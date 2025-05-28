@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+            </css>
+            <js>
+                <file>https://www.google.com/recaptcha/api.js?render=%sitekey%</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   grecaptcha.ready(function() {
+        var $submitBtn = document.querySelector("%selector% button[type='submit']");
+        if ($submitBtn) {
+            document.querySelector('input[name="%response_fieldname%"]').value = '';
+            if (document.querySelector("%selector%").classList.contains('has-validator')) {
+                // if formvalidation enabled
+
+                var formId = document.querySelector("%selector%").getAttribute('id');
+                var form   = forms[formId];
+
+                document.querySelector("%selector%").classList.add('has-recaptcha-v3')
+
+                $submitBtn.addEventListener('click', function(e) {
+                    e.preventDefault;
+                    form.fv.validate()
+                    .then (function(status) {
+                        if (status == 'Valid') {
+                            grecaptcha.execute('%sitekey%', {action: '%action%'}).then(function(token) {
+                                document.querySelector('input[name="%response_fieldname%"]').value = token;
+                                document.querySelector("%selector%").submit();
+                            });
+                        }
+                        return false;
+                    });
+                    return false;
+                });
+            } else {
+                $submitBtn.addEventListener('click', function(e) {
+                    e.preventDefault;
+                    grecaptcha.execute('%sitekey%', {action: '%action%'}).then(function(token) {
+                        document.querySelector('input[name="%response_fieldname%"]').value = token;
+                        document.querySelector("%selector%").submit();
+                    });
+                    return false;
+                });
+            }
+        } else {
+            const alert = document.createElement("p");
+            alert.classList.add("alert");
+            alert.classList.add("alert-danger");
+            alert.innerHTML = 'Recaptcha V3 - no submit button found';
+            const parent = document.querySelector("%selector%").parentNode;
+            parent.insertBefore(alert, document.querySelector("%selector%"));
+        }
+    });
+]]>
+        </js_code>
+    </default>
+    <ajax>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+            </css>
+            <js>
+                <file>https://www.google.com/recaptcha/api.js?render=%sitekey%</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   grecaptcha.ready(function() {
+        var $submitBtn = document.querySelector("%selector% button[type='submit']");
+        if ($submitBtn) {
+            document.querySelector('input[name="%response_fieldname%"]').value = '';
+            if (document.querySelector("%selector%").classList.contains('has-validator')) {
+                // if formvalidation enabled
+                var formId = document.querySelector("%selector%").getAttribute('id');
+                var form   = forms[formId];
+
+                document.querySelector("%selector%").classList.add('has-recaptcha-v3')
+
+                $submitBtn.addEventListener('click', function(e) {
+                    e.preventDefault;
+                    form.fv.validate()
+                    .then (function(status) {
+                        if (status == 'Valid') {
+                            grecaptcha.execute('%sitekey%', {action: '%action%'}).then(function(token) {
+                                document.querySelector('input[name="%response_fieldname%"]').value = token;
+                                var $form = document.getElementById(formId);
+                                let data = new FormData($form);
+                                fetch($form.getAttribute('action'), {
+                                    method: 'post',
+                                    body: new URLSearchParams(data).toString(),
+                                    headers: {
+                                        'Content-type': 'application/x-www-form-urlencoded'
+                                    },
+                                    cache: 'no-store',
+                                    credentials: 'include'
+                                }).then(function (response) {
+                                    return response.text()
+                                }).then(function (data) {
+                                    let $formContainer = document.querySelector('*[data-ajax-form-id="' + formId + '"]');
+                                    $formContainer.innerHTML = '';
+                                    loadData(data, '#' + $formContainer.id).then(() => {
+                                        window.document.dispatchEvent(loadAjaxFormEvent[formId]);
+                                    });
+                                }).catch(function (error) {
+                                    console.log(error);
+                                });
+                            });
+                        }
+                        return false;
+                    });
+                    return false;
+                });
+            } else {
+                $submitBtn.addEventListener('click', function(e) {
+                    e.preventDefault;
+                    grecaptcha.execute('%sitekey%', {action: '%action%'}).then(function(token) {
+                        document.querySelector('input[name="%response_fieldname%"]').value = token;
+                        document.querySelector("%selector%").submit();
+                    });
+                    return false;
+                });
+            }
+        } else {
+            const alert = document.createElement("p");
+            alert.classList.add("alert");
+            alert.classList.add("alert-danger");
+            alert.innerHTML = 'Recaptcha V3 - no submit button found';
+            const parent = document.querySelector("%selector%").parentNode;
+            parent.insertBefore(alert, document.querySelector("%selector%"));
+        }
+    });
+]]>
+        </js_code>
+    </ajax>
+</root>

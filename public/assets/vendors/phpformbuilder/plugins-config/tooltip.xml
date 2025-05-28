@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file>tippyjs/stylesheets/animations.min.css</file>
+                <file>tippyjs/stylesheets/themes.min.css</file>
+            </css>
+            <js>
+                <file>tippyjs/popper.min.js</file>
+                <file>tippyjs/tippy.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   document.querySelectorAll('[data-tooltip]').forEach(el => {
+        let dataAttr        = el.dataset,
+            dataContent     = dataAttr.contentSrc === undefined?dataAttr.tooltip:document.querySelector(dataAttr.contentSrc).innerHTML,
+            dataAllowHTML   = dataAttr.allowHtml === undefined?true:dataAttr.allowHtml === 'true',
+            dataAnimation   = dataAttr.animation === undefined?'fade':dataAttr.animation,
+            dataArrow       = dataAttr.arrow === undefined?true:dataAttr.arrow !== 'false',
+            dataDelay       = dataAttr.delay === undefined?500:dataAttr.delay,
+            dataInteractive = dataAttr.interactive === undefined?false:dataAttr.interactive === 'true',
+            dataPlacement   = dataAttr.placement === undefined?'top':dataAttr.placement,
+            dataTheme       = dataAttr.theme === undefined?'light':dataAttr.theme,
+            dataTrigger     = dataAttr.trigger === undefined?'mouseenter':dataAttr.trigger,
+            dataZIndex      = dataAttr.zIndex === undefined?9999:dataAttr.zIndex;
+        tippy(el, {
+            content: dataContent,
+            allowHTML: dataAllowHTML,
+            animation: dataAnimation,
+            arrow: dataArrow,
+            delay: dataDelay,
+            interactive: dataInteractive,
+            placement: dataPlacement,
+            theme: dataTheme,
+            trigger: dataTrigger,
+            zIndex: dataZIndex
+        });
+    });]]>
+        </js_code>
+    </default>
+    <popover>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file>tippyjs/stylesheets/animations.min.css</file>
+                <file>tippyjs/stylesheets/backdrop.min.css</file>
+                <file>tippyjs/stylesheets/themes.min.css</file>
+            </css>
+            <js>
+                <file>tippyjs/popper.min.js</file>
+                <file>tippyjs/tippy.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   if (typeof(phpfbPopoverTemplates) === "undefined") {
+        window.phpfbPopoverTemplates = [];
+        let popoverBackdrop = document.createElement('div');
+        popoverBackdrop.classList.add('phpfb-popover-backdrop');
+        popoverBackdrop.dataset.hidden = true;
+        document.body.insertBefore(popoverBackdrop, document.body.firstChild);
+    }
+    phpfbPopoverTemplates['%formId%'] = document.getElementById('popover-%formId%');
+    document.querySelectorAll('[data-popover-trigger="%formId%"]').forEach(el => {
+        let dataAttr      = el.dataset,
+            dataAnimation = dataAttr.animation === undefined?'fade':dataAttr.animation,
+            dataArrow     = dataAttr.arrow === undefined?true:dataAttr.arrow !== 'false',
+            dataBackdrop  = dataAttr.backdrop === undefined?false:dataAttr.backdrop === 'true',
+            dataDelay     = dataAttr.delay === undefined?500:dataAttr.delay,
+            dataPlacement = dataAttr.placement === undefined?'auto':dataAttr.placement,
+            dataMaxWidth  = dataAttr.maxWidth === undefined?'none':dataAttr.maxWidth,
+            dataTheme     = dataAttr.theme === undefined?'light':dataAttr.theme,
+            dataTrigger   = dataAttr.trigger === undefined?'click':dataAttr.trigger,
+            dataZIndex    = dataAttr.zIndex === undefined?9999:dataAttr.zIndex;
+        tippy(el, {
+            content: '',
+            allowHTML: true,
+            animation: dataAnimation,
+            arrow: dataArrow,
+            backdrop: dataBackdrop,
+            delay: dataDelay,
+            interactive: true,
+            maxWidth: dataMaxWidth,
+            placement: dataPlacement,
+            theme: dataTheme,
+            trigger: dataTrigger,
+            zIndex: dataZIndex,
+            onShow(instance) {
+                if (typeof(el.dataset.isPopoverLoaded) === 'undefined') {
+                    instance.setContent(phpfbPopoverTemplates['%formId%'].innerHTML);
+                    setTimeout(() => {
+                        if(typeof(popoverReady['%formId%']) !== "undefined") {
+                            // popoverReady is not defined if loaded with loadJs
+                            popoverReady['%formId%']();
+                        }
+                        el.dataset.isPopoverLoaded = true;
+                    }, 0);
+                }
+                if (instance.props.backdrop) {
+                    document.querySelector('.phpfb-popover-backdrop').dataset.hidden = false;
+                }
+            },
+            onHide(instance) {
+                if (instance.props.backdrop) {
+                    document.querySelector('.phpfb-popover-backdrop').dataset.hidden = true;
+                }
+            }
+        });
+
+        // show popover if the form is posted with some errors
+        if (document.querySelector("#%formId%.phpfb-has-error")) {
+            const evt = new Event('click', { bubbles: true });
+            document.querySelector('[data-popover-trigger="%formId%"]').dispatchEvent(evt);
+        }
+    });]]>
+        </js_code>
+    </popover>
+</root>

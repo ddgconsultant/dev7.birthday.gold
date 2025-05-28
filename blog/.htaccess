@@ -1,0 +1,27 @@
+# Blog URL Routing for Birthday Gold
+# Place this in your /blog/ directory
+
+RewriteEngine On
+
+# Handle admin page: /blog/admin -> admin.php
+RewriteRule ^admin/?$ admin.php [L]
+
+# Handle blog index: /blog/ -> index.php
+RewriteRule ^$ index.php [L]
+
+# Handle blog post URLs: /blog/post-slug -> post.php
+# Exclude actual files and directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# Don't rewrite if accessing actual PHP files directly
+RewriteCond %{REQUEST_URI} !^/blog/(index|post|admin)\.php$
+# Match any alphanumeric slug with hyphens
+RewriteRule ^([a-zA-Z0-9-]+)/?$ post.php?slug=$1 [L,QSA]
+
+# Optional: Force trailing slash for blog directory
+# RewriteRule ^blog$ blog/ [R=301,L]
+
+# Security: Block direct access to sensitive files (optional)
+<Files "admin.php">
+    # Add IP restrictions or additional authentication here if needed
+</Files>

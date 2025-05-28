@@ -1,0 +1,249 @@
+<?PHP
+date_default_timezone_set('America/Denver');
+# =========================================================================================================== 
+
+// Logthis function definition
+function logthis($message)
+{
+    global $homedir;
+    file_put_contents($homedir . 'your_log_file.log', $message . PHP_EOL, FILE_APPEND);
+    echo $message . PHP_EOL;
+}
+
+
+
+function firewall($state)
+{
+    $ruleName = "Simple DNS Plus (In)";
+    $cmd = "netsh advfirewall firewall set rule name=\"$ruleName\" new action=" . $state . "";
+    exec($cmd, $output, $return_var);
+    if ($return_var === 0) {
+        logthis("Firewall rule updated successfully: " . $state);
+    } else {
+        logthis("Failed to update firewall rule: " . $state);
+        logthis(print_r($output, true));
+    }
+}
+
+
+
+
+# =========================================================================================================== 
+$homedir = '/scripts/';
+$dir = '/ProgramData/JH Software/Simple DNS Plus/LogFiles';
+
+#$fileprefix = date('Ymd');
+#$fileprefix = '20231021';
+#$filename = $dir . "/{$fileprefix}"; // Construct the filename
+#$startIndex = 0;
+
+#$partIndex = $startIndex;
+
+
+
+# =========================================================================================================== 
+// Loop through the numbered log files
+
+
+
+// Read processed log files list
+$processedLogsFile = $homedir . 'processedloglist.txt';
+$processedLogs = file_exists($processedLogsFile) ? file($processedLogsFile, FILE_IGNORE_NEW_LINES) : [];
+
+$logFiles = glob($dir . '/*.log');  // Get all .log files
+$countfile = 1;
+$totalfiles = count($logFiles);
+
+logthis('STARTING: ' . date('r'));
+logthis("FOUND: " . $totalfiles . ' logfiles');
+
+
+foreach ($logFiles as $logFile) {
+    $tempFileName = basename($logFile);
+    $baseFileName = basename($logFile);
+    // Check if this log file was already processed
+    if (in_array($tempFileName, $processedLogs)) {
+        $countfile++;
+        continue;
+    }
+
+    $tempFileName = "{$logFile}"; // Full filename including part
+
+    firewall('block');
+    #   $partIndextag = sprintf('%02d', $partIndex); // Format the counter to have leading zeros
+
+    $uniqueIPs = [];
+    #  $filename = "{$filename}.{$partIndextag}"; // Full filename including part
+    # $tempFileName = "{$filename}{$partIndextag}.log"; // Full filename including part
+
+    if (!file_exists($tempFileName)) {
+        // Exit the loop if the file part does not exist
+        logthis("Exit the loop if the file part does not exist: " . $tempFileName);
+        firewall('allow');
+        break;
+    }
+
+
+
+
+    // Path to the file where you want to save the IPs
+    $outputFilePath1 = $homedir . 'grepoutput_file_list' . $baseFileName . '.txt';
+    $outputFilePath2 = $homedir . 'grepoutput_ips' . $baseFileName . '.txt';
+
+    // Read the log file line-by-line
+    $handle = fopen($tempFileName, 'r');
+    logthis(date('r') . " - processing (" . $countfile . '/' . $totalfiles . "): " . $tempFileName);
+
+    file_put_contents($outputFilePath1, "; HANDLING: " . $tempFileName . PHP_EOL, FILE_APPEND);
+    if ($handle) {
+        while (($line = fgets($handle)) !== false) {
+            // Regular expression to match IP and the requested domain
+            #        if (preg_match('/Request from (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) for [A|AAAA]-record for ([a-zA-Z0-9.-]+)/', $line, $matches)) {
+            if (preg_match('/Request from (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}) for TXT-record for cisco\.com/', $line, $matches)) {
+
+                $ip = $matches[1];
+                #$domain = $matches[2];
+
+                // Check if the domain name is mixed-case
+                #  if ($domain !== strtolower($domain) && $domain !== strtoupper($domain)) {
+                // Save the IP to the output file
+                #file_put_contents($outputFilePath1, $ip.':'.$domain . PHP_EOL, FILE_APPEND);
+                file_put_contents($outputFilePath2, $ip . PHP_EOL, FILE_APPEND);
+                #  }
+            }
+        }
+
+        fclose($handle);
+    } else {
+        // Error opening the file
+        logthis("Error opening/locating log file " . $tempFileName);
+    }
+
+
+    $matches = [];
+    $uniqueIps = [];
+    // Read the content of the file
+    $fileContent = file_get_contents($outputFilePath2);
+
+    // Use regular expression to match IP addresses
+    preg_match_all('/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/', $fileContent, $matches);
+
+    // Fetch unique IP addresses
+    $uniqueIps = array_unique($matches[0]);
+
+    // Sort the unique IP addresses
+    sort($uniqueIps);
+
+    // Convert the array of unique IPs into a string, separated by new lines
+    $newContent = implode(PHP_EOL, $uniqueIps);
+
+    // Write the unique IPs back into the file
+    file_put_contents($outputFilePath2, $newContent);
+
+    logthis("Unique IP addresses have been saved to $outputFilePath2");
+
+    #=======================
+
+
+    // Read the unique IPs from the file
+    $ipList = file_get_contents($outputFilePath2);
+    $ips = explode("\n", $ipList);
+
+    // Create a set to store the unique /24 subnets
+    // Initialize an empty array to hold subnets
+    // Create a set to store the unique /24 subnets
+    $subnets = [];
+
+    // Create a set to store the new /24 subnets
+    $newSubnets = [];
+
+    $subnetFilePath = $homedir . 'subnets.txt';
+
+    // If the subnet file exists, read its content into an array
+    if (file_exists($subnetFilePath)) {
+        $existingSubnets = file($subnetFilePath, FILE_IGNORE_NEW_LINES);
+        foreach ($existingSubnets as $existingSubnet) {
+            $subnets[$existingSubnet] = true;
+        }
+    }
+
+    // Loop through each IP
+    foreach ($ips as $ip) {
+        // Extract the first three octets of the IP
+        $octets = explode('.', $ip);
+        if (count($octets) < 4) continue; // Skip invalid lines
+        array_pop($octets); // Remove the last octet
+        $subnet = implode('.', $octets); // Reassemble into subnet string
+
+        // Check if subnet is new
+        if (!isset($subnets[$subnet])) {
+            $newSubnets[$subnet] = true;
+        }
+
+        // Add to set of subnets (keys are unique)
+        $subnets[$subnet] = true;
+    }
+
+    // Create firewall rules for each new unique subnet
+    foreach (array_keys($newSubnets) as $subnet) {
+        $command = "netsh advfirewall firewall add rule name=\"PHP-DNS_SPAMMER_BLOCK_{$subnet}.0-24\" dir=in action=block remoteip={$subnet}.0/24";
+        exec($command, $output, $return_var);
+        if ($return_var === 0) {
+            logthis("Firewall rule added: " . $subnet);
+        } else {
+            logthis("Failed to add rule: " . $subnet);
+            logthis(print_r($output, true));
+        }
+
+        logthis(" -- " . $command . PHP_EOL);
+    }
+
+    // Save the unique subnets to a file
+    file_put_contents($subnetFilePath, implode(PHP_EOL, array_keys($subnets)));
+    logthis("Unique subnets have been saved to $subnetFilePath");
+
+
+    if ($countfile < $totalfiles) {
+        // After successful processing, mark this log file as processed
+        file_put_contents($processedLogsFile, $baseFileName . PHP_EOL, FILE_APPEND);
+        logthis('added: ' . $baseFileName . ' to processedLogsFile');
+
+// Get the current year
+$currentYear = date('Y');
+
+// Create the new directory path
+$newDir = $dir . '/' . $currentYear;
+
+// Create the directory if it doesn't exist
+if (!is_dir($newDir)) {
+    mkdir($newDir, 0777, true);
+}
+
+// Define the old and new file paths
+$oldFilePath = $dir . '/' . $baseFileName;
+$newFilePath = $newDir . '/' . $baseFileName;
+
+// Move the file
+if (file_exists($oldFilePath)) {
+    rename($oldFilePath, $newFilePath);
+    logthis("File moved successfully");
+} else {
+    logthis("File does not exist");
+}
+        $timer = 3;
+        logthis("sleeping for " . $timer . " minutes and then advancing to next file");
+        # and then advancing to: ".$partIndex;
+        firewall('allow');
+        sleep($timer * 60);
+    }
+    $countfile++;
+
+    $processedLogs[] = $baseFileName; // Update the processedLogs array as well
+
+
+
+}
+firewall('allow');
+
+logthis('COMPLETED: ' . date('r'));
+logthis(str_repeat('=', 80));

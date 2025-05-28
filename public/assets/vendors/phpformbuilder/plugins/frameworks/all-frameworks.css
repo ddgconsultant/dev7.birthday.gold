@@ -1,0 +1,94 @@
+/* add inline style to adjust bottom margins with horizontal forms and grouped fields on small screens */
+@media only screen and (max-width: 767px) {
+    .form-group>div[class*="col-"]:not(:last-child) {
+        margin-bottom: 15px;
+    }
+}
+
+.append {
+    margin-left: 7px;
+}
+
+.bootstrap-select.btn-group.bs-container .dropdown-menu {
+    z-index: 10000 !important;
+}
+
+.fade.in {
+    opacity: 1 !important;
+}
+
+.fv-plugins-icon-container select.is-valid,
+.fv-plugins-icon-container select.is-invalid {
+    appearance: none;
+}
+
+.fv-plugins-icon {
+    z-index: 1;
+    pointer-events: none !important;
+}
+
+.g-recaptcha>div {
+    margin: auto !important;
+}
+
+.g-recaptcha {
+    -webkit-transform-origin: left top;
+    transform-origin: left top;
+}
+
+form label[data-has-switch="true"]~div label,
+form .lcs_wrap~label {
+    margin-left: 1em !important;
+}
+
+.nice-check>.fv-plugins-icon {
+    display: none;
+}
+
+.phpfb-centered {
+    display: flex !important;
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    flex-basis: 0% !important;
+    justify-content: center;
+    width: fit-content;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-bottom: 1.5rem;
+}
+
+.phpfb-centered button {
+    white-space: nowrap;
+}
+
+.phpfb-centered .col {
+    flex-basis: auto !important;
+    margin-left: initial !important;
+}
+
+.phpfb-centered>div:not(.lcs_wrap) {
+    width: fit-content !important;
+}
+
+.phpfb-centered div.grid {
+    display: flex;
+}
+
+.phpfb-centered-stacked {
+    flex-direction: column;
+    align-items: center;
+}
+
+.phpfb-centered-stacked label {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.prepend {
+    margin-right: 7px;
+}
+
+.recaptcha-wrapper {
+    overflow: hidden;
+    width: 100%;
+}

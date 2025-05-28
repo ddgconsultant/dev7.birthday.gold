@@ -1,0 +1,73 @@
+.ss-main {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #9e9e9e;
+    border-radius: 0;
+    outline: none;
+    min-height: 3rem;
+    line-height: 1.5;
+    color: #495057;
+    width: 100%;
+    font-size: 16px;
+    margin: 0 0 8px;
+    padding: 0;
+    box-shadow: none;
+    box-sizing: border-box;
+    transition: box-shadow .3s, border .3s;
+}
+
+.fv-valid-row .ss-arrow,
+.fv-invalid-row .ss-arrow {
+    display: none !important;
+}
+
+.ss-main.valid,
+.ss-main.invalid {
+    padding-right: 20px;
+}
+
+.ss-main .ss-single-selected {
+    border: none;
+    padding: 0;
+    height: 3rem;
+}
+
+.ss-main .placeholder {
+    cursor: pointer !important;
+}
+
+.ss-main .ss-single-selected .placeholder .ss-disabled {
+    padding-left: .5rem;
+    color: #aaa !important;
+}
+
+.ss-option.flag {
+    padding-bottom: 0 !important;
+    padding-left: 42px !important;
+    padding-top: 0 !important;
+}
+
+.ss-single-selected .placeholder {
+    background: transparent;
+    opacity: 1;
+}
+
+.ss-main .ss-multi-selected {
+    border: none;
+}
+
+select[data-slimselect="true"]:disabled~.ss-main {
+    background-color: #e9ecef;
+}
+
+select[data-slimselect="true"]:disabled~.ss-main .ss-deselect {
+    display: none;
+}
+
+.ss-main .ss-single-selected.ss-disabled {
+    background: transparent;
+}
+
+.ss-main.has-icon-before {
+    padding-left: 2.5rem;
+}

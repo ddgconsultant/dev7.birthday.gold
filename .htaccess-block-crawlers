@@ -1,0 +1,13 @@
+# .htaccess-block-crawlers
+# Deny Access to Known Crawlers and Bots
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{HTTP_USER_AGENT} ^.*(AhrefsBot|SemrushBot|DotBot|MJ12bot|Baiduspider|YandexBot|Sogou|PetalBot|MegaIndex|BLEXBot|SEOkicks|Archive\.org_bot|Exabot|spbot|Screaming Frog|HTTrack|WebCopier|DataForSeoBot|CliqzBot|NetcraftSurveyAgent|Googlebot|bingbot|AdsBot-Google|Google-Structured-Data-Testing-Tool|Google-Read-Aloud|Google-Image|Googlebot-Video|Googlebot-Mobile|360Spider|AspiegelBot|FacebookExternalHit|Python-urllib|Java|curl|wget|libwww-perl|Go-http-client|sqlmap|Zgrab|CensysInspect|Nmap).* [NC]
+RewriteRule .* - [F,L]
+</IfModule>
+
+# Block Empty User-Agents
+<IfModule mod_rewrite.c>
+RewriteCond %{HTTP_USER_AGENT} ^-?$ [NC]
+RewriteRule .* - [F,L]
+</IfModule>

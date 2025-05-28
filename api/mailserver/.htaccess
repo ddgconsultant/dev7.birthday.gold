@@ -1,0 +1,27 @@
+# Disable directory browsing
+Options -Indexes
+
+# Deny all requests
+Order deny,allow
+Deny from all
+Allow from 67.202.50.97
+Allow from 172.31.33.194
+Allow from 34.228.223.110
+Allow from 3.93.16.208
+Allow from 192.168.0.0/24
+Allow from 178.16.140.199
+Allow from 178.16.140.200
+Allow from 71.33.250.254
+
+## OLD MONITOR SERVER - AWS
+Allow from 54.146.11.169   
+
+
+ErrorDocument 403 /403
+
+
+# Added by march03.bday.gold on 2024-05-18 19:48:50
+Allow from 77.243.85.216
+
+# Added by march02.bday.gold on 2024-06-29 10:34:17
+Allow from 217.196.51.179

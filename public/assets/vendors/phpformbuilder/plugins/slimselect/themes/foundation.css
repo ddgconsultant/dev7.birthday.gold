@@ -1,0 +1,60 @@
+.fv-plugins-icon--valid~.ss-main .ss-arrow,
+.fv-plugins-icon--invalid~.ss-main .ss-arrow,
+.fv-plugins-icon--valid~.ss-main .ss-add,
+.fv-plugins-icon--invalid~.ss-main .ss-add,
+select[aria-invalid]~.ss-main .ss-arrow,
+select[aria-invalid]~.ss-main .ss-add {
+    display: none !important;
+}
+
+[class*="has-addon-"] .ss-main,
+[class*="has-addon-"] .ss-main .ss-single-selected {
+    margin-bottom: 0 !important;
+}
+
+.ss-main {
+    margin-bottom: 0.5rem;
+}
+
+.ss-main .placeholder {
+    cursor: pointer !important;
+}
+
+.ss-main .ss-single-selected .placeholder .ss-disabled {
+    color: #aaa !important;
+}
+
+.ss-option.flag {
+    padding-bottom: 0 !important;
+    padding-left: 42px !important;
+    padding-top: 0 !important;
+}
+
+.ss-single-selected .placeholder {
+    background: transparent;
+    opacity: 1;
+}
+
+.ss-single-selected {
+    height: 2.4375rem !important;
+    margin: 0 0 1rem !important;
+    padding: 0.5rem !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    border: 1px solid #cacaca !important;
+    border-radius: 0 !important;
+    box-shadow: inset 0 1px 2px rgb(10 10 10 / 10%);
+}
+
+.ss-single-selected:not(.ss-disabled) {
+    background-color: #fefefe !important;
+}
+
+select[data-slimselect="true"]:disabled~.ss-main .ss-deselect {
+    display: none;
+}
+
+.fv-plugins-icon--valid~.ss-main .ss-deselect {
+    margin-right: 30px;
+}

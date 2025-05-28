@@ -1,0 +1,50 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+a[x-apple-data-detectors] {
+    color: inherit !important;
+    text-decoration: inherit !important;
+}
+
+#MessageViewBody a {
+    color: inherit;
+    text-decoration: none;
+}
+
+p {
+    line-height: inherit
+}
+
+th.inner,
+td.inner {
+    padding: 5px 20px;
+}
+
+@media (max-width:620px) {
+    .icons-inner {
+        text-align: center;
+    }
+
+    .icons-inner td {
+        margin: 0 auto;
+    }
+
+    .row-content {
+        width: 100% !important;
+    }
+
+    .image_block img.big {
+        width: auto !important;
+    }
+
+    .stack .column {
+        width: 100%;
+        display: block;
+    }
+}

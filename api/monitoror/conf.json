@@ -1,0 +1,172 @@
+{
+    "version": "2.0",
+    "columns": 4,
+    "tiles": [
+        {
+            "type": "PORT",
+            "label": "DDG / BIRTHDAY GOLD ENTERPRISE",
+            "params": {
+                "hostname": "127.0.0.1",
+                "port": 8080
+            }
+        },
+        {
+          "type": "HTTP-RAW",
+          "label": "FRONT END",
+          "params": {
+            "url": "https://dev.birthday.gold/api/monitoror/uptimekuma_monitororfeed.php?page=frontend",
+            "regex": "All Systems Operational"
+          }
+      },
+      {
+        "type": "HTTP-RAW",
+        "label": "INFRASTRUCTURE",
+        "params": {
+          "url": "https://dev.birthday.gold/api/monitoror/uptimekuma_monitororfeed.php?page=infrastructure",
+          "regex": "All Systems Operational"
+        }
+    },
+    {
+      "type": "HTTP-RAW",
+      "label": "SERVICES",
+      "params": {
+        "url": "https://dev.birthday.gold/api/monitoror/uptimekuma_monitororfeed.php?page=vendors",
+        "regex": "All Systems Operational"
+      }
+  },
+        {
+            "type": "PING",
+            "label": "DDGDNS1 Ping ms",
+            "params": {
+              "hostname": "ns1.thedatadesigngroup.com"
+            }
+        },
+
+
+        {
+            "type": "PING",
+            "label": "Birthday.Gold Ping ms",
+            "params": {
+              "hostname": "www.birthday.gold"
+            }
+        },
+
+        {
+          "type": "PING",
+          "label": "JULY02 Ping ms",
+          "params": {
+            "hostname": "july02.bday.gold"
+          }
+      },
+
+      {
+        "type": "PING",
+        "label": "JUNE01 Ping ms",
+        "params": {
+          "hostname": "june01.bday.gold"
+        }
+    },
+
+        {
+            "type": "PING",
+            "label": "MARCH01 Ping ms",
+            "params": {
+              "hostname": "march01.bday.gold"
+            }
+        },
+
+
+
+        {
+          "type": "PING",
+          "label": "DDGDATA8P Ping ms",
+          "params": {
+            "hostname": "71.33.250.235"
+          }
+      },
+
+
+
+
+    {
+      "type": "HTTP-RAW",
+      "label": "DDGData8P Seconds Behind",
+      "params": {
+        "url": "https://dev.birthday.gold/api/monitoror/dataserver_replicalag.php",
+        "regex": "(\\d+) seconds behind"
+      }
+  },
+
+  {
+    "type": "HTTP-RAW",
+    "label": "July02 Seconds Behind",
+    "params": {
+      "url": "https://www.birthday.gold/api/monitoror/dataserver_replicalag.php",
+      "regex": "(\\d+) seconds behind"
+    }
+},
+
+
+{
+  "type": "HTTP-STATUS",
+  "label": "Birthday.Gold Availability",
+  "params": {
+    "url": "https://www.birthday.gold"
+  }
+},
+
+
+        {
+          "type": "HTTP-RAW",
+          "label": "Birthday.Gold User Enrollments",
+          "columnSpan": 2,
+          "params": {
+            "url": "https://dev.birthday.gold/api/monitoror/userstoenroll.php",
+            "regex": "(\\d+) user enrollments"
+          }
+      },
+
+
+        {
+          "type": "HTTP-RAW",
+          "label": "Birthday.Gold Company Email Domains",
+          "params": {
+            "url": "https://dev.birthday.gold/api/mailserver/company_domain_editor.php?monitor=true",
+            "regex": "(\\d+) unaccounted for domains"
+          }
+      },
+        {
+            "type": "HTTP-FORMATTED",
+            "label": "Birthday.Gold User Count",            
+            "columnSpan": 2,            
+          "rowSpan": 2,
+            "params": {
+                "url": "https://dev.birthday.gold/api/monitoror/usercount.php",
+                "format": "JSON",
+                "key": "userCounts"
+              }
+        },
+        {
+          "type": "HTTP-FORMATTED",
+          "label": "Birthday.Gold User Count Today",        
+          "columnSpan": 2,                  
+          "rowSpan": 2,
+          "params": {
+              "url": "https://dev.birthday.gold/api/monitoror/usercount.php?today=1",
+              "format": "JSON",
+              "key": "userCounts"
+            }
+      },
+
+        {
+            "type": "HTTP-RAW",
+            "columnSpan": 4,
+            "label": " ",
+            "params": {
+                "url": "https://dev.birthday.gold/api/monitoror/servertime.php",
+                "regex": "([A-Za-z]+,\\s[A-Za-z]{3}\\s\\d{1,2},\\s\\d{4}\\s-\\s\\d{1,2}:\\d{2}:\\d{2}\\s[AP]M\\s[A-Z]{3}) servertime"
+            }
+        } 
+        
+    ]
+}

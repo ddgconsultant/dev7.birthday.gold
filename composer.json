@@ -1,0 +1,14 @@
+{
+    "require": {
+        "guzzlehttp/guzzle": "^7.7",
+        "stripe/stripe-php": "^10.18",
+        "phpmailer/phpmailer": "^6.8",
+        "ipinfo/ipinfo": "^3.0",
+        "symfony/yaml": "^6.3",
+        "endroid/qr-code": "^4.8",
+        "firebase/php-jwt": "^6.9",
+        "whichbrowser/parser": "^2.1",
+        "obregonco/backblaze-b2": "^1.1",
+        "phpseclib/phpseclib": "^3.0"
+    }
+}

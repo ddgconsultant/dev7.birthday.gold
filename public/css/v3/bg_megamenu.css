@@ -1,0 +1,482 @@
+.navbar {
+	position: fixed;
+	width: 100%;
+	top: 0;
+	z-index: 1030;
+	background-color: #f8f9fa;
+}
+
+.short-text {
+	display: none;
+}
+
+.bg-secondary-subtle {
+	background-color: var(--bs-secondary-light) !important;
+  }
+
+  body.scroll-lock {
+	overflow: hidden;
+  }
+
+  .bg_mega-menu {
+    display: none;
+    top: 60px;
+    padding: 1rem;
+    background-color: #fff;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.3);  /* Heavier drop shadow */
+    z-index: 1040;  /* Higher than the button */
+    transition: left 0.5s ease;  /* Add transition */
+    max-height: 100vh;  /* Set maximum height to 100% of the viewport height */
+    overflow-y: auto;  /* Enable vertical scrollbar when content overflows */
+	overflow-x: hidden;  	/* Disable horizontal scrollbar */
+    position: absolute;  /* Change to absolute for better control */
+    right: 0;  /* Align to the right */
+    left: auto;  /* Ensure left alignment doesn't interfere */
+}
+
+
+.bg_mega-menu::-webkit-scrollbar {
+	width: 8px;     /* Set the width of the scrollbar */
+}
+
+.bg_mega-menu::-webkit-scrollbar-thumb {
+	background: #888;     /* Set the color of the scrollbar thumb */
+	border-radius: 10px;     /* Set the roundness of the scrollbar thumb */
+}
+
+.bg_mega-menu::-webkit-scrollbar-thumb:hover {
+	background: #555;     /* Set the color of the scrollbar thumb on hover */
+}
+
+/* For Firefox */
+.bg_mega-menu {
+	scrollbar-width: thin;     /* Set the scrollbar to be thin */
+	scrollbar-color: #888 #f0f0f0;     /* Set the color of the scrollbar thumb and track */
+}
+
+.menu-icons i {
+	font-weight: bold;
+	padding-left: 18px;
+	padding-right: 10px;
+}
+
+.icon-social i {
+	color: #007bff;     /* New Color: Bootstrap Primary Blue */
+}
+
+.icon-social h6 {
+	position: relative;
+}
+
+.icon-social h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #007bff;     /* New Color: Bootstrap Primary Blue underline */
+	margin-left: 15px;     /* Adjust left margin */
+	margin-right: 15px;     /* Adjust right margin */
+	position: absolute;
+	bottom: 5px;     /* Adjust as needed */
+	left: 0;
+	right: 0;
+}
+
+
+.icon-create i {
+	color: #ff6347;     /* Tomato */
+}
+
+.icon-signin i {
+	color: #4682b4;     /* Steel Blue */
+}
+
+.icon-enrollments i {
+	color: #32cd32;     /* Lime Green */
+}
+
+.icon-rewards i {
+	color: #ffa500;     /* Orange */
+}
+
+.icon-celebrate i {
+	color: #8a2be2;     /* Blue Violet */
+}
+
+.icon-account i {
+	color: #ff4500;     /* Orange Red */
+}
+
+.icon-staff i {
+	color: #6a5acd;     /* Slate Blue */
+}
+
+.icon-admin i {
+	color: #2e8b57;     /* Sea Green */
+}
+
+.icon-help i {
+	color: #d2691e;     /* Chocolate */
+}
+
+.icon-create h6 {
+	position: relative;
+}
+
+.icon-create h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #ff6347;     /* Tomato underline */
+	margin-left: 15px;     /* Adjust left margin */
+	margin-right: 15px;     /* Adjust right margin */
+	position: absolute;
+	bottom: 5px;     /* Adjust as needed */
+	left: 0;
+	right: 0;
+}
+
+.icon-signin h6 {
+	position: relative;
+}
+
+.icon-signin h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #4682b4;     /* Steel Blue underline */
+	margin-left: 15px;
+	margin-right: 15px;
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	right: 0;
+}
+
+.icon-enrollments h6 {
+	position: relative;
+}
+
+.icon-enrollments h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #32cd32;     /* Lime Green underline */
+	margin-left: 15px;
+	margin-right: 15px;
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	right: 0;
+}
+
+.icon-rewards h6 {
+	position: relative;
+}
+
+.icon-rewards h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #ffa500;     /* Orange underline */
+	margin-left: 15px;
+	margin-right: 15px;
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	right: 0;
+}
+
+.icon-celebrate h6 {
+	position: relative;
+}
+
+.icon-celebrate h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #8a2be2;     /* Blue Violet underline */
+	margin-left: 15px;
+	margin-right: 15px;
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	right: 0;
+}
+
+.icon-account h6 {
+	position: relative;
+}
+
+.icon-account h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #ff4500;     /* Orange Red underline */
+	margin-left: 15px;
+	margin-right: 15px;
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	right: 0;
+}
+
+.icon-staff h6 {
+	position: relative;
+}
+
+.icon-staff h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #6a5acd;     /* Slate Blue underline */
+	margin-left: 15px;
+	margin-right: 15px;
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	right: 0;
+}
+
+.icon-admin h6 {
+	position: relative;
+}
+
+.icon-admin h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #2e8b57;     /* Sea Green underline */
+	margin-left: 15px;
+	margin-right: 15px;
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	right: 0;
+}
+
+.icon-help h6 {
+	position: relative;
+}
+
+.icon-help h6::after {
+	content: '';
+	display: block;
+	border-bottom: 1px solid #d2691e;     /* Chocolate underline */
+	margin-left: 15px;
+	margin-right: 15px;
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	right: 0;
+}
+
+@media (min-width:1600px) {
+	.bg_mega-menu {
+		width: 1250px !important;         /* Fixed width for extra-extra-large screens */
+		background-color: white;         /* Unique background color */
+	}
+
+}
+
+@media (min-width:1400px) and (max-width:1599px) {
+	.bg_mega-menu {
+		width: 1200px !important;         /* Fixed width for extra-large screens */
+ /* 		background-color: lightblue;         /* Unique background color */
+	}
+
+}
+
+@media (min-width:1200px) and (max-width:1399px) {
+	.bg_mega-menu {
+		width: 1050px !important;         /* Fixed width for large screens */
+	 /* 	background-color: lightgreen;         /* Unique background color */
+	}
+
+	.long-text {
+		display: none;
+	}
+
+	.short-text {
+		display: block;
+	}
+
+	.menu-icons i {
+		padding-left: 6px;
+		padding-right: 9px;
+	}
+
+}
+
+@media (min-width:992px) and (max-width:1199px) {
+	.bg_mega-menu {
+		width: 870px !important;         /* Fixed width for medium screens */
+	 /* 	background-color: lightyellow;         /* Unique background color */
+	}
+
+	.long-text {
+		display: none;
+	}
+
+	.short-text {
+		display: block;
+	}
+
+	.menu-icons i {
+		padding-left: 3px;
+		padding-right: 9px;
+	}
+
+}
+
+@media (min-width:768px) and (max-width:991px) {
+	.bg_mega-menu {
+		width: 680px !important;         /* Fixed width for small screens */
+		top: 55px;         /* Adjust position for medium screens */
+	 /* 	background-color: lightpink;         /* Unique background color */
+	}
+
+	.long-text {
+		display: none;
+	}
+
+	.short-text {
+		display: block;
+	}
+
+	.menu-icons i {
+		padding-left: 3px;
+		padding-right: 9px;
+	}
+
+}
+
+@media (max-width:767px) {
+	.bg_mega-menu {
+		width: 500px !important;         /* Fixed width for small screens */
+		top: 60px;         /* Adjust position for extra small screens */
+	 /* 	background-color: lightgray;         /* Unique background color */
+		
+	}
+
+	.header-logo {
+		width: 40px !important;
+	}
+
+	.long-text {
+		display: none;
+	}
+
+	.short-text {
+		display: block;
+	}
+
+	.menu-icons i {
+		padding-left: 3px;
+		padding-right: 9px;
+	}
+
+}
+
+@media (max-width:575.98px) {
+	.bg_mega-menu {
+		width: 300px !important;         /* Fixed width for small screens */
+		top: 45px;         /* Adjust position for extra-small screens */
+	 /* 	background-color: lightgoldenrodyellow;         /* Unique background color */
+	}
+
+	.long-text {
+		display: block;
+	}
+
+	.short-text,
+	.mini-screen {
+		display: none;
+	}
+
+}
+
+.navbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	position: fixed;
+	width: 100%;
+	top: 0;
+	z-index: 1030;
+	background-color: #f8f9fa;
+}
+
+.btn-group {
+	flex-shrink: 0;
+}
+
+.header-logo {
+	width: 100px;
+	height: auto;
+}
+
+@media (max-width:767px) {
+	.header-logo img {
+		width: 40px;
+	}
+
+}
+
+@media (max-width:768px) {
+	.navbar-main img {
+		height: 40px;
+	}
+
+}
+
+@media (min-width: 992px) {
+    .dropdown-item {
+        padding: 0.5rem 1rem !important;
+    }
+}
+@media (max-width: 991.98px) {
+    .dropdown-item {
+        padding: 0.1rem 1rem !important;
+    }
+}
+
+.dropdown-bottom-button {
+	display: flex;
+	align-items: center;
+	padding: 1rem;
+	background-color: #f8f9fa;
+	border-top: 1px solid #e9ecef;
+	flex: 1;     /* Ensure equal sizing */
+	margin: 10px;     /* Added margin */
+}
+
+.dropdown-bottom-button .bi {
+	font-size: 24px;
+	margin-right: 1rem;
+}
+
+.dropdown-bottom-button .dropdown-button-title {
+	font-size: 1.25rem;
+	font-weight: 500;
+}
+
+.dropdown-bottom-button .title {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: #6c757d;
+}
+
+.navbar-nav {
+	flex-direction: row;
+}
+
+.nav-item {
+	position: relative;
+}
+
+.dropdown-header {
+	font-size: 1.25rem;
+	font-weight: 700;
+	padding-top: 23px;
+}
+
+.btn-secondary {
+	background-color: #002366;     /* Navy color */
+	border-color: #002366;
+}
+
+.btn-secondary.dropdown-toggle-split {
+	background-color: #001a4d;     /* Darker navy color */
+	border-left-color: #002366;
+}

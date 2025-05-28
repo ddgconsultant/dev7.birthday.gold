@@ -1,0 +1,13 @@
+RewriteEngine On
+RewriteBase /presentation/
+
+# Rewrite any request without extension to the corresponding .php file if it exists
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([^/]+)$ $1.php [L]
+
+# Only rewrite if the request is not for an existing file or directory
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redirect presentation with content parameter to index.php
+RewriteRule ^([^/]+)$ index.php?content=$1 [L,QSA]

@@ -1,0 +1,111 @@
+{
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "upload-to-backblaze",
+          "responseMode": "lastNode",
+          "responseData": "json"
+        },
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [
+          250,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "requestMethod": "GET",
+          "url": "={{$json[\"source_file_location\"]}}",
+          "responseFormat": "file",
+          "dataPropertyName": "data"
+        },
+        "name": "HTTP Request",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 1,
+        "position": [
+          450,
+          300
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "upload",
+          "binaryData": true,
+          "fileName": "data",
+          "bucketId": "eee9d43bffe57b4397050c1c",
+          "fileNamePath": "={{$json[\"target_file_location\"]}}"
+        },
+        "name": "Backblaze B2",
+        "type": "n8n-nodes-base.backblazeB2",
+        "typeVersion": 1,
+        "position": [
+          650,
+          300
+        ],
+        "credentials": {
+          "backblazeB2Api": {
+            "id": "MPdOebLFqEIPESpg",
+            "name": "BackBlaze Master S3 account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "table": "={{$json[\"record_table\"]}}",
+          "id": "={{$json[\"record_id\"]}}",
+          "updateKey": "={{$json[\"record_column\"]}}",
+          "updateValue": "={{$node[\"Backblaze B2\"].json[\"url\"]}}"
+        },
+        "name": "MySQL",
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 1,
+        "position": [
+          850,
+          300
+        ],
+        "credentials": {
+          "mySql": "Your_MySQL_Credentials_Name"
+        }
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HTTP Request": {
+        "main": [
+          [
+            {
+              "node": "Backblaze B2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Backblaze B2": {
+        "main": [
+          [
+            {
+              "node": "MySQL",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    }
+  }
+  

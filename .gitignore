@@ -1,0 +1,23 @@
+api/mobileapps/birthday_gold.apk
+api/mobileapps/older_google/birthday_gold.apk
+# Ignore node modules or vendor packages
+node_modules/
+vendor/
+
+# Ignore sensitive or environment files
+.env
+.env.local
+.env.*
+
+# Ignore logs and system files
+*.log
+.DS_Store
+Thumbs.db
+
+# Ignore IDE/editor folders
+.vscode/
+.idea/
+
+# Ignore OS temp files
+*.tmp
+*.swp

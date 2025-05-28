@@ -1,0 +1,26 @@
+# Enable Rewrite Engine
+RewriteEngine On
+
+# Remove .php extension
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+# Remove index.php 
+DirectoryIndex index.php
+RewriteCond %{THE_REQUEST} /index\.php [NC]
+RewriteRule ^index\.php$ / [L,R=301,NC]
+
+RewriteRule ^getplan/([^/]*)$ getplan.php?plan=$1 [L,QSA]
+
+# Block access to .git directory and redirect to custom 499 page
+RewriteRule ^\.git(/|$) /499 [R=302,L]
+
+# Normal 403 error page
+ErrorDocument 403 /403
+
+# Other normal error pages
+ErrorDocument 401 /401
+ErrorDocument 404 /404
+ErrorDocument 500 /500
+ErrorDocument 503 /503

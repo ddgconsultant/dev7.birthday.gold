@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<!-- saved from url=(0050)file:///H:/First%20Project/GWANGI/src/members.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./Gwangi_files/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="./Gwangi_files/main.css">
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+      @font-face {
+        font-family: "gwangi";
+        src: url("./fonts/gwangi.ttf");
+      }
+    </style>
+    <title>Gwangi</title>
+  <style type="text/css" id="operaUserStyle"></style></head>
+  <body>
+    <header>
+      <nav>
+        <div class="custom-bg-purple" style="position: fixed; top: 0; left: 0; width: 100vw; z-index: 999">
+          <div class="container-fluid">
+            <div class="row custom-header-h align-items-center">
+              <!-- logo -->
+              <div class="col-2 h-100 d-flex align-items-center px-0">
+                <a href="file:///H:/" id="nav-logo">
+                  <img src="./Gwangi_files/logo_community.png" alt="">
+                </a>
+              </div>
+
+              <!-- nav links -->
+              <div class="col-1 d-lg-none d-block ms-auto me-sm-0 me-2 d-flex align-items-center justify-content-sm-center justify-content-start px-0">
+                <button id="nav-toggler" class="d-flex flex-column btn p-0">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </button>
+              </div>
+
+              <div class="col-10 d-none d-lg-block h-full">
+                <div class="row h-full pe-3 nav-links-container">
+                  <div class="col-10 h-full">
+                    <ul class="list-unstyled h-full d-flex align-items-center justify-content-center gap-1 w-100">
+                      <li id="home-link" class="h-full position-relative">
+                        <a href="file:///H:/" class="custom-links text-decoration-none fw-normal"><span>Home</span>
+                          <i style="font-size: 8px; margin-left: 1px" class="fa-solid fa-chevron-down"></i></a>
+                        <div class="custom-bg-purple" id="custom-home-submenu">
+                          <a href="file:///H:/">Home 1</a>
+                          <a href="file:///H:/">Home 2</a>
+                        </div>
+                      </li>
+                      <li class="h-full position-relative custom-community-link">
+                        <a href="file:///H:/" class="custom-links text-decoration-none active fw-normal"><span>Community</span>
+                          <i style="font-size: 8px; margin-left: 1px" class="fa-solid fa-chevron-down"></i></a>
+                        <div id="community-link-menu" class="d-flex">
+                          <div class="custom-col">
+                            <h6 class="mb-2 px-3 py-2">MEMBERS</h6>
+                            <ul class="list-unstyled px-0 text-white d-flex flex-column gap-2">
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">Members Directory</a>
+                              </li>
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">Swipe Members &gt;</a>
+                              </li>
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">Member Profile</a>
+                              </li>
+                            </ul>
+                          </div>
+                          <div class="custom-col">
+                            <h6 class="mb-2 px-3 py-2">Groups</h6>
+                            <ul class="list-unstyled p-2 px-0 text-white d-flex flex-column gap-2">
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">Groups Directory</a>
+                              </li>
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">Group Profile</a>
+                              </li>
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">+Create Group</a>
+                              </li>
+                            </ul>
+                          </div>
+                          <div class="custom-col">
+                            <h6 class="mb-2 px-3 py-2">OTHERRS</h6>
+                            <ul class="list-unstyled p-2 px-0 text-white d-flex flex-column gap-2">
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">Social Wall</a>
+                              </li>
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">Forums</a>
+                              </li>
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">Log In</a>
+                              </li>
+                              <li>
+                                <a class="d-block text-decoration-none px-3 py-2 rounded mb-1" href="file:///H:/">Register</a>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="h-full">
+                        <a href="file:///H:/" class="custom-links text-decoration-none fw-normal"><span>Blog</span>
+                        </a>
+                      </li>
+                      <li id="pages-link-menu" class="h-full position-relative">
+                        <a href="file:///H:/" class="custom-links text-decoration-none fw-normal"><span>Pages</span>
+                          <i style="font-size: 8px; margin-left: 1px" class="fa-solid fa-chevron-down"></i></a>
+                        <div class=" " id="custom-pages-links">
+                          <a href="file:///H:/">Members Lists</a>
+                          <a href="file:///H:/">Group Lists</a>
+                          <a href="file:///H:/">About Us</a>
+                          <a href="file:///H:/">Coming Soon</a>
+                        </div>
+                      </li>
+                      <li class="h-full">
+                        <a href="file:///H:/" class="custom-links text-decoration-none fw-normal"><span>Shop</span></a>
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="ms-auto col-1 d-flex align-items-center justify-content-end">
+                    <a href="file:///H:/First%20Project/GWANGI/src/register.html">
+                      <button style="height: 40px" class="btn custom-btn-login me-1">
+                        Login
+                      </button>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Menu for screen lesser than 769 -->
+          <div id="sub-menu" class="custom-sub-menu col-12 px-3 h-0">
+            <div class="custom-menu-scroller">
+              <button style="width: 100%; height: 40px" class="btn custom-btn-login">
+                Login
+              </button>
+              <div class="pt-5 ps-3">
+                <ul class="list-unstyled d-flex flex-column">
+                  <li>
+                    <a href="file:///H:/" class="d-block custom-sub-menu-links main mb-1">Home</a>
+                  </li>
+                  <li>
+                    <a href="file:///H:/" class="d-block custom-sub-menu-links">Home 1</a>
+                  </li>
+                  <li>
+                    <a href="file:///H:/" class="d-block custom-sub-menu-links">Home 2</a>
+                  </li>
+                </ul>
+                <ul class="list-unstyled d-flex flex-column">
+                  <li>
+                    <a href="file:///H:/" class="d-block custom-sub-menu-links main">Community</a>
+                  </li>
+                  <li>
+                    <a href="file:///H:/" class="d-block custom-sub-menu-links">Members</a>
+                    <ul class="list-unstyled ps-2 pt-2 d-flex flex-column gap-2">
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">Members Directory</a>
+                      </li>
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">Swipe Members</a>
+                        <ul class="list-unstyled ps-2 pt-2 d-flex flex-column gap-2">
+                          <li>
+                            <a href="file:///H:/" class="custom-sub-menu-links">All Members</a>
+                          </li>
+                          <li>
+                            <a href="file:///H:/" class="custom-sub-menu-links">Only New York</a>
+                          </li>
+                        </ul>
+                      </li>
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">Member Profile</a>
+                      </li>
+                    </ul>
+                  </li>
+
+                  <li>
+                    <a href="file:///H:/" class="custom-sub-menu-links">Groups</a>
+                    <ul class="list-unstyled ps-2 pt-2 d-flex flex-column gap-2">
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">Groups Directory</a>
+                      </li>
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">Group Profile</a>
+                      </li>
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">+Create Group</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="file:///H:/First%20Project/GWANGI/src/members.html" class="custom-sub-menu-links">Others</a>
+                    <ul class="list-unstyled ps-2 pt-2 d-flex flex-column gap-2">
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">Social Wall</a>
+                      </li>
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">Forums</a>
+                      </li>
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">Login</a>
+                      </li>
+                      <li>
+                        <a href="file:///H:/" class="custom-sub-menu-links">Register</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="file:///H:/" class="custom-sub-menu-links main">Blog</a>
+                  </li>
+                  <li>
+                    <a href="file:///H:/" class="custom-sub-menu-links main">Pages</a>
+                  </li>
+
+                  <li>
+                    <a href="file:///H:/" class="custom-sub-menu-links">Members Lists</a>
+                  </li>
+                  <li>
+                    <a href="file:///H:/" class="custom-sub-menu-links">Group Lists</a>
+                  </li>
+                  <li>
+                    <a href="file:///H:/" class="custom-sub-menu-links">About Us</a>
+                  </li>
+                  <li>
+                    <a href="file:///H:/" class="custom-sub-menu-links">Coming Soon</a>
+                  </li>
+
+                  <li>
+                    <a href="file:///H:/" class="custom-sub-menu-links main">Shop</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+      <main class="members">    
+            <div class="container-fluid members-container">
+                <div class="row mb-4 pb-2 justify-content-between align-items-start">
+
+                    <div class="col-lg-3 mb-lg-0 mb-4">
+                        <form action="file:///H:/First%20Project/GWANGI/src/members.html" class="members-search-form position-relative">
+                          <label for="members-search" class="position-absolute"></label>
+                            <input type="text" id="members_search" name="members_search" placeholder="Search Groups..." value="" class="transition-3 members-search__text w-100">
+                            <button class="members-search__submit" type="submit"> <i style="opacity: .7;" class="fa-solid fa-magnifying-glass"></i> </button>
+                            <div class="position-absolute w-100 items-box">
+                              <div class="item transition-3" data-searchvalue="apple">Apple</div>
+                              <div class="item transition-3" data-searchvalue="banana">Banana</div>
+                              <div class="item transition-3" data-searchvalue="cherry">Cherry</div>
+                              <div class="item transition-3" data-searchvalue="date">Date</div>
+                              <div class="item transition-3" data-searchvalue="elderberry">Elderberry</div>
+                              
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-3 d-flex justify-content-lg-end align-items-center">
+                      <div class="btn-members-all me-md-4 mb-md-0 mb-2">
+                        <button class="transition-3">
+                          All Groups 
+                          <span class="transition-3">6</span>
+                     </button>
+                      </div>
+                    </div>
+                    <div class="col-md-3 d-flex flex-column align-items-md-end mt-md-0 mt-1">
+                     <label for="members-order-by">
+                      <div class="members-select-design position-relative"></div>
+                      <select id="members-order-by" style="outline: none;">
+                        <option value="active">Last Active</option>
+                        <option value="popular">Most Members</option>
+                        <option value="newest">Newly Created</option>
+                        <option value="alphabetical">Alphabetical</option>
+                      </select>
+                    </label>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <ul class="members-list  list-unstyled d-flex flex-wrap px-0">
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-3.png" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Scott  Pringston 
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-2.jpg" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Stephina Miovic
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-10.jpg" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Wynonn Judd
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-4.jpg" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Vernon Dahmer
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-3.png" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Scott  Pringston 
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-2.jpg" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Stephina Miovic
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-10.jpg" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Wynonn Judd
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-4.jpg" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Vernon Dahmer
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-3.png" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Scott  Pringston 
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-2.jpg" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Stephina Miovic
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-10.jpg" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Wynonn Judd
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                      <li class="">
+                        <div class="members-card w-100 bg-white transition-3">
+                            <a href="file:///H:/First%20Project/GWANGI/src/members.html">
+                              <div class="members-card__avatar d-flex align-items-center justify-content-center">
+                                  <img src="./Gwangi_files/swipe-card-4.jpg" alt="">
+                               </div>
+                            </a>
+                             <div class="members-card__body">
+                              <h2 class="members-card__title">
+                                <a class="text-decoration-none" href="file:///H:/First%20Project/GWANGI/src/members.html#">Vernon Dahmer
+                                    <span class="verified-badge"><i class="fa-solid fa-check"></i></span>
+                                </a>
+                              </h2>
+                              <div class="members-card__meta">
+                                   <div class="members-city">New York</div>
+                                   </div>
+                              </div>
+                             </div>
+                      </li>
+                  
+                   
+                    </ul>
+                </div>
+
+
+                <div class="row">
+                    <div class="members-pagination d-flex justify-content-lg-end justify-content-center">
+                      <div class="">Viewing 1 - 6 of 6 groups</div>
+                    </div>
+                </div>
+            </div>
+      </main>
+
+
+
+    <div id="profile-bg-banner">
+      <div class="container-fluid" id="join-community">
+        <div class="mx-auto text-white d-flex flex-column align-items-center justify-content-center gap-2">
+          <h2>Join the Best Community</h2>
+          <p>Subscribe to Gwangi now and find your Life Partner!</p>
+          <a href="file:///H:/" class="btn custom-register-btn">Register Now for free</a>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="footer">
+        <div class="container-fluid">
+          <div class="row py-0 px-0 justify-content-between">
+            <div class="col-md-3 first">
+              <h2 class="widget-title">GWANGI COMMUNITY</h2>
+              <ul class="list-unstyled custom-footer-links d-flex flex-column" style="gap: 10px">
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">Social Wall</a></li>
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">Swipe Members</a></li>
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">All Members</a></li>
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">Community Groups</a></li>
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">Forums</a></li>
+              </ul>
+            </div>
+            <div class="col-md-3">
+              <h2 class="widget-title">GWANGI STORIES</h2>
+              <ul class="list-unstyled custom-footer-links d-flex flex-column" style="gap: 10px">
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">Home</a></li>
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">Blog</a></li>
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">Coming Soon</a></li>
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">About Us</a></li>
+                <li><a href="file:///H:/First%20Project/GWANGI/src/members.html#">Terms &amp; Conditions</a></li>
+              </ul>
+            </div>
+            <div class="col-md-3">
+              <h2 class="widget-title">FOLLOW US</h2>
+              <ul class="list-unstyled custom-footer-links d-flex flex-column flex-wrap" style="gap: 10px">
+                <li>
+                  <a href="file:///H:/First%20Project/GWANGI/src/members.html#" class="d-flex gap-3 align-items-center"><i style="width: 20px" class="fa-brands fa-instagram"></i>
+                    <span>gwangi_community</span></a>
+                </li>
+                <li>
+                  <a href="file:///H:/First%20Project/GWANGI/src/members.html#" class="d-flex gap-3 align-items-center"><i style="width: 20px" class="fa-brands fa-twitter"></i>
+                    <span>gwangi</span></a>
+                </li>
+                <li>
+                  <a href="file:///H:/First%20Project/GWANGI/src/members.html#" class="d-flex gap-3 align-items-center"><i style="width: 20px" class="fa-brands fa-facebook-f"></i>
+                    <span>gwangi</span></a>
+                </li>
+                <li>
+                  <a href="file:///H:/First%20Project/GWANGI/src/members.html#" class="d-flex gap-3 align-items-center"><i style="width: 20px" class="fa-brands fa-youtube"></i>
+                    <span>gwangi_tv</span></a>
+                </li>
+                <li>
+                  <a href="file:///H:/First%20Project/GWANGI/src/members.html#" class="d-flex gap-3 align-items-center"><i style="width: 20px" class="fa-brands fa-snapchat"></i>
+                    <span>gwangi_community</span></a>
+                </li>
+              </ul>
+            </div>
+            <div class="col-md-3 px-0">
+              <h2 class="widget-title mb-4">REGISTER TO GWANGI</h2>
+              <ul class="list-unstyled custom-footer-links d-flex flex-column gap-4">
+                <h5 class="pb-1">
+                  Meet lots of people on Gwangi and Have amazing time!
+                </h5>
+
+                <a href="file:///H:/" class="btn custom-register-btn button">Register Now</a>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom d-flex align-items-center justify-content-center">
+        © 2024 GWANGI. All rights reserved.
+      </div>
+    </footer>
+
+    <script src="./Gwangi_files/jquery-3.6.0.min.js.download"></script>
+    <script>
+      // nav js
+      let sub_menu = document.getElementById("sub-menu");
+      let nav_toggler = document.getElementById("nav-toggler");
+      nav_toggler.addEventListener("click", () => {
+        if (sub_menu.classList.contains("h-0")) {
+          sub_menu.classList.remove("h-0");
+          sub_menu.classList.add("h-95vh");
+          nav_toggler.classList.add("toggled");
+          document.body.style.overflow = "hidden";
+        } else {
+          sub_menu.classList.remove("h-95vh");
+          sub_menu.classList.add("h-0");
+          nav_toggler.classList.remove("toggled");
+          document.body.style.overflow = "";
+        }
+      });
+
+      $(document).ready(function(){
+        $(".item").each(function(){
+          $(this).on("click", function(){
+            let choosenVal =  $(this).data("searchvalue").toLowerCase();
+            $("#members_search").val(choosenVal);
+            $(".item").hide();
+          })
+        })
+    $("#members_search").on("input", function(){
+        var searchValue = $(this).val().toLowerCase();
+
+        // If input value is empty, hide all items
+        if(searchValue === "") {
+            $(".item").hide();
+        } else {
+            // Otherwise, filter items based on the search value
+            $(".item").each(function(){
+                var itemVal = $(this).data("searchvalue").toLowerCase();
+                if(itemVal.includes(searchValue)){
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+    });
+});
+
+   
+   </script>
+  
+
+</body></html>

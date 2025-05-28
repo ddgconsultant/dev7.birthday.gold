@@ -1,0 +1,13 @@
+# Disable directory browsing
+Options -Indexes
+
+# Remove .php extension
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+# Remove index.php 
+DirectoryIndex index.php
+RewriteCond %{THE_REQUEST} /index\.php [NC]
+RewriteRule ^index\.php$ / [L,R=301,NC]

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file>js-captcha/js-captcha.min.css</file>
+            </css>
+            <js>
+                <file>js-captcha/js-captcha.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   if (typeof(myCaptcha) == "undefined") {
+        window.myCaptcha    = [];
+        window.jscDataAttr  = [];
+    }
+    jscDataAttr['%formId%'] = document.querySelector('#%formId% .jCaptcha').dataset;
+
+    myCaptcha['%formId%'] = new jCaptcha({
+        el: '#%formId% .jCaptcha',
+        canvasClass: 'jCaptchaCanvas-%formId%',
+        canvasStyle: {
+            // required properties for captcha stylings:
+            width: 100,
+            height: 15,
+            textBaseline: 'top',
+            font: '15px Arial',
+            textAlign: 'left',
+            fillStyle: jscDataAttr['%formId%'].color == undefined?'#333':jscDataAttr['%formId%'].color
+        },
+        // set callback function for success and error messages:
+        callback: ( response, $captchaInputElement, numberOfTries ) => {
+            if ( response == 'success' ) {
+                // success handle, e.g. continue with form submit
+                document.querySelector('#%formId% .jCaptcha').classList.remove('%errorClass%');
+                if (document.querySelector('#%formId% .jCaptchaErrorText') !== null) {
+                    document.querySelector('#%formId% .jCaptchaErrorText').parentNode.remove();
+                }
+                // set the server-side-verification hidden field value
+                document.querySelector('#%formId% input[name="jcaptcha-server-side-verification"]').value = document.querySelector('#%formId% .jCaptcha').value;
+                // enable the submit button
+                if (document.querySelector('#%formId% button[type="submit"]')) {
+                    document.querySelector('#%formId% button[type="submit"]').disabled = false;
+                }
+            } else if ( response == 'error' ) {
+                // error handle, e.g. add error class to captcha input
+                document.querySelector('#%formId% .jCaptcha').classList.add('%errorClass%');
+                if (document.querySelector('#%formId% .jCaptchaErrorText') === null) {
+                    let template = document.createElement('template'),
+                        errorText = '<span class="jCaptchaErrorText">' + (jscDataAttr['%formId%'].errorText == undefined?'Wrong result':jscDataAttr['%formId%'].errorText) + '</span>'
+                    template.innerHTML = '%helperStart%' + errorText + '%helperEnd%';
+                    document.querySelector('#%formId% .jCaptcha').parentNode.appendChild(template.content.firstChild);
+                }
+                if (numberOfTries === 8) {
+                    document.querySelector('#%formId% .jCaptchaErrorText').innerHTML = 'You have reached the maximum number of attempts. Please reload the page to try again.';
+                }
+            }
+        },
+        clearOnSubmit: false,
+        resetOnError: false
+    });
+    document.querySelector('#%formId% button[type="submit"]').disabled = true;
+    document.querySelector('#%formId% .jCaptcha').addEventListener('keyup', function(e) {
+        myCaptcha['%formId%'].validate();
+    });]]>
+        </js_code>
+    </default>
+    <custom>
+        <!--
+            If you need differents includes for your custom code,
+            copy the default '<includes>' structure and put the needed files into '<file>' nodes.
+            You can add several files nodes if necessary.
+        -->
+        <js_code></js_code>
+    </custom>
+</root>

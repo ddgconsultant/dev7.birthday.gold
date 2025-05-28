@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <css></css>
+            <js>
+                <file>https://js.hcaptcha.com/1/api.js?render=explicit&amp;recaptchacompat=off</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[    hcaptcha.render('hcaptcha-%formId%');]]></js_code>
+    </default>
+</root>

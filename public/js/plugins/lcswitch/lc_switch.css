@@ -1,0 +1,109 @@
+label[data-has-switch="true"] {
+    /*  main label */
+    line-height: 26px;
+    vertical-align: top;
+}
+
+.phpfb-centered:not(.phpfb-centered-stacked) .main-label.form-control-label[data-has-switch="true"] {
+    margin-bottom: 0 !important;
+}
+
+/* BS4 only */
+label[data-has-switch="true"].col-form-label {
+    padding-top: 0 !important;
+}
+
+label[data-has-switch="true"]~div label,
+label[data-has-switch="true"]~div div {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+label[data-has-switch="true"]~div .form-check:not(.form-check-inline) {
+    margin-bottom: 0.75em;
+}
+
+label[data-has-switch="true"]~div label:not(:last-child),
+.lcs_wrap~label:not(:last-child) {
+    margin-right: 2em;
+}
+
+.lcs_main_wrap {
+    display: inline-block;
+    position: relative;
+    min-width: 100px;
+    padding-right: 20px;
+    margin-bottom: 1rem;
+}
+
+.form-horizontal .lcs_label_wrap {
+    padding-top: 7px;
+}
+
+.lcs_main_wrap>.lcs_wrap {
+    margin-top: 0;
+    min-width: 100px;
+}
+
+.material-form .lcs_wrap [type='checkbox']:checked,
+.material-form .lcs_wrap [type='checkbox']:not(:checked) {
+    display: none;
+}
+
+/* switch WITHOUT column
+-------------------------------------------------- */
+
+/* main label */
+.material-form .main-labellabel[data-has-switch="true"] {
+    transform: none;
+    margin-bottom: 0;
+}
+
+.material-form .main-labellabel[data-has-switch="true"]:not(.col)~.input-field {
+    margin-top: 0.5rem;
+    padding-top: 0;
+}
+
+.material-form .input-field:not(.col)>label.lcs_label_wrap {
+    display: inline-block;
+    position: static;
+    /*padding-top: 2rem;*/
+    padding-bottom: 1rem;
+    padding-right: 1rem;
+}
+
+/* switch WITH column
+-------------------------------------------------- */
+
+/* main label */
+.material-form .main-label.collabel[data-has-switch="true"] {
+    transform: none;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.material-form .main-label.col~.input-field {
+    padding-top: 0.5rem;
+}
+
+.material-form .input-field>.main-labellabel[data-has-switch="true"] {
+    padding-left: 0;
+}
+
+/* switch */
+.material-form .main-label~.input-field label.lcs_label_wrap {
+    position: static;
+    transform: none;
+    transition: none;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.material-form label.lcs_label_wrap {
+    display: inline-block;
+}
+
+.material-form label.lcs_label_wrap .lcs_wrap {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}

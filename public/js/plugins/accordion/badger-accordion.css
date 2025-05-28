@@ -1,0 +1,71 @@
+.badger-accordion__panel {
+  max-height: 75vh;
+  overflow: hidden;
+}
+
+.badger-accordion__panel.-ba-is-hidden {
+  max-height: 0 !important;
+  visibility: hidden;
+}
+
+.badger-accordion--initialized .badger-accordion__panel {
+  -webkit-transition: max-height ease-in-out 0.2s;
+  -o-transition: max-height ease-in-out 0.2s;
+  transition: max-height ease-in-out 0.2s;
+}
+
+.js-badger-accordion h1,
+.js-badger-accordion h2,
+.js-badger-accordion h3,
+.js-badger-accordion h4,
+.js-badger-accordion h5,
+.js-badger-accordion h6 {
+  margin-bottom: -1px;
+}
+
+.js-badger-accordion-header {
+  position: relative;
+  border-bottom: 1px solid #ccc;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.js-badger-accordion-header:after {
+  content: " ";
+  position: absolute;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  right: 1rem;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+  -webkit-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  transform: rotate(45deg);
+  border: solid #666;
+  border-width: 0 2px 2px 0;
+  padding: 3px;
+  -webkit-transition: margin 0.2s, -webkit-transform 0.2s;
+  transition: margin 0.2s, -webkit-transform 0.2s;
+  -o-transition: transform 0.2s, margin 0.2s;
+  transition: transform 0.2s, margin 0.2s;
+  transition: transform 0.2s, margin 0.2s, -webkit-transform 0.2s;
+}
+
+.js-badger-accordion-header[aria-expanded="true"]:after {
+  -webkit-transform: rotate(-135deg);
+  -ms-transform: rotate(-135deg);
+  transform: rotate(-135deg);
+}
+
+.badger-accordion__panel {
+  border: 1px solid #ccc;
+}
+
+.js-badger-accordion-panel-inner {
+  padding: 0.5rem 1rem 1.25rem;
+}

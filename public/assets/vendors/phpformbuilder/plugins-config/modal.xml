@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file>modal/micromodal.min.css</file>
+            </css>
+            <js>
+                <file>modal/micromodal.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   MicroModal.init({
+        onShow: modal => {
+            if (document.querySelector('#%formId% .g-recaptcha') && document.querySelector('#%formId% .g-recaptcha').getAttribute('data-size') != 'invisible') {
+                scaleCaptcha();
+            }
+        },
+        onClose: modal => {
+            document.body.style.overflow = '';
+        },
+        openTrigger: 'data-micromodal-trigger',
+        closeTrigger: 'data-micromodal-close',
+        openClass: 'is-open',
+        disableScroll: true,
+        disableFocus: false,
+        awaitOpenAnimation: false,
+        awaitCloseAnimation: false,
+        debugMode: true
+    });
+
+    // show modal if the form is posted with some errors
+    if (document.querySelector("#%formId% .has-error") || document.querySelector("#%formId% .form-error") || document.querySelector("#%formId% .invalid") || document.querySelector("#%formId% .is-invalid")) {
+        MicroModal.show('modal-%formId%');
+    }
+    // show error in console if the modal link is not found
+    if (document.getElementById('modal-%formId%') === null) {
+        console.error('The modal plugin can\'t find any element with "data-micromodal-trigger=modal-%formId%" to trigger the modal.');
+    }]]>
+        </js_code>
+    </default>
+</root>

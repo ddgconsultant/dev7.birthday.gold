@@ -1,0 +1,1263 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.7
+  title: "Birthday.Gold API"
+  description: |
+    API for Birthday.Gold services, offering birthday perks and rewards. To authenticate:
+    1. Call `auth.php` with your API key to receive an `auth_token`.
+    2. Include the `auth_token` as a header in all subsequent API calls.
+    3. We highly recommend allowing the domain URL ("https://api.birthday.gold") to be a variable as the API Domain will change in the future.
+servers:
+  - url: "https://api.birthday.gold"
+    description: "Latest stable API version. Always points to the most recent version."
+  - url: "https://api.birthday.gold/2023.08.1"
+    description: "Previous API version. Use this if you rely on features available in the 2023.08.1 version."
+  - url: "https://api.bday.gold"
+    description: "Future API domain."
+
+
+components:
+  securitySchemes:
+    AuthToken: # Security scheme for auth_token
+      type: apiKey
+      in: header
+      name: auth_token
+      description: "Auth token received from /auth"
+security:
+  - AuthToken: []
+  
+paths:
+  /auth:
+    post:
+      tags:
+        - authentication
+      summary: "Authenticate and receive an auth_token"
+      description: "Call this endpoint to authenticate with your API key and receive an `auth_token`."
+      parameters:
+        - in: query
+          name: api_key
+          description: "Your API key"
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Successful authentication"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  auth_token:
+                    type: string
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Invalid or inactive API key."
+  /login:
+    post:
+      tags:
+        - account
+      summary: "Login to the platform"
+      operationId: loginUser
+      description: "Authenticate using your username and password."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  description: "Your username"
+                password:
+                  type: string
+                  description: "Your password"
+      responses:
+        '200':
+          description: "Successful login"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: "Login Success Status"
+                  message0:
+                    type: string
+                    format: html
+                    description: "HTML formatted message."
+                  user_id:
+                    type: integer
+                    description: "User ID of the authenticated user"
+        '400':
+          description: "Bad input parameter"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Reason for unauthorized status"
+        '429':
+          description: "Too Many Requests"
+          headers:
+            X-Rate-Limit-Limit:
+              description: "The number of allowed requests in the current period"
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: "The number of remaining requests in the current period"
+              schema:
+                type: integer
+
+  /logout:
+    post:
+      tags:
+        - account
+      summary: "Logout from the platform"
+      operationId: logoutUser
+      description: "De-authenticate the user and invalidate their session."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: integer
+                  description: "The ID of the user who wishes to logout"
+      responses:
+        '200':
+          description: "Successfully logged out"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Logout successful"
+        '400':
+          description: "Bad input parameter"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Unauthorized request, possible session expiration"
+        '429':
+          description: "Too Many Requests"
+          headers:
+            X-Rate-Limit-Limit:
+              description: "The number of allowed requests in the current period"
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: "The number of remaining requests in the current period"
+              schema:
+                type: integer
+
+
+  /forgot-password:
+    post:
+      tags:
+        - account
+      summary: "Request Password Reset"
+      operationId: forgotPassword
+      description: "Request a password reset email to be sent to the provided email address."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: "The email address associated with the account that needs a password reset."
+      responses:
+        '200':
+          description: "Password reset email sent"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: "Status of opertation."
+                  message:
+                    type: string
+                    description: "Password reset email sent successfully."
+        '400':
+          description: "Bad input parameter"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Email not registered or unauthorized request."
+        '429':
+          description: "Too Many Requests"
+          headers:
+            X-Rate-Limit-Limit:
+              description: "The number of allowed requests in the current period."
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: "The number of remaining requests in the current period."
+              schema:
+                type: integer
+
+  /change-password:
+      post:
+        tags:
+          - account
+        summary: "Change User Password"
+        operationId: changePassword
+        description: "Change the password for a user account identified by the user_id."
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - user_id
+                  - old_password
+                  - new_password
+                  - confirm_password
+                properties:
+                  user_id:
+                    type: integer
+                    description: "The ID of the user who wants to change their password."
+                  old_password:
+                    type: string
+                    description: "The current password."
+                  new_password:
+                    type: string
+                    description: "The new password to set."
+                  confirm_password:
+                    type: string
+                    description: "Confirmation of the new password."
+        responses:
+          '200':
+            description: "Password successfully changed"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Password change was successful."
+          '400':
+            description: "Bad input parameter or passwords don't match"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Bad input parameter or passwords don't match."
+          '401':
+            description: "Unauthorized"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Unauthorized request, possible session expiration or incorrect old password."
+          '429':
+            description: "Too Many Requests"
+            headers:
+              X-Rate-Limit-Limit:
+                description: "The number of allowed requests in the current period."
+                schema:
+                  type: integer
+              X-Rate-Limit-Remaining:
+                description: "The number of remaining requests in the current period."
+                schema:
+                  type: integer
+
+
+
+  /privacy:
+    get:
+      tags:
+        - content
+      summary: "Retrieve Privacy Policy"
+      operationId: privacyPolicy
+      description: "Retrieve the text of the privacy policy."
+      responses:
+        '200':
+          description: "Privacy policy details successfully retrieved"
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+                    description: "The text of the privacy policy."
+        '400':
+          description: "Bad input parameter"
+        '404':
+          description: "Privacy policy not found"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Privacy policy could not be retrieved."
+
+  /terms:
+    get:
+      tags:
+        - content
+      summary: "Retrieve Terms of Use"
+      operationId: termsOfUse
+      description: "Retrieve the text of the terms of use."
+      responses:
+        '200':
+          description: "Terms of use details successfully retrieved"
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+                    description: "The text of the terms of use."
+        '400':
+          description: "Bad input parameter"
+        '404':
+          description: "Terms of use not found"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Terms of use could not be retrieved."
+
+
+  /business-details:
+      get:
+        tags:
+          - celebrate
+        summary: "Business Details"
+        operationId: businessDetails
+        description: "Retrieve business details."
+        parameters:
+        - in: query
+          name: company_id
+          description: "The ID of the user whose profile needs to be retrieved."
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: user_zipcode
+          description: "The zipcode of the user to locate nearest business"
+          required: true
+          schema:
+            type: integer
+        responses:
+          '200':
+            description: "Business details"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    company_name:
+                      type: string
+                      description: "Name of the company"
+                    address:
+                      type: string
+                      description: "Address of the company"
+                    city:
+                      type: string
+                      description: "City of the company"
+                    state:
+                      type: string
+                      description: "State of the company"
+                    zip:
+                      type: string
+                      description: "ZIP code of the company"
+                    phone_number:
+                      type: string
+                      description: "Phone number of the company"
+                    business_hours:
+                      type: string
+                      description: "Business hours of the company"
+                    logo_url:
+                      type: string
+                      description: "URL of the company logo"
+                    overall_rating:
+                      type: number
+                      format: double
+                      description: "Overall rating score of the company (2 decimal places)"
+                    num_ratings:
+                      type: integer
+                      description: "Number of ratings for the company"
+                    coordinates:
+                      type: object
+                      description: "Coordinates near the business"
+                      properties:
+                        lat:
+                          type: number
+                          format: double
+                          description: "Latitude"
+                        lon:
+                          type: number
+                          format: double
+                          description: "Longitude"
+                    lat:
+                      type: number
+                      format: double
+                      description: "Separate Latitude field"
+                    lon:
+                      type: number
+                      format: double
+                      description: "Separate Longitude field"
+                    reward_id:
+                      type: integer
+                      description: "Random reward ID"
+                    reward_description_short:
+                      type: string
+                      format: html
+                      description: "HTML formatted message."
+                    reward_description_long:
+                      type: string
+                      format: html
+                      description: "HTML formatted message."
+                    reward_redeem_instructions:
+                      type: string
+                      format: html
+                      description: "HTML formatted message."
+
+          '400':
+            description: "Bad input parameter"
+          '401':
+            description: "Unauthorized"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Unauthorized request"
+          '404':
+            description: "Business details not found"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Business details could not be retrieved."
+          '429':
+            description: "Too Many Requests"
+            headers:
+              X-Rate-Limit-Limit:
+                description: "The number of allowed requests in the current period."
+                schema:
+                  type: integer
+              X-Rate-Limit-Remaining:
+                description: "The number of remaining requests in the current period."
+                schema:
+                  type: integer
+
+
+  /reward-details:
+    get:
+      tags:
+        - celebrate
+      summary: "Reward Details"
+      operationId: rewardDetails
+      description: "Retrieve details of a reward offer."
+      parameters:
+        - in: query
+          name: company_id
+          description: "The ID of the company providing the reward."
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: tour_dt
+          description: "The date (Y-m-d) of the  tour."
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: reward_id
+          description: "The ID of the reward from the company. Optional."
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: "Reward details"
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: "Content of the reward offer"
+        '400':
+          description: "Bad input parameter"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Bad input parameter."
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Unauthorized request."
+        '404':
+          description: "Reward offer not found"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Reward offer not found."
+        '429':
+          description: "Too Many Requests"
+          headers:
+            X-Rate-Limit-Limit:
+              description: "The number of allowed requests in the current period."
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: "The number of remaining requests in the current period."
+              schema:
+                type: integer
+
+
+  /map-status:
+      post:
+        tags:
+          - celebrate
+        summary: "Map Status"
+        operationId: mapStatus
+        description: "Retrieve the status of the celebrate map."
+        parameters:
+          - in: query
+            name: tour_dt
+            description: "The date of the tour."
+            required: true
+            schema:
+              type: string
+          - in: query
+            name: user_id
+            description: "The id of the user."
+            required: true
+            schema:
+              type: integer
+          - in: query
+            name: company_id
+            description: "The ID of the company near the user."
+            required: true
+            schema:
+              type: integer
+          - in: query
+            name: type
+            description: "['arrived', 'skip']"
+            required: true
+            schema:
+              type: string
+          - in: query
+            name: user_lon
+            description: "Longitude of the user's current location."
+            required: false
+            schema:
+              type: number
+              format: double
+          - in: query
+            name: user_lat
+            description: "Latitude of the user's current location."
+            required: false
+            schema:
+              type: number
+              format: double
+        responses:
+          '200':
+            description: "Map status"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      description: "Status of the celebrate map for the user."
+                    reward_id:
+                      type: number
+                      description: "Reward ID of the company ID"
+          '400':
+            description: "Bad input parameter"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Bad input parameter."
+          '401':
+            description: "Unauthorized"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Unauthorized request."
+          '404':
+            description: "Company or tour not found"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Company or tour not found."
+          '429':
+            description: "Too Many Requests"
+            headers:
+              X-Rate-Limit-Limit:
+                description: "The number of allowed requests in the current period."
+                schema:
+                  type: integer
+              X-Rate-Limit-Remaining:
+                description: "The number of remaining requests in the current period."
+                schema:
+                  type: integer
+
+
+  /ratings:
+    get:
+      tags:
+        - celebrate
+      summary: "Retrieve Ratings for a Business"
+      operationId: getRatings
+      description: "Retrieve user ratings for deals based on the provided company_id."
+      parameters:
+        - in: query
+          name: company_id
+          description: "The ID of the company whose ratings need to be retrieved."
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: "User ratings successfully retrieved"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    rating:
+                      type: integer
+                      description: "Rating (1-5)"
+                      minimum: 1
+                      maximum: 5
+                    username:
+                      type: string
+                      description: "Username of the rater"
+                    create_dt:
+                      type: string
+                      description: "Date the rating was posted"
+                    comment:
+                      type: string
+                      description: "Comment"
+                    media:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          thumbnail_url:
+                            type: string
+                            description: "URL of thumbnail"
+                          media_url:
+                            type: string
+                            description: "URL of media file (image/video)"
+        '400':
+          description: "Bad input parameter"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Unauthorized request, possible session expiration."
+        '429':
+          description: "Too Many Requests"
+          headers:
+            X-Rate-Limit-Limit:
+              description: "The number of allowed requests in the current period."
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: "The number of remaining requests in the current period."
+              schema:
+                type: integer
+  
+    post:
+      tags:
+        - celebrate
+      summary: "Post Ratings for a Business"
+      operationId: postRatings
+      description: "Post user ratings for deals."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - company_id
+                - user_id
+                - rating
+                - comment
+              properties:
+                company_id:
+                  type: integer
+                  description: "Company ID"
+                user_id:
+                  type: integer
+                  description: "User ID"
+                rating:
+                  type: integer
+                  description: "Rating (1-5)"
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+                  description: "Comment"
+      responses:
+        '200':
+          description: "Successful rating posted"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: "Success"
+                  rating_id:
+                    type: integer
+                    description: "ID of rating - used to upload media"
+        '201':
+          description: "Rating successfully posted"
+        '400':
+          description: "Bad input parameter"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Unauthorized request, possible session expiration."
+        '429':
+          description: "Too Many Requests"
+          headers:
+            X-Rate-Limit-Limit:
+              description: "The number of allowed requests in the current period."
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: "The number of remaining requests in the current period."
+              schema:
+                type: integer
+
+  /ratings-media:
+      post:
+        tags:
+          - celebrate
+        summary: "Upload media to associate with a rating"
+        operationId: UploadRatingMedia
+        description: "Upload rating media"
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                required:
+                  - rating_id
+                  - media
+                properties:
+                  rating_id:
+                    type: integer
+                    description: "The ID of the rating."
+                  media:
+                    type: string
+                    format: binary
+                    description: "Image file (jpg or png) no greater than 50 MB"
+        responses:
+          '200':
+            description: "Media uplaoded successfully"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    avatar_url:
+                      type: string
+                      description: "URL of the uploaded media"
+          '400':
+            description: "Bad input parameter or invalid media format or size"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Bad input parameter or invalid media format or size."
+          '401':
+            description: "Unauthorized"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Unauthorized request"
+          '429':
+            description: "Too Many Requests"
+            headers:
+              X-Rate-Limit-Limit:
+                description: "The number of allowed requests in the current period."
+                schema:
+                  type: integer
+              X-Rate-Limit-Remaining:
+                description: "The number of remaining requests in the current period."
+                schema:
+                  type: integer
+                  
+  /change-profilepic:
+      post:
+        tags:
+          - account
+        summary: "Change Profile Picture"
+        operationId: changeProfilePic
+        description: "Change user's profile picture."
+        requestBody:
+          required: true
+          content:
+            multipart/form-data:
+              schema:
+                type: object
+                required:
+                  - user_id
+                  - media
+                properties:
+                  user_id:
+                    type: integer
+                    description: "The ID of the user who wants to change their profile picture."
+                  media:
+                    type: string
+                    format: binary
+                    description: "Image file (jpg or png) no greater than 2MB"
+        responses:
+          '200':
+            description: "Profile picture changed successfully"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    avatar_url:
+                      type: string
+                      description: "URL of the new avatar"
+          '400':
+            description: "Bad input parameter or invalid media format or size"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Bad input parameter or invalid media format or size."
+          '401':
+            description: "Unauthorized"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Unauthorized request"
+          '429':
+            description: "Too Many Requests"
+            headers:
+              X-Rate-Limit-Limit:
+                description: "The number of allowed requests in the current period."
+                schema:
+                  type: integer
+              X-Rate-Limit-Remaining:
+                description: "The number of remaining requests in the current period."
+                schema:
+                  type: integer
+
+  /celebrate:
+    get:
+      tags:
+        - celebrate
+      summary: "Celebrate"
+      operationId: celebrate
+      description: "Get a list of tour dates."
+      parameters:
+        - in: query
+          name: user_id
+          description: "The ID of the user initiating the celebration."
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: tour_dt
+          description: "The date (Y-m-d) of the celebration tour (optional to return tour details)."
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Tours"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_tourcount:
+                    type: string
+                    format: html
+                    description: "HTML formatted top message."
+                  message_body:
+                    type: string
+                    format: html
+                    description: "HTML formatted sub message."
+                  tour_dates:
+                    type: array
+                    items:
+                      type: string
+                    description: "Array of available celebration tour dates"
+                  tour_info:
+                    type: object
+                    description: "Tour information (if celebration_tour_id is provided)"
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            company_id:
+                              type: integer
+                            company_name:
+                              type: string
+                            long:
+                              type: number
+                              format: double
+                            lat:
+                              type: number
+                              format: double
+                            address:
+                              type: string
+                            city:
+                              type: string
+                            state:
+                              type: string
+                            zip:
+                              type: string
+                            phone_number:
+                              type: string
+                            business_hours:
+                              type: string
+                            logo_url:
+                              type: string
+                            reward_description_short:
+                              type: string
+                              format: html
+                              description: "HTML formatted message."
+                            reward_description_long:
+                              type: string
+                              format: html
+                              description: "HTML formatted message."
+                            reward_redeem_instructions:
+                              type: string
+                              format: html
+                              description: "HTML formatted message."
+
+        '400':
+          description: "Bad input parameter"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Bad input parameter."
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Unauthorized request."
+        '429':
+          description: "Too Many Requests"
+          headers:
+            X-Rate-Limit-Limit:
+              description: "The number of allowed requests in the current period."
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: "The number of remaining requests in the current period."
+              schema:
+                type: integer
+
+
+  /start-tour:
+      post:
+        tags:
+          - celebrate
+        summary: "Start Tour"
+        operationId: startTour
+        description: "Start an celebration tour.  Note: tour_dt must match calendar date MST"
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - user_id
+                  - tour_dt
+                properties:
+                  user_id:
+                    type: integer
+                    description: "User id"
+                  tour_dt:
+                    type: string
+                    description: "The date of the celebration tour to start."
+        responses:
+          '200':
+            description: "Tour started"
+          '400':
+            description: "Bad input parameter"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Bad input parameter."
+          '401':
+            description: "Unauthorized"
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      description: "Unauthorized request."
+          '429':
+            description: "Too Many Requests"
+            headers:
+              X-Rate-Limit-Limit:
+                description: "The number of allowed requests in the current period."
+                schema:
+                  type: integer
+              X-Rate-Limit-Remaining:
+                description: "The number of remaining requests in the current period."
+                schema:
+                  type: integer
+
+
+  /profile:
+    get:
+      tags:
+        - account
+      summary: "Retrieve User Profile"
+      operationId: userProfile
+      description: "Retrieve the details of a user profile based on the provided user_id."
+      parameters:
+        - in: query
+          name: user_id
+          description: "The ID of the user whose profile needs to be retrieved."
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: "User profile details successfully retrieved"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  username:
+                    type: string
+                    description: "User's username"
+                  email:
+                    type: string
+                    description: "User's email address."
+                  title:
+                    type: string
+                    description: "User's title."
+                  first_name:
+                    type: string
+                    description: "User's first name."
+                  middle_name:
+                    type: string
+                    description: "User's middle name."
+                  last_name:
+                    type: string
+                    description: "User's last name."
+                  mailing_address:
+                    type: string
+                    description: "Account mailing address."
+                  city:
+                    type: string
+                    description: "Account mailing City."
+                  state:
+                    type: string
+                    description: "Account mailing State."
+                  zip_code:
+                    type: string
+                    description: "Account mailing ZIP code."
+                  country:
+                    type: string
+                    description: "Account mailing Country."
+                  phone_number:
+                    type: string
+                    description: "User's Phone number."
+                  birthdate:
+                    type: string
+                    description: "User's Birthdate."
+                  create_dt:
+                    type: string
+                    description: "Account creation date."
+                  modify_dt:
+                    type: string
+                    description: "Last modification date."
+                  status:
+                    type: string
+                    description: "Account status."
+                  account_type:
+                    type: string
+                    description: "Type of account."
+                  account_plan:
+                    type: string
+                    description: "Plan of the account."
+                  type:
+                    type: string
+                    description: "Account type."
+                  gender:
+                    type: string
+                    description: "User's Gender."
+                  avatar:
+                    type: string
+                    description: "URL of the avatar."
+        '400':
+          description: "Bad input parameter"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: "Unauthorized request, possible session expiration."
+        '429':
+          description: "Too Many Requests"
+          headers:
+            X-Rate-Limit-Limit:
+              description: "The number of allowed requests in the current period."
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: "The number of remaining requests in the current period."
+              schema:
+                type: integer

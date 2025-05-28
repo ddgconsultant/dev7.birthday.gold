@@ -1,0 +1,23 @@
+# Disable directory browsing
+Options -Indexes
+
+# Allow access only from the specified IP address
+Order Deny,Allow
+Deny from all
+Allow from 71.33.250.254
+Allow from 192.168.0.12 
+
+# Custom 403 Error Document
+ErrorDocument 403 /403
+ErrorDocument 404 /404
+
+
+# Prevent viewing of .htaccess file
+<Files .htaccess>
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+
+# Set DirectoryIndex to prioritize index.php over index.html
+DirectoryIndex index.php index.html

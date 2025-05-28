@@ -1,0 +1,7 @@
+# Disable directory browsing
+Options -Indexes
+
+# Deny all requests
+Order deny,allow
+Deny from all
+ErrorDocument 403 /403

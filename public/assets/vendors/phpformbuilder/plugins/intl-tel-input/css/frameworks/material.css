@@ -1,0 +1,61 @@
+.input-group .iti {
+    flex-grow: 1;
+}
+
+.iti {
+    display: block !important;
+}
+
+.iti .iti__selected-flag {
+    z-index: 4;
+}
+
+.iti>.fv-plugins-icon {
+    right: 0 !important;
+}
+
+.iti:not(.iti--allow-dropdown) {
+    display: block !important;
+}
+
+.iti .fv-plugins-icon {
+    right: 0;
+    z-index: 2;
+}
+
+.iti--allow-dropdown~.invalid-feedback {
+    display: block;
+}
+
+.input-field .iti {
+    margin-bottom: 8px;
+}
+
+.input-field .iti input {
+    box-sizing: border-box;
+}
+
+.input-field .prefix~.iti {
+    width: calc(100% - 3rem);
+    margin-left: 3rem;
+}
+
+.iti--allow-dropdown input,
+.iti--allow-dropdown input[type=tel],
+.iti--allow-dropdown input[type=text],
+.iti--separate-dial-code input,
+.iti--separate-dial-code input[type=tel],
+.iti--separate-dial-code input[type=text] {
+    padding-right: 0 !important;
+    padding-left: 52px !important;
+    margin-left: 0 !important;
+}
+
+.iti .fv-plugins-icon {
+    right: -12px !important;
+}
+
+input[data-allow-dropdown="false"]~.fv-plugins-icon--valid,
+input[data-allow-dropdown="false"]~.fv-plugins-icon--invalid {
+    right: 24px !important;
+}

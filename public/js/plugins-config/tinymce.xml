@@ -1,0 +1,229 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file></file>
+            </css>
+            <js>
+                <file>tinymce/tinymce.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   if (typeof(base_url) == 'undefined') {
+        var base_url = location.protocol + '//' + location.host + '/';
+    }
+    tinymce.init({
+        selector: '%selector%',
+        script_url : base_url + 'phpformbuilder/plugins/tinymce/tinymce.min.js',
+        document_base_url: base_url,
+        relative_urls: false,
+        theme: 'silver',
+        // language: 'fr_FR',
+        element_format: 'html',
+        // content_css : '/css/bootstrap.css, /css/main.css',
+        // menubar: 'edit view insert table tools',
+        plugins: [
+            'advlist autolink autoresize charmap code codemirror contextmenu fullscreen link lists paste preview table visualblocks textcolor charmap media image responsivefilemanager'
+        ],
+        codemirror: {
+            indentOnInit: true, // Whether or not to indent code on init.
+            path: 'CodeMirror', // Path to CodeMirror distribution
+            config: {           // CodeMirror config object
+            mode: 'application/x-httpd-php' //,
+            // lineNumbers: false
+            },
+            jsFiles: [          // Additional JS files to load
+            'mode/php/php.js'
+            ]
+        },
+        deprecation_warnings: false,
+        entity_encoding : 'raw',
+        contextmenu: 'link image inserttable | cell row column deletetable',
+        toolbar: 'undo redo | styleselect | bold italic | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist | link image preview | removeformat formats', // add 'responsivefilemanager' to add 'insert file' button
+        schema: 'html5',
+        setup: function (editor) {
+            var formId = document.querySelector('%selector%').closest('form').getAttribute('id');
+            var form   = forms[formId];
+            if (document.querySelector('%selector%').required) {
+                editor.on('init', function(e) {
+                    if (typeof(form.fv) == 'object') {
+                        var textareaName = document.querySelector('%selector%').getAttribute('name');
+                        document.querySelector('%selector%').removeAttribute('required');
+                        form.fv.removeField(textareaName);
+                        document.querySelector('%selector%').setAttribute('dataTinymceNotEmpty', true);
+                        const tinymceValidator = {
+                            validators: {
+                                tinymcenotempty: {
+                                    message: form.fv.localization.notEmpty.default
+                                }
+                            }
+                        };
+                        form.fv.addField(textareaName, tinymceValidator);
+                        editor.on('keyup', function () {
+                            // Revalidate the comment field
+                            form.fv.revalidateField(textareaName);
+                        });
+                    }
+                });
+            }
+        },
+        /* responsivefilemanager (configure /phpformbuilder/plugins/filemanager/config/config.php) */
+        external_filemanager_path: base_url + '/phpformbuilder/plugins/filemanager/',
+        filemanager_title: 'Responsive Filemanager' ,
+        external_plugins: { 'filemanager' : base_url + '/phpformbuilder/plugins/filemanager/plugin.min.js'},
+        /* END responsivefilemanager */
+        image_advtab: true
+    });]]>
+        </js_code>
+    </default>
+    <word-char-count>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file></file>
+            </css>
+            <js>
+                <file>tinymce/tinymce.min.js</file>
+                <file>word-character-count/word-character-count-tinymce.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   if (typeof(base_url) == 'undefined') {
+        var base_url = location.protocol + '//' + location.host + '/';
+    }
+    tinymce.init({
+        selector: '%selector%',
+        init_instance_callback : function(editor) {
+
+            /* word-character-count init */
+            new WordCharCount('%selector%', editor, %options%);
+        },
+        script_url : base_url + 'phpformbuilder/plugins/tinymce/tinymce.min.js',
+        document_base_url: base_url,
+        relative_urls: false,
+        theme: 'silver',
+        // language: 'fr_FR',
+        element_format: 'html',
+        // content_css : '/css/bootstrap.css, /css/main.css',
+        // menubar: 'edit view insert table tools',
+        plugins: [
+            'advlist autolink autoresize charmap code codemirror contextmenu fullscreen link lists paste preview table visualblocks textcolor charmap media image responsivefilemanager'
+        ],
+        codemirror: {
+            indentOnInit: true, // Whether or not to indent code on init.
+            path: 'CodeMirror', // Path to CodeMirror distribution
+            config: {           // CodeMirror config object
+            mode: 'application/x-httpd-php' //,
+            // lineNumbers: false
+            },
+            jsFiles: [          // Additional JS files to load
+            'mode/php/php.js'
+            ]
+        },
+        deprecation_warnings: false,
+        entity_encoding : 'raw',
+        contextmenu: 'link image inserttable | cell row column deletetable',
+        toolbar: 'undo redo | styleselect | bold italic | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist | link image preview | removeformat formats', // add 'responsivefilemanager' to add 'insert file' button
+        schema: 'html5',
+        setup: function (editor) {
+            var formId = document.querySelector('%selector%').closest('form').getAttribute('id');
+            var form   = forms[formId];
+            if (document.querySelector('%selector%').required) {
+                editor.on('init', function(e) {
+                    if (typeof(form.fv) == 'object') {
+                        var textareaName = document.querySelector('%selector%').getAttribute('name');
+                        document.querySelector('%selector%').removeAttribute('required');
+                        form.fv.removeField(textareaName);
+                        document.querySelector('%selector%').setAttribute('dataTinymceNotEmpty', true);
+                        const tinymceValidator = {
+                            validators: {
+                                tinymcenotempty: {
+                                    message: form.fv.localization.notEmpty.default
+                                }
+                            }
+                        };
+                        form.fv.addField(textareaName, tinymceValidator);
+                        editor.on('keyup', function () {
+                            // Revalidate the comment field
+                            form.fv.revalidateField(textareaName);
+                        });
+                    }
+                });
+            }
+        },
+        /* responsivefilemanager (configure /phpformbuilder/plugins/filemanager/config/config.php) */
+        external_filemanager_path: base_url + '/phpformbuilder/plugins/filemanager/',
+        filemanager_title: 'Responsive Filemanager' ,
+        external_plugins: { 'filemanager' : base_url + '/phpformbuilder/plugins/filemanager/plugin.min.js'},
+        /* END responsivefilemanager */
+        image_advtab: true
+    });]]>
+        </js_code>
+    </word-char-count>
+    <light>
+        <js_code><![CDATA[   if (typeof(base_url) == 'undefined') {
+        var base_url = location.protocol + '//' + location.host + '/';
+    }
+    tinymce.init({
+        selector: '%selector%',
+        script_url : base_url + 'phpformbuilder/plugins/tinymce/tinymce.min.js',
+        document_base_url: base_url,
+        relative_urls: false,
+        theme: 'silver',
+        // language: 'fr_FR',
+        element_format: 'html',
+        menubar: false,
+        plugins: [
+            'autolink autoresize charmap contextmenu link lists paste table'
+        ],
+        deprecation_warnings: false,
+        entity_encoding : 'raw',
+        contextmenu: 'link inserttable | cell row column deletetable',
+        toolbar: 'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link',
+        schema: 'html5',
+        setup: function (editor) {
+            var formId = document.querySelector('%selector%').closest('form').getAttribute('id');
+            var form   = forms[formId];
+            if (document.querySelector('%selector%').required) {
+                editor.on('init', function(e) {
+                    if (typeof(form.fv) == 'object') {
+                        var textareaName = document.querySelector('%selector%').getAttribute('name');
+                        document.querySelector('%selector%').removeAttribute('required');
+                        form.fv.removeField(textareaName);
+                        document.querySelector('%selector%').setAttribute('dataTinymceNotEmpty', true);
+                        const tinymceValidator = {
+                            validators: {
+                                tinymcenotempty: {
+                                    message: form.fv.localization.notEmpty.default
+                                }
+                            }
+                        };
+                        form.fv.addField(textareaName, tinymceValidator);
+                        editor.on('keyup', function () {
+                            // Revalidate the comment field
+                            form.fv.revalidateField(textareaName);
+                        });
+                    }
+                });
+            }
+        }
+    });]]>
+        </js_code>
+    </light>
+    <custom>
+        <!--
+            If you need differents includes for your custom code,
+            copy the default '<includes>' structure and put the needed files into '<file>' nodes.
+            You can add several files nodes if necessary.
+        -->
+        <js_code>
+            <!-- your custom code here -->
+        </js_code>
+    </custom>
+</root>

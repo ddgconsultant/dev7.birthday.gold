@@ -1,0 +1,137 @@
+input {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+main.register {
+  padding: 4% 0;
+  word-wrap: break-word;
+  background-color: #f0ebeb;
+  margin-top: 75.36px;
+}
+.register-container {
+  max-width: 1400px;
+  width: 100%;
+  padding-left: 30px;
+  padding-right: 30px;
+}
+.regsiter-list {
+  margin-bottom: 24px;
+}
+.regsiter-list li {
+  font-size: 3em;
+  line-height: 72px;
+  height: 72px;
+}
+.regsiter-list a {
+  border-width: 2px;
+  display: block;
+  font-size: 0.75em;
+  font-weight: 700;
+  color: #ff6162;
+  position: relative;
+  padding: 0.3rem 0;
+  letter-spacing: 0.5px;
+  border-width: 2px solid transparent;
+}
+.regsiter-list a span {
+  line-height: 20px;
+}
+.regsiter-list a::after {
+  content: "";
+  position: relative;
+  bottom: 0;
+  display: block;
+  width: 45px;
+  height: 3px;
+  // line-height: 20px;
+  margin: 0.4em auto 0 auto;
+  top: 1px;
+  background: #ff6162;
+}
+input.focus-red:focus {
+  outline: none;
+  border: 2px solid #ff6162;
+}
+.register-container form {
+  width: 100%;
+  max-width: 500px;
+  padding: 32px;
+  border-radius: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+.alert {
+  width: 100%;
+  position: relative;
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  border-width: 0;
+  border-radius: 0.25rem;
+  font-size: 0.95em;
+}
+.alert-primary {
+  background: #ff6162;
+  color: #fff;
+}
+.login-form label {
+  margin-bottom: 0.5rem;
+  color: #888491;
+}
+.login-form input {
+  color: #3b354d;
+  border-width: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.4rem;
+  display: block;
+  padding: 0.8rem 1.25rem;
+  font-size: 1rem;
+  line-height: 1.25;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  width: 100%;
+}
+.login-form .login-remember input {
+  margin-right: 0.25em;
+  width: fit-content;
+  cursor: pointer;
+}
+.login-form button.password-visibility {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 55px;
+  height: 48px;
+  padding: 0;
+  z-index: 2;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  background: none;
+  color: #3b354d;
+  border-width: 0;
+}
+.login-form .login-submit input {
+  background: #ff6162;
+  border: 2px solid #ff6162;
+  letter-spacing: 1.7px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25rem;
+  text-transform: uppercase;
+  padding: 1rem 1.75rem;
+}
+.login-form .login-lostpassword a {
+  display: block;
+  padding: 1rem 0.5rem;
+  width: 100%;
+  text-align: center;
+  color: #888491;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+@media screen and (max-width: 991px) {
+  main.register {
+    margin-top: 64.36px;
+  }
+  .regsiter-list a {
+    font-size: 0.5em;
+  }
+}

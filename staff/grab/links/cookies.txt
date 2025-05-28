@@ -1,0 +1,5 @@
+# HTTrack Website Copier Cookie File
+# This file format is compatible with Netscape cookies
+screenshots.cloudron.io	TRUE	/	FALSE	1999999999	connect.sid	s%3AmAltcPjWO0q3w6mv90KIVX1q91L_zkN4.b0SygsoEHU8naUIberOfHW%2FMHr5qIDu%2BYnx2A6x34iQ
+screenshots.cloudron.io	TRUE	/	FALSE	1999999999	SameSite	Strict
+

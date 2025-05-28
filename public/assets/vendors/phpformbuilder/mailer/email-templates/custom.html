@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:v="urn:schemas-microsoft-com:vml">
+
+<head>
+  <title>{subject}</title>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]-->
+</head>
+
+<body style="background-color: {tpl-content-light-background}; margin: 0; padding: 0; -webkit-text-size-adjust: none; text-size-adjust: none;">
+  <table border="0" cellpadding="0" cellspacing="0" class="nl-container" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #FFFFFF;" width="100%">
+    <tbody>
+      <tr>
+        <td>
+          <table align="center" border="0" cellpadding="0" cellspacing="0" class="row row-1" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;" width="100%">
+            <tbody>
+              <tr>
+                <td>
+                  <table align="center" border="0" cellpadding="0" cellspacing="0" class="row-content stack" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; color: #000000; width: 600px;" width="600">
+                    <tbody>
+                      <tr>
+                        <td class="column" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt; font-weight: 400; text-align: left; vertical-align: top; padding-top: 5px; padding-bottom: 5px; border-top: 0px; border-right: 0px; border-bottom: 0px; border-left: 0px;" width="100%">
+                          <table border="0" cellpadding="0" cellspacing="0" class="image_block" role="presentation" style="mso-table-lspace: 0pt; mso-table-rspace: 0pt;" width="100%">
+                            <tr>
+                              <td style="width:100%;padding-right:0px;padding-left:0px;">
+                                <div align="center" style="line-height:10px"><a href="https://www.phpformbuilder.pro" style="outline:none" tabindex="-1" target="_blank"><img alt="PHP Form Builder" class="big" src="{tpl-header-image}" style="display: block; height: auto; border: 0; width: 600px; max-width: 100%;" title="PHP Form Builder" width="600"/></a></div>
+                              </td>
+                            </tr>
+                          </table>
+                          <table border="0" cellpadding="20" cellspacing="0" width="100%" style="" bgcolor="{tpl-content-dark-background}">
+                            <tr>
+                              <td class="inner">
+
+                                <h1>Hello {user-full-name},</h1>
+
+                                <h2>Welcome to <a href="https://www.phpformbuilder.pro">Php Form Builder</a>
+                                </h2>
+                              </td>
+                            </tr>
+                          </table>
+                          <table border="0" cellpadding="20" cellspacing="0" width="100%" style="" bgcolor="{tpl-content-light-background}">
+                            <tr>
+                              <td class="inner">
+                                <h3>As you can see, email sending is very easy with Php Form Builder.</h3>
+                                <p>Email content is built from html/css templates located in <em>phpformbuilder/mailer/email-templates</em></p>
+                                <p>The HTML templates are built with some placeholders which are replaced automagically with the posted values.</p>
+                                <p>For instance, write <em>{any-field-name}</em> in your template and it'll be replaced with <em>the real posted value</em>.</p>
+                                <p>This can be done in HTML templates as well as in CSS templates. This way you can customize content texts, colors, backgrounds or anything using simple placeholders.
+                                </p>
+                                <hr>
+                                <p>The <em>"table"</em> shortcode allows to insert an html table with <em>all posted keys/values</em>.</p>
+                                <p>Just write the shortcode in your HTML email template, and Php Form Builder will do the job.</p>
+                              </td>
+                            </tr>
+                          </table>
+                          <table border="0" cellpadding="20" cellspacing="0" width="100%" style="" bgcolor="{tpl-content-light-background}">
+                            <tr>
+                              <td class="inner">
+                                Your message:
+                              </td>
+                              <td>
+                                {message}
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table><!-- End -->
+</body>
+
+</html>
