@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(apt-get:*)",
+      "Bash(apt-get install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(grep:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(/tmp/logo_converter_env/bin/pip install Pillow)",
+      "Bash(/tmp/logo_converter_env/bin/python:*)",
+      "Bash(cp:*)",
+      "Bash(sed:*)",
+      "Bash(php:*)",
+      "Bash(diff:*)",
+      "Bash(touch:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(curl:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": false
+}

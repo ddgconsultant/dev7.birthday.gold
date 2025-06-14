@@ -1,0 +1,425 @@
+/**
+ * Birthday.Gold Mobile Bottom Navigation - Improved Styles
+ * Version: 7.0
+ * Location: /public/css/v7/bottom-nav-improved.css
+ * 
+ * Improvements:
+ * - Better icon centering with flex layout
+ * - Consistent box sizes with proper spacing
+ * - Modern color scheme with blue accents
+ * - Smooth animations and transitions
+ * - Better visual hierarchy
+ */
+
+/* ===== ROOT VARIABLES ===== */
+:root {
+    /* Updated Color Palette */
+    --nav-primary: #3b82f6;
+    --nav-primary-dark: #2563eb;
+    --nav-primary-light: #60a5fa;
+    --nav-secondary: #6366f1;
+    --nav-secondary-dark: #4f46e5;
+    
+    --nav-text-default: #64748b;
+    --nav-text-active: #3b82f6;
+    --nav-text-white: #ffffff;
+    
+    --nav-bg-default: rgba(255, 255, 255, 0.98);
+    --nav-bg-hover: rgba(59, 130, 246, 0.08);
+    --nav-bg-active: rgba(59, 130, 246, 0.12);
+    
+    --nav-border: rgba(0, 0, 0, 0.06);
+    --nav-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    
+    --nav-badge-bg: #ef4444;
+    --nav-badge-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    
+    /* Dimensions */
+    --nav-height: 64px;
+    --nav-item-min-width: 64px;
+    --nav-item-max-width: 80px;
+    --nav-icon-size: 22px;
+    --nav-label-size: 11px;
+    
+    /* Animations */
+    --nav-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== BOTTOM NAVIGATION CONTAINER ===== */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--nav-bg-default);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--nav-border);
+    z-index: 1020;
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+    box-shadow: var(--nav-shadow);
+}
+
+/* ===== NAV ITEMS CONTAINER ===== */
+.nav-items {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: stretch;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 8px;
+    height: var(--nav-height);
+}
+
+/* ===== INDIVIDUAL NAV ITEM ===== */
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--nav-text-default);
+    padding: 8px;
+    border-radius: 12px;
+    transition: var(--nav-transition);
+    min-width: var(--nav-item-min-width);
+    position: relative;
+    flex: 1;
+    max-width: var(--nav-item-max-width);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Hover States */
+.nav-item:hover {
+    background: var(--nav-bg-hover);
+    color: var(--nav-text-active);
+    text-decoration: none;
+}
+
+/* Active/Pressed State */
+.nav-item:active {
+    transform: scale(0.95);
+}
+
+/* Current Page Active State */
+.nav-item.active {
+    color: var(--nav-text-active);
+    background: var(--nav-bg-active);
+}
+
+/* CTA Button Style */
+.nav-item.cta {
+    background: linear-gradient(135deg, var(--nav-primary) 0%, var(--nav-secondary) 100%);
+    color: var(--nav-text-white);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.nav-item.cta:hover {
+    background: linear-gradient(135deg, var(--nav-primary-dark) 0%, var(--nav-secondary-dark) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.nav-item.cta:active {
+    transform: scale(0.95);
+}
+
+/* ===== NAV ICON ===== */
+.nav-icon {
+    font-size: var(--nav-icon-size);
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    width: 24px;
+}
+
+/* Icon animations */
+.nav-item:hover .nav-icon {
+    transform: translateY(-1px);
+}
+
+.nav-item.active .nav-icon {
+    animation: iconPulse 0.3s ease-out;
+}
+
+@keyframes iconPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* ===== NAV LABEL ===== */
+.nav-label {
+    font-size: var(--nav-label-size);
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+}
+
+/* ===== NOTIFICATION BADGE ===== */
+.nav-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--nav-badge-bg);
+    color: white;
+    border-radius: 10px;
+    padding: 2px 5px;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: var(--nav-badge-shadow);
+    animation: badgeAppear 0.3s ease-out;
+}
+
+@keyframes badgeAppear {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ===== MORE MENU OVERLAY ===== */
+.more-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1045;
+    display: none;
+    align-items: flex-end;
+    animation: fadeIn 0.2s ease;
+}
+
+.more-menu-overlay.show {
+    display: flex;
+}
+
+/* ===== MORE MENU CONTENT ===== */
+.more-menu {
+    background: white;
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-overflow-scrolling: touch;
+}
+
+/* More Menu Header */
+.more-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+}
+
+.more-menu-header h5 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* More Menu Items */
+.more-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    text-decoration: none;
+    color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.more-menu-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: var(--nav-primary);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+}
+
+.more-menu-item:hover {
+    background: #f9fafb;
+    color: var(--nav-primary);
+    padding-left: 1.75rem;
+}
+
+.more-menu-item:hover::before {
+    transform: translateX(0);
+}
+
+.more-menu-item.text-danger {
+    color: #ef4444;
+}
+
+.more-menu-item.text-danger:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* More Menu Icons */
+.more-icon {
+    font-size: 20px;
+    margin-right: 1rem;
+    width: 24px;
+    text-align: center;
+    color: #9ca3af;
+    transition: color 0.2s ease;
+}
+
+.more-menu-item:hover .more-icon {
+    color: inherit;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { 
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to { 
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+/* Small phones */
+@media (max-width: 380px) {
+    :root {
+        --nav-label-size: 10px;
+        --nav-icon-size: 20px;
+    }
+    
+    .nav-items {
+        padding: 0 4px;
+    }
+    
+    .nav-item {
+        padding: 6px;
+        min-width: 56px;
+    }
+}
+
+/* Larger screens - hide bottom nav */
+@media (min-width: 768px) {
+    .bottom-nav {
+        display: none;
+    }
+    
+    .more-menu-overlay {
+        display: none !important;
+    }
+}
+
+/* ===== ACCESSIBILITY ===== */
+/* Focus states for keyboard navigation */
+.nav-item:focus-visible {
+    outline: 2px solid var(--nav-primary);
+    outline-offset: 2px;
+}
+
+.more-menu-item:focus-visible {
+    outline: 2px solid var(--nav-primary);
+    outline-offset: -2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .nav-item,
+    .nav-badge,
+    .more-menu,
+    .more-menu-item {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --nav-bg-default: rgba(30, 41, 59, 0.98);
+        --nav-text-default: #94a3b8;
+        --nav-text-active: #60a5fa;
+        --nav-bg-hover: rgba(96, 165, 250, 0.1);
+        --nav-bg-active: rgba(96, 165, 250, 0.2);
+        --nav-border: rgba(255, 255, 255, 0.1);
+        --nav-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .more-menu {
+        background: #1e293b;
+        color: #e2e8f0;
+    }
+    
+    .more-menu-header {
+        background: #1e293b;
+        border-bottom-color: #334155;
+    }
+    
+    .more-menu-header h5 {
+        color: #f1f5f9;
+    }
+    
+    .more-menu-item {
+        color: #cbd5e1;
+        border-bottom-color: #334155;
+    }
+    
+    .more-menu-item:hover {
+        background: #334155;
+        color: #60a5fa;
+    }
+    
+    .more-icon {
+        color: #64748b;
+    }
+}
+
+/* ===== UTILITY CLASSES ===== */
+.nav-hidden {
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+}
+
+.nav-visible {
+    transform: translateY(0);
+}

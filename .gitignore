@@ -21,3 +21,8 @@ Thumbs.db
 # Ignore OS temp files
 *.tmp
 *.swp
+
+# Ignore Claude Code sandbox
+/claudecode/
+!/claudecode/.gitignore
+!/claudecode/README.md

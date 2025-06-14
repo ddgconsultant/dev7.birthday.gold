@@ -1,0 +1,178 @@
+main.swipe-members {
+  padding: 4% 0;
+  word-wrap: break-word;
+  background-color: #f0ebeb;
+  margin-top: 75.36px;
+}
+.swipe-container {
+  max-width: 1400px;
+  width: 100%;
+  padding: 0 30px;
+  font-size: 16px;
+}
+.swipe-row {
+  margin: 0 -15px;
+}
+.swipe-col {
+  padding: 0 15px;
+}
+.swipe-header {
+  margin-bottom: 4%;
+}
+.swipe-header h1 {
+  font-size: 3.2rem;
+  line-height: 1.2;
+  font-family: Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  font-weight: 700;
+  letter-spacing: 0;
+  color: #3b354d;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+.swipe-col:nth-child(2) {
+  margin-bottom: 80px;
+}
+.swipe-card {
+  max-width: 300px;
+  width: 100%;
+  box-shadow: 0px 0px 15px 0px rgba(0, 0, 0, 0.04);
+  border-radius: 0.4rem;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+.swipe-card-avatar > img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.swipe-card-avatar::before {
+  position: absolute;
+  display: block;
+  content: "";
+  width: 200%;
+  height: 120px;
+  background: #f0ebeb;
+  left: -50%;
+  bottom: -70px;
+  z-index: 2;
+  transform: rotate(-5deg);
+  transform-origin: center;
+  transition: all 0.3s;
+}
+.swipe-card-avatar::after {
+  position: absolute;
+  display: block;
+  content: "";
+  width: 200%;
+  height: 120px;
+  background: white;
+  left: -50%;
+  bottom: -75px;
+  z-index: 2;
+  transform: rotate(-5deg);
+  transform-origin: center;
+  transition: all 0.3s;
+}
+.swipe-card:hover .swipe-card-avatar::after {
+  transform: rotate(1deg);
+}
+.swipe-card:hover .swipe-card-avatar::before {
+  transform: rotate(-7deg);
+  bottom: -66px;
+}
+
+.swipe-card:hover .swipe-card-avatar > img {
+  opacity: 0.8;
+}
+.swipe-card:hover {
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+}
+.swipe-card-body {
+  padding: 0px 16px 16px;
+}
+.swipe-card__title {
+  padding-bottom: 0.2rem;
+  font-weight: 600;
+  text-align: center;
+}
+.swipe-card__title a {
+  color: #2a2733;
+  transition: all 0.3s;
+  position: relative;
+}
+.verified-badge {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background: #1da1f2;
+  color: white;
+  line-height: 21px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 200;
+  transform: rotate(-10deg);
+}
+.swipe-card__title a:hover {
+  color: #ff6162;
+}
+.swipe-card__meta {
+  margin-bottom: 0.5rem;
+  font-size: 0.9em;
+  color: #888491;
+}
+.swipe-card-meta__first {
+  padding: 0 0.5rem 0.75rem;
+}
+.swipe-card-state::before {
+  content: "\2022";
+  margin-left: 6px;
+  margin-right: 6px;
+  opacity: 0.5;
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 0.7em;
+}
+
+#swipe-slider .splide__arrow {
+  background: transparent;
+  color: rgba(136, 132, 145, 0.2);
+  transition: all 0.3s;
+}
+.splide__arrow--prev:hover {
+  transform: translate(-10px, -15px) scale(1.3);
+}
+.splide__arrow--next:hover {
+  transform: translate(10px, -15px) scale(1.3);
+}
+#swipe-slider .splide__pagination {
+  display: none;
+}
+@media screen and (max-width: 991px) {
+  main.swipe-members {
+    margin-top: 64.36px;
+  }
+}
+@media screen and (max-width: 769px) {
+  .swipe-header h1 {
+    font-size: 2rem;
+  }
+  .swipe-col {
+    padding: 0 5px;
+  }
+  .swipe-col:nth-child(2) {
+    margin-bottom: 120px;
+    margin-top: 30px;
+  }
+  #swipe-slider .splide__arrow {
+    position: absolute;
+    top: calc(100% + 70px);
+  }
+  #swipe-slider .splide__arrow--prev {
+    left: 38%;
+  }
+  #swipe-slider .splide__arrow--next {
+    right: 38%;
+  }
+}

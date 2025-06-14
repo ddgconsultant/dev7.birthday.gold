@@ -174,8 +174,8 @@ function showerrors()
 #-------------------------------------------------------------------------------
 # SET UP THE UI -- we can have multiple designs of our site with this setting
 #-------------------------------------------------------------------------------
-$website['ui_version'] = 'v3';
-$website['plan_version'] = 'v3';
+$website['ui_version'] = 'v7';
+$website['plan_version'] = 'v7';
 $additionalstyles = '';
 $logBuffer = [];
 

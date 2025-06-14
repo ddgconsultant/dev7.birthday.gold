@@ -1330,26 +1330,34 @@ WHERE c.status like "' . $input['businessstatus'] . '" and c.company_id =  :cid'
 
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
-  public function getcompanyimages($id, $limit = '0')
+  public function getcompanyimages($id, $limit = '0', $input = [])
   {
-    global $database;
-
-    $sql = 'SELECT  a.description AS company_logo
-FROM bg_company_attributes a
-where a.company_id = :cid and a.category = "company_logos" ';
-    if ($limit != '0') $sql .= ' limit ' . $limit;
-    $stmt = $database->prepare($sql);
-
-    $stmt->bindParam(':cid', $id);
-
-
-    $stmt->execute();
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    if (!empty($results)) return $results;
-    return false;
+      global $database;
+  
+      $sql = 'SELECT a.description AS company_logo
+              FROM bg_company_attributes a
+              WHERE a.company_id = :cid 
+              AND a.category = "company_logos"';
+      
+      // Add primary logo filter if requested
+      if (!empty($input['primary'])) {
+          $sql .= ' AND a.grouping = "primary_logo" order by a.`rank`';
+      }
+      
+      if ($limit != '0') {
+          $sql .= ' LIMIT ' . $limit;
+      }
+      
+      $stmt = $database->prepare($sql);
+      $stmt->bindParam(':cid', $id);
+      $stmt->execute();
+      $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  
+      if (!empty($results)) {
+          return $results;
+      }
+      return false;
   }
-
 
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------

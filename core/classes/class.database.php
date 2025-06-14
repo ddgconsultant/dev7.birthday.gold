@@ -144,6 +144,36 @@ public function errorInfo($stmt = null)
 
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function getrows($sql, $params = [])
+  {
+    // Prepare statement
+    $stmt = $this->prepare($sql);
+    // Bind parameters 
+    if (!empty($params)) {
+      foreach ($params as $param => $value) {
+        // Remove colon if it's already there
+        $param = ltrim($param, ':');
+        $stmt->bindValue(":$param", $value);
+      }
+    }
+    $stmt->execute();
+    // Fetch all rows
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $results;
+  }
+
+
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function getrow($sql, $params = [])
+  {
+    // Alias for fetchOne for consistency
+    return $this->fetchOne($sql, $params);
+  }
+
+
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function lastInsertId()
   {
     return $this->pdo->lastInsertId();

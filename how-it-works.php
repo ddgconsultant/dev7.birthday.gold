@@ -123,6 +123,9 @@ echo '
     </div>
 </div>
 
+</div>
+</div>
+
 <!-- How It Works End -->
 ';
 

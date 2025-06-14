@@ -1,6 +1,7 @@
 <!-- ======================================================== -->
 <!-- START OF HEADER -->
 <!-- ======================================================== -->
+<!-- TRACE: We are in v3/bg_header.inc (NOT v7!) -->
 <?PHP
 if (!isset($bodyclass)) $bodyclass='';
 $additionalstyles .= "

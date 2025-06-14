@@ -1,0 +1,32 @@
+/* Simple Modal Fix - Remove stacking contexts */
+
+/* Ensure body doesn't create stacking context */
+body {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+}
+
+/* Ensure no parent containers create stacking contexts */
+.main-content,
+#main-content,
+main {
+    transform: none !important;
+    filter: none !important;
+    will-change: auto !important;
+}
+
+/* Reset Bootstrap modal z-indexes to defaults */
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+
+.modal {
+    z-index: 1050 !important;
+}
+
+/* Ensure modals and backdrops are direct children of body */
+body > .modal-backdrop,
+body > .modal {
+    position: fixed !important;
+}

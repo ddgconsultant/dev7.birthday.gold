@@ -1,0 +1,380 @@
+/* Custom Bootstrap Overrides */
+/* Example for WebKit-based browsers */
+html {
+  overflow-y: scroll !important;
+}
+
+html::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 12px;
+  border: 3px solid #f1f1f1;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+
+/* Root Variables */
+:root {
+  --bs-primary: #003366;
+  --bs-secondary: #FFC700;
+  --bs-secondary-light: hsl(48, 100%, 96%); /* lighter */
+  --bs-success: #28a745;
+  --bs-info: #17a2b8;
+  --bs-warning: #ffc107;
+  --bs-danger: #dc3545;
+  --bs-light: #f8f9fa;
+  --bs-dark: #343a40;
+
+  /* Text Colors */
+  --bs-primary-text: #003366;
+  --bs-secondary-text: #FFC700;
+  
+  /* Font weight variables */
+  --custom-font-weight: 600;
+  --footer-font-weight: 400;
+
+    --gold: #FFD700;
+    --dark-gold: #B8860B;
+
+
+  /* Additional colors from bgfinalv3.css */
+  --blue: #003366;
+  --indigo: #6610f2;
+  --purple: #6f42c1;
+  --pink: #e83e8c;
+  --red: #dc3545;
+  --orange: #fd7e14;
+  --yellow: #fff176;
+  --green: #28a745;
+  --teal: #20c997;
+  --cyan: #17a2b8;
+  --white: #fff;
+  --gray: #f2bb05;
+  --gray-dark: #343a40;
+  --primary: #003366;
+  --secondary: #f2bb05;
+  --success: #28a745;
+  --info: #17a2b8;
+  --warning: #fff176;
+  --danger: #dc3545;
+  --light: #f8f9fa;
+  --dark: #343a40;
+  --breakpoint-xs: 0;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-xxl: 1500px;
+  --font-family-sans-serif: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.btn-gold {
+  background-color: var(--gold);
+  border-color: var(--dark-gold);
+  color: #000;
+}
+.btn-gold:hover {
+  background-color: var(--dark-gold);
+  border-color: var(--dark-gold);
+  color: #fff;
+}
+.blur-image-1 {
+  filter: blur(2px); /* Slight blur */
+}
+
+.blur-image-2 {
+  filter: blur(4px); /* Moderate blur */
+}
+
+.blur-image-3 {
+  filter: blur(6px); /* Noticeable blur */
+}
+
+.blur-image-4 {
+  filter: blur(8px); /* Heavy blur */
+}
+
+.blur-image-5 {
+  filter: blur(10px); /* Maximum blur */
+}
+
+
+html, body {
+  overflow: auto;
+}
+
+/* Custom XXL Container Size */
+@media (min-width: 1400px) {
+  .container-xxl {
+    max-width: var(--breakpoint-xxl);
+  }
+  .container {
+    max-width: var(--breakpoint-xxl);
+  }
+}
+
+
+img.rounded-circle {
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+  height: 100%;
+}
+
+
+/* Typography Adjustments */
+body {
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 1.1rem;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: #000d1a;
+  text-decoration: underline;
+}
+
+p, li {
+  font-size: 1.1rem;
+  font-weight: var(--custom-font-weight);
+}
+
+/* Custom class for condensed uppercase text */
+.condensed-uppercase {
+  text-transform: uppercase;      /* Uppercase text */
+  font-stretch: condensed;        /* Condensed width */
+  letter-spacing: 0.05em;         /* Adjust letter spacing as needed */
+  font-weight: 600;               /* Slightly bolder font */
+}
+
+/* Override Bootstrap button colors */
+.btn-primary {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  font-weight: var(--custom-font-weight);
+}
+
+.btn-secondary {
+  background-color: var(--bs-secondary);
+  border-color: var(--bs-secondary);
+  font-weight: var(--custom-font-weight);
+}
+
+/* Additional custom button styles */
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: #00294c; /* Slightly darker navy */
+  border-color: #00294c;
+}
+
+.btn-secondary:hover, .btn-secondary:focus, .btn-secondary:active {
+  background-color: #e6b000; /* Slightly darker gold */
+  border-color: #e6b000;
+}
+
+/* Override link button colors */
+.btn-link {
+  color: var(--bs-primary);
+  font-weight: var(--custom-font-weight);
+}
+
+.btn-link:hover, .btn-link:focus, .btn-link:active {
+  color: var(--bs-secondary);
+}
+
+/* Text color adjustments */
+a, h1, h2, h3, h4, h5, h6 {
+  color: var(--bs-primary-text);
+}
+
+a:hover h1, a:hover h2, a:hover h3, a:hover h4, a:hover h5, a:hover h6 { 
+  color: var(--bs-secondary-text); 
+}
+
+/* Background color adjustments */
+.bg-primary {
+  background-color: var(--bs-primary) !important;
+}
+
+.bg-secondary {
+  background-color: var(--bs-secondary) !important;
+}
+
+.text-primary {
+  color: var(--bs-primary) !important;
+}
+
+.text-secondary {
+  color: var(--bs-secondary) !important;
+}
+
+/* Additional classes for consistency */
+.text-primary-hover:hover {
+  color: var(--bs-primary) !important;
+}
+
+.text-secondary-hover:hover {
+  color: var(--bs-secondary) !important;
+}
+
+/* Footer specific font weight */
+footer {
+  font-size: 70%;  
+  font-weight: var(--footer-font-weight);
+}
+
+/* Additional styles from bgfinalv3.css */
+
+/* Form Controls */
+.form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.2rem rgba(0, 51, 102, 0.25);
+}
+
+.form-control::placeholder {
+  color: var(--secondary);
+}
+
+/* Tables */
+.table-primary {
+  background-color: #b8c6d4;
+  border-color: #7a95af;
+}
+
+.table-secondary {
+  background-color: #fbecb9;
+  border-color: #f8dc7d;
+}
+
+.table-success {
+  background-color: #c3e6cb;
+  border-color: #8fd19e;
+}
+
+.table-info {
+  background-color: #bee5eb;
+  border-color: #86cfda;
+}
+
+.table-warning {
+  background-color: #fffbd9;
+  border-color: #fff8b8;
+}
+
+.table-danger {
+  background-color: #f5c6cb;
+  border-color: #ed969e;
+}
+
+.table-light {
+  background-color: #fdfdfe;
+  border-color: #fbfcfc;
+}
+
+.table-dark {
+  background-color: #c6c8ca;
+  border-color: #95999c;
+}
+
+
+
+
+
+
+
+.content-block {
+border: 3px solid var(--bs-primary);
+border-radius: 5px;
+padding: 15px;
+margin-bottom: 20px;
+background-color: #fafafa;
+text-align: center;      
+transition: transform 0.4s;
+}
+.content-block:hover {
+transform: scale(1.05);
+background-color: #eee; /* A lighter shade for the hover effect */
+transition: background-color 0.3s ease; /* Smooth transition effect */
+}
+.content-block .bi {
+font-size: 6rem;
+color:  var(--bs-secondary);
+margin-bottom: 15px;
+}
+.content-block h2 {
+font-size: 2rem;
+margin-bottom: 15px;
+font-weight: 700;
+}
+.content-block p {
+font-size: 1.2rem;
+}
+.content-block .more-link {
+display: block;
+text-align: right;
+font-weight: bold;
+margin-top: 10px;
+}
+.content-panel {
+border: 1px solid #ddd;
+border-radius: 5px;
+padding: 20px;
+margin-bottom: 20px;
+background-color: #f8f9fa;
+}
+.content-panel.h3 {
+font-size: 1.5rem;
+margin-bottom: 15px;
+}
+.content-panel .more-link {
+display: block;
+text-align: right;
+font-weight: bold;
+margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+.content-block, .content-panel {
+margin-bottom: 15px;
+}
+}
+
+
+
+
+
+.content-panel {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 20px;
+  background-color: #fff;
+  }
+  .content-panel h3 {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  }
+  .summary {
+  font-size: 1.1em;
+  }
+  .content-panel a {
+  display: inline-block;
+  margin-top: 10px;
+  text-decoration: underline;
+  }

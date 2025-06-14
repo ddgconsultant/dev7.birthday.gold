@@ -1,4 +1,7 @@
 <?PHP
+header('location: /myaccount/enrollment-picker'); exit;
+
+
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 
