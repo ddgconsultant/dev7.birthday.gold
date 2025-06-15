@@ -158,7 +158,7 @@ if (empty($companies)) {
 // Page setup - MUST be before includes
 $pagetitle = 'Select Your Birthday Rewards';
 $bodycontentclass = '';
-$additionalstyles = '<link rel="stylesheet" href="/public/css/enrollment-picker.css">';
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/enrollment-picker.css">';
 
 include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/header3.inc');
 include($dir['core_components'] . '/bg_pagestart.inc');

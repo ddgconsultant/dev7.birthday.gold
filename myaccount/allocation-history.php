@@ -91,7 +91,7 @@ $stats = [
 
 // Page setup
 $pagetitle = 'Allocation History';
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 .history-header {
     background: #f8f9fa;

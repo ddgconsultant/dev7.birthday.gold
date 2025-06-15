@@ -576,7 +576,7 @@ switch ($display_footertype ?? 'default') {
             // Show different links based on login status
             if (!$isLoggedIn) {
                 echo '
-                                    <li><a href="/signup-mobile">Sign Up</a></li>
+                                    <li><a href="/signup">Sign Up</a></li>
                                     <li><a href="/login">Login</a></li>';
             } else {
                 echo '
@@ -609,9 +609,9 @@ switch ($display_footertype ?? 'default') {
                             <div class="footer-section">
                                 <h6 class="footer-title">Legal</h6>
                                 <ul class="footer-links">
-                                    <li><a href="/terms">Terms of Service</a></li>
-                                    <li><a href="/privacy">Privacy Policy</a></li>
-                                    <li><a href="/cookies">Cookie Policy</a></li>
+                                    <li><a href="/legalhub/terms">Terms of Service</a></li>
+                                    <li><a href="/legalhub/privacy">Privacy Policy</a></li>
+                                    <li><a href="/legalhub/cookies">Cookie Policy</a></li>
                                     <li><a href="/legalhub">Legal Hub</a></li>
                                     <li><a href="/system-status" target="sswindow">System Status</a></li>
                                 </ul>

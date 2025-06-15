@@ -28,6 +28,8 @@ switch ($p_displaylength) {
         break;
 }
 
+
+$newheader='x';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 include($dir['core_components'] . '/bg_admin_leftpanel.inc');

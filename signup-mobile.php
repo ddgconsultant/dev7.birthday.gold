@@ -3,7 +3,7 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 
 #-------------------------------------------------------------------------------
 # MOBILE-FIRST SIGNUP PAGE
-# Location: /signup-mobile.php
+# Location: /signup.php
 # Integrates seamlessly with existing Birthday.Gold infrastructure
 #-------------------------------------------------------------------------------
 
@@ -58,7 +58,7 @@ $pagemessage = '';
 if ($app->formposted() && empty($signup_process['account_plan'])) {
     $pagemessage = '<div class="alert alert-danger alert-dismissible show" role="alert">Please select a plan.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
     $session->set('force_error_message', $pagemessage);
-    header('Location: /signup-mobile');
+    header('Location: /signup');
     exit;
 }
 
@@ -101,13 +101,13 @@ if ($app->formposted() && !empty($signup_process['account_plan'])) {
             
             $gotourl = $plandata['redirect_url'] ?? '/register';
         } else {
-            $transferpage['url'] = '/signup-mobile';
+            $transferpage['url'] = '/signup';
             $transferpage['message'] = 'Plan not found';
             $system->endpostpage($transferpage);
             exit;
         }
     } else {
-        $transferpage['url'] = '/signup-mobile';
+        $transferpage['url'] = '/signup';
         $transferpage['message'] = 'Invalid plan selected';
         $system->endpostpage($transferpage);
         exit;
@@ -169,7 +169,7 @@ $session->unset('force_error_message');
 #-------------------------------------------------------------------------------
 # ADD STYLES & SETUP PAGE
 #-------------------------------------------------------------------------------
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 :root {
     --primary: #198754;

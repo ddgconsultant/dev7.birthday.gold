@@ -41,7 +41,7 @@ $bodyattribute['class'] = 'homepage-dark';
 #-------------------------------------------------------------------------------
 # ADDITIONAL CSS FOR HOMEPAGE - Include all critical styles inline
 #-------------------------------------------------------------------------------
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 /* Homepage Dark Theme Critical Styles */
 .homepage-dark {
@@ -219,7 +219,7 @@ include($dir['core_components'] . '/bg_pagestart.inc');
                     <span>Browse All Rewards</span>
                 </a>
             <?php else: ?>
-                <a href="/signup-mobile" class="btn-hero btn-hero-primary">
+                <a href="/signup" class="btn-hero btn-hero-primary">
                     <span>Start Free Today</span>
                     <i class="bi bi-arrow-right"></i>
                 </a>
@@ -392,7 +392,7 @@ include($dir['core_components'] . '/bg_pagestart.inc');
                 <i class="bi bi-arrow-right"></i>
             </a>
         <?php else: ?>
-            <a href="/signup-mobile" class="btn-hero btn-hero-primary">
+            <a href="/signup" class="btn-hero btn-hero-primary">
                 <span>Start Your Free Account</span>
                 <i class="bi bi-arrow-right"></i>
             </a>

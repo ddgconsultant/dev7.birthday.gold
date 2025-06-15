@@ -49,7 +49,7 @@ $available_allocations = max(0, $total_allocations - $used_allocations);
 
 // Page setup
 $pagetitle = 'Earn More Enrollments';
-$additionalstyles = '<style>
+$additionalstyles .= '<style>
 .earn-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;

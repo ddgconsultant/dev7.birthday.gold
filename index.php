@@ -31,7 +31,7 @@ $headerattribute['additional_head'] = '
 
 $additionalstyles .= '<link href="/public/css/v3/theme.css" rel="stylesheet" id="style-default">
 <link rel="stylesheet" href="/public/css/homepage.css">';
-$bodyclass='class="d-flex"';
+$bodycontentclass='class="d-flex"';
 
 
 
@@ -71,7 +71,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
         </h1>
         
         <p class="hero-subtitle">
-            We automatically enroll you in hundreds of birthday programs.<br>
+        You Pick the Birthday Rewards, We Take Care of Enrollment<br>
             No forms. No hassle. Just freebies.
         </p>
         
@@ -86,13 +86,13 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
                     <span>Discover Available Rewards</span>
                 </a>
             <?php else: ?>
-                <a href="/signup-mobile" class="btn-hero btn-hero-primary">
+                <a href="/signup" class="btn-hero btn-hero-primary">
                     <span>Start Free Today</span>
                     <i class="bi bi-arrow-right"></i>
                 </a>
                 <a href="#demo" class="btn-hero btn-hero-secondary">
                     <i class="bi bi-play-circle"></i>
-                    <span>Watch Demo</span>
+                    <span>See How Simple It Is</span>
                 </a>
             <?php endif; ?>
         </div>
@@ -231,7 +231,7 @@ echo '
                 </div>
                 <h3 class="feature-title">2. We Do The Work</h3>
                 <p class="feature-description">
-                    Our AI automatically enrolls you in ' . $website['numberofbiz'] . '+ birthday reward programs.
+                    Select from over '. $website['numberofbiz'] . '+ Birthday Reward Programs, and Birthday.Gold takes care of the rest.
                 </p>
             </div>
             

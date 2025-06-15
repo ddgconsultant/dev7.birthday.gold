@@ -27,7 +27,7 @@ $balance = $allocationManager->getUserBalance($user_id);
 
 // Page setup
 $pagetitle = 'Earn More Enrollments';
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 .earn-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

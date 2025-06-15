@@ -2,11 +2,11 @@
 body {
   padding-top: 56px;
   /* Height of the navbar */
-  overflow-x: hidden; /* Only hide horizontal overflow */
+  /* overflow-x: hidden; - Removed as it breaks Bootstrap nav-tabs flexbox layout */
   overflow-y: auto; /* Allow vertical scrolling */
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
   /* Removed transform from transition to prevent stacking context issues with modals */
   transition: top 0.5s ease, left 0.5s ease, width 0.5s ease, height 0.5s ease;
   font-family: 'DM Sans', sans-serif;
@@ -58,7 +58,7 @@ body {
   
   /* The main content should take all available space */
   .main-content {
-      flex: 1;
+      flex: 1 0 auto;
       /* Removed overflow-y: auto to allow modals to work properly */
       padding: 20px;
   }
@@ -495,14 +495,14 @@ body {
   justify-content: center;
 }
 
-.center-nav .nav-link {
+.top-header .center-nav .nav-link {
   padding: 0 15px;
   color: #212529;
   text-decoration: none;
   font-weight: 500;
 }
 
-.center-nav .nav-link:hover {
+.top-header .center-nav .nav-link:hover {
   color: #0d6efd;
 }
 
