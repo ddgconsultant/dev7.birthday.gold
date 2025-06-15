@@ -470,6 +470,11 @@ if (!empty($nostickyfooter)) {
     $nostickyfooter_tag = '';
 }   
 
+// Close the main tag that was opened in bg_header.inc
+if (!isset($newheader)) {
+    echo '</main><!-- Close main content wrapper -->';
+}
+
 // Include bottom navigation component if needed
 if ($showBottomNav) {
     include($dir['core_components'] . '/bg_bottom_nav.inc');

@@ -262,8 +262,13 @@ body {
 }
 
 .main-content { 
-    margin-top: 60px;
     flex: 1 0 auto;
+}
+
+/* Header spacer - pushes content below fixed header */
+.header-spacer {
+    height: 90px; /* Fixed header height + extra spacing */
+    flex-shrink: 0;
 }
 
 /* Original dropdown fixes (preserved) */
@@ -332,6 +337,11 @@ body {
 /* Footer sticky styles */
 .main-footer, footer {
     flex-shrink: 0;
+}
+
+/* Flex grow utility */
+.flex-grow-1 {
+    flex-grow: 1 !important;
 }
 
 /* Iframe mode styles */
