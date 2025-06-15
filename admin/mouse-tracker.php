@@ -4,7 +4,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 #-------------------------------------------------------------------------------
 # PREP VARIABLES PAGE
 #-------------------------------------------------------------------------------
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 .file-tree {
     padding-left: 0;

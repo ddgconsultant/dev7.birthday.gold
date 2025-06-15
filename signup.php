@@ -266,7 +266,7 @@ $page_description = "Sign up for Birthday Gold and start receiving birthday rewa
 #-------------------------------------------------------------------------------
 # ADDITIONAL STYLES
 #-------------------------------------------------------------------------------
-$additionalstyles = '
+$additionalstyles .= '
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
 /* Include all the CSS from the original file */
@@ -374,7 +374,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <i class="bi bi-info-circle info-icon"></i>
                     <span id="contextText"><?php echo $accountTypeConfig['context_text']; ?></span>
                 </div>
-                <button type="button" class="learn-more-btn" data-bs-toggle="modal" data-bs-target="#accountTypeInfoModal" title="Learn more">
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#accountTypeInfoModal" title="Learn more">
                     <i class="bi bi-info-circle learn-more-icon d-inline d-md-none"></i>
                     <span class="learn-more-text d-none d-md-inline">More info</span>
                 </button>
@@ -583,6 +583,7 @@ const pageData = {
 <script src="/public/js/signup_flow_dynamic.js"></script>
 
 <?php
+$display_footertype='min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

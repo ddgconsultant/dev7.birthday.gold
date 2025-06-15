@@ -328,7 +328,7 @@ $pagetitle = 'Complete Your Purchase - Birthday.Gold';
 $page_description = 'Complete your Birthday Gold checkout';
 
 // Include the same styles as createaccount
-$additionalstyles = '
+$additionalstyles .= '
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
 ' . file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/claudecode/createaccount_styles.css') . '

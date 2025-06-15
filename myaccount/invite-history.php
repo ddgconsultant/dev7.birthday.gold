@@ -3,7 +3,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // initialize variables here
 $bodycontentclass = '';
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 .table-responsive { margin-top: 1rem; }
 .table th, .table td { vertical-align: middle; }

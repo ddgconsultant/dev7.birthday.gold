@@ -41,7 +41,7 @@ $pagetitle = 'Welcome to Birthday Gold!';
 $bodyclass = 'class="celebration-page"';
 
 // Additional styles for celebration
-$additionalstyles = '
+$additionalstyles .= '
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
 body.celebration-page {

@@ -5,7 +5,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 # PREP VARIABLES PAGE
 #-------------------------------------------------------------------------------
 $bodycontentclass = '';
-$additionalstyles = '';
+$additionalstyles .= '';
 $display_footertype = '';
 
 # Set your secret token here

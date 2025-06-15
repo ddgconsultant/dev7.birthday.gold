@@ -46,7 +46,7 @@ $total_enrollments = $enrollment_result['count'] ?? 0;
 // Page setup
 $pagetitle = 'My Rewards Dashboard';
 $bodycontentclass = '';
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 /* Dashboard Styles */
 .dashboard-header {

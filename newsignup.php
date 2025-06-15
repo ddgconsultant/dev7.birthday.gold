@@ -226,7 +226,7 @@ $page_description = "Sign up for Birthday Gold and start receiving birthday rewa
 #-------------------------------------------------------------------------------
 # ADDITIONAL STYLES
 #-------------------------------------------------------------------------------
-$additionalstyles = '
+$additionalstyles .= '
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
 /* Include all the CSS from the original file */

@@ -97,6 +97,17 @@ echo '
                     <img src="/public/assets/img/tickets/reports/3.png" alt="" width="40">
                     <div class="ms-3 my-x1">
                         <h5 class="fs-9 fw-semi-bold mb-2">
+                            <a class="text-900 hover-primary stretched-link" href="/admin/user-list-v2">Enhanced User Management</a>
+                        </h5>
+                        <h6 class="mb-0 text-600">Advanced user search with real-time filtering</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-4 col-lg-6">
+                <div class="d-flex align-items-center px-4 py-x1 bg-body-tertiary rounded-3 border position-relative">
+                    <img src="/public/assets/img/tickets/reports/3.png" alt="" width="40">
+                    <div class="ms-3 my-x1">
+                        <h5 class="fs-9 fw-semi-bold mb-2">
                             <a class="text-900 hover-primary stretched-link" href="/admin/redirect-enrollments">Enrollments</a>
                         </h5>
                         <h6 class="mb-0 text-600">Manage Pending Enrollments</h6>

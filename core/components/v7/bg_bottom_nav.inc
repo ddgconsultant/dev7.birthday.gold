@@ -61,7 +61,7 @@ if (!$isLoggedIn) {
             <i class="nav-icon bi bi-gift"></i>
             <span class="nav-label">Browse</span>
         </a>
-        <a href="/signup-mobile" class="nav-item cta">
+        <a href="/signup" class="nav-item cta">
             <i class="nav-icon bi bi-star"></i>
             <span class="nav-label">Sign Up</span>
         </a>

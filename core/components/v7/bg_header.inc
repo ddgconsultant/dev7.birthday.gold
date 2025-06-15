@@ -5,96 +5,99 @@
 # Location: /core/components/bg_header.inc
 #-------------------------------------------------------------------------------
 
+if (!isset($newheader)) {
+
+
+    echo '
+    </head>
+    <body' . ($is_iframe_mode ? ' class="iframe-mode"' : '') . '>
+        <!-- Page Loading Indicator Removed -->
+        
+        <!-- Skip to main content for accessibility 
+        <a href="#main-content" class="sr-only sr-only-focusable">Skip to main content</a>
+        -->
+        
+        <!-- Enhanced JavaScript initialization -->
+        <script>
+        // Mobile viewport height fix
+        function setViewportHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty("--vh", `${vh}px`);
+        }
+    
+        // Set initial viewport height
+        setViewportHeight();
+    
+        // Update on resize and orientation change
+        window.addEventListener("resize", setViewportHeight);
+        window.addEventListener("orientationchange", setViewportHeight);
+    
+        // Mark page as loaded when DOM is ready
+        document.addEventListener("DOMContentLoaded", function() {
+            document.body.classList.add("page-loaded");
+            
+            // Initialize tooltips if Bootstrap is loaded
+            if (typeof bootstrap !== "undefined" && bootstrap.Tooltip) {
+                var tooltips = [].slice.call(document.querySelectorAll("[data-bs-toggle=\"tooltip\"]"));
+                tooltips.map(function(tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
+            
+            // Initialize mobile-specific features
+            if (window.innerWidth <= 768) {
+                // Add mobile class for CSS targeting
+                document.body.classList.add("mobile-device");
+                
+                // Disable zoom on form inputs (iOS Safari)
+                let viewport = document.querySelector("meta[name=\"viewport\"]");
+                if (viewport) {
+                    document.addEventListener("touchstart", function() {
+                        viewport.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+                    });
+                    
+                    // Re-enable zoom after form interaction
+                    document.addEventListener("touchend", function() {
+                        setTimeout(function() {
+                            viewport.content = "width=device-width, initial-scale=1.0, user-scalable=yes";
+                        }, 500);
+                    });
+                }
+            }
+            
+            // Performance monitoring
+            if ("performance" in window && "mark" in window.performance) {
+                window.performance.mark("birthday-gold-page-interactive");
+            }
+        });
+    
+        // Service Worker registration for PWA functionality
+        if ("serviceWorker" in navigator && window.location.protocol === "https:") {
+            window.addEventListener("load", function() {
+                navigator.serviceWorker.register("/sw.js").then(function(registration) {
+                    console.log("ServiceWorker registration successful");
+                }).catch(function(err) {
+                    console.log("ServiceWorker registration failed");
+                });
+            });
+        }
+    
+        // Global error handling
+        window.addEventListener("error", function(e) {
+            // Log client-side errors for debugging
+            console.error("Global error:", e.error);
+        });
+        </script>
+        
+        <!-- Main content wrapper -->
+        <main id="main-content" role="main">
+    ';
+    }
+    
 echo "<!-- TRACE: TOP OF v7/bg_header.inc FILE -->\n";
 
-// Add required styles
+// Initialize bodyclass if not set
 if (!isset($bodyclass)) $bodyclass = '';
-$additionalstyles .= '
-<link rel="stylesheet" href="/public/css/' . $website['ui_version'] . '/bg_header.css?'.date('i').'">
-<style>
-/* Header styles - minimal version without modal conflicts */
-.top-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1030;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    height: 56px;
-}
-
-.home-header {
-    height: 70px;
-}
-
-body {
-    padding-top: 70px;
-}
-
-/* Logo styles */
-.header-logo img {
-    height: 40px;
-    width: auto;
-}
-
-.home-logo {
-    height: 50px !important;
-}
-
-.mobile-logo {
-    display: block;
-}
-
-.desktop-logo {
-    display: none;
-}
-
-@media (min-width: 768px) {
-    .mobile-logo {
-        display: none;
-    }
-    .desktop-logo {
-        display: block;
-    }
-}
-
-/* Center nav styles */
-.center-nav {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-}
-
-.center-nav .nav-link {
-    color: #333;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.center-nav .nav-link:hover {
-    color: #0066cc;
-}
-
-/* Avatar styles */
-.avatar-placeholder {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #ddd;
-    cursor: pointer;
-    background-size: cover;
-    background-position: center;
-}
-
-/* Login button */
-.login-btn {
-    color: #333;
-    text-decoration: none;
-    font-weight: 500;
-}
-</style>
-';
 
 // Pre-compute flags and variables to avoid redundant function calls
 $isLoggedIn = $current_user_data['user_id'] ?? false;
@@ -224,7 +227,7 @@ if ($isHomePage) {
     
     if (!$isLoggedIn) {
         echo '
-                <a href="/signup-mobile" class="btn btn-primary me-2 d-none d-md-inline-block">Sign Up</a>
+                <a href="/signup" class="btn btn-primary me-2 d-none d-md-inline-block">Sign Up</a>
                 <a href="/login" class="login-btn">Login</a>';
     } else {
         // Still show avatar dropdown for logged in users on home page
@@ -443,10 +446,10 @@ echo '
 } // End of else block for regular header
 
 if (!isset($bodycontentclass)) $bodycontentclass = 'main-content';
-/*
+
 // Add spacing div for fixed header
 if (!isset($bodycontentclass)) $bodycontentclass = 'main-content';
 echo '
 <div class="'.$bodycontentclass.'"></div>';
-*/
+
 ?>
