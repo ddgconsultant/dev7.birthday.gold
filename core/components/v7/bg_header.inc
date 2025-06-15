@@ -90,7 +90,7 @@ if (!isset($newheader)) {
         </script>
         
         <!-- Main content wrapper -->
-        <main id="main-content" role="main">
+        <main id="main-content" role="main" class="flex-grow-1">
     ';
     }
     
@@ -445,11 +445,10 @@ echo '
 </header>';
 } // End of else block for regular header
 
-if (!isset($bodycontentclass)) $bodycontentclass = 'main-content';
-
-// Add spacing div for fixed header
-if (!isset($bodycontentclass)) $bodycontentclass = 'main-content';
-echo '
-<div class="'.$bodycontentclass.'"></div>';
+// Add spacing for fixed header - this pushes content below the fixed header
+// Use a different class name to avoid confusion with actual content containers
+if (!isset($noheaderspacer)) {
+    echo '<div class="header-spacer"></div>';
+}
 
 ?>

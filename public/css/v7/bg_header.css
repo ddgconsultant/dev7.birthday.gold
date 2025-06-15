@@ -468,8 +468,13 @@ body {
 
 /* Main content */
 .main-content {
-  margin-top: 60px;
   padding-top: 15px;
+}
+
+/* Header spacer - pushes content below fixed header */
+.header-spacer {
+  height: 70px;
+  flex-shrink: 0;
 }
 
 /* Make the header sticky */

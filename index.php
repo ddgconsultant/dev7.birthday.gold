@@ -32,7 +32,7 @@ $headerattribute['additional_head'] = '
 $additionalstyles .= '<link href="/public/css/v3/theme.css" rel="stylesheet" id="style-default">
 <link rel="stylesheet" href="/public/css/homepage.css">';
 $bodycontentclass='class="d-flex"';
-
+$noheaderspacer = true;
 
 
 include($dir['core_components'] . '/bg_pagestart.inc');
