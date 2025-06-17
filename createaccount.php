@@ -31,9 +31,9 @@ if ($mode === 'dev') {
     error_log('[CREATEACCOUNT] Account plan ID: ' . ($signup_process['account_plan_id'] ?? 'NOT SET'));
 }
 
-// Get URL parameters from signup data
-$promo_code = $signup_process['promo'] ?? $signup_process['promo_code'] ?? '';
-$referral_code = $signup_process['ref'] ?? $signup_process['referral'] ?? '';
+// Get URL parameters from signup data or form submission
+$promo_code = $_POST['promo_code'] ?? $signup_process['promo'] ?? $signup_process['promo_code'] ?? '';
+$referral_code = $_POST['referral_code'] ?? $signup_process['ref'] ?? $signup_process['referral'] ?? '';
 
 // Check if we should auto-show promo/referral section
 $show_promo_section = !empty($promo_code) || !empty($referral_code);
@@ -201,6 +201,11 @@ if ($app->formposted()) {
         $errors[] = 'Password must be at least 8 characters';
     }
     
+    // Validate terms acceptance
+    if (empty($_POST['terms'])) {
+        $errors[] = 'You must agree to the Terms and Privacy Policy';
+    }
+    
     // Validate username (if required)
     if ($account_type == 'user' && !empty($_POST['username'])) {
         if (!$createaccount->isavailable($_POST['username'], 'username')) {
@@ -208,17 +213,22 @@ if ($app->formposted()) {
         }
     }
     
-    // Validate birthday
-    if (!empty($_POST['birthday'])) {
+    // Validate birthday from dropdowns
+    if (!empty($_POST['birth_month']) && !empty($_POST['birth_day']) && !empty($_POST['birth_year'])) {
+        // Combine the fields
+        $_POST['birthday'] = $_POST['birth_year'] . '-' . $_POST['birth_month'] . '-' . $_POST['birth_day'];
+        
         $birthdate = DateTime::createFromFormat('Y-m-d', $_POST['birthday']);
         if (!$birthdate) {
-            $errors[] = 'Please enter a valid date';
+            $errors[] = 'Please select a valid date';
         } else {
             $age = $birthdate->diff(new DateTime())->y;
             if ($age < 13) {
                 $errors[] = 'You must be at least 13 years old to create an account';
             }
         }
+    } else {
+        $errors[] = 'Please select your complete birth date';
     }
     
     if (empty($errors)) {
@@ -278,6 +288,11 @@ if ($app->formposted()) {
             $input['promocode'] = $_POST['promo_code'];
         }
         
+        // Add referral code if provided
+        if (!empty($_POST['referral_code'])) {
+            $input['referral_code'] = $_POST['referral_code'];
+        }
+        
         // Create the user
         try {
             $user_id = $createaccount->create_user($input);
@@ -334,15 +349,14 @@ $page_description = "Complete your Birthday Gold account setup";
 # ADDITIONAL STYLES
 #-------------------------------------------------------------------------------
 $additionalstyles .= '
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="/claudecode/createaccount_styles.css" rel="stylesheet">
 <style>
-' . file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/claudecode/createaccount_styles.css') . '
 /* Additional styles for promo/referral section */
 .promo-referral-section {
     background: #f8f9fa;
     border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
 }
 .promo-referral-header {
     display: flex;
@@ -381,6 +395,183 @@ $additionalstyles .= '
     100% { transform: translateY(-50%) scale(1); }
 }
 
+/* Disabled state for code buttons */
+.code-input-group .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #e9ecef !important;
+    border-color: #dee2e6 !important;
+    color: #6c757d !important;
+}
+
+/* Override any theme styles that might affect input backgrounds */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="date"],
+.form-control {
+    background-color: #ffffff !important;
+}
+
+/* Ensure password field specifically has white background */
+#password {
+    background-color: #ffffff !important;
+}
+
+/* New Contact Method Tab Styles - matching signup page style */
+.contact-method-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.tab-option {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    background: white;
+    color: #6c757d;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid #e9ecef;
+}
+
+.tab-option:hover {
+    border-color: #198754;
+    background: #f0f9f0;
+}
+
+.tab-option.active {
+    background: #e8f5e8;
+    color: #198754;
+    border: 3px solid #198754;
+    box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
+}
+
+.tab-option.active::after {
+    content: "✓";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #198754;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 100;
+}
+
+.tab-option i {
+    font-size: 1.2rem;
+}
+
+/* No validation styles - all validation is server-side */
+.form-control {
+    border-color: #e9ecef !important;
+}
+
+/* Blue focus state for all form fields */
+.form-control:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.15) !important;
+}
+
+/* Ensure password field has same styling */
+#password {
+    border-color: #e9ecef !important;
+}
+
+#password:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.15) !important;
+}
+
+/* Prevent password field from showing red on invalid state */
+#password:invalid {
+    border-color: #e9ecef !important;
+    box-shadow: none !important;
+}
+
+/* Never show browser validation */
+.form-control:invalid {
+    box-shadow: none !important;
+    border-color: #e9ecef !important;
+}
+
+/* Hide all browser validation UI */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Disable browser validation tooltips */
+input:invalid,
+textarea:invalid,
+select:invalid {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Override Bootstraps validation styles - but allow server-side validation */
+.form-control:invalid {
+    border-color: #e9ecef !important;
+    padding-right: calc(1.5em + 0.75rem) !important;
+    background-image: none !important;
+}
+
+/* Allow red borders for server-side validation errors */
+.form-control.is-invalid {
+    border-color: #dc3545 !important;
+    padding-right: calc(1.5em + 0.75rem) !important;
+    background-image: none !important;
+}
+
+/* Red border for invalid checkbox */
+.form-check-input.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+/* Red text for checkbox label when invalid */
+.form-check-input.is-invalid ~ .form-check-label {
+    color: #dc3545;
+}
+
+/* Input group styling for consistency */
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 2px solid #e9ecef;
+    color: #6c757d;
+}
+
+.input-group .form-control:focus ~ .input-group-text,
+.input-group .input-group-text:has(+ .form-control:focus) {
+    border-color: #0d6efd;
+}
+
+/* Ensure email icon is properly sized */
+.input-group-text i {
+    font-size: 1rem;
+}
+
 /* Fix for autofill display issue */
 .contact-field {
     position: relative;
@@ -388,33 +579,6 @@ $additionalstyles .= '
     transition: all 0.3s ease;
 }
 
-/* Completely hide inactive fields */
-.contact-field.d-none {
-    display: none !important;
-    visibility: hidden !important;
-    position: absolute !important;
-    left: -9999px !important;
-    top: -9999px !important;
-    z-index: -999 !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    height: 0 !important;
-    overflow: hidden !important;
-}
-
-.contact-field.d-none * {
-    visibility: hidden !important;
-    display: none !important;
-}
-
-/* Ensure active field is visible and on top */
-.contact-field:not(.d-none) {
-    display: block !important;
-    visibility: visible !important;
-    position: relative !important;
-    z-index: 10 !important;
-    opacity: 1 !important;
-}
 
 /* Fix Chrome autofill background */
 .contact-field input:-webkit-autofill,
@@ -424,6 +588,67 @@ $additionalstyles .= '
     box-shadow: 0 0 0px 1000px white inset !important;
     background-color: white !important;
     -webkit-text-fill-color: #495057 !important;
+}
+
+/* Make button layout responsive on large screens */
+@media (min-width: 992px) {
+    .step-nav .row {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+}
+
+@media (min-width: 1200px) {
+    .step-nav .row {
+        max-width: 700px;
+    }
+}
+
+/* Container needs relative positioning and overflow visible for checkmarks */
+.contact-method-tabs {
+    overflow: visible !important;
+    position: relative;
+}
+
+.mb-4 > .contact-method-tabs {
+    margin-bottom: 1.5rem !important; /* Extra space for checkmark */
+}
+
+/* Mobile adjustments for contact tabs */
+@media (max-width: 480px) {
+    .contact-method-tabs {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .tab-option {
+        width: 100%;
+    }
+}
+
+/* Birthday dropdowns - ensure they stay horizontal on mobile */
+@media (max-width: 576px) {
+    #birth_month {
+        font-size: 0.875rem;
+    }
+    
+    #birth_day,
+    #birth_year {
+        font-size: 0.875rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+
+/* Style for underage years in dropdown */
+#birth_year option.text-danger {
+    color: #dc3545 !important;
+    font-weight: 500;
+}
+
+/* Some browsers need more specific targeting */
+select#birth_year option[class*="danger"] {
+    color: #dc3545 !important;
 }
 </style>
 ';
@@ -444,9 +669,6 @@ include($dir['core_components'] . '/bg_header.inc');
 
     <!-- Progress Bar -->
     <div class="progress-container mb-4">
-        <div class="progress" style="height: 8px;">
-            <div class="progress-bar bg-success" role="progressbar" style="width: 66%;" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
         <div class="progress-steps">
             <div class="step-indicator completed">
                 <i class="bi bi-check-circle-fill"></i>
@@ -458,7 +680,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
             <div class="step-indicator">
                 <i class="bi bi-3-circle"></i>
-                <span>Checkout</span>
+                <span><?php echo ($account_cost > 0) ? 'Checkout' : 'Validate'; ?></span>
             </div>
         </div>
     </div>
@@ -529,7 +751,7 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         */ ?>
 
-        <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" id="detailsForm">
+        <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" id="detailsForm" novalidate>
             <?php echo $display->inputcsrf_token(); ?>
             <?php if (isset($_POST['social_provider'])): ?>
             <input type="hidden" name="social_provider" value="<?php echo htmlspecialchars($_POST['social_provider']); ?>">
@@ -538,169 +760,215 @@ include($dir['core_components'] . '/bg_header.inc');
             <?php endif; ?>
             
             
-            <!-- Account Information Section (Combined) -->
+            <!-- Name Section -->
             <div class="form-section">
-                <h5 class="section-title">Account Information</h5>
-                
-                <!-- Phone/Email Toggle -->
-                <div class="contact-toggle mb-3">
-                    <div class="btn-group w-100" role="group">
-                        <input type="radio" class="btn-check" name="contact_method" id="usePhone" value="phone" checked>
-                        <label class="btn btn-outline-success" for="usePhone">
-                            <i class="bi bi-phone"></i> Use Phone Number
-                        </label>
-                        
-                        <input type="radio" class="btn-check" name="contact_method" id="useEmail" value="email">
-                        <label class="btn btn-outline-success" for="useEmail">
-                            <i class="bi bi-envelope"></i> Use Email Address
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <!-- Phone Field -->
-                    <div class="col-md-12 mb-3 contact-field" id="phoneField">
-                        <label for="phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text">+1</span>
-                            <input type="tel" class="form-control" id="phone" name="phone" 
-                                   placeholder="(555) 123-4567"
-                                   value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
-                                   autocomplete="tel">
-                        </div>
-                        <div class="invalid-feedback">Please enter a valid phone number</div>
-                        <small class="text-muted">We'll send you a verification code via SMS</small>
-                    </div>
-                    
-                    <!-- Email Field (hidden by default) -->
-                    <div class="col-md-12 mb-3 contact-field d-none" id="emailField">
-                        <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="email" name="email" 
-                               placeholder="your@email.com"
-                               value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
-                               autocomplete="email">
-                        <div class="invalid-feedback">Please enter a valid email address</div>
-                        <small class="text-muted">We'll send you a verification link via email</small>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
-                        <div class="password-input-group">
-                            <input type="password" class="form-control" id="password" name="password" required>
-                            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </div>
-                        <div class="password-strength mt-2">
-                            <div class="strength-bar"></div>
-                        </div>
-                        <small class="text-muted">At least 8 characters with a mix of letters and numbers</small>
-                    </div>
-                </div>
-                
+                <h5 class="section-title">Your Name and Birthday</h5>
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="firstname" class="form-label">First Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="firstname" name="firstname" 
-                               value="<?php echo htmlspecialchars($_POST['firstname'] ?? ''); ?>" required>
+                               value="<?php echo htmlspecialchars($_POST['firstname'] ?? ''); ?>">
                     </div>
                     
                     <div class="col-md-6 mb-3">
                         <label for="lastname" class="form-label">Last Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="lastname" name="lastname" 
-                               value="<?php echo htmlspecialchars($_POST['lastname'] ?? ''); ?>" required>
+                               value="<?php echo htmlspecialchars($_POST['lastname'] ?? ''); ?>">
                     </div>
                 </div>
-                
+          
                 <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="birthday" class="form-label">Birthday <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="birthday" name="birthday" 
-                               value="<?php echo htmlspecialchars($_POST['birthday'] ?? ''); ?>" required>
+                    <div class="col-md-12">
+                        <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2" style="max-width: 400px;">
+                            <div class="flex-fill">
+                                <select class="form-control" id="birth_month" name="birth_month">
+                                    <option value="">Month</option>
+                                    <?php
+                                    $months = [
+                                        '01' => '01 - January', '02' => '02 - February', '03' => '03 - March',
+                                        '04' => '04 - April', '05' => '05 - May', '06' => '06 - June',
+                                        '07' => '07 - July', '08' => '08 - August', '09' => '09 - September',
+                                        '10' => '10 - October', '11' => '11 - November', '12' => '12 - December'
+                                    ];
+                                    $selected_month = $_POST['birth_month'] ?? '';
+                                    if (empty($selected_month) && !empty($_POST['birthday'])) {
+                                        $selected_month = date('m', strtotime($_POST['birthday']));
+                                    }
+                                    foreach ($months as $value => $label) {
+                                        $selected = ($selected_month == $value) ? 'selected' : '';
+                                        echo "<option value=\"$value\" $selected>$label</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div style="width: 95px;">
+                                <select class="form-control" id="birth_day" name="birth_day">
+                                    <option value="">Day</option>
+                                    <?php
+                                    $selected_day = $_POST['birth_day'] ?? '';
+                                    if (empty($selected_day) && !empty($_POST['birthday'])) {
+                                        $selected_day = date('d', strtotime($_POST['birthday']));
+                                    }
+                                    for ($i = 1; $i <= 31; $i++) {
+                                        $day = str_pad($i, 2, '0', STR_PAD_LEFT);
+                                        $selected = ($selected_day == $day) ? 'selected' : '';
+                                        echo "<option value=\"$day\" $selected>$i</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div style="width: 120px;">
+                                <select class="form-control" id="birth_year" name="birth_year">
+                                    <option value="">Year</option>
+                                    <?php
+                                    $current_year = date('Y');
+                                    $selected_year = $_POST['birth_year'] ?? '';
+                                    if (empty($selected_year) && !empty($_POST['birthday'])) {
+                                        $selected_year = date('Y', strtotime($_POST['birthday']));
+                                    }
+                                    $min_age_year = $current_year - 13;
+                                    for ($i = $current_year; $i >= 1900; $i--) {
+                                        $selected = ($selected_year == $i) ? 'selected' : '';
+                                        $class = ($i > $min_age_year) ? 'class="text-danger"' : '';
+                                        echo "<option value=\"$i\" $selected $class>$i</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                        </div>
                         <small class="text-muted">We'll use this to notify you of birthday rewards</small>
+                        <!-- Hidden field for combined birthday value -->
+                        <input type="hidden" id="birthday" name="birthday" value="<?php echo htmlspecialchars($_POST['birthday'] ?? ''); ?>">
                     </div>
-                    
-                    <!-- Hidden field for alternative contact method -->
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-6">
+                        <!-- Empty column for balance on larger screens -->
                         <input type="hidden" id="altContact" name="alt_contact" value="">
                     </div>
                 </div>
             </div>
             
-            <!-- Promo & Referral Codes Section (Combined and Collapsible) -->
-            <div class="promo-referral-section">
-                <div class="promo-referral-header" id="togglePromoReferral">
-                    <span>
-                        <i class="bi bi-gift me-1"></i>
-                        <strong>Promo or Referral Code?</strong>
-                    </span>
-                    <i class="bi bi-chevron-down" id="promoReferralChevron"></i>
+            <!-- Account Info Section -->
+            <div class="form-section">
+                <h5 class="section-title">Account Information</h5>
+                
+                <!-- Contact Method Selection -->
+                <div class="mb-4">
+                    <label class="form-label">Start Your Account with?</label>
+                    <div class="contact-method-tabs">
+                        <div class="tab-option active" data-method="phone">
+                            <i class="bi bi-phone"></i>
+                            <span>Use Phone Number</span>
+                        </div>
+                        <div class="tab-option" data-method="email">
+                            <i class="bi bi-envelope"></i>
+                            <span>Use Email Address</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Unified Input Field Container -->
+                    <div class="contact-input-wrapper mt-3" id="contactInputContainer">
+                        <!-- Input field will be dynamically inserted here -->
+                    </div>
+                    
+                    <!-- Hidden radio buttons for form submission -->
+                    <div class="d-none">
+                        <input type="radio" name="contact_method" id="usePhone" value="phone" checked>
+                        <input type="radio" name="contact_method" id="useEmail" value="email">
+                    </div>
+                </div>
+        
+                
+                <!-- Hidden username field to satisfy password managers -->
+                <input type="text" name="username_dummy" id="username_dummy" style="display: none !important; position: absolute; left: -9999px;" tabindex="-1" autocomplete="username">
+                
+                <!-- Password -->
+                <div class="mb-4">
+                    <label for="password" class="form-label">Create Password <span class="text-danger">*</span></label>
+                    <div class="password-input-group">
+                        <input type="password" class="form-control" id="password" name="password" value="<?php echo htmlspecialchars($_POST['password'] ?? ''); ?>" autocomplete="new-password">
+                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength mt-2">
+                        <div class="strength-bar"></div>
+                    </div>
+                    <small class="text-muted">At least 8 characters with a mix of letters and numbers</small>
                 </div>
                 
-                <div class="promo-referral-content collapse <?php echo $show_promo_section ? 'show' : ''; ?>" id="promoReferralSection">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="promo_code" class="form-label">Promo Code</label>
-                            <div class="code-input-group">
-                                <input type="text" class="form-control" id="promo_code" name="promo_code" 
-                                       placeholder="Enter promo code" value="<?php echo htmlspecialchars($promo_code); ?>">
-                                <button type="button" class="btn btn-success" id="applyPromo">Apply</button>
+                <!-- Terms and Privacy -->
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="terms" name="terms" value="1" <?php echo (!empty($_POST['terms'])) ? 'checked' : ''; ?>>
+                        <label class="form-check-label" for="terms">
+                            I agree to the <a href="/legalhub/terms" class="text-underline">Terms</a> and <a href="/legalhub/privacy" class="text-underline">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Promo & Referral Codes (inside Account Info section) -->
+                <div class="promo-referral-section">
+                    <div class="promo-referral-header" id="togglePromoReferral">
+                        <span>
+                            <i class="bi bi-gift me-1"></i>
+                            <strong>Promo or Referral Code?</strong>
+                        </span>
+                        <i class="bi bi-chevron-down" id="promoReferralChevron"></i>
+                    </div>
+                    
+                    <div class="promo-referral-content collapse <?php echo $show_promo_section ? 'show' : ''; ?>" id="promoReferralSection">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="promo_code" class="form-label">Promo Code</label>
+                                <div class="code-input-group">
+                                    <input type="text" class="form-control" id="promo_code" name="promo_code" 
+                                           placeholder="Enter promo code" value="<?php echo htmlspecialchars($promo_code); ?>">
+                                    <button type="button" class="btn btn-success me-2" id="applyPromo">Apply</button>
+                                </div>
+                                <div id="promoMessage" class="mt-1"></div>
                             </div>
-                            <div id="promoMessage" class="mt-1"></div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="referral_code" class="form-label">Referral Code</label>
-                            <input type="text" class="form-control" id="referral_code" name="referral_code" 
-                                   placeholder="Friend's referral code" value="<?php echo htmlspecialchars($referral_code); ?>">
-                            <small class="text-muted">Enter the code of the person who referred you</small>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="referral_code" class="form-label">Referral Code</label>
+                                <div class="code-input-group">
+                                    <input type="text" class="form-control" id="referral_code" name="referral_code" 
+                                           placeholder="Friend's referral code" value="<?php echo htmlspecialchars($referral_code); ?>">
+                                    <button type="button" class="btn btn-success me-2" id="verifyReferral">Verify</button>
+                                </div>
+                                <div id="referralMessage" class="mt-1"></div>
+                                <small class="text-muted ms-1">Enter the code of the person who referred you</small>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Newsletter Opt-in -->
-            <div class="form-section">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="newsletter" name="newsletter" value="1" checked>
-                    <label class="form-check-label" for="newsletter">
-                        Send me birthday reward reminders and special offers
-                    </label>
-                </div>
-            </div>
-            
-            <!-- Navigation Buttons -->
-            <div class="step-nav mt-4">
-                <a href="/newsignup.php" class="btn-secondary-custom">
-                    <i class="bi bi-arrow-left me-2"></i>Back to Plans
+<!-- Navigation Buttons -->
+<div class="step-nav mt-4">
+    <table style="width: 100%;">
+        <tr>
+            <td style="width: 1%; white-space: nowrap; padding-right: 8px;">
+                <a href="/signup" class="btn-secondary-custom">
+                    <i class="bi bi-arrow-left me-2"></i>Back
                 </a>
-                <button type="submit" class="btn-primary-custom">
+            </td>
+            <td>
+                <button type="submit" class="btn-primary-custom w-100">
                     <?php if ($account_cost > 0): ?>
                         Continue to Checkout <i class="bi bi-arrow-right ms-2"></i>
                     <?php else: ?>
-                        Create Free Account <i class="bi bi-check-lg ms-2"></i>
+                        Continue to Validate <i class="bi bi-arrow-right ms-2"></i>
                     <?php endif; ?>
                 </button>
-            </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
         </form>
     </div>
 
-    <!-- Footer -->
-    <footer class="border-top mt-4">
-        <div class="container py-4">
-            <div class="row text-center">
-                <div class="col-12">
-                    <small class="text-muted">
-                        By creating an account, you agree to our 
-                        <a href="/terms" class="text-decoration-none text-success fw-medium">Terms of Service</a> and 
-                        <a href="/privacy" class="text-decoration-none text-success fw-medium">Privacy Policy</a>
-                    </small>
-                </div>
-            </div>
-        </div>
-    </footer>
 </div>
 
 <!-- JavaScript -->
@@ -714,6 +982,161 @@ const pageData = {
     originalPrice: <?php echo $account_cost; ?>
 };
 console.log('[CREATEACCOUNT] Page data:', pageData);
+
+// Handle new tab-style contact method switching
+document.addEventListener('DOMContentLoaded', function() {
+    const tabOptions = document.querySelectorAll('.tab-option');
+    const container = document.getElementById('contactInputContainer');
+    const phoneRadio = document.getElementById('usePhone');
+    const emailRadio = document.getElementById('useEmail');
+    
+    // Store values to preserve when switching
+    let phoneValue = '<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>';
+    let emailValue = '<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>';
+    
+    // Create phone field HTML
+    function createPhoneField() {
+        return `
+            <div class="contact-field" id="phoneField">
+                <div class="input-group">
+                    <span class="input-group-text">+1</span>
+                    <input type="text" 
+                           class="form-control" 
+                           id="phone" 
+                           name="phone" 
+                           placeholder="555-123-4567"
+                           value="${phoneValue}"
+                           inputmode="tel">
+                </div>
+                <small class="text-muted mt-1 d-block">We'll send you a verification code via SMS</small>
+            </div>
+        `;
+    }
+    
+    // Create email field HTML
+    function createEmailField() {
+        return `
+            <div class="contact-field" id="emailField">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input type="text" 
+                           class="form-control" 
+                           id="email" 
+                           name="email" 
+                           placeholder="your@email.com"
+                           value="${emailValue}"
+                           inputmode="email">
+                </div>
+                <small class="text-muted mt-1 d-block">We'll send you a verification link via email</small>
+            </div>
+        `;
+    }
+    
+    // Switch contact method
+    function switchContactMethod(method) {
+        // Save current value before switching
+        const currentPhone = document.getElementById('phone');
+        const currentEmail = document.getElementById('email');
+        
+        if (currentPhone) phoneValue = currentPhone.value;
+        if (currentEmail) emailValue = currentEmail.value;
+        
+        // Clear container
+        container.innerHTML = '';
+        
+        // Create new field
+        if (method === 'phone') {
+            container.innerHTML = createPhoneField();
+            phoneRadio.checked = true;
+            
+            // Attach event handlers
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
+                // Update stored value on input
+                phoneInput.addEventListener('input', function(e) {
+                    phoneValue = e.target.value;
+                    
+                    // Format phone number
+                    if (typeof formatPhoneNumber === 'function') {
+                        formatPhoneNumber(e);
+                    }
+                });
+            }
+        } else {
+            container.innerHTML = createEmailField();
+            emailRadio.checked = true;
+            
+            // Attach event handlers
+            const emailInput = document.getElementById('email');
+            if (emailInput) {
+                // Update stored value on input
+                emailInput.addEventListener('input', function(e) {
+                    emailValue = e.target.value;
+                });
+            }
+        }
+    }
+    
+    // Attach click handlers
+    tabOptions.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active from all tabs
+            tabOptions.forEach(t => t.classList.remove('active'));
+            
+            // Add active to clicked tab
+            this.classList.add('active');
+            
+            // Switch fields
+            switchContactMethod(this.dataset.method);
+        });
+    });
+    
+    // Initialize with default selection
+    switchContactMethod(phoneRadio.checked ? 'phone' : 'email');
+    
+    // Highlight error fields if there are errors
+    <?php if (!empty($errors)): ?>
+    // Fields that might have errors
+    const errorFieldMap = {
+        'First name is required': 'firstname',
+        'Lastname is required': 'lastname',
+        'Last name is required': 'lastname',
+        'Birthday is required': 'birthday',
+        'Please select your complete birth date': ['birth_month', 'birth_day', 'birth_year'],
+        'Please select a valid date': ['birth_month', 'birth_day', 'birth_year'],
+        'Password is required': 'password',
+        'Password must be at least 8 characters': 'password',
+        'Phone is required': 'phone',
+        'Please enter a valid 10-digit phone number': 'phone',
+        'Email is required': 'email',
+        'Please enter a valid email address': 'email',
+        'This email is already registered': 'email',
+        'You must agree to the Terms and Privacy Policy': 'terms'
+    };
+    
+    // Parse errors and highlight fields
+    const errors = <?php echo json_encode($errors); ?>;
+    errors.forEach(error => {
+        // Find the field ID for this error
+        Object.keys(errorFieldMap).forEach(errorText => {
+            if (error.includes(errorText.replace(' is required', '')) || error === errorText) {
+                const fieldIds = errorFieldMap[errorText];
+                
+                // Handle both single field and array of fields
+                const fieldsToHighlight = Array.isArray(fieldIds) ? fieldIds : [fieldIds];
+                
+                fieldsToHighlight.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (field) {
+                        field.classList.add('is-invalid');
+                        field.style.borderColor = '#dc3545';
+                    }
+                });
+            }
+        });
+    });
+    <?php endif; ?>
+});
 </script>
 <!-- Load embedded promo validation to avoid 403 errors -->
 <script src="/promo_validate_embedded.php"></script>

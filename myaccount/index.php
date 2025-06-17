@@ -175,6 +175,7 @@ else $minorbg = '';
 
 
 $bodycontentclass = '';
+$header_spacer='60px';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 

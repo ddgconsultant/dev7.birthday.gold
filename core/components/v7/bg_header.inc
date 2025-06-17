@@ -1,25 +1,20 @@
 <?php
 #-------------------------------------------------------------------------------
-# ENHANCED HEADER COMPONENT
+# HEADER COMPONENT - CLEANED VERSION
 # Compatible with existing Birthday.Gold v3 infrastructure
 # Location: /core/components/bg_header.inc
 #-------------------------------------------------------------------------------
 
 if (!isset($newheader)) {
-
-
     echo '
     </head>
     <body' . ($is_iframe_mode ? ' class="iframe-mode"' : '') . '>
-        <!-- Page Loading Indicator Removed -->
-        
-        <!-- Skip to main content for accessibility 
+        <!-- Skip to main content for accessibility -->
         <a href="#main-content" class="sr-only sr-only-focusable">Skip to main content</a>
-        -->
         
-        <!-- Enhanced JavaScript initialization -->
+        <!-- JavaScript initialization -->
         <script>
-        // Mobile viewport height fix
+        // Mobile viewport height fix (actually useful!)
         function setViewportHeight() {
             const vh = window.innerHeight * 0.01;
             document.documentElement.style.setProperty("--vh", `${vh}px`);
@@ -44,62 +39,26 @@ if (!isset($newheader)) {
                 });
             }
             
-            // Initialize mobile-specific features
+            // Add mobile class for CSS targeting
             if (window.innerWidth <= 768) {
-                // Add mobile class for CSS targeting
                 document.body.classList.add("mobile-device");
-                
-                // Disable zoom on form inputs (iOS Safari)
-                let viewport = document.querySelector("meta[name=\"viewport\"]");
-                if (viewport) {
-                    document.addEventListener("touchstart", function() {
-                        viewport.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
-                    });
-                    
-                    // Re-enable zoom after form interaction
-                    document.addEventListener("touchend", function() {
-                        setTimeout(function() {
-                            viewport.content = "width=device-width, initial-scale=1.0, user-scalable=yes";
-                        }, 500);
-                    });
-                }
             }
-            
-            // Performance monitoring
-            if ("performance" in window && "mark" in window.performance) {
-                window.performance.mark("birthday-gold-page-interactive");
-            }
-        });
-    
-        // Service Worker registration for PWA functionality
-        if ("serviceWorker" in navigator && window.location.protocol === "https:") {
-            window.addEventListener("load", function() {
-                navigator.serviceWorker.register("/sw.js").then(function(registration) {
-                    console.log("ServiceWorker registration successful");
-                }).catch(function(err) {
-                    console.log("ServiceWorker registration failed");
-                });
-            });
-        }
-    
-        // Global error handling
-        window.addEventListener("error", function(e) {
-            // Log client-side errors for debugging
-            console.error("Global error:", e.error);
         });
         </script>
         
         <!-- Main content wrapper -->
         <main id="main-content" role="main" class="flex-grow-1">
     ';
-    }
-    
-echo "<!-- TRACE: TOP OF v7/bg_header.inc FILE -->\n";
+}
+
+if ($mode == 'dev') {
+    echo "<!-- TRACE: TOP OF v7/bg_header.inc FILE -->\n";
+}
 
 // Initialize bodyclass if not set
 if (!isset($bodyclass)) $bodyclass = '';
 
-// Pre-compute flags and variables to avoid redundant function calls
+// Pre-compute flags and variables
 $isLoggedIn = $current_user_data['user_id'] ?? false;
 $tmpheadervar_isUserActive = $isLoggedIn && $account->isactive();
 $tmpheadervar_isUserStaff = $tmpheadervar_isUserActive && $account->isstaff();
@@ -107,7 +66,17 @@ $tmpheadervar_isUserAdmin = $tmpheadervar_isUserActive && $account->isadmin();
 
 // Get current page for active states
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
-$isHomePage = in_array($currentPage, ['index', 'home', '']);
+$currentPath = $_SERVER['REQUEST_URI'];
+$scriptName = $_SERVER['SCRIPT_NAME'];
+
+// Check if we're on the home page - be thorough
+$isHomePage = ($currentPage === 'index' || 
+               $currentPage === '' || 
+               $currentPath === '/' || 
+               $currentPath === '/index' ||
+               $currentPath === '/index.php' ||
+               $scriptName === '/index.php');
+
 $isBrowsePage = in_array($currentPage, ['browse', 'rewards', 'browse-rewards']);
 $isHelpPage = in_array($currentPage, ['help', 'support', 'faq']);
 $isAccountPage = in_array($currentPage, ['account', 'profile', 'settings']);
@@ -156,45 +125,8 @@ if ($tmpheadervar_isUserActive) {
     $tmpheadervar_daysUntilBirthday = $till['days'] ?? 0;
 }
 
-// Get current page for active states
-$currentPage = basename($_SERVER['PHP_SELF'], '.php');
-$currentPath = $_SERVER['REQUEST_URI'];
-$scriptName = $_SERVER['SCRIPT_NAME'];
-
-// Check if we're on the home page - be more thorough
-$isHomePage = ($currentPage === 'index' || 
-               $currentPage === '' || 
-               $currentPath === '/' || 
-               $currentPath === '/index' ||
-               $currentPath === '/index.php' ||
-               $scriptName === '/index.php');
-
-$isBrowsePage = in_array($currentPage, ['browse', 'rewards', 'browse-rewards']);
-$isHelpPage = in_array($currentPage, ['help', 'support', 'faq']);
-$isAccountPage = in_array($currentPage, ['account', 'profile', 'settings']);
-
-// Handle signup mode for kiosk/iframe contexts
-$signupMode = $session->get('signupmode', '');
-$isKioskMode = in_array($signupMode, ['tabletkiosk', 'upgrade']);
-
-// Admin mode detection
-$current_url = $_SERVER['REQUEST_URI'];
-$adminenabledpage = $adminenabledpage ?? false;
-$isAdminPage = $adminenabledpage || (strpos($current_url, '/admin') !== false);
-$navclass = $isAdminPage ? 'bg-danger-subtle' : '';
-
-// Impersonation mode detection
-$impersonator_enabled = false;
-if ($account->isimpersonator()) {
-    $returntouser = $session->get('impersonator', '');
-    if (!empty($returntouser['user_id'])) {
-        $impersonator_enabled = true;
-        $navclass = 'admin-impersonation-bg';
-    }
-}
-
-
-echo '
+if ($mode == 'dev') {
+    echo '
 <!-- ======================================================== -->
 <!-- START OF HEADER v7 -->
 <!-- ======================================================== -->
@@ -203,15 +135,20 @@ echo '
 <!-- TRACE: currentPath = "' . $currentPath . '" -->
 <!-- TRACE: scriptName = "' . $scriptName . '" -->
 <!-- TRACE: isHomePage = ' . ($isHomePage ? 'TRUE' : 'FALSE') . ' -->';
+}
 
 // Begin header output
 echo '
-<!-- ===== ENHANCED HEADER COMPONENT ===== -->';
+<!-- ===== HEADER COMPONENT ===== -->';
 
 if ($isHomePage) {
     // Special header for index/home page
+    if ($mode == 'dev') { 
+        echo '
+<!-- TRACE: ENTERING HOME PAGE HEADER SECTION -->';
+    }
+    
     echo '
-<!-- TRACE: ENTERING HOME PAGE HEADER SECTION -->
 <header class="top-header home-header '.$navclass.'">
     <div class="container-fluid h-100">
         <div class="row h-100 align-items-center">
@@ -227,7 +164,7 @@ if ($isHomePage) {
     
     if (!$isLoggedIn) {
         echo '
-                <a href="/signup" class="btn btn-primary me-2 d-none d-md-inline-block">Sign Up</a>
+                <a href="/signup" class="btn btn-success me-2 d-none d-md-inline-block">Sign Up</a>
                 <a href="/login" class="login-btn">Login</a>';
     } else {
         // Still show avatar dropdown for logged in users on home page
@@ -237,7 +174,7 @@ if ($isHomePage) {
                     style="background-image: url(' . ($current_user_data['avatar']??'') . ')"></div>
                     <ul class="dropdown-menu dropdown-menu-end pt-0" aria-labelledby="bg_avatarMenuMain">';
         
-        // Include the same dropdown menu content
+        // Include the dropdown menu content
         if ($tmpheadervar_isUserActive) {
             echo '
                         <li class="m-0 p-0">
@@ -315,8 +252,12 @@ if ($isHomePage) {
 </header>';
 } else {
     // Regular header for all other pages
+    if ($mode == 'dev') {
+        echo '
+<!-- TRACE: ENTERING REGULAR HEADER SECTION -->';
+    }
+    
     echo '
-<!-- TRACE: ENTERING REGULAR HEADER SECTION -->
 <header class="top-header '.$navclass.'">
     <div class="container-fluid h-100">
         <div class="row h-100 align-items-center">
@@ -340,23 +281,22 @@ if ($isHomePage) {
             <!-- Right Side - Auth State -->
             <div class="col-6 col-md-3 d-flex justify-content-end align-items-center">';
 
-// User Authentication UI
-if (!$isLoggedIn) {
-    // Logged Out State
-    echo '
+    // User Authentication UI
+    if (!$isLoggedIn) {
+        // Logged Out State
+        echo '
                 <a href="/login" class="login-btn">Login</a>';
-} else {
-    // Logged In State  
-    echo '
+    } else {
+        // Logged In State  
+        echo '
                 <div class="dropdown">
                     <div class="avatar-placeholder rounded-circle" id="bg_avatarMenuMain" data-bs-toggle="dropdown" aria-expanded="false" role="button" 
                     style="background-image: url(' . ($current_user_data['avatar']??'') . ')"></div>
-                    <ul class="dropdown-menu dropdown-menu-end pt-0" aria-labelledby="bg_avatarMenuMain">
-                  ';
-    
-    // User stats in the dropdown menu - For ALL screen sizes
-    if ($tmpheadervar_isUserActive) {
-        echo '
+                    <ul class="dropdown-menu dropdown-menu-end pt-0" aria-labelledby="bg_avatarMenuMain">';
+        
+        // User stats in the dropdown menu
+        if ($tmpheadervar_isUserActive) {
+            echo '
                         <li class="m-0 p-0">
                             <div class="dropdown-item p-0">
                                 <div class="stats-menu-container my-0 p-0">
@@ -387,66 +327,64 @@ if (!$isLoggedIn) {
                             </div>
                         </li>
                         <li><hr class="dropdown-divider mt-0"></li>
-                              <li><a class="dropdown-item" href="/myaccount/"><i class="bi bi-person me-3"></i>Account Home</a></li>';
-                              
-    }
-    
-    // Regular menu items
-    echo '
+                        <li><a class="dropdown-item" href="/myaccount/"><i class="bi bi-person me-3"></i>Account Home</a></li>';
+        }
+        
+        // Regular menu items
+        echo '
                         <li><a class="dropdown-item" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>
                         <li><a class="dropdown-item" href="/myaccount/preferences"><i class="bi bi-bell me-3"></i>Preferences</a></li>';
-    
-    // Only show billing for paid accounts
-    if (($current_user_data['account_plan'] ?? '') !== 'free') {
-        echo '
+        
+        // Only show billing for paid accounts
+        if (($current_user_data['account_plan'] ?? '') !== 'free') {
+            echo '
                         <li><a class="dropdown-item" href="/myaccount/billing"><i class="bi bi-credit-card me-3"></i>Billing</a></li>';
-    }
-    
-    // Staff/Admin links
-    if ($tmpheadervar_isUserStaff) {
-        echo '
+        }
+        
+        // Staff/Admin links
+        if ($tmpheadervar_isUserStaff) {
+            echo '
                         <li><a class="dropdown-item" href="/staff"><i class="bi bi-person-badge me-3 text-warning"></i>Staff</a></li>';
-    }
-    
-    if ($tmpheadervar_isUserAdmin) {
-        echo '
+        }
+        
+        if ($tmpheadervar_isUserAdmin) {
+            echo '
                         <li><a class="dropdown-item" href="/admin"><i class="bi bi-shield-lock me-3 text-danger"></i>Admin</a></li>';
-    }
-    
-    echo '
+        }
+        
+        echo '
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-3"></i>Logout</a></li>';
-    
-    // Impersonation link
-    if ($impersonator_enabled) {
-        echo '
+        
+        // Impersonation link
+        if ($impersonator_enabled) {
+            echo '
                         <li><a class="dropdown-item text-danger" href="/myaccount/myaccount_actions/switch2user?id=' . $qik->encodeId($returntouser['user_id']) . '&aid=' . $qik->encodeId($returntouser['user_id']) . '&revertimpersonation=1&_token=' . $display->inputcsrf_token('tokenonly') . '">
                             <i class="bi bi-slash-circle-fill me-3"></i>Stop Impersonating
                         </a></li>';
-    }
-    
-    echo '
+        }
+        
+        echo '
                     </ul>
                 </div>';
-}
+    }
 
-// Add signup exit button for kiosk mode
-if ($signupMode != '' && $isKioskMode) {
-    echo '
+    // Add signup exit button for kiosk mode
+    if ($signupMode != '' && $isKioskMode) {
+        echo '
                 <a href="/logout" class="signup-exit-btn" title="Exit Signup">
                     <i class="bi bi-x-square text-info"></i>
                 </a>';
-}
+    }
 
-echo '
+    echo '
             </div>
         </div>
     </div>
 </header>';
 } // End of else block for regular header
 
-// Add spacing for fixed header - this pushes content below the fixed header
-// Use a different class name to avoid confusion with actual content containers
+// Add spacing for fixed header
 if (!isset($noheaderspacer)) {
     echo '<div class="header-spacer"></div>';
 }

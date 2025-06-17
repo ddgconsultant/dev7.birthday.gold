@@ -238,7 +238,7 @@ echo '<div class="container mt-0 pt-0 main-content">';
 
 <!-- Warning Messages -->
 <?php
-$containermargin= 'mt-10';
+$containermargin= '';
 if ($allocation_warning): 
 
 echo ' <div class="container '.$containermargin.'"></div>';
@@ -660,6 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/public/js/enrollment-basket.js"></script>
 
 <?php
+$display_footertype='min';+
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

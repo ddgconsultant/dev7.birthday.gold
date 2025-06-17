@@ -52,6 +52,23 @@ $selectedAccountType = $_REQUEST['account_type'] ?? 'user';
 global $website;
 $selectedVersion = $_REQUEST['version'] ?? $website['plan_version']; // Uses site's plan version, allow override for testing
 
+// Check if we're coming back from createaccount (back button)
+// Retrieve previously selected values from session
+$existingSignupData = $session->get('signup_process_data', []);
+if (!empty($existingSignupData) && empty($_REQUEST['account_type']) && empty($_REQUEST['account_plan'])) {
+    // Restore previous selections if no new selections in request
+    if (isset($existingSignupData['account_type'])) {
+        $selectedAccountType = $existingSignupData['account_type'];
+    }
+    if (isset($existingSignupData['account_plan'])) {
+        // We need to get the encoded ID for the plan
+        $selectedPlanCode = $existingSignupData['account_plan'];
+    }
+    if (isset($existingSignupData['account_plan_id'])) {
+        $selectedPlanId = $qik->encodeId($existingSignupData['account_plan_id']);
+    }
+}
+
 // Capture URL parameters to carry forward
 $urlParams = [];
 if (isset($_REQUEST['promo'])) $urlParams['promo'] = $_REQUEST['promo'];
@@ -267,47 +284,7 @@ $page_description = "Sign up for Birthday Gold and start receiving birthday rewa
 # ADDITIONAL STYLES
 #-------------------------------------------------------------------------------
 $additionalstyles .= '
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
-<style>
-/* Include all the CSS from the original file */
-' . file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/public/css/signup_styles.css') . '
-
-/* Page-specific compact styles */
-.main-content {
-    max-width: 1000px !important;
-    margin: 1rem auto !important;
-}
-.header {
-    text-align: center;
-    margin-bottom: 1.5rem !important;
-}
-.header h1 {
-    font-size: 1.75rem !important;
-    margin-bottom: 0.25rem !important;
-}
-.header p {
-    font-size: 1rem !important;
-    margin: 0 !important;
-}
-.content h3 {
-    font-size: 1.25rem !important;
-    margin-bottom: 1rem !important;
-}
-.section-label {
-    font-size: 0.95rem !important;
-    margin-bottom: 0.75rem !important;
-}
-.plan-section-title {
-    margin-top: 1.5rem !important;
-    margin-bottom: 0.75rem !important;
-}
-.plan-grid {
-    margin-bottom: 1.5rem !important;
-}
-footer.border-top {
-    margin-top: 2rem !important;
-}
-</style>
+<link href="/public/css/signup_styles.css" rel="stylesheet">
 ';
 
 include($dir['core_components'] . '/bg_pagestart.inc');
@@ -321,7 +298,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Header -->
     <div class="header">
         <h1>Create Your Account</h1>
-        <p>Start celebrating with birthday freebies and VIP experiences</p>
+        <p>Start getting your birthday freebies by Choosing Your Account Type & Plan</p>
     </div>
 
     <!-- Content -->
@@ -337,10 +314,7 @@ include($dir['core_components'] . '/bg_header.inc');
 
         <!-- Account Type & Plan Selection -->
         <div>
-            <h3 class="mb-4">Choose Your Account Type & Plan</h3>
-            
-            <!-- Who is this for? Section -->
-            <div class="section-label">Who is this for?</div>
+            <h3 class="mt-5 pt-md-5 pt-sm-2">Pick who is this for:</h3>
             
             <!-- Dynamic Account Type Selector -->
             <div class="account-type-selector" id="accountTypeSelector">
@@ -353,7 +327,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     // Only show first 3 types directly, rest go in "Other" modal
                     if ($displayedTypes < 3) {
                         echo '<button class="account-type-btn ' . $isActive . '" data-account-type="' . $accountType['account_type'] . '">
-                                <i class="bi ' . $config['icon'] . ' me-1"></i>' . $config['short_label'] . '
+                                <i class="bi ' . $config['icon'] . '"></i><span>' . $config['short_label'] . '</span>
                               </button>';
                         $displayedTypes++;
                     }
@@ -362,7 +336,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 // Add "Other" button if there are more account types
                 if (count($accountTypes) > 3) {
                     echo '<button class="account-type-btn" data-modal-trigger="otherAccountsModal">
-                            <i class="bi bi-plus-circle me-1"></i>Other
+                            <i class="bi bi-plus-circle"></i><span>Other</span>
                           </button>';
                 }
                 ?>
@@ -381,7 +355,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
 
             <!-- Choose your plan Section -->
-            <div class="plan-section-title">Choose your plan</div>
+            <h3 class="mt-5 pt-md-5 pt-sm-2">Pick the plan:</h3>
 
             <!-- Dynamic Plan Grid -->
             <div class="plan-grid" id="planGrid">
@@ -389,7 +363,18 @@ include($dir['core_components'] . '/bg_header.inc');
                 foreach ($availablePlans as $plan) {
                     $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
                     
-                    echo '<div class="plan-card' . ($isRecommended ? ' recommended' : '') . '" 
+                    // Check if this plan was previously selected
+                    $isSelected = false;
+                    if (isset($selectedPlanId) && $plan['encoded_id'] == $selectedPlanId) {
+                        $isSelected = true;
+                    } elseif (isset($selectedPlanCode) && $plan['account_plan'] == $selectedPlanCode) {
+                        $isSelected = true;
+                    }
+                    
+                    // Wrap each plan in a container to hold the checkmark
+                    echo '<div class="plan-card-wrapper' . ($isSelected ? ' selected' : '') . '">';
+                    
+                    echo '<div class="plan-card' . ($isRecommended ? ' recommended' : '') . ($isSelected ? ' selected' : '') . '" 
                               data-plan="' . $plan['account_plan'] . '" 
                               data-plan-id="' . $plan['encoded_id'] . '"
                               data-price="' . $plan['price'] . '">';
@@ -442,7 +427,8 @@ include($dir['core_components'] . '/bg_header.inc');
                         echo '</ul>';
                     }
                     
-                    echo '</div>';
+                    echo '</div>'; // Close plan-card
+                    echo '</div>'; // Close plan-card-wrapper
                 }
                 ?>
             </div>
@@ -477,16 +463,16 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="container py-4">
             <div class="row text-center">
                 <div class="col-12 mb-2">
-                    <small class="text-muted">
+                <small class="text-muted" style="font-size: 0.9rem;">
                         Already have an account? 
                         <a href="/login" class="text-decoration-none text-success fw-medium">Sign in</a>
-                    </small>
+            </small>
                 </div>
                 <div class="col-12">
-                    <small class="text-muted">
+                <small class="text-muted" style="font-size: 0.9rem;">
                         Have a gift certificate? 
                         <a href="/redeem" class="text-decoration-none text-success fw-medium">Redeem here</a>
-                    </small>
+            </small>
                 </div>
             </div>
         </div>
@@ -575,13 +561,183 @@ include($dir['core_components'] . '/bg_header.inc');
 const pageData = {
     ajaxUrl: '<?php echo $_SERVER['PHP_SELF']; ?>',
     csrfToken: '<?php echo $session->get('csrf_token'); ?>',
-    selectedVersion: '<?php echo $selectedVersion; ?>'
+    selectedVersion: '<?php echo $selectedVersion; ?>',
+    preselectedAccountType: '<?php echo $selectedAccountType; ?>',
+    preselectedPlanId: '<?php echo isset($selectedPlanId) ? $selectedPlanId : ''; ?>'
 };
+
+// Handle preselection on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // If we have a preselected plan, update the form
+    if (pageData.preselectedPlanId) {
+        const selectedPlanCard = document.querySelector('.plan-card.selected');
+        if (selectedPlanCard) {
+            const planId = selectedPlanCard.getAttribute('data-plan-id');
+            const accountType = pageData.preselectedAccountType;
+            
+            // Update hidden form fields
+            document.getElementById('hiddenPlan').value = planId;
+            document.getElementById('hiddenAccountType').value = accountType;
+            
+            // Update continue button
+            const continueBtn = document.getElementById('continueBtn');
+            if (continueBtn) {
+                continueBtn.disabled = false;
+                continueBtn.textContent = 'Continue';
+            }
+        }
+    }
+});
+
+
+// Add this JavaScript after your existing JavaScript in the page
+// It should be placed right after the pageData declaration and DOMContentLoaded handler
+
+// Checkmark badge management
+const CheckmarkManager = {
+    // Add checkmark to a plan card wrapper
+    addCheckmark: function(wrapper) {
+        // Remove all existing checkmarks first
+        this.removeAllCheckmarks();
+        
+        // Create new checkmark element
+        const checkmark = document.createElement('div');
+        checkmark.className = 'plan-checkmark-badge';
+        checkmark.innerHTML = '✓';
+        
+        // Append to wrapper (outside the overflow:hidden card)
+        wrapper.appendChild(checkmark);
+    },
+    
+    // Remove all checkmarks from the page
+    removeAllCheckmarks: function() {
+        document.querySelectorAll('.plan-checkmark-badge').forEach(badge => {
+            badge.remove();
+        });
+    },
+    
+    // Initialize checkmark for preselected plan
+    initializePreselected: function() {
+        const preselectedWrapper = document.querySelector('.plan-card-wrapper.selected');
+        if (preselectedWrapper) {
+            this.addCheckmark(preselectedWrapper);
+        }
+    }
+};
+
+// Enhanced plan selection handler
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize checkmark for preselected plan
+    CheckmarkManager.initializePreselected();
+    
+    // Handle plan card clicks - using event delegation for dynamic content
+    document.getElementById('planGrid').addEventListener('click', function(e) {
+        const card = e.target.closest('.plan-card');
+        if (!card) return;
+        
+        e.preventDefault();
+        
+        // Get the wrapper element
+        const wrapper = card.closest('.plan-card-wrapper');
+        
+        // Remove selected class from all elements
+        document.querySelectorAll('.plan-card-wrapper').forEach(w => {
+            w.classList.remove('selected');
+        });
+        document.querySelectorAll('.plan-card').forEach(c => {
+            c.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked elements
+        wrapper.classList.add('selected');
+        card.classList.add('selected');
+        
+        // Add checkmark badge
+        CheckmarkManager.addCheckmark(wrapper);
+        
+        // Update form values
+        const planId = card.getAttribute('data-plan-id');
+        const accountType = document.querySelector('.account-type-btn.active')?.getAttribute('data-account-type') || 'user';
+        
+        document.getElementById('hiddenPlan').value = planId;
+        document.getElementById('hiddenAccountType').value = accountType;
+        
+        // Enable and update continue button
+        const continueBtn = document.getElementById('continueBtn');
+        continueBtn.disabled = false;
+        continueBtn.textContent = 'Continue to Account Details';
+    });
+});
+
+// Override the loadPlans function to maintain checkmarks after AJAX updates
+const originalSignupFlow = window.SignupFlow || {};
+if (originalSignupFlow.loadPlans) {
+    const originalLoadPlans = originalSignupFlow.loadPlans;
+    originalSignupFlow.loadPlans = function(accountType) {
+        return originalLoadPlans.call(this, accountType).then(result => {
+            // After plans are loaded, check if we need to restore checkmark
+            setTimeout(() => {
+                CheckmarkManager.initializePreselected();
+            }, 100);
+            return result;
+        });
+    };
+}
 
 // Include the enhanced JavaScript
 </script>
 <script src="/public/js/signup_flow_dynamic.js"></script>
+<script>
+    // Add this AFTER loading signup_flow_dynamic.js
+// This will override any checkmark creation from that file
 
+(function() {
+    // Store original functions that might create checkmarks
+    const originalFunctions = {};
+    
+    // Common function names that might create checkmarks
+    const checkmarkFunctions = [
+        'addCheckmark', 
+        'showCheckmark', 
+        'createCheckmark', 
+        'selectPlan',
+        'updatePlanSelection',
+        'markAsSelected'
+    ];
+    
+    // Override any global functions that might create checkmarks
+    checkmarkFunctions.forEach(funcName => {
+        if (window[funcName]) {
+            originalFunctions[funcName] = window[funcName];
+            window[funcName] = function(...args) {
+                // Call original function
+                const result = originalFunctions[funcName].apply(this, args);
+                
+                // Then remove any non-badge checkmarks
+                setTimeout(() => {
+                    document.querySelectorAll('.plan-card .checkmark, .plan-card-wrapper .checkmark').forEach(el => {
+                        if (!el.classList.contains('plan-checkmark-badge')) {
+                            el.remove();
+                        }
+                    });
+                }, 0);
+                
+                return result;
+            };
+        }
+    });
+    
+    // Also override any jQuery event handlers if jQuery is present
+    if (typeof $ !== 'undefined') {
+        $(document).on('click', '.plan-card', function(e) {
+            // After any click, clean up residual checkmarks
+            setTimeout(() => {
+                $('.plan-card .checkmark, .plan-card-wrapper .checkmark').not('.plan-checkmark-badge').remove();
+            }, 50);
+        });
+    }
+})();
+</script>
 <?php
 $display_footertype='min';
 include($dir['core_components'] . '/bg_footer.inc');

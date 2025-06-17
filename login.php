@@ -388,5 +388,6 @@ togglePasswordButton.addEventListener("click", togglePasswordVisibility);
 
 
 echo $display->submitbuttoncolorjs('mainform');
+$display_footertype='mobilemin';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
