@@ -15,9 +15,9 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $signupMode = $session->get('signupmode', '');
 $isKioskMode = in_array($signupMode, ['tabletkiosk', 'upgrade']);
 
-// Don't show bottom nav in kiosk mode or certain pages
-$hideNavPages = ['login', 'register', 'validate-account', 'password-reset'];
-if ($isKioskMode || in_array($currentPage, $hideNavPages)) {
+// Don't show bottom nav in kiosk mode only
+// Bottom nav should show on all pages on mobile
+if ($isKioskMode) {
     return;
 }
 

@@ -16,13 +16,9 @@ $signupMode = $session->get('signupmode', '');
 $isKioskMode = in_array($signupMode, ['tabletkiosk', 'upgrade']);
 
 // Determine if we should show bottom navigation
-$showBottomNav = true;
-
-// Hide bottom nav on certain pages or in kiosk mode
-$hideNavPages = ['login', 'register', 'validate-account', 'password-reset'];
-if (in_array($currentPage, $hideNavPages) || $isKioskMode) {
-    $showBottomNav = false;
-}
+// Bottom nav should always show on mobile screens (handled by CSS)
+// Only hide in kiosk/iframe modes
+$showBottomNav = !$isKioskMode;
 
 // Footer styling - combine original and enhanced styles
 $additionalstyles .= "
@@ -426,16 +422,36 @@ $additionalstyles .= "
     body {
         padding-bottom: 80px !important;
     }
+    
+    /* Hide full footer content on mobile when using mobilemin */
+    .footer-mobilemin .footer-content {
+        display: none !important;
+    }
+    
+    /* Show only minimal footer on mobile */
+    .footer-mobilemin .footer-mobile-min {
+        display: block !important;
+    }
 }
 
 /* Responsive Design */
 @media (min-width: 768px) {
     .bottom-nav {
-        display: none;
+        display: none !important;
     }
     
     body {
         padding-bottom: 0 !important;
+    }
+    
+    /* Show full footer content on desktop */
+    .footer-mobilemin .footer-content {
+        display: block !important;
+    }
+    
+    /* Hide minimal footer on desktop */
+    .footer-mobilemin .footer-mobile-min {
+        display: none !important;
     }
 }
 
@@ -477,7 +493,14 @@ if (!isset($newheader)) {
 
 // Include bottom navigation component if needed
 if ($showBottomNav) {
-    include($dir['core_components'] . '/bg_bottom_nav.inc');
+    // Use v7 components path
+    $bottomNavPath = $_SERVER['DOCUMENT_ROOT'] . '/core/components/v7/bg_bottom_nav.inc';
+    if (file_exists($bottomNavPath)) {
+        include($bottomNavPath);
+    } else {
+        // Fallback to regular path
+        include($dir['core_components'] . '/bg_bottom_nav.inc');
+    }
 }
 
 // Start footer output
@@ -485,6 +508,33 @@ echo '<!-- ===== ENHANCED MOBILE-FIRST FOOTER ===== -->';
 
 // Choose footer type based on settings
 switch ($display_footertype ?? 'default') {
+    //------------------------------------
+    case 'mobilemin':
+        // Responsive footer - minimal on mobile, full on desktop
+        echo '<footer class="main-footer footer-mobilemin">';
+        
+        // Minimal footer for mobile (hidden on desktop via CSS)
+        echo '
+        <div class="footer-mobile-min" style="display: none;">
+            <div class="container-fluid bg-dark text-white">
+                <div class="container">
+                    <div class="row pt-2 pb-2">
+                        <div class="col-12 text-center">
+                            <small class="text-secondary">
+                                © ' . date('Y') . ' Birthday.Gold | 
+                                <a href="/help" class="text-secondary">Help</a> | 
+                                <a href="/legalhub" class="text-secondary">Legal</a>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>';
+        
+        // Full footer content (hidden on mobile via CSS)
+        goto default_footer_content;
+        break;
+        
     //------------------------------------
     case 'none':
         // NO FOOTER
@@ -527,16 +577,17 @@ switch ($display_footertype ?? 'default') {
     //------------------------------------
     // DEFAULT FOOTER - ENHANCED WITH MOBILE-FIRST APPROACH
     default:
+        default_footer:
         echo '<footer class="main-footer">';
         
-        // Only show full footer on desktop or specific pages
-        if (!$showBottomNav || $currentPage === 'help' || $currentPage === 'terms' || $currentPage === 'privacy') {
-            echo '
+        default_footer_content:
+        // Footer content
+        echo '
             <div class="footer-content">
                 <div class="container">
                     <div class="row g-4">
                         <!-- Company Info -->
-                        <div class="col-12 col-md-6 col-lg-3">
+                        <div class="col-12 col-md-6 col-lg-4">
                             <div class="footer-section">
                                 <h6 class="footer-title">Birthday.Gold</h6>';
             
@@ -559,6 +610,22 @@ switch ($display_footertype ?? 'default') {
             echo '<p class="footer-text">' . $CONTENT_footermessage['content'] . '</p>';
             
             // Social links
+            
+// social media links
+echo '
+<div class="social-links">
+    ' . $display->socialapplink('twitter', 'https://twitter.com/birthday_gold') . '
+    ' . $display->socialapplink('facebook', 'https://www.facebook.com/birthdaygold/') . '
+    ' . $display->socialapplink('instagram', 'https://www.instagram.com/birthday_gold/') . '
+    ' . $display->socialapplink('linkedin', 'https://www.linkedin.com/company/birthdaygold') . '
+    ' . $display->socialapplink('tiktok', 'https://www.tiktok.com/@birthday.gold') . '
+    ' . $display->socialapplink('youtube', 'https://www.youtube.com/@birthdaygold') . '
+    ' . $display->socialapplink('pinterest', 'https://www.pinterest.com/birthdaygold/') . '
+</div>
+
+';
+/*
+
             echo '
                                 <div class="social-links">
                                     <a href="https://x.com/birthday_gold" class="social-link" aria-label="Twitter"><i class="bi bi-twitter"></i></a>
@@ -566,7 +633,10 @@ switch ($display_footertype ?? 'default') {
                                     <a href="https://www.instagram.com/birthday_gold/" class="social-link" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
                                     <a href="https://www.tiktok.com/@birthday.gold" class="social-link" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
                                 </div>
-                            </div>
+                                ';
+*/
+
+                     echo '                   </div>
                         </div>
                         
                         <!-- Quick Links -->
@@ -575,7 +645,7 @@ switch ($display_footertype ?? 'default') {
                                 <h6 class="footer-title">Quick Links</h6>
                                 <ul class="footer-links">
                                     <li><a href="/how-it-works">How it Works</a></li>
-                                    <li><a href="/browse-rewards">Browse Rewards</a></li>
+                                    <li><a href="/discover">Browse Rewards</a></li>
                                     <li><a href="/pricing">Pricing</a></li>';
             
             // Show different links based on login status
@@ -602,9 +672,10 @@ switch ($display_footertype ?? 'default') {
                                     <li><a href="/help">Help Center</a></li>
                                     <li><a href="/faq">FAQ</a></li>
                                     <li><a href="/contact">Contact Us</a></li>
-                                    <li><a href="/feedback">Feedback</a></li>
+                               <!--     <li><a href="/feedback">Feedback</a></li> -->
                                     <li><a href="/about">About</a></li>
-                                    <li><a href="/careers">Careers</a></li>
+                          <!--          <li><a href="/careers">Careers</a></li>  -->
+                                    <li><a href="/system-status" target="sswindow">System Status</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -618,13 +689,12 @@ switch ($display_footertype ?? 'default') {
                                     <li><a href="/legalhub/privacy">Privacy Policy</a></li>
                                     <li><a href="/legalhub/cookies">Cookie Policy</a></li>
                                     <li><a href="/legalhub">Legal Hub</a></li>
-                                    <li><a href="/system-status" target="sswindow">System Status</a></li>
                                 </ul>
                             </div>
                         </div>
                         
                         <!-- Newsletter / Business -->
-                        <div class="col-6 col-md-3 col-lg-3">';
+                        <div class="col-6 col-md-3 col-lg-2">';
                         
             // Only show newsletter on non-account pages
             if (!strpos($website['fulluri']['uri'], 'myaccount') && !strpos($website['fulluri']['uri'], 'mail')) {
@@ -643,11 +713,12 @@ switch ($display_footertype ?? 'default') {
                                     </form>
                                 </div>
                                 
-                                <h6 class="footer-title mt-4">For Businesses</h6>
+                       <!--        <h6 class="footer-title mt-4">For Businesses</h6>
                                 <ul class="footer-links">
                                     <li><a href="/business/partner">Become a Partner</a></li>
                                     <li><a href="/business/api">API Documentation</a></li>
                                 </ul>
+                                -->
                             </div>';
             } else {
                 // Show different content for account pages
@@ -664,6 +735,7 @@ switch ($display_footertype ?? 'default') {
                                     <li><a href="/business/api">API Documentation</a></li>
                                 </ul>
                             </div>';
+                            $enableemailjs=true;
             }
             
             echo '
@@ -696,14 +768,11 @@ switch ($display_footertype ?? 'default') {
                     </div>
                 </div>
             </div>';
-        } else {
-            // No footer on mobile when bottom nav is shown
-            // Copyright info available in More menu and legal pages
-        }
         
         echo '</footer>';
         
         // Email setup script
+        if (!empty($enableemailjs)) {
         echo '
         <script src="/public/js/email.js"></script>
         <script>
@@ -713,6 +782,7 @@ switch ($display_footertype ?? 'default') {
                 }
             });
         </script>';
+        }
         break;
 }
 
@@ -912,7 +982,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
     
-    // Handle viewport height for mobile browsers
+    // Handle viewport height for mobile browsers (actually useful!)
     function setViewportHeight() {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty("--vh", `${vh}px`);
@@ -923,7 +993,7 @@ document.addEventListener("DOMContentLoaded", function() {
     window.addEventListener("orientationchange", setViewportHeight);
 });
 
-// Global functions for navigation
+// Global function for navigation (keep this, it is used by the nav)
 function toggleMoreMenu() {
     const overlay = document.getElementById("moreMenuOverlay");
     if (overlay) {
@@ -931,48 +1001,6 @@ function toggleMoreMenu() {
         overlay.style.display = isVisible ? "none" : "flex";
     }
 }
-
-// Performance optimizations
-if ("requestIdleCallback" in window) {
-    requestIdleCallback(() => {
-        const criticalPages = ["/myaccount/", "/browse-rewards", "/help"];
-        criticalPages.forEach(page => {
-            const link = document.createElement("link");
-            link.rel = "prefetch";
-            link.href = page;
-            document.head.appendChild(link);
-        });
-    });
-}
-
-// Service worker registration for offline functionality (optional)
-if ("serviceWorker" in navigator && window.location.protocol === "https:") {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-        // Service worker not available, continue normally
-    });
-}
-
-// PWA installation prompt (if applicable)
-let deferredPrompt;
-window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    
-    // Show install button if on mobile
-    if (window.innerWidth <= 768) {
-        const installBtn = document.getElementById("installPWA");
-        if (installBtn) {
-            installBtn.style.display = "block";
-            installBtn.addEventListener("click", () => {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => {
-                    deferredPrompt = null;
-                    installBtn.style.display = "none";
-                });
-            });
-        }
-    }
-});
 </script>';
 
 // Cookie consent banner logic

@@ -80,6 +80,8 @@ echo '
 
 ';
 
+if (!isset($header_spacer)) $header_spacer='90px';
+
 // Production mode logic with HAProxy detection (preserved from original)
 if ($mode == 'production') {
 
@@ -199,7 +201,7 @@ echo '
 <link rel="apple-touch-icon" sizes="180x180" href="/public/images/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/public/images/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/public/images/favicon-16x16.png">
-<link rel="manifest" href="/site.webmanifest">
+<!-- <link rel="manifest" href="/site.webmanifest"> 
 <link rel="mask-icon" href="/public/images/safari-pinned-tab.svg" color="#198754">
 <link rel="shortcut icon" href="/favicon.ico">
 
@@ -222,10 +224,6 @@ echo '
 <link href="/public/css/'.$styvers.'/bg_theme.css" rel="stylesheet">  
 <link href="/public/css/' . $website['ui_version'] . '/bg_header.css?' . date('i') . '" rel="stylesheet">
 
-
-<!-- Preload critical resources -->
-<link rel="preload" href="/public/css/' . $styvers . '/bg_theme.css" as="style">
-<link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/fonts/bootstrap-icons.woff2" as="font" type="font/woff2" crossorigin>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 ';
@@ -267,7 +265,7 @@ body {
 
 /* Header spacer - pushes content below fixed header */
 .header-spacer {
-    height: 90px; /* Fixed header height + extra spacing */
+    height: '.$header_spacer.'; /* Fixed header height + extra spacing */
     flex-shrink: 0;
 }
 

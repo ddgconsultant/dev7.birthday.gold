@@ -1,4 +1,4 @@
-// Email.js version 5
+// Email.js version 5 - Fixed
 var tld_ = new Array()
 tld_[0] = "com";
 tld_[1] = "org";
@@ -18,20 +18,24 @@ function mail(name, dom, tl, params)
 {
 	var s = e(name,dom,tl);
 	document.write('<a href="'+m_+s+params+'">'+s+'</a>');
-
-
 }
-function mail2(name, dom, tl, params, display)
+
+function mail2(name, dom, tl, params, display, targetSelector = '#emaillink')
 {
-	// document.write('<a href="'+m_+e(name,dom,tl)+params+'">'+display+'</a>');
-    const emailSpan = document.querySelector('#emaillink');
-
-const emailLink = '<a href="'+m_+e(name,dom,tl)+params+'">'+display+'</a>';
-
-emailSpan.innerHTML = emailLink;
-
-
+	const emailSpan = document.querySelector(targetSelector);
+	
+	if (!emailSpan) {
+		console.error(`Element with selector "${targetSelector}" not found. Creating email link in document body instead.`);
+		// Fallback: create the link and append to body or use document.write
+		const emailLink = '<a href="'+m_+e(name,dom,tl)+params+'">'+display+'</a>';
+		document.write(emailLink);
+		return;
+	}
+	
+	const emailLink = '<a href="'+m_+e(name,dom,tl)+params+'">'+display+'</a>';
+	emailSpan.innerHTML = emailLink;
 }
+
 function e(name, dom, tl)
 {
 	var s = name+a_;
@@ -45,6 +49,7 @@ function e(name, dom, tl)
 		s+= swapper(dom);
 	return s;
 }
+
 function swapper(d)
 {
 	var s = "";

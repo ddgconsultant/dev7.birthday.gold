@@ -102,11 +102,11 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
         <div class="hero-stats">
             <div class="stat-item">
                 <div class="stat-number">' . $website['numberofbiz'] . '+</div>
-                <div class="stat-label">Restaurants</div>
+                <div class="stat-label">Popular Brands</div>
             </div>
             <div class="stat-item">
                 <div class="stat-number">$300+</div>
-                <div class="stat-label">Avg. Savings</div>
+                <div class="stat-label">Average Savings</div>
             </div>
             <div class="stat-item">
                 <div class="stat-number">50K+</div>

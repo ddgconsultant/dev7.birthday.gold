@@ -176,11 +176,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handlePlanSelection(planCard) {
-        // Update UI
+        // Update UI - Remove previous selections
         document.querySelectorAll('.plan-card').forEach(card => {
             card.classList.remove('selected');
         });
+        
+        // Remove selected class from all wrappers
+        document.querySelectorAll('.plan-card-wrapper').forEach(wrapper => {
+            wrapper.classList.remove('selected');
+        });
+        
+        // Add selected class to the card
         planCard.classList.add('selected');
+        
+        // Add selected class to the wrapper too
+        const wrapper = planCard.parentElement;
+        if (wrapper && wrapper.classList.contains('plan-card-wrapper')) {
+            wrapper.classList.add('selected');
+        }
 
         // Update state
         state.selectedPlan = planCard.getAttribute('data-plan-id');
