@@ -54,19 +54,27 @@ if (empty($data['password'])) {
     $errors['password'] = 'Password must be at least 8 characters';
 }
 
-// Birthday validation
-if (empty($data['birthday'])) {
-    $errors['birthday'] = 'Parent birthday is required';
-} else {
+// Birthday validation from dropdowns
+if (!empty($data['birth_month']) && !empty($data['birth_day']) && !empty($data['birth_year'])) {
+    // Combine the fields
+    $data['birthday'] = $data['birth_year'] . '-' . $data['birth_month'] . '-' . $data['birth_day'];
+    
     $birthdate = DateTime::createFromFormat('Y-m-d', $data['birthday']);
     if (!$birthdate) {
-        $errors['birthday'] = 'Please enter a valid date';
+        $errors['birthday'] = 'Please select a valid date';
     } else {
         $age = $birthdate->diff(new DateTime())->y;
         if ($age < 18) {
             $errors['birthday'] = 'Parent must be at least 18 years old';
         }
     }
+} else {
+    $errors['birthday'] = 'Please select your complete birth date';
+}
+
+// Terms validation
+if (empty($data['terms'])) {
+    $errors['terms'] = 'You must agree to the Terms and Privacy Policy';
 }
 
 // Number of children validation
@@ -145,6 +153,9 @@ if (empty($errors)) {
     
     // Newsletter preference
     $processed['newsletter'] = isset($data['newsletter']) ? 1 : 0;
+    
+    // Store password value for form re-display on errors
+    $processed['password'] = $data['password'];
 }
 
 // Return results

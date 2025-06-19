@@ -86,19 +86,27 @@ if (empty($data['lastname'])) {
     $errors['lastname'] = 'Last name is required';
 }
 
-// Birthday validation
-if (empty($data['birthday'])) {
-    $errors['birthday'] = 'Birthday is required';
-} else {
+// Birthday validation from dropdowns
+if (!empty($data['birth_month']) && !empty($data['birth_day']) && !empty($data['birth_year'])) {
+    // Combine the fields
+    $data['birthday'] = $data['birth_year'] . '-' . $data['birth_month'] . '-' . $data['birth_day'];
+    
     $birthdate = DateTime::createFromFormat('Y-m-d', $data['birthday']);
     if (!$birthdate) {
-        $errors['birthday'] = 'Please enter a valid date';
+        $errors['birthday'] = 'Please select a valid date';
     } else {
         $age = $birthdate->diff(new DateTime())->y;
         if ($age < 13) {
-            $errors['birthday'] = 'You must be at least 13 years old';
+            $errors['birthday'] = 'You must be at least 13 years old to create an account';
         }
     }
+} else {
+    $errors['birthday'] = 'Please select your complete birth date';
+}
+
+// Terms validation
+if (empty($data['terms'])) {
+    $errors['terms'] = 'You must agree to the Terms and Privacy Policy';
 }
 
 // Check email availability if provided and no errors yet
@@ -149,6 +157,9 @@ if (empty($errors)) {
     // Generate username (will be done by main processor if not provided)
     $processed['username'] = '';
     $processed['profile_username'] = '';
+    
+    // Store password value for form re-display on errors
+    $processed['password'] = $data['password'];
     
     // Location data
     $processed['city'] = trim($client_locationdata['city'] ?? '');
