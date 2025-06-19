@@ -1,10 +1,15 @@
 /* =================================
    PAGE LAYOUT & STRUCTURE
    ================================= */
-   .main-content {
+   
+* {
+    box-sizing: border-box !important;
+}
+
+.main-content {
     max-width: 1000px !important;
     margin: 1rem auto !important;
-    overflow: visible !important;
+    overflow-x: hidden !important;
 }
 
 .header {
@@ -23,11 +28,11 @@
 }
 
 .content {
-    overflow: visible !important;
+    overflow-x: hidden !important;
 }
 
 .content > div {
-    overflow: visible !important;
+    overflow-x: hidden !important;
 }
 
 .content h3 {
@@ -49,6 +54,7 @@ footer.border-top {
     padding: 4px;
     margin-bottom: 1rem;
     display: flex;
+    gap: 8px;
 }
 
 .account-type-btn {
@@ -89,7 +95,7 @@ footer.border-top {
     box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
 }
 
-.account-type-btn.active::after {
+.account-type-btn.active::before {
     content: "✓";
     position: absolute;
     top: -8px;
@@ -119,11 +125,16 @@ footer.border-top {
     position: relative !important;
     padding: 20px !important;
     overflow: visible !important;
+    justify-content: center !important;
+    max-width: 1200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
 }
 
 .plan-card-wrapper {
     position: relative !important;
-    display: block;
+    display: flex;
+    height: 100%;
 }
 
 .plan-card-wrapper.selected {
@@ -134,13 +145,13 @@ footer.border-top {
     background: white;
     border: 2px solid #e9ecef;
     border-radius: 12px;
-    padding: 0.5rem !important;
+    padding: 1.5rem !important;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative !important;
     display: flex;
     flex-direction: column;
-    min-height: auto !important;
+    height: 100%;
     overflow: hidden !important;
 }
 
@@ -527,6 +538,35 @@ footer.border-top {
    RESPONSIVE STYLES
    ================================= */
 @media (max-width: 767px) {
+    .container.main-content {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+        margin: 0 auto !important;
+    }
+    
+    .plan-grid {
+        grid-template-columns: 1fr !important;
+        padding: 0 !important;
+        gap: 1rem !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    .plan-card-wrapper {
+        width: 100%;
+    }
+    
+    .plan-card {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .account-type-selector {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
     .account-type-btn {
         flex-direction: column;
         padding: 8px 4px !important;
@@ -563,19 +603,23 @@ footer.border-top {
     }
     
     .plan-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(280px, 350px));
         gap: 2.5rem !important;
+        justify-content: center !important;
     }
 }
 
 @media (min-width: 992px) {
     .plan-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(300px, 350px));
+        justify-content: center !important;
     }
 }
 
 @media (min-width: 1200px) {
     .plan-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(320px, 380px));
+        justify-content: center !important;
+        max-width: 1200px !important;
     }
 }

@@ -25,38 +25,66 @@ $account_type = $signup_process['account_type'] ?? 'user';
 $account_plan = $signup_process['account_plan'] ?? '';
 $account_cost = $signup_process['account_cost'] ?? 0;
 
+// Initialize form values and errors
+$values = $_POST;
+$errors = [];
+
 // Debug output for development
 if ($mode === 'dev') {
-    error_log('[CREATEACCOUNT] Signup process data: ' . json_encode($signup_process));
-    error_log('[CREATEACCOUNT] Account plan ID: ' . ($signup_process['account_plan_id'] ?? 'NOT SET'));
+    error_log('[CREATENEWACCOUNT] Signup process data: ' . json_encode($signup_process));
+    error_log('[CREATENEWACCOUNT] Account plan ID: ' . ($signup_process['account_plan_id'] ?? 'NOT SET'));
 }
 
-// Get URL parameters from signup data or form submission
-$promo_code = $_POST['promo_code'] ?? $signup_process['promo'] ?? $signup_process['promo_code'] ?? '';
-$referral_code = $_POST['referral_code'] ?? $signup_process['ref'] ?? $signup_process['referral'] ?? '';
-
-// Check if we should auto-show promo/referral section
-$show_promo_section = !empty($promo_code) || !empty($referral_code);
-
 #-------------------------------------------------------------------------------
-# HANDLE SOCIAL LOGIN CALLBACK - ARCHIVED
+# DEFINE FORM SECTIONS FOR EACH ACCOUNT TYPE
 #-------------------------------------------------------------------------------
-/* ARCHIVED: Social login disabled - providers don't give birthday data
-if (isset($_GET['social_callback']) && $session->get('social_auth_data')) {
-    $social_data = $session->get('social_auth_data');
-    $session->unset('social_auth_data');
-    
-    // Pre-fill form with social data
-    $_POST['firstname'] = $social_data['firstname'];
-    $_POST['lastname'] = $social_data['lastname'];
-    $_POST['email'] = $social_data['email'];
-    $_POST['social_auth_id'] = $social_data['social_id'];
-    $_POST['social_provider'] = $social_data['provider'];
-    
-    // Show success message
-    $social_success_message = "Successfully connected with " . ucfirst($social_data['provider']) . "! Please complete your profile.";
+// Default sections array
+$default_sections = [
+    'name_birthday' => '/core/forms/signup/section_name_birthday.inc',
+    'account_opener' => '/core/forms/signup/section_account_opener.inc',
+    'credentials' => '/core/forms/signup/section_credentials.inc',
+    'promo_codes' => '/core/forms/signup/section_promo_codes.inc'
+];
+
+// Define section configurations for each account type
+$section_configs = [
+    'user' => [
+        'sections' => ['name_birthday', 'account_opener', 'credentials', 'promo_codes']
+    ],
+    'parental' => [
+        'sections' => ['name_birthday', 'family_children', 'account_opener', 'credentials', 'promo_codes']
+    ],
+    'family' => [
+        'sections' => ['name_birthday', 'family_children', 'account_opener', 'credentials', 'promo_codes']
+    ],
+    'business' => [
+        'sections' => ['name_birthday', 'business_info', 'account_opener', 'credentials', 'promo_codes']
+    ],
+    'giftcertificate' => [
+        'sections' => ['name_birthday', 'account_opener', 'credentials', 'gift_certificate', 'promo_codes']
+    ]
+];
+
+// Get configuration for current account type
+$config = $section_configs[$account_type] ?? $section_configs['user'];
+
+// Debug logging
+if ($mode === 'dev') {
+    error_log('[CREATENEWACCOUNT] Account type: ' . $account_type);
+    error_log('[CREATENEWACCOUNT] Config sections: ' . json_encode($config['sections']));
+    error_log('[CREATENEWACCOUNT] Default sections: ' . json_encode(array_keys($default_sections)));
 }
-*/
+
+// Add custom sections to default array
+if ($account_type === 'parental' || $account_type === 'family') {
+    $default_sections['family_children'] = '/core/forms/signup/section_family_children.inc';
+}
+if ($account_type === 'business') {
+    $default_sections['business_info'] = '/core/forms/signup/section_business_info.inc';
+}
+if ($account_type === 'giftcertificate') {
+    $default_sections['gift_certificate'] = '/core/forms/signup/section_gift_certificate.inc';
+}
 
 #-------------------------------------------------------------------------------
 # HANDLE AJAX REQUESTS
@@ -74,13 +102,13 @@ if (isset($_REQUEST['ajax_action'])) {
                 $promoCode = $_REQUEST['promo_code'] ?? '';
                 $productId = $signup_process['account_plan_id'] ?? null;
                 
-                error_log('[CREATEACCOUNT] Session data: ' . json_encode($signup_process));
-                error_log('[CREATEACCOUNT] Validating promo: ' . $promoCode . ' for product: ' . $productId);
+                error_log('[CREATENEWACCOUNT] Session data: ' . json_encode($signup_process));
+                error_log('[CREATENEWACCOUNT] Validating promo: ' . $promoCode . ' for product: ' . $productId);
                 
                 if ($productId && $promoCode) {
                     $validation = $productManager->validatePromoCode($promoCode, $productId);
                     
-                    error_log('[CREATEACCOUNT] Validation result: ' . json_encode($validation));
+                    error_log('[CREATENEWACCOUNT] Validation result: ' . json_encode($validation));
                     
                     if ($validation['valid']) {
                         // Calculate new price
@@ -103,16 +131,10 @@ if (isset($_REQUEST['ajax_action'])) {
                     echo json_encode(['valid' => false, 'message' => 'Invalid request - missing product ID or promo code']);
                 }
             } catch (Exception $e) {
-                error_log('[CREATEACCOUNT] Exception in promo validation: ' . $e->getMessage());
+                error_log('[CREATENEWACCOUNT] Exception in promo validation: ' . $e->getMessage());
                 ob_clean();
                 echo json_encode(['valid' => false, 'message' => 'Server error processing promo code']);
             }
-            exit;
-            
-        case 'check_username':
-            $username = $_REQUEST['username'] ?? '';
-            $available = $createaccount->isavailable($username, 'username');
-            echo json_encode(['available' => $available]);
             exit;
             
         case 'check_email':
@@ -123,128 +145,60 @@ if (isset($_REQUEST['ajax_action'])) {
     }
 }
 
-
 #-------------------------------------------------------------------------------
 # HANDLE FORM SUBMISSION
 #-------------------------------------------------------------------------------
 if ($app->formposted()) {
-    $errors = [];
+    // Set flag to process handlers
+    $process_handlers = true;
     
-    // Validate required fields
-    $required_fields = ['password', 'firstname', 'lastname', 'birthday'];
-    
-    // Check contact method
-    $contact_method = $_POST['contact_method'] ?? 'phone';
-    if ($contact_method == 'phone') {
-        $required_fields[] = 'phone';
-    } else {
-        $required_fields[] = 'email';
-    }
-    
-    foreach ($required_fields as $field) {
-        if (empty($_POST[$field])) {
-            $errors[] = ucfirst($field) . ' is required';
-        }
-    }
-    
-    // Validate phone
-    if (!empty($_POST['phone'])) {
-        $phone = preg_replace('/\D/', '', $_POST['phone']);
-        if (strlen($phone) !== 10) {
-            $errors[] = 'Please enter a valid 10-digit phone number';
-        }
-    }
-    
-    // Validate email (optional)
-    if (!empty($_POST['email']) && !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Please enter a valid email address';
-    }
-    
-    // Check email availability - using the proper method
-    if (!empty($_POST['email'])) {
-        $email = trim(strtolower($_POST['email']));
-        $response = $createaccount->isemailaccountavailable($email);
-        
-        if ($response !== true) {
-            // We found an existing record
-            $tempinfo = $response;
-            
-            // Check if it's a pending or validated user we can continue with
-            if (!empty($tempinfo['status']) && in_array($tempinfo['status'], ['pending', 'validated'])) {
-                // Store the existing user info and redirect appropriately
-                $session->set('userregistrationdata', $tempinfo);
-                
-                if ($account_cost > 0) {
-                    // Paid plan - go to checkout with existing user
-                    $encoded_user_id = $qik->encodeId($tempinfo['user_id']);
-                    header('Location: /claudecode/checkout_api.php?u=' . $encoded_user_id);
-                    exit();
-                } else {
-                    // Free plan - check status
-                    if ($tempinfo['status'] == 'validated' || $plandata['account_verification'] == 'notrequired') {
-                        header('Location: /myaccount/welcome.php');
-                    } else {
-                        header('Location: /validate-account.php');
-                    }
-                    exit();
-                }
-            } else {
-                // Email is truly unavailable
-                $errors[] = 'This email is already registered';
+    // Run all section handlers for this account type
+    foreach ($config['sections'] as $section_key) {
+        if (isset($default_sections[$section_key])) {
+            $section_file = $_SERVER['DOCUMENT_ROOT'] . $default_sections[$section_key];
+            if (file_exists($section_file)) {
+                include($section_file);
             }
         }
     }
     
-    
-    // Validate password strength
-    if (strlen($_POST['password']) < 8) {
-        $errors[] = 'Password must be at least 8 characters';
-    }
-    
-    // Validate terms acceptance
-    if (empty($_POST['terms'])) {
-        $errors[] = 'You must agree to the Terms and Privacy Policy';
-    }
-    
-    // Validate username (if required)
-    if ($account_type == 'user' && !empty($_POST['username'])) {
-        if (!$createaccount->isavailable($_POST['username'], 'username')) {
-            $errors[] = 'This username is already taken';
-        }
-    }
-    
-    // Validate birthday from dropdowns
-    if (!empty($_POST['birth_month']) && !empty($_POST['birth_day']) && !empty($_POST['birth_year'])) {
-        // Combine the fields
-        $_POST['birthday'] = $_POST['birth_year'] . '-' . $_POST['birth_month'] . '-' . $_POST['birth_day'];
-        
-        $birthdate = DateTime::createFromFormat('Y-m-d', $_POST['birthday']);
-        if (!$birthdate) {
-            $errors[] = 'Please select a valid date';
-        } else {
-            $age = $birthdate->diff(new DateTime())->y;
-            if ($age < 13) {
-                $errors[] = 'You must be at least 13 years old to create an account';
-            }
-        }
-    } else {
-        $errors[] = 'Please select your complete birth date';
-    }
-    
+    // If no errors, process the account creation
     if (empty($errors)) {
+        // Check for existing user (from credentials handler)
+        if (!empty($values['existing_user_info'])) {
+            // We have an existing pending/validated user
+            $tempinfo = $values['existing_user_info'];
+            $session->set('userregistrationdata', $tempinfo);
+            
+            if ($account_cost > 0) {
+                // Paid plan - go to checkout with existing user
+                $encoded_user_id = $qik->encodeId($tempinfo['user_id']);
+                header('Location: /claudecode/checkout_api.php?u=' . $encoded_user_id);
+                exit();
+            } else {
+                // Free plan - check status
+                if ($tempinfo['status'] == 'validated' || $plandata['account_verification'] == 'notrequired') {
+                    header('Location: /myaccount/welcome.php');
+                } else {
+                    header('Location: /validate-account.php');
+                }
+                exit();
+            }
+        }
+        
         // Prepare user data for creation
-        $birthday_date = DateTime::createFromFormat('Y-m-d', $_POST['birthday']);
+        $birthday_date = DateTime::createFromFormat('Y-m-d', $values['birthday']);
         $birthday_formatted = $birthday_date->format('Y-m-d');
-        $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        $first_name = ucfirst($_POST['firstname']);
-        $last_name = ucfirst($_POST['lastname']);
-        $email = !empty($_POST['email']) ? trim(strtolower($_POST['email'])) : '';
-        $phone = preg_replace('/\D/', '', $_POST['phone']); // Strip non-digits
+        $hashed_password = password_hash($values['password'], PASSWORD_DEFAULT);
+        $first_name = ucfirst($values['firstname']);
+        $last_name = ucfirst($values['lastname']);
+        $email = !empty($values['email']) ? trim(strtolower($values['email'])) : '';
+        $phone = !empty($values['phone_clean']) ? $values['phone_clean'] : preg_replace('/\D/', '', $values['phone'] ?? '');
         
         // Generate username if not provided
-        $username = $_POST['username'] ?? '';
+        $username = $values['username'] ?? '';
         if (empty($username) && $account_type == 'user') {
-            $username = $createaccount->generate_username($first_name, $last_name, $_POST['birthday']);
+            $username = $createaccount->generate_username($first_name, $last_name, $values['birthday']);
         }
         
         // Get location data from session
@@ -283,14 +237,23 @@ if ($app->formposted()) {
             'avatar_file' => ''
         ];
         
+        // Add business fields if business account
+        if ($account_type === 'business') {
+            $input['business_name'] = $values['businessnamefield'] ?? '';
+            $input['business_type'] = $values['businesstypefield'] ?? '';
+            $input['business_phone'] = $values['businessphonefield'] ?? '';
+            $input['business_address'] = $values['businessaddressfield'] ?? '';
+            $input['business_website'] = $values['businesswebsitefield'] ?? '';
+        }
+        
         // Add promo code if provided
-        if (!empty($_POST['promo_code'])) {
-            $input['promocode'] = $_POST['promo_code'];
+        if (!empty($values['promo_code'])) {
+            $input['promocode'] = $values['promo_code'];
         }
         
         // Add referral code if provided
-        if (!empty($_POST['referral_code'])) {
-            $input['referral_code'] = $_POST['referral_code'];
+        if (!empty($values['referral_code'])) {
+            $input['referral_code'] = $values['referral_code'];
         }
         
         // Create the user
@@ -298,20 +261,24 @@ if ($app->formposted()) {
             $user_id = $createaccount->create_user($input);
             
             if ($user_id) {
+                // Handle children for parental accounts
+                if (($account_type === 'parental' || $account_type === 'family') && !empty($values['children'])) {
+                    foreach ($values['children'] as $child) {
+                        if (!empty($child['firstname']) && !empty($child['lastname']) && !empty($child['birthday'])) {
+                            // Add child account logic here
+                            // This would typically involve creating linked child accounts
+                        }
+                    }
+                }
+                
                 // Store registration data in session for validation page
                 $session->set('userregistrationdata', array_merge($input, ['user_id' => $user_id]));
                 $session->set('accountcode', $user_id);
                 
                 // Also ensure signup_process_data is set for checkout
-                if (empty($session->get('signup_process_data'))) {
-                    $session->set('signup_process_data', [
-                        'account_type' => $account_type,
-                        'account_plan' => $account_plan,
-                        'account_plan_id' => $plandata['id'] ?? 0,
-                        'promo_code' => $_POST['promo_code'] ?? '',
-                        'referrer_code' => $_POST['referral_code'] ?? ''
-                    ]);
-                }
+                $signup_process['promo_code'] = $values['promo_code'] ?? '';
+                $signup_process['referrer_code'] = $values['referral_code'] ?? '';
+                $session->set('signup_process_data', $signup_process);
                 
                 // Redirect based on account cost and validation requirements
                 if ($account_cost > 0) {
@@ -330,10 +297,10 @@ if ($app->formposted()) {
                 }
                 exit();
             } else {
-                $errors[] = 'Failed to create account. Please try again.';
+                $errors['general'] = 'Failed to create account. Please try again.';
             }
         } catch (Exception $e) {
-            $errors[] = 'An error occurred while creating your account. Please try again.';
+            $errors['general'] = 'An error occurred while creating your account. Please try again.';
             error_log('User creation error: ' . $e->getMessage());
         }
     }
@@ -351,6 +318,23 @@ $page_description = "Complete your Birthday Gold account setup";
 $additionalstyles .= '
 <link href="/claudecode/createaccount_styles.css" rel="stylesheet">
 <style>
+/* Additional styles for modular sections */
+.form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.section-title {
+    margin-bottom: 1.5rem;
+    color: #333;
+    font-weight: 600;
+}
+
 /* Additional styles for promo/referral section */
 .promo-referral-section {
     background: #f8f9fa;
@@ -358,25 +342,37 @@ $additionalstyles .= '
     padding: 0.75rem 1rem;
     margin-top: 1rem;
 }
+
 .promo-referral-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
     user-select: none;
+    padding: 0.5rem 0;
 }
+
 .promo-referral-header:hover {
     opacity: 0.8;
 }
+
 .promo-referral-content {
     margin-top: 1rem;
+    padding-top: 0.5rem;
 }
+
+.promo-referral-content.collapsing {
+    transition: height 0.35s ease;
+}
+
 .code-input-group {
     position: relative;
 }
+
 .code-input-group input {
     padding-right: 80px;
 }
+
 .code-input-group .btn {
     position: absolute;
     right: 4px;
@@ -386,40 +382,8 @@ $additionalstyles .= '
     font-size: 0.875rem;
     transition: all 0.3s ease;
 }
-.code-input-group .btn.btn-danger {
-    animation: pulse 0.3s ease-in-out;
-}
-@keyframes pulse {
-    0% { transform: translateY(-50%) scale(1); }
-    50% { transform: translateY(-50%) scale(1.05); }
-    100% { transform: translateY(-50%) scale(1); }
-}
 
-/* Disabled state for code buttons */
-.code-input-group .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: #e9ecef !important;
-    border-color: #dee2e6 !important;
-    color: #6c757d !important;
-}
-
-/* Override any theme styles that might affect input backgrounds */
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="password"],
-input[type="date"],
-.form-control {
-    background-color: #ffffff !important;
-}
-
-/* Ensure password field specifically has white background */
-#password {
-    background-color: #ffffff !important;
-}
-
-/* New Contact Method Tab Styles - matching signup page style */
+/* Contact method tab styles */
 .contact-method-tabs {
     display: flex;
     gap: 1rem;
@@ -475,110 +439,76 @@ input[type="date"],
     z-index: 100;
 }
 
-.tab-option i {
-    font-size: 1.2rem;
+/* Password input group */
+.password-input-group {
+    position: relative;
+    display: flex;
 }
 
-/* No validation styles - all validation is server-side */
-.form-control {
-    border-color: #e9ecef !important;
+.password-input-group .form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
-/* Blue focus state for all form fields */
-.form-control:focus {
-    border-color: #0d6efd !important;
-    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.15) !important;
-}
-
-/* Ensure password field has same styling */
-#password {
-    border-color: #e9ecef !important;
-}
-
-#password:focus {
-    border-color: #0d6efd !important;
-    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.15) !important;
-}
-
-/* Prevent password field from showing red on invalid state */
-#password:invalid {
-    border-color: #e9ecef !important;
-    box-shadow: none !important;
-}
-
-/* Never show browser validation */
-.form-control:invalid {
-    box-shadow: none !important;
-    border-color: #e9ecef !important;
-}
-
-/* Hide all browser validation UI */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-input[type=number] {
-    -moz-appearance: textfield;
-}
-
-/* Disable browser validation tooltips */
-input:invalid,
-textarea:invalid,
-select:invalid {
-    box-shadow: none !important;
-    outline: none !important;
-}
-
-/* Override Bootstraps validation styles - but allow server-side validation */
-.form-control:invalid {
-    border-color: #e9ecef !important;
-    padding-right: calc(1.5em + 0.75rem) !important;
-    background-image: none !important;
-}
-
-/* Allow red borders for server-side validation errors */
-.form-control.is-invalid {
-    border-color: #dc3545 !important;
-    padding-right: calc(1.5em + 0.75rem) !important;
-    background-image: none !important;
-}
-
-/* Red border for invalid checkbox */
-.form-check-input.is-invalid {
-    border-color: #dc3545 !important;
-}
-
-/* Red text for checkbox label when invalid */
-.form-check-input.is-invalid ~ .form-check-label {
-    color: #dc3545;
-}
-
-/* Input group styling for consistency */
-.input-group-text {
-    background-color: #f8f9fa;
-    border: 2px solid #e9ecef;
+.password-input-group .toggle-password {
+    border: 1px solid #ced4da;
+    border-left: none;
+    border-top-right-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+    background: #fff;
+    padding: 0.375rem 0.75rem;
     color: #6c757d;
+    transition: all 0.15s ease-in-out;
 }
 
-.input-group .form-control:focus ~ .input-group-text,
-.input-group .input-group-text:has(+ .form-control:focus) {
+.password-input-group .toggle-password:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.password-input-group .toggle-password:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+/* Match border color when input is focused */
+.password-input-group .form-control:focus ~ .toggle-password {
     border-color: #0d6efd;
 }
 
-/* Ensure email icon is properly sized */
-.input-group-text i {
-    font-size: 1rem;
+.password-strength {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
 }
 
-/* Fix for autofill display issue */
-.contact-field {
-    position: relative;
-    background: white;
+.password-strength .strength-bar {
+    height: 100%;
+    width: 0;
     transition: all 0.3s ease;
+    background: #dc3545;
 }
 
+.password-strength .strength-bar.weak { width: 33%; background: #dc3545; }
+.password-strength .strength-bar.medium { width: 66%; background: #ffc107; }
+.password-strength .strength-bar.strong { width: 100%; background: #28a745; }
+
+/* Child entry cards */
+.child-entry .card {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.child-entry .card:hover {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Style for underage years in dropdown */
+#birth_year option.text-danger {
+    color: #dc3545 !important;
+    font-weight: 500;
+}
 
 /* Fix Chrome autofill background */
 .contact-field input:-webkit-autofill,
@@ -590,65 +520,42 @@ select:invalid {
     -webkit-text-fill-color: #495057 !important;
 }
 
-/* Make button layout responsive on large screens */
-@media (min-width: 992px) {
-    .step-nav .row {
-        max-width: 600px;
-        margin: 0 auto;
+/* Mobile adjustments */
+@media (max-width: 576px) {
+    .form-section {
+        margin-bottom: 1.5rem;
     }
-}
-
-@media (min-width: 1200px) {
-    .step-nav .row {
-        max-width: 700px;
-    }
-}
-
-/* Container needs relative positioning and overflow visible for checkmarks */
-.contact-method-tabs {
-    overflow: visible !important;
-    position: relative;
-}
-
-.mb-4 > .contact-method-tabs {
-    margin-bottom: 1.5rem !important; /* Extra space for checkmark */
-}
-
-/* Mobile adjustments for contact tabs */
-@media (max-width: 480px) {
+    
+    /* Keep tabs horizontal on mobile */
     .contact-method-tabs {
-        flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.5rem;
     }
     
     .tab-option {
-        width: 100%;
-    }
-}
-
-/* Birthday dropdowns - ensure they stay horizontal on mobile */
-@media (max-width: 576px) {
-    #birth_month {
+        padding: 12px 10px;
         font-size: 0.875rem;
     }
     
-    #birth_day,
-    #birth_year {
-        font-size: 0.875rem;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+    .tab-option i {
+        font-size: 1rem;
     }
 }
 
-/* Style for underage years in dropdown */
-#birth_year option.text-danger {
-    color: #dc3545 !important;
-    font-weight: 500;
-}
-
-/* Some browsers need more specific targeting */
-select#birth_year option[class*="danger"] {
-    color: #dc3545 !important;
+/* Very small screens */
+@media (max-width: 400px) {
+    .tab-option {
+        padding: 10px 8px;
+        font-size: 0.8rem;
+    }
+    
+    .tab-option i {
+        font-size: 0.95rem;
+    }
+    
+    /* Even smaller gap on tiny screens */
+    .contact-method-tabs {
+        gap: 0.35rem;
+    }
 }
 </style>
 ';
@@ -688,11 +595,22 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Content -->
     <div class="content mx-auto" style="max-width: 900px;">
         <?php
-        // Error Message Display
-        if (!empty($errors)) {
+        // General error message display
+        if (!empty($errors['general'])) {
+            echo '<div class="alert alert-danger" role="alert">';
+            echo htmlspecialchars($errors['general']);
+            echo '</div>';
+        }
+        
+        // Multiple error message display
+        $display_errors = array_filter($errors, function($key) {
+            return !in_array($key, ['general']) && !str_contains($key, '.');
+        }, ARRAY_FILTER_USE_KEY);
+        
+        if (!empty($display_errors)) {
             echo '<div class="alert alert-danger" role="alert">';
             echo '<ul class="mb-0">';
-            foreach ($errors as $error) {
+            foreach ($display_errors as $error) {
                 echo '<li>' . htmlspecialchars($error) . '</li>';
             }
             echo '</ul>';
@@ -716,259 +634,44 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         <?php endif; ?>
 
-
-        <?php 
-        /* ARCHIVED FEATURE: Social Login 
-           Disabled because social providers don't give us birthday data,
-           which is essential for the Birthday.Gold platform.
-           Keeping code for potential future use if we find a solution.
-           
-        <!-- Social Login Options -->
-        <div class="social-login-section mb-4">
-            <h5 class="text-center mb-3">Sign up quickly with</h5>
-            <div class="row g-2 mb-3">
-                <div class="col-md-4">
-                    <button type="button" class="btn btn-outline-primary w-100 social-btn" id="googleSignup">
-                        <i class="bi bi-google me-2"></i>Google
-                    </button>
-                </div>
-                <div class="col-md-4">
-                    <button type="button" class="btn btn-outline-primary w-100 social-btn" id="facebookSignup">
-                        <i class="bi bi-facebook me-2"></i>Facebook
-                    </button>
-                </div>
-                <div class="col-md-4">
-                    <button type="button" class="btn btn-outline-dark w-100 social-btn" id="appleSignup">
-                        <i class="bi bi-apple me-2"></i>Apple
-                    </button>
-                </div>
-            </div>
-            
-            <div class="divider-container">
-                <hr class="divider">
-                <span class="divider-text">or sign up manually</span>
-            </div>
-        </div>
-        */ ?>
-
         <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" id="detailsForm" novalidate>
             <?php echo $display->inputcsrf_token(); ?>
-            <?php if (isset($_POST['social_provider'])): ?>
-            <input type="hidden" name="social_provider" value="<?php echo htmlspecialchars($_POST['social_provider']); ?>">
-            <input type="hidden" name="social_auth_id" value="<?php echo htmlspecialchars($_POST['social_auth_id'] ?? ''); ?>">
-            <input type="hidden" name="social_processed" value="1">
-            <?php endif; ?>
             
+            <!-- Include form sections based on account type -->
+            <?php 
+            foreach ($config['sections'] as $section_key) {
+                if (isset($default_sections[$section_key])) {
+                    $section_file = $_SERVER['DOCUMENT_ROOT'] . $default_sections[$section_key];
+                    if (file_exists($section_file)) {
+                        include($section_file);
+                    }
+                }
+            }
+            ?>
             
-            <!-- Name Section -->
-            <div class="form-section">
-                <h5 class="section-title">Your Name and Birthday</h5>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="firstname" class="form-label">First Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="firstname" name="firstname" 
-                               value="<?php echo htmlspecialchars($_POST['firstname'] ?? ''); ?>">
-                    </div>
-                    
-                    <div class="col-md-6 mb-3">
-                        <label for="lastname" class="form-label">Last Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="lastname" name="lastname" 
-                               value="<?php echo htmlspecialchars($_POST['lastname'] ?? ''); ?>">
-                    </div>
-                </div>
-          
-                <div class="row">
-                    <div class="col-md-12">
-                        <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                        <div class="d-flex gap-2" style="max-width: 400px;">
-                            <div class="flex-fill">
-                                <select class="form-control" id="birth_month" name="birth_month">
-                                    <option value="">Month</option>
-                                    <?php
-                                    $months = [
-                                        '01' => '01 - January', '02' => '02 - February', '03' => '03 - March',
-                                        '04' => '04 - April', '05' => '05 - May', '06' => '06 - June',
-                                        '07' => '07 - July', '08' => '08 - August', '09' => '09 - September',
-                                        '10' => '10 - October', '11' => '11 - November', '12' => '12 - December'
-                                    ];
-                                    $selected_month = $_POST['birth_month'] ?? '';
-                                    if (empty($selected_month) && !empty($_POST['birthday'])) {
-                                        $selected_month = date('m', strtotime($_POST['birthday']));
-                                    }
-                                    foreach ($months as $value => $label) {
-                                        $selected = ($selected_month == $value) ? 'selected' : '';
-                                        echo "<option value=\"$value\" $selected>$label</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                            <div style="width: 95px;">
-                                <select class="form-control" id="birth_day" name="birth_day">
-                                    <option value="">Day</option>
-                                    <?php
-                                    $selected_day = $_POST['birth_day'] ?? '';
-                                    if (empty($selected_day) && !empty($_POST['birthday'])) {
-                                        $selected_day = date('d', strtotime($_POST['birthday']));
-                                    }
-                                    for ($i = 1; $i <= 31; $i++) {
-                                        $day = str_pad($i, 2, '0', STR_PAD_LEFT);
-                                        $selected = ($selected_day == $day) ? 'selected' : '';
-                                        echo "<option value=\"$day\" $selected>$i</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                            <div style="width: 120px;">
-                                <select class="form-control" id="birth_year" name="birth_year">
-                                    <option value="">Year</option>
-                                    <?php
-                                    $current_year = date('Y');
-                                    $selected_year = $_POST['birth_year'] ?? '';
-                                    if (empty($selected_year) && !empty($_POST['birthday'])) {
-                                        $selected_year = date('Y', strtotime($_POST['birthday']));
-                                    }
-                                    $min_age_year = $current_year - 13;
-                                    for ($i = $current_year; $i >= 1900; $i--) {
-                                        $selected = ($selected_year == $i) ? 'selected' : '';
-                                        $class = ($i > $min_age_year) ? 'class="text-danger"' : '';
-                                        echo "<option value=\"$i\" $selected $class>$i</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-                        </div>
-                        <small class="text-muted">We'll use this to notify you of birthday rewards</small>
-                        <!-- Hidden field for combined birthday value -->
-                        <input type="hidden" id="birthday" name="birthday" value="<?php echo htmlspecialchars($_POST['birthday'] ?? ''); ?>">
-                    </div>
-                    <div class="col-md-6">
-                        <!-- Empty column for balance on larger screens -->
-                        <input type="hidden" id="altContact" name="alt_contact" value="">
-                    </div>
-                </div>
+            <!-- Navigation Buttons -->
+            <div class="step-nav mt-4">
+                <table style="width: 100%;">
+                    <tr>
+                        <td style="width: 1%; white-space: nowrap; padding-right: 8px;">
+                            <a href="/signup" class="btn-secondary-custom">
+                                <i class="bi bi-arrow-left me-2"></i>Back
+                            </a>
+                        </td>
+                        <td>
+                            <button type="submit" class="btn-primary-custom w-100">
+                                <?php if ($account_cost > 0): ?>
+                                    Continue to Checkout <i class="bi bi-arrow-right ms-2"></i>
+                                <?php else: ?>
+                                    Continue to Validate <i class="bi bi-arrow-right ms-2"></i>
+                                <?php endif; ?>
+                            </button>
+                        </td>
+                    </tr>
+                </table>
             </div>
-            
-            <!-- Account Info Section -->
-            <div class="form-section">
-                <h5 class="section-title">Account Information</h5>
-                
-                <!-- Contact Method Selection -->
-                <div class="mb-4">
-                    <label class="form-label">Start Your Account with?</label>
-                    <div class="contact-method-tabs">
-                        <div class="tab-option active" data-method="phone">
-                            <i class="bi bi-phone"></i>
-                            <span>Use Phone Number</span>
-                        </div>
-                        <div class="tab-option" data-method="email">
-                            <i class="bi bi-envelope"></i>
-                            <span>Use Email Address</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Unified Input Field Container -->
-                    <div class="contact-input-wrapper mt-3" id="contactInputContainer">
-                        <!-- Input field will be dynamically inserted here -->
-                    </div>
-                    
-                    <!-- Hidden radio buttons for form submission -->
-                    <div class="d-none">
-                        <input type="radio" name="contact_method" id="usePhone" value="phone" checked>
-                        <input type="radio" name="contact_method" id="useEmail" value="email">
-                    </div>
-                </div>
-        
-                
-                <!-- Hidden username field to satisfy password managers -->
-                <input type="text" name="username_dummy" id="username_dummy" style="display: none !important; position: absolute; left: -9999px;" tabindex="-1" autocomplete="username">
-                
-                <!-- Password -->
-                <div class="mb-4">
-                    <label for="password" class="form-label">Create Password <span class="text-danger">*</span></label>
-                    <div class="password-input-group">
-                        <input type="password" class="form-control" id="password" name="password" value="<?php echo htmlspecialchars($_POST['password'] ?? ''); ?>" autocomplete="new-password">
-                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                    </div>
-                    <div class="password-strength mt-2">
-                        <div class="strength-bar"></div>
-                    </div>
-                    <small class="text-muted">At least 8 characters with a mix of letters and numbers</small>
-                </div>
-                
-                <!-- Terms and Privacy -->
-                <div class="mb-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="terms" name="terms" value="1" <?php echo (!empty($_POST['terms'])) ? 'checked' : ''; ?>>
-                        <label class="form-check-label" for="terms">
-                            I agree to the <a href="/legalhub/terms" class="text-underline">Terms</a> and <a href="/legalhub/privacy" class="text-underline">Privacy Policy</a>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Promo & Referral Codes (inside Account Info section) -->
-                <div class="promo-referral-section">
-                    <div class="promo-referral-header" id="togglePromoReferral">
-                        <span>
-                            <i class="bi bi-gift me-1"></i>
-                            <strong>Promo or Referral Code?</strong>
-                        </span>
-                        <i class="bi bi-chevron-down" id="promoReferralChevron"></i>
-                    </div>
-                    
-                    <div class="promo-referral-content collapse <?php echo $show_promo_section ? 'show' : ''; ?>" id="promoReferralSection">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="promo_code" class="form-label">Promo Code</label>
-                                <div class="code-input-group">
-                                    <input type="text" class="form-control" id="promo_code" name="promo_code" 
-                                           placeholder="Enter promo code" value="<?php echo htmlspecialchars($promo_code); ?>">
-                                    <button type="button" class="btn btn-success me-2" id="applyPromo">Apply</button>
-                                </div>
-                                <div id="promoMessage" class="mt-1"></div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="referral_code" class="form-label">Referral Code</label>
-                                <div class="code-input-group">
-                                    <input type="text" class="form-control" id="referral_code" name="referral_code" 
-                                           placeholder="Friend's referral code" value="<?php echo htmlspecialchars($referral_code); ?>">
-                                    <button type="button" class="btn btn-success me-2" id="verifyReferral">Verify</button>
-                                </div>
-                                <div id="referralMessage" class="mt-1"></div>
-                                <small class="text-muted ms-1">Enter the code of the person who referred you</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-<!-- Navigation Buttons -->
-<div class="step-nav mt-4">
-    <table style="width: 100%;">
-        <tr>
-            <td style="width: 1%; white-space: nowrap; padding-right: 8px;">
-                <a href="/signup" class="btn-secondary-custom">
-                    <i class="bi bi-arrow-left me-2"></i>Back
-                </a>
-            </td>
-            <td>
-                <button type="submit" class="btn-primary-custom w-100">
-                    <?php if ($account_cost > 0): ?>
-                        Continue to Checkout <i class="bi bi-arrow-right ms-2"></i>
-                    <?php else: ?>
-                        Continue to Validate <i class="bi bi-arrow-right ms-2"></i>
-                    <?php endif; ?>
-                </button>
-            </td>
-        </tr>
-    </table>
-</div>
-
         </form>
     </div>
-
 </div>
 
 <!-- JavaScript -->
@@ -979,20 +682,21 @@ const pageData = {
     ajaxUrl: '<?php echo $_SERVER['PHP_SELF']; ?>',
     csrfToken: '<?php echo $session->get('csrf_token'); ?>',
     productId: <?php echo isset($signup_process['account_plan_id']) ? $signup_process['account_plan_id'] : '0'; ?>,
-    originalPrice: <?php echo $account_cost; ?>
+    originalPrice: <?php echo $account_cost; ?>,
+    accountType: '<?php echo $account_type; ?>'
 };
-console.log('[CREATEACCOUNT] Page data:', pageData);
 
-// Handle new tab-style contact method switching
+// Initialize contact method switching (from credentials section)
 document.addEventListener('DOMContentLoaded', function() {
+    // Handle tab-style contact method switching
     const tabOptions = document.querySelectorAll('.tab-option');
     const container = document.getElementById('contactInputContainer');
     const phoneRadio = document.getElementById('usePhone');
     const emailRadio = document.getElementById('useEmail');
     
-    // Store values to preserve when switching
-    let phoneValue = '<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>';
-    let emailValue = '<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>';
+    // Use values from credentialsData if available
+    let phoneValue = window.credentialsData?.phoneValue || '';
+    let emailValue = window.credentialsData?.emailValue || '';
     
     // Create phone field HTML
     function createPhoneField() {
@@ -1042,37 +746,34 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentEmail) emailValue = currentEmail.value;
         
         // Clear container
-        container.innerHTML = '';
-        
-        // Create new field
-        if (method === 'phone') {
-            container.innerHTML = createPhoneField();
-            phoneRadio.checked = true;
+        if (container) {
+            container.innerHTML = '';
             
-            // Attach event handlers
-            const phoneInput = document.getElementById('phone');
-            if (phoneInput) {
-                // Update stored value on input
-                phoneInput.addEventListener('input', function(e) {
-                    phoneValue = e.target.value;
-                    
-                    // Format phone number
-                    if (typeof formatPhoneNumber === 'function') {
+            // Create new field
+            if (method === 'phone') {
+                container.innerHTML = createPhoneField();
+                if (phoneRadio) phoneRadio.checked = true;
+                
+                // Attach event handlers
+                const phoneInput = document.getElementById('phone');
+                if (phoneInput) {
+                    phoneInput.addEventListener('input', function(e) {
+                        phoneValue = e.target.value;
+                        // Format phone number
                         formatPhoneNumber(e);
-                    }
-                });
-            }
-        } else {
-            container.innerHTML = createEmailField();
-            emailRadio.checked = true;
-            
-            // Attach event handlers
-            const emailInput = document.getElementById('email');
-            if (emailInput) {
-                // Update stored value on input
-                emailInput.addEventListener('input', function(e) {
-                    emailValue = e.target.value;
-                });
+                    });
+                }
+            } else {
+                container.innerHTML = createEmailField();
+                if (emailRadio) emailRadio.checked = true;
+                
+                // Attach event handlers
+                const emailInput = document.getElementById('email');
+                if (emailInput) {
+                    emailInput.addEventListener('input', function(e) {
+                        emailValue = e.target.value;
+                    });
+                }
             }
         }
     }
@@ -1092,57 +793,127 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Initialize with default selection
-    switchContactMethod(phoneRadio.checked ? 'phone' : 'email');
+    const initialMethod = window.credentialsData?.contactMethod || 'phone';
+    switchContactMethod(phoneRadio && phoneRadio.checked ? 'phone' : initialMethod);
     
-    // Highlight error fields if there are errors
-    <?php if (!empty($errors)): ?>
-    // Fields that might have errors
-    const errorFieldMap = {
-        'First name is required': 'firstname',
-        'Lastname is required': 'lastname',
-        'Last name is required': 'lastname',
-        'Birthday is required': 'birthday',
-        'Please select your complete birth date': ['birth_month', 'birth_day', 'birth_year'],
-        'Please select a valid date': ['birth_month', 'birth_day', 'birth_year'],
-        'Password is required': 'password',
-        'Password must be at least 8 characters': 'password',
-        'Phone is required': 'phone',
-        'Please enter a valid 10-digit phone number': 'phone',
-        'Email is required': 'email',
-        'Please enter a valid email address': 'email',
-        'This email is already registered': 'email',
-        'You must agree to the Terms and Privacy Policy': 'terms'
-    };
+    // Handle password toggle
+    setTimeout(function() {
+        const togglePasswordBtn = document.querySelector('.toggle-password');
+        if (togglePasswordBtn) {
+            togglePasswordBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const passwordInput = document.getElementById('password');
+                const icon = this.querySelector('i');
+                
+                if (passwordInput && passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else if (passwordInput) {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            });
+        }
+    }, 100); // Small delay to ensure DOM is ready
     
-    // Parse errors and highlight fields
-    const errors = <?php echo json_encode($errors); ?>;
-    errors.forEach(error => {
-        // Find the field ID for this error
-        Object.keys(errorFieldMap).forEach(errorText => {
-            if (error.includes(errorText.replace(' is required', '')) || error === errorText) {
-                const fieldIds = errorFieldMap[errorText];
-                
-                // Handle both single field and array of fields
-                const fieldsToHighlight = Array.isArray(fieldIds) ? fieldIds : [fieldIds];
-                
-                fieldsToHighlight.forEach(fieldId => {
-                    const field = document.getElementById(fieldId);
-                    if (field) {
-                        field.classList.add('is-invalid');
-                        field.style.borderColor = '#dc3545';
-                    }
-                });
+    // Handle promo/referral toggle with Bootstrap collapse
+    const togglePromo = document.getElementById('togglePromoReferral');
+    const promoSection = document.getElementById('promoReferralSection');
+    const promoChevron = document.getElementById('promoReferralChevron');
+    
+    if (togglePromo && promoSection) {
+        // Initialize Bootstrap collapse
+        const bsCollapse = new bootstrap.Collapse(promoSection, {
+            toggle: false
+        });
+        
+        togglePromo.addEventListener('click', function(e) {
+            e.preventDefault();
+            bsCollapse.toggle();
+        });
+        
+        // Listen for Bootstrap collapse events to update chevron
+        promoSection.addEventListener('shown.bs.collapse', function() {
+            promoChevron.classList.remove('bi-chevron-down');
+            promoChevron.classList.add('bi-chevron-up');
+        });
+        
+        promoSection.addEventListener('hidden.bs.collapse', function() {
+            promoChevron.classList.remove('bi-chevron-up');
+            promoChevron.classList.add('bi-chevron-down');
+        });
+    }
+    
+    // Birthday dropdown sync
+    const birthMonth = document.getElementById('birth_month');
+    const birthDay = document.getElementById('birth_day');
+    const birthYear = document.getElementById('birth_year');
+    const birthdayHidden = document.getElementById('birthday');
+    
+    function updateBirthdayField() {
+        if (birthMonth && birthDay && birthYear && 
+            birthMonth.value && birthDay.value && birthYear.value) {
+            birthdayHidden.value = birthYear.value + '-' + birthMonth.value + '-' + birthDay.value;
+        }
+    }
+    
+    if (birthMonth) birthMonth.addEventListener('change', updateBirthdayField);
+    if (birthDay) birthDay.addEventListener('change', updateBirthdayField);
+    if (birthYear) birthYear.addEventListener('change', updateBirthdayField);
+});
+
+// Phone number formatting
+function formatPhoneNumber(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 0) {
+        if (value.length <= 3) {
+            value = value;
+        } else if (value.length <= 6) {
+            value = value.slice(0, 3) + '-' + value.slice(3);
+        } else {
+            value = value.slice(0, 3) + '-' + value.slice(3, 6) + '-' + value.slice(6, 10);
+        }
+    }
+    e.target.value = value;
+}
+
+// Password strength checker
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.getElementById('password');
+    const strengthBar = document.querySelector('.strength-bar');
+    
+    if (passwordInput && strengthBar) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+            
+            strengthBar.classList.remove('weak', 'medium', 'strong');
+            
+            if (strength <= 1) {
+                strengthBar.classList.add('weak');
+            } else if (strength === 2) {
+                strengthBar.classList.add('medium');
+            } else {
+                strengthBar.classList.add('strong');
             }
         });
-    });
-    <?php endif; ?>
+    }
 });
 </script>
+
 <!-- Load embedded promo validation to avoid 403 errors -->
 <script src="/promo_validate_embedded.php"></script>
 <script src="/claudecode/createaccount_flow.js"></script>
 
 <?php
+$display_footertype='min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

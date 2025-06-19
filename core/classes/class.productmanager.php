@@ -38,7 +38,7 @@ class ProductManager {
         
         // Get features for each product
         foreach ($products as &$product) {
-            $product['features'] = $this->getProductFeatures($product['id']);
+            $product['features'] = $this->getProductFeatures($product['id'], false, 'user');
             $product['encoded_id'] = $this->qik ? $this->qik->encodeId($product['id']) : $product['id'];
         }
         
@@ -72,21 +72,28 @@ class ProductManager {
     /**
      * Get available account types with plan counts
      * @param string $version Version to check (v2, v3, v7)
+     * @param bool $includeInactive Include inactive types (for admin)
      * @return array Account types with display info
      */
-    public function getAvailableAccountTypes($version = 'v7') {
+    public function getAvailableAccountTypes($version = 'v7', $includeInactive = false) {
+        // Build WHERE clause based on whether we include inactive
+        $whereClause = "WHERE p.version = :version";
+        if (!$includeInactive) {
+            $whereClause .= " AND p.status = 'active' AND p.display_grouping_status = 'active'";
+        }
+        
         // First get account types from products
         $sql = "SELECT p.account_type, COUNT(*) as plan_count
                 FROM bg_products p
-                WHERE p.status = 'active' 
-                AND p.display_grouping_status = 'active'
-                AND p.version = :version
+                $whereClause
                 GROUP BY p.account_type";
         
         $accountTypes = $this->database->getrows($sql, ['version' => $version]);
         
         // Try to join with account types table for display info
         try {
+            $atStatusClause = $includeInactive ? "" : " AND at.status = 'active'";
+            
             $sql = "SELECT 
                     p.account_type, 
                     COUNT(*) as plan_count,
@@ -94,12 +101,12 @@ class ProductManager {
                     COALESCE(at.short_label, p.account_type) as short_label,
                     COALESCE(at.description, '') as description,
                     COALESCE(at.icon, 'bi-tag') as icon,
-                    COALESCE(at.display_order, 999) as display_order
+                    COALESCE(at.display_order, 999) as display_order,
+                    p.display_grouping_status,
+                    at.status as type_status
                 FROM bg_products p
-                LEFT JOIN bg_account_types at ON p.account_type = at.account_type AND at.version = :version AND at.status = 'active'
-                WHERE p.status = 'active' 
-                AND p.display_grouping_status = 'active'
-                AND p.version = :version
+                LEFT JOIN bg_account_types at ON p.account_type = at.account_type AND at.version = :version $atStatusClause
+                $whereClause
                 GROUP BY p.account_type
                 ORDER BY display_order, p.account_type";
             
@@ -285,9 +292,10 @@ class ProductManager {
      * Get product features including system features
      * @param int $productId Product ID
      * @param bool $includeSystem Include system features (_sys_*)
+     * @param string $context Context for display ('user', 'admin', 'all')
      * @return array Features array
      */
-    public function getProductFeatures($productId, $includeSystem = false) {
+    public function getProductFeatures($productId, $includeSystem = false, $context = 'user') {
         $sql = "SELECT * FROM bg_product_features 
                 WHERE product_id = :product_id ";
         
@@ -299,6 +307,16 @@ class ProductManager {
         if (!$includeSystem) {
             $sql .= "AND status = 'active' ";
         }
+        
+        // Filter by display_mode based on context
+        if ($context === 'user') {
+            // For user context, only show features marked as 'show'
+            $sql .= "AND (display_mode = 'show' OR display_mode IS NULL) ";
+        } elseif ($context === 'admin') {
+            // For admin context, show 'show' and 'admin_only', but not 'hide'
+            $sql .= "AND (display_mode IN ('show', 'admin_only') OR display_mode IS NULL) ";
+        }
+        // For 'all' context, no additional filtering
         
         $sql .= "ORDER BY id ASC";
         

@@ -77,6 +77,11 @@ if (empty($data['password'])) {
     $errors['password'] = 'Password must be at least 8 characters';
 }
 
+// Terms validation
+if (empty($data['terms'])) {
+    $errors['terms'] = 'You must agree to the Terms and Privacy Policy';
+}
+
 // Check email availability if provided and no errors yet
 if (empty($errors['email']) && !empty($data['email'])) {
     $email = trim(strtolower($data['email']));
@@ -157,6 +162,9 @@ if (empty($errors)) {
     
     // Newsletter preference
     $processed['newsletter'] = isset($data['newsletter']) ? 1 : 0;
+    
+    // Store password value for form re-display on errors
+    $processed['password'] = $data['password'];
 }
 
 // Return results

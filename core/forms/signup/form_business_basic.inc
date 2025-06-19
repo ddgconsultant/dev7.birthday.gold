@@ -154,11 +154,14 @@ $location_options = [
         <!-- Business Email -->
         <div class="col-md-6 mb-3">
             <label for="email" class="form-label">Business Email <span class="text-danger">*</span></label>
-            <input type="email" class="form-control <?php echo isset($errors['email']) ? 'is-invalid' : ''; ?>" 
-                   id="email" name="email" placeholder="contact@business.com"
-                   value="<?php echo htmlspecialchars($email); ?>" required>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input type="email" class="form-control <?php echo isset($errors['email']) ? 'is-invalid' : ''; ?>" 
+                       id="email" name="email" placeholder="contact@business.com"
+                       value="<?php echo htmlspecialchars($email); ?>" required>
+            </div>
             <?php if (isset($errors['email'])): ?>
-                <div class="invalid-feedback"><?php echo htmlspecialchars($errors['email']); ?></div>
+                <div class="invalid-feedback d-block"><?php echo htmlspecialchars($errors['email']); ?></div>
             <?php endif; ?>
         </div>
         
@@ -168,7 +171,7 @@ $location_options = [
             <div class="input-group">
                 <span class="input-group-text">+1</span>
                 <input type="tel" class="form-control <?php echo isset($errors['phone']) ? 'is-invalid' : ''; ?>" 
-                       id="phone" name="phone" placeholder="(555) 123-4567" required
+                       id="phone" name="phone" placeholder="555-123-4567" required
                        value="<?php echo htmlspecialchars($phone); ?>">
             </div>
             <?php if (isset($errors['phone'])): ?>
@@ -181,7 +184,7 @@ $location_options = [
             <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
             <div class="password-input-group">
                 <input type="password" class="form-control <?php echo isset($errors['password']) ? 'is-invalid' : ''; ?>" 
-                       id="password" name="password" required>
+                       id="password" name="password" value="<?php echo htmlspecialchars($values['password'] ?? ''); ?>" required>
                 <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password">
                     <i class="bi bi-eye"></i>
                 </button>
@@ -207,8 +210,181 @@ $location_options = [
     </div>
 </div>
 
+<!-- Terms and Privacy -->
+<div class="form-section">
+    <div class="form-check">
+        <input class="form-check-input <?php echo isset($errors['terms']) ? 'is-invalid' : ''; ?>" type="checkbox" id="terms" name="terms" value="1" <?php echo (!empty($values['terms'])) ? 'checked' : ''; ?>>
+        <label class="form-check-label <?php echo isset($errors['terms']) ? 'text-danger' : ''; ?>" for="terms">
+            I agree to the <a href="/legalhub/terms" class="text-underline">Terms</a> and <a href="/legalhub/privacy" class="text-underline">Privacy Policy</a>
+        </label>
+        <?php if (isset($errors['terms'])): ?>
+            <div class="invalid-feedback d-block"><?php echo htmlspecialchars($errors['terms']); ?></div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Promo & Referral Codes -->
+<div class="promo-referral-section">
+    <div class="promo-referral-header" id="togglePromoReferral">
+        <span>
+            <i class="bi bi-gift me-1"></i>
+            <strong>Promo or Referral Code?</strong>
+        </span>
+        <i class="bi bi-chevron-down" id="promoReferralChevron"></i>
+    </div>
+    
+    <div class="promo-referral-content collapse" id="promoReferralSection">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="promo_code" class="form-label">Promo Code</label>
+                <div class="code-input-group">
+                    <input type="text" class="form-control" id="promo_code" name="promo_code" 
+                           placeholder="Enter promo code" value="<?php echo htmlspecialchars($values['promo_code'] ?? ''); ?>">
+                    <button type="button" class="btn btn-success me-2" id="applyPromo">Apply</button>
+                </div>
+                <div id="promoMessage" class="mt-1"></div>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label for="referral_code" class="form-label">Referral Code</label>
+                <div class="code-input-group">
+                    <input type="text" class="form-control" id="referral_code" name="referral_code" 
+                           placeholder="Friend's referral code" value="<?php echo htmlspecialchars($values['referral_code'] ?? ''); ?>">
+                    <button type="button" class="btn btn-success me-2" id="verifyReferral">Verify</button>
+                </div>
+                <div id="referralMessage" class="mt-1"></div>
+                <small class="text-muted ms-1">Enter the code of the person who referred you</small>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Hidden birthday field (businesses don't have birthdays but the system requires it) -->
 <input type="hidden" name="birthday" value="2000-01-01">
+
+<!-- Form-specific Styles -->
+<style>
+/* Form Controls Focus State */
+.form-control:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.15) !important;
+}
+
+/* Ensure all form fields have white background */
+.form-control {
+    background-color: #ffffff !important;
+    border-color: #e9ecef !important;
+}
+
+/* Password Input Group */
+.password-input-group {
+    position: relative;
+    display: flex;
+}
+
+.password-input-group .form-control {
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.password-input-group .btn {
+    border: 2px solid #e9ecef;
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    background: white;
+    color: #6c757d;
+}
+
+.password-input-group .form-control:focus ~ .btn {
+    border-color: #0d6efd;
+}
+
+/* Password Strength */
+.password-strength {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0;
+    transition: all 0.3s ease;
+    background: #dc3545;
+}
+
+.strength-bar.weak {
+    width: 33%;
+    background: #dc3545;
+}
+
+.strength-bar.medium {
+    width: 66%;
+    background: #ffc107;
+}
+
+.strength-bar.strong {
+    width: 100%;
+    background: #198754;
+}
+
+/* Input group styling */
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 2px solid #e9ecef;
+    color: #6c757d;
+}
+
+.input-group .form-control:focus ~ .input-group-text,
+.input-group .input-group-text:has(+ .form-control:focus) {
+    border-color: #0d6efd;
+}
+
+/* Promo/Referral Section */
+.promo-referral-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+}
+
+.promo-referral-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.promo-referral-header:hover {
+    opacity: 0.8;
+}
+
+.promo-referral-content {
+    margin-top: 1rem;
+}
+
+.code-input-group {
+    position: relative;
+}
+
+.code-input-group input {
+    padding-right: 80px;
+}
+
+.code-input-group .btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.25rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+</style>
 
 <!-- Form-specific JavaScript -->
 <script>
@@ -222,11 +398,11 @@ $location_options = [
             
             if (value.length > 0) {
                 if (value.length <= 3) {
-                    formattedValue = `(${value}`;
+                    formattedValue = value;
                 } else if (value.length <= 6) {
-                    formattedValue = `(${value.slice(0, 3)}) ${value.slice(3)}`;
+                    formattedValue = `${value.slice(0, 3)}-${value.slice(3)}`;
                 } else {
-                    formattedValue = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
+                    formattedValue = `${value.slice(0, 3)}-${value.slice(3, 6)}-${value.slice(6, 10)}`;
                 }
             }
             
@@ -254,6 +430,87 @@ $location_options = [
             if (value && !value.match(/^https?:\/\//)) {
                 e.target.value = 'https://' + value;
             }
+        });
+    }
+    
+    // Password toggle
+    document.querySelectorAll('.toggle-password').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+    });
+    
+    // Password strength indicator
+    const passwordInput = document.getElementById('password');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            const strengthBar = document.querySelector('.strength-bar');
+            
+            if (!strengthBar) return;
+            
+            let strength = 0;
+            
+            // Length check
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            
+            // Complexity checks
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+            
+            // Update strength bar
+            strengthBar.className = 'strength-bar';
+            if (password.length === 0) {
+                strengthBar.style.width = '0';
+            } else if (strength <= 2) {
+                strengthBar.classList.add('weak');
+            } else if (strength <= 3) {
+                strengthBar.classList.add('medium');
+            } else {
+                strengthBar.classList.add('strong');
+            }
+        });
+    }
+    
+    // Promo/Referral toggle
+    const togglePromoReferral = document.getElementById('togglePromoReferral');
+    const promoReferralSection = document.getElementById('promoReferralSection');
+    const promoReferralChevron = document.getElementById('promoReferralChevron');
+    
+    if (togglePromoReferral && promoReferralSection) {
+        // Initialize Bootstrap collapse
+        const promoReferralCollapse = new bootstrap.Collapse(promoReferralSection, {
+            toggle: false
+        });
+        
+        togglePromoReferral.addEventListener('click', function(e) {
+            e.preventDefault();
+            promoReferralCollapse.toggle();
+        });
+        
+        // Listen for show/hide events to update chevron
+        promoReferralSection.addEventListener('shown.bs.collapse', function() {
+            promoReferralChevron.classList.remove('bi-chevron-down');
+            promoReferralChevron.classList.add('bi-chevron-up');
+        });
+        
+        promoReferralSection.addEventListener('hidden.bs.collapse', function() {
+            promoReferralChevron.classList.remove('bi-chevron-up');
+            promoReferralChevron.classList.add('bi-chevron-down');
         });
     }
 })();

@@ -127,6 +127,33 @@ echo '
                 </div>
             </div>
         </div>
+        
+        <h5 class="fs-9 mb-2 mt-5">Plans & Products</h5>
+        <div class="row g-3">
+            <div class="col-xxl-4 col-lg-6">
+                <div class="d-flex align-items-center px-4 py-x1 bg-body-tertiary rounded-3 border position-relative">
+                    <img src="/public/assets/img/tickets/reports/2.png" alt="" width="40">
+                    <div class="ms-3 my-x1">
+                        <h5 class="fs-9 fw-semi-bold mb-2">
+                            <a class="text-900 hover-primary stretched-link" href="/admin/plan_editor.php">Plan Editor</a>
+                        </h5>
+                        <h6 class="mb-0 text-600">Manage signup plans and pricing</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-4 col-lg-6">
+                <div class="d-flex align-items-center px-4 py-x1 bg-body-tertiary rounded-3 border position-relative">
+                    <img src="/public/assets/img/tickets/reports/5.png" alt="" width="40">
+                    <div class="ms-3 my-x1">
+                        <h5 class="fs-9 fw-semi-bold mb-2">
+                            <a class="text-900 hover-primary stretched-link" href="/admin/promo_editor.php">Promo Code Editor</a>
+                        </h5>
+                        <h6 class="mb-0 text-600">Create and manage promotional codes</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <h5 class="fs-9 mb-2 mt-5">System</h5>
         <div class="row g-3 mb-5">
             <div class="col-xxl-4 col-lg-6">
