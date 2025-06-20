@@ -1,393 +1,587 @@
 <?php
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 
-// Get user ID
-$encoded_user_id = $_REQUEST['u'] ?? '';
+// Testing flag - add ?test=1 to bypass user authentication
+// Usage: ?test=1&uid=USER123&product_id=441&name=John
+$test_mode = isset($_GET['test']) && $_GET['test'] == '1';
+
 $user_id = null;
 $user_data = null;
+$product_id = null;
 
-// Try to decode user ID if provided
-if (!empty($encoded_user_id)) {
-    try {
-        $user_id = $qik->decodeId($encoded_user_id);
-        
-        // Get user data
-        $sql = "SELECT * FROM bg_users WHERE user_id = :user_id";
-        $user_data = $database->getrow($sql, ['user_id' => $user_id]);
-        
-        // Ensure user is logged in
-        if ($user_data && (!$session->get('logged_in') || $session->get('user_id') != $user_id)) {
-            $session->set('user_id', $user_id);
-            $session->set('logged_in', true);
-            $session->set('account_type', $user_data['account_type']);
+// If in test mode, create mock user data
+if ($test_mode) {
+    $test_uid = $_GET['uid'] ?? 'TEST_USER';
+    $test_product_id = $_GET['product_id'] ?? 441; // Default to user_gold
+    $test_first_name = $_GET['name'] ?? 'Richard';
+    
+    // Look up product details from bg_products
+    $sql = "SELECT * FROM bg_products WHERE id = :product_id AND status = 'active'";
+    $product_info = $database->getrow($sql, ['product_id' => $test_product_id]);
+    $test_plan = $product_info['plan'] ?? 'user_gold';
+    
+    $user_data = [
+        'user_id' => $test_uid,
+        'first_name' => $test_first_name,
+        'last_name' => 'Test',
+        'account_type' => 'individual',
+        'account_plan' => $test_plan,
+        'email' => 'test@example.com'
+    ];
+    $user_id = $test_uid;
+    $product_id = $test_product_id;
+} else {
+    // Production mode - get data from session
+    $celebration_data = $session->get('celebration_data', []);
+    
+    if (empty($celebration_data)) {
+        // No celebration data in session - redirect to account or login
+        error_log('[CELEBRATION] No celebration data in session');
+        if ($session->get('logged_in')) {
+            header('Location: /myaccount/');
+        } else {
+            header('Location: /login');
         }
-    } catch (Exception $e) {
-        // Continue anyway - we'll show a generic celebration
-        error_log('[CELEBRATION] Failed to decode user ID: ' . $e->getMessage());
+        exit();
+    }
+    
+    $user_id = $celebration_data['user_id'] ?? null;
+    $product_id = $celebration_data['product_id'] ?? null;
+    
+    if (!$user_id) {
+        error_log('[CELEBRATION] No user_id in celebration data');
+        header('Location: /login');
+        exit();
     }
 }
 
-// If we still don't have user data, try to get it from session
-if (!$user_data && $session->get('logged_in')) {
-    $user_id = $session->get('user_id');
-    if ($user_id) {
-        $sql = "SELECT * FROM bg_users WHERE user_id = :user_id";
-        $user_data = $database->getrow($sql, ['user_id' => $user_id]);
+// Get user data from database (for both test and production mode)
+if (!$test_mode && $user_id) {
+    $sql = "SELECT * FROM bg_users WHERE user_id = :user_id";
+    $user_data = $database->getrow($sql, ['user_id' => $user_id]);
+    
+    if (!$user_data) {
+        error_log('[CELEBRATION] User not found: ' . $user_id);
+        header('Location: /login');
+        exit();
     }
+    
+    // Ensure user is logged in
+    if (!$session->get('logged_in') || $session->get('user_id') != $user_id) {
+        $session->set('user_id', $user_id);
+        $session->set('logged_in', true);
+        $session->set('account_type', $user_data['account_type']);
+    }
+    
+    // Clear celebration data from session after successful use
+    $session->unset('celebration_data');
+}
+
+// Get product-specific messaging from bg_product_features using product_id
+$celebration_messages = [];
+
+// First try to get product_id if not already set
+if (!$product_id && $user_data && isset($user_data['account_plan'])) {
+    // Look up product_id from plan for existing users
+    $sql = "SELECT id FROM bg_products WHERE plan = :plan AND status = 'active' LIMIT 1";
+    $product_info = $database->getrow($sql, ['plan' => $user_data['account_plan']]);
+    $product_id = $product_info['id'] ?? null;
+}
+
+if ($product_id) {
+    // Fetch product-specific celebration messages using product_id
+    $sql = "SELECT name, value FROM bg_product_features 
+            WHERE product_id = :product_id 
+            AND status = 'active' 
+            AND name LIKE 'celebration_%'
+            ORDER BY name";
+    $messages = $database->getrows($sql, ['product_id' => $product_id]);
+    
+    foreach ($messages as $message) {
+        $celebration_messages[$message['name']] = $message['value'];
+    }
+}
+
+// If no product-specific messages found, try 'default' plan as fallback
+if (empty($celebration_messages)) {
+    $sql = "SELECT name, value FROM bg_product_features 
+            WHERE plan = 'default' 
+            AND status = 'active' 
+            AND name LIKE 'celebration_%'
+            ORDER BY name";
+    $messages = $database->getrows($sql, []);
+    
+    foreach ($messages as $message) {
+        $celebration_messages[$message['name']] = $message['value'];
+    }
+}
+
+// Default messages if none found in database
+if (empty($celebration_messages)) {
+    $celebration_messages = [
+        'celebration_title' => 'Welcome to Birthday Gold!',
+        'celebration_subtitle' => 'Your payment was successful{NAME}!',
+        'celebration_message' => 'You\'re all set to start receiving amazing birthday rewards from hundreds of businesses. We\'ll automatically enroll you in birthday programs as your special day approaches.',
+        'celebration_next_steps_title' => 'Your Next Steps:',
+        'celebration_button_text' => 'Go to Your Dashboard'
+    ];
 }
 
 // Page setup
-$pagetitle = 'Welcome to Birthday Gold!';
-$bodyclass = 'class="celebration-page"';
+$pagetitle = $celebration_messages['celebration_title'] ?? 'Welcome to Birthday Gold!';
+$page_title = $celebration_messages['celebration_title'] ?? 'Welcome to Birthday Gold!';
 
-// Additional styles for celebration
-$additionalstyles .= '
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+// Add celebration-specific styles in $additionalstyles
+$additionalstyles = '
 <style>
-body.celebration-page {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    min-height: 100vh;
+/* Celebration content area - fills container naturally */
+.celebration-content-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 50%, #17a2b8 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    position: relative;
-    padding-top: 0 !important; /* Override default body padding */
+    padding: 2rem;
 }
+
 
 .celebration-container {
     text-align: center;
     color: white;
-    position: relative;
-    z-index: 10;
-    padding: 2rem;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    max-width: 800px;
-    margin: 0 auto;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    backdrop-filter: blur(10px);
+    max-width: 700px;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 25px;
+    padding: 3rem 2rem;
+    backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    animation: slideInUp 1s ease-out;
 }
 
 .celebration-icon {
     font-size: 5rem;
     margin-bottom: 1.5rem;
-    animation: bounce 1s ease-in-out;
+    animation: bounce 2s ease-in-out infinite;
 }
 
 .celebration-title {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
+    font-size: 3rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 1rem !important;
     animation: fadeInUp 0.8s ease-out 0.3s both;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 1rem 2rem;
-    border-radius: 12px;
-    backdrop-filter: blur(5px);
+    color: white !important;
 }
 
 .celebration-subtitle {
-    font-size: 1.5rem;
-    margin-bottom: 2rem;
+    font-size: 1.5rem !important;
+    margin-bottom: 2rem !important;
     animation: fadeInUp 0.8s ease-out 0.5s both;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.75rem 1.5rem;
-    border-radius: 10px;
-    backdrop-filter: blur(5px);
-    display: inline-block;
+    color: white !important;
 }
 
 .celebration-message {
-    font-size: 1.1rem;
-    margin-bottom: 2.5rem;
+    font-size: 1.1rem !important;
+    margin-bottom: 2.5rem !important;
     max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
+    margin-left: auto !important;
+    margin-right: auto !important;
     animation: fadeInUp 0.8s ease-out 0.7s both;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 1.5rem;
-    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.4) !important;
+    padding: 1.5rem !important;
+    border-radius: 15px !important;
     backdrop-filter: blur(5px);
-    color: white;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
 }
 
-.celebration-button {
-    background: white;
-    color: #28a745;
-    border: none;
-    padding: 1rem 3rem;
-    font-size: 1.2rem;
-    font-weight: 600;
-    border-radius: 50px;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.3s ease;
-    animation: fadeInUp 0.8s ease-out 0.9s both;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.celebration-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-    color: #20c997;
-    background: #f8f9fa;
-}
-
-/* Confetti animation */
-.confetti {
-    position: fixed;
-    width: 10px;
-    height: 10px;
-    background: #f0f;
-    animation: confetti-fall linear infinite;
-    z-index: 5;
-}
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-    }
-    40% {
-        transform: translateY(-30px);
-    }
-    60% {
-        transform: translateY(-15px);
-    }
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes confetti-fall {
-    0% {
-        top: -10vh;
-        transform: translateX(0) rotateZ(0deg);
-        opacity: 1;
-    }
-    90% {
-        opacity: 1;
-    }
-    100% {
-        top: 110vh;
-        transform: translateX(100px) rotateZ(720deg);
-        opacity: 0;
-    }
-}
-
-/* Next Steps Section */
 .next-steps {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin: 2rem auto;
-    max-width: 600px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem !important;
+    animation: fadeInUp 0.8s ease-out 0.8s both;
+    background: rgba(0, 0, 0, 0.4) !important;
+    padding: 2rem !important;
+    border-radius: 15px !important;
+    backdrop-filter: blur(5px);
 }
 
 .next-steps h3 {
-    margin-bottom: 1rem;
-    font-size: 1.3rem;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    margin-bottom: 1rem !important;
+    font-size: 1.3rem !important;
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
 }
 
 .next-steps-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    text-align: left;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    text-align: left !important;
 }
 
 .next-steps-list li {
-    padding: 0.5rem 0;
-    padding-left: 2rem;
-    position: relative;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    padding: 0.5rem 0 !important;
+    padding-left: 2rem !important;
+    position: relative !important;
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
 }
 
 .next-steps-list li:before {
     content: "✓";
-    position: absolute;
-    left: 0;
-    font-weight: bold;
-    font-size: 1.2rem;
-    color: white;
+    position: absolute !important;
+    left: 0 !important;
+    font-weight: bold !important;
+    font-size: 1.2rem !important;
+    color: #ffd93d !important;
 }
 
-/* Hide header/nav on celebration page */
-body.celebration-page .top-header,
-body.celebration-page .main-navigation,
-body.celebration-page header {
-    display: none !important;
+.celebration-button {
+    background: #28a745 !important;
+    color: white !important;
+    border: none !important;
+    padding: 1rem 3rem !important;
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    border-radius: 50px !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+    transition: all 0.3s ease !important;
+    animation: fadeInUp 0.8s ease-out 0.9s both;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
 }
 
-/* Responsive */
+.celebration-button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.3) !important;
+    color: white !important;
+    background: #20c997 !important;
+    text-decoration: none !important;
+}
+
+/* Prevent button bounce by adding padding around hover area */
+.celebration-button {
+    position: relative !important;
+}
+
+.celebration-button::before {
+    content: '';
+    position: absolute !important;
+    top: -5px !important;
+    left: -5px !important;
+    right: -5px !important;
+    bottom: -5px !important;
+    pointer-events: none !important;
+}
+
+/* Confetti - Maximum specificity to override site CSS */
+body .confetti,
+.confetti.confetti.confetti {
+    position: fixed !important;
+    width: 8px !important;
+    height: 8px !important;
+    z-index: 9999 !important;
+    animation-name: confetti-fall !important;
+    animation-duration: 3s !important;
+    animation-timing-function: linear !important;
+    animation-iteration-count: infinite !important;
+    animation-fill-mode: none !important;
+    animation-play-state: running !important;
+    animation-delay: 0s !important;
+    pointer-events: none !important;
+}
+
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(100px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-20px); }
+    60% { transform: translateY(-10px); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes confetti-fall {
+    from {
+        top: -10px;
+        transform: rotate(0deg);
+    }
+    to {
+        top: 100vh;
+        transform: rotate(360deg);
+    }
+}
+
 @media (max-width: 768px) {
-    .celebration-title {
-        font-size: 2rem;
-    }
-    .celebration-subtitle {
-        font-size: 1.2rem;
-    }
-    .celebration-icon {
-        font-size: 4rem;
-    }
-    .next-steps {
-        margin: 1rem;
-    }
+    .celebration-title { font-size: 2rem !important; }
+    .celebration-subtitle { font-size: 1.2rem !important; }
+    .celebration-icon { font-size: 4rem !important; }
+    .celebration-container { padding: 2rem 1rem !important; margin: 1rem !important; }
 }
 </style>
 ';
 
-// Skip header for celebration page
-$ignoreheader = true;
+// Define variables needed by header
+$is_iframe_mode = false;
 
+// Add celebration-page class to body
+$bodyclass = 'class="celebration-page"';
+
+// Include header
 include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 ?>
-
-<div class="celebration-container">
-    <div class="celebration-icon">
-        <i class="bi bi-check-circle-fill text-success"></i>
+<div class="main-content">
+<div class="celebration-content-wrapper">
+    <div class="celebration-container">
+        <div class="celebration-icon">
+            <i class="bi bi-check-circle-fill text-warning"></i>
+        </div>
+        
+        <h1 class="celebration-title"><?php echo htmlspecialchars($celebration_messages['celebration_title'] ?? 'Welcome to Birthday Gold!'); ?></h1>
+        
+        <?php
+        // Determine if this is a paid account
+        $is_paid_account = true;
+        if ($user_data) {
+            // Check if user has a free plan
+            $is_paid_account = !in_array($user_data['account_plan'] ?? '', ['free', 'basic', '']);
+        }
+        
+        // Process subtitle with name replacement
+        $subtitle = $celebration_messages['celebration_subtitle'] ?? 'Your payment was successful{NAME}!';
+        $name_part = $user_data ? ', ' . htmlspecialchars($user_data['first_name']) : '';
+        $subtitle = str_replace('{NAME}', $name_part, $subtitle);
+        ?>
+        
+        <p class="celebration-subtitle">
+            <?php echo $subtitle; ?>
+        </p>
+        
+        <div class="celebration-message">
+            <p><?php echo htmlspecialchars($celebration_messages['celebration_message'] ?? 'You\'re all set to start receiving amazing birthday rewards from hundreds of businesses. We\'ll automatically enroll you in birthday programs as your special day approaches.'); ?></p>
+        </div>
+        
+        <div class="next-steps">
+            <h3><?php echo htmlspecialchars($celebration_messages['celebration_next_steps_title'] ?? 'Your Next Steps:'); ?></h3>
+            <ul class="next-steps-list">
+                <?php 
+                // Check for plan-specific next steps
+                $next_steps_found = false;
+                for ($i = 1; $i <= 10; $i++) {
+                    $step_key = "celebration_next_step_{$i}";
+                    if (isset($celebration_messages[$step_key]) && !empty($celebration_messages[$step_key])) {
+                        echo '<li>' . htmlspecialchars($celebration_messages[$step_key]) . '</li>';
+                        $next_steps_found = true;
+                    }
+                }
+                
+                // Fallback to account type-based steps if no plan-specific steps found
+                if (!$next_steps_found) {
+                    if ($user_data && $user_data['account_type'] === 'parental'): ?>
+                        <li>Add your children's profiles to start earning their rewards</li>
+                        <li>Upload verification documents for each child</li>
+                        <li>Select birthday rewards for the whole family</li>
+                        <li>Check your email for important account information</li>
+                    <?php else: ?>
+                        <li>Complete your profile with a photo and preferences</li>
+                        <li>Browse and select your favorite birthday reward programs</li>
+                        <li>Verify your account to unlock all features</li>
+                        <li>Check your email for tips and special offers</li>
+                    <?php endif;
+                }
+                ?>
+            </ul>
+        </div>
+        
+        <?php
+        // Determine redirect URL
+        $redirect_url = '/myaccount/';
+        if ($user_data && $user_data['account_type'] === 'parental') {
+            $redirect_url = '/myaccount/parental-mode.php';
+        }
+        ?>
+        
+        <a href="<?php echo $redirect_url; ?>" class="celebration-button">
+            <?php echo htmlspecialchars($celebration_messages['celebration_button_text'] ?? 'Go to Your Dashboard'); ?> <i class="bi bi-arrow-right-circle ms-2"></i>
+        </a>
     </div>
-    
-    <h1 class="celebration-title">Welcome to Birthday Gold!</h1>
-    
-    <?php
-    // Determine if this is a paid account
-    $is_paid_account = true;
-    if ($user_data) {
-        // Check if user has a free plan
-        $is_paid_account = !in_array($user_data['account_plan'], ['free', 'basic', '']);
-    }
-    ?>
-    
-    <p class="celebration-subtitle text-success">
-        <?php if ($is_paid_account): ?>
-            Your payment was successful<?php echo $user_data ? ', ' . htmlspecialchars($user_data['first_name']) : ''; ?>!
-        <?php else: ?>
-            Your account is ready<?php echo $user_data ? ', ' . htmlspecialchars($user_data['first_name']) : ''; ?>!
-        <?php endif; ?>
-    </p>
-    
-    <p class="celebration-message">
-        <?php if ($is_paid_account): ?>
-            You're all set to start receiving amazing birthday rewards from hundreds of businesses. 
-            We'll automatically enroll you in birthday programs as your special day approaches.
-        <?php else: ?>
-            Welcome to the Birthday Gold community! 
-            You can now start selecting birthday rewards from participating businesses.
-        <?php endif; ?>
-    </p>
-    
-    <!-- Next Steps Section -->
-    <div class="next-steps">
-        <h3><i class="bi bi-list-check me-2"></i>Your Next Steps:</h3>
-        <ul class="next-steps-list text-primary">
-            <?php if ($user_data && $user_data['account_type'] === 'parental'): ?>
-                <li>Add your children's profiles to start earning their rewards</li>
-                <li>Upload verification documents for each child</li>
-                <li>Select birthday rewards for the whole family</li>
-                <li>Check your email for important account information</li>
-            <?php else: ?>
-                <li>Complete your profile with a photo and preferences</li>
-                <li>Browse and select your favorite birthday reward programs</li>
-                <li>Verify your account to unlock all features</li>
-                <li>Check your email for tips and special offers</li>
-            <?php endif; ?>
-        </ul>
-    </div>
-    
-    <?php
-    // Determine redirect URL
-    $redirect_url = '/myaccount/';
-    if ($user_data && $user_data['account_type'] === 'parental') {
-        $redirect_url = '/myaccount/parental-mode.php';
-    }
-    ?>
-    
-    <a href="<?php echo $redirect_url; ?>" class="celebration-button">
-        Go to Your Dashboard <i class="bi bi-arrow-right-circle ms-2"></i>
-    </a>
 </div>
-
-<!-- Simple confetti effect -->
+</div>
 <script>
-// Create confetti
+// Create confetti animation
 function createConfetti() {
     const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6ab04c', '#ffffff', '#ffd93d'];
     
     // Create initial batch
-    for (let i = 0; i < 100; i++) {
-        createSingleConfetti(colors, i * 50);
+    for (let i = 0; i < 150; i++) {
+        createSingleConfetti(colors, i * 30);
     }
     
-    // Continue creating confetti every few seconds
+    // Continue creating confetti
     setInterval(() => {
-        for (let i = 0; i < 20; i++) {
-            createSingleConfetti(colors, i * 100);
+        for (let i = 0; i < 30; i++) {
+            createSingleConfetti(colors, i * 50);
         }
-    }, 3000);
+    }, 2000);
 }
 
 function createSingleConfetti(colors, delay) {
     setTimeout(() => {
         const confetti = document.createElement('div');
         confetti.className = 'confetti';
-        confetti.style.left = Math.random() * 100 + 'vw';
-        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.width = (Math.random() * 10 + 5) + 'px';
-        confetti.style.height = confetti.style.width;
-        confetti.style.animationDuration = (Math.random() * 3 + 5) + 's';
+        confetti.style.left = Math.random() * 100 + '%';
+        
+        // Set background color with !important to override site CSS
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.setProperty('background-color', color, 'important');
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        
+        // Force animation properties with maximum specificity
+        const duration = (Math.random() * 3 + 2) + 's';
+        confetti.style.setProperty('animation-duration', duration, 'important');
+        confetti.style.setProperty('animation-name', 'confetti-fall', 'important');
+        confetti.style.setProperty('animation-timing-function', 'linear', 'important');
+        confetti.style.setProperty('animation-iteration-count', 'infinite', 'important');
+        confetti.style.setProperty('animation-fill-mode', 'none', 'important');
+        confetti.style.setProperty('animation-play-state', 'running', 'important');
+        confetti.style.setProperty('animation-delay', '0s', 'important');
         confetti.style.opacity = Math.random() * 0.8 + 0.2;
+        
         document.body.appendChild(confetti);
         
-        // Remove after animation completes
-        setTimeout(() => confetti.remove(), 8000);
+        // Remove confetti after animation
+        setTimeout(() => {
+            if (confetti.parentNode) {
+                confetti.parentNode.removeChild(confetti);
+            }
+        }, parseFloat(duration) * 1000 + 1000);
     }, delay);
 }
 
-// Start confetti on load
-window.addEventListener('load', createConfetti);
+// Auto-forward timer with smart pausing
+let autoForwardTimer;
+let autoForwardCountdown = 10; // 10 seconds
+let isPaused = false;
+let lastMouseMove = 0;
 
-// Add countdown timer
-let timeLeft = 60;
-const countdownEl = document.createElement('p');
-countdownEl.className = 'countdown-timer';
-countdownEl.style.cssText = 'position: fixed; bottom: 20px; right: 20px; color: white; font-size: 0.9rem; opacity: 0.7;';
-document.body.appendChild(countdownEl);
+function startAutoForward() {
+    const dashboardButton = document.querySelector('.celebration-button');
+    if (!dashboardButton) return;
+    
+    autoForwardTimer = setInterval(() => {
+        if (isPaused) return;
+        
+        autoForwardCountdown--;
+        
+        if (autoForwardCountdown <= 0) {
+            clearInterval(autoForwardTimer);
+            window.location.href = dashboardButton.href;
+        } else {
+            // Update button text with countdown
+            const buttonText = dashboardButton.innerHTML;
+            if (!buttonText.includes('(')) {
+                dashboardButton.innerHTML = buttonText + ' <span style="opacity: 0.7;">(' + autoForwardCountdown + 's)</span>';
+            } else {
+                dashboardButton.innerHTML = buttonText.replace(/\(\d+s\)/, '(' + autoForwardCountdown + 's)');
+            }
+        }
+    }, 1000);
+}
 
-function updateCountdown() {
-    countdownEl.textContent = `Redirecting in ${timeLeft} seconds...`;
-    timeLeft--;
-    if (timeLeft < 0) {
-        window.location.href = '<?php echo $redirect_url; ?>';
+function pauseAutoForward() {
+    isPaused = true;
+    const dashboardButton = document.querySelector('.celebration-button');
+    if (dashboardButton) {
+        // Remove countdown from button text
+        dashboardButton.innerHTML = dashboardButton.innerHTML.replace(/ <span[^>]*>\(\d+s\)<\/span>/, '');
     }
 }
-updateCountdown();
-setInterval(updateCountdown, 1000);
 
-// Auto-redirect after 60 seconds
-setTimeout(() => {
-    window.location.href = '<?php echo $redirect_url; ?>';
-}, 60000);
+function resumeAutoForward() {
+    isPaused = false;
+    autoForwardCountdown = Math.max(5, autoForwardCountdown); // Reset to at least 5 seconds
+}
+
+// Start confetti and auto-forward when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    createConfetti();
+    
+    // Start auto-forward after initial animations complete
+    setTimeout(() => {
+        startAutoForward();
+    }, 3000);
+    
+    // Pause/resume based on button hover
+    const dashboardButton = document.querySelector('.celebration-button');
+    if (dashboardButton) {
+        dashboardButton.addEventListener('mouseenter', pauseAutoForward);
+        dashboardButton.addEventListener('mouseleave', resumeAutoForward);
+    }
+});
+
+// Pause on mouse movement, resume after inactivity
+document.addEventListener('mousemove', function(e) {
+    lastMouseMove = Date.now();
+    
+    // Pause auto-forward on mouse movement
+    if (!isPaused) {
+        pauseAutoForward();
+        
+        // Resume after 3 seconds of no movement
+        setTimeout(() => {
+            if (Date.now() - lastMouseMove >= 3000) {
+                resumeAutoForward();
+            }
+        }, 3000);
+    }
+    
+    // Add sparkle effect
+    if (Math.random() > 0.95) {
+        const sparkle = document.createElement('div');
+        sparkle.className = 'confetti';
+        sparkle.style.left = e.clientX + 'px';
+        sparkle.style.top = e.clientY + 'px';
+        sparkle.style.position = 'fixed';
+        sparkle.style.setProperty('background-color', '#ffd93d', 'important');
+        sparkle.style.setProperty('animation-duration', '1s', 'important');
+        sparkle.style.opacity = '0.8';
+        sparkle.style.transform = 'scale(0.5)';
+        
+        document.body.appendChild(sparkle);
+        
+        setTimeout(() => {
+            if (sparkle.parentNode) {
+                sparkle.parentNode.removeChild(sparkle);
+            }
+        }, 1000);
+    }
+});
+
+// Pause on any click or key press
+document.addEventListener('click', pauseAutoForward);
+document.addEventListener('keydown', pauseAutoForward);
+
+// Clean up timer on page unload
+window.addEventListener('beforeunload', function() {
+    if (autoForwardTimer) {
+        clearInterval(autoForwardTimer);
+    }
+});
 </script>
 
 <?php
-// No footer on celebration page
+$display_footertype='min';
+include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();
 ?>
-</body>
-</html>

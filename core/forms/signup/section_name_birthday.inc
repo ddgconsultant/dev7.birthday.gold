@@ -68,15 +68,16 @@ if (isset($process_handlers) && $process_handlers) {
 # DISPLAY CODE - Show the form section
 #-------------------------------------------------------------------------------
 ?>
-<div class="form-section">
-    <h5 class="section-title d-flex justify-content-between align-items-center">
-        Your Name and Birthday
+<div class="card mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Your Name and Birthday</h5>
         <i class="bi bi-info-circle text-muted" 
            style="font-size: 1rem; cursor: pointer;" 
            data-bs-toggle="modal" 
            data-bs-target="#nameBirthdayInfoModal"
            title="Click for more information"></i>
-    </h5>
+    </div>
+    <div class="card-body">
     <div class="row">
         <div class="col-md-6 mb-3">
             <label for="firstname" class="form-label">First Name <span class="text-danger">*</span></label>
@@ -176,6 +177,7 @@ if (isset($process_handlers) && $process_handlers) {
                 <div class="text-danger small mt-1"><?php echo $errors['birthday']; ?></div>
             <?php endif; ?>
         </div>
+    </div>
     </div>
 </div>
 

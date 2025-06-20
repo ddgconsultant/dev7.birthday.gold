@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($is_payment_successful) {
                 // Update user to active
                 $sql = "UPDATE bg_users SET status = 'active', modify_dt = NOW() WHERE user_id = :user_id";
-                $database->execute($sql, ['user_id' => $user_id]);
+                $database->query($sql, ['user_id' => $user_id]);
                 error_log('[CHECKOUT_API] User status updated to active');
                 
                 // Log user in immediately
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             SET status = 'completed', stripe_payment_intent = :pi_id, completed_at = NOW()
                             WHERE user_id = :user_id AND status = 'pending'
                             ORDER BY created_at DESC LIMIT 1";
-                    $database->execute($sql, ['user_id' => $user_id, 'pi_id' => $payment_intent_id]);
+                    $database->query($sql, ['user_id' => $user_id, 'pi_id' => $payment_intent_id]);
                     error_log('[CHECKOUT_API] Transaction updated');
                 } else {
                     error_log('[CHECKOUT_API] bg_transactions table does not exist, skipping transaction update');
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             SET status = 'completed', completed_at = NOW()
                             WHERE user_id = :user_id AND status = 'pending'
                             ORDER BY created_at DESC LIMIT 1";
-                    $database->execute($sql, ['user_id' => $user_id]);
+                    $database->query($sql, ['user_id' => $user_id]);
                     error_log('[CHECKOUT_API] Checkout session updated');
                 }
                 
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                 (user_id, amount, stripe_payment_intent, status, payment_method, metadata, created_at) 
                                 VALUES (:user_id, :amount, :payment_intent, 'completed', :payment_method, :metadata, NOW())";
                         
-                        $database->execute($sql, [
+                        $database->query($sql, [
                             'user_id' => $user_id,
                             'amount' => $payment_intent->amount,
                             'payment_intent' => $payment_intent->id,
@@ -113,9 +113,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $user_sql = "SELECT account_type FROM bg_users WHERE user_id = :user_id";
                 $user_data = $database->getrow($user_sql, ['user_id' => $user_id]);
                 
-                // Redirect to celebration page first
-                $encoded_user_id = $qik->encodeId($user_id);
-                $redirect_url = '/checkout_celebration.php?u=' . $encoded_user_id;
+                // Store celebration data in session
+                $session->set('celebration_data', [
+                    'user_id' => $user_id,
+                    'product_id' => $user_data['account_product_id'] ?? '',
+                    'completed_at' => time()
+                ]);
+                
+                // Redirect to celebration page
+                $redirect_url = '/checkout_celebration.php';
                 
                 error_log('[CHECKOUT_API] Payment successful, redirecting to celebration page');
                 echo json_encode(['success' => true, 'redirect' => $redirect_url]);
@@ -155,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $user_data && $user_data['status'] !== 'active') {
                     
                     $sql = "UPDATE bg_users SET status = 'active', modify_dt = NOW() WHERE user_id = :user_id";
-                    $database->execute($sql, ['user_id' => $user_id]);
+                    $database->query($sql, ['user_id' => $user_id]);
                     
                     // Re-fetch user data
                     $user_data = $database->getrow("SELECT status, account_type FROM bg_users WHERE user_id = :user_id", ['user_id' => $user_id]);
@@ -163,9 +169,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     error_log('[CHECKOUT_API] User activated via heartbeat check');
                 }
                 
+                // Store celebration data in session
+                $session->set('celebration_data', [
+                    'user_id' => $user_id,
+                    'product_id' => $payment_intent->metadata->product_id ?? '',
+                    'completed_at' => time()
+                ]);
+                
                 // Determine redirect
-                $encoded_user_id = $qik->encodeId($user_id);
-                $redirect_url = '/checkout_celebration.php?u=' . $encoded_user_id;
+                $redirect_url = '/checkout_celebration.php';
                 
                 echo json_encode([
                     'status' => $payment_intent->status,
@@ -300,7 +312,7 @@ try {
             'account_type' => $user_data['account_type']
         ]);
         
-        $database->execute($sql, [
+        $database->query($sql, [
             'session_id' => $session_id,
             'stripe_session_id' => $payment_intent->id,
             'user_id' => $user_id,
@@ -827,8 +839,18 @@ form.addEventListener('submit', async (e) => {
                     throw new Error('Network response was not ok');
                 }
                 
-                const result = await response.json();
-                console.log('[CHECKOUT] Backend response:', result);
+                const responseText = await response.text();
+                console.log('[CHECKOUT] Raw response:', responseText);
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                    console.log('[CHECKOUT] Backend response:', result);
+                } catch (parseError) {
+                    console.error('[CHECKOUT] JSON parse error:', parseError);
+                    console.error('[CHECKOUT] Response was:', responseText);
+                    throw new Error('Invalid JSON response from server');
+                }
                 
                 if (result.success) {
                     buttonText.innerHTML = '✓ Payment Successful!';
@@ -875,7 +897,7 @@ form.addEventListener('submit', async (e) => {
 // Add heartbeat to check payment status periodically
 let heartbeatInterval;
 let checkCount = 0;
-const maxChecks = 20; // Check for up to 1 minute (every 3 seconds)
+const maxChecks = 60; // Check for up to 30 seconds (every 500ms)
 
 function startHeartbeat() {
     heartbeatInterval = setInterval(async () => {
@@ -897,8 +919,18 @@ function startHeartbeat() {
             });
             
             if (response.ok) {
-                const result = await response.json();
-                console.log('[CHECKOUT] Heartbeat result:', result);
+                const responseText = await response.text();
+                console.log('[CHECKOUT] Heartbeat raw response:', responseText);
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                    console.log('[CHECKOUT] Heartbeat result:', result);
+                } catch (parseError) {
+                    console.error('[CHECKOUT] Heartbeat JSON parse error:', parseError);
+                    console.error('[CHECKOUT] Heartbeat response was:', responseText);
+                    return; // Skip this heartbeat check
+                }
                 
                 if ((result.status === 'succeeded' || result.status === 'processing') && result.user_active) {
                     clearInterval(heartbeatInterval);
@@ -921,7 +953,7 @@ function startHeartbeat() {
         } catch (e) {
             console.error('[CHECKOUT] Heartbeat error:', e);
         }
-    }, 3000); // Check every 3 seconds
+    }, 500); // Check every 500ms for faster response
 }
 
 // Start heartbeat when page loads
@@ -951,5 +983,5 @@ window.addEventListener('beforeunload', () => {
 </script>
 
 <?php
-include($_SERVER['DOCUMENT_ROOT'].'/core/v7/footer.inc');
-?>
+include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();

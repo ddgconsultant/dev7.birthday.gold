@@ -12,15 +12,16 @@ if (isset($process_handlers) && $process_handlers) {
 }
 ?>
 <!-- Account Information Section (spans multiple subsections) -->
-<div class="form-section">
-    <h5 class="section-title d-flex justify-content-between align-items-center">
-        Account Information
+<div class="card mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Account Information</h5>
         <i class="bi bi-info-circle text-muted" 
            style="font-size: 1rem; cursor: pointer;" 
            data-bs-toggle="modal" 
            data-bs-target="#accountInfoModal"
            title="Click for more information"></i>
-    </h5>
+    </div>
+    <div class="card-body">
     
 <!-- Account Info Modal -->
 <div class="modal fade" id="accountInfoModal" tabindex="-1" aria-labelledby="accountInfoModalLabel" aria-hidden="true">
