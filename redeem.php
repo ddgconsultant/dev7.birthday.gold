@@ -1,159 +1,232 @@
-<?PHP
+<?php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-
-
 $errormessage = '';
-#-------------------------------------------------------------------------------
-# PROCESS LOGIN ATTEMPT
-#-------------------------------------------------------------------------------
 
+#-------------------------------------------------------------------------------
+# PROCESS REDEMPTION ATTEMPT
+#-------------------------------------------------------------------------------
 if ($app->formposted()) {
-  $username = ($_POST['code'] ?? '');
-  #$password = (isset($_POST['password']) ? $_POST['password'] : '');
-  $password = $sitesettings['app']['APP_GIFTCODEPASS'];
-  if (!empty($username) && !empty($password)) {
-    $response = $account->login($username, $password, 'giftcode');
-
-    if ($response) {
-      $session->set('generateGiftCertificateCode',  $username);
-      $session->set('generateGiftCertificateCode_user_id',  $response);
-
-      $errormessage = '<div class="alert alert-success">Gift Certificate successfully redeemed.</div>';
-      $transferpagedata['message'] = $errormessage;
-      $transferpagedata['url'] = '/register-giftcertificate';
-      $transferpagedata = $system->endpostpage($transferpagedata);
-      exit;
+    $code = trim($_POST['code'] ?? '');
+    $password = $sitesettings['app']['APP_GIFTCODEPASS'];
+    
+    if (!empty($code) && !empty($password)) {
+        $response = $account->login($code, $password, 'giftcode');
+        
+        if ($response) {
+            $session->set('generateGiftCertificateCode', $code);
+            $session->set('generateGiftCertificateCode_user_id', $response);
+            
+            $errormessage = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Gift certificate successfully redeemed!</div>';
+            $transferpagedata['message'] = $errormessage;
+            $transferpagedata['url'] = '/register-giftcertificate';
+            $transferpagedata = $system->endpostpage($transferpagedata);
+            exit;
+        } else {
+            $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Invalid code. Please check and try again.</div>';
+        }
     } else {
-      $errormessage = '<div class="alert alert-danger">Sorry: Unable to redeem that code.</div>';
-      $transferpagedata['message'] = $errormessage;
-      $transferpagedata['url'] = '/redeem';
-      $transferpagedata = $system->endpostpage($transferpagedata);
-      exit;
+        $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Please enter a gift certificate code.</div>';
     }
-  }
 }
 
-
-
-
-
-
 #-------------------------------------------------------------------------------
-# DISPLAY PAGE
+# PAGE SETUP
 #-------------------------------------------------------------------------------
+$page_title = "Redeem Gift Certificate - Birthday Gold";
+$page_description = "Redeem your Birthday Gold gift certificate and start enjoying birthday rewards";
+
+$additionalstyles = '<link href="/public/css/redeem_styles_v2.css" rel="stylesheet">';
 
 $transferpagedata['message'] = $errormessage;
 $transferpagedata = $system->startpostpage($transferpagedata);
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-
 ?>
 
-
-
-<section class="h-100 gradient-form main-content">
-
-  <div class="container-xl my-lg-5">
-    <div class="row d-flex justify-content-center align-items-center h-100">
-
-      <div class="col-xl-10">
-        <?= $display->formaterrormessage($transferpagedata['message']); ?>
-        <div class="card rounded-3 text-black">
-          <div class="row g-0">
-            <div class="col-lg-6">
-              <div class="card-body p-md-5 mx-md-4">
-
-                <div class="text-center">
-                  <h1 class="mt-1 pb-1">Redeem</h1>
-                  <h2 class="mt-1 mb-5 pb-1">Gift Certificate</h2>
-                </div>
-
-                <form method="post"  id="mainform" action="/redeem">
-                  <?PHP echo $display->inputcsrf_token(); ?>
-                  <!--    <p class="font-weight-bold">Login to your account</p> -->
-
-                  <div class="form-outline mb-4">
-                    <input type="text" name="code" id="code" class="form-control" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="nope" autocomplete="off" />
-                    <label class="form-label" for="code">Enter Your Gift Certificate Code</label>
-                  </div>
-
-                  <div class="text-center pt-1 mb-5 pb-1">
-                    <div>
-                      <button class="btn btn-primary fa-lg mb-3 py-2 px-5"  id="mainsubmit"  type="submit">Redeem</button>
+<div class="main-content">
+    <!-- Desktop wrapper for side-by-side layout -->
+    <div class="redeem-wrapper">
+        <!-- Welcome content - Desktop only -->
+        <div class="welcome-content d-none d-lg-block">
+            <h2>Someone special thinks you deserve <span>more birthdays freebies</span></h2>
+            <p>Your gift certificate unlocks a Gold Plan of birthday rewards and exclusive perks from hundreds of brands.</p>
+            
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-gift"></i>
                     </div>
-                </form>
-              </div>
-
-
-              <div class="d-flex align-items-center justify-content-center pb-2">
-                <a class="text-black" href="/login">I have an account <span class="btn btn-sm btn-outline-primary" href="/login">Login</span></a>
-              </div>
-              <div class="d-flex align-items-center justify-content-center pb-2">
-                <a class="text-black" href="/signup">Don't have an account? <span class="btn btn-sm btn-outline-primary" href="/signup">Sign Up</span></a>
-              </div>
+                    <div class="feature-text">
+                        <h3>Birthday Rewards</h3>
+                        <p>Free treats and discounts all month long</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-magic"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Auto-Enrollment</h3>
+                        <p>We handle all the birthday club signups</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Never Miss Out</h3>
+                        <p>Timely reminders for every reward</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-star"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Exclusive Deals</h3>
+                        <p>Member-only offers throughout the year</p>
+                    </div>
+                </div>
             </div>
-          </div>
-
-          <div class="col-lg-6 d-flex align-items-center flex-column bg-success">
-            <div class="flex-grow-1 d-flex align-items-center">
-              <div class="text-white px-3 py-4 p-md-5 mx-md-4 text-center">
-                <h4 class="mb-4 text-white">Someone Loves You!</h4>
-                <p class="mb-0 fw-bold text-dark">At <span class="birthdaygold-white">birthday.gold</span>, we do too! Let's get you started with your own account and hurry and get you as many freebies we can to celebrate your special day.</p>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
+        
+        <!-- Redeem Card -->
+        <div class="redeem-container">
+            <div class="redeem-card">
+                <!-- Header Section -->
+                <div class="redeem-header">
+                    <div class="gift-badge">
+                        <i class="bi bi-gift-fill"></i>
+                        <span>Gift Certificate</span>
+                    </div>
+                    <h1>Redeem Your Gift</h1>
+                    <p>Enter your code to get started</p>
+                </div>
+                
+                <!-- Form Section -->
+                <div class="redeem-body">
+                    <?php if (!empty($errormessage)): ?>
+                        <div class="alert-container">
+                            <?php echo $errormessage; ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <form method="POST" action="/redeem" id="redeemForm">
+                        <?php echo $display->inputcsrf_token(); ?>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="code">Certificate Code</label>
+                            <div class="code-input-wrapper">
+                                <input 
+                                    type="text" 
+                                    name="code" 
+                                    id="code" 
+                                    class="code-input" 
+                                    placeholder="XXXX-XXXX-XXXX" 
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    maxlength="20"
+                                    required
+                                >
+                            </div>
+                            <div class="help-text">
+                                Enter code exactly as shown on your certificate
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-redeem" id="redeemBtn">
+                            <span>Redeem Now</span>
+                        </button>
+                    </form>
+                    
+                    <!-- Divider -->
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+                    
+                    <!-- Alternative Actions -->
+                    <div class="alt-actions">
+                        Already have an account? <a href="/login">Sign in</a>
+                        <br>
+                        Don't have a gift certificate? <a href="/signup">Create account</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</section>
-
-
+</div>
 
 <?php
-$footerattribute['postfooter'] = "
+$footerattribute['postfooter'] = '
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-// Assuming your input has an id of 'code'
-const inputElement = document.getElementById('code');
-
-if (inputElement) {
-inputElement.addEventListener('input', function() {
-formatInput(this);
+document.addEventListener("DOMContentLoaded", function() {
+    const codeInput = document.getElementById("code");
+    const redeemForm = document.getElementById("redeemForm");
+    const redeemBtn = document.getElementById("redeemBtn");
+    
+    // Auto-format the gift code input
+    if (codeInput) {
+        codeInput.addEventListener("input", function(e) {
+            let value = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+            let formatted = "";
+            
+            // Format as XXXX-XXXX-XXXX
+            for (let i = 0; i < value.length && i < 12; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    formatted += "-";
+                }
+                formatted += value[i];
+            }
+            
+            e.target.value = formatted;
+            
+            // Add visual feedback
+            if (formatted.length === 14) { // Complete code
+                codeInput.classList.add("is-valid");
+                codeInput.classList.remove("is-invalid");
+            } else {
+                codeInput.classList.remove("is-valid");
+            }
+        });
+        
+        // Focus on the input field
+        codeInput.focus();
+    }
+    
+    // Form submission handling
+    if (redeemForm) {
+        redeemForm.addEventListener("submit", function(e) {
+            const cleanCode = codeInput.value.replace(/[^A-Za-z0-9]/g, "");
+            
+            if (cleanCode.length < 8) {
+                e.preventDefault();
+                codeInput.classList.add("is-invalid");
+                codeInput.focus();
+                return false;
+            }
+            
+            // Add loading state
+            redeemBtn.classList.add("loading");
+            redeemBtn.disabled = true;
+        });
+    }
+    
+    // Remove invalid class on input
+    if (codeInput) {
+        codeInput.addEventListener("input", function() {
+            this.classList.remove("is-invalid");
+        });
+    }
 });
-}
-});
-
-function formatInput(input) {
-let value = input.value.replace(/[^A-Za-z0-9-]/g, '').toUpperCase(); // Allow dashes and alphanumeric characters
-let formatted = '';
-let j = 0; // Counter for the actual characters (excluding dashes)
-
-for (let i = 0; i < value.length; i++) {
-// Automatically insert a dash after every 4th character (but not at the start)
-if (j === 4 || j === 8 || j === 12) {
-formatted += '-';
-j = 0;
-}
-
-// If the user manually enters a dash, skip it and reset the counter
-if (value[i] === '-') {
-j = 0;
-continue;
-}
-
-formatted += value[i];
-j++;
-}
-
-input.value = formatted;
-}
-
 </script>
-";
+';
 
-
-echo $display->submitbuttoncolorjs();
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
+?>

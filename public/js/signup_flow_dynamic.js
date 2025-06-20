@@ -37,6 +37,30 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('hiddenAccountType').value = state.selectedAccountType;
         }
 
+        // Check for preselected plan and add checkmark
+        const selectedWrapper = document.querySelector('.plan-card-wrapper.selected');
+        if (selectedWrapper) {
+            const selectedCard = selectedWrapper.querySelector('.plan-card');
+            if (selectedCard) {
+                // Set state from preselected plan
+                state.selectedPlan = selectedCard.getAttribute('data-plan-id');
+                state.selectedPlanData = {
+                    name: selectedCard.querySelector('.plan-title').textContent,
+                    price: parseInt(selectedCard.getAttribute('data-price')),
+                    priceFormatted: selectedCard.querySelector('.plan-price').textContent,
+                    priceNote: selectedCard.querySelector('.plan-price-note').textContent
+                };
+                
+                // Add checkmark if not already present
+                if (!selectedWrapper.querySelector('.plan-checkmark-badge')) {
+                    const checkmark = document.createElement('div');
+                    checkmark.className = 'plan-checkmark-badge';
+                    checkmark.innerHTML = '✓';
+                    selectedWrapper.appendChild(checkmark);
+                }
+            }
+        }
+
         // Bind events
         bindEvents();
         
@@ -181,18 +205,29 @@ document.addEventListener('DOMContentLoaded', function() {
             card.classList.remove('selected');
         });
         
-        // Remove selected class from all wrappers
+        // Remove selected class from all wrappers and checkmarks
         document.querySelectorAll('.plan-card-wrapper').forEach(wrapper => {
             wrapper.classList.remove('selected');
+        });
+        
+        // Remove all existing checkmarks
+        document.querySelectorAll('.plan-checkmark-badge').forEach(badge => {
+            badge.remove();
         });
         
         // Add selected class to the card
         planCard.classList.add('selected');
         
-        // Add selected class to the wrapper too
-        const wrapper = planCard.parentElement;
-        if (wrapper && wrapper.classList.contains('plan-card-wrapper')) {
+        // Add selected class to the wrapper and add checkmark
+        const wrapper = planCard.closest('.plan-card-wrapper');
+        if (wrapper) {
             wrapper.classList.add('selected');
+            
+            // Add the checkmark badge to the wrapper
+            const checkmark = document.createElement('div');
+            checkmark.className = 'plan-checkmark-badge';
+            checkmark.innerHTML = '✓';
+            wrapper.appendChild(checkmark);
         }
 
         // Update state

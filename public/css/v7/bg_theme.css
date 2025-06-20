@@ -2,6 +2,7 @@
 /* Example for WebKit-based browsers */
 html {
   overflow-y: scroll !important;
+  
 }
 
 html::-webkit-scrollbar-track {
@@ -133,6 +134,8 @@ img.rounded-circle {
 body {
   font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   font-size: 1.1rem;
+  
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -355,8 +358,20 @@ margin-bottom: 15px;
 }
 
 
+.main-content {
+  min-height: calc(100vh - 435px);
+  padding: 1rem;
+  background: #f8f9fa;
+}
 
 
+@media (min-width: 992px) {
+  .main-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+}
 
 .content-panel {
   border: 1px solid #ddd;
@@ -378,3 +393,6 @@ margin-bottom: 15px;
   margin-top: 10px;
   text-decoration: underline;
   }
+
+
+  

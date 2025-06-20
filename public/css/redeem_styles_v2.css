@@ -1,0 +1,394 @@
+/* =================================
+   REDEEM PAGE STYLES V2 - Clean & Modern
+   ================================= */
+
+* {
+    box-sizing: border-box !important;
+}
+
+
+/* Card Container */
+.redeem-container {
+    width: 100%;
+    max-width: 480px;
+    margin: 2rem auto;
+}
+
+.redeem-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* Header Section - Minimal */
+.redeem-header {
+    text-align: center;
+    padding: 2rem 1.5rem 1rem;
+}
+
+.redeem-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.redeem-header p {
+    font-size: 1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Gift Badge */
+.gift-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #e8f5e8;
+    color: #198754;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.gift-badge i {
+    font-size: 1rem;
+}
+
+/* Form Section */
+.redeem-body {
+    padding: 0 1.5rem 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Code Input Field - Cleaner */
+.code-input-wrapper {
+    position: relative;
+}
+
+.code-input {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    font-size: 1.25rem;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    font-weight: 500;
+    text-align: center;
+    letter-spacing: 3px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: white;
+    color: #212529;
+}
+
+.code-input:focus {
+    outline: none;
+    border-color: #198754;
+    box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1);
+}
+
+.code-input::placeholder {
+    color: #adb5bd;
+    font-size: 1rem;
+    letter-spacing: 2px;
+}
+
+/* Submit Button - Cleaner */
+.btn-redeem {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: #198754;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-redeem:hover:not(:disabled) {
+    background: #157347;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2);
+}
+
+.btn-redeem:active {
+    transform: translateY(0);
+}
+
+.btn-redeem:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* Help Text */
+.help-text {
+    font-size: 0.8125rem;
+    color: #6c757d;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+/* Divider - Subtle */
+.divider {
+    margin: 2rem 0;
+    text-align: center;
+    position: relative;
+}
+
+.divider::before {
+    content: "";
+    position: absolute;
+    left: 20%;
+    right: 20%;
+    top: 50%;
+    height: 1px;
+    background: #e9ecef;
+}
+
+.divider span {
+    background: white;
+    padding: 0 0.75rem;
+    position: relative;
+    color: #adb5bd;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Alternative Actions - Simplified */
+.alt-actions {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.alt-actions a {
+    color: #198754;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.alt-actions a:hover {
+    color: #157347;
+    text-decoration: underline;
+}
+
+/* Alert Messages - Refined */
+.alert-container {
+    margin-bottom: 1.5rem;
+}
+
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background: #d1e7dd;
+    color: #0f5132;
+    border-color: #badbcc;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #842029;
+    border-color: #f5c2c7;
+}
+
+/* Loading State */
+.btn-redeem.loading {
+    pointer-events: none;
+}
+
+.btn-redeem.loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    border: 2px solid transparent;
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+.btn-redeem.loading span {
+    opacity: 0;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Invalid input state */
+.code-input.is-invalid {
+    border-color: #dc3545;
+}
+
+.code-input.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+/* Success animation */
+@keyframes success-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.code-input.is-valid {
+    border-color: #198754;
+    animation: success-pulse 0.3s ease;
+}
+
+/* =================================
+   TABLET & DESKTOP STYLES
+   ================================= */
+
+@media (min-width: 768px) {
+
+    
+    .redeem-container {
+        max-width: 480px;
+        margin: 3rem auto;
+    }
+    
+    .redeem-header {
+        padding: 3rem 2rem 1.5rem;
+    }
+    
+    .redeem-header h1 {
+        font-size: 2rem;
+    }
+    
+    .redeem-body {
+        padding: 0 2rem 3rem;
+    }
+    
+    .code-input {
+        padding: 1.25rem 1.5rem;
+        font-size: 1.5rem;
+    }
+}
+
+/* Large Desktop - Enhanced Layout */
+@media (min-width: 992px) {
+
+    
+    .redeem-wrapper {
+        width: 100%;
+        max-width: 1200px;
+        display: grid;
+        grid-template-columns: 1fr 480px;
+        gap: 4rem;
+        align-items: center;
+        padding: 0 2rem;
+    }
+    
+    /* Welcome content for desktop */
+    .welcome-content {
+        color: #212529;
+    }
+    
+    .welcome-content h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+    }
+    
+    .welcome-content h2 span {
+        color: #198754;
+    }
+    
+    .welcome-content p {
+        font-size: 1.25rem;
+        color: #6c757d;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .feature-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .feature-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .feature-icon {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        background: var(--bs-secondary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #198754;
+        font-size: 1.25rem;
+    }
+    
+    .feature-text h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 0.25rem;
+    }
+    
+    .feature-text p {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.4;
+    }
+    
+    .redeem-container {
+        margin: 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+}
+
+@media (min-width: 1200px) {
+    .redeem-wrapper {
+        gap: 6rem;
+    }
+    
+    .welcome-content h2 {
+        font-size: 3rem;
+    }
+}

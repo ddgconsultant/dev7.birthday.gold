@@ -126,6 +126,7 @@ footer.border-top {
     padding: 20px !important;
     overflow: visible !important;
     justify-content: center !important;
+    justify-items: center !important;
     max-width: 1200px !important;
     margin-left: auto !important;
     margin-right: auto !important;
@@ -135,6 +136,8 @@ footer.border-top {
     position: relative !important;
     display: flex;
     height: 100%;
+    width: 100%;
+    max-width: 380px;
 }
 
 .plan-card-wrapper.selected {
@@ -317,10 +320,27 @@ footer.border-top {
    SECTIONS & LABELS
    ================================= */
 .section-label {
-    font-size: 0.95rem !important;
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.75rem !important;
+    font-size: 1.2rem !important;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 1rem !important;
+    padding-left: 12px;
+    position: relative;
+    background: linear-gradient(to right, #f8f9fa 0%, transparent 100%);
+    padding: 0.5rem 1rem 0.5rem 12px;
+    border-radius: 6px;
+}
+
+.section-label::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 70%;
+    background: #198754;
+    border-radius: 2px;
 }
 
 .plan-section-title {
@@ -527,7 +547,6 @@ footer.border-top {
 .plan-card-wrapper.selected::after,
 .plan-card.selected::before,
 .plan-card.selected::after,
-.account-type-btn.active::before,
 .plan-checkmark:not(.plan-checkmark-badge),
 .checkmark:not(.plan-checkmark-badge) {
     content: none !important;
@@ -546,7 +565,7 @@ footer.border-top {
     
     .plan-grid {
         grid-template-columns: 1fr !important;
-        padding: 0 !important;
+        padding: 0 15px !important;
         gap: 1rem !important;
         max-width: 100% !important;
         margin-left: 0 !important;
@@ -555,11 +574,32 @@ footer.border-top {
     
     .plan-card-wrapper {
         width: 100%;
+        padding: 0 15px;
+    }
+    
+    .plan-card-wrapper.selected {
+        margin: 0 -15px;
+        padding: 0 15px;
     }
     
     .plan-card {
         width: 100%;
         margin: 0;
+    }
+    
+    /* Disable scale transform on mobile for selected cards */
+    .plan-card.selected,
+    .plan-card.recommended.selected {
+        transform: none !important;
+    }
+    
+    /* Adjust checkmark position for mobile */
+    .plan-checkmark-badge {
+        top: -10px;
+        right: 5px;
+        width: 32px;
+        height: 32px;
+        font-size: 1.2rem;
     }
     
     .account-type-selector {
@@ -583,6 +623,15 @@ footer.border-top {
         display: block !important;
     }
     
+    /* Adjust account type checkmark for mobile */
+    .account-type-btn.active::before {
+        top: -6px;
+        right: -6px;
+        width: 20px;
+        height: 20px;
+        font-size: 0.75rem;
+    }
+    
     .plan-features {
         grid-template-columns: 1fr !important;
     }
@@ -603,23 +652,26 @@ footer.border-top {
     }
     
     .plan-grid {
-        grid-template-columns: repeat(auto-fit, minmax(280px, 350px));
+        grid-template-columns: repeat(auto-fill, minmax(280px, 350px));
         gap: 2.5rem !important;
         justify-content: center !important;
+        place-items: center !important;
     }
 }
 
 @media (min-width: 992px) {
     .plan-grid {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 350px));
+        grid-template-columns: repeat(auto-fill, minmax(300px, 350px));
         justify-content: center !important;
+        place-items: center !important;
     }
 }
 
 @media (min-width: 1200px) {
     .plan-grid {
-        grid-template-columns: repeat(auto-fit, minmax(320px, 380px));
+        grid-template-columns: repeat(auto-fill, minmax(320px, 380px));
         justify-content: center !important;
+        place-items: center !important;
         max-width: 1200px !important;
     }
 }

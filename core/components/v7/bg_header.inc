@@ -165,7 +165,7 @@ if ($isHomePage) {
     if (!$isLoggedIn) {
         echo '
                 <a href="/signup" class="btn btn-success me-2 d-none d-md-inline-block">Sign Up</a>
-                <a href="/login" class="login-btn">Login</a>';
+                <a href="/login" class="btn-primary">Login</a>';
     } else {
         // Still show avatar dropdown for logged in users on home page
         echo '
@@ -285,7 +285,7 @@ if ($isHomePage) {
     if (!$isLoggedIn) {
         // Logged Out State
         echo '
-                <a href="/login" class="login-btn">Login</a>';
+                <a href="/login" class="login-btn btn-primary">Login</a>';
     } else {
         // Logged In State  
         echo '
@@ -385,8 +385,8 @@ if ($isHomePage) {
 } // End of else block for regular header
 
 // Add spacing for fixed header
-if (!isset($noheaderspacer)) {
-    echo '<div class="header-spacer"></div>';
+if (!isset($noheaderspacer) && 1==2) {
+    echo '<div class="pt-4"></div>';
 }
 
 ?>

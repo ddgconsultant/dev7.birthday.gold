@@ -22,7 +22,10 @@
       "Bash(rg:*)",
       "Bash(curl:*)",
       "Bash(md5sum:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(grep -n \"header.*Location.*\\/checkout\" /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/classes/class.account.php)",
+      "Bash(git config:*)",
+      "Bash(git commit:*)"
     ]
   },
   "enableAllProjectMcpServers": false

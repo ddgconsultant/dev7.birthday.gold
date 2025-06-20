@@ -294,27 +294,28 @@ include($dir['core_components'] . '/bg_header.inc');
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 ?>
-<div class="container main-content">
+<div>
     <!-- Header -->
-    <div class="header">
+    <div class="header mt-5 pt-5">
         <h1>Create Your Account</h1>
         <p>Start getting your birthday freebies by Choosing Your Account Type & Plan</p>
     </div>
 
     <!-- Content -->
-    <div class="content">
+    <div class="main-content">
+   
+
+        <!-- Account Type & Plan Selection -->
+        <div class="card pb-5 px-3 mt-5 pt-md-5 pt-sm-2">
         <?php
         // Error Message Display
         if (!empty($transferpage['message'])) {
-            echo '<div class="alert alert-danger mb-3" role="alert">';
+          
             echo $display->formaterrormessage($transferpage['message']);
-            echo '</div>';
         }
         ?>
 
-        <!-- Account Type & Plan Selection -->
-        <div>
-            <h3 class="mt-5 pt-md-5 pt-sm-2">Pick who is this for:</h3>
+            <h3 class="pt-0 mt-0">Pick who this for:</h3>
             
             <!-- Dynamic Account Type Selector -->
             <div class="account-type-selector" id="accountTypeSelector">

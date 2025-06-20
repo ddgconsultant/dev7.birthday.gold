@@ -1,136 +1,706 @@
 <?php
-
 $addClasses[] = 'Mail';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-
-
-
 $errormessage = '';
+
 #-------------------------------------------------------------------------------
 # PROCESS POST ATTEMPT
 #-------------------------------------------------------------------------------
 if ($app->formposted()) {
-  $email = (isset($_POST['email']) ? $_POST['email'] : '');
-  $sendcount = 1;
-  $response = $account->getuserdata($email, 'email');
-  if (!empty($response['user_id'])) {
-    $fullname = $response['first_name'];
-    $message['toemail'] = $email;
-    $message['fullname'] = $fullname;
-    # $link= $appclass->getshortcode( $website['fullurl'].'/validate-account?t='.sha1($email) );
-    #$message['validatelink']=$link['shorturl'];
-    $validatedata['rawdata'] = $email;
-    $validatedata['user_id'] = $response['user_id'];
-    $validatedata['sendcount'] = $sendcount;
-    $validatedata['type'] = 'forgotpassword';
-    $validationcodes = $app->getvalidationcodes($validatedata);
+    $email = trim($_POST['email'] ?? '');
+    $sendcount = 1;
+    $response = $account->getuserdata($email, 'email');
+    
+    if (!empty($response['user_id'])) {
+        $fullname = $response['first_name'];
+        $message['toemail'] = $email;
+        $message['fullname'] = $fullname;
+        
+        $validatedata['rawdata'] = $email;
+        $validatedata['user_id'] = $response['user_id'];
+        $validatedata['sendcount'] = $sendcount;
+        $validatedata['type'] = 'forgotpassword';
+        $validationcodes = $app->getvalidationcodes($validatedata);
 
-    $link = $website['fullurl'] . '/resetpassword?t=' . $validationcodes['long'];
-    $message['validatelink'] = $link;
-    $message['validationcode'] = $local_validationcode = $validationcodes['mini'];
-    #print_r($message);
+        $link = $website['fullurl'] . '/resetpassword?t=' . $validationcodes['long'];
+        $message['validatelink'] = $link;
+        $message['validationcode'] = $local_validationcode = $validationcodes['mini'];
 
+        $mail->sendPasswordResetEmail($message);
 
-    $mail->sendPasswordResetEmail($message);
-    # header('location: /login');
-
-
-
-
-
-
-    #-------------------------------------------------------------------------------
-    # DISPLAY PAGE
-    #-------------------------------------------------------------------------------   
-    include($dir['core_components'] . '/bg_pagestart.inc');
-    include($dir['core_components'] . '/bg_header.inc');
-    echo '
-
-<div class="container py-6 main-content">
-<div class="container text-center">
-<div class="row justify-content-center">
-<div class="col-lg-8">
-<i class="bi bi-envelope-check display-4 text-primary""></i>
-<h1 class="display-4">Password Reset Email Sent</h1>
-<p class="">We sent an email to:  ' . $email . '</p>
-<p>Click the link in the email to reset your password.</p>
-<p class="mb-4 fw-bold">TIP: Don\'t forget to check your spam/junk folders.</p>
-<a class="btn btn-primary py-3 px-5" href="/login">Go to Login</a>
-</div>
-</div>
-</div>
-</div>
-
-';
-
-
-include($dir['core_components'] . '/bg_footer.inc');
-$app->outputpage();
-exit;
-  } else {
-    $errormessage = '<div class="bg-danger p-2 mb-4 text-white">Hmmm: Unable to locate an account with that information</div>';
-  }
+        #-------------------------------------------------------------------------------
+        # DISPLAY SUCCESS PAGE
+        #-------------------------------------------------------------------------------   
+        $page_title = "Password Reset Email Sent - Birthday Gold";
+        
+        $additionalstyles = '
+        <style>
+      
+        
+        .success-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .success-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #e8f5e8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2.5rem;
+            color: var(--bs-primary);
+        }
+        
+        .success-card h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 1rem;
+        }
+        
+        .email-display {
+            background: #f0f9ff;
+            border: 1px solid #cfe2ff;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: #0c63e4;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+        
+        .success-text {
+            font-size: 1.125rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .tip-box {
+            background: #fff3cd;
+            border: 1px solid #ffecb5;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            color: #664d03;
+            font-size: 0.875rem;
+        }
+        
+        .tip-box i {
+            color: #f0ad4e;
+            margin-right: 0.5rem;
+        }
+        
+        .btn-back {
+            background: var(--bs-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-back:hover {
+            background: #0b5ed7;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+        }
+        
+        @media (min-width: 768px) {
+            .success-card {
+                padding: 4rem 3rem;
+            }
+        }
+        </style>
+        ';
+        
+        include($dir['core_components'] . '/bg_pagestart.inc');
+        include($dir['core_components'] . '/bg_header.inc');
+        ?>
+        
+        <div class="main-content">
+            <div class="success-container">
+                <div class="success-card">
+                    <div class="success-icon">
+                        <i class="bi bi-envelope-check"></i>
+                    </div>
+                    
+                    <h1>Check Your Email</h1>
+                    
+                    <p class="success-text">We've sent a password reset link to:</p>
+                    
+                    <div class="email-display">
+                        <?php echo htmlspecialchars($email); ?>
+                    </div>
+                    
+                    <p class="success-text">Click the link in the email to reset your password.</p>
+                    
+                    <div class="tip-box">
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Tip:</strong> Don't forget to check your spam or junk folder if you don't see the email in your inbox.
+                    </div>
+                    
+                    <a href="/login" class="btn-back">Back to Login</a>
+                </div>
+            </div>
+        </div>
+        
+        <?php
+        include($dir['core_components'] . '/bg_footer.inc');
+        $app->outputpage();
+        exit;
+    } else {
+        $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Unable to find an account with that email address.</div>';
+    }
 }
+
+#-------------------------------------------------------------------------------
+# PAGE SETUP
+#-------------------------------------------------------------------------------
+$page_title = "Forgot Password - Birthday Gold";
+$page_description = "Reset your Birthday Gold account password";
+
+// Modern Minimalist CSS - Matching /redeem style
+$additionalstyles = '
+<style>
+/* Modern Minimalist Forgot Password Styles - Clean & Modern */
+* {
+    box-sizing: border-box !important;
+}
+
+
+/* Card Container */
+.forgot-container {
+    width: 100%;
+    max-width: 480px;
+    margin: 2rem auto;
+}
+
+.forgot-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* Header Section - Minimal */
+.forgot-header {
+    text-align: center;
+    padding: 2rem 1.5rem 1rem;
+}
+
+.forgot-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.forgot-header p {
+    font-size: 1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Reset Badge */
+.reset-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #e8f5e8;
+    color: var(--bs-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.reset-badge i {
+    font-size: 1rem;
+}
+
+/* Form Section */
+.forgot-body {
+    padding: 0 1.5rem 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Email Input Field */
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: white;
+    color: #212529;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+.form-control::placeholder {
+    color: #adb5bd;
+}
+
+/* Submit Button */
+.btn-submit {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: var(--bs-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-submit:hover:not(:disabled) {
+    background: #0b5ed7;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+.btn-submit:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* Help Text */
+.help-text {
+    font-size: 0.8125rem;
+    color: #6c757d;
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+/* Divider - Subtle */
+.divider {
+    margin: 2rem 0;
+    text-align: center;
+    position: relative;
+}
+
+.divider::before {
+    content: "";
+    position: absolute;
+    left: 20%;
+    right: 20%;
+    top: 50%;
+    height: 1px;
+    background: #e9ecef;
+}
+
+.divider span {
+    background: white;
+    padding: 0 0.75rem;
+    position: relative;
+    color: #adb5bd;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Alternative Actions */
+.alt-actions {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.alt-actions a {
+    color: var(--bs-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.alt-actions a:hover {
+    color: #0b5ed7;
+    text-decoration: underline;
+}
+
+/* Alert Messages */
+.alert-container {
+    margin-bottom: 1.5rem;
+}
+
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #842029;
+    border-color: #f5c2c7;
+}
+
+/* Loading State */
+.btn-submit.loading {
+    pointer-events: none;
+}
+
+.btn-submit.loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    margin: auto;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    border: 2px solid transparent;
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+.btn-submit.loading span {
+    opacity: 0;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Invalid input state */
+.form-control.is-invalid {
+    border-color: #dc3545;
+}
+
+.form-control.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+/* Success animation */
+@keyframes success-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Tablet & Desktop Styles */
+@media (min-width: 768px) {
+
+    
+    .forgot-container {
+        max-width: 480px;
+        margin: 3rem auto;
+    }
+    
+    .forgot-header {
+        padding: 3rem 2rem 1.5rem;
+    }
+    
+    .forgot-header h1 {
+        font-size: 2rem;
+    }
+    
+    .forgot-body {
+        padding: 0 2rem 3rem;
+    }
+}
+
+/* Large Desktop - Enhanced Layout */
+@media (min-width: 992px) {
+
+    
+    .forgot-wrapper {
+        width: 100%;
+        max-width: 1200px;
+        display: grid;
+        grid-template-columns: 1fr 480px;
+        gap: 4rem;
+        align-items: center;
+        padding: 0 2rem;
+    }
+    
+    /* Welcome content for desktop */
+    .welcome-content {
+        color: #212529;
+    }
+    
+    .welcome-content h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+    }
+    
+    .welcome-content h2 span {
+        color: var(--bs-primary);
+    }
+    
+    .welcome-content p {
+        font-size: 1.25rem;
+        color: #6c757d;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .feature-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .feature-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .feature-icon {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        background: #e8f5e8;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bs-primary);
+        font-size: 1.25rem;
+    }
+    
+    .feature-text h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 0.25rem;
+    }
+    
+    .feature-text p {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.4;
+    }
+    
+    .forgot-container {
+        margin: 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+}
+
+@media (min-width: 1200px) {
+    .forgot-wrapper {
+        gap: 6rem;
+    }
+    
+    .welcome-content h2 {
+        font-size: 3rem;
+    }
+}
+</style>
+';
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<section class="h-100 gradient-form main-content">
-  <div class="container py-5 h-100">
-
-    <div class="row d-flex justify-content-center align-items-center h-100">
-
-      <div class="col-xl-10">
-        <?= $errormessage; ?>
-        <div class="card rounded-3 text-black">
-          <div class="row g-0">
-            <div class="col-lg-6">
-              <div class="card-body p-md-5 mx-md-4">
-
-                <div class="text-center">
-                  <h1 class="mt-1 mb-5 pb-1">Forgot Password</h1>
+<div class="container main-content">
+    <!-- Desktop wrapper for side-by-side layout -->
+    <div class="forgot-wrapper">
+        <!-- Welcome content - Desktop only -->
+        <div class="welcome-content d-none d-lg-block">
+            <h2>Locked out? <span>No worries</span></h2>
+            <p>We'll help you get back into your account quickly and securely.</p>
+            
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Secure Reset</h3>
+                        <p>Password reset links expire for your security</p>
+                    </div>
                 </div>
-
-                <form method="post" id="mainform" action="/forgot">
-                  <?PHP echo $display->inputcsrf_token(); ?>
-                  <p class="fw-bolder ">Provide your account email. We will send you a link to change your password.</p>
-
-                  <div class="mb-3">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-control">
-                  </div>
-
-                  <div class="text-center pt-1 mb-5 pb-1">
-                    <button class="btn btn-primary fa-lg mb-3" id="mainsubmit" type="submit">Submit</button>
-               
-              </div>
-              </form>
-              <div class="d-flex align-items-center justify-content-center pb-4">
-                <a  class="btn btn-outline-primary" href="/login">Back to Login</a>
-              </div>
-
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-envelope"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Quick Delivery</h3>
+                        <p>Reset email sent within seconds</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>24 Hour Valid</h3>
+                        <p>Links remain active for one day</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-headset"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Need Help?</h3>
+                        <p>Support team ready to assist you</p>
+                    </div>
+                </div>
             </div>
-          </div>
-
-          <div class="col-lg-6 d-flex align-items-center flex-column bg-secondary">
-
-            <div class="flex-grow-1 d-flex align-items-center">
-              <div class="text-white px-3 py-4 p-md-5 mx-md-4 text-center">
-                <h4 class="mb-4 text-white">Don't worry, we can help you get back into your account.</h4>
-                <p class="mb-0 text-black">If you don't remember what email you used, please use our contact form: <a href="/contact" class="text-white">HERE</a></p>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
+        
+        <!-- Forgot Card -->
+        <div class="forgot-container">
+            <div class="forgot-card">
+                <!-- Header Section -->
+                <div class="forgot-header">
+                    <div class="reset-badge">
+                        <i class="bi bi-key-fill"></i>
+                        <span>Password Reset</span>
+                    </div>
+                    <h1>Forgot Your Password?</h1>
+                    <p>Enter your email to reset it</p>
+                </div>
+                
+                <!-- Form Section -->
+                <div class="forgot-body">
+                    <?php if (!empty($errormessage)): ?>
+                        <div class="alert-container">
+                            <?php echo $errormessage; ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <form method="POST" action="/forgot" id="forgotForm">
+                        <?php echo $display->inputcsrf_token(); ?>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="email">Email Address</label>
+                            <input 
+                                type="email" 
+                                name="email" 
+                                id="email" 
+                                class="form-control" 
+                                placeholder="name@example.com" 
+                                autocomplete="email"
+                                value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                                required
+                                autofocus
+                            >
+                            <div class="help-text">
+                                We'll send a password reset link to this email
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <span>Send Reset Link</span>
+                        </button>
+                    </form>
+                    
+                    <!-- Divider -->
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+                    
+                    <!-- Alternative Actions -->
+                    <div class="alt-actions">
+                        Remember your password? <a href="/login">Sign in</a>
+                        <br>
+                        New to Birthday Gold? <a href="/signup">Create account</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>  </div>
-</section>
+</div>
 
+<?php
+$footerattribute['postfooter'] = '
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const forgotForm = document.getElementById("forgotForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const emailInput = document.getElementById("email");
+    
+    if (forgotForm) {
+        forgotForm.addEventListener("submit", function(e) {
+            // Basic email validation
+            const email = emailInput.value.trim();
+            if (!email || !email.includes("@")) {
+                e.preventDefault();
+                emailInput.classList.add("is-invalid");
+                emailInput.focus();
+                return false;
+            }
+            
+            // Add loading state
+            submitBtn.classList.add("loading");
+            submitBtn.disabled = true;
+            submitBtn.textContent = "";
+        });
+    }
+    
+    // Remove invalid state on input
+    if (emailInput) {
+        emailInput.addEventListener("input", function() {
+            this.classList.remove("is-invalid");
+        });
+    }
+});
+</script>
+';
 
-<?PHP
-echo $display->submitbuttoncolorjs();
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

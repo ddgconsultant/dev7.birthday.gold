@@ -162,6 +162,9 @@ if ($app->formposted()) {
         }
     }
     
+    // Unset process_handlers flag after validation
+    $process_handlers = false;
+    
     // If no errors, process the account creation
     if (empty($errors)) {
         // Check for existing user (from credentials handler)
@@ -173,7 +176,7 @@ if ($app->formposted()) {
             if ($account_cost > 0) {
                 // Paid plan - go to checkout with existing user
                 $encoded_user_id = $qik->encodeId($tempinfo['user_id']);
-                header('Location: /claudecode/checkout_api.php?u=' . $encoded_user_id);
+                header('Location: /checkout.php?u=' . $encoded_user_id);
                 exit();
             } else {
                 // Free plan - check status
@@ -284,7 +287,7 @@ if ($app->formposted()) {
                 if ($account_cost > 0) {
                     // Paid plan - go to checkout
                     $encoded_user_id = $qik->encodeId($user_id);
-                    header('Location: /claudecode/checkout_api.php?u=' . $encoded_user_id);
+                    header('Location: /checkout.php?u=' . $encoded_user_id);
                 } else {
                     // Free plan - check validation requirements
                     if ($plandata['account_verification'] == 'notrequired') {
@@ -629,7 +632,16 @@ include($dir['core_components'] . '/bg_header.inc');
                 <span id="displayPrice" class="h5 mb-0">
                     $<?php echo number_format($account_cost / 100, 2); ?>
                 </span>
-                <span class="text-muted">/year</span>
+                <?php 
+                $billing_cycle = $plandata['billing_cycle'] ?? 'yearly';
+                switch($billing_cycle) {
+                    case 'monthly': echo '<span class="text-muted">/month</span>'; break;
+                    case 'yearly': echo '<span class="text-muted">/year</span>'; break;
+                    case 'one_time': echo '<span class="text-muted"> (one-time)</span>'; break;
+                    case 'lifetime': echo '<span class="text-muted"> (lifetime)</span>'; break;
+                    default: echo '<span class="text-muted">/' . $billing_cycle . '</span>';
+                }
+                ?>
             </div>
         </div>
         <?php endif; ?>
