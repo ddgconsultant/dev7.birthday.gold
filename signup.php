@@ -285,6 +285,91 @@ $page_description = "Sign up for Birthday Gold and start receiving birthday rewa
 #-------------------------------------------------------------------------------
 $additionalstyles .= '
 <link href="/public/css/signup_styles.css" rel="stylesheet">
+<style>
+/* Responsive headline sizing */
+.header h1 {
+    font-size: 1.75rem !important; /* Default for mobile - keep readable */
+    font-weight: 700 !important;
+    color: #212529 !important;
+    margin-bottom: 0.5rem !important;
+    line-height: 1.2 !important;
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+    .header h1 {
+        font-size: 2.25rem !important;
+    }
+}
+
+/* Desktop and up */
+@media (min-width: 992px) {
+    .header h1 {
+        font-size: 2.75rem !important;
+    }
+}
+
+/* Large desktop */
+@media (min-width: 1200px) {
+    .header h1 {
+        font-size: 3.25rem !important;
+    }
+}
+
+/* XL desktop */
+@media (min-width: 1400px) {
+    .header h1 {
+        font-size: 3.5rem !important;
+    }
+}
+
+/* Subtitle/byline styling */
+.header p {
+    font-size: 1rem !important; /* Mobile */
+    color: #6c757d !important;
+}
+
+@media (min-width: 768px) {
+    .header p {
+        font-size: 1.5rem !important;
+    }
+}
+
+@media (min-width: 992px) {
+    .header p {
+        font-size: 1.75rem !important;
+    }
+}
+
+/* Plan cards equal height */
+.plan-card-wrapper {
+    height: 100%;
+}
+
+.plan-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.plan-features {
+    flex-grow: 1;
+}
+
+/* Ensure plan grid centers properly */
+#planGrid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center !important;
+}
+
+/* Max width for plan cards to prevent them from getting too wide */
+@media (min-width: 1200px) {
+    #planGrid > div {
+        max-width: 350px;
+    }
+}
+</style>
 ';
 
 include($dir['core_components'] . '/bg_pagestart.inc');
@@ -293,20 +378,35 @@ include($dir['core_components'] . '/bg_header.inc');
 #-------------------------------------------------------------------------------
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
+
+// Array of welcoming headlines - randomly selected
+$headlines = [
+    "Awesome! Let's Get Started 🎉",
+    "Welcome! You're Gonna Love This",
+    "Sweet! Let's Create Your Account",
+    "Perfect! Let's Do This Together",
+    "Exciting! Your Birthday Rewards Await",
+    "Yes! Let's Make This Happen",
+    "Fantastic! Ready to Get Started?"
+];
+
+// Select a random headline
+$selectedHeadline = $headlines[array_rand($headlines)];
+
+// Professional byline that explains the process
+$byline = "Choose your account type and plan below. Takes less than 60 seconds!";
 ?>
-<div>
-    <!-- Header -->
-    <div class="header mt-5 pt-5">
-        <h1>Create Your Account</h1>
-        <p>Start getting your birthday freebies by Choosing Your Account Type & Plan</p>
-    </div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="header text-center mt-5 mb-4">
+                <h1><?php echo $selectedHeadline; ?></h1>
+                <p class="mb-0"><?php echo $byline; ?></p>
+            </div>
 
-    <!-- Content -->
-    <div class="main-content">
-   
-
-        <!-- Account Type & Plan Selection -->
-        <div class="card pb-5 px-3 mt-5 pt-md-5 pt-sm-2">
+            <!-- Account Type & Plan Selection -->
+            <div class="card p-3 p-md-4 p-lg-5">
         <?php
         // Error Message Display
         if (!empty($transferpage['message'])) {
@@ -359,8 +459,22 @@ include($dir['core_components'] . '/bg_header.inc');
             <h3 class="mt-5 pt-md-5 pt-sm-2">Pick the plan:</h3>
 
             <!-- Dynamic Plan Grid -->
-            <div class="plan-grid" id="planGrid">
+            <div class="row g-3 justify-content-center" id="planGrid">
                 <?php
+                $planCount = count($availablePlans);
+                // Determine column classes based on plan count
+                if ($planCount == 1) {
+                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-5 col-xl-4'; // Centered single card with margins
+                } elseif ($planCount == 2) {
+                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-5 col-xl-4'; // 2 cards centered on mobile
+                } elseif ($planCount == 3) {
+                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-4'; // 3 cards centered on mobile
+                } elseif ($planCount == 4) {
+                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-6 col-xl-3'; // 4 cards - 2x2 on lg, 4 in row on xl
+                } else {
+                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-4'; // Multiple cards centered on mobile
+                }
+                
                 foreach ($availablePlans as $plan) {
                     $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
                     
@@ -373,7 +487,8 @@ include($dir['core_components'] . '/bg_header.inc');
                     }
                     
                     // Wrap each plan in a container to hold the checkmark
-                    echo '<div class="plan-card-wrapper' . ($isSelected ? ' selected' : '') . '">';
+                    echo '<div class="' . $colClasses . '">
+                            <div class="plan-card-wrapper' . ($isSelected ? ' selected' : '') . '">';
                     
                     echo '<div class="plan-card' . ($isRecommended ? ' recommended' : '') . ($isSelected ? ' selected' : '') . '" 
                               data-plan="' . $plan['account_plan'] . '" 
@@ -430,6 +545,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     
                     echo '</div>'; // Close plan-card
                     echo '</div>'; // Close plan-card-wrapper
+                    echo '</div>'; // Close col
                 }
                 ?>
             </div>
@@ -457,28 +573,30 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
             </form>
         </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="border-top mt-4">
-        <div class="container py-4">
-            <div class="row text-center">
-                <div class="col-12 mb-2">
-                <small class="text-muted" style="font-size: 0.9rem;">
-                        Already have an account? 
-                        <a href="/login" class="text-decoration-none text-success fw-medium">Sign in</a>
-            </small>
-                </div>
-                <div class="col-12">
-                <small class="text-muted" style="font-size: 0.9rem;">
-                        Have a gift certificate? 
-                        <a href="/redeem" class="text-decoration-none text-success fw-medium">Redeem here</a>
-            </small>
+        
+        <!-- Footer -->
+        <footer class="border-top mt-4">
+            <div class="container py-4">
+                <div class="row text-center">
+                    <div class="col-12 mb-2">
+                    <small class="text-muted" style="font-size: 0.9rem;">
+                            Already have an account? 
+                            <a href="/login" class="text-decoration-none text-success fw-medium">Sign in</a>
+                </small>
+                    </div>
+                    <div class="col-12">
+                    <small class="text-muted" style="font-size: 0.9rem;">
+                            Have a gift certificate? 
+                            <a href="/redeem" class="text-decoration-none text-success fw-medium">Redeem here</a>
+                </small>
+                    </div>
                 </div>
             </div>
-        </div>
-    </footer>
-</div>
+        </footer>
+        
+        </div> <!-- End col -->
+    </div> <!-- End row -->
+</div> <!-- End container-fluid -->
 
 <!-- Other Account Types Modal -->
 <div class="modal fade" id="otherAccountsModal" tabindex="-1" aria-labelledby="otherAccountsModalLabel" aria-hidden="true">

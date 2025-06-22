@@ -191,3 +191,30 @@ npm test
 - Generates true random 6-digit codes when requested
 - Maintains backward compatibility with alphanumeric codes
 - Fixed test mode to use numeric user_id (999999) for database compatibility
+
+## Header System Updates (2025-06-22a)
+
+### Homepage Header Enhancements
+- Transparent header with black 80% opacity and blur effect
+- White glow/shadow effects for text visibility
+- Special styling for homepage vs regular pages
+
+### Navigation Improvements
+- Right-aligned navigation menu (updated center-nav in bg_header.css)
+- Responsive breakpoints:
+  - Nav menu hidden at <992px (large screens only)
+  - Sign Up button visible down to 576px
+  - Buttons always flush right with `ms-auto`
+
+### Button Styling Standards
+- Sign Up: `btn-secondary` with transparent background
+- Login: `btn-primary` with transparent background
+- Both use 25px border-radius for oval shape
+- Hover effects with background color fill
+- `white-space: nowrap` prevents text wrapping
+
+### Header Layout Structure
+- Logo: `col-auto` (minimal space)
+- Navigation: `col` (fills available space)
+- Buttons: `col-auto ms-auto` (flush right)
+- This ensures proper responsive behavior
