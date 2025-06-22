@@ -64,8 +64,8 @@ if (($formdata = $app->formposted())) {
   
 #$message['validatelink']=$link['shorturl'];
 $messageinput['from']=[$email, $name];
-$messageinput['to']='CS birthday.gold';
-$messageinput['toemail']='cs@birthday.gold';
+$messageinput['to']='Member Support birthday.gold';
+$messageinput['toemail']='membersupport@birthday.gold';
 if ($subject!='') $subject='<br>SUBJECT: '.$subject;
 $messageinput['body']='DATE: '.date('r').'<br>ID: '.session_id().$subject.'<hr>'.$message;
 $messageinput['notification']='DATE: '.date('r')."\n".'ID: '.session_id().$subject."\n".$message;
@@ -87,6 +87,89 @@ $errormessage=str_replace('</div>', '<button type="button" class="close position
 #-------------------------------------------------------------------------------
 displaypage:
 
+// Add page-specific styles
+$additionalstyles .= '
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+    
+    .page-wrapper {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 2rem 0;
+    }
+    
+    /* Footer specific styles */
+    footer, .footer {
+        flex-shrink: 0;
+        margin-top: auto;
+    }
+    
+    .display-6 {
+        font-size: 1.5rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .py-6 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+    
+    .form-floating {
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-control {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .form-floating > label {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .form-floating > .form-control {
+        height: calc(2.5rem + 2px);
+    }
+    
+    .form-floating > textarea.form-control {
+        height: 100px !important;
+    }
+    
+    .btn {
+        padding: 0.5rem 1.5rem !important;
+        font-size: 0.9rem;
+    }
+    
+    .card {
+        padding: 1.5rem;
+    }
+    
+    h6 {
+        font-size: 0.875rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .g-5 {
+        --bs-gutter-y: 1.5rem !important;
+        --bs-gutter-x: 1.5rem !important;
+    }
+    
+    .g-3 {
+        --bs-gutter-y: 0.75rem !important;
+        --bs-gutter-x: 0.75rem !important;
+    }
+        </style>
+';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
@@ -95,14 +178,15 @@ include($dir['core_components'] . '/bg_header.inc');
 
 
     <!-- Contact Start -->
-    <div class="container py-6 flex-grow-1">
+    <div class="page-wrapper">
         <div class="container">
+            <div class="contact-content">
             <div class="row g-5">
-                
+                <div class="card">
     <?PHP echo $errormessage; ?>
                 <div class="col-lg" data-wow-delay="0.5s">
                     <h6 class="text-primary text-uppercase mb-2">Contact Us</h6>
-                    <h1 class="display-6 mb-4">If you need to reach us, please use this form.</h1>
+                    <h2 class="h4 mb-3">If you need to reach us, please use this form.</h2>
                     <form method="post" action="/contact">
                   <?PHP echo $display->inputcsrf_token(); ?>
                         <div class="row g-3">
@@ -133,7 +217,7 @@ include($dir['core_components'] . '/bg_header.inc');
                             </div>
 
 <?PHP
-echo $app->generateCaptcha();
+echo $app->generateCaptcha('medium');
 
 echo '
                            <div class="col-12 d-flex justify-content-end">
@@ -157,12 +241,12 @@ echo '
                 // Check if the current hour is within business hours
                 if ($currentHour >= $businessHoursStart && $currentHour < $businessHoursEnd) {
                     echo '
-                        <hr>
-                        <div class="pt-6 mt-6">
-                            <h6 class="text-primary text-uppercase mb-2 mt-6">Call Us</h6>
-                            <h1 class="display-6 mb-4">Need to talk to us on the phone.</h1>
-                            <h2 class="display-6 mb-4"><a href="tel:877-234-6532">1-877-BDGOLD-2</a> <a class="h5" href="tel:877-234-6532">(877-234-6532)</a></h2>
-                            Our business hours:  9:00 AM - 5:00 PM MST, Monday - Friday
+                        <hr class="my-3">
+                        <div class="pt-3">
+                            <h6 class="text-primary text-uppercase mb-2">Call Us</h6>
+                            <p class="mb-2">Need to talk to us on the phone.</p>
+                            <p class="h5 mb-2"><a href="tel:877-234-6532">1-877-BDGOLD-2</a> <span class="text-muted small">(877-234-6532)</span></p>
+                            <p class="small text-muted mb-0">Our business hours: 9:00 AM - 5:00 PM MST, Monday - Friday</p>
                         </div>
                     ';
                 }
@@ -170,9 +254,11 @@ echo '
                 
 
 echo '       </div>
-
+</div>
         </div>
-    </div>
+            </div> <!-- End contact-content -->
+        </div> <!-- End container -->
+    </div> <!-- End page-wrapper -->
     <!-- Contact End -->
 
 

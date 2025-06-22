@@ -30,10 +30,18 @@ $headerattribute['additional_head'] = '
 #-------------------------------------------------------------------------------
 
 $additionalstyles .= '<link href="/public/css/v3/theme.css" rel="stylesheet" id="style-default">
-<link rel="stylesheet" href="/public/css/homepage.css">';
+<link rel="stylesheet" href="/public/css/homepage.css">
+<style>
+/* Fix floating elements initial position */
+.floating-elements {
+    pointer-events: none; /* Ensure they dont interfere with clicks */
+}
+.float-element {
+    transform: translateY(100vh); /* Start offscreen */
+}
+</style>';
 $bodycontentclass='class="d-flex"';
-$noheaderspacer = true;
-
+$header_flush = true; // Homepage should have content flush with header
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');

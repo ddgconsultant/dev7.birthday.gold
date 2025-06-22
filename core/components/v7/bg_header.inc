@@ -384,9 +384,30 @@ if ($isHomePage) {
 </header>';
 } // End of else block for regular header
 
-// Add spacing for fixed header
-if (!isset($noheaderspacer) && 1==2) {
-    echo '<div class="pt-4"></div>';
+// Add universal content spacing after header
+// This creates consistent spacing between header and content on all pages
+// Can be disabled by setting $header_flush = true; before including bg_header.inc
+if (!isset($header_flush) || !$header_flush) {
+    echo '<div class="content-spacing-wrapper" style="padding-top: 2rem;"></div>';
 }
+
+// Add CSS for the spacing system
+echo '<style>
+/* Universal header spacing system */
+.header-flush .content-spacing-wrapper {
+    display: none !important;
+}
+
+/* Ensure body has no margin/padding that interferes */
+body {
+    margin: 0;
+    padding: 0;
+}
+
+/* Optional: Add smooth transition when toggling */
+.content-spacing-wrapper {
+    transition: padding 0.3s ease;
+}
+</style>';
 
 ?>

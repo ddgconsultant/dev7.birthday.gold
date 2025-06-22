@@ -7,13 +7,13 @@ ini_set('log_errors', 1);
 if (isset($_SERVER['HTTP_ORIGIN'])) {
   $origin = $_SERVER['HTTP_ORIGIN'];
   if (preg_match('/^https:\/\/[a-zA-Z0-9.-]*\.birthday\.gold$/', $origin)) {
-      // Ensure header is set only once
-      header_remove('Access-Control-Allow-Origin'); // Remove any pre-existing header
-      header('Access-Control-Allow-Origin: ' . $origin);
-      header('Vary: Origin'); // Recommended to prevent caching issues with CORS
-      header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-      header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-      header('Access-Control-Allow-Credentials: true');
+    // Ensure header is set only once
+    header_remove('Access-Control-Allow-Origin'); // Remove any pre-existing header
+    header('Access-Control-Allow-Origin: ' . $origin);
+    header('Vary: Origin'); // Recommended to prevent caching issues with CORS
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    header('Access-Control-Allow-Credentials: true');
   }
 }
 
@@ -31,28 +31,28 @@ if (!empty($site_maintenancemode)) {
 <title>Birthday.Gold Site Maintenance</title>
 <link href="//fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
 <style>
-  html, body { padding: 0; margin: 0; width: 100%; height: 100%; }
-  * {box-sizing: border-box;}
-  body { text-align: center; padding: 0; background: #f3bd00; color: #fff; font-family: Open Sans;}
-  h1 { font-size: 50px; text-align: center;}
-  body { font-family: Open Sans; font-weight: 175; font-size: 20px; color: #fff; text-align: center; display: flex; justify-content: center; align-items: center; flex-direction: column;}
-  article { display: block; width: 700px; padding: 50px; margin: 0 auto; }
-  a { color: #fff; font-weight: bold;}
-  a:hover { text-decoration: none; }
-  svg { width: 75px; margin-top: 1em; }
-  footer { position: absolute; bottom: 0; width: 100%; padding: 20px 0; background: #f3bd00; }
+html, body { padding: 0; margin: 0; width: 100%; height: 100%; }
+* {box-sizing: border-box;}
+body { text-align: center; padding: 0; background: #f3bd00; color: #fff; font-family: Open Sans;}
+h1 { font-size: 50px; text-align: center;}
+body { font-family: Open Sans; font-weight: 175; font-size: 20px; color: #fff; text-align: center; display: flex; justify-content: center; align-items: center; flex-direction: column;}
+article { display: block; width: 700px; padding: 50px; margin: 0 auto; }
+a { color: #fff; font-weight: bold;}
+a:hover { text-decoration: none; }
+svg { width: 75px; margin-top: 1em; }
+footer { position: absolute; bottom: 0; width: 100%; padding: 20px 0; background: #f3bd00; }
 </style>
 </head><body>
 <article>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 202.24 202.24"><defs><style>.cls-1{fill:#fff;}</style></defs>
-    <title>Maintenance</title><g id="Layer_2" data-name="Layer 2"><g id="Capa_1" data-name="Capa 1"><path class="cls-1" d="M101.12,0A101.12,101.12,0,1,0,202.24,101.12,101.12,101.12,0,0,0,101.12,0ZM159,148.76H43.28a11.57,11.57,0,0,1-10-17.34L91.09,31.16a11.57,11.57,0,0,1,20.06,0L169,131.43a11.57,11.57,0,0,1-10,17.34Z"/><path class="cls-1" d="M101.12,36.93h0L43.27,137.21H159L101.13,36.94Zm0,88.7a7.71,7.71,0,1,1,7.71-7.71A7.71,7.71,0,0,1,101.12,125.63Zm7.71-50.13a7.56,7.56,0,0,1-.11,1.3l-3.8,22.49a3.86,3.86,0,0,1-7.61,0l-3.8-22.49a8,8,0,0,1-.11-1.3,7.71,7.71,0,1,1,15.43,0Z"/></g></g></svg>
-    <h1>We&rsquo;ll be back soon!</h1>
-    <div>
-        <p>Sorry for the inconvenience. We&rsquo;re performing some maintenance at the moment. 
-        <span style="display:block">If you would like, you can always follow us on <a href="//www.x.com/birthday_gold">X (formally Twitter)</a> for updates.</span>
-        We&rsquo;ll be back up shortly!</p>
-        <p>&mdash; The Birthday.Gold Team</p>
-    </div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 202.24 202.24"><defs><style>.cls-1{fill:#fff;}</style></defs>
+<title>Maintenance</title><g id="Layer_2" data-name="Layer 2"><g id="Capa_1" data-name="Capa 1"><path class="cls-1" d="M101.12,0A101.12,101.12,0,1,0,202.24,101.12,101.12,101.12,0,0,0,101.12,0ZM159,148.76H43.28a11.57,11.57,0,0,1-10-17.34L91.09,31.16a11.57,11.57,0,0,1,20.06,0L169,131.43a11.57,11.57,0,0,1-10,17.34Z"/><path class="cls-1" d="M101.12,36.93h0L43.27,137.21H159L101.13,36.94Zm0,88.7a7.71,7.71,0,1,1,7.71-7.71A7.71,7.71,0,0,1,101.12,125.63Zm7.71-50.13a7.56,7.56,0,0,1-.11,1.3l-3.8,22.49a3.86,3.86,0,0,1-7.61,0l-3.8-22.49a8,8,0,0,1-.11-1.3,7.71,7.71,0,1,1,15.43,0Z"/></g></g></svg>
+<h1>We&rsquo;ll be back soon!</h1>
+<div>
+<p>Sorry for the inconvenience. We&rsquo;re performing some maintenance at the moment. 
+<span style="display:block">If you would like, you can always follow us on <a href="//www.x.com/birthday_gold">X (formally Twitter)</a> for updates.</span>
+We&rsquo;ll be back up shortly!</p>
+<p>&mdash; The Birthday.Gold Team</p>
+</div>
 </article>
 
 <footer>
@@ -71,55 +71,55 @@ if (!empty($site_maintenancemode)) {
 #-------------------------------------------------------------------------------
 $site = 'dev7';
 $mode = 'dev';
-$errormode='showerrors';
+$errormode = 'showerrors';
 $codemode = 'web';
 $devversion = 'dev7';
-$cookiebannerversion=2;
-$cookieinfolink='https://consumer.ftc.gov/articles/how-websites-and-apps-collect-and-use-your-information';
+$cookiebannerversion = 2;
+$cookieinfolink = 'https://consumer.ftc.gov/articles/how-websites-and-apps-collect-and-use-your-information';
 
 #-------------------------------------------------------------------------------
 # ERROR HANDLER
 #-------------------------------------------------------------------------------
 if ($errormode === 'showerrors') {
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);    
-    ini_set('log_errors', 1);
-    error_reporting(E_ALL);
+  ini_set('display_errors', 1);
+  ini_set('display_startup_errors', 1);
+  ini_set('log_errors', 1);
+  error_reporting(E_ALL);
 } else { // 'prod' mode
-    ini_set('display_errors', 0);
-    ini_set('display_startup_errors', 0);
-    ini_set('log_errors', 1);
-    error_reporting(E_ALL);
+  ini_set('display_errors', 0);
+  ini_set('display_startup_errors', 0);
+  ini_set('log_errors', 1);
+  error_reporting(E_ALL);
 }
 
 // Handle uncaught exceptions and log them
 set_exception_handler(function ($e) {
-    error_log('Uncaught Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
-    if ($GLOBALS['errormode'] === 'showerrors') {
-        echo "Uncaught Exception: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine() . "<br>";
-    }
+  error_log('Uncaught Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+  if ($GLOBALS['errormode'] === 'showerrors') {
+    echo "Uncaught Exception: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine() . "<br>";
+  }
 });
 
 // Convert warnings and notices to log entries but allow execution to continue
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
-    error_log("PHP Error [$errno]: $errstr in $errfile on line $errline");
+  error_log("PHP Error [$errno]: $errstr in $errfile on line $errline");
 
-    if ($GLOBALS['errormode'] === 'showerrors') {
-        echo "PHP Error [$errno]: $errstr in $errfile on line $errline <br>";
-    }
-    return true; // Prevents PHP from handling the error as a fatal error
+  if ($GLOBALS['errormode'] === 'showerrors') {
+    echo "PHP Error [$errno]: $errstr in $errfile on line $errline <br>";
+  }
+  return true; // Prevents PHP from handling the error as a fatal error
 });
 
 // Ensure fatal errors are logged but don't break Apache
 register_shutdown_function(function () {
-    $error = error_get_last();
-    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        error_log("Fatal Error: {$error['message']} in {$error['file']} on line {$error['line']}");
+  $error = error_get_last();
+  if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+    error_log("Fatal Error: {$error['message']} in {$error['file']} on line {$error['line']}");
 
-        if ($GLOBALS['errormode'] === 'showerrors') {
-            echo "Fatal Error: {$error['message']} in {$error['file']} on line {$error['line']} <br>";
-        }
+    if ($GLOBALS['errormode'] === 'showerrors') {
+      echo "Fatal Error: {$error['message']} in {$error['file']} on line {$error['line']} <br>";
     }
+  }
 });
 
 
@@ -187,13 +187,13 @@ $logBuffer = [];
 // Check if $dir['base'] is already set and non-empty, otherwise determine its value
 if (empty($dir['base'])) {
   if (php_sapi_name() != 'cli') {
-      $dir['base'] = $_SERVER['DOCUMENT_ROOT'];
+    $dir['base'] = $_SERVER['DOCUMENT_ROOT'];
   } else {
-      $dir['base'] = __DIR__ . '/..';
+    $dir['base'] = __DIR__ . '/..';
   }
 } else {
   $dir['base'] = rtrim($dir['base'], '/');
- # echo "DIR BASE: " . $dir['base']; exit;
+  # echo "DIR BASE: " . $dir['base']; exit;
 }
 
 if (empty($BASEDIR)) $BASEDIR = $dir['base'];
@@ -230,13 +230,13 @@ $footerattribute = array();
 // Resolve and verify configuration directory
 $dir['configs'] = realpath($dir['base'] . '/../ENV_CONFIGS');
 if (!$dir['configs']) {
-    die('Error: Configuration directory not found: ' . $dir['base'] . '/../ENV_CONFIGS');
+die('Error: Configuration directory not found: ' . $dir['base'] . '/../ENV_CONFIGS');
 }
 
 // Check configuration file existence
 $configFile = $dir['configs'] . '/config-database.inc';
 if (!file_exists($configFile)) {
-    die('Error: Configuration file not found: ' . $configFile);
+die('Error: Configuration file not found: ' . $configFile);
 }
 
 // Include configuration file
@@ -244,9 +244,9 @@ include($configFile);
 
 // Verify $db initialization
 if (empty($db) || !is_array($db)) {
-    die('Error: $db variable is not initialized correctly in the configuration file.');
+die('Error: $db variable is not initialized correctly in the configuration file.');
 }
-    breakpoint ($dir);
+breakpoint ($dir);
 */
 
 
@@ -259,10 +259,10 @@ if (empty($db) || !is_array($db)) {
 #$dir['bge'] = '/admin/bgrab';
 $dir['bge'] = '/admin/bgreb_v3';
 $dir['bge_dir'] = $dir['base'] . $dir['bge'];
-$dir['bge_web'] = 'https://' . $site . '.birthday.gold'.$dir['bge'];
-$dir['bge_raw'] = 'W:/BIRTHDAY_SERVER/'.$devversion.'.birthday.gold'.$dir['bge'];
-$dir['bge_webA'] = 'https://' . $site . '.birthday.gold'.$dir['bge'];
-$website['bge_extensionversion'] ='v4';
+$dir['bge_web'] = 'https://' . $site . '.birthday.gold' . $dir['bge'];
+$dir['bge_raw'] = 'W:/BIRTHDAY_SERVER/' . $devversion . '.birthday.gold' . $dir['bge'];
+$dir['bge_webA'] = 'https://' . $site . '.birthday.gold' . $dir['bge'];
+$website['bge_extensionversion'] = 'v4';
 
 $website['domain'] = '.birthday.gold';  // Notice the leading dot (.)
 $website['url'] = $site . $website['domain'];
@@ -282,8 +282,8 @@ $website['updatemedia_url'] = $website['fullurl'] . $dir['updatemedia'];
 $website['cdnurl'] = 'files.birthday.gold';
 
 $website['numberofbiz'] = 275;
-$website['biznames']='businesses';
-$website['bizname']='business';
+$website['biznames'] = 'businesses';
+$website['bizname'] = 'business';
 $website['defaultavatar'] = '/public/avatars/problemavatar.png';
 
 $website['bootstrap_css'] = '<link href="//cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">';
@@ -312,7 +312,7 @@ ini_set('session.cookie_domain', $website['domain']);
 #-------------------------------------------------------------------------------
 # READ IN ENVIRONMENT FILE
 #-------------------------------------------------------------------------------
-$configfile = $dir['configs'] . '/config-main-' . $mode . '6.inc';
+$configfile = $dir['configs'] . '/config-main-' . $mode . '7.inc';
 if (!file_exists($configfile)) {
   die("CRITICAL: Configuration file does not exist: $configfile");
 }
@@ -331,7 +331,7 @@ $classes = ['Timer', 'System', 'Qik', 'Session', 'Database', 'App', 'Account', '
 
 // Check if any classes set externally
 if (isset($addClasses)) {
- # $classes = array_merge($classes, $addClasses);  
+  # $classes = array_merge($classes, $addClasses);  
   array_push($classes, ...$addClasses);
 }
 
@@ -355,39 +355,39 @@ foreach ($classes as $class) {
     // Instantiate class and Allow special instantiation of a class if needed
     $className = $class;
     switch ($class) {
-        // -----------------------------------------
+      // -----------------------------------------
       case 'accessmanager':
         $am_default_kidirpath = 'AFL_H/QAB_A';
         $$className = new $className($database, $sitesettings['keymanager'],  $am_default_kidirpath);
         break;
-        // -----------------------------------------      
+      // -----------------------------------------      
       case 'account':
-        case 'createaccount':
+      case 'createaccount':
         $$className = new $className($database, $session);
         break;
-        // -----------------------------------------
-        case 'admin':
-       if ($account->isadmin())   $$className = new $className($database, $session);
-          break;
-        // -----------------------------------------
+      // -----------------------------------------
+      case 'admin':
+        if ($account->isadmin())   $$className = new $className($database, $session);
+        break;
+      // -----------------------------------------
       case 'referral':
         $$className = new $className($database, $session);
         break;
-        // -----------------------------------------
+      // -----------------------------------------
       case 'timeclock':
         $$className = new $className($database, $session);
         break;
-        // -----------------------------------------
+      // -----------------------------------------
       case 'timer':
         $$className = new $className($classConfig);
         $timer->start();
         break;
-        // -----------------------------------------
+      // -----------------------------------------
       case 'fileuploader':
         $b2Credentials = $sitesettings['storage'];
         $$className = new $className($b2Credentials);
         break;
-        // -----------------------------------------
+      // -----------------------------------------
       case 'fileuploader_ui':
         // Default parameters
         $defaultParams = array(
@@ -402,37 +402,46 @@ foreach ($classes as $class) {
         $customParams = array_merge($defaultParams, $params2); // Merge custom parameters with default          
         $$className = new $className($params1, $customParams); // Instantiate fileuploader_ui with the first param ($params1) and merged custom parameters
         break;
-        // -----------------------------------------
+      // -----------------------------------------
       case 'leantime':
         $params1 = $classparams1['leantime'] ?? 'https://leantime.birthdaygold.cloud//api/v1';
         $params2 = $classparams2['leantime'] ?? [];  // need an API key         
         $$className = new $className($params1, $params2);
         break;
-        // -----------------------------------------
+      // -----------------------------------------
       case 'cdn':
         $cdnAccountId = $sitesettings['cdn_backblaze']['account_id'];
         $cdnApplicationKey = $sitesettings['cdn_backblaze']['application_key'];
         $$className = new $className($cdnAccountId, $cdnApplicationKey);
         break;
-        // -----------------------------------------
-        case 'telegramsmsservice':
-          $telegramToken = $sitesettings['telegram']['telegramToken'];
-          $telegramAPI = $sitesettings['telegram']['telegramAPI'];
-          $telegramsmsservice = new TelegramSMSService($telegramToken, $telegramAPI, $database);
-          break;
-          // -----------------------------------------
+      // -----------------------------------------
+      case 'mail':
+        $usemailconfig = $sitesettings['mail'];    // Use the default mail settings
+        if (!empty($usemailsender) && !empty($sitesettings['mailsender_' . $usemailsender])) { // If a specific sender override exists, merge it
+            $usemailconfig = array_merge($usemailconfig, $sitesettings['mailsender_' . $usemailsender]);
+        }
+        $$className = new $className($usemailconfig);  // Instantiate the class with the resolved config
+     #   print_r($usemailconfig); exit;// Debugging line to check the mail configuration
+        break;
+      // -----------------------------------------
+      case 'telegramsmsservice':
+        $telegramToken = $sitesettings['telegram']['telegramToken'];
+        $telegramAPI = $sitesettings['telegram']['telegramAPI'];
+        $telegramsmsservice = new TelegramSMSService($telegramToken, $telegramAPI, $database);
+        break;
+      // -----------------------------------------
       case 'chat':
         $$className = new $className($sitesettings['chat']);
         break;
-     // -----------------------------------------  
-     case 'ai':
-      $config_ai = file_get_contents($dir['configs'] . '/config-ai.inc');
-      $sitesettings_ai = parse_ini_string($config_ai, true);
-      $ai = new AI($system, $sitesettings_ai);
-    #  $$className = AI::getInstance($sitesettings_ai['ai']);
-      break;
+      // -----------------------------------------  
+      case 'ai':
+        $config_ai = file_get_contents($dir['configs'] . '/config-ai.inc');
+        $sitesettings_ai = parse_ini_string($config_ai, true);
+        $ai = new AI($system, $sitesettings_ai);
+        #  $$className = AI::getInstance($sitesettings_ai['ai']);
+        break;
 
-        // -----------------------------------------
+      // -----------------------------------------
       default:
         $$className = new $className($classConfig);
         break;
@@ -448,7 +457,7 @@ foreach ($classes as $class) {
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 # ## SITE WIDE VARIABLES 
 ############################
-$errormessage='';
+$errormessage = '';
 $website['fulluri'] = $qik->currenturl();
 $entrypoint['first'] = $session->get('entrypoint_first', 'notset');
 if ($entrypoint['first'] == 'notset') {
@@ -456,8 +465,8 @@ if ($entrypoint['first'] == 'notset') {
   $session->set('enable_adminpageeditor', false);
 }
 
-if ($account->isadmin() && $mode=='dev' &&  $session->get('enable_adminpageeditor', false) ) $enableadminpageeditor=true;
-else $enableadminpageeditor=false;
+if ($account->isadmin() && $mode == 'dev' &&  $session->get('enable_adminpageeditor', false)) $enableadminpageeditor = true;
+else $enableadminpageeditor = false;
 
 ## INITIALIZE CLIENT DETAILS
 #-------------------------------------
@@ -596,7 +605,6 @@ function session_tracking($name = '', $trackingdata = array(), $p_pagename = '')
   }
 
 
-
   // --------------------------------------------------------------------------------------------------
   // CHECK FOR ERROR PAGES
   $logerrorpage = false;
@@ -615,13 +623,11 @@ function session_tracking($name = '', $trackingdata = array(), $p_pagename = '')
   }
 
 
-
   // --------------------------------------------------------------------------------------------------
   // Prepare SQL query
   $sql = "INSERT INTO bg_sessiontracking (`name`, `page`, `sessionid`, `ip`, `user_id`, `username`, `type`, `tracking_data`, `session_data`, `request_data`, `server_data`, `site`, `server`, `version`, `create_dt`) 
-   VALUES (:name, :pagename, :sessionid, :ip, :userid, :username, :type, :trackingdata, :sessiondata, :requestdata, :serverdata, :site, :server, :version, NOW())";
+VALUES (:name, :pagename, :sessionid, :ip, :userid, :username, :type, :trackingdata, :sessiondata, :requestdata, :serverdata, :site, :server, :version, NOW())";
   $stmt = $database->prepare($sql);
-
 
 
   // --------------------------------------------------------------------------------------------------
@@ -653,7 +659,7 @@ function session_tracking($name = '', $trackingdata = array(), $p_pagename = '')
   if ($logerrorpage) {
     // Prepare and execute the SQL statement
     $stmt = $database->prepare("INSERT INTO `bg_errors` (`cip`, `type`, `hit`, `city`, `state`, `country_code`, `lon`, `lat`, `data_string`, `create_dt`, `session_id`) 
-                                VALUES (:cip, :type, :hit, :city, :state, :country_code, :lon, :lat, :data_string, now(), :session_id)");
+VALUES (:cip, :type, :hit, :city, :state, :country_code, :lon, :lat, :data_string, now(), :session_id)");
     $stmt->execute([
       'cip' => $client_ip,
       'type' => $pagename,
@@ -668,7 +674,6 @@ function session_tracking($name = '', $trackingdata = array(), $p_pagename = '')
     ]);
   }
 
-  
 
   // --------------------------------------------------------------------------------------------------
   // -- do rate limiting
@@ -696,7 +701,7 @@ function session_tracking($name = '', $trackingdata = array(), $p_pagename = '')
       $block_duration = min(pow(2, $lockout_count), 99999); // 2^lockout_count but no more than 99999 minutes
 
       $sql = "INSERT INTO bg_lockout (ip, expire_dt, session_id, start_dt, create_dt, modify_dt, `status`, `type`) 
-      VALUES (:ip, DATE_ADD(NOW(), INTERVAL :duration MINUTE), :sessionid, NOW(), NOW(), NOW(), 'active', 'rate_limit')";
+VALUES (:ip, DATE_ADD(NOW(), INTERVAL :duration MINUTE), :sessionid, NOW(), NOW(), NOW(), 'active', 'rate_limit')";
       $database->query($sql, ['ip' => $client_ip, 'duration' => $block_duration, 'sessionid' => session_id()]);
       session_tracking('BLOCKED: excessive requests');
       die("You're temporarily blocked due to excessive requests. [$client_ip]");

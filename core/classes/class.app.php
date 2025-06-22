@@ -737,12 +737,22 @@ GROUP BY
     $companyid = $input['companyid'] ?? null;
     $locationid = $input['locationid'] ?? null;
     $device_id = $input['device_id'] ?? null;
+    $numeric_only = $input['numeric_only'] ?? false;
 
     $output['expiremessagetag'] = $qik->convertMinutes($expireminutes);
     $expiredt = (new DateTime())->add(new DateInterval('PT' . $expireminutes . 'M'))->format('Y-m-d H:i:s');
     $extendedrawdata = $rawdata . '|' . $expiredt . '|' . rand(1, 999);
-    $code1 = md5($extendedrawdata);
-    $minicode = substr($code1, 0, 1) . substr($code1, -5);
+    
+    // Generate minicode based on numeric_only flag
+    if ($numeric_only) {
+        // Generate a 6-digit numeric code
+        $minicode = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+    } else {
+        // Original alphanumeric code generation
+        $code1 = md5($extendedrawdata);
+        $minicode = substr($code1, 0, 1) . substr($code1, -5);
+    }
+    
     $longcode = sha1($extendedrawdata);
 
     $extendedrawdata = $input['validation_rawdata'] ?? $extendedrawdata;

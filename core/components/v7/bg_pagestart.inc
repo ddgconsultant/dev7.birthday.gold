@@ -223,7 +223,10 @@ echo '
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 <link href="/public/css/'.$styvers.'/bg_theme.css" rel="stylesheet">  
 <link href="/public/css/' . $website['ui_version'] . '/bg_header.css?' . date('i') . '" rel="stylesheet">
-
+<!--
+<link href="/public/css/floating-labels.css" rel="stylesheet">
+<link href="/public/css/global_floating-labels.css" rel="stylesheet">
+-->
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 ';

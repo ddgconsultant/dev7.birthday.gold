@@ -1013,7 +1013,7 @@ if (!$cookiePreferencesSet) {
         // Random selection between version 1 and 2
         $cookiebannerversion = rand(1, 2);
     }
-
+    $cookiebannerversion=2;
     // Include the appropriate cookie banner based on version
     $bannerFile = 'bg_cookiebanner' . $cookiebannerversion . '.inc';
     include($_SERVER['DOCUMENT_ROOT'] . '/core/components/' . $website['ui_version'] . '/' . $bannerFile);

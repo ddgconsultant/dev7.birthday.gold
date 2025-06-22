@@ -29,7 +29,7 @@ class Mail
     $this->mail->Username = $mailConfig['MAIL_USERNAME'];
     $this->mail->Password = $mailConfig['MAIL_PASSWORD'];
 
-    if ($mailConfig['MAIL_ENCRYPTION'] != '') {
+    if (!empty($mailConfig['MAIL_ENCRYPTION'])) {
       $this->mail->SMTPSecure = $mailConfig['MAIL_ENCRYPTION'];
     }
 

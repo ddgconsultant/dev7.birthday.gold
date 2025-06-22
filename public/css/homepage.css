@@ -73,7 +73,7 @@
 
     .float-element {
         position: absolute;
-        font-size: 2rem;
+        font-size: 6rem;
         opacity: 0.08;
         animation: float 25s infinite linear;
         will-change: transform;

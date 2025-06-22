@@ -1,6 +1,5 @@
 <?php
 // Cookie banner include file - simplified version
-// Initialize cookie session counter if not already set
 if (!isset($_COOKIE['bdgold_banner_closed'])) {
     setcookie("bdgold_banner_closed", "0", [
         'expires' => time() + (86400 * 365),
@@ -12,14 +11,13 @@ if (!isset($_COOKIE['bdgold_banner_closed'])) {
     ]);
 }
 
-// Get current count of times banner was closed
 $closeCount = isset($_COOKIE['bdgold_banner_closed']) ? intval($_COOKIE['bdgold_banner_closed']) : 0;
-
-// Determine if close button should be shown
-$showCloseButton = $closeCount < 3; // Hide close button after 3 closes
+$showCloseButton = $closeCount < 3;
 ?>
 
-<!-- Cookie Consent Banner - Simplified -->
+
+
+<!-- Cookie Banner -->
 <div id="cookieConsentBanner" class="cookie-banner">
     <div class="cookie-content">
         <div class="cookie-header">
@@ -28,11 +26,11 @@ $showCloseButton = $closeCount < 3; // Hide close button after 3 closes
             <button id="closeCookieBanner" class="btn-close btn-close-white" aria-label="Close"></button>
             <?php endif; ?>
         </div>
-        <p>We use cookies to make your Birthday.Gold experience sparkle! 
-            ✨ Just like how we help you collect birthday rewards, these cookies help us remember your preferences and improve your experience. 
+        <p>
+            We use cookies to make your Birthday.Gold experience sparkle! ✨ Just like how we help you collect birthday rewards, these cookies help us remember your preferences and improve your experience. 
             <a href="/legalhub/cookies" class="cookie-link">Manage your cookie preferences</a> or check the 
-            <a href="<?php echo $cookieinfolink; ?>" class="cookie-linkx" target="_blank">regulations</a> that require us to ask for your consent.</p>
-        
+            <a href="<?php echo $cookieinfolink; ?>" class="cookie-linkx" target="_blank">regulations</a> that require us to ask for your consent.
+        </p>
         <div class="cookie-actions">
             <button id="acceptAll" class="cookie-btn primary-btn">Accept All</button>
             <button id="managePreferences" class="cookie-btn secondary-btn" onclick="window.location.href='/legalhub/cookies'">Manage Preferences</button>
@@ -42,19 +40,23 @@ $showCloseButton = $closeCount < 3; // Hide close button after 3 closes
 </div>
 
 <style>
-/* Cookie Banner Styles */
 .cookie-banner {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: #1e1e1e;
+    background-color:rgb(62, 51, 5);
     color: #fff;
     z-index: 9999;
-    border-top: 3px solid var(--bs-secondary);
-    box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.1);
     font-size: 0.9rem;
     transition: transform 0.3s ease-in-out;
+
+    /* Squiggly top border */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='12'><path d='M0,6 Q25,0 50,6 T100,6' fill='transparent' stroke='%23ffc107' stroke-width='7'/></svg>");
+    background-repeat: repeat-x;
+    background-position: top left;
+    background-size: 100px 12px;
+    padding-top: 12px;
 }
 
 .cookie-banner.hidden {

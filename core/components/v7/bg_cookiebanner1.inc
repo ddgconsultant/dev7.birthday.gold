@@ -67,11 +67,18 @@ $showCloseButton = $closeCount < 3; // Hide close button after 3 closes
     background-color: #1e1e1e;
     color: #fff;
     z-index: 9999;
-    border-top: 3px solid var(--bs-secondary);
-    box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.1);
     font-size: 0.9rem;
+    box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease-in-out;
+
+    /* Squiggly top border */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='12'><path d='M0,6 Q25,0 50,6 T100,6' fill='transparent' stroke='%23ffc107' stroke-width='2'/></svg>");
+    background-repeat: repeat-x;
+    background-position: top left;
+    background-size: 100px 12px;
+    padding-top: 12px;
 }
+
 
 .cookie-banner.hidden {
     transform: translateY(100%);
