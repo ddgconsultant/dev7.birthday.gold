@@ -161,3 +161,33 @@ npm test
 - CORS restricted to `*.birthday.gold` domains
 - Comprehensive audit logging
 - Session fingerprinting and device tracking
+
+## Recent Development (2025-06-22)
+
+### Email Verification System (/verify.php)
+- Created modern 6-digit code verification page
+- Auto-advance between input fields
+- Support for numeric-only codes via `?type=numeric` parameter
+- Direct link verification with `?code=XXXXXX` and auto-submit
+- Real validation using database (no fake test codes)
+- "Send a new code" as hard link (not AJAX) for better tracking
+- Responsive design with proper error/success messaging
+
+### Universal Layout System
+- Implemented universal header spacing in `bg_header.inc`
+- Default 2rem spacing between header and content
+- Override with `$header_flush = true` for pages needing flush content
+- Fixed sticky footer implementation across all pages
+- Proper flexbox layout with `page-wrapper` structure
+
+### Code Standards Updates
+- Use `$additionalstyles` for CSS (not inline `<style>` tags)
+- Real processes in test mode (no fake data/messages)
+- Test mode (`?test=1`) bypasses account lifecycle but uses real validation
+- Always check `headers_sent()` before redirects in production code
+
+### Database Enhancements
+- Added `numeric_only` flag to `getvalidationcodes()` function
+- Generates true random 6-digit codes when requested
+- Maintains backward compatibility with alphanumeric codes
+- Fixed test mode to use numeric user_id (999999) for database compatibility

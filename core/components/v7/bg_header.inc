@@ -152,20 +152,29 @@ if ($isHomePage) {
 <header class="top-header home-header '.$navclass.'">
     <div class="container-fluid h-100">
         <div class="row h-100 align-items-center">
-            <!-- Logo/Brand - Full size on home page -->
-            <div class="col-8 col-md-6">
+            <!-- Logo/Brand -->
+            <div class="col-auto">
                 <a class="navbar-brand header-logo" href="/">
-                    <img class="home-logo" src="//cdn.birthday.gold/public/images/logo/birthday.gold_logo.png" alt="Birthday Gold" style="height: 50px;">
+                    <img class="home-logo" src="//cdn.birthday.gold/public/images/logo/birthday.gold_logo.png" alt="Birthday Gold" style="height: 40px;">
                 </a>
             </div>
             
-            <!-- Right Side - Signup/Login only -->
-            <div class="col-4 col-md-6 d-flex justify-content-end align-items-center">';
+            <!-- Desktop Navigation (right-aligned) -->
+            <div class="col d-none d-lg-block">
+                <nav class="center-nav">
+                    <a href="/how-it-works" class="nav-link">How it Works</a>
+                    <a href="/discover" class="nav-link">Browse Rewards</a>
+                    <a href="/help" class="nav-link">Help</a>
+                </nav>
+            </div>
+            
+            <!-- Right Side - Auth buttons (always flush right) -->
+            <div class="col-auto d-flex align-items-center justify-content-end ms-auto">';
     
     if (!$isLoggedIn) {
         echo '
-                <a href="/signup" class="btn btn-success me-2 d-none d-md-inline-block">Sign Up</a>
-                <a href="/login" class="btn-primary">Login</a>';
+                <a href="/signup" class="btn btn-secondary me-2 d-none d-sm-inline-block">Sign Up</a>
+                <a href="/login" class="btn btn-primary">Login</a>';
     } else {
         // Still show avatar dropdown for logged in users on home page
         echo '
@@ -262,15 +271,15 @@ if ($isHomePage) {
     <div class="container-fluid h-100">
         <div class="row h-100 align-items-center">
             <!-- Logo/Brand - Smaller on mobile -->
-            <div class="col-6 col-md-3">
+            <div class="col-auto">
                 <a class="navbar-brand header-logo" href="/">
                     <img class="mobile-logo" src="//cdn.birthday.gold/public/images/logo/bg_icon.png" alt="Company Icon" id="companyIcon" data-bs-toggle="tooltip" data-bs-placement="right" title="birthday.gold Home">
                     <img class="desktop-logo" src="//cdn.birthday.gold/public/images/logo/birthday.gold_logo.png" alt="Company Logo" id="companyLogo">
                 </a>
             </div>
             
-            <!-- Desktop Navigation (centered) -->
-            <div class="col-md-6 d-none d-md-block">
+            <!-- Desktop Navigation (right-aligned) -->
+            <div class="col d-none d-lg-block">
                 <nav class="center-nav">
                     <a href="/how-it-works" class="nav-link">How it Works</a>
                     <a href="/discover" class="nav-link">Browse Rewards</a>
@@ -278,8 +287,8 @@ if ($isHomePage) {
                 </nav>
             </div>
             
-            <!-- Right Side - Auth State -->
-            <div class="col-6 col-md-3 d-flex justify-content-end align-items-center">';
+            <!-- Right Side - Auth State (always flush right) -->
+            <div class="col-auto d-flex align-items-center justify-content-end ms-auto">';
 
     // User Authentication UI
     if (!$isLoggedIn) {
@@ -407,6 +416,100 @@ body {
 /* Optional: Add smooth transition when toggling */
 .content-spacing-wrapper {
     transition: padding 0.3s ease;
+}
+
+/* Universal header improvements */
+.top-header {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Align navigation to the right */
+.center-nav {
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    padding-right: 1rem;
+}
+
+/* Consistent button styling for login/signup */
+.top-header .btn-primary,
+.top-header .login-btn {
+    background-color: #FFD700;
+    border: 2px solid #FFD700;
+    color: #000;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    border-radius: 25px;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.top-header .btn-primary:hover,
+.top-header .login-btn:hover {
+    background-color: #FFA500;
+    border-color: #FFA500;
+    transform: translateY(-2px);
+}
+
+.top-header .btn-success {
+    background-color: transparent;
+    border: 2px solid #FFD700;
+    color: #FFD700;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    border-radius: 25px;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.top-header .btn-success:hover {
+    background-color: #FFD700;
+    color: #000;
+    transform: translateY(-2px);
+}
+
+/* Home page specific - ensure buttons are visible on transparent header */
+.home-header .btn-primary,
+.home-header .login-btn,
+.home-header .btn-success {
+    color: #fff !important;
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    background-color: transparent !important;
+}
+
+.home-header .btn-primary:hover,
+.home-header .login-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border-color: #fff !important;
+}
+
+.home-header .btn-success:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border-color: #fff !important;
+}
+
+/* Navigation links */
+.nav-link {
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #FFD700;
+}
+
+.home-header .nav-link {
+    color: #fff !important;
+}
+
+.home-header .nav-link:hover {
+    color: #FFD700 !important;
 }
 </style>';
 

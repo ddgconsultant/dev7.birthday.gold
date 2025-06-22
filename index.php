@@ -39,6 +39,82 @@ $additionalstyles .= '<link href="/public/css/v3/theme.css" rel="stylesheet" id=
 .float-element {
     transform: translateY(100vh); /* Start offscreen */
 }
+
+/* Make header black transparent on homepage only */
+.home-header {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: none !important;
+}
+
+/* Ensure header text is visible with white shadow */
+header a, header .nav-link, header .navbar-brand {
+    color: #fff !important;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2), 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+/* Add stronger white shadow for navigation links */
+.home-header .nav-link {
+    font-weight: 600;
+}
+
+/* Push navigation further right and prevent wrapping */
+.home-header .center-nav {
+    padding-right: 1rem;
+    white-space: nowrap;
+}
+
+/* Ensure buttons do not wrap text */
+.home-header .btn {
+    white-space: nowrap;
+}
+
+/* Adjust navigation positioning to be closer to buttons */
+@media (min-width: 992px) {
+    .home-header .center-nav {
+        margin-right: 0;
+        padding-right: 0.5rem;
+    }
+}
+
+/* Sign Up button - Bootstrap Secondary style */
+.home-header .btn-secondary {
+    background-color: transparent !important;
+    border: 2px solid var(--bs-secondary) !important;
+    color: var(--bs-secondary) !important;
+    border-radius: 25px !important;
+    padding: 0.375rem 1.5rem !important;
+}
+
+.home-header .btn-secondary:hover {
+    background-color: var(--bs-secondary) !important;
+    color: #fff !important;
+    border-color: var(--bs-secondary) !important;
+}
+
+/* Login button - Bootstrap Primary style (transparent) */
+.home-header .btn-primary,
+.home-header .login-btn {
+    background-color: transparent !important;
+    border: 2px solid var(--bs-primary) !important;
+    color: var(--bs-primary) !important;
+    border-radius: 25px !important;
+    padding: 0.375rem 1.5rem !important;
+}
+
+.home-header .btn-primary:hover,
+.home-header .login-btn:hover {
+    background-color: var(--bs-primary) !important;
+    color: #fff !important;
+    border-color: var(--bs-primary) !important;
+}
+
+/* Logo also needs white glow for visibility */
+.home-header .home-logo {
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+}
 </style>';
 $bodycontentclass='class="d-flex"';
 $header_flush = true; // Homepage should have content flush with header

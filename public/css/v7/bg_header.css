@@ -488,10 +488,10 @@ body {
   font-size: 1.2rem;
 }
 
-/* Center navigation items */
+/* Right-aligned navigation items */
 .center-nav {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .top-header .center-nav .nav-link {
