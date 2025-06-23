@@ -117,6 +117,7 @@ footer.border-top {
 /* =================================
    PLAN CARDS
    ================================= */
+/* Commented out CSS Grid styles to use Bootstrap's grid instead
 .plan-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -131,13 +132,14 @@ footer.border-top {
     margin-left: auto !important;
     margin-right: auto !important;
 }
+*/
 
 .plan-card-wrapper {
     position: relative !important;
     display: flex;
     height: 100%;
     width: 100%;
-    max-width: 380px;
+    /* max-width: 380px; - Removed to let Bootstrap handle sizing */
 }
 
 .plan-card-wrapper.selected {
@@ -155,6 +157,7 @@ footer.border-top {
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
     overflow: hidden !important;
 }
 
@@ -563,6 +566,7 @@ footer.border-top {
         margin: 0 auto !important;
     }
     
+    /* Commented out for Bootstrap grid
     .plan-grid {
         grid-template-columns: 1fr !important;
         padding: 0 15px !important;
@@ -571,6 +575,7 @@ footer.border-top {
         margin-left: 0 !important;
         margin-right: 0 !important;
     }
+    */
     
     .plan-card-wrapper {
         width: 100%;
@@ -651,27 +656,33 @@ footer.border-top {
         margin-right: 0.25rem;
     }
     
+    /* Commented out for Bootstrap grid
     .plan-grid {
         grid-template-columns: repeat(auto-fill, minmax(280px, 350px));
         gap: 2.5rem !important;
         justify-content: center !important;
         place-items: center !important;
     }
+    */
 }
 
 @media (min-width: 992px) {
+    /* Commented out for Bootstrap grid
     .plan-grid {
         grid-template-columns: repeat(auto-fill, minmax(300px, 350px));
         justify-content: center !important;
         place-items: center !important;
     }
+    */
 }
 
 @media (min-width: 1200px) {
+    /* Commented out for Bootstrap grid
     .plan-grid {
         grid-template-columns: repeat(auto-fill, minmax(320px, 380px));
         justify-content: center !important;
         place-items: center !important;
         max-width: 1200px !important;
     }
+    */
 }

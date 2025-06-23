@@ -232,6 +232,7 @@ if ($app->formposted() && !empty($signup_process['account_plan'])) {
 $accountTypes = $productManager->getAvailableAccountTypes($selectedVersion);
 $availablePlans = $productManager->getProductsWithFeatures($selectedAccountType, $selectedVersion);
 $accountTypeConfig = $productManager->getAccountTypeConfig($selectedAccountType);
+$planCount = count($availablePlans);
 
 #-------------------------------------------------------------------------------
 # HANDLE SIGNUP MODE
@@ -341,7 +342,11 @@ $additionalstyles .= '
     }
 }
 
-/* Plan cards equal height */
+
+
+
+
+/* Ensure Bootstrap grid works properly */
 .plan-card-wrapper {
     height: 100%;
 }
@@ -356,19 +361,6 @@ $additionalstyles .= '
     flex-grow: 1;
 }
 
-/* Ensure plan grid centers properly */
-#planGrid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center !important;
-}
-
-/* Max width for plan cards to prevent them from getting too wide */
-@media (min-width: 1200px) {
-    #planGrid > div {
-        max-width: 350px;
-    }
-}
 </style>
 ';
 
@@ -455,27 +447,22 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                 </button>
             </div>
 
-            <!-- Choose your plan Section -->
-            <h3 class="mt-5 pt-md-5 pt-sm-2">Pick the plan:</h3>
+<!-- Choose your plan Section -->
+<h3 class="mt-5 pt-md-5 pt-sm-2">Pick the plan:</h3>
 
-            <!-- Dynamic Plan Grid -->
-            <div class="row g-3 justify-content-center" id="planGrid">
-                <?php
-                $planCount = count($availablePlans);
-                // Determine column classes based on plan count
-                if ($planCount == 1) {
-                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-5 col-xl-4'; // Centered single card with margins
-                } elseif ($planCount == 2) {
-                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-5 col-xl-4'; // 2 cards centered on mobile
-                } elseif ($planCount == 3) {
-                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-4'; // 3 cards centered on mobile
-                } elseif ($planCount == 4) {
-                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-6 col-xl-3'; // 4 cards - 2x2 on lg, 4 in row on xl
-                } else {
-                    $colClasses = 'col-10 col-sm-8 col-md-6 col-lg-4'; // Multiple cards centered on mobile
-                }
-                
-                foreach ($availablePlans as $plan) {
+<!-- Dynamic Plan Grid Container using Bootstrap 5 -->
+<div id="planGrid">
+    <?php 
+    // Determine container structure based on plan count
+    if ($planCount == 1): 
+    ?>
+        <!-- 1 Card: Centered with ~70% width on desktop -->
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-md-8">
+                    <?php
+                    // Single plan - render without additional column wrapper
+                    $plan = $availablePlans[0]; // Get the single plan
                     $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
                     
                     // Check if this plan was previously selected
@@ -485,70 +472,153 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                     } elseif (isset($selectedPlanCode) && $plan['account_plan'] == $selectedPlanCode) {
                         $isSelected = true;
                     }
-                    
-                    // Wrap each plan in a container to hold the checkmark
-                    echo '<div class="' . $colClasses . '">
-                            <div class="plan-card-wrapper' . ($isSelected ? ' selected' : '') . '">';
-                    
-                    echo '<div class="plan-card' . ($isRecommended ? ' recommended' : '') . ($isSelected ? ' selected' : '') . '" 
-                              data-plan="' . $plan['account_plan'] . '" 
-                              data-plan-id="' . $plan['encoded_id'] . '"
-                              data-price="' . $plan['price'] . '">';
-                    
-                    if ($isRecommended) {
-                        echo '<div class="recommended-badge">POPULAR</div>';
-                    }
-                    
-                    echo '<div class="plan-header">
-                            <div class="plan-icon">';
-                    
-                    // Dynamic icon based on plan name
-                    $planIcon = 'bi-award'; // default
-                    if (strpos($plan['account_plan'], 'free') !== false) {
-                        $planIcon = 'bi-person';
-                    } elseif (strpos($plan['account_plan'], 'gold') !== false) {
-                        $planIcon = 'bi-star-fill';
-                    } elseif (strpos($plan['account_plan'], 'life') !== false) {
-                        $planIcon = 'bi-infinity';
-                    } elseif (strpos($plan['account_plan'], 'business') !== false) {
-                        $planIcon = 'bi-building';
-                    } elseif (strpos($plan['account_plan'], 'family') !== false) {
-                        $planIcon = 'bi-people';
-                    }
-                    
-                    echo '<i class="bi ' . $planIcon . '"></i>
-                          </div>
-                          <h3 class="plan-title">' . htmlspecialchars($plan['account_name']) . '</h3>
+                    ?>
+                    <div class="plan-card-wrapper<?php echo $isSelected ? ' selected' : ''; ?>">
+                        <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?><?php echo $isSelected ? ' selected' : ''; ?>" 
+                             data-plan="<?php echo $plan['account_plan']; ?>" 
+                             data-plan-id="<?php echo $plan['encoded_id']; ?>"
+                             data-price="<?php echo $plan['price']; ?>">
+                            
+                            <?php if ($isRecommended): ?>
+                                <div class="recommended-badge">POPULAR</div>
+                            <?php endif; ?>
+                            
+                            <div class="plan-header">
+                                <div class="plan-icon">
+                                    <?php
+                                    // Dynamic icon based on plan name
+                                    $planIcon = 'bi-award'; // default
+                                    if (strpos($plan['account_plan'], 'free') !== false) {
+                                        $planIcon = 'bi-person';
+                                    } elseif (strpos($plan['account_plan'], 'gold') !== false) {
+                                        $planIcon = 'bi-star-fill';
+                                    } elseif (strpos($plan['account_plan'], 'life') !== false) {
+                                        $planIcon = 'bi-infinity';
+                                    } elseif (strpos($plan['account_plan'], 'business') !== false) {
+                                        $planIcon = 'bi-building';
+                                    } elseif (strpos($plan['account_plan'], 'family') !== false) {
+                                        $planIcon = 'bi-people';
+                                    }
+                                    ?>
+                                    <i class="bi <?php echo $planIcon; ?>"></i>
+                                </div>
+                                <h3 class="plan-title"><?php echo htmlspecialchars($plan['account_name']); ?></h3>
+                            </div>
+                            <div class="plan-price"><?php echo $qik->convertamount($plan['price']); ?></div>
+                            <div class="plan-price-note">
+                                <?php
+                                // Dynamic price note
+                                if ($plan['price'] == 0) {
+                                    echo 'Forever free';
+                                } elseif (strpos(strtolower($plan['account_plan']), 'life') !== false) {
+                                    echo 'Lifetime access';
+                                } else {
+                                    echo 'One-time payment';
+                                }
+                                ?>
+                            </div>
+                            
+                            <?php if (!empty($plan['features'])): ?>
+                                <ul class="plan-features">
+                                    <?php foreach ($plan['features'] as $feature): ?>
+                                        <li><?php echo htmlspecialchars($feature['value']); ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
                         </div>
-                        <div class="plan-price">' . $qik->convertamount($plan['price']) . '</div>
-                        <div class="plan-price-note">';
-                    
-                    // Dynamic price note
-                    if ($plan['price'] == 0) {
-                        echo 'Forever free';
-                    } elseif (strpos(strtolower($plan['account_plan']), 'life') !== false) {
-                        echo 'Lifetime access';
-                    } else {
-                        echo 'One-time payment';
-                    }
-                    
-                    echo '</div>';
-                    
-                    // Display features from database
-                    if (!empty($plan['features'])) {
-                        echo '<ul class="plan-features">';
-                        foreach ($plan['features'] as $feature) {
-                            echo '<li>' . htmlspecialchars($feature['value']) . '</li>';
-                        }
-                        echo '</ul>';
-                    }
-                    
-                    echo '</div>'; // Close plan-card
-                    echo '</div>'; // Close plan-card-wrapper
-                    echo '</div>'; // Close col
-                }
-                ?>
+                    </div>
+                </div>
             </div>
+        </div>
+    
+    <?php else: ?>
+        <!-- Multiple Cards: Use appropriate grid layout -->
+        <div class="container">
+            <div class="row g-4 justify-content-center">
+                <?php
+                // Determine column classes based on plan count
+                $colClasses = '';
+                if ($planCount == 2) {
+                    $colClasses = 'col-12 col-md-6'; // 2 columns on desktop
+                } elseif ($planCount == 3) {
+                    $colClasses = 'col-12 col-md-4'; // 3 columns on desktop
+                } else {
+                    // 4+ cards: 2 columns on desktop
+                    $colClasses = 'col-12 col-md-6';
+                }
+                
+                foreach ($availablePlans as $plan):
+                    $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
+                    
+                    // Check if this plan was previously selected
+                    $isSelected = false;
+                    if (isset($selectedPlanId) && $plan['encoded_id'] == $selectedPlanId) {
+                        $isSelected = true;
+                    } elseif (isset($selectedPlanCode) && $plan['account_plan'] == $selectedPlanCode) {
+                        $isSelected = true;
+                    }
+                ?>
+                    <div class="<?php echo $colClasses; ?>">
+                        <div class="plan-card-wrapper h-100<?php echo $isSelected ? ' selected' : ''; ?>">
+                            <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?><?php echo $isSelected ? ' selected' : ''; ?>" 
+                                 data-plan="<?php echo $plan['account_plan']; ?>" 
+                                 data-plan-id="<?php echo $plan['encoded_id']; ?>"
+                                 data-price="<?php echo $plan['price']; ?>">
+                                
+                                <?php if ($isRecommended): ?>
+                                    <div class="recommended-badge">POPULAR</div>
+                                <?php endif; ?>
+                                
+                                <div class="plan-header">
+                                    <div class="plan-icon">
+                                        <?php
+                                        // Dynamic icon based on plan name
+                                        $planIcon = 'bi-award'; // default
+                                        if (strpos($plan['account_plan'], 'free') !== false) {
+                                            $planIcon = 'bi-person';
+                                        } elseif (strpos($plan['account_plan'], 'gold') !== false) {
+                                            $planIcon = 'bi-star-fill';
+                                        } elseif (strpos($plan['account_plan'], 'life') !== false) {
+                                            $planIcon = 'bi-infinity';
+                                        } elseif (strpos($plan['account_plan'], 'business') !== false) {
+                                            $planIcon = 'bi-building';
+                                        } elseif (strpos($plan['account_plan'], 'family') !== false) {
+                                            $planIcon = 'bi-people';
+                                        }
+                                        ?>
+                                        <i class="bi <?php echo $planIcon; ?>"></i>
+                                    </div>
+                                    <h3 class="plan-title"><?php echo htmlspecialchars($plan['account_name']); ?></h3>
+                                </div>
+                                <div class="plan-price"><?php echo $qik->convertamount($plan['price']); ?></div>
+                                <div class="plan-price-note">
+                                    <?php
+                                    // Dynamic price note
+                                    if ($plan['price'] == 0) {
+                                        echo 'Forever free';
+                                    } elseif (strpos(strtolower($plan['account_plan']), 'life') !== false) {
+                                        echo 'Lifetime access';
+                                    } else {
+                                        echo 'One-time payment';
+                                    }
+                                    ?>
+                                </div>
+                                
+                                <?php if (!empty($plan['features'])): ?>
+                                    <ul class="plan-features">
+                                        <?php foreach ($plan['features'] as $feature): ?>
+                                            <li><?php echo htmlspecialchars($feature['value']); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+</div>
 
 
             <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" id="signupForm">
