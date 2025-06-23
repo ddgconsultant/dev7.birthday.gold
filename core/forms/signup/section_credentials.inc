@@ -66,8 +66,8 @@ if (isset($process_handlers) && $process_handlers) {
     if (empty($values['password'])) {
         $errors['password'] = 'Password is required';
     } else {
-        if (strlen($values['password']) < 8) {
-            $errors['password'] = 'Password must be at least 8 characters';
+        if (strlen($values['password']) < 10) {
+            $errors['password'] = 'Password must be at least 10 characters';
         }
         // Additional password strength checks could go here
         // e.g., require mix of letters and numbers
@@ -137,7 +137,7 @@ $contact_method = $values['contact_method'] ?? 'phone';
         <div class="password-strength mt-2">
             <div class="strength-bar"></div>
         </div>
-        <small class="text-muted">At least 8 characters with a mix of letters and numbers</small>
+        <small class="text-muted">A mix at least 10 letters, numbers, symbols</small>
         <?php if (!empty($errors['password'])): ?>
             <div class="invalid-feedback d-block"><?php echo $errors['password']; ?></div>
         <?php endif; ?>

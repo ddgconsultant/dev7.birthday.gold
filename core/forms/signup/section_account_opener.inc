@@ -38,18 +38,24 @@ if (isset($process_handlers) && $process_handlers) {
                 $account_type = $signup_process['account_type'] ?? 'user';
                 
                 if ($account_type === 'giftcertificate'): ?>
-                    <h6 class="mb-3">Your Account as the Gift Buyer</h6>
-                    <p>This section collects your information as the purchaser of the gift certificate. You'll need to provide:</p>
+                    <h6 class="mb-3">Gift Buyer Account Setup</h6>
+                    <p>Set up your account to manage gift certificates:</p>
+                    
+                    <h6 class="mt-3">Login Credentials</h6>
                     <ul>
-                        <li><strong>Your Name:</strong> For account creation and purchase records</li>
-                        <li><strong>Your Birthday:</strong> Required for all Birthday Gold accounts</li>
-                        <li><strong>Contact Method:</strong> Email or phone number for account access and receipts</li>
-                        <li><strong>Password:</strong> To secure your account and manage gift certificates</li>
+                        <li><strong>Email or Phone:</strong> For account access and gift receipts</li>
+                        <li><strong>Password:</strong> To secure your gift management dashboard</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Optional</h6>
+                    <ul>
+                        <li><strong>Promo Code:</strong> Apply any discount codes you have</li>
+                        <li><strong>Referral:</strong> Credit the person who told you about us</li>
                     </ul>
                     
                     <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>Why do I need an account?</strong> Your account allows you to track gift certificate delivery, reprint certificates, and purchase additional gifts in the future.
+                        <i class="bi bi-gift me-2"></i>
+                        <strong>Note:</strong> After creating your account, you'll enter the gift recipient's details on the next page.
                     </div>
                     
                 <?php elseif ($account_type === 'parental' || $account_type === 'family'): ?>
@@ -71,14 +77,30 @@ if (isset($process_handlers) && $process_handlers) {
                     </ul>
                     
                 <?php else: ?>
-                    <h6 class="mb-3">Personal Account Information</h6>
-                    <p>To create your Birthday Gold account, you'll need to provide:</p>
+                    <h6 class="mb-3">Your Account Setup</h6>
+                    <p>This section covers your login credentials and account preferences.</p>
+                    
+                    <div class="alert alert-success mb-3">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>Flexible Access:</strong> These can all be changed by you at anytime, and you can use your phone number, email address or username to log into your account.
+                    </div>
+                    
+                    <h6 class="mt-3">Login Information</h6>
                     <ul>
-                        <li><strong>Full Name:</strong> As you'd like it to appear on birthday rewards</li>
-                        <li><strong>Birthday:</strong> So we know when to celebrate with you!</li>
-                        <li><strong>Contact Method:</strong> Email or phone number for account access</li>
-                        <li><strong>Password:</strong> To keep your account secure</li>
+                        <li><strong>Email or Phone:</strong> Choose which to use as your login method</li>
+                        <li><strong>Password:</strong> Create a secure password (8+ characters)</li>
                     </ul>
+                    
+                    <h6 class="mt-3">Optional Features</h6>
+                    <ul>
+                        <li><strong>Promo Code:</strong> If you have a discount code, apply it here</li>
+                        <li><strong>Referral Code:</strong> Enter if someone referred you to Birthday Gold</li>
+                    </ul>
+                    
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>Tip:</strong> You can use either email or phone to log in. Choose whichever you prefer!
+                    </div>
                 <?php endif; ?>
             </div>
             <div class="modal-footer">

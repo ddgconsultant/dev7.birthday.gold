@@ -349,6 +349,73 @@ $additionalstyles .= '
     min-width: 0;
 }
 
+/* Style the placeholder options in dropdowns */
+select option[value=""] {
+    color: var(--bs-primary) !important;
+    font-weight: 500;
+}
+
+/* Alternative: Make them lighter gray */
+/* select option[value=""] {
+    color: #adb5bd !important;
+} */
+
+/* Remove browser autofill blue background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: inherit !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* For floating label inputs specifically */
+.form-floating input:-webkit-autofill,
+.form-floating input:-webkit-autofill:hover,
+.form-floating input:-webkit-autofill:focus,
+.form-floating input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: inherit !important;
+}
+
+/* Style all input group buttons - lighter blue using opacity */
+.toggle-password,
+#applyPromo,
+#verifyReferral,
+.input-group .btn-primary-subtle {
+    background-color: rgba(var(--bs-primary-rgb), 0.1) !important;  /* 10% opacity of primary */
+    color: var(--bs-primary) !important;  /* Full primary color for icon/text */
+    border-color: rgba(var(--bs-primary-rgb), 0.3) !important;  /* 30% opacity for border */
+}
+
+.toggle-password:hover,
+#applyPromo:hover,
+#verifyReferral:hover,
+.input-group .btn-primary-subtle:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.2) !important;  /* 20% opacity on hover */
+    border-color: rgba(var(--bs-primary-rgb), 0.4) !important;
+    color: var(--bs-primary) !important;
+}
+
+/* Fix border issues on desktop only */
+@media (min-width: 768px) {
+    .input-group .toggle-password,
+    .input-group #applyPromo,
+    .input-group #verifyReferral,
+    .input-group .btn-primary-subtle {
+        border-left: 1px solid rgba(var(--bs-primary-rgb), 0.3) !important;
+    }
+    
+    /* Keep border when input is focused */
+    .input-group:focus-within .toggle-password,
+    .input-group:focus-within #applyPromo,
+    .input-group:focus-within #verifyReferral,
+    .input-group:focus-within .btn-primary-subtle {
+        border-color: rgba(var(--bs-primary-rgb), 0.4) !important;
+    }
+}
+
 /* Mobile/Small screens - underline style */
 @media (max-width: 767px) {
     /* Form inputs with underline only */
@@ -376,6 +443,33 @@ $additionalstyles .= '
     .form-control.is-invalid,
     .form-select.is-invalid {
         border-bottom-color: #dc3545;
+    }
+    
+    /* Remove autofill background on mobile with transparent background */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+        -webkit-text-fill-color: inherit !important;
+    }
+    
+    /* Remove all borders from input group buttons on mobile */
+    .toggle-password,
+    #applyPromo,
+    #verifyReferral,
+    .input-group .btn-primary-subtle {
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0.375rem 0.75rem !important;
+    }
+    
+    /* Match the underline style when input is focused */
+    .input-group:focus-within .toggle-password,
+    .input-group:focus-within #applyPromo,
+    .input-group:focus-within #verifyReferral,
+    .input-group:focus-within .btn-primary-subtle {
+        border: none !important;
     }
     
     /* Input groups need special handling */
@@ -492,6 +586,48 @@ small.text-muted,
 
 .promo-referral-header:hover {
     opacity: 0.8;
+}
+
+/* Mobile-specific promo header styles */
+.promo-referral-header-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.25rem 0;
+}
+
+.promo-referral-header-mobile:hover .bi {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+.promo-referral-header-mobile .bi {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+/* Mobile: Make promo section minimal */
+@media (max-width: 767px) {
+    .promo-referral-section {
+        background: transparent;
+        border-radius: 0;
+        padding: 0.5rem 0;
+        margin-top: 0.5rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .promo-referral-header-mobile {
+        padding: 0.75rem 0;
+    }
+    
+    .promo-referral-content {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
 }
 
 .promo-referral-content {
@@ -656,6 +792,13 @@ small.text-muted,
     box-shadow: 0 0 0px 1000px white inset !important;
     background-color: white !important;
     -webkit-text-fill-color: #495057 !important;
+}
+
+/* Hide step wizard on mobile screens */
+@media (max-width: 767px) {
+    .progress-container {
+        display: none !important;
+    }
 }
 
 </style>
@@ -1031,7 +1174,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="/claudecode/createaccount_flow.js"></script>
 
 <?php
-$display_footertype='min';
+$display_footertype='mobilenonemin';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

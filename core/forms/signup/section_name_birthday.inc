@@ -120,7 +120,7 @@ if (isset($process_handlers) && $process_handlers) {
                     <select class="form-control <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
                             id="birth_month" 
                             name="birth_month">
-                        <option value="">Month</option>
+                        <option value="" class="text-primary">Month</option>
                         <?php
                         $months = [
                             '01' => '01 - January', '02' => '02 - February', '03' => '03 - March',
@@ -143,7 +143,7 @@ if (isset($process_handlers) && $process_handlers) {
                     <select class="form-control <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
                             id="birth_day" 
                             name="birth_day">
-                        <option value="">Day</option>
+                        <option value="" class="text-primary">Day</option>
                         <?php
                         $selected_day = $values['birth_day'] ?? '';
                         if (empty($selected_day) && !empty($values['birthday'])) {
@@ -161,7 +161,7 @@ if (isset($process_handlers) && $process_handlers) {
                     <select class="form-control <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
                             id="birth_year" 
                             name="birth_year">
-                        <option value="">Year</option>
+                        <option value="" class="text-primary">Year</option>
                         <?php
                         $current_year = date('Y');
                         $selected_year = $values['birth_year'] ?? '';
@@ -178,7 +178,7 @@ if (isset($process_handlers) && $process_handlers) {
                     </select>
                 </div>
             </div>
-            <small class="form-text text-muted">We'll use this to notify you of birthday rewards</small>
+            <small class="form-text text-muted">Your birthday is a big deal! Heads up: can't change this later</small>
             <!-- Hidden field for combined birthday value -->
             <input type="hidden" id="birthday" name="birthday" value="<?php echo htmlspecialchars($values['birthday'] ?? ''); ?>">
             <?php if (!empty($errors['birthday'])): ?>

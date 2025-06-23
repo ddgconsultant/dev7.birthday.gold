@@ -432,6 +432,11 @@ $additionalstyles .= "
     .footer-mobilemin .footer-mobile-min {
         display: block !important;
     }
+    
+    /* Hide entire footer on mobile when using mobilenonemin */
+    .footer-mobilenonemin {
+        display: none !important;
+    }
 }
 
 /* Responsive Design */
@@ -452,6 +457,16 @@ $additionalstyles .= "
     /* Hide minimal footer on desktop */
     .footer-mobilemin .footer-mobile-min {
         display: none !important;
+    }
+    
+    /* Show footer on desktop when using mobilenonemin */
+    .footer-mobilenonemin {
+        display: block !important;
+    }
+    
+    /* Show minimal footer content on desktop for mobilenonemin */
+    .footer-mobilenonemin .footer-desktop-min {
+        display: block !important;
     }
 }
 
@@ -533,6 +548,38 @@ switch ($display_footertype ?? 'default') {
         
         // Full footer content (hidden on mobile via CSS)
         goto default_footer_content;
+        break;
+        
+    //------------------------------------
+    case 'mobilenonemin':
+        // Responsive footer - no footer on mobile, minimal on desktop
+        echo '<footer class="main-footer footer-mobilenonemin">';
+        
+        // Minimal footer for desktop only (hidden on mobile via CSS)
+        echo '
+        <div class="footer-desktop-min" style="display: none;">
+            <div class="container-fluid bg-dark text-white">
+                <div class="container">
+                    <div class="row pt-2 pb-2">
+                        <div class="col-12 text-center">
+                            <h5 class="text-white fs-3">
+                                birthday.gold
+                                <span style="font-size: 0.85rem; color: #aaa;">
+                                    <span class="px-5"></span>
+                                    <a href="/" class="text-secondary text-decoration-none">HOME</a>
+                                    <span class="px-5">|</span>
+                                    <a href="/help" class="text-secondary text-decoration-none">HELP</a>
+                                    <span class="px-5"></span>
+                                    <span>Copyright &copy;' . date('Y') . '</span>
+                                </span>
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>';
+        
+        echo '</footer>';
         break;
         
     //------------------------------------

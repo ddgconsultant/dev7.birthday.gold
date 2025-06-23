@@ -72,12 +72,19 @@ $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($e
 <!-- Promo & Referral Codes (continues Account Information section) -->
     <!-- Collapsible Promo/Referral Section -->
     <div class="promo-referral-section mt-4">
-        <div class="promo-referral-header" id="togglePromoReferral">
+        <!-- Desktop header (hidden on mobile) -->
+        <div class="promo-referral-header d-none d-md-flex" id="togglePromoReferral">
             <span>
                 <i class="bi bi-gift me-1"></i>
                 <strong>Promo or Referral Code?</strong>
             </span>
             <i class="bi bi-chevron-<?php echo $show_promo_section ? 'up' : 'down'; ?>" id="promoReferralChevron"></i>
+        </div>
+        
+        <!-- Mobile header (shown only on mobile) -->
+        <div class="promo-referral-header-mobile d-md-none" id="togglePromoReferralMobile">
+            <span class="<?php echo $show_promo_section ? 'text-black' : 'text-muted'; ?>">Add promo or referral code</span>
+            <i class="bi bi-<?php echo $show_promo_section ? 'dash-circle' : 'plus-circle'; ?> fs-5 text-primary"></i>
         </div>
         
         <div class="promo-referral-content collapse <?php echo $show_promo_section ? 'show' : ''; ?>" id="promoReferralSection">
@@ -93,7 +100,9 @@ $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($e
                                    value="<?php echo htmlspecialchars($promo_code); ?>">
                             <label for="promo_code">Promo Code</label>
                         </div>
-                        <button type="button" class="btn btn-primary-subtle" id="applyPromo">Apply</button>
+                        <button type="button" class="btn btn-primary-subtle" id="applyPromo">
+                            <i class="bi bi-check-circle me-1"></i>Apply
+                        </button>
                     </div>
                     <div id="promoMessage" class="mt-1">
                         <?php if (!empty($errors['promo_code'])): ?>
@@ -113,14 +122,16 @@ $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($e
                                    value="<?php echo htmlspecialchars($referral_code); ?>">
                             <label for="referral_code">Referral Code</label>
                         </div>
-                        <button type="button" class="btn btn-primary-subtle" id="verifyReferral">Verify</button>
+                        <button type="button" class="btn btn-primary-subtle" id="verifyReferral">
+                            <i class="bi bi-check-circle me-1"></i>Verify
+                        </button>
                     </div>
                     <div id="referralMessage" class="mt-1">
                         <?php if (!empty($errors['referral_code'])): ?>
                             <div class="invalid-feedback d-block"><?php echo htmlspecialchars($errors['referral_code']); ?></div>
                         <?php endif; ?>
                     </div>
-                    <small class="text-muted">Enter the code of the person who referred you</small>
+                    <small class="text-muted">Enter the code you were provided</small>
                 </div>
             </div>
         </div>
@@ -135,7 +146,7 @@ $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($e
                    name="terms" 
                    value="1" 
                    <?php echo (!empty($values['terms'])) ? 'checked' : ''; ?>>
-            <label class="form-check-label" for="terms">
+            <label class="form-check-label text-black" for="terms">
                 I agree to the <a href="/legalhub/terms" class="text-underline">Terms</a> and 
                 <a href="/legalhub/privacy" class="text-underline">Privacy Policy</a>
             </label>
