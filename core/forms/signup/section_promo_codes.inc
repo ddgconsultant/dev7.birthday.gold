@@ -82,7 +82,7 @@ $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($e
         
         <div class="promo-referral-content collapse <?php echo $show_promo_section ? 'show' : ''; ?>" id="promoReferralSection">
             <div class="row">
-                <div class="col-md-6 mb-3">
+                <div class="col-12 mb-3">
                     <label for="promo_code" class="form-label">Promo Code</label>
                     <div class="code-input-group">
                         <input type="text" 
@@ -100,7 +100,7 @@ $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($e
                     </div>
                 </div>
                 
-                <div class="col-md-6 mb-3">
+                <div class="col-12 mb-3">
                     <label for="referral_code" class="form-label">Referral Code</label>
                     <div class="code-input-group">
                         <input type="text" 

@@ -523,45 +523,11 @@ $additionalstyles .= '
     -webkit-text-fill-color: #495057 !important;
 }
 
-/* Mobile adjustments */
-@media (max-width: 576px) {
-    .form-section {
-        margin-bottom: 1.5rem;
-    }
-    
-    /* Keep tabs horizontal on mobile */
-    .contact-method-tabs {
-        gap: 0.5rem;
-    }
-    
-    .tab-option {
-        padding: 12px 10px;
-        font-size: 0.875rem;
-    }
-    
-    .tab-option i {
-        font-size: 1rem;
-    }
-}
-
-/* Very small screens */
-@media (max-width: 400px) {
-    .tab-option {
-        padding: 10px 8px;
-        font-size: 0.8rem;
-    }
-    
-    .tab-option i {
-        font-size: 0.95rem;
-    }
-    
-    /* Even smaller gap on tiny screens */
-    .contact-method-tabs {
-        gap: 0.35rem;
-    }
-}
 </style>
 ';
+
+// Make content flush with header
+$header_flush = true;
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
@@ -570,9 +536,9 @@ include($dir['core_components'] . '/bg_header.inc');
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 ?>
-<div class="container main-content">
+<div class="container">
     <!-- Header -->
-    <div class="header">
+    <div class="header mt-5 pt-5">
         <h1>Create Your Account</h1>
         <p>Step 2: Enter your account details</p>
     </div>
@@ -596,7 +562,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 
     <!-- Content -->
-    <div class="content mx-auto" style="max-width: 900px;">
+    <div class="card p-3">
         <?php
         // General error message display
         if (!empty($errors['general'])) {

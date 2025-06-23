@@ -79,7 +79,7 @@ if (isset($process_handlers) && $process_handlers) {
     </div>
     <div class="card-body">
     <div class="row">
-        <div class="col-md-6 mb-3">
+        <div class="col-12 mb-3">
             <label for="firstname" class="form-label">First Name <span class="text-danger">*</span></label>
             <input type="text" 
                    class="form-control <?php echo !empty($errors['firstname']) ? 'is-invalid' : ''; ?>" 
@@ -91,7 +91,7 @@ if (isset($process_handlers) && $process_handlers) {
             <?php endif; ?>
         </div>
         
-        <div class="col-md-6 mb-3">
+        <div class="col-12 mb-3">
             <label for="lastname" class="form-label">Last Name <span class="text-danger">*</span></label>
             <input type="text" 
                    class="form-control <?php echo !empty($errors['lastname']) ? 'is-invalid' : ''; ?>" 

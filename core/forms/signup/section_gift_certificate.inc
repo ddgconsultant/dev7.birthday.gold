@@ -158,7 +158,7 @@ if ($app->formposted()) {
         <p class="text-muted small mb-3">Who will receive this birthday rewards membership</p>
         
         <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-12">
                 <label for="recipient_firstnamefield" class="form-label">First Name</label>
                 <input type="text" 
                        class="form-control" 
@@ -171,7 +171,7 @@ if ($app->formposted()) {
                 <?php endif; ?>
             </div>
             
-            <div class="col-md-6">
+            <div class="col-12">
                 <label for="recipient_lastnamefield" class="form-label">Last Name</label>
                 <input type="text" 
                        class="form-control" 
@@ -184,7 +184,7 @@ if ($app->formposted()) {
                 <?php endif; ?>
             </div>
             
-            <div class="col-md-6">
+            <div class="col-12">
                 <label for="recipient_birthdatefield" class="form-label">Birthdate</label>
                 <input type="date" 
                        class="form-control" 

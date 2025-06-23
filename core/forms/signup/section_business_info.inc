@@ -100,7 +100,7 @@ if (isset($process_handlers) && $process_handlers) {
             <?php endif; ?>
         </div>
         
-        <div class="col-md-6">
+        <div class="col-12">
             <label for="businesstypefield" class="form-label">Business Type</label>
             <select class="form-select" 
                     id="businesstypefield" 
@@ -119,7 +119,7 @@ if (isset($process_handlers) && $process_handlers) {
             <?php endif; ?>
         </div>
         
-        <div class="col-md-6">
+        <div class="col-12">
             <label for="businessphonefield" class="form-label">Business Phone</label>
             <input type="tel" 
                    class="form-control" 
