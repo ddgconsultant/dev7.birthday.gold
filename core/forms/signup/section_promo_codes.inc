@@ -82,41 +82,45 @@ $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($e
         
         <div class="promo-referral-content collapse <?php echo $show_promo_section ? 'show' : ''; ?>" id="promoReferralSection">
             <div class="row">
-                <div class="col-12 mb-3">
-                    <label for="promo_code" class="form-label">Promo Code</label>
-                    <div class="code-input-group">
-                        <input type="text" 
-                               class="form-control <?php echo !empty($errors['promo_code']) ? 'is-invalid' : ''; ?>" 
-                               id="promo_code" 
-                               name="promo_code" 
-                               placeholder="Enter promo code" 
-                               value="<?php echo htmlspecialchars($promo_code); ?>">
-                        <button type="button" class="btn btn-success me-2" id="applyPromo">Apply</button>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <div class="form-floating flex-grow-1">
+                            <input type="text" 
+                                   class="form-control <?php echo !empty($errors['promo_code']) ? 'is-invalid' : ''; ?>" 
+                                   id="promo_code" 
+                                   name="promo_code" 
+                                   placeholder="Promo Code" 
+                                   value="<?php echo htmlspecialchars($promo_code); ?>">
+                            <label for="promo_code">Promo Code</label>
+                        </div>
+                        <button type="button" class="btn btn-primary-subtle" id="applyPromo">Apply</button>
                     </div>
                     <div id="promoMessage" class="mt-1">
                         <?php if (!empty($errors['promo_code'])): ?>
-                            <div class="text-danger small"><?php echo htmlspecialchars($errors['promo_code']); ?></div>
+                            <div class="invalid-feedback d-block"><?php echo htmlspecialchars($errors['promo_code']); ?></div>
                         <?php endif; ?>
                     </div>
                 </div>
                 
-                <div class="col-12 mb-3">
-                    <label for="referral_code" class="form-label">Referral Code</label>
-                    <div class="code-input-group">
-                        <input type="text" 
-                               class="form-control <?php echo !empty($errors['referral_code']) ? 'is-invalid' : ''; ?>" 
-                               id="referral_code" 
-                               name="referral_code" 
-                               placeholder="Friend's referral code" 
-                               value="<?php echo htmlspecialchars($referral_code); ?>">
-                        <button type="button" class="btn btn-success me-2" id="verifyReferral">Verify</button>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <div class="form-floating flex-grow-1">
+                            <input type="text" 
+                                   class="form-control <?php echo !empty($errors['referral_code']) ? 'is-invalid' : ''; ?>" 
+                                   id="referral_code" 
+                                   name="referral_code" 
+                                   placeholder="Referral Code" 
+                                   value="<?php echo htmlspecialchars($referral_code); ?>">
+                            <label for="referral_code">Referral Code</label>
+                        </div>
+                        <button type="button" class="btn btn-primary-subtle" id="verifyReferral">Verify</button>
                     </div>
                     <div id="referralMessage" class="mt-1">
                         <?php if (!empty($errors['referral_code'])): ?>
-                            <div class="text-danger small"><?php echo htmlspecialchars($errors['referral_code']); ?></div>
+                            <div class="invalid-feedback d-block"><?php echo htmlspecialchars($errors['referral_code']); ?></div>
                         <?php endif; ?>
                     </div>
-                    <small class="text-muted ms-1">Enter the code of the person who referred you</small>
+                    <small class="text-muted">Enter the code of the person who referred you</small>
                 </div>
             </div>
         </div>
@@ -125,8 +129,8 @@ $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($e
     <!-- Terms and Privacy Agreement -->
     <div class="mt-3">
         <div class="form-check">
-            <input class="form-check-input <?php echo !empty($errors['terms']) ? 'is-invalid' : ''; ?>" 
-                   type="checkbox" 
+            <input type="checkbox" 
+                   class="form-check-input <?php echo !empty($errors['terms']) ? 'is-invalid' : ''; ?>" 
                    id="terms" 
                    name="terms" 
                    value="1" 

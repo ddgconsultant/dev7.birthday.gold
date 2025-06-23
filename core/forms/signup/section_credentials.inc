@@ -118,15 +118,19 @@ $contact_method = $values['contact_method'] ?? 'phone';
     
     <!-- Password -->
     <div class="mb-4">
-        <label for="password" class="form-label">Create Password <span class="text-danger">*</span></label>
-        <div class="input-group password-input-group">
-            <input type="password" 
-                   class="form-control <?php echo !empty($errors['password']) ? 'is-invalid' : ''; ?>" 
-                   id="password" 
-                   name="password" 
-                   value="<?php echo htmlspecialchars($values['password'] ?? ''); ?>" 
-                   autocomplete="off">
-            <button type="button" class="btn btn-outline-secondary toggle-password">
+        <div class="input-group">
+            <div class="form-floating flex-grow-1">
+                <input type="password" 
+                       class="form-control <?php echo !empty($errors['password']) ? 'is-invalid' : ''; ?>" 
+                       id="password" 
+                       name="password" 
+                       placeholder="Create Password"
+                       value="<?php echo htmlspecialchars($values['password'] ?? ''); ?>" 
+                       autocomplete="off"
+                       required>
+                <label for="password">Create Password <span class="text-danger">*</span></label>
+            </div>
+            <button type="button" class="btn btn-outline-secondary toggle-password" tabindex="-1">
                 <i class="bi bi-eye"></i>
             </button>
         </div>
@@ -135,7 +139,7 @@ $contact_method = $values['contact_method'] ?? 'phone';
         </div>
         <small class="text-muted">At least 8 characters with a mix of letters and numbers</small>
         <?php if (!empty($errors['password'])): ?>
-            <div class="text-danger small mt-1"><?php echo $errors['password']; ?></div>
+            <div class="invalid-feedback d-block"><?php echo $errors['password']; ?></div>
         <?php endif; ?>
     </div>
 <!-- Section remains open for additional content -->

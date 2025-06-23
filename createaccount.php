@@ -328,8 +328,143 @@ $additionalstyles .= '
     border-bottom: 1px solid #e9ecef;
 }
 
+/* Raise floating labels higher when active */
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label {
+    transform: scale(0.85) translateY(-0.7rem) translateX(0.15rem);
+}
+
+/* Ensure date dropdowns stay on one line on all screens */
+.date-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+}
+
+.date-row .col-md-5,
+.date-row .col-md-3,
+.date-row .col-md-4 {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Mobile/Small screens - underline style */
+@media (max-width: 767px) {
+    /* Form inputs with underline only */
+    .form-floating .form-control,
+    .form-control,
+    .form-select {
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        border-radius: 0;
+        background-color: transparent;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
+    .form-floating .form-control:focus,
+    .form-control:focus,
+    .form-select:focus {
+        border-bottom-color: #0d6efd;
+        box-shadow: none;
+        background-color: transparent;
+    }
+    
+    /* Invalid state */
+    .form-floating .form-control.is-invalid,
+    .form-control.is-invalid,
+    .form-select.is-invalid {
+        border-bottom-color: #dc3545;
+    }
+    
+    /* Input groups need special handling */
+    .input-group .form-control {
+        border-bottom: 2px solid #dee2e6;
+        border-right: none !important;
+    }
+    
+    .input-group .input-group-text {
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        border-radius: 0;
+        background-color: transparent;
+        padding-left: 0;
+    }
+    
+    /* Floating labels adjustment for mobile */
+    .form-floating > label {
+        padding-left: 0;
+    }
+    
+    /* Add some transition for smooth effect */
+    .form-control,
+    .form-select {
+        transition: border-color 0.15s ease-in-out;
+    }
+    
+    /* Date row specific adjustments */
+    .date-row .col-md-5 {
+        flex: 2; /* Month gets more space */
+    }
+    .date-row .col-md-3 {
+        flex: 1; /* Day gets less space */
+    }
+    .date-row .col-md-4 {
+        flex: 1.5; /* Year gets medium space */
+    }
+    
+    /* Make select text smaller on mobile to fit better */
+    .date-row select {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.5rem;
+    }
+}
+
+/* Desktop/Large screens - keep full borders */
+@media (min-width: 768px) {
+    .form-floating .form-control,
+    .form-control,
+    .form-select {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        background-color: #fff;
+    }
+    
+    .form-floating .form-control:focus,
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+}
+
 .form-section:last-of-type {
     border-bottom: none;
+}
+
+/* Make form captions/help text lighter grey */
+small.text-muted,
+.form-text,
+.text-muted {
+    color: #adb5bd !important; /* Lighter grey - Bootstraps gray-500 */
+}
+
+/* Fix input group with floating labels */
+.input-group > .form-floating {
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+}
+
+.input-group > .form-floating > .form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group > .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
 }
 
 .section-title {
@@ -682,13 +817,17 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="contact-field" id="phoneField">
                 <div class="input-group">
                     <span class="input-group-text">+1</span>
-                    <input type="text" 
-                           class="form-control" 
-                           id="phone" 
-                           name="phone" 
-                           placeholder="555-123-4567"
-                           value="${phoneValue}"
-                           inputmode="tel">
+                    <div class="form-floating flex-grow-1">
+                        <input type="text" 
+                               class="form-control" 
+                               id="phone" 
+                               name="phone" 
+                               placeholder="Phone Number"
+                               value="${phoneValue}"
+                               inputmode="tel"
+                               required>
+                        <label for="phone">Phone Number</label>
+                    </div>
                 </div>
                 <small class="text-muted mt-1 d-block">We'll send you a verification code via SMS</small>
             </div>
@@ -699,15 +838,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function createEmailField() {
         return `
             <div class="contact-field" id="emailField">
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                    <input type="text" 
+                <div class="form-floating">
+                    <input type="email" 
                            class="form-control" 
                            id="email" 
                            name="email" 
-                           placeholder="your@email.com"
+                           placeholder="Email Address"
                            value="${emailValue}"
-                           inputmode="email">
+                           inputmode="email"
+                           required>
+                    <label for="email">Email Address</label>
                 </div>
                 <small class="text-muted mt-1 d-block">We'll send you a verification link via email</small>
             </div>

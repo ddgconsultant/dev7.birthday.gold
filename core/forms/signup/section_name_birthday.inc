@@ -78,37 +78,45 @@ if (isset($process_handlers) && $process_handlers) {
            title="Click for more information"></i>
     </div>
     <div class="card-body">
-    <div class="row">
-        <div class="col-12 mb-3">
-            <label for="firstname" class="form-label">First Name <span class="text-danger">*</span></label>
-            <input type="text" 
-                   class="form-control <?php echo !empty($errors['firstname']) ? 'is-invalid' : ''; ?>" 
-                   id="firstname" 
-                   name="firstname" 
-                   value="<?php echo htmlspecialchars($values['firstname'] ?? ''); ?>">
-            <?php if (!empty($errors['firstname'])): ?>
-                <div class="invalid-feedback"><?php echo $errors['firstname']; ?></div>
-            <?php endif; ?>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="form-floating">
+                <input type="text" 
+                       class="form-control <?php echo !empty($errors['firstname']) ? 'is-invalid' : ''; ?>" 
+                       id="firstname" 
+                       name="firstname" 
+                       placeholder="First Name"
+                       value="<?php echo htmlspecialchars($values['firstname'] ?? ''); ?>"
+                       required>
+                <label for="firstname">First Name <span class="text-danger">*</span></label>
+                <?php if (!empty($errors['firstname'])): ?>
+                    <div class="invalid-feedback"><?php echo $errors['firstname']; ?></div>
+                <?php endif; ?>
+            </div>
         </div>
         
-        <div class="col-12 mb-3">
-            <label for="lastname" class="form-label">Last Name <span class="text-danger">*</span></label>
-            <input type="text" 
-                   class="form-control <?php echo !empty($errors['lastname']) ? 'is-invalid' : ''; ?>" 
-                   id="lastname" 
-                   name="lastname" 
-                   value="<?php echo htmlspecialchars($values['lastname'] ?? ''); ?>">
-            <?php if (!empty($errors['lastname'])): ?>
-                <div class="invalid-feedback"><?php echo $errors['lastname']; ?></div>
-            <?php endif; ?>
+        <div class="col-md-6">
+            <div class="form-floating">
+                <input type="text" 
+                       class="form-control <?php echo !empty($errors['lastname']) ? 'is-invalid' : ''; ?>" 
+                       id="lastname" 
+                       name="lastname" 
+                       placeholder="Last Name"
+                       value="<?php echo htmlspecialchars($values['lastname'] ?? ''); ?>"
+                       required>
+                <label for="lastname">Last Name <span class="text-danger">*</span></label>
+                <?php if (!empty($errors['lastname'])): ?>
+                    <div class="invalid-feedback"><?php echo $errors['lastname']; ?></div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
   
-    <div class="row">
-        <div class="col-md-12">
+    <div class="row g-3 mt-3">
+        <div class="col-12">
             <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-            <div class="d-flex gap-2" style="max-width: 400px;">
-                <div class="flex-fill">
+            <div class="row g-2 date-row">
+                <div class="col-md-5">
                     <select class="form-control <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
                             id="birth_month" 
                             name="birth_month">
@@ -131,7 +139,7 @@ if (isset($process_handlers) && $process_handlers) {
                         ?>
                     </select>
                 </div>
-                <div style="width: 95px;">
+                <div class="col-md-3">
                     <select class="form-control <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
                             id="birth_day" 
                             name="birth_day">
@@ -149,7 +157,7 @@ if (isset($process_handlers) && $process_handlers) {
                         ?>
                     </select>
                 </div>
-                <div style="width: 120px;">
+                <div class="col-md-4">
                     <select class="form-control <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
                             id="birth_year" 
                             name="birth_year">
@@ -170,11 +178,11 @@ if (isset($process_handlers) && $process_handlers) {
                     </select>
                 </div>
             </div>
-            <small class="text-muted">We'll use this to notify you of birthday rewards</small>
+            <small class="form-text text-muted">We'll use this to notify you of birthday rewards</small>
             <!-- Hidden field for combined birthday value -->
             <input type="hidden" id="birthday" name="birthday" value="<?php echo htmlspecialchars($values['birthday'] ?? ''); ?>">
             <?php if (!empty($errors['birthday'])): ?>
-                <div class="text-danger small mt-1"><?php echo $errors['birthday']; ?></div>
+                <div class="invalid-feedback d-block"><?php echo $errors['birthday']; ?></div>
             <?php endif; ?>
         </div>
     </div>
