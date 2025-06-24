@@ -19,3 +19,4 @@ echo "hello world";
 echo '<hr>';
 echo 'display_errors: ' . ini_get('display_errors') . "\n";
 echo 'error_reporting: ' . error_reporting() . "\n";
+echo '<br>error_log location: ' . ini_get('error_log') . "\n";

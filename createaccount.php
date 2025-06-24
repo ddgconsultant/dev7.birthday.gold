@@ -291,7 +291,7 @@ if ($app->formposted()) {
                 if ($tempinfo['status'] == 'validated' || $plandata['account_verification'] == 'notrequired') {
                     header('Location: /myaccount/welcome.php');
                 } else {
-                    header('Location: /validate-account.php');
+                    header('Location: /verify');
                 }
                 exit();
             }
@@ -416,9 +416,9 @@ if ($app->formposted()) {
                             error_log('[CREATENEWACCOUNT] No validation required, redirecting to welcome');
                             header('Location: /myaccount/welcome.php');
                         } else {
-                            // Validation required
-                            error_log('[CREATENEWACCOUNT] Validation required, redirecting to validate-account.php');
-                            header('Location: /validate-account.php');
+                            // Validation required - use new verify system
+                            error_log('[CREATENEWACCOUNT] Validation required, redirecting to /verify');
+                            header('Location: /verify');
                         }
                     }
                     exit();

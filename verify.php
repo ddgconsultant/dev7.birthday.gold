@@ -36,7 +36,9 @@ if ($test_mode) {
 }
 
 // Only redirect to signup if not in test mode
-if (empty($userregistrationdata['email']) && !$test_mode) {
+// Check if we have valid registration data - must have either email or phone_number
+if (!$test_mode && (empty($userregistrationdata) || 
+    (empty($userregistrationdata['email']) && empty($userregistrationdata['phone_number'])))) {
     $session->set('force_error_message', 'No registration data found. Please sign up again.');
     header('location: /signup');
     exit;
@@ -156,8 +158,19 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
         }
     }
     
+    // Determine contact method - email or phone
     $email = $userregistrationdata['email'] ?? '';
+    $phone = $userregistrationdata['phone_number'] ?? $userregistrationdata['phone'] ?? '';
     $fullname = ($userregistrationdata['first_name'] ?? '') . ' ' . ($userregistrationdata['last_name'] ?? '');
+    
+    // For now, we'll use email if available, otherwise we'd need SMS integration
+    if (empty($email) && !empty($phone)) {
+        // Phone-based account - for now, redirect to a phone verification page
+        // TODO: Implement SMS verification
+        $_SESSION['error_message'] = 'Phone verification is not yet implemented. Please use email.';
+        header('Location: /signup');
+        exit;
+    }
     
     // Send verification email
     $message = array();

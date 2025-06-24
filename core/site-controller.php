@@ -84,6 +84,7 @@ if ($errormode === 'showerrors') {
   ini_set('display_errors', 1);
   ini_set('display_startup_errors', 1);
   ini_set('log_errors', 1);
+  ini_set('error_log', 'W:/BIRTHDAY_SERVER/_logs_/'.$devversion.'_PHP_errors.log');
   error_reporting(E_ALL);
 } else { // 'prod' mode
   ini_set('display_errors', 0);
