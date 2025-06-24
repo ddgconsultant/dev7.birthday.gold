@@ -796,9 +796,9 @@ $additionalstyles = '
     }
     
     .welcome-content h2 {
-        font-size: 2.5rem;
+        font-size: 2.25rem;
         font-weight: 700;
-        margin-bottom: 1.5rem;
+        margin-bottom: 0.75rem;
         line-height: 1.2;
     }
     
@@ -806,50 +806,62 @@ $additionalstyles = '
         color: var(--bs-primary);
     }
     
-    .welcome-content p {
-        font-size: 1.25rem;
-        color: #6c757d;
-        margin-bottom: 2rem;
+    .welcome-content p.lead {
+        font-size: 1.125rem;
+        color: #495057;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+    
+    .order-context {
+        margin-top: 2.5rem;
+    }
+    
+    .context-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.75rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .context-card h4 {
+        color: #212529;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .context-card p {
+        font-size: 0.9375rem;
         line-height: 1.6;
+        margin: 0;
     }
     
-    .feature-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
+    .price-context {
+        display: flex;
+        align-items: baseline;
+        padding-top: 0.5rem;
     }
     
-    .feature-item {
+    .price-context .h3 {
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .trust-signals {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .trust-signals p {
         display: flex;
         align-items: flex-start;
-        gap: 1rem;
+        line-height: 1.5;
     }
     
-    .feature-icon {
-        flex-shrink: 0;
-        width: 48px;
-        height: 48px;
-        background: #e8f5e8;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--bs-primary);
-        font-size: 1.25rem;
-    }
-    
-    .feature-text h3 {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #212529;
-        margin-bottom: 0.25rem;
-    }
-    
-    .feature-text p {
-        font-size: 0.875rem;
-        color: #6c757d;
-        margin: 0;
-        line-height: 1.4;
+    .trust-signals i {
+        margin-top: 0.125rem;
+        font-size: 1.125rem;
     }
     
     .checkout-container {
@@ -1012,52 +1024,28 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="checkout-wrapper">
         <!-- Welcome content - Desktop only -->
         <div class="welcome-content d-none d-lg-block">
-            <h2>Complete Your <span>Order</span></h2>
-            <p><?php echo htmlspecialchars($user_data['account_name'] ?? 'Birthday Gold'); ?> - <?php echo ucfirst($user_data['account_type']); ?> Plan</p>
+            <h2>Welcome back, <span><?php echo htmlspecialchars($user_data['first_name']); ?></span></h2>
+            <p class="lead mb-4">You're moments away from never missing another birthday reward!</p>
             
-            <div class="feature-grid">
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="bi bi-gift"></i>
-                    </div>
-                    <div class="feature-text">
-                        <h3><?php 
-                            // Get billing cycle from product data
-                            $product_name = $user_data['name'] ?? 'Birthday Gold';
-                            echo htmlspecialchars($product_name);
-                        ?></h3>
-                        <p>$<?php echo number_format($amount / 100, 2); ?> per year</p>
+            <div class="order-context">
+                <div class="context-card mb-3">
+                    <h4 class="h5 mb-3">Your <?php echo htmlspecialchars($user_data['name'] ?? 'Birthday Gold'); ?> membership includes:</h4>
+                    <p class="text-muted mb-2">Automatic enrollment in birthday programs from your favorite brands, personalized reminders so you never miss a reward, and exclusive member perks throughout the year.</p>
+                    <div class="price-context mt-3">
+                        <span class="h3 text-primary">$<?php echo number_format($amount / 100, 2); ?></span>
+                        <span class="text-muted ms-2">for your first year</span>
                     </div>
                 </div>
                 
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="bi bi-person-check"></i>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Billing To</h3>
-                        <p><?php echo htmlspecialchars($user_data['first_name'] . ' ' . $user_data['last_name']); ?></p>
-                    </div>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="bi bi-shield-lock"></i>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Secure Checkout</h3>
-                        <p>256-bit SSL encryption</p>
-                    </div>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="bi bi-credit-card-2-front"></i>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Powered by Stripe</h3>
-                        <p>Trusted payment processing</p>
-                    </div>
+                <div class="trust-signals">
+                    <p class="small text-muted mb-3">
+                        <i class="bi bi-shield-check text-success me-2"></i>
+                        Your payment is secured with bank-level encryption and processed by Stripe, the same trusted platform used by millions of businesses worldwide.
+                    </p>
+                    <p class="small text-muted mb-0">
+                        <i class="bi bi-person-check text-primary me-2"></i>
+                        Billing as <strong><?php echo htmlspecialchars($user_data['first_name'] . ' ' . $user_data['last_name']); ?></strong> • <?php echo ucfirst($user_data['account_type']); ?> account
+                    </p>
                 </div>
             </div>
         </div>
