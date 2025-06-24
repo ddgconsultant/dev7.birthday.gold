@@ -99,9 +99,17 @@ if (isset($process_handlers) && $process_handlers) {
 // Get children data from values
 $children = $values['children'] ?? [];
 ?>
-<div class="mb-4">
-    <h4 class="mb-3">Children Information</h4>
-    <p class="text-muted">Add your children to enroll them in birthday programs</p>
+<div class="card mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Children Information</h5>
+        <i class="bi bi-info-circle text-muted" 
+           style="font-size: 1rem; cursor: pointer;" 
+           data-bs-toggle="modal" 
+           data-bs-target="#childrenInfoModal"
+           title="Click for more information"></i>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Add your children to enroll them in birthday programs</p>
     
     <div id="children-container">
         <?php 
@@ -122,42 +130,51 @@ $children = $values['children'] ?? [];
                 <?php endif; ?>
             </div>
             
-            <div class="row g-2">
+            <div class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">First Name</label>
-                    <input type="text" 
-                           class="form-control" 
-                           name="children[<?php echo $index; ?>][firstname]" 
-                           value="<?php echo htmlspecialchars($child['firstname'] ?? ''); ?>" 
-                           required>
-                    <?php if (!empty($errors["children_{$index}_firstname"])): ?>
-                        <div class="text-danger small mt-1"><?php echo $errors["children_{$index}_firstname"]; ?></div>
-                    <?php endif; ?>
+                    <div class="form-floating">
+                        <input type="text" 
+                               class="form-control <?php echo !empty($errors["children_{$index}_firstname"]) ? 'is-invalid' : ''; ?>" 
+                               name="children[<?php echo $index; ?>][firstname]" 
+                               placeholder="First Name"
+                               value="<?php echo htmlspecialchars($child['firstname'] ?? ''); ?>" 
+                               required>
+                        <label>First Name <span class="text-danger">*</span></label>
+                        <?php if (!empty($errors["children_{$index}_firstname"])): ?>
+                            <div class="invalid-feedback"><?php echo $errors["children_{$index}_firstname"]; ?></div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 
                 <div class="col-md-4">
-                    <label class="form-label">Last Name</label>
-                    <input type="text" 
-                           class="form-control" 
-                           name="children[<?php echo $index; ?>][lastname]" 
-                           value="<?php echo htmlspecialchars($child['lastname'] ?? ''); ?>" 
-                           required>
-                    <?php if (!empty($errors["children_{$index}_lastname"])): ?>
-                        <div class="text-danger small mt-1"><?php echo $errors["children_{$index}_lastname"]; ?></div>
-                    <?php endif; ?>
+                    <div class="form-floating">
+                        <input type="text" 
+                               class="form-control <?php echo !empty($errors["children_{$index}_lastname"]) ? 'is-invalid' : ''; ?>" 
+                               name="children[<?php echo $index; ?>][lastname]" 
+                               placeholder="Last Name"
+                               value="<?php echo htmlspecialchars($child['lastname'] ?? ''); ?>" 
+                               required>
+                        <label>Last Name <span class="text-danger">*</span></label>
+                        <?php if (!empty($errors["children_{$index}_lastname"])): ?>
+                            <div class="invalid-feedback"><?php echo $errors["children_{$index}_lastname"]; ?></div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 
                 <div class="col-md-4">
-                    <label class="form-label">Birthday</label>
-                    <input type="date" 
-                           class="form-control" 
-                           name="children[<?php echo $index; ?>][birthday]" 
-                           value="<?php echo htmlspecialchars($child['birthday'] ?? ''); ?>" 
-                           max="<?php echo date('Y-m-d'); ?>"
-                           required>
-                    <?php if (!empty($errors["children_{$index}_birthday"])): ?>
-                        <div class="text-danger small mt-1"><?php echo $errors["children_{$index}_birthday"]; ?></div>
-                    <?php endif; ?>
+                    <div class="form-floating">
+                        <input type="date" 
+                               class="form-control <?php echo !empty($errors["children_{$index}_birthday"]) ? 'is-invalid' : ''; ?>" 
+                               name="children[<?php echo $index; ?>][birthday]" 
+                               placeholder="Birthday"
+                               value="<?php echo htmlspecialchars($child['birthday'] ?? ''); ?>" 
+                               max="<?php echo date('Y-m-d'); ?>"
+                               required>
+                        <label>Birthday <span class="text-danger">*</span></label>
+                        <?php if (!empty($errors["children_{$index}_birthday"])): ?>
+                            <div class="invalid-feedback"><?php echo $errors["children_{$index}_birthday"]; ?></div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -167,7 +184,8 @@ $children = $values['children'] ?? [];
     <button type="button" class="btn btn-outline-primary" id="add-child">
         <i class="bi bi-plus-circle"></i> Add Another Child
     </button>
-</div>
+    </div><!-- End card-body -->
+</div><!-- End card -->
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -252,3 +270,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<\!-- Children Info Modal -->
+<div class="modal fade" id="childrenInfoModal" tabindex="-1" aria-labelledby="childrenInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="childrenInfoModalLabel">
+                    <i class="bi bi-people text-primary me-2"></i>Children Information
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6 class="mb-3">Adding Your Children</h6>
+                <p>For family accounts, you can add your children to enroll them in birthday reward programs. Each child will receive their own birthday rewards\!</p>
+                
+                <h6 class="mt-3">What We Need</h6>
+                <ul>
+                    <li><strong>Child&apos;s Name:</strong> First and last name for each child</li>
+                    <li><strong>Birthday:</strong> So we know when to celebrate with them</li>
+                    <li><strong>Age Requirements:</strong> Children must be under 18 years old</li>
+                </ul>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Note:</strong> You can add multiple children and manage their birthday rewards from your parent account.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Got it</button>
+            </div>
+        </div>
+    </div>
+</div>

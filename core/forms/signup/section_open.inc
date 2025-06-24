@@ -19,9 +19,10 @@ if (isset($process_handlers) && $process_handlers) {
 
 // Set defaults
 $section_icon = $section_icon ?? 'bi-info-circle';
+$section_class = $section_class ?? '';
 ?>
 <!-- <?php echo htmlspecialchars($section_title); ?> Section -->
-<div class="card mb-4">
+<div class="card mb-4 <?php echo htmlspecialchars($section_class); ?>">
     <div class="card-header bg-light d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><?php echo htmlspecialchars($section_title); ?></h5>
         <?php if (!empty($section_info_modal)): ?>

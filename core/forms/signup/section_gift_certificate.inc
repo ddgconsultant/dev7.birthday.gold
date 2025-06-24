@@ -18,6 +18,12 @@
 if (isset($process_handlers) && $process_handlers) {
     // Only validate gift info if this is a gift certificate account
     $account_type = $signup_process['account_type'] ?? 'user';
+    
+    // Debug logging
+    if (isset($mode) && $mode === 'dev') {
+        error_log('[GIFT_CERT] Handler executing for account type: ' . $account_type);
+    }
+    
     if ($account_type !== 'giftcertificate') {
         return;
     }
@@ -36,17 +42,34 @@ if (isset($process_handlers) && $process_handlers) {
     }
     
     // Recipient birthdate validation
-    if (empty($values['recipient_birthdatefield'])) {
-        $errors['recipient_birthdatefield'] = 'Recipient\'s birthdate is required';
+    if (empty($values['recipient_birth_month']) || empty($values['recipient_birth_day']) || empty($values['recipient_birth_year'])) {
+        $errors['recipient_birthdatefield'] = 'Please select recipient\'s complete birth date';
     } else {
-        $birthdate = DateTime::createFromFormat('Y-m-d', $values['recipient_birthdatefield']);
-        if (!$birthdate) {
-            $errors['recipient_birthdatefield'] = 'Please enter a valid date';
+        // Construct date from dropdowns
+        $month = str_pad($values['recipient_birth_month'], 2, '0', STR_PAD_LEFT);
+        $day = str_pad($values['recipient_birth_day'], 2, '0', STR_PAD_LEFT);
+        $year = $values['recipient_birth_year'];
+        
+        $birthday_string = $year . '-' . $month . '-' . $day;
+        $values['recipient_birthdatefield'] = $birthday_string;
+        
+        // Validate the date
+        $birthdate = DateTime::createFromFormat('Y-m-d', $birthday_string);
+        if (!$birthdate || $birthdate->format('Y-m-d') !== $birthday_string) {
+            $errors['recipient_birthdatefield'] = 'Please select a valid date';
         } else {
             $today = new DateTime();
             $age = $today->diff($birthdate)->y;
-            if ($age < 13) {
-                $errors['recipient_birthdatefield'] = 'Recipient must be at least 13 years old';
+            
+            // Debug logging
+            if (isset($mode) && $mode === 'dev') {
+                error_log('[GIFT_CERT] Recipient age calculated: ' . $age . ' years');
+                error_log('[GIFT_CERT] Birthdate: ' . $birthday_string);
+            }
+            
+            // Check if birthday is in the future
+            if ($birthdate > $today) {
+                $errors['recipient_birthdatefield'] = 'Birthday cannot be in the future';
             } elseif ($age > 120) {
                 $errors['recipient_birthdatefield'] = 'Please enter a valid birthdate';
             }
@@ -83,11 +106,21 @@ if (isset($process_handlers) && $process_handlers) {
                     $phone = preg_replace('/\D/', '', $values['recipient_phone_delivery']);
                     if (strlen($phone) !== 10) {
                         $errors['recipient_phonefield'] = 'Please enter a valid 10-digit phone number';
+                    } else {
+                        // Format the phone number for storage
+                        $formatted_phone = sprintf('(%s) %s-%s', 
+                            substr($phone, 0, 3), 
+                            substr($phone, 3, 3), 
+                            substr($phone, 6, 4)
+                        );
+                        $values['recipient_phonefield'] = $formatted_phone;
                     }
                 }
                 
-                // Store the phone in the standard field for processing
-                $values['recipient_phonefield'] = $values['recipient_phone_delivery'] ?? '';
+                // Store the phone in the standard field for processing if not already set
+                if (!isset($values['recipient_phonefield'])) {
+                    $values['recipient_phonefield'] = $values['recipient_phone_delivery'] ?? '';
+                }
             }
             
             // Date validation for email and phone delivery
@@ -149,43 +182,109 @@ if (isset($process_handlers) && $process_handlers) {
         <p class="text-muted small mb-3">Who will receive this birthday rewards membership</p>
         
         <div class="row g-3">
-            <div class="col-12">
-                <label for="recipient_firstnamefield" class="form-label">First Name</label>
-                <input type="text" 
-                       class="form-control" 
-                       id="recipient_firstnamefield" 
-                       name="recipient_firstnamefield" 
-                       value="<?php echo htmlspecialchars($values['recipient_firstnamefield'] ?? ''); ?>" 
-                       required>
-                <?php if (!empty($errors['recipient_firstnamefield'])): ?>
-                    <div class="text-danger small mt-1"><?php echo $errors['recipient_firstnamefield']; ?></div>
-                <?php endif; ?>
+            <div class="col-md-6">
+                <div class="form-floating">
+                    <input type="text" 
+                           class="form-control <?php echo !empty($errors['recipient_firstnamefield']) ? 'is-invalid' : ''; ?>" 
+                           id="recipient_firstnamefield" 
+                           name="recipient_firstnamefield" 
+                           placeholder="First Name"
+                           value="<?php echo htmlspecialchars($values['recipient_firstnamefield'] ?? ''); ?>" 
+                           required>
+                    <label for="recipient_firstnamefield">First Name <span class="text-danger">*</span></label>
+                    <?php if (!empty($errors['recipient_firstnamefield'])): ?>
+                        <div class="invalid-feedback"><?php echo $errors['recipient_firstnamefield']; ?></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-floating">
+                    <input type="text" 
+                           class="form-control <?php echo !empty($errors['recipient_lastnamefield']) ? 'is-invalid' : ''; ?>" 
+                           id="recipient_lastnamefield" 
+                           name="recipient_lastnamefield" 
+                           placeholder="Last Name"
+                           value="<?php echo htmlspecialchars($values['recipient_lastnamefield'] ?? ''); ?>" 
+                           required>
+                    <label for="recipient_lastnamefield">Last Name <span class="text-danger">*</span></label>
+                    <?php if (!empty($errors['recipient_lastnamefield'])): ?>
+                        <div class="invalid-feedback"><?php echo $errors['recipient_lastnamefield']; ?></div>
+                    <?php endif; ?>
+                </div>
             </div>
             
             <div class="col-12">
-                <label for="recipient_lastnamefield" class="form-label">Last Name</label>
-                <input type="text" 
-                       class="form-control" 
-                       id="recipient_lastnamefield" 
-                       name="recipient_lastnamefield" 
-                       value="<?php echo htmlspecialchars($values['recipient_lastnamefield'] ?? ''); ?>" 
-                       required>
-                <?php if (!empty($errors['recipient_lastnamefield'])): ?>
-                    <div class="text-danger small mt-1"><?php echo $errors['recipient_lastnamefield']; ?></div>
-                <?php endif; ?>
-            </div>
-            
-            <div class="col-12">
-                <label for="recipient_birthdatefield" class="form-label">Birthdate</label>
-                <input type="date" 
-                       class="form-control" 
-                       id="recipient_birthdatefield" 
-                       name="recipient_birthdatefield" 
-                       value="<?php echo htmlspecialchars($values['recipient_birthdatefield'] ?? ''); ?>" 
-                       max="<?php echo date('Y-m-d', strtotime('-13 years')); ?>"
-                       required>
+                <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                <div class="row g-2 date-row">
+                    <div class="col-auto">
+                        <select class="form-select <?php echo !empty($errors['recipient_birthdatefield']) ? 'is-invalid' : ''; ?>" 
+                                id="recipient_birth_month" 
+                                name="recipient_birth_month"
+                                style="width: auto; min-width: 160px;">
+                            <option value="" class="text-primary">Month</option>
+                            <?php
+                            $months = [
+                                '01' => '01 - January', '02' => '02 - February', '03' => '03 - March',
+                                '04' => '04 - April', '05' => '05 - May', '06' => '06 - June',
+                                '07' => '07 - July', '08' => '08 - August', '09' => '09 - September',
+                                '10' => '10 - October', '11' => '11 - November', '12' => '12 - December'
+                            ];
+                            $selected_month = $values['recipient_birth_month'] ?? '';
+                            if (empty($selected_month) && !empty($values['recipient_birthdatefield'])) {
+                                $selected_month = date('m', strtotime($values['recipient_birthdatefield']));
+                            }
+                            foreach ($months as $value => $label) {
+                                $selected = ($selected_month == $value) ? 'selected' : '';
+                                echo "<option value=\"$value\" $selected>$label</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select <?php echo !empty($errors['recipient_birthdatefield']) ? 'is-invalid' : ''; ?>" 
+                                id="recipient_birth_day" 
+                                name="recipient_birth_day"
+                                style="width: auto; min-width: 110px;">
+                            <option value="" class="text-primary">Day</option>
+                            <?php
+                            $selected_day = $values['recipient_birth_day'] ?? '';
+                            if (empty($selected_day) && !empty($values['recipient_birthdatefield'])) {
+                                $selected_day = date('d', strtotime($values['recipient_birthdatefield']));
+                            }
+                            for ($i = 1; $i <= 31; $i++) {
+                                $day = str_pad($i, 2, '0', STR_PAD_LEFT);
+                                $selected = ($selected_day == $day) ? 'selected' : '';
+                                echo "<option value=\"$day\" $selected>$i</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select <?php echo !empty($errors['recipient_birthdatefield']) ? 'is-invalid' : ''; ?>" 
+                                id="recipient_birth_year" 
+                                name="recipient_birth_year"
+                                style="width: auto; min-width: 120px;">
+                            <option value="" class="text-primary">Year</option>
+                            <?php
+                            $current_year = date('Y');
+                            $selected_year = $values['recipient_birth_year'] ?? '';
+                            if (empty($selected_year) && !empty($values['recipient_birthdatefield'])) {
+                                $selected_year = date('Y', strtotime($values['recipient_birthdatefield']));
+                            }
+                            for ($i = $current_year; $i >= 1900; $i--) {
+                                $selected = ($selected_year == $i) ? 'selected' : '';
+                                echo "<option value=\"$i\" $selected>$i</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+                </div>
+                <small class="form-text text-muted">Enter the recipient's date of birth</small>
+                <!-- Hidden field for combined birthday value -->
+                <input type="hidden" id="recipient_birthdatefield" name="recipient_birthdatefield" value="<?php echo htmlspecialchars($values['recipient_birthdatefield'] ?? ''); ?>">
                 <?php if (!empty($errors['recipient_birthdatefield'])): ?>
-                    <div class="text-danger small mt-1"><?php echo $errors['recipient_birthdatefield']; ?></div>
+                    <div class="invalid-feedback d-block"><?php echo $errors['recipient_birthdatefield']; ?></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -231,30 +330,37 @@ if (isset($process_handlers) && $process_handlers) {
         <div class="delivery-fields" id="email_delivery_fields" style="display: none;">
             <div class="row g-3">
                 <div class="col-md-7">
-                    <label for="recipient_email_delivery" class="form-label">Recipient's Email Address</label>
-                    <input type="email" 
-                           class="form-control" 
-                           id="recipient_email_delivery" 
-                           name="recipient_email_delivery" 
-                           value="<?php echo htmlspecialchars($values['recipient_emailfield'] ?? ''); ?>" 
-                           placeholder="recipient@email.com">
-                    <?php if (!empty($errors['recipient_emailfield'])): ?>
-                        <div class="text-danger small mt-1"><?php echo $errors['recipient_emailfield']; ?></div>
-                    <?php endif; ?>
+                    <div class="form-floating">
+                        <input type="email" 
+                               class="form-control <?php echo !empty($errors['recipient_emailfield']) ? 'is-invalid' : ''; ?>" 
+                               id="recipient_email_delivery" 
+                               name="recipient_email_delivery" 
+                               placeholder="recipient@email.com"
+                               value="<?php echo htmlspecialchars($values['recipient_email_delivery'] ?? ''); ?>"
+                               required>
+                        <label for="recipient_email_delivery">Recipient's Email Address <span class="text-danger">*</span></label>
+                        <?php if (!empty($errors['recipient_emailfield'])): ?>
+                            <div class="invalid-feedback"><?php echo $errors['recipient_emailfield']; ?></div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 
                 <div class="col-md-5">
-                    <label for="delivery_date_email" class="form-label">Delivery Date</label>
-                    <input type="date" 
-                           class="form-control" 
-                           id="delivery_date_email" 
-                           name="delivery_date" 
-                           value="<?php echo htmlspecialchars($values['delivery_date'] ?? date('Y-m-d')); ?>" 
-                           min="<?php echo date('Y-m-d'); ?>"
-                           max="<?php echo date('Y-m-d', strtotime('+1 year')); ?>">
-                    <?php if (!empty($errors['delivery_date'])): ?>
-                        <div class="text-danger small mt-1"><?php echo $errors['delivery_date']; ?></div>
-                    <?php else: ?>
+                    <div class="form-floating">
+                        <input type="date" 
+                               class="form-control <?php echo !empty($errors['delivery_date']) ? 'is-invalid' : ''; ?>" 
+                               id="delivery_date_email" 
+                               name="delivery_date" 
+                               placeholder="Delivery Date"
+                               value="<?php echo htmlspecialchars($values['delivery_date'] ?? date('Y-m-d')); ?>" 
+                               min="<?php echo date('Y-m-d'); ?>"
+                               max="<?php echo date('Y-m-d', strtotime('+1 year')); ?>">
+                        <label for="delivery_date_email">Delivery Date</label>
+                        <?php if (!empty($errors['delivery_date'])): ?>
+                            <div class="invalid-feedback"><?php echo $errors['delivery_date']; ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (empty($errors['delivery_date'])): ?>
                         <small class="text-muted">We'll send an email on this date</small>
                     <?php endif; ?>
                 </div>
@@ -265,30 +371,38 @@ if (isset($process_handlers) && $process_handlers) {
         <div class="delivery-fields" id="phone_delivery_fields" style="display: none;">
             <div class="row g-3">
                 <div class="col-md-7">
-                    <label for="recipient_phone_delivery" class="form-label">Recipient's Phone Number</label>
-                    <input type="tel" 
-                           class="form-control" 
-                           id="recipient_phone_delivery" 
-                           name="recipient_phone_delivery" 
-                           value="<?php echo htmlspecialchars($values['recipient_phonefield'] ?? ''); ?>" 
-                           placeholder="(123) 456-7890">
-                    <?php if (!empty($errors['recipient_phonefield'])): ?>
-                        <div class="text-danger small mt-1"><?php echo $errors['recipient_phonefield']; ?></div>
-                    <?php endif; ?>
+                    <div class="form-floating">
+                        <input type="tel" 
+                               class="form-control <?php echo !empty($errors['recipient_phonefield']) ? 'is-invalid' : ''; ?>" 
+                               id="recipient_phone_delivery" 
+                               name="recipient_phone_delivery" 
+                               placeholder="(123) 456-7890"
+                               value="<?php echo htmlspecialchars($values['recipient_phone_delivery'] ?? ''); ?>"
+                               pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+                               required>
+                        <label for="recipient_phone_delivery">Recipient's Phone Number <span class="text-danger">*</span></label>
+                        <?php if (!empty($errors['recipient_phonefield'])): ?>
+                            <div class="invalid-feedback"><?php echo $errors['recipient_phonefield']; ?></div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 
                 <div class="col-md-5">
-                    <label for="delivery_date_phone" class="form-label">Delivery Date</label>
-                    <input type="date" 
-                           class="form-control" 
-                           id="delivery_date_phone" 
-                           name="delivery_date" 
-                           value="<?php echo htmlspecialchars($values['delivery_date'] ?? date('Y-m-d')); ?>" 
-                           min="<?php echo date('Y-m-d'); ?>"
-                           max="<?php echo date('Y-m-d', strtotime('+1 year')); ?>">
-                    <?php if (!empty($errors['delivery_date'])): ?>
-                        <div class="text-danger small mt-1"><?php echo $errors['delivery_date']; ?></div>
-                    <?php else: ?>
+                    <div class="form-floating">
+                        <input type="date" 
+                               class="form-control <?php echo !empty($errors['delivery_date']) ? 'is-invalid' : ''; ?>" 
+                               id="delivery_date_phone" 
+                               name="delivery_date" 
+                               placeholder="Delivery Date"
+                               value="<?php echo htmlspecialchars($values['delivery_date'] ?? date('Y-m-d')); ?>" 
+                               min="<?php echo date('Y-m-d'); ?>"
+                               max="<?php echo date('Y-m-d', strtotime('+1 year')); ?>">
+                        <label for="delivery_date_phone">Delivery Date</label>
+                        <?php if (!empty($errors['delivery_date'])): ?>
+                            <div class="invalid-feedback"><?php echo $errors['delivery_date']; ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (empty($errors['delivery_date'])): ?>
                         <small class="text-muted">We'll send an SMS on this date</small>
                     <?php endif; ?>
                 </div>
@@ -303,13 +417,16 @@ if (isset($process_handlers) && $process_handlers) {
         </div>
         
         <div class="mb-3">
-            <label for="gift_message" class="form-label">Personal Message (Optional)</label>
-            <textarea class="form-control" 
-                      id="gift_message" 
-                      name="gift_message" 
-                      rows="3" 
-                      maxlength="1000"
-                      placeholder="Happy Birthday! Enjoy your special rewards..."><?php echo htmlspecialchars($values['gift_message'] ?? ''); ?></textarea>
+            <div class="form-floating">
+                <textarea class="form-control" 
+                          id="gift_message" 
+                          name="gift_message" 
+                          rows="3" 
+                          maxlength="1000"
+                          placeholder="Happy Birthday! Enjoy your special rewards..."
+                          style="height: 100px"><?php echo htmlspecialchars($values['gift_message'] ?? ''); ?></textarea>
+                <label for="gift_message">Personal Message (Optional)</label>
+            </div>
             <div class="d-flex justify-content-between">
                 <small class="text-muted">Add a personal message to include with the gift certificate</small>
                 <small class="text-muted"><span id="message_char_count">0</span>/1000</small>
@@ -327,16 +444,25 @@ if (isset($process_handlers) && $process_handlers) {
 .delivery-tab {
     flex: 1;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 0.25rem;
-    padding: 1rem 0.5rem;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
     border-radius: 8px;
     transition: all 0.2s ease;
+    background-color: #f8f9fa; /* Light gray background for inactive state */
+    border-color: #dee2e6;
+    color: #495057;
+}
+
+.delivery-tab:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
 }
 
 .delivery-tab i {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
 }
 
 .delivery-tab span {
@@ -377,15 +503,16 @@ if (isset($process_handlers) && $process_handlers) {
     }
     
     .delivery-tab {
-        padding: 0.75rem 0.25rem;
+        padding: 0.5rem 0.75rem;
+        gap: 0.375rem;
     }
     
     .delivery-tab i {
-        font-size: 1.25rem;
+        font-size: 1rem;
     }
     
     .delivery-tab span {
-        font-size: 0.75rem;
+        font-size: 0.8125rem;
     }
 }
 </style>
@@ -458,6 +585,57 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Birthday dropdowns sync
+    const birthMonth = document.getElementById('recipient_birth_month');
+    const birthDay = document.getElementById('recipient_birth_day');
+    const birthYear = document.getElementById('recipient_birth_year');
+    const birthdateField = document.getElementById('recipient_birthdatefield');
+    
+    function updateBirthdateField() {
+        if (birthMonth.value && birthDay.value && birthYear.value) {
+            const month = birthMonth.value.padStart(2, '0');
+            const day = birthDay.value.padStart(2, '0');
+            const year = birthYear.value;
+            birthdateField.value = `${year}-${month}-${day}`;
+        } else {
+            birthdateField.value = '';
+        }
+    }
+    
+    if (birthMonth && birthDay && birthYear) {
+        birthMonth.addEventListener('change', updateBirthdateField);
+        birthDay.addEventListener('change', updateBirthdateField);
+        birthYear.addEventListener('change', updateBirthdateField);
+    }
+    
+    // Phone number formatting
+    const phoneInput = document.getElementById('recipient_phone_delivery');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            // Remove all non-numeric characters
+            let value = e.target.value.replace(/\D/g, '');
+            
+            // Limit to 10 digits
+            if (value.length > 10) {
+                value = value.substr(0, 10);
+            }
+            
+            // Format the number
+            if (value.length >= 6) {
+                value = '(' + value.substr(0, 3) + ') ' + value.substr(3, 3) + '-' + value.substr(6);
+            } else if (value.length >= 3) {
+                value = '(' + value.substr(0, 3) + ') ' + value.substr(3);
+            } else if (value.length > 0) {
+                value = '(' + value;
+            }
+            
+            e.target.value = value;
+        });
+        
+        // Update pattern to match formatted phone
+        phoneInput.setAttribute('pattern', '\\([0-9]{3}\\) [0-9]{3}-[0-9]{4}');
+    }
+    
     // Character counter for personal message
     const messageTextarea = document.getElementById('gift_message');
     const charCount = document.getElementById('message_char_count');
@@ -504,7 +682,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>Please provide the following information about the person who will receive this gift certificate:</p>
                 <ul>
                     <li><strong>Full Name:</strong> The recipient's first and last name as they would like it to appear on their account</li>
-                    <li><strong>Birthdate:</strong> Must be at least 13 years old to receive a Birthday Gold membership</li>
+                    <li><strong>Birthdate:</strong> Enter the recipient's date of birth for their birthday rewards</li>
                 </ul>
                 
                 <hr>

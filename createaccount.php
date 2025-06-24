@@ -29,6 +29,14 @@ $account_cost = $signup_process['account_cost'] ?? 0;
 $values = $_POST;
 $errors = [];
 
+// Debug POST data for gift certificate
+if ($mode === 'dev' && $app->formposted() && $account_type === 'giftcertificate') {
+    error_log('[CREATENEWACCOUNT] POST data keys: ' . json_encode(array_keys($_POST)));
+    error_log('[CREATENEWACCOUNT] Recipient fields in POST: ' . json_encode(array_filter($_POST, function($key) {
+        return strpos($key, 'recipient_') === 0 || strpos($key, 'delivery_') === 0 || strpos($key, 'gift_') === 0;
+    }, ARRAY_FILTER_USE_KEY)));
+}
+
 // Debug output for development
 if ($mode === 'dev') {
     error_log('[CREATENEWACCOUNT] Signup process data: ' . json_encode($signup_process));
@@ -99,8 +107,8 @@ $section_configs = [
             'account_opener',
             'credentials',
             'section_close',
-            // Gift Certificate is its own card
-            ['section_open', ['section_title' => 'Gift Certificate Details', 'section_info_modal' => 'giftCertificateInfoModal']],
+            // Gift Certificate is its own card with special styling
+            ['section_open', ['section_title' => 'Gift Certificate Details', 'section_info_modal' => 'giftCertificateInfoModal', 'section_class' => 'gift-certificate-section']],
             'gift_certificate',
             'section_close',
             // Additional Options card
@@ -115,7 +123,7 @@ $section_configs = [
 $config = $section_configs[$account_type] ?? $section_configs['user'];
 
 // Function to process a section (handles both string and array formats)
-function processSection($section_item, $default_sections, $process_handlers = false) {
+function processSection($section_item, $default_sections, $process_handlers = false, &$values = null, &$errors = null, $signup_process = null, $app = null, $session = null) {
     $section_key = '';
     $section_vars = [];
     
@@ -217,11 +225,25 @@ if ($app->formposted()) {
     
     // Run all section handlers for this account type
     foreach ($config['sections'] as $section_item) {
-        processSection($section_item, $default_sections, true);
+        processSection($section_item, $default_sections, true, $values, $errors, $signup_process, $app, $session);
     }
     
     // Unset process_handlers flag after validation
     $process_handlers = false;
+    
+    // Debug logging for form values
+    if ($mode === 'dev' && !empty($errors)) {
+        error_log('[CREATENEWACCOUNT] Form errors: ' . json_encode($errors));
+        error_log('[CREATENEWACCOUNT] Birthday value: ' . ($values['birthday'] ?? 'NOT SET'));
+        error_log('[CREATENEWACCOUNT] Birth month: ' . ($values['birth_month'] ?? 'NOT SET'));
+        error_log('[CREATENEWACCOUNT] Birth day: ' . ($values['birth_day'] ?? 'NOT SET'));
+        error_log('[CREATENEWACCOUNT] Birth year: ' . ($values['birth_year'] ?? 'NOT SET'));
+        
+        // Log gift certificate fields
+        error_log('[CREATENEWACCOUNT] Recipient first name: ' . ($values['recipient_firstnamefield'] ?? 'NOT SET'));
+        error_log('[CREATENEWACCOUNT] Recipient last name: ' . ($values['recipient_lastnamefield'] ?? 'NOT SET'));
+        error_log('[CREATENEWACCOUNT] Delivery method: ' . ($values['delivery_method'] ?? 'NOT SET'));
+    }
     
     // If no errors, process the account creation
     if (empty($errors)) {
@@ -248,28 +270,34 @@ if ($app->formposted()) {
         }
         
         // Prepare user data for creation
-        $birthday_date = DateTime::createFromFormat('Y-m-d', $values['birthday']);
-        $birthday_formatted = $birthday_date->format('Y-m-d');
-        $hashed_password = password_hash($values['password'], PASSWORD_DEFAULT);
-        $first_name = ucfirst($values['firstname']);
-        $last_name = ucfirst($values['lastname']);
-        $email = !empty($values['email']) ? trim(strtolower($values['email'])) : '';
-        $phone = !empty($values['phone_clean']) ? $values['phone_clean'] : preg_replace('/\D/', '', $values['phone'] ?? '');
-        
-        // Generate username if not provided
-        $username = $values['username'] ?? '';
-        if (empty($username) && $account_type == 'user') {
-            $username = $createaccount->generate_username($first_name, $last_name, $values['birthday']);
-        }
-        
-        // Get location data from session
-        $client_locationdata = $session->get('client_locationdata', []);
-        $city = trim(!empty($client_locationdata['city']) ? $client_locationdata['city'] : '');
-        $state = trim(!empty($client_locationdata['regionName']) ? $client_locationdata['regionName'] : '');
-        $zip_code = trim(!empty($client_locationdata['zip']) ? $client_locationdata['zip'] : '');
-        
-        // Prepare input array for user creation
-        $input = [
+        if (!isset($values['birthday']) || empty($values['birthday'])) {
+            $errors['general'] = 'Please complete your date of birth selection.';
+        } else {
+            $birthday_date = DateTime::createFromFormat('Y-m-d', $values['birthday']);
+            if (!$birthday_date) {
+                $errors['general'] = 'Invalid birthday format. Please check your date of birth.';
+            } else {
+            $birthday_formatted = $birthday_date->format('Y-m-d');
+            $hashed_password = password_hash($values['password'], PASSWORD_DEFAULT);
+            $first_name = ucfirst($values['firstname']);
+            $last_name = ucfirst($values['lastname']);
+            $email = !empty($values['email']) ? trim(strtolower($values['email'])) : '';
+            $phone = !empty($values['phone_clean']) ? $values['phone_clean'] : preg_replace('/\D/', '', $values['phone'] ?? '');
+            
+            // Generate username if not provided
+            $username = $values['username'] ?? '';
+            if (empty($username) && $account_type == 'user') {
+                $username = $createaccount->generate_username($first_name, $last_name, $values['birthday']);
+            }
+            
+            // Get location data from session
+            $client_locationdata = $session->get('client_locationdata', []);
+            $city = trim(!empty($client_locationdata['city']) ? $client_locationdata['city'] : '');
+            $state = trim(!empty($client_locationdata['regionName']) ? $client_locationdata['regionName'] : '');
+            $zip_code = trim(!empty($client_locationdata['zip']) ? $client_locationdata['zip'] : '');
+            
+            // Prepare input array for user creation
+            $input = [
             'first_name' => $first_name,
             'last_name' => $last_name,
             'username' => $username,
@@ -295,75 +323,77 @@ if ($app->formposted()) {
             'account_type' => $account_type,
             'account_cost' => $account_cost,
             'account_validation' => $plandata['account_verification'] ?? 'required',
-            'avatar_file' => ''
-        ];
-        
-        // Add business fields if business account
-        if ($account_type === 'business') {
-            $input['business_name'] = $values['businessnamefield'] ?? '';
-            $input['business_type'] = $values['businesstypefield'] ?? '';
-            $input['business_phone'] = $values['businessphonefield'] ?? '';
-            $input['business_address'] = $values['businessaddressfield'] ?? '';
-            $input['business_website'] = $values['businesswebsitefield'] ?? '';
-        }
-        
-        // Add promo code if provided
-        if (!empty($values['promo_code'])) {
-            $input['promocode'] = $values['promo_code'];
-        }
-        
-        // Add referral code if provided
-        if (!empty($values['referral_code'])) {
-            $input['referral_code'] = $values['referral_code'];
-        }
-        
-        // Create the user
-        try {
-            $user_id = $createaccount->create_user($input);
+                'avatar_file' => ''
+            ];
             
-            if ($user_id) {
-                // Handle children for parental accounts
-                if (($account_type === 'parental' || $account_type === 'family') && !empty($values['children'])) {
-                    foreach ($values['children'] as $child) {
-                        if (!empty($child['firstname']) && !empty($child['lastname']) && !empty($child['birthday'])) {
-                            // Add child account logic here
-                            // This would typically involve creating linked child accounts
+            // Add business fields if business account
+            if ($account_type === 'business') {
+                $input['business_name'] = $values['businessnamefield'] ?? '';
+                $input['business_type'] = $values['businesstypefield'] ?? '';
+                $input['business_phone'] = $values['businessphonefield'] ?? '';
+                $input['business_address'] = $values['businessaddressfield'] ?? '';
+                $input['business_website'] = $values['businesswebsitefield'] ?? '';
+            }
+            
+            // Add promo code if provided
+            if (!empty($values['promo_code'])) {
+                $input['promocode'] = $values['promo_code'];
+            }
+            
+            // Add referral code if provided
+            if (!empty($values['referral_code'])) {
+                $input['referral_code'] = $values['referral_code'];
+            }
+            
+            // Create the user
+            try {
+                $user_id = $createaccount->create_user($input);
+                
+                if ($user_id) {
+                    // Handle children for parental accounts
+                    if (($account_type === 'parental' || $account_type === 'family') && !empty($values['children'])) {
+                        foreach ($values['children'] as $child) {
+                            if (!empty($child['firstname']) && !empty($child['lastname']) && !empty($child['birthday'])) {
+                                // Add child account logic here
+                                // This would typically involve creating linked child accounts
+                            }
                         }
                     }
-                }
-                
-                // Store registration data in session for validation page
-                $session->set('userregistrationdata', array_merge($input, ['user_id' => $user_id]));
-                $session->set('accountcode', $user_id);
-                
-                // Also ensure signup_process_data is set for checkout
-                $signup_process['promo_code'] = $values['promo_code'] ?? '';
-                $signup_process['referrer_code'] = $values['referral_code'] ?? '';
-                $session->set('signup_process_data', $signup_process);
-                
-                // Redirect based on account cost and validation requirements
-                if ($account_cost > 0) {
-                    // Paid plan - go to checkout
-                    $encoded_user_id = $qik->encodeId($user_id);
-                    header('Location: /checkout.php?u=' . $encoded_user_id);
-                } else {
-                    // Free plan - check validation requirements
-                    if ($plandata['account_verification'] == 'notrequired') {
-                        // No validation required, go to welcome
-                        header('Location: /myaccount/welcome.php');
+                    
+                    // Store registration data in session for validation page
+                    $session->set('userregistrationdata', array_merge($input, ['user_id' => $user_id]));
+                    $session->set('accountcode', $user_id);
+                    
+                    // Also ensure signup_process_data is set for checkout
+                    $signup_process['promo_code'] = $values['promo_code'] ?? '';
+                    $signup_process['referrer_code'] = $values['referral_code'] ?? '';
+                    $session->set('signup_process_data', $signup_process);
+                    
+                    // Redirect based on account cost and validation requirements
+                    if ($account_cost > 0) {
+                        // Paid plan - go to checkout
+                        $encoded_user_id = $qik->encodeId($user_id);
+                        header('Location: /checkout.php?u=' . $encoded_user_id);
                     } else {
-                        // Validation required
-                        header('Location: /validate-account.php');
+                        // Free plan - check validation requirements
+                        if ($plandata['account_verification'] == 'notrequired') {
+                            // No validation required, go to welcome
+                            header('Location: /myaccount/welcome.php');
+                        } else {
+                            // Validation required
+                            header('Location: /validate-account.php');
+                        }
                     }
+                    exit();
+                } else {
+                    $errors['general'] = 'Failed to create account. Please try again.';
                 }
-                exit();
-            } else {
-                $errors['general'] = 'Failed to create account. Please try again.';
+            } catch (Exception $e) {
+                $errors['general'] = 'An error occurred while creating your account. Please try again.';
+                error_log('User creation error: ' . $e->getMessage());
             }
-        } catch (Exception $e) {
-            $errors['general'] = 'An error occurred while creating your account. Please try again.';
-            error_log('User creation error: ' . $e->getMessage());
-        }
+            } // End of birthday validation else block
+        } // End of birthday exists check
     }
 }
 
@@ -410,6 +440,21 @@ select option[value=""] {
 /* select option[value=""] {
     color: #adb5bd !important;
 } */
+
+/* Gift Certificate Section Styling */
+.gift-certificate-section {
+    background-color: #fffcf4; /* Light gold/cream background - 10% lighter */
+    border-color: #f8ecdb;
+}
+
+.gift-certificate-section .card-header {
+    background-color: #fceed7 !important; /* Light gold for header - 10% lighter */
+    border-bottom-color: #f8ecdb;
+}
+
+.gift-certificate-section .card-body {
+    background-color: transparent;
+}
 
 /* Remove browser autofill blue background */
 input:-webkit-autofill,
@@ -947,7 +992,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <!-- Include form sections based on account type -->
             <?php 
             foreach ($config['sections'] as $section_item) {
-                processSection($section_item, $default_sections, false);
+                processSection($section_item, $default_sections, false, $values, $errors, $signup_process, $app, $session);
             }
             ?>
             
