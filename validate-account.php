@@ -200,7 +200,9 @@ if (!empty($_REQUEST['act']) && $_REQUEST['act'] == 'resend' && isset($_REQUEST[
 #-------------------------------------------------------------------------------
 $userregistrationdata = $session->get('userregistrationdata', '');
 $sentagainmessage = '';
-if (empty($userregistrationdata['email'])) {
+// Check if we have valid registration data - must have either email or phone_number
+if (empty($userregistrationdata) || 
+    (empty($userregistrationdata['email']) && empty($userregistrationdata['phone_number']))) {
   $session->set('force_error_message', 'No registration data found. Please sign up again.');
   header('location: /signup');
   exit;

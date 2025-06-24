@@ -272,7 +272,14 @@ if ($app->formposted()) {
         if (!empty($values['existing_user_info'])) {
             // We have an existing pending/validated user
             $tempinfo = $values['existing_user_info'];
+            
+            // Ensure userregistrationdata has required fields for validate-account.php
+            if (!isset($tempinfo['email']) && isset($tempinfo['phone'])) {
+                $tempinfo['phone_number'] = $tempinfo['phone'];
+            }
+            
             $session->set('userregistrationdata', $tempinfo);
+            error_log('[CREATENEWACCOUNT] Existing user found, setting session data');
             
             if ($account_cost > 0) {
                 // Paid plan - go to checkout with existing user
