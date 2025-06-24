@@ -342,13 +342,6 @@ $additionalstyles .= '
     flex-wrap: nowrap;
 }
 
-.date-row .col-md-5,
-.date-row .col-md-3,
-.date-row .col-md-4 {
-    flex: 1;
-    min-width: 0;
-}
-
 /* Style the placeholder options in dropdowns */
 select option[value=""] {
     color: var(--bs-primary) !important;

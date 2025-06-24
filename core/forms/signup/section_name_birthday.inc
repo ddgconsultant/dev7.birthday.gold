@@ -116,10 +116,11 @@ if (isset($process_handlers) && $process_handlers) {
         <div class="col-12">
             <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
             <div class="row g-2 date-row">
-                <div class="col-md-5">
-                    <select class="form-control <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
+                <div class="col-auto">
+                    <select class="form-select <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
                             id="birth_month" 
-                            name="birth_month">
+                            name="birth_month"
+                            style="width: auto; min-width: 160px;">
                         <option value="" class="text-primary">Month</option>
                         <?php
                         $months = [
@@ -139,10 +140,11 @@ if (isset($process_handlers) && $process_handlers) {
                         ?>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select class="form-control <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
+                <div class="col-auto">
+                    <select class="form-select <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
                             id="birth_day" 
-                            name="birth_day">
+                            name="birth_day"
+                            style="width: auto; min-width: 110px;">
                         <option value="" class="text-primary">Day</option>
                         <?php
                         $selected_day = $values['birth_day'] ?? '';
@@ -157,10 +159,11 @@ if (isset($process_handlers) && $process_handlers) {
                         ?>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <select class="form-control <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
+                <div class="col-auto">
+                    <select class="form-select <?php echo !empty($errors['birthday']) ? 'is-invalid' : ''; ?>" 
                             id="birth_year" 
-                            name="birth_year">
+                            name="birth_year"
+                            style="width: auto; min-width: 120px;">
                         <option value="" class="text-primary">Year</option>
                         <?php
                         $current_year = date('Y');

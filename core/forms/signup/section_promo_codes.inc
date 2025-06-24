@@ -61,9 +61,9 @@ if (isset($process_handlers) && $process_handlers) {
 #-------------------------------------------------------------------------------
 # DISPLAY CODE - Show the form section
 #-------------------------------------------------------------------------------
-// Get promo and referral codes from values or signup process
-$promo_code = $values['promo_code'] ?? $signup_process['promo'] ?? $signup_process['promo_code'] ?? '';
-$referral_code = $values['referral_code'] ?? $signup_process['ref'] ?? $signup_process['referral'] ?? '';
+// Get promo and referral codes from values or signup process (prioritize POST values for form resubmission)
+$promo_code = $values['promo_code'] ?? $signup_process['promo_code'] ?? $signup_process['promo'] ?? '';
+$referral_code = $values['referral_code'] ?? $signup_process['referral_code'] ?? $signup_process['ref'] ?? $signup_process['referral'] ?? '';
 
 // Check if we should auto-show promo/referral section
 $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($errors['promo_code']) || !empty($errors['referral_code']);
