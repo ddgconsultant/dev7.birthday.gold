@@ -1024,16 +1024,69 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="checkout-wrapper">
         <!-- Welcome content - Desktop only -->
         <div class="welcome-content d-none d-lg-block">
-            <h2>Welcome back, <span><?php echo htmlspecialchars($user_data['first_name']); ?></span></h2>
+            <?php
+            // Fun encouraging phrases for the final step
+            $final_step_phrases = [
+                "Almost there, %s!",
+                "%s, you're on the home stretch!",
+                "Last step, %s!",
+                "Let's finish this, %s!",
+                "%s, just one more click!",
+                "Final step, %s!",
+                "You're so close, %s!",
+                "%s, let's wrap this up!",
+                "One more step, %s!",
+                "%s, time to celebrate soon!"
+            ];
+            
+            // Pick a random phrase
+            $phrase = $final_step_phrases[array_rand($final_step_phrases)];
+            $heading = sprintf($phrase, '<span>' . htmlspecialchars($user_data['first_name']) . '</span>');
+            ?>
+            <h2><?php echo $heading; ?></h2>
             <p class="lead mb-4">You're moments away from never missing another birthday reward!</p>
             
             <div class="order-context">
                 <div class="context-card mb-3">
                     <h4 class="h5 mb-3">Your <?php echo htmlspecialchars($user_data['name'] ?? 'Birthday Gold'); ?> membership includes:</h4>
-                    <p class="text-muted mb-2">Automatic enrollment in birthday programs from your favorite brands, personalized reminders so you never miss a reward, and exclusive member perks throughout the year.</p>
+                    <?php
+                    // Dynamic description based on account type
+                    $account_descriptions = [
+                        'individual' => 'Automatic enrollment in birthday programs from your favorite brands, personalized reminders so you never miss a reward, and exclusive member perks throughout the year.',
+                        'parental' => 'Manage birthday rewards for your entire family in one place. Track multiple birthdays, get organized reminders, and ensure no one misses their special rewards.',
+                        'giftcertificate' => 'The perfect gift! This certificate provides a full year of birthday rewards and perks for someone special.',
+                        'business' => 'Professional birthday reward management for your team. Track employee birthdays, automate reward enrollment, and boost workplace morale.'
+                    ];
+                    
+                    $description = $account_descriptions[$user_data['account_type']] ?? $account_descriptions['individual'];
+                    
+                    // Get billing cycle from product data
+                    $billing_cycle = 'year'; // default
+                    $billing_text = 'per year';
+                    
+                    if (!empty($user_data['billing_cycle'])) {
+                        switch($user_data['billing_cycle']) {
+                            case 'monthly':
+                                $billing_cycle = 'month';
+                                $billing_text = 'per month';
+                                break;
+                            case 'quarterly':
+                                $billing_cycle = 'quarter';
+                                $billing_text = 'per quarter';
+                                break;
+                            case 'yearly':
+                            case 'annual':
+                            default:
+                                $billing_cycle = 'year';
+                                $billing_text = 'per year';
+                                break;
+                        }
+                    }
+                    ?>
+                    <p class="text-muted mb-2"><?php echo $description; ?></p>
                     <div class="price-context mt-3">
                         <span class="h3 text-primary">$<?php echo number_format($amount / 100, 2); ?></span>
-                        <span class="text-muted ms-2">for your first year</span>
+                        <span class="text-muted ms-2"><?php echo $billing_text; ?></span>
                     </div>
                 </div>
                 
