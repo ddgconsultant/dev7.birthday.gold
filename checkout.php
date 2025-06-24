@@ -336,145 +336,251 @@ try {
 #-------------------------------------------------------------------------------
 # PAGE DISPLAY
 #-------------------------------------------------------------------------------
-$pagetitle = 'Complete Your Purchase - Birthday.Gold';
+$page_title = 'Complete Your Purchase - Birthday.Gold';
 $page_description = 'Complete your Birthday Gold checkout';
+$errormessage = '';
 
-// Include the same styles as createaccount
-$additionalstyles .= '
-<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+// Modern Minimalist CSS - Matching /login and /forgot style
+$additionalstyles = '
 <style>
-' . file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/claudecode/createaccount_styles.css') . '
-/* Additional checkout-specific styles */
-.checkout-content {
-    max-width: 100%;
-    margin: 0 auto;
+/* Modern Minimalist Checkout Styles - Clean & Modern */
+* {
+    box-sizing: border-box !important;
 }
 
-/* Minimal header for checkout */
-.checkout-header {
+/* Card Container */
+.checkout-container {
+    width: 100%;
+    max-width: 480px;
+    margin: 2rem auto;
+}
+
+.checkout-card {
     background: white;
-    border-bottom: 1px solid #e9ecef;
-    padding: 1rem 0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* Header Section - Minimal */
+.checkout-header {
+    text-align: center;
+    padding: 2rem 1.5rem 1rem;
+}
+
+.checkout-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.checkout-header p {
+    font-size: 1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Checkout Badge */
+.checkout-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #e8f5e8;
+    color: var(--bs-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.checkout-badge i {
+    font-size: 1rem;
+}
+
+/* Form Section */
+.checkout-body {
+    padding: 0 1.5rem 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Price Display */
+.price-display {
+    text-align: center;
     margin-bottom: 2rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
 }
 
-.checkout-header .container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.price-original {
+    text-decoration: line-through;
+    color: #6c757d;
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
 }
 
-.checkout-header .logo {
-    height: 36px;
+.price-current {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #28a745;
+    line-height: 1;
 }
 
-.checkout-header .security-badge {
-    display: flex;
-    align-items: center;
+.price-current span {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #6c757d;
+}
+
+.price-savings {
+    margin-top: 0.5rem;
+    color: #28a745;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Account Summary */
+.account-summary {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Submit Button */
+.btn-submit {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: var(--bs-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-submit:hover:not(:disabled) {
+    background: #0b5ed7;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+.btn-submit:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* Divider - Subtle */
+.divider {
+    margin: 2rem 0;
+    text-align: center;
+    position: relative;
+}
+
+.divider::before {
+    content: "";
+    position: absolute;
+    left: 20%;
+    right: 20%;
+    top: 50%;
+    height: 1px;
+    background: #e9ecef;
+}
+
+.divider span {
+    background: white;
+    padding: 0 0.75rem;
+    position: relative;
+    color: #adb5bd;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Alternative Actions */
+.alt-actions {
+    text-align: center;
     font-size: 0.875rem;
     color: #6c757d;
 }
 
-.checkout-header .security-badge i {
-    font-size: 1.1rem;
-    margin-right: 0.5rem;
-    color: #198754;
+.alt-actions a {
+    color: var(--bs-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
 }
 
-/* Override header for cleaner look */
-.header {
-    margin-bottom: 1rem;
+.alt-actions a:hover {
+    color: #0b5ed7;
+    text-decoration: underline;
 }
 
-/* Improved progress bar */
-.progress-container {
-    margin-bottom: 2rem;
+/* Alert Messages */
+.alert-container {
+    margin-bottom: 1.5rem;
 }
 
-.progress {
-    height: 6px !important;
-    background: #e9ecef;
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
 }
 
-/* Progress steps - better alignment */
-.progress-steps {
-    position: relative;
+.alert-danger {
+    background: #f8d7da;
+    color: #842029;
+    border-color: #f5c2c7;
 }
 
-/* Ensure line is below icons */
-.step-indicator {
-    z-index: 2;
-    position: relative;
+/* Loading State */
+.btn-submit.loading {
+    pointer-events: none;
 }
 
-.step-indicator:not(:last-child)::after {
+.btn-submit.loading::after {
     content: "";
     position: absolute;
-    top: 1.5rem; /* Adjusted to center with icon */
-    left: 50%;
-    width: 100%;
-    height: 2px;
-    background: #dee2e6;
-    z-index: -1;
-}
-
-/* Desktop: grid layout */
-@media (min-width: 992px) {
-    .checkout-grid {
-        display: grid;
-        grid-template-columns: 5fr 7fr;
-        gap: 3rem;
-        align-items: start;
-    }
-    
-    .left-column {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-}
-
-.price-display {
-    background: linear-gradient(135deg, #f8fffe 0%, #f0f9ff 100%);
-    border: 1px solid #e3f2fd;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.order-details {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 1rem;
-    font-size: 0.9rem;
-}
-
-#payment-element {
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    padding: 1.5rem;
-    min-height: 280px;
-    margin-bottom: 1.5rem;
-}
-
-#payment-element:focus-within {
-    border-color: #198754;
-    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.1);
-}
-
-.spinner {
-    display: inline-block;
     width: 16px;
     height: 16px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #198754;
+    margin: auto;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    border: 2px solid transparent;
+    border-top-color: white;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-right: 8px;
+    animation: spin 0.6s linear infinite;
+}
+
+.btn-submit.loading span {
+    opacity: 0;
 }
 
 @keyframes spin {
@@ -482,418 +588,491 @@ $additionalstyles .= '
     100% { transform: rotate(360deg); }
 }
 
-.promo-applied {
-    background-color: #d1f2db;
-    border: 1px solid #b8e7c3;
-    color: #155724;
-    padding: 12px;
-    border-radius: 8px;
+/* Security Note */
+.security-note {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #6c757d;
     margin-top: 1rem;
-    font-size: 0.95rem;
-}
-
-.promo-applied i {
-    color: #28a745;
-}
-
-/* Make form sections more compact on checkout */
-.checkout-content .form-section {
-    padding: 1.5rem;
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-}
-
-.checkout-content .section-title {
-    font-size: 1.1rem;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid #e9ecef;
-}
-
-/* Sticky order summary on desktop */
-@media (min-width: 992px) {
-    .order-summary-section {
-        position: sticky;
-        top: 80px; /* Account for header */
-    }
-}
-
-/* Trust section styling */
-.trust-section {
-    padding: 1rem;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-}
-
-/* Mobile: single column with reordering */
-@media (max-width: 991px) {
-    .checkout-grid {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    /* Order: 1. Order Summary, 2. Payment Form, 3. Trust Section */
-    .order-summary-section {
-        order: 1;
-    }
-    
-    .trust-section {
-        order: 3;
-        margin-top: 1.5rem;
-    }
-    
-    /* Payment form section */
-    .checkout-grid > div:last-child {
-        order: 2;
-        margin-top: 1.5rem;
-    }
-    
-    .left-column {
-        display: contents; /* This makes children act as direct children of grid */
-    }
-}
-
-/* Trust indicators */
-.trust-badges {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1.5rem;
-    padding: 1.5rem 0;
+    gap: 0.5rem;
+}
+
+.security-note i {
+    color: #28a745;
+}
+
+/* Payment Element Styling */
+#payment-element {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 200px;
+}
+
+#payment-element:focus-within {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+/* Tablet & Desktop Styles */
+@media (min-width: 768px) {
+    .checkout-container {
+        max-width: 480px;
+        margin: 3rem auto;
+    }
+    
+    .checkout-header {
+        padding: 3rem 2rem 1.5rem;
+    }
+    
+    .checkout-header h1 {
+        font-size: 2rem;
+    }
+    
+    .checkout-body {
+        padding: 0 2rem 3rem;
+    }
+}
+
+/* Large Desktop - Enhanced Layout */
+@media (min-width: 992px) {
+    .checkout-wrapper {
+        width: 100%;
+        max-width: 1200px;
+        display: grid;
+        grid-template-columns: 1fr 480px;
+        gap: 4rem;
+        align-items: center;
+        padding: 0 2rem;
+    }
+    
+    /* Welcome content for desktop */
+    .welcome-content {
+        color: #212529;
+    }
+    
+    .welcome-content h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+    }
+    
+    .welcome-content h2 span {
+        color: var(--bs-primary);
+    }
+    
+    .welcome-content p {
+        font-size: 1.25rem;
+        color: #6c757d;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .feature-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    
+    .feature-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .feature-icon {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        background: #e8f5e8;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bs-primary);
+        font-size: 1.25rem;
+    }
+    
+    .feature-text h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 0.25rem;
+    }
+    
+    .feature-text p {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.4;
+    }
+    
+    .checkout-container {
+        margin: 0;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+}
+
+@media (min-width: 1200px) {
+    .checkout-wrapper {
+        gap: 6rem;
+    }
+    
+    .welcome-content h2 {
+        font-size: 3rem;
+    }
+}
+
+/* Order Details Card */
+.order-details-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
     margin-top: 2rem;
+}
+
+.order-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.order-header h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.order-body {
+    padding: 1.5rem;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+
+.order-item:last-child {
+    margin-bottom: 0;
+}
+
+.order-item-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.order-item-value {
+    text-align: right;
+    font-weight: 500;
+}
+
+.order-total {
+    border-top: 2px solid #e9ecef;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.order-footer {
+    background: #f8f9fa;
+    padding: 1.5rem;
     border-top: 1px solid #e9ecef;
 }
 
-.trust-badge {
+.feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.feature-list-item {
     display: flex;
     align-items: center;
+    gap: 0.5rem;
     font-size: 0.875rem;
-    color: #6c757d;
-}
-
-.trust-badge i {
-    font-size: 1.25rem;
-    margin-right: 0.5rem;
-}
-
-/* Back link styling */
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    color: #6c757d;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: color 0.2s;
-}
-
-.back-link:hover {
     color: #495057;
 }
 
-/* Hide main navigation on checkout page */
-body.checkout-page .top-header {
-    display: none;
-}
-
-body.checkout-page {
-    padding-top: 0;
+.feature-list-item i {
+    font-size: 1rem;
 }
 </style>
 ';
 
-// Add checkout-page class to body
-$bodyclass = 'class="checkout-page"';
-
 include($dir['core_components'] . '/bg_pagestart.inc');
-// Skip the main header for checkout
+include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<!-- Simplified Checkout Header -->
-<div class="checkout-header">
-    <div class="container">
-        <a href="/" class="d-flex align-items-center">
-            <img src="//cdn.birthday.gold/public/images/logo/birthday.gold_logo.png" alt="Birthday Gold" class="logo">
-        </a>
-        <div class="security-badge">
-            <i class="bi bi-shield-lock-fill"></i>
-            Secure Checkout
-        </div>
-    </div>
-</div>
-
 <div class="container main-content">
-    <!-- Header -->
-    <div class="header text-center">
-        <h1>Complete Your Purchase</h1>
-        <p class="text-muted">You're almost done! Just one more step.</p>
-    </div>
-
-    <!-- Progress Bar -->
-    <div class="progress-container mb-4">
-        <!-- Progress bar removed since we're at 100% -->
-        <div class="progress-steps mt-3">
-            <div class="step-indicator completed">
-                <i class="bi bi-check-circle-fill"></i>
-                <span>Choose Plan</span>
-            </div>
-            <div class="step-indicator completed">
-                <i class="bi bi-check-circle-fill"></i>
-                <span>Account Details</span>
-            </div>
-            <div class="step-indicator active">
-                <i class="bi bi-3-circle-fill"></i>
-                <span>Payment</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="checkout-content">
-        <div class="checkout-grid">
-            <!-- Left Column -->
-            <div class="left-column">
-                <!-- Order Summary -->
-                <div class="form-section order-summary-section">
-                    <h5 class="section-title">Order Summary</h5>
-                    
-                    <div class="price-display text-center">
-                        <h4 class="mb-2"><?php echo htmlspecialchars($user_data['account_name'] ?? 'Birthday Gold'); ?></h4>
-                        <p class="text-muted mb-3"><?php echo ucfirst($user_data['account_type']); ?> Account</p>
-                        
-                        <?php if ($promo_code && isset($pricing['discount']) && $pricing['discount'] > 0): ?>
-                            <div class="mb-1">
-                                <span style="text-decoration: line-through;" class="text-muted h5">
-                                    $<?php echo number_format($pricing['original_price'] / 100, 2); ?>
-                                </span>
-                            </div>
-                            <h2 class="text-success mb-0">$<?php echo number_format($amount / 100, 2); ?></h2>
-                            <small class="text-muted">per year</small>
-                            <div class="promo-applied">
-                                <i class="bi bi-tag-fill me-1"></i>
-                                Promo: <strong><?php echo htmlspecialchars($promo_code); ?></strong>
-                                <br>Savings: <strong>$<?php echo number_format($pricing['discount'] / 100, 2); ?></strong>
-                            </div>
-                        <?php else: ?>
-                            <h2 class="text-success mb-0">$<?php echo number_format($amount / 100, 2); ?></h2>
-                            <small class="text-muted">per year</small>
-                        <?php endif; ?>
+    <!-- Desktop wrapper for side-by-side layout -->
+    <div class="checkout-wrapper">
+        <!-- Welcome content - Desktop only -->
+        <div class="welcome-content d-none d-lg-block">
+            <h2>Complete Your Order</h2>
+            <p><?php echo htmlspecialchars($user_data['account_name'] ?? 'Birthday Gold'); ?> - <?php echo ucfirst($user_data['account_type']); ?> Plan</p>
+            
+            <!-- Order Details Card -->
+            <div class="order-details-card">
+                <div class="order-header">
+                    <h4>Order Summary</h4>
+                    <span class="h4 text-success mb-0">$<?php echo number_format($amount / 100, 2); ?><small class="text-muted">/year</small></span>
+                </div>
+                
+                <div class="order-body">
+                    <div class="order-item">
+                        <div class="order-item-label">Plan Type</div>
+                        <div class="order-item-value"><?php echo htmlspecialchars($user_data['account_name'] ?? 'Birthday Gold'); ?> - <?php echo ucfirst($user_data['account_type']); ?></div>
                     </div>
                     
-                    <!-- Account Details Summary -->
-                    <div class="order-details mt-3">
-                        <h6 class="mb-2 fw-bold">Account Details</h6>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">Name:</span>
-                            <span><?php echo htmlspecialchars($user_data['first_name'] . ' ' . $user_data['last_name']); ?></span>
+                    <div class="order-item">
+                        <div class="order-item-label">Billing for</div>
+                        <div class="order-item-value">
+                            <strong><?php echo htmlspecialchars($user_data['first_name'] . ' ' . $user_data['last_name']); ?></strong><br>
+                            <span class="text-muted"><?php echo htmlspecialchars($user_data['email'] ?? ''); ?></span>
                         </div>
-                        <?php if (!empty($user_data['email'])): ?>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">Email:</span>
-                            <span><?php echo htmlspecialchars($user_data['email']); ?></span>
-                        </div>
-                        <?php endif; ?>
-                        <?php if (!empty($user_data['phone_number'])): ?>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">Phone:</span>
-                            <span><?php echo htmlspecialchars($user_data['phone_number']); ?></span>
-                        </div>
-                        <?php endif; ?>
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Birthday:</span>
-                            <span><?php echo date('F j', strtotime($user_data['birthday'] ?? '')); ?></span>
+                    </div>
+                    
+                    <div class="order-item">
+                        <div class="order-item-label">Subscription Type</div>
+                        <div class="order-item-value">Annual Membership</div>
+                    </div>
+                    
+                    <?php if ($promo_code && isset($pricing['discount']) && $pricing['discount'] > 0): ?>
+                    <div class="order-item">
+                        <div class="order-item-label">Original Price</div>
+                        <div class="order-item-value text-decoration-line-through text-muted">$<?php echo number_format($pricing['original_price'] / 100, 2); ?></div>
+                    </div>
+                    
+                    <div class="order-item">
+                        <div class="order-item-label">Promo Code</div>
+                        <div class="order-item-value text-success"><?php echo htmlspecialchars($promo_code); ?></div>
+                    </div>
+                    
+                    <div class="order-item">
+                        <div class="order-item-label">Discount</div>
+                        <div class="order-item-value text-success">-$<?php echo number_format($pricing['discount'] / 100, 2); ?></div>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div class="order-total">
+                        <div class="order-item-label">Total Due Today</div>
+                        <div class="order-item-value">
+                            <span class="h3 text-success mb-0">$<?php echo number_format($amount / 100, 2); ?></span>
+                            <small class="text-muted d-block">per year</small>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Trust Indicators - Separate section for mobile ordering -->
-                <div class="form-section mt-3 trust-section">
-                    <div class="d-flex justify-content-center align-items-center flex-wrap gap-3 text-center">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-shield-lock text-success me-1"></i>
-                            <small class="text-muted">SSL Encrypted</small>
+                <div class="order-footer">
+                    <div class="feature-list">
+                        <div class="feature-list-item">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Instant account activation</span>
                         </div>
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-award text-primary me-1"></i>
-                            <small class="text-muted">Trusted by 10,000+</small>
+                        <div class="feature-list-item">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Access to 500+ birthday rewards</span>
                         </div>
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-arrow-counterclockwise text-info me-1"></i>
-                            <small class="text-muted">Cancel Anytime</small>
+                        <div class="feature-list-item">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Cancel anytime</span>
                         </div>
-                    </div>
-                    <div class="text-center mt-3">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" height="20" alt="Powered by Stripe" style="opacity: 0.4;">
                     </div>
                 </div>
             </div>
-            
-            <!-- Right Column: Payment Form -->
-            <div>
-                <div class="form-section">
-                    <h5 class="section-title">Payment Information</h5>
+        </div>
+        
+        <!-- Checkout Card -->
+        <div class="checkout-container">
+            <div class="checkout-card">
+                <!-- Header Section -->
+                <div class="checkout-header">
+                    <div class="checkout-badge">
+                        <i class="bi bi-credit-card"></i>
+                        <span>Secure Checkout</span>
+                    </div>
+                    <h1>Payment Information</h1>
+                    <p>Enter your payment details below</p>
+                </div>
+                
+                <!-- Form Section -->
+                <div class="checkout-body">
+                    <?php if (!empty($errormessage)): ?>
+                        <div class="alert-container">
+                            <?php echo $errormessage; ?>
+                        </div>
+                    <?php endif; ?>
                     
-                    <form id="payment-form">
-                        <div id="payment-element"></div>
+                    <form method="POST" action="/checkout" id="checkoutForm">
+                        <?php echo $display->inputcsrf_token(); ?>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Payment Method</label>
+                            <div id="payment-element"></div>
+                        </div>
+                        
                         <div id="error-message" class="alert alert-danger d-none mt-3"></div>
                         
-                        <button type="submit" class="btn-primary-custom w-100 mt-3" id="submit-button">
-                            <span id="button-text">
-                                <i class="bi bi-lock-fill me-2"></i>Complete Purchase
-                            </span>
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <span>Complete Purchase</span>
                         </button>
                         
-                        <div class="text-center mt-3 mb-3">
-                            <small class="text-muted">
-                                <i class="bi bi-shield-check me-1"></i>
-                                Your payment information is secure and encrypted
-                            </small>
-                        </div>
-                        
-                        <div class="text-center">
-                            <a href="/createaccount.php" class="back-link">
-                                <i class="bi bi-arrow-left me-1"></i>Back to account details
-                            </a>
+                        <div class="security-note">
+                            <i class="bi bi-shield-lock-fill"></i>
+                            Your payment information is secure and encrypted
                         </div>
                     </form>
+                    
+                    <!-- Divider -->
+                    <div class="divider">
+                        <span>need help?</span>
+                    </div>
+                    
+                    <!-- Alternative Actions -->
+                    <div class="alt-actions">
+                        <a href="/createaccount.php">← Back to account details</a>
+                        <br>
+                        Questions? <a href="/contact">Contact support</a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Footer -->
-    <footer class="text-center mt-4 pb-4">
-        <small class="text-muted">
-            By completing this purchase, you agree to our 
-            <a href="/terms" class="text-decoration-none text-success fw-medium">Terms of Service</a> and 
-            <a href="/privacy" class="text-decoration-none text-success fw-medium">Privacy Policy</a>
-        </small>
-    </footer>
 </div>
 
+<?php
+$footerattribute['postfooter'] = '
 <script src="https://js.stripe.com/v3/"></script>
 <script>
-const stripe = Stripe('<?php echo $stripe_key; ?>');
+const stripe = Stripe(\'' . $stripe_key . '\');
 const elements = stripe.elements({
-    clientSecret: '<?php echo $payment_intent->client_secret; ?>',
+    clientSecret: \'' . $payment_intent->client_secret . '\',
     appearance: {
-        theme: 'stripe',
+        theme: \'stripe\',
         variables: {
-            colorPrimary: '#28a745',
+            colorPrimary: \'#0d6efd\',
         }
     }
 });
 
-const paymentElement = elements.create('payment');
-paymentElement.mount('#payment-element');
+const paymentElement = elements.create(\'payment\');
+paymentElement.mount(\'#payment-element\');
 
-const form = document.getElementById('payment-form');
-const submitButton = document.getElementById('submit-button');
-const buttonText = document.getElementById('button-text');
-const errorMessage = document.getElementById('error-message');
+const form = document.getElementById(\'checkoutForm\');
+const submitButton = document.getElementById(\'submitBtn\');
+const errorMessage = document.getElementById(\'error-message\');
 
-form.addEventListener('submit', async (e) => {
+form.addEventListener(\'submit\', async (e) => {
     e.preventDefault();
     
-    // Disable button
+    // Add loading state
+    submitButton.classList.add(\'loading\');
     submitButton.disabled = true;
-    buttonText.innerHTML = '<span class="spinner"></span>Processing...';
-    errorMessage.classList.add('d-none');
+    errorMessage.classList.add(\'d-none\');
     
-    console.log('[CHECKOUT] Starting payment confirmation');
+    console.log(\'[CHECKOUT] Starting payment confirmation\');
     
     try {
         const {error} = await stripe.confirmPayment({
             elements,
             confirmParams: {
-                return_url: window.location.origin + '/checkout_complete.php?user_id=<?php echo $encoded_user_id; ?>',
+                return_url: window.location.origin + \'/checkout_complete.php?user_id=' . $encoded_user_id . '\',
             },
-            redirect: 'if_required'
+            redirect: \'if_required\'
         });
         
         if (error) {
             // Show error
-            console.error('[CHECKOUT] Stripe error:', error);
+            console.error(\'[CHECKOUT] Stripe error:\', error);
             errorMessage.textContent = error.message;
-            errorMessage.classList.remove('d-none');
+            errorMessage.classList.remove(\'d-none\');
+            submitButton.classList.remove(\'loading\');
             submitButton.disabled = false;
-            buttonText.innerHTML = '<i class="bi bi-lock-fill me-2"></i>Complete Purchase';
         } else {
             // Payment succeeded without redirect
-            console.log('[CHECKOUT] Payment confirmed, verifying with backend');
-            buttonText.innerHTML = '<span class="spinner"></span>Verifying payment...';
+            console.log(\'[CHECKOUT] Payment confirmed, verifying with backend\');
             
             // Confirm with backend
             const formData = new FormData();
-            formData.append('action', 'confirm_payment');
-            formData.append('payment_intent_id', '<?php echo $payment_intent->id; ?>');
-            formData.append('user_id', '<?php echo $user_id; ?>');
+            formData.append(\'action\', \'confirm_payment\');
+            formData.append(\'payment_intent_id\', \'' . $payment_intent->id . '\');
+            formData.append(\'user_id\', \'' . $user_id . '\');
             
             try {
                 const response = await fetch(window.location.href, {
-                    method: 'POST',
+                    method: \'POST\',
                     body: formData
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(\'Network response was not ok\');
                 }
                 
                 const responseText = await response.text();
-                console.log('[CHECKOUT] Raw response:', responseText);
+                console.log(\'[CHECKOUT] Raw response:\', responseText);
                 
                 let result;
                 try {
                     result = JSON.parse(responseText);
-                    console.log('[CHECKOUT] Backend response:', result);
+                    console.log(\'[CHECKOUT] Backend response:\', result);
                 } catch (parseError) {
-                    console.error('[CHECKOUT] JSON parse error:', parseError);
-                    console.error('[CHECKOUT] Response was:', responseText);
-                    throw new Error('Invalid JSON response from server');
+                    console.error(\'[CHECKOUT] JSON parse error:\', parseError);
+                    console.error(\'[CHECKOUT] Response was:\', responseText);
+                    throw new Error(\'Invalid JSON response from server\');
                 }
                 
                 if (result.success) {
-                    buttonText.innerHTML = '✓ Payment Successful!';
+                    submitButton.classList.remove(\'loading\');
+                    submitButton.textContent = \'✓ Payment Successful!\';
                     // Store success in session storage for the redirect page
-                    sessionStorage.setItem('payment_success', 'true');
-                    sessionStorage.setItem('account_type', '<?php echo $user_data['account_type']; ?>');
+                    sessionStorage.setItem(\'payment_success\', \'true\');
+                    sessionStorage.setItem(\'account_type\', \'' . $user_data['account_type'] . '\');
                     
                     setTimeout(() => {
                         window.location.href = result.redirect;
                     }, 1000);
                 } else {
-                    errorMessage.textContent = result.error || 'Payment verification failed';
-                    errorMessage.classList.remove('d-none');
+                    errorMessage.textContent = result.error || \'Payment verification failed\';
+                    errorMessage.classList.remove(\'d-none\');
+                    submitButton.classList.remove(\'loading\');
                     submitButton.disabled = false;
-                    buttonText.innerHTML = '<i class="bi bi-lock-fill me-2"></i>Complete Purchase';
                 }
             } catch (fetchError) {
-                console.error('[CHECKOUT] Fetch error:', fetchError);
+                console.error(\'[CHECKOUT] Fetch error:\', fetchError);
                 // For network errors, start checking payment status
-                errorMessage.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Verifying payment status... If your payment was processed, you will be redirected automatically.';
-                errorMessage.classList.remove('d-none');
-                errorMessage.classList.remove('alert-danger');
-                errorMessage.classList.add('alert-warning');
+                errorMessage.innerHTML = \'<i class="bi bi-exclamation-triangle me-2"></i>Verifying payment status... If your payment was processed, you will be redirected automatically.\';
+                errorMessage.classList.remove(\'d-none\');
+                errorMessage.classList.remove(\'alert-danger\');
+                errorMessage.classList.add(\'alert-warning\');
                 
                 // Start heartbeat to check payment status
                 startHeartbeat();
                 
                 // Keep button disabled during verification
                 submitButton.disabled = true;
-                buttonText.innerHTML = '<span class="spinner"></span>Verifying...';
             }
         }
     } catch (generalError) {
-        console.error('[CHECKOUT] General error:', generalError);
-        errorMessage.textContent = 'An unexpected error occurred. Please try again.';
-        errorMessage.classList.remove('d-none');
+        console.error(\'[CHECKOUT] General error:\', generalError);
+        errorMessage.textContent = \'An unexpected error occurred. Please try again.\';
+        errorMessage.classList.remove(\'d-none\');
+        submitButton.classList.remove(\'loading\');
         submitButton.disabled = false;
-        buttonText.innerHTML = '<i class="bi bi-lock-fill me-2"></i>Complete Purchase';
     }
 });
-</script>
 
-<script>
 // Add heartbeat to check payment status periodically
 let heartbeatInterval;
 let checkCount = 0;
@@ -910,78 +1089,85 @@ function startHeartbeat() {
         
         try {
             const formData = new FormData();
-            formData.append('action', 'check_payment_status');
-            formData.append('payment_intent_id', '<?php echo $payment_intent->id; ?>');
+            formData.append(\'action\', \'check_payment_status\');
+            formData.append(\'payment_intent_id\', \'' . $payment_intent->id . '\');
             
             const response = await fetch(window.location.href, {
-                method: 'POST',
+                method: \'POST\',
                 body: formData
             });
             
             if (response.ok) {
                 const responseText = await response.text();
-                console.log('[CHECKOUT] Heartbeat raw response:', responseText);
+                console.log(\'[CHECKOUT] Heartbeat raw response:\', responseText);
                 
                 let result;
                 try {
                     result = JSON.parse(responseText);
-                    console.log('[CHECKOUT] Heartbeat result:', result);
+                    console.log(\'[CHECKOUT] Heartbeat result:\', result);
                 } catch (parseError) {
-                    console.error('[CHECKOUT] Heartbeat JSON parse error:', parseError);
-                    console.error('[CHECKOUT] Heartbeat response was:', responseText);
+                    console.error(\'[CHECKOUT] Heartbeat JSON parse error:\', parseError);
+                    console.error(\'[CHECKOUT] Heartbeat response was:\', responseText);
                     return; // Skip this heartbeat check
                 }
                 
-                if ((result.status === 'succeeded' || result.status === 'processing') && result.user_active) {
+                if ((result.status === \'succeeded\' || result.status === \'processing\') && result.user_active) {
                     clearInterval(heartbeatInterval);
                     
                     // Update UI to show success
-                    if (errorMessage && !errorMessage.classList.contains('d-none')) {
-                        errorMessage.innerHTML = '<i class="bi bi-check-circle me-2"></i>Payment confirmed! Redirecting...';
-                        errorMessage.classList.remove('alert-warning', 'alert-danger');
-                        errorMessage.classList.add('alert-success');
+                    const errorMsg = document.getElementById(\'error-message\');
+                    if (errorMsg && !errorMsg.classList.contains(\'d-none\')) {
+                        errorMsg.innerHTML = \'<i class="bi bi-check-circle me-2"></i>Payment confirmed! Redirecting...\'
+                        errorMsg.classList.remove(\'alert-warning\', \'alert-danger\');
+                        errorMsg.classList.add(\'alert-success\');
                     }
                     
-                    buttonText.innerHTML = '✓ Payment Successful!';
-                    sessionStorage.setItem('payment_success', 'true');
+                    submitButton.classList.remove(\'loading\');
+                    submitButton.textContent = \'✓ Payment Successful!\';
+                    sessionStorage.setItem(\'payment_success\', \'true\');
                     
                     setTimeout(() => {
-                        window.location.href = result.redirect || '/myaccount/';
+                        window.location.href = result.redirect || \'/myaccount/\';
                     }, 1000);
                 }
             }
         } catch (e) {
-            console.error('[CHECKOUT] Heartbeat error:', e);
+            console.error(\'[CHECKOUT] Heartbeat error:\', e);
         }
     }, 500); // Check every 500ms for faster response
 }
 
 // Start heartbeat when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    // Check if we're returning from a redirect
+document.addEventListener(\'DOMContentLoaded\', () => {
+    // Check if we\'re returning from a redirect
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('payment_intent') || urlParams.get('payment_intent_client_secret')) {
-        console.log('[CHECKOUT] Returned from redirect, starting heartbeat');
+    if (urlParams.get(\'payment_intent\') || urlParams.get(\'payment_intent_client_secret\')) {
+        console.log(\'[CHECKOUT] Returned from redirect, starting heartbeat\');
         startHeartbeat();
         
         // Show status message
-        const errorMessage = document.getElementById('error-message');
+        const errorMessage = document.getElementById(\'error-message\');
         if (errorMessage) {
-            errorMessage.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Verifying your payment... Please wait.';
-            errorMessage.classList.remove('d-none', 'alert-danger');
-            errorMessage.classList.add('alert-info');
+            errorMessage.innerHTML = \'<i class="bi bi-hourglass-split me-2"></i>Verifying your payment... Please wait.\';
+            errorMessage.classList.remove(\'d-none\', \'alert-danger\');
+            errorMessage.classList.add(\'alert-info\');
         }
     }
 });
 
 // Stop heartbeat when leaving page
-window.addEventListener('beforeunload', () => {
+window.addEventListener(\'beforeunload\', () => {
     if (heartbeatInterval) {
         clearInterval(heartbeatInterval);
     }
 });
 </script>
+';
+
+?>
 
 <?php
+echo $display->submitbuttoncolorjs('checkoutForm');
+$display_footertype='mobilenonemin';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
