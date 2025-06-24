@@ -948,6 +948,58 @@ $additionalstyles = '
 .feature-list-item i {
     font-size: 1rem;
 }
+
+/* Mobile Order Summary */
+.mobile-order-summary {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.mobile-summary-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+}
+
+.mobile-summary-header h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.mobile-summary-header p {
+    font-size: 0.8125rem;
+}
+
+.mobile-summary-price {
+    text-align: right;
+}
+
+.price-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 0.125rem;
+}
+
+.price-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--bs-primary);
+}
+
+@media (max-width: 575px) {
+    .mobile-summary-card {
+        padding: 1rem 1.25rem;
+    }
+    
+    .price-amount {
+        font-size: 1.25rem;
+    }
+}
 </style>
 ';
 
@@ -1012,6 +1064,20 @@ include($dir['core_components'] . '/bg_header.inc');
         
         <!-- Checkout Card -->
         <div class="checkout-container">
+            <!-- Mobile Order Summary - Only visible on mobile -->
+            <div class="mobile-order-summary d-lg-none mb-3">
+                <div class="mobile-summary-card">
+                    <div class="mobile-summary-header">
+                        <h5 class="mb-0"><?php echo htmlspecialchars($user_data['name'] ?? 'Birthday Gold'); ?></h5>
+                        <p class="mb-0 text-muted small"><?php echo ucfirst($user_data['account_type']); ?> Plan</p>
+                    </div>
+                    <div class="mobile-summary-price">
+                        <span class="price-label">Total:</span>
+                        <span class="price-amount">$<?php echo number_format($amount / 100, 2); ?></span>
+                    </div>
+                </div>
+            </div>
+            
             <div class="checkout-card">
                 <!-- Header Section -->
                 <div class="checkout-header">
