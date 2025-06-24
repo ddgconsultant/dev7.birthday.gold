@@ -588,20 +588,160 @@ $additionalstyles = '
     100% { transform: rotate(360deg); }
 }
 
-/* Security Note */
-.security-note {
-    text-align: center;
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin-top: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+/* Order Summary */
+.order-summary {
+    margin-top: 2rem;
 }
 
-.security-note i {
+/* Value Proposition */
+.value-proposition {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.value-proposition h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1.5rem;
+}
+
+.benefit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.benefit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.benefit-item i {
+    font-size: 1.5rem;
+    color: var(--bs-primary);
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.benefit-item div {
+    flex: 1;
+}
+
+.benefit-item strong {
+    display: block;
+    font-size: 0.9375rem;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.benefit-item span {
+    font-size: 0.8125rem;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+/* Price Summary */
+.price-summary {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.price-row:last-child {
+    margin-bottom: 0;
+}
+
+.price-row.promo {
     color: #28a745;
+    padding-bottom: 0.75rem;
+}
+
+.price-row.total {
+    border-top: 2px solid #dee2e6;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    font-weight: 600;
+}
+
+.price-original {
+    text-decoration: line-through;
+    color: #6c757d;
+}
+
+.price-total {
+    font-size: 1.25rem;
+    color: #212529;
+}
+
+/* Account Info */
+.account-info {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.info-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.info-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.info-details strong {
+    font-size: 0.9375rem;
+    color: #212529;
+}
+
+.info-details span {
+    font-size: 0.8125rem;
+    color: #6c757d;
+}
+
+/* Security Info - Left Side */
+.security-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding: 0;
+}
+
+.security-info i {
+    font-size: 1.75rem;
+    color: #28a745;
+    flex-shrink: 0;
+}
+
+.security-info p {
+    margin: 0;
+    font-size: 0.6875rem;
+    color: #6c757d;
+    line-height: 1.2;
+    font-weight: 400;
 }
 
 /* Payment Element Styling */
@@ -820,75 +960,51 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="checkout-wrapper">
         <!-- Welcome content - Desktop only -->
         <div class="welcome-content d-none d-lg-block">
-            <h2>Complete Your Order</h2>
+            <h2>Complete Your <span>Order</span></h2>
             <p><?php echo htmlspecialchars($user_data['account_name'] ?? 'Birthday Gold'); ?> - <?php echo ucfirst($user_data['account_type']); ?> Plan</p>
             
-            <!-- Order Details Card -->
-            <div class="order-details-card">
-                <div class="order-header">
-                    <h4>Order Summary</h4>
-                    <span class="h4 text-success mb-0">$<?php echo number_format($amount / 100, 2); ?><small class="text-muted">/year</small></span>
-                </div>
-                
-                <div class="order-body">
-                    <div class="order-item">
-                        <div class="order-item-label">Plan Type</div>
-                        <div class="order-item-value"><?php echo htmlspecialchars($user_data['account_name'] ?? 'Birthday Gold'); ?> - <?php echo ucfirst($user_data['account_type']); ?></div>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-gift"></i>
                     </div>
-                    
-                    <div class="order-item">
-                        <div class="order-item-label">Billing for</div>
-                        <div class="order-item-value">
-                            <strong><?php echo htmlspecialchars($user_data['first_name'] . ' ' . $user_data['last_name']); ?></strong><br>
-                            <span class="text-muted"><?php echo htmlspecialchars($user_data['email'] ?? ''); ?></span>
-                        </div>
-                    </div>
-                    
-                    <div class="order-item">
-                        <div class="order-item-label">Subscription Type</div>
-                        <div class="order-item-value">Annual Membership</div>
-                    </div>
-                    
-                    <?php if ($promo_code && isset($pricing['discount']) && $pricing['discount'] > 0): ?>
-                    <div class="order-item">
-                        <div class="order-item-label">Original Price</div>
-                        <div class="order-item-value text-decoration-line-through text-muted">$<?php echo number_format($pricing['original_price'] / 100, 2); ?></div>
-                    </div>
-                    
-                    <div class="order-item">
-                        <div class="order-item-label">Promo Code</div>
-                        <div class="order-item-value text-success"><?php echo htmlspecialchars($promo_code); ?></div>
-                    </div>
-                    
-                    <div class="order-item">
-                        <div class="order-item-label">Discount</div>
-                        <div class="order-item-value text-success">-$<?php echo number_format($pricing['discount'] / 100, 2); ?></div>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <div class="order-total">
-                        <div class="order-item-label">Total Due Today</div>
-                        <div class="order-item-value">
-                            <span class="h3 text-success mb-0">$<?php echo number_format($amount / 100, 2); ?></span>
-                            <small class="text-muted d-block">per year</small>
-                        </div>
+                    <div class="feature-text">
+                        <h3><?php 
+                            // Get billing cycle from product data
+                            $product_name = $user_data['name'] ?? 'Birthday Gold';
+                            echo htmlspecialchars($product_name);
+                        ?></h3>
+                        <p>$<?php echo number_format($amount / 100, 2); ?> per year</p>
                     </div>
                 </div>
                 
-                <div class="order-footer">
-                    <div class="feature-list">
-                        <div class="feature-list-item">
-                            <i class="bi bi-check-circle-fill text-success"></i>
-                            <span>Instant account activation</span>
-                        </div>
-                        <div class="feature-list-item">
-                            <i class="bi bi-check-circle-fill text-success"></i>
-                            <span>Access to 500+ birthday rewards</span>
-                        </div>
-                        <div class="feature-list-item">
-                            <i class="bi bi-check-circle-fill text-success"></i>
-                            <span>Cancel anytime</span>
-                        </div>
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Billing To</h3>
+                        <p><?php echo htmlspecialchars($user_data['first_name'] . ' ' . $user_data['last_name']); ?></p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Secure Checkout</h3>
+                        <p>256-bit SSL encryption</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="bi bi-credit-card-2-front"></i>
+                    </div>
+                    <div class="feature-text">
+                        <h3>Powered by Stripe</h3>
+                        <p>Trusted payment processing</p>
                     </div>
                 </div>
             </div>
@@ -929,10 +1045,6 @@ include($dir['core_components'] . '/bg_header.inc');
                             <span>Complete Purchase</span>
                         </button>
                         
-                        <div class="security-note">
-                            <i class="bi bi-shield-lock-fill"></i>
-                            Your payment information is secure and encrypted
-                        </div>
                     </form>
                     
                     <!-- Divider -->
@@ -963,11 +1075,37 @@ const elements = stripe.elements({
         theme: \'stripe\',
         variables: {
             colorPrimary: \'#0d6efd\',
+            colorBackground: \'#ffffff\',
+            colorText: \'#30313d\',
+            colorDanger: \'#df1b41\',
+            fontFamily: \'system-ui, sans-serif\',
+            spacingUnit: \'4px\',
+            borderRadius: \'8px\',
+            fontSizeBase: \'16px\'
         }
     }
 });
 
-const paymentElement = elements.create(\'payment\');
+// Use payment element with tabs layout for more compact but trustworthy form
+const paymentElement = elements.create(\'payment\', {
+    layout: \'tabs\',
+    defaultValues: {
+        billingDetails: {
+            name: \'' . addslashes($user_data['first_name'] . ' ' . $user_data['last_name']) . '\',
+            email: \'' . addslashes($user_data['email'] ?? '') . '\',
+            address: {
+                country: \'US\'
+            }
+        }
+    },
+    fields: {
+        billingDetails: {
+            address: {
+                country: \'never\'
+            }
+        }
+    }
+});
 paymentElement.mount(\'#payment-element\');
 
 const form = document.getElementById(\'checkoutForm\');
