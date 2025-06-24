@@ -220,6 +220,9 @@ if (isset($_REQUEST['ajax_action'])) {
 # HANDLE FORM SUBMISSION
 #-------------------------------------------------------------------------------
 if ($app->formposted()) {
+    error_log('[CREATENEWACCOUNT] Form posted - processing submission');
+    error_log('[CREATENEWACCOUNT] Initial values: ' . json_encode(array_keys($values)));
+    
     // Set flag to process handlers
     $process_handlers = true;
     
@@ -227,6 +230,9 @@ if ($app->formposted()) {
     foreach ($config['sections'] as $section_item) {
         processSection($section_item, $default_sections, true, $values, $errors, $signup_process, $app, $session);
     }
+    
+    error_log('[CREATENEWACCOUNT] After handlers - Errors: ' . json_encode($errors));
+    error_log('[CREATENEWACCOUNT] After handlers - Birthday: ' . ($values['birthday'] ?? 'NOT SET'));
     
     // Unset process_handlers flag after validation
     $process_handlers = false;
@@ -247,12 +253,19 @@ if ($app->formposted()) {
     
     // If no errors, process the account creation
     if (empty($errors)) {
+        // Debug logging
+        error_log('[CREATENEWACCOUNT] No errors, processing account creation');
+        error_log('[CREATENEWACCOUNT] Account cost: ' . $account_cost);
+        error_log('[CREATENEWACCOUNT] Account type: ' . $account_type);
+        error_log('[CREATENEWACCOUNT] Birthday value: ' . ($values['birthday'] ?? 'NOT SET'));
+        
         // Ensure birthday is set from the dropdown values if not already set
         if (!isset($values['birthday']) && !empty($values['birth_month']) && !empty($values['birth_day']) && !empty($values['birth_year'])) {
             $month = str_pad($values['birth_month'], 2, '0', STR_PAD_LEFT);
             $day = str_pad($values['birth_day'], 2, '0', STR_PAD_LEFT);
             $year = $values['birth_year'];
             $values['birthday'] = $year . '-' . $month . '-' . $day;
+            error_log('[CREATENEWACCOUNT] Birthday constructed from dropdowns: ' . $values['birthday']);
         }
         
         // Check for existing user (from credentials handler)
@@ -369,8 +382,13 @@ if ($app->formposted()) {
                     }
                     
                     // Store registration data in session for validation page
-                    $session->set('userregistrationdata', array_merge($input, ['user_id' => $user_id]));
+                    $userregistrationdata = array_merge($input, ['user_id' => $user_id]);
+                    $session->set('userregistrationdata', $userregistrationdata);
                     $session->set('accountcode', $user_id);
+                    
+                    error_log('[CREATENEWACCOUNT] User created with ID: ' . $user_id);
+                    error_log('[CREATENEWACCOUNT] Setting userregistrationdata in session with email: ' . ($userregistrationdata['email'] ?? 'NO EMAIL'));
+                    error_log('[CREATENEWACCOUNT] Account verification requirement: ' . ($plandata['account_verification'] ?? 'NOT SET'));
                     
                     // Also ensure signup_process_data is set for checkout
                     $signup_process['promo_code'] = $values['promo_code'] ?? '';
@@ -381,14 +399,18 @@ if ($app->formposted()) {
                     if ($account_cost > 0) {
                         // Paid plan - go to checkout
                         $encoded_user_id = $qik->encodeId($user_id);
+                        error_log('[CREATENEWACCOUNT] Redirecting to checkout for paid plan');
                         header('Location: /checkout.php?u=' . $encoded_user_id);
                     } else {
                         // Free plan - check validation requirements
+                        error_log('[CREATENEWACCOUNT] Free plan detected, checking validation requirements');
                         if ($plandata['account_verification'] == 'notrequired') {
                             // No validation required, go to welcome
+                            error_log('[CREATENEWACCOUNT] No validation required, redirecting to welcome');
                             header('Location: /myaccount/welcome.php');
                         } else {
                             // Validation required
+                            error_log('[CREATENEWACCOUNT] Validation required, redirecting to validate-account.php');
                             header('Location: /validate-account.php');
                         }
                     }
