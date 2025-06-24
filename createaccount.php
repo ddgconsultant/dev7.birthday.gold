@@ -247,6 +247,14 @@ if ($app->formposted()) {
     
     // If no errors, process the account creation
     if (empty($errors)) {
+        // Ensure birthday is set from the dropdown values if not already set
+        if (!isset($values['birthday']) && !empty($values['birth_month']) && !empty($values['birth_day']) && !empty($values['birth_year'])) {
+            $month = str_pad($values['birth_month'], 2, '0', STR_PAD_LEFT);
+            $day = str_pad($values['birth_day'], 2, '0', STR_PAD_LEFT);
+            $year = $values['birth_year'];
+            $values['birthday'] = $year . '-' . $month . '-' . $day;
+        }
+        
         // Check for existing user (from credentials handler)
         if (!empty($values['existing_user_info'])) {
             // We have an existing pending/validated user
