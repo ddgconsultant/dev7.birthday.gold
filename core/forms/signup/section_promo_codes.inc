@@ -155,5 +155,3 @@ $show_promo_section = !empty($promo_code) || !empty($referral_code) || !empty($e
             <?php endif; ?>
         </div>
     </div>
-    </div>
-</div> <!-- Close card -->

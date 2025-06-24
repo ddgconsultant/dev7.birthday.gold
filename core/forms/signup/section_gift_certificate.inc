@@ -13,9 +13,9 @@
  */
 
 #-------------------------------------------------------------------------------
-# HANDLER CODE - Process validation if form was posted
+# HANDLER CODE - Process validation if flag is set
 #-------------------------------------------------------------------------------
-if ($app->formposted()) {
+if (isset($process_handlers) && $process_handlers) {
     // Only validate gift info if this is a gift certificate account
     $account_type = $signup_process['account_type'] ?? 'user';
     if ($account_type !== 'giftcertificate') {
@@ -133,24 +133,15 @@ if ($app->formposted()) {
         // name: 'gift_cert_[timestamp]_code', 'gift_cert_[timestamp]_recipient_name', etc.
         // string_value: the actual values
     }
+    
+    // Exit if only processing handlers
+    return;
 }
 
 #-------------------------------------------------------------------------------
 # DISPLAY CODE - Show the form section
 #-------------------------------------------------------------------------------
 ?>
-</div><!-- Close Account Information Section -->
-
-<!-- Gift Certificate Details Section (Recipient + Delivery combined) -->
-<div class="form-section">
-    <h5 class="section-title d-flex justify-content-between align-items-center">
-        Gift Certificate Details
-        <i class="bi bi-info-circle text-muted" 
-           style="font-size: 1rem; cursor: pointer;" 
-           data-bs-toggle="modal" 
-           data-bs-target="#giftCertificateInfoModal"
-           title="Click for more information"></i>
-    </h5>
     
     <!-- Recipient Information -->
     <div class="mb-4">
@@ -325,18 +316,6 @@ if ($app->formposted()) {
             </div>
         </div>
     </div>
-</div>
-
-<!-- Open the Additional Options Section for promo/opt-in -->
-<div class="form-section">
-    <h5 class="section-title d-flex justify-content-between align-items-center">
-        Additional Options
-        <i class="bi bi-info-circle text-muted" 
-           style="font-size: 1rem; cursor: pointer;" 
-           data-bs-toggle="modal" 
-           data-bs-target="#additionalOptionsInfoModal"
-           title="Click for more information"></i>
-    </h5>
 
 <style>
 /* Delivery method tabs styling */

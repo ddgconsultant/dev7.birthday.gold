@@ -40,6 +40,8 @@ if ($mode === 'dev') {
 #-------------------------------------------------------------------------------
 // Default sections array
 $default_sections = [
+    'section_open' => '/core/forms/signup/section_open.inc',
+    'section_close' => '/core/forms/signup/section_close.inc',
     'name_birthday' => '/core/forms/signup/section_name_birthday.inc',
     'account_opener' => '/core/forms/signup/section_account_opener.inc',
     'credentials' => '/core/forms/signup/section_credentials.inc',
@@ -47,26 +49,93 @@ $default_sections = [
 ];
 
 // Define section configurations for each account type
+// Each section can have configuration passed through $section_config variable
 $section_configs = [
     'user' => [
-        'sections' => ['name_birthday', 'account_opener', 'credentials', 'promo_codes']
+        'sections' => [
+            // Name and Birthday is already in its own card
+            'name_birthday',
+            // Account Information group
+            'account_opener', 
+            'credentials', 
+            'promo_codes'
+        ]
     ],
     'parental' => [
-        'sections' => ['name_birthday', 'family_children', 'account_opener', 'credentials', 'promo_codes']
+        'sections' => [
+            'name_birthday',
+            // Family section is already in its own card
+            'family_children',
+            // Account Information group
+            'account_opener',
+            'credentials',
+            'promo_codes'
+        ]
     ],
     'family' => [
-        'sections' => ['name_birthday', 'family_children', 'account_opener', 'credentials', 'promo_codes']
+        'sections' => [
+            'name_birthday',
+            'family_children',
+            'account_opener',
+            'credentials',
+            'promo_codes'
+        ]
     ],
     'business' => [
-        'sections' => ['name_birthday', 'business_info', 'account_opener', 'credentials', 'promo_codes']
+        'sections' => [
+            'name_birthday',
+            // Business info is already in its own card
+            'business_info',
+            // Account Information group
+            'account_opener',
+            'credentials',
+            'promo_codes'
+        ]
     ],
     'giftcertificate' => [
-        'sections' => ['name_birthday', 'account_opener', 'credentials', 'gift_certificate', 'promo_codes']
+        'sections' => [
+            'name_birthday',
+            // Account Information group (shorter for gift cert)
+            'account_opener',
+            'credentials',
+            'section_close',
+            // Gift Certificate is its own card
+            ['section_open', ['section_title' => 'Gift Certificate Details', 'section_info_modal' => 'giftCertificateInfoModal']],
+            'gift_certificate',
+            'section_close',
+            // Additional Options card
+            ['section_open', ['section_title' => 'Additional Options', 'section_info_modal' => 'additionalOptionsInfoModal']],
+            'promo_codes',
+            'section_close'
+        ]
     ]
 ];
 
 // Get configuration for current account type
 $config = $section_configs[$account_type] ?? $section_configs['user'];
+
+// Function to process a section (handles both string and array formats)
+function processSection($section_item, $default_sections, $process_handlers = false) {
+    $section_key = '';
+    $section_vars = [];
+    
+    // Handle array format [section_key, variables]
+    if (is_array($section_item)) {
+        $section_key = $section_item[0] ?? '';
+        $section_vars = $section_item[1] ?? [];
+    } else {
+        $section_key = $section_item;
+    }
+    
+    if (isset($default_sections[$section_key])) {
+        $section_file = $_SERVER['DOCUMENT_ROOT'] . $default_sections[$section_key];
+        if (file_exists($section_file)) {
+            // Extract section variables into current scope
+            extract($section_vars);
+            include($section_file);
+        }
+    }
+}
 
 // Debug logging
 if ($mode === 'dev') {
@@ -75,16 +144,10 @@ if ($mode === 'dev') {
     error_log('[CREATENEWACCOUNT] Default sections: ' . json_encode(array_keys($default_sections)));
 }
 
-// Add custom sections to default array
-if ($account_type === 'parental' || $account_type === 'family') {
-    $default_sections['family_children'] = '/core/forms/signup/section_family_children.inc';
-}
-if ($account_type === 'business') {
-    $default_sections['business_info'] = '/core/forms/signup/section_business_info.inc';
-}
-if ($account_type === 'giftcertificate') {
-    $default_sections['gift_certificate'] = '/core/forms/signup/section_gift_certificate.inc';
-}
+// Add all possible sections to default array
+$default_sections['family_children'] = '/core/forms/signup/section_family_children.inc';
+$default_sections['business_info'] = '/core/forms/signup/section_business_info.inc';
+$default_sections['gift_certificate'] = '/core/forms/signup/section_gift_certificate.inc';
 
 #-------------------------------------------------------------------------------
 # HANDLE AJAX REQUESTS
@@ -153,13 +216,8 @@ if ($app->formposted()) {
     $process_handlers = true;
     
     // Run all section handlers for this account type
-    foreach ($config['sections'] as $section_key) {
-        if (isset($default_sections[$section_key])) {
-            $section_file = $_SERVER['DOCUMENT_ROOT'] . $default_sections[$section_key];
-            if (file_exists($section_file)) {
-                include($section_file);
-            }
-        }
+    foreach ($config['sections'] as $section_item) {
+        processSection($section_item, $default_sections, true);
     }
     
     // Unset process_handlers flag after validation
@@ -833,7 +891,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 
     <!-- Content -->
-    <div class="card p-3">
+    <div class="card p-3 p-lg-5">
         <?php
         // General error message display
         if (!empty($errors['general'])) {
@@ -888,13 +946,8 @@ include($dir['core_components'] . '/bg_header.inc');
             
             <!-- Include form sections based on account type -->
             <?php 
-            foreach ($config['sections'] as $section_key) {
-                if (isset($default_sections[$section_key])) {
-                    $section_file = $_SERVER['DOCUMENT_ROOT'] . $default_sections[$section_key];
-                    if (file_exists($section_file)) {
-                        include($section_file);
-                    }
-                }
+            foreach ($config['sections'] as $section_item) {
+                processSection($section_item, $default_sections, false);
             }
             ?>
             
