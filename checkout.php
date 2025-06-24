@@ -1054,31 +1054,30 @@ include($dir['core_components'] . '/bg_header.inc');
                     $account_descriptions = [
                         'individual' => 'Automatic enrollment in birthday programs from your favorite brands, personalized reminders so you never miss a reward, and exclusive member perks throughout the year.',
                         'parental' => 'Manage birthday rewards for your entire family in one place. Track multiple birthdays, get organized reminders, and ensure no one misses their special rewards.',
-                        'giftcertificate' => 'The perfect gift! This certificate provides a full year of birthday rewards and perks for someone special.',
+                        'giftcertificate' => 'The perfect gift! Give someone special the joy of never missing their birthday rewards with this thoughtful certificate.',
                         'business' => 'Professional birthday reward management for your team. Track employee birthdays, automate reward enrollment, and boost workplace morale.'
                     ];
                     
                     $description = $account_descriptions[$user_data['account_type']] ?? $account_descriptions['individual'];
                     
                     // Get billing cycle from product data
-                    $billing_cycle = 'year'; // default
-                    $billing_text = 'per year';
+                    $billing_text = 'one-time payment'; // default
                     
                     if (!empty($user_data['billing_cycle'])) {
                         switch($user_data['billing_cycle']) {
                             case 'monthly':
-                                $billing_cycle = 'month';
                                 $billing_text = 'per month';
                                 break;
-                            case 'quarterly':
-                                $billing_cycle = 'quarter';
-                                $billing_text = 'per quarter';
-                                break;
                             case 'yearly':
-                            case 'annual':
-                            default:
-                                $billing_cycle = 'year';
                                 $billing_text = 'per year';
+                                break;
+                            case 'one-time':
+                            case 'one_time':
+                                $billing_text = 'one-time payment';
+                                break;
+                            default:
+                                // For any unrecognized value, default to one-time
+                                $billing_text = 'one-time payment';
                                 break;
                         }
                     }
