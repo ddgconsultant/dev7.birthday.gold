@@ -1044,7 +1044,7 @@ include($dir['core_components'] . '/bg_header.inc');
             $heading = sprintf($phrase, '<span>' . htmlspecialchars($user_data['first_name']) . '</span>');
             ?>
             <h2><?php echo $heading; ?></h2>
-            <p class="lead mb-4">You're moments away from never missing another birthday reward!</p>
+            <p class="lead mb-2">You're moments away from never missing another birthday reward!</p>
             
             <div class="order-context">
                 <div class="context-card mb-3">
