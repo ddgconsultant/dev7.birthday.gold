@@ -163,9 +163,47 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
     $phone = $userregistrationdata['phone_number'] ?? $userregistrationdata['phone'] ?? '';
     $fullname = ($userregistrationdata['first_name'] ?? '') . ' ' . ($userregistrationdata['last_name'] ?? '');
     
-    // For now, we'll use email if available, otherwise we'd need SMS integration
-    if (empty($email) && !empty($phone)) {
-        // Phone-based account - for now, redirect to a phone verification page
+    // Determine preferred contact method and code type
+    // Priority order: 1) Phone (if available), 2) Email
+    // Allow user preference via URL parameter (e.g., ?method=email)
+    $requested_method = $_GET['method'] ?? '';
+    
+    $contact_method = '';
+    $contact_value = '';
+    $use_numeric_code = false; // Default based on method
+    
+    // Determine which contact method to use based on availability and preference
+    if ($requested_method === 'email' && !empty($email)) {
+        // User specifically requested email
+        $contact_method = 'email';
+        $contact_value = $email;
+        // For future: we're moving towards numeric codes even for email
+        $use_numeric_code = true;
+    } elseif ($requested_method === 'phone' && !empty($phone)) {
+        // User specifically requested phone
+        $contact_method = 'phone';
+        $contact_value = $phone;
+        $use_numeric_code = true;
+    } elseif (!empty($phone)) {
+        // Phone takes precedence when both are available
+        $contact_method = 'phone';
+        $contact_value = $phone;
+        $use_numeric_code = true;
+    } elseif (!empty($email)) {
+        // Fall back to email if no phone
+        $contact_method = 'email';
+        $contact_value = $email;
+        // Moving towards numeric codes as default
+        $use_numeric_code = true;
+    } else {
+        // No contact method available
+        $_SESSION['error_message'] = 'No contact information available for verification.';
+        header('Location: /signup');
+        exit;
+    }
+    
+    // Handle phone verification not yet implemented
+    if ($contact_method === 'phone') {
         // TODO: Implement SMS verification
         $_SESSION['error_message'] = 'Phone verification is not yet implemented. Please use email.';
         header('Location: /signup');
@@ -179,7 +217,7 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
     
     // Always use real validation code generation
     $validatedata = array();
-    $validatedata['rawdata'] = $email;
+    $validatedata['rawdata'] = $contact_value;
     $validatedata['sendcount'] = $sendcount;
     
     // In test mode, use a numeric user_id for database compatibility
@@ -190,19 +228,28 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
         $validatedata['user_id'] = $userregistrationdata['user_id'];
     }
     
-    // Check if numeric code is requested (from test mode type parameter)
+    // Set code type based on our determination above
+    if ($use_numeric_code) {
+        $validatedata['numeric_only'] = true;
+    }
+    
+    // Allow test mode to explicitly set code type
     if ($test_code_type === 'numeric') {
         $validatedata['numeric_only'] = true;
+    } elseif ($test_code_type === 'alphanumeric') {
+        // Allow override to alphanumeric for scaling/testing
+        unset($validatedata['numeric_only']);
     }
     
     $validationcodes = $app->getvalidationcodes($validatedata);
     
-    $link = $website['formalurl'] . '/validate-account?t=' . $validationcodes['long'];
+    // Use verify endpoint instead of validate-account
+    $link = $website['formalurl'] . '/verify?code=' . urlencode($validationcodes['mini']);
     $message['validatelink'] = $link;
     $message['validationcode'] = $validationcodes['mini'];
     
-    // Also provide direct verify link with code pre-filled
-    $direct_verify_link = $website['formalurl'] . '/verify?code=' . urlencode($validationcodes['mini']);
+    // Also provide direct verify link with code pre-filled (same as validatelink now)
+    $direct_verify_link = $link;
     $message['directverifylink'] = $direct_verify_link;
     
     $result = $mail->sendVerificationEmail($message);
@@ -210,6 +257,8 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
     if ($result) {
         $userregistrationdata['validationemailsent'] = date('r');
         $userregistrationdata['validationemailsent_count'] = $sendcount;
+        // Store whether we used numeric code
+        $userregistrationdata['used_numeric_code'] = isset($validatedata['numeric_only']) && $validatedata['numeric_only'];
         $session->set('userregistrationdata', $userregistrationdata);
         
         if ($isAjax) {
@@ -452,7 +501,7 @@ $additionalstyles .= '
         }
 
         .btn-primary-custom.loading::after {
-            content: '';
+            content: \'\';
             position: absolute;
             width: 20px;
             height: 20px;
@@ -585,9 +634,29 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="verification-card" id="verificationCard">
             <div class="logo">Time to Verify</div>
             
-            <h1 class="verification-title">Check your email</h1>
+            <?php
+            // Determine contact method for dynamic title
+            $phone = $userregistrationdata['phone_number'] ?? $userregistrationdata['phone'] ?? '';
+            $email = $userregistrationdata['email'] ?? '';
+            $using_phone = !empty($phone) && !empty($userregistrationdata['sent_to_phone']);
+            ?>
+            <h1 class="verification-title">Check your <?php echo $using_phone ? 'phone' : 'email'; ?></h1>
             <p class="verification-subtitle">
-                We sent a <?php echo ($test_mode && $test_code_type === 'numeric') ? 'numeric' : ''; ?> code to <strong><?php echo htmlspecialchars($userregistrationdata['email']); ?></strong>
+                <?php 
+                // Determine if code is numeric based on what was actually sent
+                $is_numeric_code = !empty($userregistrationdata['used_numeric_code']) || ($test_mode && $test_code_type === 'numeric');
+                
+                if ($is_numeric_code) {
+                    echo "A 6-digit code";
+                } else {
+                    echo "A 6-character code";
+                }
+                ?> was sent to 
+                <?php if ($using_phone): ?>
+                    your phone ending in <strong><?php echo htmlspecialchars(substr($phone, -4)); ?></strong>
+                <?php else: ?>
+                    <strong><?php echo htmlspecialchars($userregistrationdata['email']); ?></strong>
+                <?php endif; ?>
             </p>
 
             <?php if (isset($_SESSION['success_message'])): ?>

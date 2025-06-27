@@ -500,7 +500,7 @@ public function isValidIpAddress($ip)
 
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 public function isBot($userAgent = '') {
-    // Use server's HTTP_USER_AGENT if no argument is provided and it's set
+    // Use server HTTP_USER_AGENT if no argument is provided and it is set
     if (empty($userAgent) && isset($_SERVER['HTTP_USER_AGENT'])) {
         $userAgent = $_SERVER['HTTP_USER_AGENT'];
     }

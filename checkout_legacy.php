@@ -258,8 +258,8 @@ switch ($checkouttype) {
 
 
 
-/// rght now we can't handle multiple transactions at once
-//we've made it this far... we have a valid transaction and now let's go get the plan details
+/// rght now we cannot handle multiple transactions at once
+//we have made it this far... we have a valid transaction and now let us go get the plan details
 $plandetails = $app->plandetail('detailsall_id', $transactiondata['product_id']);
 if (!$plandetails) {
     

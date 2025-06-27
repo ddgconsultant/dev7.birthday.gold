@@ -132,7 +132,7 @@ class ProductManager {
      */
     public function getRecommendedPlan($accountType = 'user') {
         // Logic to determine recommended plan
-        // For now, let's recommend 'gold' plans
+        // For now, let us recommend 'gold' plans
         $recommendedPlans = [
             'user' => 'gold',
             'parental' => 'family_gold',

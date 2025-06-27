@@ -115,6 +115,62 @@ header a, header .nav-link, header .navbar-brand {
 .home-header .home-logo {
     filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
 }
+
+/* Fix avatar dropdown menu visibility */
+.home-header .dropdown-menu,
+.dropdown-menu {
+    background-color: white !important;
+    border: 1px solid rgba(0,0,0,0.15) !important;
+}
+
+.home-header .dropdown-item,
+.dropdown-menu .dropdown-item,
+.dropdown-menu .dropdown-item a {
+    color: #212529 !important;
+    text-shadow: none !important;
+}
+
+.home-header .dropdown-item:hover,
+.home-header .dropdown-item:focus,
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+/* Ensure dropdown dividers are visible */
+.home-header .dropdown-divider,
+.dropdown-menu .dropdown-divider {
+    border-color: rgba(0,0,0,0.1) !important;
+}
+
+/* Fix any dropdown headers */
+.home-header .dropdown-header,
+.dropdown-menu .dropdown-header {
+    color: #6c757d !important;
+    text-shadow: none !important;
+}
+
+/* Ensure all text within dropdowns is black */
+.dropdown-menu * {
+    color: #212529 !important;
+    text-shadow: none !important;
+}
+
+/* Special handling for links within dropdown items */
+.dropdown-menu a,
+.dropdown-menu a:hover,
+.dropdown-menu a:focus {
+    color: #212529 !important;
+    text-decoration: none !important;
+}
+
+/* Override any inherited white color from body */
+.dropdown-menu,
+.dropdown-menu .dropdown-item,
+.dropdown-menu .dropdown-item * {
+    color: #212529 !important;
+}
 </style>';
 $bodycontentclass='class="d-flex"';
 $header_flush = true; // Homepage should have content flush with header
@@ -161,7 +217,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
         
         <div class="hero-cta">
             <?php if (!empty($current_user_data['user_id'])): ?>
-                <a href="/account/rewards" class="btn-hero btn-hero-primary">
+                <a href="/myaccount/rewards" class="btn-hero btn-hero-primary">
                     <span>Pick My Rewards</span>
                     <i class="bi bi-check2-circle"></i>
                 </a>

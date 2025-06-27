@@ -13,7 +13,7 @@ class ProductManagerPromo {
         $this->database = $database;
         $this->qik = $qik;
         
-        // Create instance of original ProductManager for methods we don't override
+        // Create instance of original ProductManager for methods we do not override
         if (class_exists('ProductManager')) {
             $this->originalProductManager = new ProductManager($database, $qik);
         }

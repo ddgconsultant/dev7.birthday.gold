@@ -738,7 +738,7 @@ $additionalstyles = '
         </div>
         
         <!-- Login Card -->
-        <div class="login-container">
+        <div class="login-container mb-md-5">
        
             <div class="login-card">
                 <!-- Header Section -->
@@ -896,6 +896,7 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 ';
 
+#$display_footertype='mobilenonemin';
 echo $display->submitbuttoncolorjs('loginForm');
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

@@ -244,7 +244,7 @@ try {
               </tr>';
     }
 } catch (PDOException $e) {
-    // Log the error but don't display it to users
+    // Log the error but do not display it to users
     error_log("Database error in user-details.php: " . $e->getMessage());
     echo '<tr><td colspan="4" class="text-center">Unable to load activity logs at this time.</td></tr>';
 }

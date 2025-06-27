@@ -43,7 +43,7 @@ if (!$test_mode && !empty($encoded_user_id)) {
     }
 }
 
-// If we still don't have user data, try to get it from session (skip if in test mode)
+// If we still do not have user data, try to get it from session (skip if in test mode)
 if (!$test_mode && !$user_data && $session->get('logged_in')) {
     $user_id = $session->get('user_id');
     if ($user_id) {

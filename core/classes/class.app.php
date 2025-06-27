@@ -672,7 +672,7 @@ GROUP BY
     if (!empty($client_timezone) && in_array($client_timezone, DateTimeZone::listIdentifiers())) {
       $timezone = new DateTimeZone($client_timezone);
     } else {
-      // Use server's default timezone if client timezone is unavailable
+      // Use server default timezone if client timezone is unavailable
       $timezone = new DateTimeZone(date_default_timezone_get());
     }
 

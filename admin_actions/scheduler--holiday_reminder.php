@@ -131,7 +131,7 @@ foreach ($holidayResults as $holiday) {
         if ($description) {
             $channel = '@' . $description;
 
-            // Determine the user's timezone (default to UTC if not found)
+            // Determine the user timezone (default to UTC if not found)
             $userTimezone = $staff['timezone'] ?: 'UTC';
 
             // Map the custom timezone to a valid PHP timezone
@@ -143,12 +143,12 @@ foreach ($holidayResults as $holiday) {
                 // Set the timezone for the holiday date and current time
                 $userTimeZoneObj = new DateTimeZone($validTimezone);
 
-                // Get the current UTC time and convert it to the user's local time
+                // Get the current UTC time and convert it to the user local time
                 $currentDateTimeUTC = new DateTime('now', new DateTimeZone('UTC'));
                 $currentDateTimeUser = clone $currentDateTimeUTC;
                 $currentDateTimeUser->setTimezone($userTimeZoneObj);
 
-                // Get the hour in the user's local time
+                // Get the hour in the user local time
                 $currentHourUser = (int)$currentDateTimeUser->format('H');
                 $qik->logmessage("Current time for {$staff['username']} is " . $currentDateTimeUser->format('Y-m-d H:i:s'));
 
@@ -190,7 +190,7 @@ foreach ($holidayResults as $holiday) {
                         $qik->logmessage("Sending 'upcoming holiday' message to {$staff['username']}...");
                     }
 
-                    // If there's a message to send, send it to the Rocket.Chat channel
+                    // If there is a message to send, send it to the Rocket.Chat channel
                     if ($personalMessage != '') {
                      #   $channel='@Richard';
                      $qik->logmessage("Posting message to channel: {$channel}");

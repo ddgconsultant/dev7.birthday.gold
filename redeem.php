@@ -97,7 +97,7 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         
         <!-- Redeem Card -->
-        <div class="redeem-container">
+        <div class="redeem-container mb-md-5">
             <div class="redeem-card">
                 <!-- Header Section -->
                 <div class="redeem-header">
@@ -227,6 +227,7 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 ';
 
+#$display_footertype='mobilenonemin';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

@@ -603,7 +603,7 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         
         <!-- Forgot Card -->
-        <div class="forgot-container">
+        <div class="forgot-container mb-md-5">
             <div class="forgot-card">
                 <!-- Header Section -->
                 <div class="forgot-header">
@@ -702,5 +702,6 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 ';
 
+#$display_footertype='mobilenonemin';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

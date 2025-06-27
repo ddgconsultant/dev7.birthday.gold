@@ -32,7 +32,7 @@ $sql = "SELECT p.account_name as plan_name, p.price as plan_price
 
 $productData = $database->getrow($sql, ['account_plan' => $current_user_data['account_plan']]);
 
-// Debug output (uncomment to see what's happening)
+// Debug output (uncomment to see what is happening)
 /*
 echo "<!-- DEBUG INFO:
 Current User ID: " . $currentUserId . "
