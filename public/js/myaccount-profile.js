@@ -14,6 +14,7 @@ const instructions = {
     "inputprofile_email": "<h4>Enter your email address.</h4>This might end up being how you sign into your account if they don\'t use usernames.",
     "inputprofile_password": "<h4>Enter your password.</h4>This is the password you are going to use to log into the account that is created with the businesses you select.<p>It\'s important to make your password match the following requirements or the account will probably fail to be created:<ul>  <li>Minimum 10 characters</li> <li>Contains uppercase and lowercase letters</li><li>Include numbers</li><li>Includes a special character [ @ # ? $ . ]).  Other symbols typically are not accepted.</li>   <li>No username parts</li> <li>No common words or sequences</li></ul>",
     "inputprofile_phone_number": "<h4>Enter your mobile number.</h4>It is important to provide your mobile number because some businesses will be texting you confirmation messages.  If you don\'t want to receive their marketing text messages then disable the [Receive SMS/Texts] option",
+    "inputprofile_phone_type": "<h4>Select your phone type.</h4>Let us know if you're using an iPhone or Android device. This helps businesses send you the right app download links and ensures compatibility with any mobile features.",
    
     "inputprofile_military": "<h4>Veteran or Active Military</h4>Some businesses provide additional benefits to those that are or have served.  Some businesses may request identification.",
     "inputprofile_educator": "<h4>Educator/Teacher</h4>Some businesses provide additional benefits to those educate the next generation.  Some businesses may request identification.",
@@ -39,13 +40,48 @@ document.querySelectorAll("input, select").forEach(function(input) {
     input.addEventListener("focus", function(e) {
         let fieldId = e.target.name;
         if(instructions[fieldId]) {
-            document.querySelector("#guidancecard").innerHTML = instructions[fieldId];
+            // Handle both desktop and mobile panels
+            const guidanceCards = document.querySelectorAll("#guidancecard, #guidancecard-mobile");
+            const helpPanels = document.querySelectorAll(".help-panel");
+            const mobileHelpButton = document.querySelector(".floating-help-button");
+            
+            // Add active class to desktop panels
+            helpPanels.forEach(panel => panel.classList.add("active"));
+            
+            // Update content in all guidance cards
+            guidanceCards.forEach(card => {
+                // Fade out existing content
+                card.style.opacity = "0";
+                
+                // After fade out, update content and fade in
+                setTimeout(() => {
+                    card.innerHTML = instructions[fieldId];
+                    card.style.opacity = "1";
+                }, 150);
+            });
+            
+            // Pulse mobile help button when content updates
+            if (mobileHelpButton && window.innerWidth < 992) {
+                mobileHelpButton.classList.add("pulse");
+                setTimeout(() => {
+                    mobileHelpButton.classList.remove("pulse");
+                }, 500);
+            }
         }
     });
 });
 
 window.onload = function() {
     const defaultinputfield = document.querySelector("#inputprofile_first_name");
+    const guidanceCards = document.querySelectorAll("#guidancecard, #guidancecard-mobile");
+    
+    // Initialize help content opacity for smooth transitions
+    guidanceCards.forEach(card => {
+        if(card) {
+            card.style.transition = "opacity 0.15s ease-in-out";
+        }
+    });
+    
     if(defaultinputfield) {
         defaultinputfield.focus();
     }
@@ -125,6 +161,33 @@ document.addEventListener("DOMContentLoaded", function() {
             // Show the generated password by toggling visibility
             if (passwordField.type === "password") {
                 togglePasswordVisibility();
+            }
+        });
+    }
+    
+    // Mobile help panel controls
+    const mobileHelpToggle = document.getElementById("mobileHelpToggle");
+    const mobileHelpClose = document.getElementById("mobileHelpClose");
+    const mobileHelpOverlay = document.getElementById("mobileHelpOverlay");
+    
+    if (mobileHelpToggle && mobileHelpOverlay) {
+        // Open help panel
+        mobileHelpToggle.addEventListener("click", function() {
+            mobileHelpOverlay.classList.add("show");
+            document.body.style.overflow = "hidden"; // Prevent body scroll
+        });
+        
+        // Close help panel via X button
+        mobileHelpClose.addEventListener("click", function() {
+            mobileHelpOverlay.classList.remove("show");
+            document.body.style.overflow = ""; // Restore body scroll
+        });
+        
+        // Close help panel by clicking overlay
+        mobileHelpOverlay.addEventListener("click", function(e) {
+            if (e.target === mobileHelpOverlay) {
+                mobileHelpOverlay.classList.remove("show");
+                document.body.style.overflow = ""; // Restore body scroll
             }
         });
     }

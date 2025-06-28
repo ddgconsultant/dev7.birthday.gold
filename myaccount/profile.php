@@ -244,19 +244,473 @@ if (!empty($wizardmode) && !empty($nextpage) && !isset($_GET['review'])) {
 # DISPLAY THE PAGE
 #-------------------------------------------------------------------------------
 $bodycontentclass = '';
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
 
-$additionalstyles .= "
+// Include floating labels CSS BEFORE headers
+$additionalstyles .= '
+<link rel="stylesheet" href="/public/css/floating-labels.css?v=' . date('YmdHis') . '">
 <style>
+/* Profile page specific styles */
+.profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Positioning context for floating panel */
+@media (min-width: 992px) {
+    .col-lg-4 {
+        position: relative; /* Positioning context for absolute positioning */
+    }
+}
+
+/* Ensure proper row alignment for sticky */
+.row {
+    align-items: flex-start !important;
+    display: flex;
+    flex-wrap: wrap;
+}
+
 #infoAccordion {
-position: -webkit-sticky; /* For Safari */
-position: sticky;
-top: 100px; /* Adjust based on your header nav bar's height */
-z-index: 1000; /* Ensure it's above other content */
+    position: -webkit-sticky;
+    position: sticky;
+    top: 100px;
+    z-index: 100;
+}
+
+/* Profile section headers */
+.profile-section-header {
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    font-size: 1.25rem;
+    color: #212529;
+}
+
+/* Make section headers more prominent on mobile */
+@media (max-width: 576px) {
+    .profile-section-header {
+        font-size: 1.375rem;
+        font-weight: 700;
+        color: var(--bs-primary);
+        border-bottom: 3px solid var(--bs-primary);
+        padding-bottom: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Enhanced card styles */
+.card {
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* Better checkbox/switch groups */
+.preference-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+    .preference-grid.grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .preference-grid.grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Modern switch styles - enhance Bootstrap defaults */
+.form-switch {
+    padding-left: 2.5em; /* Bootstrap default */
+}
+
+.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+    margin-right: 0.5rem; /* Add more space after switch */
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+/* Add spacing between checkbox/switch items */
+.preference-grid .form-check {
+    margin-bottom: 1rem;
+}
+
+/* Ensure proper label spacing */
+.form-check-label {
+    margin-left: 0.25rem;
+}
+
+/* Give switches more room on small screens */
+@media (max-width: 767px) {
+    .preference-grid.grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Locked email field styling */
+.locked-email {
+    position: relative;
+}
+
+.locked-email .lock-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+}
+
+/* Adjust padding for locked email input */
+.locked-email .floating-input {
+    padding-right: 3rem;
+}
+
+/* Style dropdowns to match floating inputs */
+select.form-control,
+.floating-select {
+    border: none;
+    border-bottom: 2px solid #e9ecef;
+    border-radius: 0;
+    padding: 1rem 0 0.5rem 0;
+    background: transparent;
+    transition: all 0.3s ease;
+    width: 100%;
+    min-height: 44px;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+}
+
+/* Style placeholder option */
+select.floating-select option[disabled] {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* When select has no value (showing placeholder) */
+select.floating-select:has(option:disabled:checked) {
+    color: #6c757d;
+}
+
+select.form-control:focus,
+.floating-select:focus {
+    outline: none;
+    border-bottom-color: var(--bs-primary);
+    box-shadow: none;
+    background: transparent;
+}
+
+/* Desktop specific dropdown styling to match floating inputs */
+@media (min-width: 992px) {
+    select.form-control,
+    .floating-select {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 2rem 1rem 0.375rem 1rem;
+        background: white !important;
+        transition: all 0.2s ease;
+        height: auto;
+        min-height: calc(3.5rem + 2px);
+    }
+    
+    select.form-control:focus,
+    .floating-select:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+}
+
+/* Form Labels (for non-floating fields) */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Select field labels - always visible */
+.select-label {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+    background: transparent;
+    padding: 0;
+    pointer-events: none;
+    transform: translateY(-0.25rem);
+    transition: all 0.3s ease;
+}
+
+/* Style select label on focus */
+.floating-select:focus ~ .select-label {
+    color: var(--bs-primary);
+}
+
+/* Style the chevron icon in select labels */
+.select-label i {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+    opacity: 0.6;
+}
+
+/* Desktop adjustments for select labels to match floating labels */
+@media (min-width: 992px) {
+    .select-label {
+        left: 0.75rem; /* Moved slightly left to better align */
+        top: 1.125rem;
+        background: transparent;
+        transform: translateY(-1.1rem) scale(0.85);
+        transform-origin: left top;
+        font-size: 1rem;
+        color: var(--bs-primary);
+    }
+    
+    .floating-select:focus ~ .select-label {
+        color: var(--bs-primary);
+    }
+    
+    .select-label i {
+        font-size: 0.65rem;
+    }
+}
+
+/* Better spacing for form sections */
+.form-section {
+    margin-bottom: 3rem;
+}
+
+/* Save button spacing */
+.save-button-container {
+    margin-top: 4rem;
+    margin-bottom: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* JavaScript-powered Floating Panel */
+@media (min-width: 992px) {
+    .help-panel-wrapper {
+        /* Remove all positioning - let JS handle it */
+        position: relative;
+        width: 100%;
+        transition: none; /* Disable CSS transitions for smoother JS animation */
+    }
+    
+    .help-panel-wrapper.is-floating {
+        position: fixed;
+        z-index: 1000;
+    }
+    
+    .help-panel {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    
+    .help-panel.active {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-color: var(--bs-primary);
+    }
+    
+    /* Placeholder to maintain layout when floating */
+    .help-panel-placeholder {
+        display: none;
+    }
+    
+    .help-panel-placeholder.active {
+        display: block;
+    }
+}
+
+.help-panel .help-header {
+    display: flex;
+    align-items: center;
+    color: #495057;
+}
+
+.help-content {
+    min-height: 60px;
+    max-height: 400px;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+}
+
+/* Animate help content changes */
+.help-content.updating {
+    opacity: 0.3;
+}
+
+/* Style help content based on type */
+.help-content h4 {
+    font-size: 1rem;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.help-content ul {
+    margin-bottom: 0;
+    padding-left: 1.25rem;
+}
+
+.help-content ul li {
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+
+/* Add a subtle highlight when help is active */
+.help-panel.active {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+/* Mobile Help Button and Panel */
+@media (max-width: 991px) {
+    .help-panel-wrapper {
+        display: none !important;
+    }
+    
+    /* Floating help button */
+    .floating-help-button {
+        position: fixed;
+        bottom: calc(80px + env(safe-area-inset-bottom, 0px)); /* Above bottom nav + safe area */
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+    }
+    
+    .floating-help-button:hover {
+        transform: scale(1.1);
+    }
+    
+    .floating-help-button i {
+        font-size: 1.5rem;
+    }
+    
+    /* Help overlay */
+    .mobile-help-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1050;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .mobile-help-overlay.show {
+        display: block;
+        opacity: 1;
+    }
+    
+    /* Help panel */
+    .mobile-help-panel {
+        position: absolute;
+        bottom: 60px; /* Above bottom nav */
+        left: 10px;
+        right: 10px;
+        background: white;
+        border-radius: 1rem;
+        max-height: 50vh; /* Reduced height */
+        display: flex;
+        flex-direction: column;
+        transform: translateY(calc(100% + 60px));
+        transition: transform 0.3s ease;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .mobile-help-overlay.show .mobile-help-panel {
+        transform: translateY(0);
+    }
+    
+    .mobile-help-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #dee2e6;
+        flex-shrink: 0;
+    }
+    
+    .mobile-help-content {
+        padding: 1.25rem;
+        overflow-y: auto;
+        flex: 1;
+        padding-bottom: calc(2rem + env(safe-area-inset-bottom, 20px));
+    }
+    
+    .mobile-help-content h4 {
+        font-size: 1rem;
+        color: #212529;
+        margin-bottom: 0.5rem;
+    }
+    
+    .mobile-help-content ul {
+        margin-bottom: 0;
+        padding-left: 1.25rem;
+    }
+    
+    /* Pulse animation for button when content updates */
+    .floating-help-button.pulse {
+        animation: pulse 0.5s ease;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+    }
+}
+
+/* Improve mobile responsiveness */
+@media (max-width: 576px) {
+    .preference-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .row.gx-3 > * {
+        padding-right: 0.5rem;
+        padding-left: 0.5rem;
+    }
+    
+    .save-button-container {
+        margin-top: 3rem;
+        margin-bottom: 2rem;
+    }
+}
+
+/* Debug styles - remove after testing */
+.help-panel-wrapper {
+    /* border: 3px solid red; */ /* Uncomment to visualize floating element */
 }
 </style>
-";
+';
+
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 
 
 
@@ -291,7 +745,7 @@ if ($locked) {
 }
 
 echo '
-<div class="container mt-7">
+<div class="container profile-container mt-4">
 ' . $showtip . '
 <section id="body" class="mt-1 pt-1">
 <div class="row">
@@ -318,30 +772,58 @@ echo '
 
 // PROFILE FIELD INSTRUCTION ACCORDIAN BOX
 echo '
-<div class="accordion-item mb-3">
-<h2 class="accordion-header" id="headingTwo">
-<button class="accordion-button collapsed fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-<span class="button-text">Profile Completion Guidance</span><span class="indicator">' . $guidancendicator . '</span>
-</button>
-</h2>
-<div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#infoAccordion">
-<div class="accordion-body" id="guidancecard">
-Helpful instructions will appear here.
+</div>
+
+<!-- Desktop Help Panel -->
+<div class="help-panel-wrapper d-none d-lg-block">
+<div class="help-panel card shadow-sm mb-3">
+<div class="card-body">
+<div class="help-header mb-3">
+<i class="bi bi-lightbulb text-warning fs-4"></i>
+<h6 class="mb-0 ms-2">Quick Help</h6>
+</div>
+<div id="guidancecard" class="help-content">
+<p class="text-muted mb-0">Click on any field to see helpful tips</p>
 </div>
 </div>
 </div>
 </div>
+
 <!-- end left section -->
 </div>
 ';
 
 // PROFILE ENROLLMENT FIELDS
 echo '
-<div class="col-lg-8">
+<div class="col-lg-8 d-flex flex-column">
 ';
 
-echo '<div class="mb-3">
-<h2 class="text-primary">Your Enrollment Profile</h2>
+// Mobile help panel - floating button with dismissible panel
+echo '
+<div class="d-lg-none">
+<!-- Floating Help Button -->
+<button class="btn btn-primary floating-help-button" id="mobileHelpToggle" aria-label="Quick Help">
+<i class="bi bi-question-circle-fill"></i>
+</button>
+
+<!-- Mobile Help Panel Overlay -->
+<div class="mobile-help-overlay" id="mobileHelpOverlay">
+<div class="mobile-help-panel">
+<div class="mobile-help-header">
+<h6 class="mb-0">Quick Help</h6>
+<button class="btn-close" id="mobileHelpClose" aria-label="Close"></button>
+</div>
+<div class="mobile-help-content" id="guidancecard-mobile">
+<p class="text-muted">Tap any field to see helpful tips here</p>
+</div>
+</div>
+</div>
+</div>
+';
+
+echo '<div class="mb-4">
+<h2 class="fw-bold mb-1">Your Enrollment Profile</h2>
+<p class="text-muted">Complete your profile to maximize birthday rewards</p>
 </div>
 ';
 
@@ -349,11 +831,10 @@ echo '<div class="mb-3">
 echo '
 <!-- Account details card-->
 <div class="card mb-4">
-<div class="card-header d-flex justify-content-between">
-<span>Enrollment Details</span>
-<!-- Button trigger modal -->
+<div class="card-header d-flex justify-content-between align-items-center">
+<span class="fw-semibold">Enrollment Details</span>
 <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#instructionsModal">
-Instructions
+<i class="bi bi-info-circle me-1"></i>Instructions
 </button>
 </div>
 
@@ -363,45 +844,73 @@ Instructions
 ' . $display->inputcsrf_token() . '
 <input name="profileupdate" type="hidden" value="1">
 
-<div class="row gx-3 mb-3">
-<div><h4 class="fw-bold">Personal Details:</h4></div>
-</div>
+<!-- Personal Details Section -->
+<div class="form-section">
+<h4 class="profile-section-header">Personal Details</h4>
 
-
-<!-- Form Row-->
-<div class="row gx-3 mb-3">
-<!-- Form Group (title)-->
-<div class="col-md-2">
-<label class="small mb-1" for="inputprofile_title">Title</label>
-<select name="inputprofile_title" class="form-select form-select mb-3" aria-label=".form-select example">
+<div class="row gx-3">
+<!-- Title dropdown with floating-style label -->
+<div class="col-md-2 mb-3">
+<div class="floating-label-group">
+<select name="inputprofile_title" class="form-control floating-select has-value" aria-label="Title">
+<option value="" disabled' . (empty($current_user_data['profile_title']) ? ' selected' : '') . '>Select...</option>
 ' . $display->list_title($current_user_data['profile_title']) . '
 </select>
-</div>
-
-<!-- Form Group (first name)-->
-<div class="col-md-4">
-<label class="small mb-1" for="inputprofile_first_name">First Name</label>
-<input class="form-control" name="inputprofile_first_name"  id="inputprofile_first_name" type="text" placeholder="Enter your first name" value="' . $current_user_data['profile_first_name'] . '">
-</div>
-<!-- Form Group (middle name)-->
-<div class="col-md-2">
-<label class="small mb-1" for="inputprofile_middle_name">Middle</label>
-<input class="form-control" name="inputprofile_middle_name"  id="inputprofile_middle_name" type="text" placeholder="" value="' . $current_user_data['profile_middle_name'] . '">
-</div>
-<!-- Form Group (last name)-->
-<div class="col-md-4">
-<label class="small mb-1" for="inputprofile_last_name">Last Name</label>
-<input class="form-control" name="inputprofile_last_name" id="inputprofile_last_name" type="text" placeholder="Last name" value="' . $current_user_data['profile_last_name'] . '">
+<label class="select-label">Title <i class="bi bi-caret-down-fill"></i></label>
 </div>
 </div>
 
-<div class="row gx-3 mb-3">
-<!-- Form Group (gender)-->
+<!-- First Name with floating label -->
+<div class="col-md-4 mb-3">
+<div class="floating-label-group">
+<input type="text" 
+       class="form-control floating-input" 
+       name="inputprofile_first_name" 
+       id="inputprofile_first_name" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_first_name']) . '">
+<label for="inputprofile_first_name" class="floating-label">First Name</label>
+</div>
+</div>
+
+<!-- Middle Name with floating label -->
+<div class="col-md-2 mb-3">
+<div class="floating-label-group">
+<input type="text" 
+       class="form-control floating-input" 
+       name="inputprofile_middle_name" 
+       id="inputprofile_middle_name" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_middle_name']) . '">
+<label for="inputprofile_middle_name" class="floating-label">Middle</label>
+</div>
+</div>
+
+<!-- Last Name with floating label -->
+<div class="col-md-4 mb-3">
+<div class="floating-label-group">
+<input type="text" 
+       class="form-control floating-input" 
+       name="inputprofile_last_name" 
+       id="inputprofile_last_name" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_last_name']) . '">
+<label for="inputprofile_last_name" class="floating-label">Last Name</label>
+</div>
+</div>
+</div>
+
+<div class="row gx-3">
+<!-- Gender dropdown with floating-style label -->
 <div class="col-md-4">
-<label class="small mb-1" for="inputprofile_gender">Gender</label>                      
-<select name="inputprofile_gender" class="form-select form-select mb-3" aria-label=".form-select example">
+<div class="floating-label-group">
+<select name="inputprofile_gender" class="form-control floating-select has-value" aria-label="Gender">
+<option value="" disabled' . (empty($current_user_data['profile_gender']) ? ' selected' : '') . '>Select...</option>
 ' . $display->list_gender($current_user_data['profile_gender']) . '
 </select>
+<label class="select-label">Gender <i class="bi bi-caret-down-fill"></i></label>
+</div>
+</div>
 </div>
 </div>
 
@@ -411,28 +920,44 @@ Instructions
 
 $passgenerator = '';
 if ($current_user_data['profile_password'] == '') {
-  $passgenerator = '&nbsp;&nbsp;&nbsp;   <button id="generatePassword" type="button" class="btn btn-sm custom-button-sm btn-outline-success my-0 py-0 mb-1">Generate Password</button>';
+  $passgenerator = '<button id="generatePassword" type="button" class="btn btn-sm btn-outline-success position-absolute" style="right: 10px; top: 8px;">Generate</button>';
 }
 
 echo '
-<hr class="mt-4 mb-4">
-<!-- Contact Details -------------------------------------------------------------------------------------------- -->
-<div class="row gx-3 mb-3">
-<div><h4 class="fw-bold">Enrollment Credential Details:</h4></div>
+<!-- Enrollment Credentials Section -->
+<div class="form-section">
+<h4 class="profile-section-header">Enrollment Credential Details</h4>
 
-<!-- Form Group (username)-->
-<div class="col-md-6">
-<label class="small mb-1" for="inputprofile_Username">Username</label>
-<div class="input-group mb-3">
-<input type="text" class="form-control" name="inputprofile_Username" id="inputprofile_Username" placeholder="Enter your username" value="' . $current_user_data['profile_username'] . '">
+<div class="row gx-3">
+<!-- Username with floating label -->
+<div class="col-md-6 mb-3">
+<div class="floating-label-group">
+<input type="text" 
+       class="form-control floating-input" 
+       name="inputprofile_Username" 
+       id="inputprofile_Username" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_username']) . '">
+<label for="inputprofile_Username" class="floating-label">Username</label>
 </div>
 </div>
-<!-- Form Group (password)  -->
-<div class="col-md-6">
-<label class="small mb-1" for="inputprofile_password">Password ' . $passgenerator . '</label>
-<div class="input-group">
-<input class="form-control" name="inputprofile_password" id="input_password" type="password" placeholder="Enter your Password" value="' . $current_user_data['profile_password'] . '"  autocomplete="new-password">
-<button class="btn btn-outline-secondary custom-button" id="togglePassword" type="button"><i class="field-icon toggle-password bi bi-eye-fill"></i></button>
+
+<!-- Password with floating label and toggle -->
+<div class="col-md-6 mb-3">
+<div class="floating-label-group password-floating-wrapper">
+<input type="password" 
+       class="form-control floating-input" 
+       name="inputprofile_password" 
+       id="input_password" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_password']) . '" 
+       autocomplete="new-password">
+<label for="input_password" class="floating-label">Password</label>
+<button class="password-toggle" id="togglePassword" type="button">
+<i class="field-icon toggle-password bi bi-eye-fill"></i>
+</button>
+' . $passgenerator . '
+</div>
 </div>
 </div>
 ';
@@ -458,73 +983,125 @@ if (isset($current_user_data['profile_email'], $current_user_data['feature_email
 
 if ($emaillock) {
   $emailfieldcontent = '
-<div class="input-group py-0 my-0">
-<input class="form-control" name="profile_email" id="inputprofile_email" type="email"  aria-label="email" aria-describedby="basic-addon2" value="' . $current_user_data['feature_email'] . '" disabled readonly>
-<input name="inputprofile_email" id="hiddenprofile_email" type="hidden" value="' . $current_user_data['feature_email'] . '">
-<span class="input-group-text text-success py-0 my-0" id="basic-addon2"><i class="bi bi-lock-fill px-2"></i></span>
+<div class="floating-label-group locked-email">
+<input class="form-control floating-input" 
+       name="profile_email" 
+       id="inputprofile_email" 
+       type="email" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['feature_email']) . '" 
+       disabled readonly>
+<label for="inputprofile_email" class="floating-label">Email Address</label>
+<span class="lock-icon text-success"><i class="bi bi-lock-fill"></i></span>
+<input name="inputprofile_email" id="hiddenprofile_email" type="hidden" value="' . htmlspecialchars($current_user_data['feature_email']) . '">
 </div>
 ';
 } else {
-  $emailfieldcontent = '<input class="form-control" name="inputprofile_email" id="inputprofile_email" type="email" placeholder="Enter your email address" value="' . $current_user_data['profile_email'] . '">
+  $emailfieldcontent = '
+<div class="floating-label-group">
+<input type="email" 
+       class="form-control floating-input" 
+       name="inputprofile_email" 
+       id="inputprofile_email" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_email']) . '">
+<label for="inputprofile_email" class="floating-label">Email Address</label>
+</div>
 ';
 }
+
 echo '
-<!-- Form Group (email)-->
-<div class="col-md-6">
-<label class="small mb-1" for="inputprofile_email">Email Address</label>
+<div class="row gx-3">
+<!-- Email with floating label -->
+<div class="col-md-6 mb-3">
 ' . $emailfieldcontent . '
 </div>
-';
 
-
-echo '
-<!-- Form Group (phone_number)-->
-<div class="col-md-3">
-<label class="small mb-1" for="inputprofile_phone_number">Mobile Number</label>
-<input class="form-control" name="inputprofile_phone_number" id="inputprofile_phone_number" type="tel" placeholder="Enter your mobile number" value="' . $current_user_data['profile_phone_number'] . '">
+<!-- Phone Number with floating label -->
+<div class="col-md-3 mb-3">
+<div class="floating-label-group">
+<input type="tel" 
+       class="form-control floating-input" 
+       name="inputprofile_phone_number" 
+       id="inputprofile_phone_number" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_phone_number']) . '">
+<label for="inputprofile_phone_number" class="floating-label">Mobile Number</label>
 </div>
-<!-- Form Group (phone_type)-->
-<div class="col-md-3">
-<label class="small mb-1" for="profile_phone_type">Phone Type</label>
-<select  name="inputprofile_phone_type" class="form-select form-select mb-3" aria-label=".form-select example">
+</div>
+
+<!-- Phone Type dropdown with floating-style label -->
+<div class="col-md-3 mb-3">
+<div class="floating-label-group">
+<select name="inputprofile_phone_type" class="form-control floating-select has-value" aria-label="Phone Type">
+<option value="" disabled' . (empty($current_user_data['profile_phone_type']) ? ' selected' : '') . '>Select...</option>
 ' . $display->list_phonetype($current_user_data['profile_phone_type']) . '
 </select>
+<label class="select-label">Phone Type <i class="bi bi-caret-down-fill"></i></label>
+</div>
+</div>
 </div>
 </div>
 
 
 
-<hr class="mt-4 mb-4">
-<!-- Mailing Address -------------------------------------------------------------------------------------------- -->
-<!-- Form Row-->
-<div class="row gx-3 mb-3">
-<div><h4 class="fw-bold">Enrollment Mailing Address:</h4></div>
-<small class="mb-2">Some businesses may mail you things on your birthday.</small>
-<!-- Form Group (organization name)-->
-<div class="col-md-12">
-<input class="form-control" name="inputprofile_mailing_address"  id="inputprofile_mailing_address" type="text" placeholder="Mailing Address" value="' . $current_user_data['profile_mailing_address'] . '">
+<!-- Mailing Address Section -->
+<div class="form-section">
+<h4 class="profile-section-header">Enrollment Mailing Address</h4>
+<p class="text-muted small mb-3">Some businesses may mail you things on your birthday.</p>
+
+<div class="row gx-3">
+<!-- Mailing Address with floating label -->
+<div class="col-md-12 mb-3">
+<div class="floating-label-group">
+<input type="text" 
+       class="form-control floating-input" 
+       name="inputprofile_mailing_address" 
+       id="inputprofile_mailing_address" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_mailing_address']) . '">
+<label for="inputprofile_mailing_address" class="floating-label">Mailing Address</label>
+</div>
+</div>
 </div>
 
+<div class="row gx-3">
+<!-- City with floating label -->
+<div class="col-md-4 mb-3">
+<div class="floating-label-group">
+<input type="text" 
+       class="form-control floating-input" 
+       name="inputprofile_City" 
+       id="inputprofile_City" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_city']) . '">
+<label for="inputprofile_City" class="floating-label">City</label>
 </div>
-<!-- Form Row        -->
-<div class="row gx-3 mb-3">
-
-<!-- Form Group (location)-->
-<div class="col-md-4">
-<input class="form-control" name="inputprofile_City"  id="inputprofile_City" type="text" placeholder="City" value="' . $current_user_data['profile_city'] . '">
 </div>
 
-
-<!-- Form Group (organization name)-->
-<div class="col-md-4">
-<select name="inputprofile_State" class="form-select form-select mb-3" aria-label=".form-select example">
+<!-- State dropdown with floating-style label -->
+<div class="col-md-4 mb-3">
+<div class="floating-label-group">
+<select name="inputprofile_State" class="form-control floating-select has-value" aria-label="State">
+<option value="" disabled' . (empty($profilemailingstate) ? ' selected' : '') . '>Select...</option>
 ' . $display->list_state($profilemailingstate) . '
 </select>
-
+<label class="select-label">State <i class="bi bi-caret-down-fill"></i></label>
 </div>
-<!-- Form Group (location)-->
-<div class="col-md-4">
-<input class="form-control"  name="inputprofile_zip_code"  id="inputprofile_zip_code" type="text" placeholder="Zipcode" value="' . $current_user_data['profile_zip_code'] . '">
+</div>
+
+<!-- Zip Code with floating label -->
+<div class="col-md-4 mb-3">
+<div class="floating-label-group">
+<input type="text" 
+       class="form-control floating-input" 
+       name="inputprofile_zip_code" 
+       id="inputprofile_zip_code" 
+       placeholder=" " 
+       value="' . htmlspecialchars($current_user_data['profile_zip_code']) . '">
+<label for="inputprofile_zip_code" class="floating-label">Zip Code</label>
+</div>
+</div>
 </div>
 </div>
 ';
@@ -541,69 +1118,72 @@ $sections = array(
   'honor' => [
     'title' => 'Honor Class',
     'style' => 'switch',
-    'columns' => 'col-md-4',
+    'grid' => 'grid-3',
     'tag' => ''
   ],
   'agree' => [
-    'title' => 'Agree to',
+    'title' => 'Preferences',
     'style' => 'switch',
-    'columns' => 'col-md-4',
+    'grid' => 'grid-3',
     'tag' => 'agree_'
   ],
   'allergy' => [
     'title' => 'Allergens',
     'style' => 'checkbox',
-    'columns' => 'col-md-3',
+    'grid' => 'grid-4',
     'tag' => 'allergy_'
   ],
   'diet' => [
     'title' => 'Diet Preferences',
     'style' => 'checkbox',
-    'columns' => 'col-md-4',
+    'grid' => 'grid-3',
     'tag' => 'diet_'
   ]
 );
 
 foreach ($sections as $section => $sectionData) {
 
-  echo '<!-- SECTION ' . strtoupper($section) . ' START -------------------------------------------------------------------------------------------- -->';
-
-
   if ($current_user_data['account_type'] == 'minor' &&  $section == 'honor') {
-    echo '<div class="row gx-3 mb-3 d-none">';
+    echo '<div class="form-section d-none">';
   } else {
-    echo '<hr class="mt-4 mb-4">';
-    echo '<div class="row gx-3 mb-3">';
+    echo '<div class="form-section">';
   }
 
-
-
-  echo '<div><h4 class="fw-bold">' . $sectionData['title'] . ':</h4></div>';
+  echo '<h4 class="profile-section-header">' . $sectionData['title'] . '</h4>';
+  echo '<div class="preference-grid ' . $sectionData['grid'] . '">';
+  
   $nametag = $sectionData['tag'];
   $optionlist = $account->getuseroptions($section);
   foreach ($optionlist as $option) {
     $isChecked = (isset($current_user_data['profile_' . $nametag . '' . $option]) && $current_user_data['profile_' . $nametag . '' . $option] == 'true') ? 'checked' : '';
     $icon = '';
-    if ($option == 'kosher') $icon = ' <i class="fas fa-exclamation-triangle"  ' . $display->tooltip("Kosher Rewards are very limited") . '></i>';
+    if ($option == 'kosher') $icon = ' <i class="fas fa-exclamation-triangle" ' . $display->tooltip("Kosher Rewards are very limited") . '></i>';
 
     echo '
-<!-- Form Group ' . $option . ' -->
-<div class="' . $sectionData['columns'] . '">
 <div class="form-check form-' . $sectionData['style'] . '">
-<input class="form-check-input" type="checkbox" role="' . $sectionData['style'] . '" value="true" name="inputprofile_' . $nametag . '' . $option . '" id="inputprofile_' . $nametag . '' . $option . '" ' . $isChecked . '>
-<label class="form-check-label" for="inputprofile_' . $nametag . '' . $option . '">' . $labels[$section][$option] . $icon . '</label>
-</div>
+<input class="form-check-input" 
+       type="checkbox" 
+       role="' . $sectionData['style'] . '" 
+       value="true" 
+       name="inputprofile_' . $nametag . '' . $option . '" 
+       id="inputprofile_' . $nametag . '' . $option . '" 
+       ' . $isChecked . '>
+<label class="form-check-label" for="inputprofile_' . $nametag . '' . $option . '">
+' . $labels[$section][$option] . $icon . '
+</label>
 </div>
 ';
   }
-  echo '</div>';
+  echo '</div></div>';
 }
 
 
 echo '</div>
-<div class="m-5 text-center">
+<div class="save-button-container text-center">
 <!-- Save changes button-->
-<button class="btn btn-success px-5" ' . $locktag . ' type="submit">Save Changes</button>
+<button class="btn btn-success btn-lg px-5" ' . $locktag . ' type="submit">
+<i class="bi bi-check-circle me-2"></i>Save Changes
+</button>
 </div>
 </fieldset>
 </form>
@@ -620,9 +1200,9 @@ echo '
 <div class="modal fade" id="instructionsModal" tabindex="-1" role="dialog" aria-labelledby="ModalCenterTitle" aria-hidden="true">
 <div class="modal-dialog modal-lg">
 <div class="modal-content">
-<div class="modal-header  bg-primary">
+<div class="modal-header bg-primary text-white">
 <h5 class="modal-title">Instructions for Your Profile</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
 <div class="modal-body">
 <p>Your profile contains important information that birthday.gold uses to enroll you for birthday freebies, deals,
@@ -639,10 +1219,10 @@ ensure you can take full advantage of the birthday fun!</p>
 </ul>
 <p>Once we enroll you into the business you select, birthday.gold cannot directly change any registration details. 
 Please ensure everything is correct!</p>
-<p>We\'re excited to use your profile to maximize the birthday fun!</p> 
+<p>We are excited to use your profile to maximize the birthday fun!</p> 
 </div>
 <div class="modal-footer">
-<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 </div>
 </div>
 </div>
@@ -673,7 +1253,7 @@ echo '
 </ul>
 ';
 if ($suppressionitem) {
-  echo '<p>We want you to have it exactly the way you want.  Maybe you can share the birthday treat/benefit with a friend who doesn\'t have the same dietary restrictions.  We just want you to have as many options as possible.</p> ';
+  echo '<p>We want you to have it exactly the way you want.  Maybe you can share the birthday treat/benefit with a friend who does not have the same dietary restrictions.  We just want you to have as many options as possible.</p> ';
 }
 
 if ($extremesuppression) {
@@ -698,6 +1278,118 @@ echo '
 
 
 $footerattribute['postfooter'] = '
+<!-- Expert Floating Panel JavaScript Solution -->
+<script>
+(function() {
+    // Only run on desktop
+    if (window.innerWidth < 992) return;
+    
+    const helpPanelWrapper = document.querySelector(".help-panel-wrapper");
+    if (!helpPanelWrapper) return;
+    
+    // Get the desktop panel only (not mobile)
+    const desktopWrapper = document.querySelector(".col-lg-4 .help-panel-wrapper");
+    if (!desktopWrapper) return;
+    
+    // Create placeholder element to maintain layout
+    const placeholder = document.createElement("div");
+    placeholder.className = "help-panel-placeholder";
+    placeholder.style.height = helpPanelWrapper.offsetHeight + "px";
+    helpPanelWrapper.parentNode.insertBefore(placeholder, helpPanelWrapper.nextSibling);
+    
+    // Get important elements
+    const header = document.querySelector("header") || document.querySelector(".navbar");
+    const leftCol = document.querySelector(".col-lg-4");
+    const rightCol = document.querySelector(".col-lg-8");
+    
+    // Calculate header height
+    const headerHeight = header ? header.offsetHeight : 80;
+    const topOffset = headerHeight + 20; // 20px gap below header
+    
+    let ticking = false;
+    let panelHeight = helpPanelWrapper.offsetHeight;
+    
+    function updateFloatingPanel() {
+        const scrollY = window.pageYOffset;
+        const leftColRect = leftCol.getBoundingClientRect();
+        const rightColRect = rightCol.getBoundingClientRect();
+        const wrapperOriginalTop = placeholder.getBoundingClientRect().top + scrollY;
+        
+        // Update panel height
+        panelHeight = helpPanelWrapper.offsetHeight;
+        
+        // Calculate when to start floating
+        const startFloat = wrapperOriginalTop - topOffset;
+        
+        // Calculate when to stop floating (bottom of right column)
+        const rightColBottom = rightColRect.top + scrollY + rightColRect.height;
+        const stopFloat = rightColBottom - panelHeight - topOffset;
+        
+        if (scrollY >= startFloat && scrollY <= stopFloat) {
+            // Float the panel
+            helpPanelWrapper.classList.add("is-floating");
+            helpPanelWrapper.style.position = "fixed";
+            helpPanelWrapper.style.top = topOffset + "px";
+            helpPanelWrapper.style.left = leftColRect.left + "px";
+            helpPanelWrapper.style.width = leftColRect.width + "px";
+            
+            // Show placeholder
+            placeholder.classList.add("active");
+            placeholder.style.height = panelHeight + "px";
+        } else if (scrollY > stopFloat) {
+            // Stick to bottom
+            helpPanelWrapper.classList.add("is-floating");
+            helpPanelWrapper.style.position = "absolute";
+            helpPanelWrapper.style.top = (stopFloat - wrapperOriginalTop + topOffset) + "px";
+            helpPanelWrapper.style.left = "0";
+            helpPanelWrapper.style.width = "100%";
+            
+            placeholder.classList.add("active");
+        } else {
+            // Return to normal position
+            helpPanelWrapper.classList.remove("is-floating");
+            helpPanelWrapper.style.position = "";
+            helpPanelWrapper.style.top = "";
+            helpPanelWrapper.style.left = "";
+            helpPanelWrapper.style.width = "";
+            
+            placeholder.classList.remove("active");
+        }
+        
+        ticking = false;
+    }
+    
+    function requestTick() {
+        if (!ticking) {
+            requestAnimationFrame(updateFloatingPanel);
+            ticking = true;
+        }
+    }
+    
+    // Event listeners
+    window.addEventListener("scroll", requestTick);
+    window.addEventListener("resize", () => {
+        // Recalculate on resize
+        requestTick();
+    });
+    
+    // Initial calculation
+    updateFloatingPanel();
+    
+    // Recalculate when content changes
+    const observer = new MutationObserver(() => {
+        panelHeight = helpPanelWrapper.offsetHeight;
+        placeholder.style.height = panelHeight + "px";
+        requestTick();
+    });
+    
+    observer.observe(helpPanelWrapper, {
+        childList: true,
+        subtree: true,
+        characterData: true
+    });
+})();
+</script>
 <script>
 $(document).ready(function() {
 $("#uploadBtn").click(function() {
