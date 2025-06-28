@@ -35,6 +35,9 @@ const instructions = {
     "inputprofile_diet_vegetarian": "<h4>Check this box if you follow a Vegetarian diet.</h4>"
     };
     
+// Track if help panel has been shown
+let helpPanelShown = false;
+
  // When an input field is focused, show its corresponding instructions
 document.querySelectorAll("input, select").forEach(function(input) {
     input.addEventListener("focus", function(e) {
@@ -44,6 +47,12 @@ document.querySelectorAll("input, select").forEach(function(input) {
             const guidanceCards = document.querySelectorAll("#guidancecard, #guidancecard-mobile");
             const helpPanels = document.querySelectorAll(".help-panel");
             const mobileHelpButton = document.querySelector(".floating-help-button");
+            
+            // Show panel on first field focus (desktop only)
+            if (!helpPanelShown && window.innerWidth >= 992) {
+                helpPanels.forEach(panel => panel.classList.add("show"));
+                helpPanelShown = true;
+            }
             
             // Add active class to desktop panels
             helpPanels.forEach(panel => panel.classList.add("active"));
@@ -72,7 +81,6 @@ document.querySelectorAll("input, select").forEach(function(input) {
 });
 
 window.onload = function() {
-    const defaultinputfield = document.querySelector("#inputprofile_first_name");
     const guidanceCards = document.querySelectorAll("#guidancecard, #guidancecard-mobile");
     
     // Initialize help content opacity for smooth transitions
@@ -82,9 +90,8 @@ window.onload = function() {
         }
     });
     
-    if(defaultinputfield) {
-        defaultinputfield.focus();
-    }
+    // Don't auto-focus on load to prevent help panel from showing immediately
+    // User will click/tab into fields when ready
 };
 
 let passwordInput = document.getElementById("input_password");

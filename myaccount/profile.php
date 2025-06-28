@@ -501,10 +501,9 @@ select.form-control:focus,
 /* JavaScript-powered Floating Panel */
 @media (min-width: 992px) {
     .help-panel-wrapper {
-        /* Remove all positioning - let JS handle it */
         position: relative;
         width: 100%;
-        transition: none; /* Disable CSS transitions for smoother JS animation */
+        transition: none;
     }
     
     .help-panel-wrapper.is-floating {
@@ -519,7 +518,14 @@ select.form-control:focus,
         max-height: calc(100vh - 120px);
         overflow-y: auto;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        transition: box-shadow 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+        opacity: 0;
+        visibility: hidden;
+    }
+    
+    .help-panel.show {
+        opacity: 1;
+        visibility: visible;
     }
     
     .help-panel.active {
@@ -530,10 +536,12 @@ select.form-control:focus,
     /* Placeholder to maintain layout when floating */
     .help-panel-placeholder {
         display: none;
+        visibility: hidden;
     }
     
     .help-panel-placeholder.active {
         display: block;
+        visibility: visible;
     }
 }
 
@@ -1280,21 +1288,20 @@ echo '
 $footerattribute['postfooter'] = '
 <!-- Expert Floating Panel JavaScript Solution -->
 <script>
-(function() {
+document.addEventListener("DOMContentLoaded", function() {
     // Only run on desktop
     if (window.innerWidth < 992) return;
     
-    const helpPanelWrapper = document.querySelector(".help-panel-wrapper");
-    if (!helpPanelWrapper) return;
-    
-    // Get the desktop panel only (not mobile)
-    const desktopWrapper = document.querySelector(".col-lg-4 .help-panel-wrapper");
-    if (!desktopWrapper) return;
+    // Get the desktop panel wrapper specifically
+    const helpPanelWrapper = document.querySelector(".col-lg-4 .help-panel-wrapper");
+    if (!helpPanelWrapper) {
+        console.log("Help panel wrapper not found");
+        return;
+    }
     
     // Create placeholder element to maintain layout
     const placeholder = document.createElement("div");
     placeholder.className = "help-panel-placeholder";
-    placeholder.style.height = helpPanelWrapper.offsetHeight + "px";
     helpPanelWrapper.parentNode.insertBefore(placeholder, helpPanelWrapper.nextSibling);
     
     // Get important elements
@@ -1307,53 +1314,78 @@ $footerattribute['postfooter'] = '
     const topOffset = headerHeight + 20; // 20px gap below header
     
     let ticking = false;
-    let panelHeight = helpPanelWrapper.offsetHeight;
+    let panelHeight = 0;
+    let isFloating = false;
+    let panelShown = false;
+    let hasScrolled = false;
     
     function updateFloatingPanel() {
+        // Only update if panel is shown
+        const helpPanel = helpPanelWrapper.querySelector(".help-panel");
+        if (!helpPanel || !helpPanel.classList.contains("show")) {
+            ticking = false;
+            return;
+        }
+        
+        // On first show, set initial state
+        if (!panelShown) {
+            panelShown = true;
+            panelHeight = helpPanelWrapper.offsetHeight;
+            placeholder.style.height = panelHeight + "px";
+            // Do not process positioning on first show - let it stay in natural position
+            ticking = false;
+            return;
+        }
+        
+        // Do not float until user has actually scrolled
+        if (!hasScrolled) {
+            ticking = false;
+            return;
+        }
+        
         const scrollY = window.pageYOffset;
         const leftColRect = leftCol.getBoundingClientRect();
         const rightColRect = rightCol.getBoundingClientRect();
-        const wrapperOriginalTop = placeholder.getBoundingClientRect().top + scrollY;
         
-        // Update panel height
-        panelHeight = helpPanelWrapper.offsetHeight;
+        // Get original position from placeholder
+        const originalTop = placeholder.offsetTop;
         
         // Calculate when to start floating
-        const startFloat = wrapperOriginalTop - topOffset;
+        const startFloat = originalTop - topOffset;
         
         // Calculate when to stop floating (bottom of right column)
-        const rightColBottom = rightColRect.top + scrollY + rightColRect.height;
+        const rightColBottom = rightColRect.bottom + scrollY;
         const stopFloat = rightColBottom - panelHeight - topOffset;
         
-        if (scrollY >= startFloat && scrollY <= stopFloat) {
-            // Float the panel
+        // Only update if state changes to prevent jumping
+        if (scrollY >= startFloat && scrollY <= stopFloat && !isFloating) {
+            // Start floating
+            isFloating = true;
             helpPanelWrapper.classList.add("is-floating");
             helpPanelWrapper.style.position = "fixed";
             helpPanelWrapper.style.top = topOffset + "px";
             helpPanelWrapper.style.left = leftColRect.left + "px";
             helpPanelWrapper.style.width = leftColRect.width + "px";
-            
-            // Show placeholder
             placeholder.classList.add("active");
-            placeholder.style.height = panelHeight + "px";
-        } else if (scrollY > stopFloat) {
-            // Stick to bottom
-            helpPanelWrapper.classList.add("is-floating");
-            helpPanelWrapper.style.position = "absolute";
-            helpPanelWrapper.style.top = (stopFloat - wrapperOriginalTop + topOffset) + "px";
-            helpPanelWrapper.style.left = "0";
-            helpPanelWrapper.style.width = "100%";
-            
-            placeholder.classList.add("active");
-        } else {
-            // Return to normal position
+        } else if (scrollY < startFloat && isFloating) {
+            // Stop floating - return to normal
+            isFloating = false;
             helpPanelWrapper.classList.remove("is-floating");
             helpPanelWrapper.style.position = "";
             helpPanelWrapper.style.top = "";
             helpPanelWrapper.style.left = "";
             helpPanelWrapper.style.width = "";
-            
             placeholder.classList.remove("active");
+        } else if (scrollY > stopFloat && isFloating) {
+            // Update position when scrolled past bottom
+            const newTop = topOffset - (scrollY - stopFloat);
+            helpPanelWrapper.style.top = newTop + "px";
+        }
+        
+        // Update dimensions if floating
+        if (isFloating) {
+            helpPanelWrapper.style.left = leftColRect.left + "px";
+            helpPanelWrapper.style.width = leftColRect.width + "px";
         }
         
         ticking = false;
@@ -1367,28 +1399,36 @@ $footerattribute['postfooter'] = '
     }
     
     // Event listeners
-    window.addEventListener("scroll", requestTick);
+    window.addEventListener("scroll", () => {
+        hasScrolled = true;
+        requestTick();
+    });
     window.addEventListener("resize", () => {
-        // Recalculate on resize
         requestTick();
     });
     
-    // Initial calculation
-    updateFloatingPanel();
-    
-    // Recalculate when content changes
-    const observer = new MutationObserver(() => {
-        panelHeight = helpPanelWrapper.offsetHeight;
-        placeholder.style.height = panelHeight + "px";
-        requestTick();
+    // Watch for panel visibility changes
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            if (mutation.type === "attributes" && mutation.attributeName === "class") {
+                const helpPanel = helpPanelWrapper.querySelector(".help-panel");
+                if (helpPanel && helpPanel.classList.contains("show") && !panelShown) {
+                    // Panel just became visible - just measure it, do not position
+                    setTimeout(() => {
+                        panelHeight = helpPanelWrapper.offsetHeight;
+                        placeholder.style.height = panelHeight + "px";
+                        panelShown = true;
+                    }, 350); // Wait for fade-in transition
+                }
+            }
+        });
     });
     
-    observer.observe(helpPanelWrapper, {
-        childList: true,
-        subtree: true,
-        characterData: true
+    observer.observe(helpPanelWrapper.querySelector(".help-panel"), {
+        attributes: true,
+        attributeFilter: ["class"]
     });
-})();
+});
 </script>
 <script>
 $(document).ready(function() {
