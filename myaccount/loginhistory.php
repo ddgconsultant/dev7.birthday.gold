@@ -97,34 +97,207 @@ include($dir['core_components'] . '/bg_user_profileheader.inc');
 include($dir['core_components'] . '/bg_user_leftpanel.inc');
 $additionalstyles .= '
 <style>
-.row-hover:hover {
-background-color: #f8f9fa; /* gray color */
-}          
+/* Modern minimal design for login history */
+.login-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Tab navigation without scrollbar */
+.nav-tabs-modern {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 2rem;
+    gap: 0;
+    overflow: hidden;
+}
+
+.nav-tab-item {
+    flex: 0 0 auto;
+    padding: 1rem 2rem;
+    text-decoration: none;
+    color: #6c757d;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s ease;
+    background: none;
+    border-radius: 0;
+}
+
+.nav-tab-item:hover {
+    color: #495057;
+    text-decoration: none;
+    background: #f8f9fa;
+}
+
+.nav-tab-item.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    background: none;
+}
+
+/* Compact device cards for mobile */
+.device-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.device-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+}
+
+.device-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.device-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    color: #495057;
+    flex-shrink: 0;
+}
+
+.device-icon.current {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.device-info {
+    margin-left: 1rem;
+    flex: 1;
+}
+
+.device-name {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    color: #212529;
+}
+
+.device-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.device-details {
+    margin-bottom: 1rem;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    color: #495057;
+    padding: 0.25rem 0;
+}
+
+.detail-label {
+    font-weight: 500;
+    margin-right: 0.5rem;
+    color: #6c757d;
+    min-width: 60px;
+}
+
+.device-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.current-badge {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: #0dcaf0;
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .nav-tab-item {
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .device-card {
+        padding: 0.875rem;
+    }
+    
+    .device-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
+    }
+    
+    .detail-row {
+        font-size: 0.813rem;
+    }
+    
+    .detail-label {
+        min-width: 50px;
+    }
+}
+
+/* Remove Bootstrap default styles that might interfere */
+.nav-tabs {
+    border-bottom: none;
+}
+
+.nav-link {
+    border: none;
+}
 </style>
 ';
 
 
 echo '
-<div class="container main-content mt-0 pt-0">
-<div class="row">
+<div class="login-container">
 ';
-echo '<div class="mb-3">
-<h2 class="text-primary">Your Login History</h2>
+
+// Header
+echo '<div class="mb-4">
+<h2 class="fw-bold mb-1">Login Activity</h2>
+<p class="text-muted mb-0">Monitor access to your account and manage trusted devices</p>
 </div>
 ';
 
+// Tab navigation
 $device_result = $account->user_activedevices($workinguserdata['user_id']);
 if (!empty($device_result)) {
-  echo '<div class="mb-3">';
-
-  $loginHistoryClass = ($displaysection === '') ? 'btn btn-primary me-2' : 'btn btn-secondary me-2';
-  $savedDevicesClass = ($displaysection === 'devices') ? 'btn btn-primary' : 'btn btn-secondary';
-
-  echo '<a href="/myaccount/loginhistory" class="' . $loginHistoryClass . '">LOGIN HISTORY</a>';
-  echo '<a href="/myaccount/loginhistory?view=devices" class="' . $savedDevicesClass . '">TRUSTED DEVICES</a>';
-  echo '</div>';
+    echo '<nav class="nav-tabs-modern">';
+    
+    $loginHistoryActive = ($displaysection === '') ? 'active' : '';
+    $devicesActive = ($displaysection === 'devices') ? 'active' : '';
+    
+    echo '<a href="/myaccount/loginhistory" class="nav-tab-item ' . $loginHistoryActive . '">
+            <i class="bi bi-clock-history me-2"></i>Login History
+          </a>';
+    echo '<a href="/myaccount/loginhistory?view=devices" class="nav-tab-item ' . $devicesActive . '">
+            <i class="bi bi-shield-check me-2"></i>Trusted Devices
+          </a>';
+    
+    echo '</nav>';
 } else {
-  $displaysection = '';
+    $displaysection = '';
 }
 
 
@@ -132,21 +305,18 @@ if (!empty($device_result)) {
 switch ($displaysection) {
 // --------------------------
   case 'devices':
-  include('module_login/manage_devices.inc');
+  include('module_login/manage_devices_modern.inc');
     break;
 
 // --------------------------
   default:
-  include('module_login/manage_history.inc');
+  include('module_login/manage_history_modern.inc');
     break;
 }
 
 
 
-echo '  </div>
-</div>
-</div>
-';
+echo '</div>'; // Close login-container
 
 echo '  </div>
 </div>
