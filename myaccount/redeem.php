@@ -6,11 +6,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 #-------------------------------------------------------------------------------
 
 $bodycontentclass = '';
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
-
 
 $additionalstyles.="
 <style>
@@ -73,7 +68,10 @@ transform: rotateY(180deg);
 </style>
 ";
 
-        
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
+include($dir['core_components'] . '/bg_user_profileheader.inc');
+include($dir['core_components'] . '/bg_user_leftpanel.inc');
 
 $results = $account->getbusinesslist_rewards($current_user_data, 'card', '"success", "success-btn"', 10, true);
 if (!empty($results)) {
@@ -83,17 +81,17 @@ $show_rewards = false;
 }
 
     echo '
-<div class="container main-content">
-    <div class="d-flex justify-content-between align-items-center">
+<div class="col-md-9 col-lg-9">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">🎉 Redeem Your Rewards 🎉
          <!--     <span class="badge rounded-pill bg-success fs-3"></span>-->
         </h1>'.
         ($show_rewards ? '<a href="/myaccount/redeem-list" class="btn btn-primary">View All Rewards</a>' : '') . '
     </div>
-'.($show_rewards ? '<p class="">Click on a reward to see how to redeem it!</p>' : '').'
+'.($show_rewards ? '<p class="mb-4">Click on a reward to see how to redeem it!</p>' : '').'
 
 
-    <div class="row">
+    <div class="row g-4">
 ';
 
 
@@ -114,7 +112,7 @@ $show_rewards = false;
             $scaled_class = (strlen($company['redeem_instructions']) > 200) ? 'shrink' : ''; // Adjust based on length or any other condition
             echo '
             <!--  Flip Card ' . $company['company_name'] . ' -->
-            <div class="col-md-6 mb-5">
+            <div class="col-lg-4 col-md-6 mb-4">
                 <div class="flip-card">
                     <div class="flip-card-inner">
                         <!-- Front of the card -->
@@ -160,7 +158,10 @@ $show_rewards = false;
     }
     
 ?>
-</div></div></div></div>
+</div> <!-- close col-md-9 -->
+</div> <!-- close row -->
+</div> <!-- close container -->
+</div> <!-- close main-content -->
 <?php
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
