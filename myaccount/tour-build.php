@@ -319,7 +319,7 @@ echo '
 
 <form name="myTourForm" id="myTourForm" action="/myaccount/tour-build" method="POST">
 ' . $display->inputcsrf_token() . '
-<input type="hidden" name="calendar_date" value="' . ($_GET['date'] ?? '') . '">
+<input type="hidden" name="calendar_date" id="calendar_date" value="' . ($_GET['date'] ?? '') . '">
 ';
 
 echo '<div class="row">';
@@ -339,7 +339,6 @@ echo '</div>';
 <div id="datecontent m-0 p-0">
 ' . $finaloutput . '
 </div>
-</form>
 ';
 
 
@@ -348,6 +347,7 @@ echo '</div></div>';
 echo '</div>';
 echo '</div>';
 echo '</div></div>';
+echo '</form>'; // Close the main form here
 
 
 // SIDE Column: 4 parts wide
@@ -386,8 +386,6 @@ if ($showbusinesses) {
 <div class="small text-muted">Tour Selection</div>
 <div class="h3 text-center mb-3" id="tourselectiondate"></div>
 <hr>
-<form action="tour-build" method="post">
-' . $display->inputcsrf_token() . '
 <div class="my-4">
 <ul id="listoftourcompanies">
 </ul>
@@ -398,9 +396,8 @@ Number of '.$website['biznames'].' on this tour: <span id="companycount">0</span
 </div>
 <!-- Submit button -->
 <div class="d-flex justify-content-center align-items-center">
-<button type="submit" class="btn btn-success mt-3 d-none" name="savetourbutton" id="savetourbutton">Save This Tour</button>
+<button type="button" onclick="document.getElementById(\'myTourForm\').submit()" class="btn btn-success mt-3 d-none" name="savetourbutton" id="savetourbutton">Save This Tour</button>
 </div>
-</form>
 
 </div>
 </div>
@@ -422,6 +419,16 @@ Number of '.$website['biznames'].' on this tour: <span id="companycount">0</span
             });
             return `${weekday}<br>${monthDay}, ${year}`;
         }
+        
+        // Update the calendar date when page loads with date parameter
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dateParam = urlParams.get('date');
+            if (dateParam) {
+                document.getElementById('calendar_date').value = dateParam;
+                document.getElementById('tourselectiondate').innerHTML = formatDate(dateParam);
+            }
+        });
 
         function updateCompanyCount() {
             const companyCount = document.querySelectorAll('#listoftourcompanies li').length;

@@ -44,6 +44,33 @@ $additionalstyles.='<link rel="stylesheet" href="/public/css/myaccount.css">
             display: block;
         }
     }
+    
+    .sortable_item {
+        cursor: move;
+    }
+    
+    .sortable_item_handle {
+        cursor: grab;
+    }
+    
+    .sortable_item_handle:active {
+        cursor: grabbing;
+    }
+    
+    #directions-panel {
+        font-size: 0.875rem;
+    }
+    
+    #directions-panel .adp-directions {
+        padding: 0;
+    }
+    
+    #directions-panel .adp-placemark {
+        background: #f8f9fa;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+    }
 </style>';
 
 
@@ -51,6 +78,7 @@ $bodycontentclass='';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 include($dir['core_components'] . '/bg_user_profileheader.inc');
+include($dir['core_components'] . '/bg_user_leftpanel.inc');
 
 
 /* 
@@ -79,58 +107,53 @@ $dateObject = new DateTime($date);
 $formattedDate = $dateObject->format('l, F j, Y');
 
 
+// Start the proper myaccount layout
+echo '<div class="col-md-9 col-lg-9">
+';
+
 $output='   
-<div class="container main-content">
-    <div class="row">
-        <div class="col-lg-8 mb-4 mt-5">
-            <!-- DATE card -->
-            <div class="card h-100 border-start-lg border-start-primary">
-                <div class="card-body">
-                    <div class="small text-muted">Your Tour:</div>
-                    <div class="h3 my-3">'.$formattedDate .'</div>
-                     Consists of '.ucfirst($qik->plural2(count($companies), $website['bizname'])).'
-                    </a>
-                </div>
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <!-- DATE card -->
+        <div class="card h-100 border-start-lg border-start-primary">
+            <div class="card-body">
+                <div class="small text-muted">Your Tour:</div>
+                <div class="h3 my-3">'.$formattedDate .'</div>
+                 Consists of '.ucfirst($qik->plural2(count($companies), $website['bizname'])).'
             </div>
         </div>
-       ';
-
-
-       echo $output;
-       ?>
-        <div class="col-lg-4 mb-4">
-            <!-- ACTIONS card 3-->
-            <div class="card h-100 border-start-lg border-start-success">
-                <div class="card-body">
-                    <div class="small text-muted mb-4">Actions</div>
-                    <!--
-                    <a href="#" class="btn button"><i class="bi bi-printer-fill"></i> Print Map</a>
-                    <a href="#" class="btn button"><i class="bi bi-printer-fill"></i> Print Steps</a> -->
-
-                     <!-- Print button -->
-    <div class="text-center">
-        <button class="btn btn-primary print_map" onclick="printContent()">Download PDF</button>
     </div>
+   ';
+
+
+echo $output;
+?>
+    <div class="col-lg-4 mb-4">
+        <!-- ACTIONS card 3-->
+        <div class="card h-100 border-start-lg border-start-success">
+            <div class="card-body">
+                <div class="small text-muted mb-4">Actions</div>
+                <div class="text-center">
+                    <button class="btn btn-primary print_map" onclick="printContent()">Download PDF</button>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
     <?PHP
-    echo '
-    <hr class="mt-0 mb-4">
-    <div class="row">
-    <div class="col-lg-12 mb-4 ">
-    <!-- CELBRATION TOUR COMPANIES card-->
-    <div class="card card-header-actions mb-4 p-0  ">
-        <div class="card-header  d-flex align-items-center justify-content-between ">
-            <h2>
-            Celebration Tour
-            </h2>
-            <div>
-            <a href="/myaccount/tour-build?date='.$date.'" class="btn btn-sm btn-primary" type="button">Add More '.ucfirst($website['biznames']).'</a>
-        </div>
-        </div>
+echo '
+<hr class="mt-0 mb-4">
+<div class="row">
+    <div class="col-lg-12 mb-4">
+        <!-- CELEBRATION TOUR COMPANIES card-->
+        <div class="card card-header-actions mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h2 class="mb-0">Celebration Tour</h2>
+                <div>
+                    <a href="/myaccount/tour-build?date='.$date.'" class="btn btn-sm btn-primary" type="button">Add More '.ucfirst($website['biznames']).'</a>
+                </div>
+            </div>
 ';
 
 $homeaddress=''.$current_user_data['profile_mailing_address'].', '.$current_user_data['profile_city'].', '.$current_user_data['profile_state'].'  '.$current_user_data['profile_zip_code'].'';
@@ -197,47 +220,40 @@ echo $companylistoutput;
 <!-- Draw new map -->
 <div style="text-align: center; margin-bottom: 20px;">
     <button class="btn btn-secondary draw_map" id="draw_map" style="display: none;" onclick="DrawNewMap()">Draw New Map</button>
-</div>
-</div>
-</div>
-</div>
-
-</div>
-
-
-    <div class="row">
-        <div class="col-lg-4 mb-4">
-            <!-- STEPS CARD-->
-            <div class="card h-100 border-start-lg border-start-secondary">
-          <!-- Show directions in a panel -->
-        <!-- <div id="directions-panel"></div> -->
-        <div id="directions-panel"></div>
+        </div>
     </div>
-    </div>
+</div>
 
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <!-- STEPS CARD-->
+        <div class="card h-100 border-start-lg border-start-secondary">
+            <div class="card-header">Turn-by-Turn Directions</div>
+            <div class="card-body" style="max-height: 800px; overflow-y: auto;">
+                <div id="directions-panel"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- MAP card-->
-    <div class="col-lg-8 mb-8">
-    <div class="card mb-4" id="printContainer">
-        <div class="card-header">Map and Direction</div>
-      
-        <div class="card card-header-actions mb-4">
-            <!-- Existing content -->
+    <div class="col-lg-8 mb-4">
+        <div class="card" id="printContainer">
+            <div class="card-header">Map and Direction</div>
             <div class="card-body p-0">
                 <!-- Map will be displayed here -->
                 <div id="google_map" style="height: 800px;"></div>
             </div>
         </div>
     </div>
-   
-</div>
 </div>
 
 <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
 <script src="/public/js/mappingengine.js"></script>
 
 
-</div>   </div>   </div>
+</div><!-- End col-md-9 -->
+</div><!-- End row -->
+</div><!-- End container -->
 
 <?PHP
 include($dir['core_components'] . '/bg_footer.inc');
