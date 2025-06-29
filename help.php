@@ -207,21 +207,55 @@ $additionalstyles = '
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    border: 1px solid #dee2e6;
-    background: white;
+    border: 2px solid;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6c757d;
     transition: all 0.2s ease;
     text-decoration: none;
+    color: white;
+}
+
+/* Social Media Brand Colors */
+.social-link[title="Twitter"] {
+    background: #000000;
+    border-color: #000000;
+}
+
+.social-link[title="Facebook"] {
+    background: #1877f2;
+    border-color: #1877f2;
+}
+
+.social-link[title="Instagram"] {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    border-color: #dc2743;
+}
+
+.social-link[title="LinkedIn"] {
+    background: #0077b5;
+    border-color: #0077b5;
+}
+
+.social-link[title="TikTok"] {
+    background: #000000;
+    border-color: #000000;
+}
+
+.social-link[title="YouTube"] {
+    background: #ff0000;
+    border-color: #ff0000;
+}
+
+.social-link[title="Pinterest"] {
+    background: #bd081c;
+    border-color: #bd081c;
 }
 
 .social-link:hover {
-    border-color: var(--bs-primary);
-    color: var(--bs-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+    transform: translateY(-2px) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    opacity: 0.9;
 }
 
 /* Holiday Alert */

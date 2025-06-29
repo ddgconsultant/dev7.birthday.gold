@@ -56,14 +56,33 @@ echo '
 ';
 $optionProductData_free = $app->getProduct('free', 'user', '*', 1);
 $optionProductData_gold = $app->getProduct('gold', 'user', '*', 1);
-$plandatafeatures_free=$app->plandetail('details_id', $optionProductData_free['id']);
-$plandatafeatures_gold=$app->plandetail('details_id', $optionProductData_gold['id']);
+
+// Add null checks to prevent errors
+if ($optionProductData_free && isset($optionProductData_free['id'])) {
+    $plandatafeatures_free = $app->plandetail('details_id', $optionProductData_free['id']);
+} else {
+    $plandatafeatures_free = array('price' => 0, 'max_business_select' => '5');
+}
+
+if ($optionProductData_gold && isset($optionProductData_gold['id'])) {
+    $plandatafeatures_gold = $app->plandetail('details_id', $optionProductData_gold['id']);
+} else {
+    $plandatafeatures_gold = array('price' => 99.00, 'max_business_select' => '500+');
+}
+
+// Ensure max_business_select exists
+if (!isset($plandatafeatures_free['max_business_select'])) {
+    $plandatafeatures_free['max_business_select'] = '5';
+}
+if (!isset($plandatafeatures_gold['max_business_select'])) {
+    $plandatafeatures_gold['max_business_select'] = '500+';
+}
 
 echo '                        <th class="table-header">
                             <div class="text-center position-relative">
                                 <h1 class="fw-bold">GOLD</h1>
                                 <p class="mb-0">Paid Plan</p>
-                                <small>'.$qik->convertamount($plandatafeatures_gold['price'], '$',  'Free', 0).' (One-time Payment)</small>
+                                <small>'.$qik->convertamount(isset($plandatafeatures_gold['price']) ? $plandatafeatures_gold['price'] : 99.00, '$',  'Free', 0).' (One-time Payment)</small>
                                 <div class="pricing-option_popular"></div>
                             </div>
                         </th>
@@ -82,8 +101,8 @@ echo '                        <th class="table-header">
                     </tr>
                     <tr class="table-row">
                         <td class="fw-bold">Auto-enroll Brand Rewards</td>
-                        <td class="text-center xhover fw-bold">'.$plandatafeatures_free['max_business_select'].'</td>
-                        <td class="text-center xhover fw-bold">'.$plandatafeatures_gold['max_business_select'].' Every Year!</td>
+                        <td class="text-center xhover fw-bold">'.(isset($plandatafeatures_free['max_business_select']) ? $plandatafeatures_free['max_business_select'] : '5').'</td>
+                        <td class="text-center xhover fw-bold">'.(isset($plandatafeatures_gold['max_business_select']) ? $plandatafeatures_gold['max_business_select'] : '500+').' Every Year!</td>
                     </tr>
                     <tr class="table-row">
                         <td class="fw-bold">Exclusive lifetime deals</td>

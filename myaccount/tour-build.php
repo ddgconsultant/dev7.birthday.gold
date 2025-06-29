@@ -386,7 +386,7 @@ if ($showbusinesses) {
 <div class="small text-muted">Tour Selection</div>
 <div class="h3 text-center mb-3" id="tourselectiondate"></div>
 <hr>
-<form action="myaccount-tour-build" method="post">
+<form action="tour-build" method="post">
 ' . $display->inputcsrf_token() . '
 <div class="my-4">
 <ul id="listoftourcompanies">
