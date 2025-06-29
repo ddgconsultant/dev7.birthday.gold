@@ -28,13 +28,12 @@ body {
 
 /* Sticky Header */
 .enrollment-header {
-    position: fixed;
+    position: sticky;
     top: 0;
-    left: 0;
-    right: 0;
     background: white;
     z-index: 1000;
     box-shadow: var(--shadow-sm);
+    margin-top: 1rem;
 }
 
 /* Balance Bar */
@@ -45,6 +44,41 @@ body {
     padding: 0.75rem 1rem;
     background: var(--primary-color);
     color: white;
+}
+
+/* Selected info in balance bar */
+.selected-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.selected-info:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.selected-info:active {
+    transform: scale(0.98);
+}
+
+.selected-info i {
+    font-size: 1.25rem;
+}
+
+.selected-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.selected-label {
+    font-size: 0.875rem;
 }
 
 .balance-info {
@@ -231,12 +265,12 @@ body {
 .companies-container {
     padding: 1rem;
     min-height: 50vh;
-    margin-top: 160px; /* Account for sticky header */
+    margin-top: 1rem;
 }
 
 .companies-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
 }
 
@@ -432,9 +466,10 @@ body {
 }
 
 /* Responsive Adjustments */
+/* Small devices (sm) - ≥576px - Still 2 columns */
 @media (min-width: 576px) {
     .companies-grid {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .company-name {
@@ -446,14 +481,14 @@ body {
     }
 }
 
+/* Medium devices (md) - ≥768px - Still 2 columns */
 @media (min-width: 768px) {
     .companies-container {
         padding: 1.5rem;
-        margin-top: 170px; /* Slightly more space for larger header */
     }
     
     .companies-grid {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
     }
     
@@ -462,12 +497,15 @@ body {
     }
 }
 
+/* Large devices (lg) - ≥992px - 3 columns */
 @media (min-width: 992px) {
     .companies-grid {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
     }
 }
 
+/* Extra large devices (xl) - ≥1200px - 4 columns */
 @media (min-width: 1200px) {
     .companies-grid {
         grid-template-columns: repeat(4, 1fr);
@@ -475,9 +513,10 @@ body {
     }
 }
 
+/* Extra extra large devices (xxl) - ≥1400px - Still 4 columns */
 @media (min-width: 1400px) {
     .companies-grid {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 1.5rem;
     }
 }

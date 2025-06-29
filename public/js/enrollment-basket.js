@@ -82,6 +82,18 @@ function updateBasketUI() {
     const basketCount = document.getElementById('basketCount');
     const modalBasketCount = document.getElementById('modalBasketCount');
     const basketItems = document.getElementById('basketItems');
+    const selectedInfo = document.getElementById('selectedInfo');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    // Update the purple header selected count
+    if (selectedInfo && selectedCount) {
+        if (selectionBasket.length > 0) {
+            selectedInfo.style.display = 'flex';
+            selectedCount.textContent = selectionBasket.length;
+        } else {
+            selectedInfo.style.display = 'none';
+        }
+    }
     
     if (selectionBasket.length > 0) {
         counter.style.display = 'flex';

@@ -156,15 +156,19 @@ if (empty($companies)) {
 }
 
 // Page setup - MUST be before includes
-$pagetitle = 'Select Your Birthday Rewards';
+$pagetitle = 'Pick Your Birthday Rewards';
 $bodycontentclass = '';
 $additionalstyles .= '<link rel="stylesheet" href="/public/css/enrollment-picker.css">';
 
-include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/header3.inc');
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+include($dir['core_components'] . '/bg_user_profileheader.inc');
+include($dir['core_components'] . '/bg_user_leftpanel.inc');
 
-echo '<div class="container mt-0 pt-0 main-content">';
+echo '<div class="col-md-9 col-lg-9">
+    <div class="mb-4">
+        <h1 style="font-size: 2.5rem; font-weight: 400;">Pick Your Birthday Rewards</h1>
+    </div>';
 ?>
 
 <!-- Sticky Header -->
@@ -175,6 +179,13 @@ echo '<div class="container mt-0 pt-0 main-content">';
             <span class="balance-number"><?php echo $balance['available_allocations']; ?></span>
             <span class="balance-label">enrollments available</span>
         </div>
+        
+        <div class="selected-info" id="selectedInfo" style="display: none;" onclick="toggleBasketDetails()">
+            <i class="bi bi-basket-fill"></i>
+            <span class="selected-number" id="selectedCount">0</span>
+            <span class="selected-label">selected</span>
+        </div>
+        
         <?php if ($balance['expiring_soon_count'] > 0): ?>
         <div class="expiring-warning">
             <i class="bi bi-clock-history"></i>
@@ -577,7 +588,10 @@ body {
 }
 </style>
 
-</div> <!-- Close main-content container -->
+</div> <!-- close col-md-9 -->
+</div> <!-- close row -->
+</div> <!-- close container -->
+</div> <!-- close main-content -->
 
 <script>
 // Initialize user data
