@@ -11,55 +11,49 @@ $additionalstyles.="
 <style>
 /* Mobile-first responsive design */
 .redeem-header {
-    padding: 1.5rem 0;
-    border-bottom: 2px solid #e9ecef;
-    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+}
+
+.redeem-title-wrapper {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
 }
 
 .redeem-title {
-    font-size: 1.75rem;
-    font-weight: 700;
+    font-size: 2rem;
+    font-weight: 400;
     color: #212529;
-    margin-bottom: 0.5rem;
+    margin: 0;
 }
 
 @media (min-width: 768px) {
     .redeem-title {
-        font-size: 2.25rem;
+        font-size: 2.5rem;
     }
 }
 
-.redeem-subtitle {
-    color: #6c757d;
-    font-size: 1rem;
-    margin-bottom: 0;
+.reward-count-badge {
+    background-color: #28a745;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 500;
+    padding: 0.375rem 1rem;
+    border-radius: 50rem;
+    vertical-align: baseline;
+    margin-bottom: 3px;
 }
 
-/* Stats section */
-.stats-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.stats-info {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-}
-
-.stats-number {
-    font-size: 2rem;
-    font-weight: 700;
+/* Section headers */
+.section-header {
+    font-size: 1.75rem;
+    font-weight: 400;
     color: #212529;
-}
-
-.stats-label {
-    font-size: 1rem;
-    color: #6c757d;
+    margin-bottom: 1.5rem;
 }
 
 /* Enhanced flip cards */
@@ -370,31 +364,59 @@ $show_rewards = false;
     echo '
 <div class="col-md-9 col-lg-9">
     <div class="redeem-header">
-        <h1 class="redeem-title">Redeem Your Rewards</h1>
-        <p class="redeem-subtitle">'.($show_rewards ? 'Tap cards to see redemption instructions' : 'Check back soon for available rewards').'</p>
+        <div class="redeem-title-wrapper">
+            <h1 class="redeem-title">Your Rewards</h1>
+            '.($show_rewards && count($results) > 0 ? '<span class="reward-count-badge">'.count($results).'</span>' : '').'  
+        </div>
+        <a href="/myaccount/redeem-list" class="btn btn-primary">View All Rewards</a>
     </div>
 
 
 ';
 
-    // Show stats and filters if there are rewards
+    // Show section header and filters if there are rewards
     if ($show_rewards && count($results) > 0) {
-        echo '
-        <div class="stats-section">
-            <div class="stats-info">
-                <span class="stats-number">'.count($results).'</span>
-                <span class="stats-label">rewards available</span>
-            </div>
-            <a href="/myaccount/redeem-list" class="btn btn-outline-primary btn-sm">View All</a>
-        </div>
+        echo '<h2 class="section-header">Currently Available Rewards</h2>';
         
-        <!-- Filter pills -->
-        <div class="filter-pills">
-            <div class="filter-pill active" data-filter="all">All Rewards</div>
-            <div class="filter-pill" data-filter="available">Available Now</div>
-            <div class="filter-pill" data-filter="upcoming">Coming Soon</div>
-        </div>
-        ';
+        // Check what status types are available
+        $has_available = false;
+        $has_upcoming = false;
+        $has_expiring = false;
+        
+        foreach ($results as $company) {
+            $availability_tag = $app->getAvailabilityTag($company['availability_from_date'], $company['expiration_date']);
+            if (!empty($availability_tag['availability'])) {
+                if (strpos($availability_tag['availability'], 'Coming Soon') !== false) {
+                    $has_upcoming = true;
+                } elseif (strpos($availability_tag['availability'], 'Expiring') !== false) {
+                    $has_expiring = true;
+                } else {
+                    $has_available = true;
+                }
+            } else {
+                $has_available = true;
+            }
+        }
+        
+        // Only show filter pills if there are multiple status types
+        if (($has_available && ($has_upcoming || $has_expiring)) || ($has_upcoming && $has_expiring)) {
+            echo '
+            <!-- Filter pills -->
+            <div class="filter-pills mb-3">
+                <div class="filter-pill active" data-filter="all">All Rewards</div>';
+                
+            if ($has_available) {
+                echo '<div class="filter-pill" data-filter="available">Available Now</div>';
+            }
+            if ($has_upcoming) {
+                echo '<div class="filter-pill" data-filter="upcoming">Coming Soon</div>';
+            }
+            if ($has_expiring) {
+                echo '<div class="filter-pill" data-filter="expiring">Expiring Soon</div>';
+            }
+            
+            echo '</div>';
+        }
     }
 
     echo '<div class="row g-3">';
@@ -476,8 +498,8 @@ $show_rewards = false;
         </div>
     
         <div class="text-center mt-5">
-            <a href="/myaccount/redeem-list" class="btn btn-primary btn-lg">
-                <i class="fas fa-list me-2"></i> View All Your Rewards
+            <a href="/myaccount/redeem-list" class="btn btn-secondary">
+                Back to Dashboard
             </a>
         </div>
         ';
@@ -501,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             cards.forEach(card => {
                 if (filter === 'all' || card.getAttribute('data-status') === filter) {
-                    card.style.display = 'block';
+                    card.style.display = '';
                 } else {
                     card.style.display = 'none';
                 }

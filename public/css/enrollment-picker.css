@@ -24,7 +24,6 @@ body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: var(--light-gray);
-    padding-top: 160px; /* Space for sticky header */
 }
 
 /* Sticky Header */
@@ -232,6 +231,7 @@ body {
 .companies-container {
     padding: 1rem;
     min-height: 50vh;
+    margin-top: 160px; /* Account for sticky header */
 }
 
 .companies-grid {
@@ -447,12 +447,9 @@ body {
 }
 
 @media (min-width: 768px) {
-    body {
-        padding-top: 170px;
-    }
-    
     .companies-container {
         padding: 1.5rem;
+        margin-top: 170px; /* Slightly more space for larger header */
     }
     
     .companies-grid {
@@ -467,7 +464,21 @@ body {
 
 @media (min-width: 992px) {
     .companies-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}
+
+@media (min-width: 1200px) {
+    .companies-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 1400px) {
+    .companies-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1.5rem;
     }
 }
 

@@ -25,7 +25,7 @@ foreach ($results as $reward) {
 }
 
 echo '
-<div class="container main-content">
+<div class="col-md-9 col-lg-9">
     <div class="d-flex justify-content-between align-items-center">
         <h1 class="mb-0">Your Rewards 
             <span class="badge rounded-pill bg-success fs-3 align-middle" style="vertical-align: baseline; margin-bottom: 3px;">' . count($current_rewards) . '</span>
@@ -108,7 +108,10 @@ if (!empty($future_rewards)) {
         <a href="/myaccount/redeem" class="btn btn-secondary">Back to Dashboard</a>
     </div>
 </div>
-</div></div></div>
+</div> <!-- close col-md-9 -->
+</div> <!-- close row -->
+</div> <!-- close container -->
+</div> <!-- close main-content -->
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

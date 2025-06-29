@@ -93,22 +93,54 @@ if (!empty($_GET['getcontent'])) {
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 $bodycontentclass = '';
+
+// Move styles before includes
+$additionalstyles .= '
+<style>
+/* Enrollment history page styles */
+.enrollment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.enrollment-title {
+    font-size: 2.5rem;
+    font-weight: 400;
+    color: #212529;
+    margin: 0;
+}
+
+.enrollment-count {
+    background-color: #28a745;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 500;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50rem;
+    vertical-align: middle;
+    margin-left: 0.5rem;
+}
+
+/* Tab styles */
+.nav-tabs .nav-link { padding: 10px 20px; width: auto; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #6c757d; }
+.nav-tabs .nav-link.active { background-color: #e9ecef; border-color: #dee2e6 #dee2e6 #fff; color: #007bff; }
+.nav-tabs .nav-link.active .bi-info-circle-fill { color: #007bff; }
+.nav-tabs .nav-link.active .badge { background-color: #6c757d; color: #ffffff; }
+.nav-tabs .nav-link .bi-info-circle-fill { color: #6c757d; }
+.nav-tabs .nav-link .badge { background-color: #dee2e6; color: #6c757d; }
+.form-control::placeholder { color: #b0b0b0; opacity: 1; }
+.row-hover:hover { background-color: #eee; }
+.muted-company { opacity: 0.8; color: #6c757d; }
+.muted-company .company-name { color: inherit; }
+.muted-company img { filter: grayscale(100%); opacity: 0.8; }
+</style>
+';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-
 include($dir['core_components'] . '/bg_user_profileheader.inc');
-
-
-/*
-$lefpanelcontent['prepanel']= '<div class="text-center">
-<a class="small btn button btn-primary" href="/myaccount/select">Collect brands for enrollment</a>
-</div>
-<div class="text-center">
-<a class="small btn button btn-primary" href="/myaccount/enrollment-schedule">Change Enrollment Schedule</a>
-</div>';
-*/
-
-
 include($dir['core_components'] . '/bg_user_leftpanel.inc');
 
 
@@ -192,36 +224,23 @@ $totalEnrollments = $statusCounters['total'];
 
 $apptype = $current_user_data['profile_phone_type'] ?? '';
 $displayType = isset($_GET['displayType']) ? $_GET['displayType'] : 'link';
-$additionalstyles .= '
-<style>
-.nav-tabs .nav-link { padding: 10px 20px; width: auto; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #6c757d;     /* Inactive tab text color */ }
-.nav-tabs .nav-link.active { background-color: #e9ecef;     /* Subtle background color for active tab */ border-color: #dee2e6 #dee2e6 #fff; color: #007bff;     /* Primary color for active tab text */ }
-.nav-tabs .nav-link.active .bi-info-circle-fill { color: #007bff;     /* Primary color for active tab icon */ }
-.nav-tabs .nav-link.active .badge { background-color: #6c757d;     /* Darker gray background color for active badge */ color: #ffffff;     /* White color for active badge text */ }
-.nav-tabs .nav-link .bi-info-circle-fill { color: #6c757d;     /* Gray color for inactive tab icon */ }
-.nav-tabs .nav-link .badge { background-color: #dee2e6;     /* Light gray background color for inactive badge */ color: #6c757d;     /* Gray color for inactive badge text */ }
-.form-control::placeholder { color: #b0b0b0;     /* Lighter gray placeholder color */ opacity: 1;     /* Override default opacity */ }
-.row-hover:hover { background-color: #eee;     /* Light gray background color */ }
-.muted-company { opacity: 0.8; color: #6c757d;     /* Muted text color */ }
-.muted-company .company-name { color: inherit;     /* Inherits the muted color from the parent */ }
-.muted-company img { filter: grayscale(100%); opacity: 0.8;     /* Ensure the image has the same opacity */ }
-</style>
-';
 
 
 // main right section
-echo '<div class="container main-content mt-0 pt-0" data-layout="container">';
-echo '<div class="mb-3">
-
-<h2 class="text-primary">Your Enrollments</h2>
-' . $display->formaterrormessage($transferpagedata['message']) . '
+echo '<div class="col-md-9 col-lg-9">';
+echo '<div class="enrollment-header">
+    <h1 class="enrollment-title">Your Enrollments<span class="enrollment-count">' . $totalEnrollments . '</span></h1>
+    <a href="/myaccount/select" class="btn btn-primary">Add New Enrollments</a>
 </div>
-';
-echo '<div class="alert alert-info my-4 d-flex justify-content-between align-items-center" role="alert">';
-echo '<span>You have used ' . $totalEnrollments . ' enrollments.';
+' . $display->formaterrormessage($transferpagedata['message']);
+echo '<div class="alert alert-info mb-4 d-flex justify-content-between align-items-center" role="alert">';
+echo '<span>';
 
 if ($businessoutput['counts']['remaining'] > 0) {
-    echo '<a class="btn btn-sm btn-primary py-1 ms-3" href="/myaccount/select">Pick more '.$website['biznames'].'</a>';
+    echo 'You have ' . $businessoutput['counts']['remaining'] . ' enrollments remaining. ';
+    echo '<a class="btn btn-sm btn-outline-primary py-1 ms-2" href="/myaccount/select">Pick more '.$website['biznames'].'</a>';
+} else {
+    echo 'You have used all ' . $totalEnrollments . ' of your enrollments.';
 }
 
 echo '</span>';
@@ -680,7 +699,7 @@ echo '
 
 // end of tab content
 // -----------------------------------------------------
-echo '</div></div>';
+echo '</div>';
 
 
 echo '<!-- Modal Structure -->
@@ -719,12 +738,10 @@ echo '<!-- Modal Structure -->
 
 
 $csrfToken = $display->inputcsrf_token('tokenonly');
-?>
-</div>
-</div>
-</div>
-</div>
-</main>
+?> <!-- close col-md-9 -->
+</div> <!-- close row -->
+</div> <!-- close container -->
+</div> <!-- close main-content -->
 
 <!-- Modal Structure for QR Code -->
 <div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
