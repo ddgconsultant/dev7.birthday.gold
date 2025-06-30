@@ -407,7 +407,7 @@ echo '<div class="col-12">';
         document.getElementById('api-status').textContent = 'Loading Google Maps API...';
         
         var script = document.createElement('script');
-        script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $siteconfig['GOOGLEAPI']['mainkey']; ?>&libraries=places&callback=initMap';
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places&callback=initMap';
         script.async = true;
         script.defer = true;
         
