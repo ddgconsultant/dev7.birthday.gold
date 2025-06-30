@@ -223,7 +223,7 @@ echo '<div class="col-12">';
                         </div>
                     </div>
                     <div class="ms-4 small">
-                        <a href="#!" data-bs-toggle="modal" data-bs-target="#changeLocationModal">Change Location</a>
+                        <a href="#!" onclick="openChangeLocationModal(event)">Change Location</a>
                     </div>
                 </div>
                 <hr>
@@ -1077,6 +1077,15 @@ document.getElementById('location-search').addEventListener('input', function(e)
 </div><!-- End row -->
 </div><!-- End container -->
 
+<!-- Bootstrap JS if not already loaded -->
+<script>
+if (typeof bootstrap === 'undefined') {
+    var bootstrapScript = document.createElement('script');
+    bootstrapScript.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js';
+    document.head.appendChild(bootstrapScript);
+}
+</script>
+
 <!-- Change Home Location Modal -->
 <div class="modal fade" id="changeLocationModal" tabindex="-1" aria-labelledby="changeLocationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -1110,8 +1119,16 @@ var selectedHomeLocation = null;
 var homeLocationMap = null;
 var homeLocationMarker = null;
 
-// Initialize when modal opens
-document.getElementById('changeLocationModal').addEventListener('shown.bs.modal', function() {
+// Wait for Bootstrap to load
+function initializeHomeLocationModal() {
+    // Check if Bootstrap is loaded
+    if (typeof bootstrap === 'undefined') {
+        setTimeout(initializeHomeLocationModal, 100);
+        return;
+    }
+    
+    // Initialize when modal opens
+    document.getElementById('changeLocationModal').addEventListener('shown.bs.modal', function() {
     if (!homeAutocomplete) {
         homeAutocomplete = new google.maps.places.Autocomplete(
             document.getElementById('home-address-input'),
@@ -1154,8 +1171,8 @@ document.getElementById('changeLocationModal').addEventListener('shown.bs.modal'
     }
 });
 
-// Confirm home location update
-document.getElementById('confirm-home-location').addEventListener('click', function() {
+    // Confirm home location update
+    document.getElementById('confirm-home-location').addEventListener('click', function() {
     if (selectedHomeLocation) {
         // Update via AJAX
         fetch(window.location.pathname, {
@@ -1186,7 +1203,54 @@ document.getElementById('confirm-home-location').addEventListener('click', funct
             }
         });
     }
-});
+    });
+}
+
+// Initialize modal when page loads
+window.addEventListener('load', initializeHomeLocationModal);
+
+// Manual open function as fallback
+function openChangeLocationModal(event) {
+    event.preventDefault();
+    
+    // Try Bootstrap modal first
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        var modal = new bootstrap.Modal(document.getElementById('changeLocationModal'));
+        modal.show();
+    } else {
+        // Fallback - show modal manually
+        var modalEl = document.getElementById('changeLocationModal');
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        modalEl.setAttribute('aria-hidden', 'false');
+        
+        // Add backdrop
+        var backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        document.body.appendChild(backdrop);
+        
+        // Add close handlers
+        modalEl.querySelector('.btn-close').onclick = function() {
+            closeChangeLocationModal();
+        };
+        modalEl.querySelector('[data-bs-dismiss="modal"]').onclick = function() {
+            closeChangeLocationModal();
+        };
+    }
+}
+
+function closeChangeLocationModal() {
+    var modalEl = document.getElementById('changeLocationModal');
+    modalEl.classList.remove('show');
+    modalEl.style.display = 'none';
+    modalEl.setAttribute('aria-hidden', 'true');
+    
+    // Remove backdrop
+    var backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+}
 </script>
 
 <?php
