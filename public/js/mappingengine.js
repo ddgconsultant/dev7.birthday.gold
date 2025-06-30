@@ -323,7 +323,7 @@
 
     function loadMapScript() {
         const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCYB0E0B5QvxNB3LB48iWpx5Nh_ETB0mtI&libraries=places&callback=initMap`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCtO04U0nKVeodiS0TL12ib8MDEtwdANOM&libraries=places&callback=initMap`;
         script.defer = true;
         script.async = true;
         document.body.appendChild(script);

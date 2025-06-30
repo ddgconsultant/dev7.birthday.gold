@@ -73,6 +73,7 @@ echo '
 <!-- Mobile & PWA Meta Tags -->
 <meta name="theme-color" content="#198754">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Birthday.Gold">
 <meta name="msapplication-TileColor" content="#198754">
