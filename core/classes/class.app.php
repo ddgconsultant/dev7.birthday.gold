@@ -3326,4 +3326,239 @@ function bg_businesshours() {
 
     return $coords;
   }
+
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  // Get nearest company location from pre-populated data
+  public function getNearestCompanyLocation($company_id, $user_lat, $user_lng, $max_distance_miles = 50)
+  {
+    global $database;
+    
+    // Calculate distance using Haversine formula
+    $sql = "SELECT cl.*, 
+            (3959 * acos(
+              cos(radians(:user_lat)) * 
+              cos(radians(cl.latitude)) * 
+              cos(radians(cl.longitude) - radians(:user_lng)) + 
+              sin(radians(:user_lat)) * 
+              sin(radians(cl.latitude))
+            )) AS distance_miles
+            FROM bg_company_locations cl
+            WHERE cl.company_id = :company_id
+            AND cl.status = 'active'
+            AND cl.latitude IS NOT NULL
+            AND cl.longitude IS NOT NULL
+            HAVING distance_miles <= :max_distance
+            ORDER BY distance_miles ASC
+            LIMIT 1";
+    
+    $stmt = $database->prepare($sql);
+    $stmt->execute([
+      'company_id' => $company_id,
+      'user_lat' => $user_lat,
+      'user_lng' => $user_lng,
+      'max_distance' => $max_distance_miles
+    ]);
+    
+    $location = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($location) {
+      // Get additional attributes
+      $attr_sql = "SELECT attribute_key, attribute_value 
+                   FROM bg_company_locations_attributes 
+                   WHERE location_id = :location_id 
+                   AND status = 'active'";
+      $attr_stmt = $database->prepare($attr_sql);
+      $attr_stmt->execute(['location_id' => $location['location_id']]);
+      
+      $attributes = [];
+      while ($row = $attr_stmt->fetch(PDO::FETCH_ASSOC)) {
+        $attributes[$row['attribute_key']] = $row['attribute_value'];
+      }
+      $location['attributes'] = $attributes;
+    }
+    
+    return $location;
+  }
+
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  // Search for company location using Google Places API and store result
+  public function searchAndStoreCompanyLocation($company_id, $company_name, $search_location, $user_lat = null, $user_lng = null)
+  {
+    global $database, $sitesettings;
+    
+    $google_api_key = $sitesettings['GOOGLEAPI']['mainkey'];
+    
+    // Build search query
+    $search_query = $company_name;
+    if ($search_location) {
+      $search_query .= " near " . $search_location;
+    }
+    
+    // Google Places Text Search API
+    $url = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+    $params = [
+      'query' => $search_query,
+      'key' => $google_api_key
+    ];
+    
+    // If we have user coordinates, bias the search
+    if ($user_lat && $user_lng) {
+      $params['location'] = "$user_lat,$user_lng";
+      $params['radius'] = 50000; // 50km radius
+    }
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url . '?' . http_build_query($params));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($http_code !== 200 || !$response) {
+      return false;
+    }
+    
+    $data = json_decode($response, true);
+    
+    if ($data['status'] !== 'OK' || empty($data['results'])) {
+      return false;
+    }
+    
+    // Use the first result
+    $place = $data['results'][0];
+    
+    // Check if we already have this place_id
+    $check_sql = "SELECT cl.* FROM bg_company_locations cl
+                  JOIN bg_company_locations_attributes cla ON cl.location_id = cla.location_id
+                  WHERE cla.attribute_key = 'google_place_id' 
+                  AND cla.attribute_value = :place_id";
+    $check_stmt = $database->prepare($check_sql);
+    $check_stmt->execute(['place_id' => $place['place_id']]);
+    $existing = $check_stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($existing) {
+      return $existing;
+    }
+    
+    // Parse address components
+    $address_parts = explode(',', $place['formatted_address']);
+    $address = trim($address_parts[0] ?? '');
+    $city = trim($address_parts[1] ?? '');
+    $state_zip = trim($address_parts[2] ?? '');
+    
+    // Extract state and zip
+    preg_match('/([A-Z]{2})\s*(\d{5}(?:-\d{4})?)/', $state_zip, $matches);
+    $state = $matches[1] ?? '';
+    $zip = $matches[2] ?? '';
+    
+    // Insert new location
+    $insert_sql = "INSERT INTO bg_company_locations 
+                   (company_id, source, address, city, state, zip_code, country, 
+                    latitude, longitude, is_verified, status) 
+                   VALUES (:company_id, :source, :address, :city, :state, :zip, :country,
+                           :lat, :lng, :verified, :status)";
+    
+    $insert_stmt = $database->prepare($insert_sql);
+    $result = $insert_stmt->execute([
+      'company_id' => $company_id,
+      'source' => 'google_places_api_realtime',
+      'address' => $address,
+      'city' => $city,
+      'state' => $state,
+      'zip' => $zip,
+      'country' => 'United States',
+      'lat' => $place['geometry']['location']['lat'],
+      'lng' => $place['geometry']['location']['lng'],
+      'verified' => 1,
+      'status' => 'active'
+    ]);
+    
+    if (!$result) {
+      return false;
+    }
+    
+    $location_id = $database->lastInsertId();
+    
+    // Store Google attributes
+    $attributes = [
+      'google_place_id' => $place['place_id'],
+      'google_place_name' => $place['name'],
+      'google_formatted_address' => $place['formatted_address'],
+      'google_place_types' => json_encode($place['types'] ?? [])
+    ];
+    
+    if (isset($place['rating'])) {
+      $attributes['google_rating'] = $place['rating'];
+      $attributes['google_user_ratings_total'] = $place['user_ratings_total'] ?? 0;
+    }
+    
+    foreach ($attributes as $key => $value) {
+      $attr_sql = "INSERT INTO bg_company_locations_attributes
+                   (location_id, attribute_key, attribute_value, attribute_type, source)
+                   VALUES (:location_id, :key, :value, :type, :source)";
+      
+      $attr_stmt = $database->prepare($attr_sql);
+      $attr_stmt->execute([
+        'location_id' => $location_id,
+        'key' => $key,
+        'value' => (string)$value,
+        'type' => is_numeric($value) ? 'number' : 'string',
+        'source' => 'google_places_api_realtime'
+      ]);
+    }
+    
+    // Return the complete location data
+    return [
+      'location_id' => $location_id,
+      'company_id' => $company_id,
+      'address' => $address,
+      'city' => $city,
+      'state' => $state,
+      'zip_code' => $zip,
+      'latitude' => $place['geometry']['location']['lat'],
+      'longitude' => $place['geometry']['location']['lng'],
+      'distance_miles' => 0 // Will be calculated by caller if needed
+    ];
+  }
+
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  // Get company locations for tour with fallback to real-time search
+  public function getTourCompanyLocations($tour_companies, $user_lat, $user_lng, $max_distance_miles = 50)
+  {
+    $locations = [];
+    
+    foreach ($tour_companies as $company) {
+      // First try to get from pre-populated data
+      $location = $this->getNearestCompanyLocation(
+        $company['company_id'], 
+        $user_lat, 
+        $user_lng, 
+        $max_distance_miles
+      );
+      
+      // If no pre-populated location found, search in real-time
+      if (!$location) {
+        $search_location = $company['city'] . ', ' . $company['state'];
+        $location = $this->searchAndStoreCompanyLocation(
+          $company['company_id'],
+          $company['company_name'],
+          $search_location,
+          $user_lat,
+          $user_lng
+        );
+      }
+      
+      if ($location) {
+        // Merge company info with location data
+        $locations[] = array_merge($company, $location);
+      }
+    }
+    
+    return $locations;
+  }
 }
