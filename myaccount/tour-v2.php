@@ -1,6 +1,37 @@
 <?php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+// Handle AJAX requests
+if (isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    
+    switch ($_POST['action']) {
+        case 'update_home_location':
+            $address = $_POST['address'] ?? '';
+            $lat = $_POST['lat'] ?? null;
+            $lng = $_POST['lng'] ?? null;
+            
+            // Store in session for this demo (in production, save to user profile)
+            $_SESSION['tour_home_address'] = $address;
+            $_SESSION['tour_home_lat'] = $lat;
+            $_SESSION['tour_home_lng'] = $lng;
+            
+            echo json_encode(['success' => true, 'address' => $address]);
+            exit;
+            
+        case 'get_tour_locations':
+            $tour_companies = json_decode($_POST['companies'], true);
+            $user_lat = $_POST['lat'] ?? null;
+            $user_lng = $_POST['lng'] ?? null;
+            
+            // Get locations using the new App methods
+            $locations = $app->getTourCompanyLocations($tour_companies, $user_lat, $user_lng);
+            
+            echo json_encode(['success' => true, 'locations' => $locations]);
+            exit;
+    }
+}
+
 // Get tour data - hardcoded to 2025-07-03 for testing
 $date = '2025-07-03'; // $_GET['date'] ?? date('Y-m-d');
 
@@ -20,8 +51,10 @@ foreach ($companies as $item_company) {
 $dateObject = new DateTime($date);
 $formattedDate = $dateObject->format('l, F j, Y');
 
-// Get home address - using user actual address
-$homeaddress = '10106 Atlanta Street, Parker, CO 80134';
+// Get home address - check session first, then use default
+$homeaddress = $_SESSION['tour_home_address'] ?? '10106 Atlanta Street, Parker, CO 80134';
+$home_lat = $_SESSION['tour_home_lat'] ?? null;
+$home_lng = $_SESSION['tour_home_lng'] ?? null;
 
 // Add styles
 $additionalstyles = '<style>
@@ -190,7 +223,7 @@ echo '<div class="col-12">';
                         </div>
                     </div>
                     <div class="ms-4 small">
-                        <a href="#!">Change Location</a>
+                        <a href="#!" data-bs-toggle="modal" data-bs-target="#changeLocationModal">Change Location</a>
                     </div>
                 </div>
                 <hr>
@@ -319,6 +352,8 @@ echo '<div class="col-12">';
         {
             name: "Your Home",
             address: <?php echo json_encode($homeaddress); ?>,
+            lat: <?php echo json_encode($home_lat); ?>,
+            lng: <?php echo json_encode($home_lng); ?>,
             type: "home"
         }
         <?php 
@@ -339,6 +374,7 @@ echo '<div class="col-12">';
         ?>
         ,{
             name: <?php echo json_encode($item_company['company_name']); ?>,
+            company_id: <?php echo json_encode($item_company['company_id']); ?>,
             address: <?php echo json_encode($companyaddress); ?>,
             needsGeocoding: <?php echo json_encode(!$hasFullAddress); ?>,
             city: <?php echo json_encode($businessCity); ?>,
@@ -447,58 +483,115 @@ echo '<div class="col-12">';
     </script>
 
     <script>
-    // Function to geocode missing addresses
+    // Function to geocode missing addresses using server-side lookup
     function geocodeMissingAddresses() {
         console.log('Starting geocodeMissingAddresses...');
-        var geocodePromises = [];
-        var placesService = new google.maps.places.PlacesService(document.createElement('div'));
         
-        console.log('Checking locations for geocoding needs:', locations);
-        
+        // Collect companies that need geocoding
+        var companiesNeedingLocation = [];
         locations.forEach(function(location, index) {
-            console.log('Checking location:', location.name, 'needsGeocoding:', location.needsGeocoding);
             if (location.needsGeocoding && location.type === 'business') {
-                var promise = new Promise(function(resolve) {
-                    var searchQuery = location.name + ' near ' + location.city + ', ' + location.state;
-                    console.log('Searching for:', searchQuery);
-                    
-                    var request = {
-                        query: searchQuery,
-                        fields: ['name', 'geometry', 'formatted_address']
-                    };
-                    
-                    placesService.textSearch(request, function(results, status) {
-                        if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
-                            // Use the first result
-                            var place = results[0];
-                            console.log('Found location for', location.name, ':', place.formatted_address);
-                            
-                            // Update the location
-                            locations[index].address = place.formatted_address;
-                            locations[index].needsGeocoding = false;
-                            
-                            // Update the display on the page
-                            updateBusinessDisplay(location.name, place.formatted_address);
-                        } else {
-                            console.error('Could not find location for', location.name);
-                        }
-                        resolve();
-                    });
+                companiesNeedingLocation.push({
+                    index: index,
+                    company_id: location.company_id,
+                    company_name: location.name,
+                    city: location.city,
+                    state: location.state
                 });
-                geocodePromises.push(promise);
             }
         });
         
-        // Wait for all geocoding to complete, then load directions
-        if (geocodePromises.length > 0) {
-            Promise.all(geocodePromises).then(function() {
-                console.log('All geocoding complete, loading directions...');
-                loadDirections();
-            });
-        } else {
+        if (companiesNeedingLocation.length === 0) {
             // No geocoding needed, load directions immediately
             loadDirections();
+            return;
         }
+        
+        // Get home location coordinates
+        var homeLat = locations[0].lat || <?php echo $home_lat ?: 'null'; ?>;
+        var homeLng = locations[0].lng || <?php echo $home_lng ?: 'null'; ?>;
+        
+        // If we don't have home coordinates, get them first
+        if (!homeLat || !homeLng) {
+            // Use Google Geocoding for home address
+            var geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: locations[0].address }, function(results, status) {
+                if (status === 'OK') {
+                    homeLat = results[0].geometry.location.lat();
+                    homeLng = results[0].geometry.location.lng();
+                    locations[0].lat = homeLat;
+                    locations[0].lng = homeLng;
+                    
+                    // Now fetch business locations
+                    fetchBusinessLocations(companiesNeedingLocation, homeLat, homeLng);
+                } else {
+                    console.error('Failed to geocode home address');
+                    loadDirections(); // Try to continue anyway
+                }
+            });
+        } else {
+            fetchBusinessLocations(companiesNeedingLocation, homeLat, homeLng);
+        }
+    }
+    
+    // Fetch business locations from server
+    function fetchBusinessLocations(companiesNeedingLocation, homeLat, homeLng) {
+        console.log('Fetching business locations from server...');
+        
+        // Prepare company data
+        var companies = companiesNeedingLocation.map(function(item) {
+            return {
+                company_id: item.company_id,
+                company_name: item.company_name,
+                city: item.city,
+                state: item.state
+            };
+        });
+        
+        // Call server to get locations
+        fetch(window.location.pathname, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=get_tour_locations&companies=' + encodeURIComponent(JSON.stringify(companies)) +
+                  '&lat=' + homeLat + '&lng=' + homeLng
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.locations) {
+                // Update our locations with the server results
+                data.locations.forEach(function(serverLocation, idx) {
+                    if (serverLocation) {
+                        var originalIndex = companiesNeedingLocation[idx].index;
+                        
+                        // Build full address
+                        var fullAddress = serverLocation.address + ', ' + 
+                                        serverLocation.city + ', ' + 
+                                        serverLocation.state + ' ' + 
+                                        serverLocation.zip_code;
+                        
+                        locations[originalIndex].address = fullAddress;
+                        locations[originalIndex].lat = parseFloat(serverLocation.latitude);
+                        locations[originalIndex].lng = parseFloat(serverLocation.longitude);
+                        locations[originalIndex].needsGeocoding = false;
+                        
+                        // Update the display
+                        updateBusinessDisplay(locations[originalIndex].name, fullAddress);
+                    }
+                });
+                
+                console.log('All locations updated, loading directions...');
+                loadDirections();
+            } else {
+                console.error('Failed to get locations from server');
+                loadDirections(); // Try to continue anyway
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching locations:', error);
+            loadDirections(); // Try to continue anyway
+        });
     }
     
     // Function to update business display with new address
@@ -519,7 +612,7 @@ echo '<div class="col-12">';
     function createCustomDirectionsPanel(response, locations) {
         var panel = document.getElementById('directions-panel');
         var html = '<div style="padding: 10px;">';
-        html += '<h4 style="margin-bottom: 15px; color: #1a73e8;">Turn-by-Turn Directions</h4>';
+       // html += '<h4 style="margin-bottom: 15px; color: #1a73e8;">Turn-by-Turn Directions</h4>';
         
         console.log('Creating directions for route with', response.routes[0].legs.length, 'legs');
         console.log('Locations:', locations.map(l => l.name));
@@ -983,6 +1076,118 @@ document.getElementById('location-search').addEventListener('input', function(e)
 </div><!-- End col-md-9 -->
 </div><!-- End row -->
 </div><!-- End container -->
+
+<!-- Change Home Location Modal -->
+<div class="modal fade" id="changeLocationModal" tabindex="-1" aria-labelledby="changeLocationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeLocationModalLabel">Change Home Location</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="home-address-input" class="form-label">Enter your home address</label>
+                    <input type="text" class="form-control" id="home-address-input" 
+                           placeholder="Enter address..." 
+                           value="<?php echo htmlspecialchars($homeaddress); ?>">
+                    <div class="form-text">Start typing and select from the suggestions</div>
+                </div>
+                <div id="home-location-map" style="height: 400px; width: 100%; display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-home-location">Update Home Location</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Home location change functionality
+var homeAutocomplete;
+var selectedHomeLocation = null;
+var homeLocationMap = null;
+var homeLocationMarker = null;
+
+// Initialize when modal opens
+document.getElementById('changeLocationModal').addEventListener('shown.bs.modal', function() {
+    if (!homeAutocomplete) {
+        homeAutocomplete = new google.maps.places.Autocomplete(
+            document.getElementById('home-address-input'),
+            { types: ['address'] }
+        );
+        
+        homeAutocomplete.addListener('place_changed', function() {
+            var place = homeAutocomplete.getPlace();
+            
+            if (place.geometry) {
+                selectedHomeLocation = {
+                    address: place.formatted_address,
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng()
+                };
+                
+                // Show map
+                document.getElementById('home-location-map').style.display = 'block';
+                
+                if (!homeLocationMap) {
+                    homeLocationMap = new google.maps.Map(document.getElementById('home-location-map'), {
+                        center: place.geometry.location,
+                        zoom: 15
+                    });
+                }
+                
+                homeLocationMap.setCenter(place.geometry.location);
+                
+                if (homeLocationMarker) {
+                    homeLocationMarker.setMap(null);
+                }
+                
+                homeLocationMarker = new google.maps.Marker({
+                    position: place.geometry.location,
+                    map: homeLocationMap,
+                    title: 'Home Location'
+                });
+            }
+        });
+    }
+});
+
+// Confirm home location update
+document.getElementById('confirm-home-location').addEventListener('click', function() {
+    if (selectedHomeLocation) {
+        // Update via AJAX
+        fetch(window.location.pathname, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=update_home_location&address=' + encodeURIComponent(selectedHomeLocation.address) +
+                  '&lat=' + selectedHomeLocation.lat + '&lng=' + selectedHomeLocation.lng
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the display
+                document.querySelector('[data-location]').setAttribute('data-location', selectedHomeLocation.address);
+                document.querySelector('.text-xs.text-muted').textContent = selectedHomeLocation.address;
+                
+                // Update our locations array
+                locations[0].address = selectedHomeLocation.address;
+                locations[0].lat = selectedHomeLocation.lat;
+                locations[0].lng = selectedHomeLocation.lng;
+                
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('changeLocationModal')).hide();
+                
+                // Trigger map redraw
+                loadGoogleMaps();
+            }
+        });
+    }
+});
+</script>
 
 <?php
 // Footer breaks Google Maps, so we skip it
