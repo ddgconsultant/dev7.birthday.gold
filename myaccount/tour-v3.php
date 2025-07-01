@@ -697,6 +697,12 @@ $additionalstyles = '<style>
     object-fit: cover;
 }
 
+/* Compact home location styles */
+.home-location-logo {
+    width: 40px !important;
+    height: 40px !important;
+}
+
 .business-info {
     flex: 1;
 }
@@ -1171,13 +1177,14 @@ echo '<div class="mobile-container">';
     <div id="sortable">
         <!-- Home Location Card -->
         <div class="business-card" style="background: #d1f2eb;">
-            <div class="business-card-header">
-                <div class="business-logo d-flex align-items-center justify-content-center" style="background: #28a745;">
-                    <i class="bi bi-house-fill text-white" style="font-size: 24px;"></i>
-                </div>
-                <div class="business-info">
-                    <div class="business-name">Starting Tour Location</div>
-                    <div class="business-address">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="business-logo d-flex align-items-center justify-content-center" style="background: #28a745; width: 40px; height: 40px;">
+                        <i class="bi bi-house-fill text-white" style="font-size: 20px;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold">Starting Tour Location</div>
+                        <div class="small text-muted">
                         <?php 
                                 // Remove USA from display
                                 $displayHomeAddress = preg_replace('/, USA$/', '', $homeaddress);
@@ -1235,12 +1242,11 @@ echo '<div class="mobile-container">';
                                     }
                                 }
                                 ?>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="d-flex gap-2 mt-3 justify-content-end">
-                <button class="btn btn-outline-secondary btn-sm" onclick="openChangeLocationModal(event)">
-                    <i class="bi bi-geo-alt"></i> Change Location
+                <button class="btn btn-link btn-sm text-decoration-none" onclick="openChangeLocationModal(event)">
+                    <i class="bi bi-geo-alt"></i> Change
                 </button>
             </div>
         </div>
