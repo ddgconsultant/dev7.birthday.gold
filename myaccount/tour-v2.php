@@ -39,6 +39,19 @@ function getCompanyLocations($database, $companyId) {
 
 // Handle AJAX requests
 if (isset($_POST['action'])) {
+    // Check if headers were already sent
+    if (headers_sent($file, $line)) {
+        die(json_encode(['success' => false, 'message' => "Headers already sent in $file on line $line"]));
+    }
+    
+    // Clear any output buffers
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    
+    // Start output buffering to catch any warnings
+    ob_start();
+    
     header('Content-Type: application/json');
     
     switch ($_POST['action']) {
@@ -152,7 +165,95 @@ if (isset($_POST['action'])) {
                 ]);
             }
             
+            // Release any non-forced locations for this tour date
+            // First get all tours for this date to check attributes
+            $checkQuery = "SELECT tour_id, attributes FROM bg_user_tours 
+                          WHERE user_id = :user_id 
+                          AND calendar_dt = :calendar_dt";
+            $stmt = $database->prepare($checkQuery);
+            $stmt->execute([
+                ':user_id' => $current_user_data['user_id'],
+                ':calendar_dt' => $tourDate
+            ]);
+            $tours = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Update only non-forced locations
+            foreach ($tours as $tour) {
+                $attributes = !empty($tour['attributes']) ? json_decode($tour['attributes'], true) : [];
+                if (!isset($attributes['force_location']) || !$attributes['force_location']) {
+                    $releaseQuery = "UPDATE bg_user_tours 
+                                   SET location_id = NULL 
+                                   WHERE tour_id = :tour_id";
+                    $stmt = $database->prepare($releaseQuery);
+                    $stmt->execute([':tour_id' => $tour['tour_id']]);
+                }
+            }
+            
+            ob_end_clean();
             echo json_encode(['success' => true, 'address' => $address]);
+            exit;
+            
+        case 'search_business_locations':
+            $companyId = $_POST['company_id'] ?? '';
+            $radius = $_POST['radius'] ?? 25;
+            $homeLat = $_POST['home_lat'] ?? null;
+            $homeLng = $_POST['home_lng'] ?? null;
+            
+            if (!$companyId || !$homeLat || !$homeLng) {
+                ob_end_clean();
+                echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
+                exit;
+            }
+            
+            // Search for locations within radius using Haversine formula
+            $query = "SELECT *, 
+                      (3959 * acos(cos(radians(:lat1)) * cos(radians(latitude)) * 
+                      cos(radians(longitude) - radians(:lng1)) + 
+                      sin(radians(:lat2)) * sin(radians(latitude)))) AS distance 
+                      FROM bg_company_locations 
+                      WHERE company_id = :company_id 
+                      AND status = 'active' 
+                      AND latitude IS NOT NULL 
+                      AND longitude IS NOT NULL 
+                      HAVING distance < :radius 
+                      ORDER BY distance";
+            
+            $stmt = $database->prepare($query);
+            $stmt->execute([
+                ':lat1' => $homeLat,
+                ':lat2' => $homeLat,
+                ':lng1' => $homeLng,
+                ':company_id' => $companyId,
+                ':radius' => $radius
+            ]);
+            
+            $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Format addresses for display
+            foreach ($locations as &$loc) {
+                $loc['full_address'] = trim($loc['address'] . ', ' . $loc['city'] . ', ' . $loc['state'] . ' ' . $loc['zip_code']);
+                $loc['distance'] = round($loc['distance'], 1);
+            }
+            
+            // If no locations found, get all locations for this company
+            if (empty($locations)) {
+                $fallbackQuery = "SELECT * FROM bg_company_locations 
+                                 WHERE company_id = :company_id 
+                                 AND status = 'active' 
+                                 ORDER BY city, state 
+                                 LIMIT 20";
+                $stmt = $database->prepare($fallbackQuery);
+                $stmt->execute([':company_id' => $companyId]);
+                $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                foreach ($locations as &$loc) {
+                    $loc['full_address'] = trim($loc['address'] . ', ' . $loc['city'] . ', ' . $loc['state'] . ' ' . $loc['zip_code']);
+                    $loc['distance'] = 'Unknown';
+                }
+            }
+            
+            ob_end_clean();
+            echo json_encode(['success' => true, 'locations' => $locations, 'count' => count($locations)]);
             exit;
             
         case 'save_business_location':
@@ -224,7 +325,66 @@ if (isset($_POST['action'])) {
                 $locationId = $existing['location_id'];
             }
             
+            ob_end_clean();
             echo json_encode(['success' => true, 'location_id' => $locationId]);
+            exit;
+            
+        case 'update_tour_location':
+            try {
+                $tourDate = $_POST['tour_date'] ?? date('Y-m-d');
+                $companyId = $_POST['company_id'] ?? '';
+                $locationId = $_POST['location_id'] ?? null;
+                $forceLocation = $_POST['force_location'] ?? 0;
+                
+                if (!$companyId) {
+                    ob_end_clean();
+                    echo json_encode(['success' => false, 'message' => 'Missing company ID']);
+                    exit;
+                }
+                
+                if (!$locationId) {
+                    ob_end_clean();
+                    echo json_encode(['success' => false, 'message' => 'Missing location ID']);
+                    exit;
+                }
+                
+                // Create attributes JSON
+                $attributes = json_encode([
+                    'force_location' => (bool)$forceLocation,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                    'updated_by' => 'user'
+                ]);
+                
+                // Update the tour with the selected location
+                $updateQuery = "UPDATE bg_user_tours 
+                               SET location_id = :location_id,
+                                   attributes = :attributes,
+                                   modify_dt = NOW() 
+                               WHERE user_id = :user_id 
+                               AND company_id = :company_id 
+                               AND calendar_dt = :calendar_dt";
+                
+                $stmt = $database->prepare($updateQuery);
+                $result = $stmt->execute([
+                    ':location_id' => $locationId,
+                    ':attributes' => $attributes,
+                    ':user_id' => $current_user_data['user_id'],
+                    ':company_id' => $companyId,
+                    ':calendar_dt' => $tourDate
+                ]);
+                
+                // Clear output buffer before sending response
+                ob_end_clean();
+                
+                if ($result) {
+                    echo json_encode(['success' => true]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Database update failed']);
+                }
+            } catch (Exception $e) {
+                ob_end_clean();
+                echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            }
             exit;
     }
 }
@@ -233,51 +393,91 @@ if (isset($_POST['action'])) {
 $date = '2025-07-03'; // $_GET['date'] ?? date('Y-m-d');
 
 // Get tour businesses for this date
-$checkEnrollmentQuery = "SELECT * FROM bg_user_tours WHERE calendar_dt = :date AND user_id = ".$current_user_data['user_id']."";
+$checkEnrollmentQuery = "SELECT t.*, 
+                        cl.location_id as cl_location_id,
+                        cl.address as cl_address,
+                        cl.city as cl_city,
+                        cl.state as cl_state,
+                        cl.zip_code as cl_zip_code,
+                        cl.latitude as cl_latitude,
+                        cl.longitude as cl_longitude
+                        FROM bg_user_tours t 
+                        LEFT JOIN bg_company_locations cl ON t.location_id = cl.location_id 
+                        WHERE t.calendar_dt = :date 
+                        AND t.user_id = :user_id";
 $stmt = $database->prepare($checkEnrollmentQuery);
-$stmt->execute([':date' => $date]);
+$stmt->execute([
+    ':date' => $date,
+    ':user_id' => $current_user_data['user_id']
+]);
 $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $listofcompanies = [];
 foreach ($companies as $item_company) {  
     $company_data = $app->getcompany($item_company['company_id']);
     
-    // Check if we have verified locations in bg_company_locations
-    $verifiedLocation = null;
-    if ($company_data) {
-        $locationQuery = "SELECT * FROM bg_company_locations 
-                         WHERE company_id = :company_id 
-                         AND status = 'active' 
-                         AND is_verified = 1 
-                         AND latitude IS NOT NULL 
-                         AND longitude IS NOT NULL 
-                         ORDER BY modify_dt DESC 
-                         LIMIT 1";
-        $stmt = $database->prepare($locationQuery);
-        $stmt->execute([':company_id' => $item_company['company_id']]);
-        $verifiedLocation = $stmt->fetch(PDO::FETCH_ASSOC);
+    // Check if we have a specific location_id set in the tour (user selected a specific location)
+    if (!empty($item_company['location_id']) && !empty($item_company['cl_latitude'])) {
+        // Use the specific location from the tour (this is a user-selected location)
+        if (!empty($item_company['cl_address'])) {
+            $company_data['address'] = $item_company['cl_address'];
+        }
+        if (!empty($item_company['cl_city'])) {
+            $company_data['city'] = $item_company['cl_city'];
+        }
+        if (!empty($item_company['cl_state'])) {
+            $company_data['state'] = $item_company['cl_state'];
+        }
+        if (!empty($item_company['cl_zip_code'])) {
+            $company_data['zip_code'] = $item_company['cl_zip_code'];
+        }
         
-        // If we have a verified location, update the company data
-        if ($verifiedLocation) {
-            // Only update address fields if they're not empty in the verified location
-            if (!empty($verifiedLocation['address'])) {
-                $company_data['address'] = $verifiedLocation['address'];
-            }
-            if (!empty($verifiedLocation['city'])) {
-                $company_data['city'] = $verifiedLocation['city'];
-            }
-            if (!empty($verifiedLocation['state'])) {
-                $company_data['state'] = $verifiedLocation['state'];
-            }
-            if (!empty($verifiedLocation['zip_code'])) {
-                $company_data['zip_code'] = $verifiedLocation['zip_code'];
-            }
+        $company_data['latitude'] = $item_company['cl_latitude'];
+        $company_data['longitude'] = $item_company['cl_longitude'];
+        $company_data['has_verified_location'] = true;
+        $company_data['location_id'] = $item_company['cl_location_id'];
+        
+        // Parse attributes JSON to check if location is forced
+        $attributes = !empty($item_company['attributes']) ? json_decode($item_company['attributes'], true) : [];
+        $company_data['is_forced_location'] = isset($attributes['force_location']) && $attributes['force_location'];
+    } else {
+        // Check if we have verified locations in bg_company_locations
+        $verifiedLocation = null;
+        if ($company_data) {
+            $locationQuery = "SELECT * FROM bg_company_locations 
+                             WHERE company_id = :company_id 
+                             AND status = 'active' 
+                             AND is_verified = 1 
+                             AND latitude IS NOT NULL 
+                             AND longitude IS NOT NULL 
+                             ORDER BY modify_dt DESC 
+                             LIMIT 1";
+            $stmt = $database->prepare($locationQuery);
+            $stmt->execute([':company_id' => $item_company['company_id']]);
+            $verifiedLocation = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // Always update coordinates if available
-            $company_data['latitude'] = $verifiedLocation['latitude'];
-            $company_data['longitude'] = $verifiedLocation['longitude'];
-            $company_data['has_verified_location'] = true;
-            $company_data['location_id'] = $verifiedLocation['location_id'];
+            // If we have a verified location, update the company data
+            if ($verifiedLocation) {
+                // Only update address fields if they're not empty in the verified location
+                if (!empty($verifiedLocation['address'])) {
+                    $company_data['address'] = $verifiedLocation['address'];
+                }
+                if (!empty($verifiedLocation['city'])) {
+                    $company_data['city'] = $verifiedLocation['city'];
+                }
+                if (!empty($verifiedLocation['state'])) {
+                    $company_data['state'] = $verifiedLocation['state'];
+                }
+                if (!empty($verifiedLocation['zip_code'])) {
+                    $company_data['zip_code'] = $verifiedLocation['zip_code'];
+                }
+                
+                // Always update coordinates if available
+                $company_data['latitude'] = $verifiedLocation['latitude'];
+                $company_data['longitude'] = $verifiedLocation['longitude'];
+                $company_data['has_verified_location'] = true;
+                $company_data['location_id'] = $verifiedLocation['location_id'];
+            }
         }
     }
     
@@ -718,6 +918,15 @@ echo '<div class="col-12">';
                         // Check if we have coordinates (which means location is already known)
                         $hasCoordinates = !empty($item_company['latitude']) && !empty($item_company['longitude']);
                         
+                        // Debug output
+                        if (isset($_GET['debug'])) {
+                            echo "<!-- Company: " . $item_company['company_name'] . " -->\n";
+                            echo "<!-- Has coords: " . ($hasCoordinates ? 'YES' : 'NO') . " -->\n";
+                            echo "<!-- Lat: " . ($item_company['latitude'] ?? 'null') . " -->\n";
+                            echo "<!-- Lng: " . ($item_company['longitude'] ?? 'null') . " -->\n";
+                            echo "<!-- Location ID: " . ($item_company['location_id'] ?? 'null') . " -->\n";
+                        }
+                        
                         // Use home location city/state if business does not have them
                         $businessCity = !empty($item_company['city']) ? $item_company['city'] : $home_city;
                         $businessState = !empty($item_company['state']) ? $item_company['state'] : $home_state;
@@ -747,11 +956,14 @@ echo '<div class="col-12">';
                                     <?php else: ?>
                                         <?php echo $companyaddress; ?>
                                     <?php endif; ?>
+                                    <?php if (!empty($item_company['is_forced_location'])): ?>
+                                        <span class="badge bg-info text-white ms-1">Forced</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
                         <div class="ms-4 small">
-                            <a href="#!" class="pick-location me-2" onclick="pickLocation('<?php echo htmlspecialchars($item_company['company_name']); ?>', '<?php echo htmlspecialchars($item_company['city'] ?? ''); ?>', this)">Pick Different Location</a>
+                            <a href="javascript:void(0);" class="pick-location me-2" data-company-id="<?php echo $item_company['company_id']; ?>" data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">Pick Different Location</a>
                             <div class="btn btn-sm sortable_item_handle" title="Drag to reorder"><i class="bi bi-grip-vertical h4"></i></div>
                         </div>
                     </div>
@@ -779,20 +991,44 @@ echo '<div class="col-12">';
 
 <!-- Location Picker Modal -->
 <div class="modal fade" id="locationPickerModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Pick Location for <span id="modal-business-name"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <input type="text" class="form-control" id="location-search" placeholder="Search for a location...">
+                <div class="row">
+                    <div class="col-md-5">
+                        <div class="mb-3">
+                            <label class="form-label">Search Radius from Starting Location</label>
+                            <select class="form-select" id="radius-select">
+                                <option value="5">5 miles</option>
+                                <option value="25" selected>25 miles</option>
+                                <option value="50">50 miles</option>
+                                <option value="100">100 miles</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <button class="btn btn-primary w-100" onclick="searchBusinessLocations()">
+                                <i class="bi bi-search"></i> Search Locations
+                            </button>
+                        </div>
+                        <div id="location-results" class="list-group" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Search results will appear here -->
+                        </div>
+                        <div class="form-check mt-3" id="force-location-container" style="display: none;">
+                            <input class="form-check-input" type="checkbox" id="force-location-check">
+                            <label class="form-check-label" for="force-location-check">
+                                <strong>Force this location</strong><br>
+                                <small class="text-muted">Keep this location even when starting location changes</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div id="location-map" style="height: 500px;"></div>
+                    </div>
                 </div>
-                <div id="location-results" class="list-group mb-3" style="max-height: 300px; overflow-y: auto;">
-                    <!-- Search results will appear here -->
-                </div>
-                <div id="location-map" style="height: 400px;"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -1504,73 +1740,146 @@ var locationPickerMap;
 var selectedLocation = null;
 var currentBusinessElement = null;
 var currentBusinessIndex = -1;
+var currentCompanyId = null;
+var locationMarkers = [];
 
-function pickLocation(businessName, city, element) {
-    console.log('Picking location for:', businessName, 'in', city);
+// Simple jQuery click handler for all pick location links
+$(document).on('click', '.pick-location', function(e) {
+    e.preventDefault();
     
-    // Store the current element and find the business index
-    currentBusinessElement = element.closest('.sortable_item');
-    var businessNameFromCard = currentBusinessElement.querySelector('.small.fw-bold').textContent;
+    var $this = $(this);
+    currentCompanyId = $this.data('company-id');
+    var businessName = $this.data('company-name');
     
-    // Find the business in locations array
-    for (var i = 1; i < locations.length; i++) {
-        if (locations[i].name === businessNameFromCard) {
-            currentBusinessIndex = i;
-            break;
-        }
-    }
+    console.log('Pick location clicked:', businessName, 'ID:', currentCompanyId);
     
     // Set modal title
-    document.getElementById('modal-business-name').textContent = businessName;
+    $('#modal-business-name').text(businessName);
+    
+    // Clear previous results
+    $('#location-results').empty();
+    $('#force-location-check').prop('checked', false);
+    $('#force-location-container').hide();
+    $('#confirm-location').prop('disabled', true);
     
     // Show modal
-    var modal = new bootstrap.Modal(document.getElementById('locationPickerModal'));
-    modal.show();
+    $('#locationPickerModal').modal('show');
     
-    // Initialize map when modal is shown
-    setTimeout(function() {
+    // Search for locations when modal opens
+    $('#locationPickerModal').off('shown.bs.modal').on('shown.bs.modal', function() {
+        // Initialize map if needed
         if (!locationPickerMap) {
             locationPickerMap = new google.maps.Map(document.getElementById('location-map'), {
-                zoom: 13,
+                zoom: 10,
                 center: {lat: 39.7392, lng: -104.9903}
             });
         }
         
-        // Search for the business
-        searchBusiness(businessName + ' ' + city);
-    }, 500);
-}
+        searchBusinessLocations();
+    });
+});
 
-function searchBusiness(query) {
-    var service = new google.maps.places.PlacesService(locationPickerMap);
-    var request = {
-        query: query,
-        fields: ['name', 'geometry', 'formatted_address', 'place_id']
-    };
+function searchBusinessLocations() {
+    console.log('searchBusinessLocations called');
+    console.log('currentCompanyId:', currentCompanyId);
+    console.log('Home location:', locations[0]);
     
-    service.textSearch(request, function(results, status) {
-        if (status === google.maps.places.PlacesServiceStatus.OK) {
-            displayLocationResults(results);
-            if (results.length > 0) {
-                locationPickerMap.setCenter(results[0].geometry.location);
-            }
+    if (!currentCompanyId) {
+        document.getElementById('location-results').innerHTML = '<div class="alert alert-danger">No company selected</div>';
+        return;
+    }
+    
+    // Get home coordinates - make sure they're numbers
+    var homeLat = locations[0].lat ? parseFloat(locations[0].lat) : 39.7392;
+    var homeLng = locations[0].lng ? parseFloat(locations[0].lng) : -104.9903;
+    var radius = document.getElementById('radius-select').value || 25;
+    
+    console.log('Using coordinates:', homeLat, homeLng, 'Radius:', radius);
+    
+    // Show loading
+    document.getElementById('location-results').innerHTML = '<div class="text-center p-3">Loading locations...</div>';
+    
+    // Make AJAX call to current page
+    $.ajax({
+        url: window.location.pathname,
+        method: 'POST',
+        data: {
+            action: 'search_business_locations',
+            company_id: currentCompanyId,
+            radius: radius,
+            home_lat: homeLat,
+            home_lng: homeLng
+        },
+        dataType: 'json'
+    })
+    .done(function(data) {
+        console.log('API Response:', data);
+        if (data.success && data.locations && data.locations.length > 0) {
+            displayLocationResults(data.locations);
+        } else if (data.success && data.locations && data.locations.length === 0) {
+            document.getElementById('location-results').innerHTML = '<div class="alert alert-warning">No locations found within ' + radius + ' miles for this company.</div>';
+        } else if (data.message) {
+            document.getElementById('location-results').innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+        } else {
+            document.getElementById('location-results').innerHTML = '<div class="alert alert-warning">No locations found</div>';
         }
+    })
+    .fail(function(xhr, status, error) {
+        console.error('AJAX error:', status, error);
+        console.error('Response:', xhr.responseText);
+        document.getElementById('location-results').innerHTML = '<div class="alert alert-danger">Error loading locations: ' + error + '</div>';
     });
 }
 
-function displayLocationResults(results) {
+function displayLocationResults(locations) {
     var resultsDiv = document.getElementById('location-results');
     resultsDiv.innerHTML = '';
     
-    results.forEach(function(place, index) {
+    // Clear existing location markers (but keep home marker)
+    locationMarkers = locationMarkers.filter(marker => {
+        if (marker.getTitle() !== 'Starting Location') {
+            marker.setMap(null);
+            return false;
+        }
+        return true;
+    });
+    
+    if (locations.length === 0) {
+        resultsDiv.innerHTML = '<div class="alert alert-info">No locations found in this radius</div>';
+        return;
+    }
+    
+    // Define colors for markers (up to 10 different colors)
+    var markerColors = ['#EA4335', '#FBBC04', '#34A853', '#4285F4', '#9C27B0', 
+                       '#FF5722', '#795548', '#607D8B', '#E91E63', '#00BCD4'];
+    
+    // Create bounds to fit all markers
+    var bounds = new google.maps.LatLngBounds();
+    // Add home location to bounds
+    if (window.locations && window.locations[0] && window.locations[0].lat && window.locations[0].lng) {
+        bounds.extend({lat: parseFloat(window.locations[0].lat), lng: parseFloat(window.locations[0].lng)});
+    }
+    
+    locations.forEach(function(location, index) {
+        var color = markerColors[index % markerColors.length];
+        
         var item = document.createElement('a');
         item.className = 'list-group-item list-group-item-action';
         item.href = '#';
-        item.innerHTML = '<strong>' + place.name + '</strong><br><small>' + place.formatted_address + '</small>';
+        item.setAttribute('data-location-index', index);
+        item.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
+                        '<div class="d-flex align-items-start">' +
+                        '<div style="width: 20px; height: 20px; background-color: ' + color + '; border-radius: 50%; margin-right: 10px; flex-shrink: 0;"></div>' +
+                        '<div>' +
+                        '<strong>' + location.full_address + '</strong><br>' +
+                        '<small class="text-muted">' + location.distance + ' miles away</small>' +
+                        '</div>' +
+                        '</div>' +
+                        '</div>';
         
         item.onclick = function(e) {
             e.preventDefault();
-            selectLocation(place);
+            selectLocation(location, index);
             
             // Highlight selected
             document.querySelectorAll('#location-results .list-group-item').forEach(function(el) {
@@ -1582,77 +1891,175 @@ function displayLocationResults(results) {
         resultsDiv.appendChild(item);
         
         // Add marker to map
+        var position = {lat: parseFloat(location.latitude), lng: parseFloat(location.longitude)};
         var marker = new google.maps.Marker({
-            position: place.geometry.location,
+            position: position,
             map: locationPickerMap,
-            title: place.name
+            title: location.full_address,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 10,
+                fillColor: color,
+                fillOpacity: 1,
+                strokeColor: 'white',
+                strokeWeight: 2
+            }
         });
         
+        // Store the marker reference
+        marker.locationIndex = index;
+        location.marker = marker;
+        
+        bounds.extend(position);
+        locationMarkers.push(marker);
+        
         marker.addListener('click', function() {
-            selectLocation(place);
+            selectLocation(location, index);
             document.querySelectorAll('#location-results .list-group-item')[index].click();
         });
     });
+    
+    // Fit map to show all markers
+    locationPickerMap.fitBounds(bounds);
 }
 
-function selectLocation(place) {
+function selectLocation(location, index) {
     selectedLocation = {
-        name: place.name,
-        address: place.formatted_address,
-        location: place.geometry.location
+        location_id: location.location_id,
+        address: location.full_address,
+        lat: parseFloat(location.latitude),
+        lng: parseFloat(location.longitude)
     };
     
+    console.log('Location selected:', selectedLocation);
+    
+    // Enable confirm button and show force location option
     document.getElementById('confirm-location').disabled = false;
-    locationPickerMap.setCenter(place.geometry.location);
+    document.getElementById('force-location-container').style.display = 'block';
+    
+    // Animate all markers back to normal size
+    locationMarkers.forEach(function(marker) {
+        if (marker.getTitle() !== 'Starting Location') {
+            marker.setAnimation(null);
+            // Reset to normal size
+            var icon = marker.getIcon();
+            icon.scale = 10;
+            marker.setIcon(icon);
+        }
+    });
+    
+    // Animate selected marker
+    if (location.marker) {
+        location.marker.setAnimation(google.maps.Animation.BOUNCE);
+        // Make selected marker larger
+        var icon = location.marker.getIcon();
+        icon.scale = 15;
+        location.marker.setIcon(icon);
+        
+        // Stop bouncing after 2 seconds
+        setTimeout(function() {
+            location.marker.setAnimation(null);
+        }, 2000);
+    }
+    
+    locationPickerMap.setCenter({lat: selectedLocation.lat, lng: selectedLocation.lng});
     locationPickerMap.setZoom(15);
 }
 
+// Handle radius change
+$(document).on('change', '#radius-select', function() {
+    searchBusinessLocations();
+});
+
 // Confirm location selection
-document.getElementById('confirm-location').addEventListener('click', function() {
-    if (selectedLocation && currentBusinessIndex > -1) {
-        // Update the location in our array
-        locations[currentBusinessIndex].address = selectedLocation.address;
-        locations[currentBusinessIndex].lat = selectedLocation.location.lat();
-        locations[currentBusinessIndex].lng = selectedLocation.location.lng();
+$(document).on('click', '#confirm-location', function() {
+    console.log('Confirm clicked. selectedLocation:', selectedLocation, 'currentCompanyId:', currentCompanyId);
+    
+    if (selectedLocation && currentCompanyId) {
+        var forceLocation = document.getElementById('force-location-check').checked;
         
-        // Update the display
-        var addressDiv = currentBusinessElement.querySelector('.text-xs.text-muted');
-        if (addressDiv) {
-            addressDiv.textContent = selectedLocation.address;
-        }
-        
-        // Update the data-location attribute
-        var locationDiv = currentBusinessElement.querySelector('[data-location]');
-        if (locationDiv) {
-            locationDiv.setAttribute('data-location', selectedLocation.address);
-        }
-        
-        // Save the new location to database
-        var companyId = currentBusinessElement.getAttribute('data-company-id');
-        var companyName = locations[currentBusinessIndex].name;
-        saveTourBusinessLocation(companyId, companyName, selectedLocation.address, 
-                               selectedLocation.location.lat(), selectedLocation.location.lng());
-        
-        // Show update map button
-        document.getElementById('draw_map').style.display = 'inline-block';
-        
-        // Close modal
-        bootstrap.Modal.getInstance(document.getElementById('locationPickerModal')).hide();
-        
-        // Reset
-        selectedLocation = null;
-        currentBusinessElement = null;
-        currentBusinessIndex = -1;
+        // Update the tour with the selected location
+        fetch(window.location.pathname, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=update_tour_location' +
+                  '&company_id=' + encodeURIComponent(currentCompanyId) +
+                  '&location_id=' + selectedLocation.location_id +
+                  '&force_location=' + (forceLocation ? '1' : '0') +
+                  '&tour_date=<?php echo $date; ?>'
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+            return response.text(); // Get text first to debug
+        })
+        .then(text => {
+            console.log('Response text:', text);
+            try {
+                const data = JSON.parse(text);
+                if (data.success) {
+                    console.log('Location updated successfully');
+                
+                // Find the business element by company ID
+                var businessElement = document.querySelector('.sortable_item[data-company-id="' + currentCompanyId + '"]');
+                if (businessElement) {
+                    // Update the display
+                    var addressDiv = businessElement.querySelector('.text-xs.text-muted');
+                    if (addressDiv) {
+                        var html = selectedLocation.address;
+                        if (forceLocation) {
+                            html += ' <span class="badge bg-info text-white ms-1">Forced</span>';
+                        }
+                        addressDiv.innerHTML = html;
+                    }
+                    
+                    // Update the data-location attribute
+                    var locationDiv = businessElement.querySelector('[data-location]');
+                    if (locationDiv) {
+                        locationDiv.setAttribute('data-location', selectedLocation.address);
+                    }
+                }
+                
+                // Update locations array if we can find the business
+                for (var i = 0; i < locations.length; i++) {
+                    if (locations[i].company_id == currentCompanyId) {
+                        locations[i].address = selectedLocation.address;
+                        locations[i].lat = selectedLocation.lat;
+                        locations[i].lng = selectedLocation.lng;
+                        break;
+                    }
+                }
+                
+                // Show update map button
+                var drawMapBtn = document.getElementById('draw_map');
+                if (drawMapBtn) {
+                    drawMapBtn.style.display = 'inline-block';
+                }
+                
+                // Close modal using jQuery
+                $('#locationPickerModal').modal('hide');
+                
+                // Reset
+                selectedLocation = null;
+                currentCompanyId = null;
+                } else {
+                    alert('Failed to update location: ' + (data.message || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error('Failed to parse JSON:', e);
+                console.error('Response was:', text);
+                alert('Error: Invalid response from server. Check console for details.');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating location:', error);
+            alert('Error updating location: ' + error.message);
+        });
     }
 });
 
-// Search functionality
-document.getElementById('location-search').addEventListener('input', function(e) {
-    var query = e.target.value;
-    if (query.length > 2) {
-        searchBusiness(query);
-    }
-});
 </script>
 
 </div><!-- End col-md-9 -->
