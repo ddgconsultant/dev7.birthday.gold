@@ -1312,7 +1312,7 @@ echo '<div class="col-12">';
         <?php endif; ?>
         
         var script = document.createElement('script');
-        script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places,marker&callback=initMap&v=weekly';
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places,marker&callback=initMap&v=weekly&loading=async';
         script.async = true;
         script.defer = true;
         
@@ -1598,7 +1598,8 @@ echo '<div class="col-12">';
         var routeMapElement = document.getElementById('route-map');
         routeMap = new google.maps.Map(routeMapElement, {
             zoom: 13,
-            center: {lat: 39.7392, lng: -104.9903} // Denver, CO
+            center: {lat: 39.7392, lng: -104.9903}, // Denver, CO
+            mapId: 'DEMO_MAP_ID' // Required for AdvancedMarkerElement
         });
         
         directionsService = new google.maps.DirectionsService();
@@ -1928,7 +1929,8 @@ $(document).on('click', '.pick-location', function(e) {
         if (!locationPickerMap) {
             locationPickerMap = new google.maps.Map(document.getElementById('location-map'), {
                 zoom: 10,
-                center: {lat: 39.7392, lng: -104.9903}
+                center: {lat: 39.7392, lng: -104.9903},
+                mapId: 'DEMO_MAP_ID' // Required for AdvancedMarkerElement
             });
         }
         
@@ -2331,7 +2333,8 @@ function initializeHomeLocationModal() {
                 if (!homeLocationMap) {
                     homeLocationMap = new google.maps.Map(document.getElementById('home-location-map'), {
                         center: place.geometry.location,
-                        zoom: 15
+                        zoom: 15,
+                        mapId: 'DEMO_MAP_ID' // Required for AdvancedMarkerElement
                     });
                 }
                 

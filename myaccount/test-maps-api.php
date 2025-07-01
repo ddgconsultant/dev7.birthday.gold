@@ -59,7 +59,8 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
         try {
             var map = new google.maps.Map(document.getElementById('map'), {
                 center: {lat: 39.7392, lng: -104.9903},
-                zoom: 12
+                zoom: 12,
+                mapId: 'DEMO_MAP_ID' // Required for AdvancedMarkerElement
             });
             
             document.getElementById('status').innerHTML = '<p class="success">✓ Google Maps loaded successfully!</p>';
@@ -82,7 +83,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
     // Load Google Maps
     <?php if (!empty($sitesettings['GOOGLEAPI']['mainkey'])): ?>
     var script = document.createElement('script');
-    script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places,marker&callback=initMap&v=weekly';
+    script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places,marker&callback=initMap&v=weekly&loading=async';
     script.async = true;
     script.defer = true;
     
@@ -105,6 +106,18 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
             <li>Check that billing is enabled on your Google Cloud project</li>
             <li>Ensure this domain (<?php echo $_SERVER['HTTP_HOST']; ?>) is in the API key restrictions</li>
             <li>Verify all required APIs are enabled</li>
+            <li><strong>Map ID:</strong> Currently using 'DEMO_MAP_ID'. For production, create a Map ID in Google Cloud Console → Maps → Map Management</li>
+        </ol>
+    </div>
+    
+    <div class="info">
+        <h2>Note on Map IDs:</h2>
+        <p>To use AdvancedMarkerElement (new marker system), you need a Map ID. The code currently uses 'DEMO_MAP_ID' which works for testing.</p>
+        <p>For production use:</p>
+        <ol>
+            <li>Go to Google Cloud Console → Maps → Map Management</li>
+            <li>Create a new Map ID</li>
+            <li>Update the code to use your Map ID instead of 'DEMO_MAP_ID'</li>
         </ol>
     </div>
 </body>
