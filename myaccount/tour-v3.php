@@ -599,9 +599,259 @@ foreach ($listofcompanies as &$company_item) {
     }
 }
 
-// Add styles
+// Add mobile-first responsive styles
 $additionalstyles = '<style>
-/* Sortable styles */
+/* Mobile-first responsive design */
+.mobile-container {
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
+}
+
+/* Mobile tabs navigation */
+.mobile-tabs {
+    display: flex;
+    background: white;
+    border-bottom: 2px solid #dee2e6;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.mobile-tab {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 16px;
+    text-align: center;
+    border: none;
+    background: white;
+    color: #6c757d;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mobile-tab.active {
+    color: #0d6efd;
+    border-bottom: 3px solid #0d6efd;
+    background: #f8f9fa;
+}
+
+.mobile-tab-content {
+    display: none;
+    padding: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+.mobile-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile-optimized business cards */
+.business-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.business-card.out-of-range {
+    opacity: 0.6;
+    background: #f8f9fa;
+}
+
+.business-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.business-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.business-info {
+    flex: 1;
+}
+
+.business-name {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 4px;
+    color: #212529;
+}
+
+.business-address {
+    font-size: 14px;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+.business-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.mobile-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    color: #495057;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.mobile-btn:active {
+    transform: scale(0.95);
+}
+
+.mobile-btn-primary {
+    background: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+/* Mobile map container */
+.mobile-map-container {
+    height: 50vh;
+    min-height: 300px;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+/* Mobile directions panel */
+.mobile-directions {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.mobile-directions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.mobile-directions-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.direction-step {
+    padding: 12px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.direction-step:last-child {
+    border-bottom: none;
+}
+
+/* Floating action button */
+.fab-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+}
+
+.fab {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #0d6efd;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(13,110,253,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.fab:active {
+    transform: scale(0.9);
+}
+
+/* Bottom sheet modal */
+.bottom-sheet {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    z-index: 2000;
+    transition: bottom 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.bottom-sheet.show {
+    bottom: 0;
+}
+
+.bottom-sheet-header {
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bottom-sheet-content {
+    padding: 20px;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+    .mobile-container {
+        max-width: 768px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .mobile-map-container {
+        height: 70vh;
+    }
+    
+    .business-card {
+        padding: 20px;
+    }
+    
+    .mobile-tabs {
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+}
+
+/* Override existing sortable styles for mobile */
 .sortable_item {
     cursor: move;
     transition: all 0.2s ease;
@@ -876,56 +1126,67 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 include($dir['core_components'] . '/bg_user_profileheader.inc');
 #include($dir['core_components'] . '/bg_user_leftpanel.inc');
-echo '<div class="container">';
-// Start the myaccount layout
-echo '<div class="col-12">';
+// Mobile-first container
+echo '<div class="mobile-container">';
 ?>
 
-<div class="row">
-    <div class="col-lg-8 mb-4">
-        <!-- DATE card -->
-        <div class="card h-100 border-start-lg border-start-primary">
-            <div class="card-body">
-                <div class="small text-muted">Your Tour:</div>
-                <div class="h3 my-3"><?php echo $formattedDate; ?></div>
-                Consists of <?php echo count($listofcompanies); ?> businesses
-            </div>
+<!-- Mobile Header -->
+<div class="mobile-header bg-white shadow-sm p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1">Birthday Tour</h5>
+            <small class="text-muted"><?php echo $formattedDate; ?></small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-plus-circle"></i>
+            </a>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+            </button>
         </div>
     </div>
-    <div class="col-lg-4 mb-4">
-        <!-- ACTIONS card -->
-        <div class="card h-100 border-start-lg border-start-success">
-            <div class="card-body">
-                <div class="small text-muted mb-4">Actions</div>
-                <div class="text-center">
-                    <button class="btn btn-primary" onclick="window.print()">Print/Download Directions</button>
-                </div>
-            </div>
-        </div>
+    <div class="mt-2">
+        <span class="badge bg-primary"><?php echo count($listofcompanies); ?> businesses</span>
+        <?php
+        $outOfRangeCount = 0;
+        foreach ($listofcompanies as $company) {
+            if ($company['data']['is_out_of_range'] ?? false) {
+                $outOfRangeCount++;
+            }
+        }
+        if ($outOfRangeCount > 0): ?>
+            <span class="badge bg-danger"><?php echo $outOfRangeCount; ?> out of range</span>
+        <?php endif; ?>
     </div>
 </div>
 
-<hr class="mt-0 mb-4">
+<!-- Mobile Tab Navigation -->
+<div class="mobile-tabs">
+    <button class="mobile-tab active" onclick="showTab('businesses')">
+        <i class="bi bi-list-ul"></i> List
+    </button>
+    <button class="mobile-tab" onclick="showTab('map')">
+        <i class="bi bi-map"></i> Map
+    </button>
+    <button class="mobile-tab" onclick="showTab('directions')">
+        <i class="bi bi-sign-turn-right"></i> Directions
+    </button>
+</div>
 
-<div class="row">
-    <div class="col-lg-12 mb-4">
-        <!-- CELEBRATION TOUR COMPANIES card-->
-        <div class="card card-header-actions mb-4">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <h2 class="mb-0">Celebration Tour</h2>
-                <div>
-                    <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="btn btn-sm btn-primary" type="button">Add More Businesses</a>
+<!-- Tab Content: Businesses List -->
+<div id="businesses-tab" class="mobile-tab-content active">
+    <div id="sortable">
+        <!-- Home Location Card -->
+        <div class="business-card" style="background: #d1f2eb;">
+            <div class="business-card-header">
+                <div class="business-logo d-flex align-items-center justify-content-center" style="background: #28a745;">
+                    <i class="bi bi-house-fill text-white" style="font-size: 24px;"></i>
                 </div>
-            </div>
-            <div class="card-body" id="sortable">
-                <!-- Home location -->
-                <div class="d-flex align-items-center justify-content-between px-4 bg-success bg-opacity-10 py-3 rounded" data-location="<?php echo $homeaddress; ?>">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-house-fill"></i>
-                        <div class="ms-4">
-                            <div class="small">Starting Tour Location</div>
-                            <div class="text-xs text-muted">
-                                <?php 
+                <div class="business-info">
+                    <div class="business-name">Starting Tour Location</div>
+                    <div class="business-address">
+                        <?php 
                                 // Remove USA from display
                                 $displayHomeAddress = preg_replace('/, USA$/', '', $homeaddress);
                                 $displayHomeAddress = preg_replace('/, United States$/', '', $displayHomeAddress);
@@ -982,14 +1243,15 @@ echo '<div class="col-12">';
                                     }
                                 }
                                 ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ms-4 small">
-                        <a href="#!" onclick="openChangeLocationModal(event)">Change Location</a>
                     </div>
                 </div>
-                <hr>
+            </div>
+            <div class="business-actions">
+                <button class="mobile-btn" onclick="openChangeLocationModal(event)">
+                    <i class="bi bi-geo-alt"></i> Change Location
+                </button>
+            </div>
+        </div>
                 
                 <?php
                 // Display tour businesses
@@ -1028,59 +1290,117 @@ echo '<div class="col-12">';
                             $companyaddress = 'Location pending';
                         }
                 ?>
-                <!-- Business location -->
-                <div class="sortable_item <?php echo ($item_company['data']['is_out_of_range'] ?? false) ? 'out-of-range' : ''; ?>" 
-                     data-company-id="<?php echo $item_company['company_id']; ?>" 
-                     data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>"
-                     data-out-of-range="<?php echo ($item_company['data']['is_out_of_range'] ?? false) ? 'true' : 'false'; ?>">
-                    <div class="d-flex align-items-center justify-content-between px-4" data-location="<?php echo $companyaddress; ?>">
-                        <div class="d-flex align-items-center">
-                            <img src="<?php echo $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']); ?>" style="width:32px" alt="" />  
-                            <div class="ms-4">
-                                <div class="small fw-bold">
-                                    <?php echo $item_company['company_name']; ?>
-                                    <?php if ($item_company['data']['is_out_of_range'] ?? false): ?>
-                                        <span class="out-of-range-badge">
-                                            <?php echo $item_company['data']['distance_from_home']; ?> miles away
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="text-xs text-muted company-address" id="address-<?php echo $item_company['company_id']; ?>">
-                                    <?php if ($hasCoordinates && !$hasFullAddress): ?>
-                                        <span class="text-success">📍 <?php echo $businessCity; ?>, <?php echo $businessState; ?> (Located)</span>
-                                    <?php elseif (!$hasFullAddress): ?>
-                                        <span class="text-warning">📍 Searching for location in <?php echo $home_city; ?></span>
-                                    <?php else: ?>
-                                        <?php echo $companyaddress; ?>
-                                    <?php endif; ?>
-                                    <?php if (!empty($item_company['is_forced_location'])): ?>
-                                        <span class="badge bg-info text-white ms-1">Forced</span>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ms-4 small">
-                            <a href="javascript:void(0);" class="pick-location me-2" data-company-id="<?php echo $item_company['company_id']; ?>" data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">Pick Different Location</a>
-                            <div class="btn btn-sm sortable_item_handle" title="Drag to reorder"><i class="bi bi-grip-vertical h4"></i></div>
-                        </div>
+        <!-- Business Card -->
+        <div class="business-card sortable_item <?php echo ($item_company['data']['is_out_of_range'] ?? false) ? 'out-of-range' : ''; ?>" 
+             data-company-id="<?php echo $item_company['company_id']; ?>" 
+             data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>"
+             data-out-of-range="<?php echo ($item_company['data']['is_out_of_range'] ?? false) ? 'true' : 'false'; ?>"
+             data-location="<?php echo $companyaddress; ?>">
+            
+            <?php if (!($item_company['data']['is_out_of_range'] ?? false)): ?>
+            <!-- Drag handle for in-range businesses -->
+            <div class="sortable_item_handle position-absolute top-0 end-0 p-2" style="cursor: grab;">
+                <i class="bi bi-grip-vertical text-muted"></i>
+            </div>
+            <?php endif; ?>
+            
+            <div class="business-card-header">
+                <img src="<?php echo $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']); ?>" 
+                     class="business-logo" 
+                     alt="<?php echo htmlspecialchars($item_company['company_name']); ?>">
+                <div class="business-info">
+                    <div class="business-name">
+                        <?php echo $item_company['company_name']; ?>
+                        <?php if ($item_company['data']['is_out_of_range'] ?? false): ?>
+                            <span class="out-of-range-badge">
+                                <?php echo $item_company['data']['distance_from_home']; ?> mi
+                            </span>
+                        <?php endif; ?>
                     </div>
-                    <hr>
+                    <div class="business-address" id="address-<?php echo $item_company['company_id']; ?>">
+                        <?php if ($hasCoordinates && !$hasFullAddress): ?>
+                            <i class="bi bi-geo-alt-fill text-success"></i> <?php echo $businessCity; ?>, <?php echo $businessState; ?>
+                        <?php elseif (!$hasFullAddress): ?>
+                            <i class="bi bi-search text-warning"></i> Searching in <?php echo $home_city; ?>
+                        <?php else: ?>
+                            <i class="bi bi-geo-alt"></i> <?php echo $companyaddress; ?>
+                        <?php endif; ?>
+                        <?php if (!empty($item_company['is_forced_location'])): ?>
+                            <span class="badge bg-info text-white ms-1" style="font-size: 10px;">Locked</span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (!empty($item_company['description'])): ?>
+                    <div class="mt-1 text-muted" style="font-size: 13px;">
+                        <i class="bi bi-gift"></i> <?php echo $item_company['description']; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <?php if (!($item_company['data']['is_out_of_range'] ?? false)): ?>
+            <div class="business-actions">
+                <button class="mobile-btn pick-location" 
+                        data-company-id="<?php echo $item_company['company_id']; ?>" 
+                        data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
+                    <i class="bi bi-geo"></i> Change Location
+                </button>
+                <a href="/myaccount/enrollments-individual?company_id=<?php echo $item_company['company_id']; ?>" 
+                   class="mobile-btn mobile-btn-primary">
+                    <i class="bi bi-box-arrow-up-right"></i> View Details
+                </a>
+            </div>
+            <?php endif; ?>
+        </div>
                 </div>
                 <?php
                     }
                 }
                 ?>
                 
-                <!-- Draw new map button -->
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <p class="text-muted small mb-2"><i class="bi bi-info-circle"></i> Drag businesses to reorder your tour route</p>
-                    <button class="btn btn-secondary draw_map" id="draw_map" style="display: none;" onclick="DrawNewMap()">
-                        <i class="bi bi-arrow-clockwise"></i> Update Map with New Route
-                    </button>
-                </div>
+    </div>
+    
+    <!-- Reorder notice and button -->
+    <div class="text-center mt-3">
+        <p class="text-muted small mb-2"><i class="bi bi-arrows-move"></i> Drag businesses to reorder</p>
+        <button class="btn btn-primary draw_map" id="draw_map" style="display: none;" onclick="DrawNewMap()">
+            <i class="bi bi-arrow-clockwise"></i> Update Route
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content: Map -->
+<div id="map-tab" class="mobile-tab-content">
+    <div class="mobile-map-container" id="map"></div>
+    <div class="text-center mt-2">
+        <button class="btn btn-sm btn-outline-primary" onclick="loadDirections()">
+            <i class="bi bi-arrow-repeat"></i> Refresh Map
+        </button>
+    </div>
+</div>
+
+<!-- Tab Content: Directions -->
+<div id="directions-tab" class="mobile-tab-content">
+    <div class="mobile-directions">
+        <div class="mobile-directions-header">
+            <h6 class="mobile-directions-title">Turn-by-Turn Directions</h6>
+            <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+            </button>
+        </div>
+        <div id="directions-panel">
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-map" style="font-size: 48px;"></i>
+                <p>Loading directions...</p>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Floating Action Button -->
+<div class="fab-container">
+    <button class="fab" onclick="showQuickActions()">
+        <i class="bi bi-plus"></i>
+    </button>
 </div>
 
 <!-- Hidden status div for API loading messages -->
@@ -1160,6 +1480,67 @@ echo '<div class="col-12">';
 
 
     <script>
+    // Mobile-specific functions
+    function showTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.mobile-tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active class from all tabs
+        document.querySelectorAll('.mobile-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show selected tab content
+        document.getElementById(tabName + '-tab').classList.add('active');
+        
+        // Set active tab button
+        event.target.classList.add('active');
+        
+        // Initialize map if switching to map tab
+        if (tabName === 'map' && !routeMap) {
+            setTimeout(loadDirections, 100);
+        }
+    }
+    
+    function showQuickActions() {
+        // Create bottom sheet for quick actions
+        const sheet = document.createElement('div');
+        sheet.className = 'bottom-sheet show';
+        sheet.innerHTML = `
+            <div class="bottom-sheet-header">
+                <h5>Quick Actions</h5>
+                <button class="btn-close" onclick="this.closest('.bottom-sheet').remove()"></button>
+            </div>
+            <div class="bottom-sheet-content">
+                <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="mobile-btn w-100 mb-2">
+                    <i class="bi bi-plus-circle"></i> Add More Businesses
+                </a>
+                <button class="mobile-btn w-100 mb-2" onclick="window.print(); this.closest('.bottom-sheet').remove()">
+                    <i class="bi bi-printer"></i> Print Directions
+                </button>
+                <button class="mobile-btn w-100" onclick="shareRoute(); this.closest('.bottom-sheet').remove()">
+                    <i class="bi bi-share"></i> Share Route
+                </button>
+            </div>
+        `;
+        document.body.appendChild(sheet);
+    }
+    
+    function shareRoute() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'My Birthday Tour - <?php echo $formattedDate; ?>',
+                text: 'Check out my birthday tour route!',
+                url: window.location.href
+            });
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link copied to clipboard!');
+        }
+    }
 
     // Map initialization
     var routeMap;
@@ -2447,6 +2828,8 @@ function closeChangeLocationModal() {
     }
 }
 </script>
+
+</div> <!-- End mobile-container -->
 
 <?php
 // Footer breaks Google Maps, so we skip it
