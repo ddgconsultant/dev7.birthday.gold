@@ -62,7 +62,60 @@ if (isset($_POST['action'])) {
                 'zip' => $_POST['zip'] ?? ''
             ];
             
-            // Update the default home location
+            // Get tour date
+            $tourDate = $_POST['tour_date'] ?? date('Y-m-d');
+            $locationName = 'start_' . $tourDate;
+            
+            // Store location with tour date
+            $locationDataWithMeta = array_merge($locationData, [
+                'type' => 'home',
+                'tour_date' => $tourDate,
+                'saved_at' => date('Y-m-d H:i:s')
+            ]);
+            $locationJson = json_encode($locationDataWithMeta);
+            
+            // Check if location already exists for this tour
+            $checkQuery = "SELECT attribute_id FROM bg_user_attributes 
+                          WHERE user_id = :user_id 
+                          AND type = 'tour_locations' 
+                          AND name = :name 
+                          AND status = 'active'";
+            $stmt = $database->prepare($checkQuery);
+            $stmt->execute([
+                ':user_id' => $current_user_data['user_id'],
+                ':name' => $locationName
+            ]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($existing) {
+                // Update existing location for this tour
+                $updateQuery = "UPDATE bg_user_attributes 
+                               SET description = :description, 
+                                   string_value = :address,
+                                   modify_dt = NOW() 
+                               WHERE attribute_id = :attribute_id";
+                $stmt = $database->prepare($updateQuery);
+                $stmt->execute([
+                    ':description' => $locationJson,
+                    ':address' => $address,
+                    ':attribute_id' => $existing['attribute_id']
+                ]);
+            } else {
+                // Insert new location record
+                $insertQuery = "INSERT INTO bg_user_attributes 
+                               (user_id, type, name, description, status, category, string_value, start_dt) 
+                               VALUES (:user_id, 'tour_locations', :name, :description, 'active', 'locations', :address, :start_dt)";
+                $stmt = $database->prepare($insertQuery);
+                $stmt->execute([
+                    ':user_id' => $current_user_data['user_id'],
+                    ':name' => $locationName,
+                    ':description' => $locationJson,
+                    ':address' => $address,
+                    ':start_dt' => $tourDate
+                ]);
+            }
+            
+            // Also update the default home location
             $defaultLocationData = json_encode($locationData);
             $checkQuery = "SELECT attribute_id FROM bg_user_attributes 
                           WHERE user_id = :user_id 
@@ -442,12 +495,70 @@ echo '<div class="col-12">';
             </div>
             <div class="card-body" id="sortable">
                 <!-- Home location -->
-                <div class="d-flex align-items-center justify-content-between px-4" data-location="<?php echo $homeaddress; ?>">
+                <div class="d-flex align-items-center justify-content-between px-4 bg-success bg-opacity-10 py-3 rounded" data-location="<?php echo $homeaddress; ?>">
                     <div class="d-flex align-items-center">
                         <i class="bi bi-house-fill"></i>
                         <div class="ms-4">
-                            <div class="small">Your Home</div>
-                            <div class="text-xs text-muted"><?php echo $homeaddress; ?></div>
+                            <div class="small">Starting Tour Location</div>
+                            <div class="text-xs text-muted">
+                                <?php 
+                                // Remove USA from display
+                                $displayHomeAddress = preg_replace('/, USA$/', '', $homeaddress);
+                                $displayHomeAddress = preg_replace('/, United States$/', '', $displayHomeAddress);
+                                echo $displayHomeAddress;
+                                
+                                // Get user's profile mailing address
+                                $profileAddress = getUserAttribute($database, $current_user_data['user_id'], 'profile', 'profile_mailing_address');
+                                $profileCity = getUserAttribute($database, $current_user_data['user_id'], 'profile', 'profile_city');
+                                $profileState = getUserAttribute($database, $current_user_data['user_id'], 'profile', 'profile_state');
+                                $profileZip = getUserAttribute($database, $current_user_data['user_id'], 'profile', 'profile_zip_code');
+                                
+                                // Check if address components match (excluding state)
+                                if ($profileAddress && $profileCity && $profileZip) {
+                                    // Clean USA from homeaddress before parsing
+                                    $cleanHomeAddress = preg_replace('/, USA$/', '', $homeaddress);
+                                    $cleanHomeAddress = preg_replace('/, United States$/', '', $cleanHomeAddress);
+                                    
+                                    // Parse the tour starting address
+                                    $addressParts = array_map('trim', explode(',', $cleanHomeAddress));
+                                    $tourStreet = isset($addressParts[0]) ? strtolower(trim($addressParts[0])) : '';
+                                    $tourCity = isset($addressParts[1]) ? strtolower(trim($addressParts[1])) : '';
+                                    
+                                    // Extract zip from the state/zip part
+                                    $tourZip = '';
+                                    if (isset($addressParts[2])) {
+                                        $stateZipParts = explode(' ', trim($addressParts[2]));
+                                        $tourZip = isset($stateZipParts[1]) ? trim($stateZipParts[1]) : '';
+                                    }
+                                    
+                                    // Compare individual components - remove punctuation
+                                    $profileStreet = preg_replace('/[^a-z0-9\s]/i', '', strtolower(trim($profileAddress['string_value'])));
+                                    $profileCityLower = preg_replace('/[^a-z0-9\s]/i', '', strtolower(trim($profileCity['string_value'])));
+                                    $profileZipTrim = trim($profileZip['string_value']);
+                                    
+                                    // Also remove punctuation from tour values
+                                    $tourStreetClean = preg_replace('/[^a-z0-9\s]/i', '', $tourStreet);
+                                    $tourCityClean = preg_replace('/[^a-z0-9\s]/i', '', $tourCity);
+                                    
+                                    $streetMatch = $profileStreet === $tourStreetClean;
+                                    $cityMatch = $profileCityLower === $tourCityClean;
+                                    $zipMatch = $profileZipTrim === $tourZip;
+                                    
+                                    // Debug output
+                                    if (isset($_GET['debug'])) {
+                                        echo '<br><small class="text-muted" style="font-size: 10px;">';
+                                        echo 'Profile: [' . $profileStreet . '] [' . $profileCityLower . '] [' . $profileZipTrim . ']<br>';
+                                        echo 'Tour: [' . $tourStreet . '] [' . $tourCity . '] [' . $tourZip . ']<br>';
+                                        echo 'Matches: Street=' . ($streetMatch ? 'Y' : 'N') . ' City=' . ($cityMatch ? 'Y' : 'N') . ' Zip=' . ($zipMatch ? 'Y' : 'N');
+                                        echo '</small>';
+                                    }
+                                    
+                                    if ($streetMatch && $cityMatch && $zipMatch) {
+                                        echo ' <span class="text-primary">(Your Home)</span>';
+                                    }
+                                }
+                                ?>
+                            </div>
                         </div>
                     </div>
                     <div class="ms-4 small">
@@ -588,7 +699,7 @@ echo '<div class="col-12">';
     // Tour locations from PHP data - Global array
     var locations = [
         {
-            name: "Your Home",
+            name: "Starting Tour Location",
             address: <?php echo json_encode($homeaddress); ?>,
             lat: <?php echo json_encode($home_lat); ?>,
             lng: <?php echo json_encode($home_lng); ?>,
@@ -755,20 +866,18 @@ echo '<div class="col-12">';
         var placesService = new google.maps.places.PlacesService(document.createElement('div'));
         
         console.log('Checking locations for geocoding needs:', locations);
+        console.log('Home location:', locations[0]);
         
         locations.forEach(function(location, index) {
-            console.log('Checking location:', location.name, 'needsGeocoding:', location.needsGeocoding);
+            console.log('Checking location:', location.name, 'needsGeocoding:', location.needsGeocoding, 'lat:', location.lat, 'lng:', location.lng);
             
-            // Skip if we already have coordinates
-            if (location.lat && location.lng) {
-                console.log('Location already has coordinates:', location.name, location.lat, location.lng);
-                location.needsGeocoding = false;
-                return;
-            }
-            
+            // Check if location needs geocoding
             if (location.needsGeocoding && location.type === 'business') {
                 var promise = new Promise(function(resolve) {
-                    var searchQuery = location.name + ' near ' + location.city + ', ' + location.state;
+                    // Use the starting tour location as search context
+                    var homeLocation = locations[0]; // First location is always home
+                    var searchContext = homeLocation.address || (homeLocation.city + ', ' + homeLocation.state);
+                    var searchQuery = location.name + ' near ' + searchContext;
                     console.log('Searching for:', searchQuery);
                     
                     var request = {
@@ -777,22 +886,30 @@ echo '<div class="col-12">';
                     };
                     
                     placesService.textSearch(request, function(results, status) {
+                        console.log('Search status for', location.name, ':', status);
                         if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
                             // Use the first result
                             var place = results[0];
                             console.log('Found location for', location.name, ':', place.formatted_address);
+                            console.log('New coordinates:', place.geometry.location.lat(), place.geometry.location.lng());
+                            
+                            // Remove USA from the end of the address
+                            var cleanAddress = place.formatted_address;
+                            cleanAddress = cleanAddress.replace(/, USA$/, '');
+                            cleanAddress = cleanAddress.replace(/, United States$/, '');
                             
                             // Update the location
-                            locations[index].address = place.formatted_address;
+                            locations[index].address = cleanAddress;
                             locations[index].lat = place.geometry.location.lat();
                             locations[index].lng = place.geometry.location.lng();
                             locations[index].needsGeocoding = false;
                             
                             // Update the display on the page
-                            updateBusinessDisplay(location.name, place.formatted_address);
+                            updateBusinessDisplay(location.name, cleanAddress);
                             
                             // Save to database
-                            saveTourBusinessLocation(location.company_id, location.name, place.formatted_address, 
+                            console.log('Saving to database:', location.name, cleanAddress);
+                            saveTourBusinessLocation(location.company_id, location.name, cleanAddress, 
                                                    place.geometry.location.lat(), place.geometry.location.lng());
                         } else {
                             console.error('Could not find location for', location.name);
@@ -823,13 +940,16 @@ echo '<div class="col-12">';
         }
         
         // Wait for all geocoding to complete, then load directions
+        console.log('Total geocoding promises:', geocodePromises.length);
         if (geocodePromises.length > 0) {
             Promise.all(geocodePromises).then(function() {
                 console.log('All geocoding complete, loading directions...');
+                console.log('Final locations state:', locations);
                 loadDirections();
             });
         } else {
             // No geocoding needed, load directions immediately
+            console.log('No geocoding needed, loading directions immediately');
             loadDirections();
         }
     }
@@ -877,7 +997,9 @@ echo '<div class="col-12">';
             html += '<span style="background: #1a73e8; color: white; padding: 2px 8px; border-radius: 50%; margin-right: 8px;">' + (index + 1) + '</span>';
             html += fromLocation.name;
             html += '</div>';
-            html += '<div style="color: #5f6368; font-size: 14px; margin-left: 35px; font-weight: bold;">' + leg.start_address + '</div>';
+            // Remove USA from address display
+            var cleanStartAddress = leg.start_address.replace(/, USA$/, '').replace(/, United States$/, '');
+            html += '<div style="color: #5f6368; font-size: 14px; margin-left: 35px; font-weight: bold;">' + cleanStartAddress + '</div>';
             html += '</div>';
             
             // Driving directions
@@ -942,7 +1064,9 @@ echo '<div class="col-12">';
             html += '<span style="background: #1a73e8; color: white; padding: 2px 8px; border-radius: 50%; margin-right: 8px;">' + lastStopNumber + '</span>';
             html += 'Return to Home';
             html += '</div>';
-            html += '<div style="color: #5f6368; font-size: 14px; margin-left: 35px; font-weight: bold;">' + lastLeg.end_address + '</div>';
+            // Remove USA from address display
+            var cleanEndAddress = lastLeg.end_address.replace(/, USA$/, '').replace(/, United States$/, '');
+            html += '<div style="color: #5f6368; font-size: 14px; margin-left: 35px; font-weight: bold;">' + cleanEndAddress + '</div>';
             html += '</div>';
             html += '</div>';
         }
@@ -986,7 +1110,7 @@ echo '<div class="col-12">';
             map: routeMap,
             // Do not use default panel since we are creating custom one
             // panel: document.getElementById('directions-panel'),
-            suppressMarkers: false
+            suppressMarkers: true  // We'll create custom numbered markers
         });
         
         console.log('Locations array:', locations);
@@ -1041,32 +1165,104 @@ echo '<div class="col-12">';
                 // Create custom directions panel with optimized order
                 createCustomDirectionsPanel(response, optimizedLocations);
                 
-                // Add markers for each location with business names
+                // Add numbered markers for each location
+                var bounds = new google.maps.LatLngBounds();
+                
+                // Create markers for the route
+                for (var i = 0; i < optimizedLocations.length; i++) {
+                    var location = optimizedLocations[i];
+                    var markerPosition;
+                    
+                    // Get position from the route legs
+                    if (i === 0) {
+                        // Starting location
+                        markerPosition = response.routes[0].legs[0].start_location;
+                    } else {
+                        // Get the end location of the previous leg (which is this location)
+                        markerPosition = response.routes[0].legs[i - 1].end_location;
+                    }
+                    
+                    // Create a simple numbered marker
+                    var marker = new google.maps.Marker({
+                        position: markerPosition,
+                        map: routeMap,
+                        title: location.name,
+                        label: {
+                            text: (i + 1).toString(),
+                            color: 'white',
+                            fontSize: '14px',
+                            fontWeight: 'bold'
+                        },
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 12,
+                            fillColor: (i === 0) ? '#4285F4' : '#EA4335',
+                            fillOpacity: 1,
+                            strokeColor: 'white',
+                            strokeWeight: 2
+                        }
+                    });
+                    
+                    bounds.extend(markerPosition);
+                    
+                    // Add click listener for info window
+                    (function(marker, location) {
+                        var infoContent = '<div style="padding: 10px;">';
+                        infoContent += '<h4 style="margin: 0 0 5px 0; color: #1a73e8;">' + location.name + '</h4>';
+                        if (location.reward) {
+                            infoContent += '<p style="margin: 5px 0; color: #5f6368;"><strong>Reward:</strong> ' + location.reward + '</p>';
+                        }
+                        infoContent += '<p style="margin: 5px 0; color: #5f6368; font-size: 0.9em;">' + location.address + '</p>';
+                        infoContent += '</div>';
+                        
+                        var infoWindow = new google.maps.InfoWindow({
+                            content: infoContent
+                        });
+                        
+                        marker.addListener('click', function() {
+                            infoWindow.open(routeMap, marker);
+                        });
+                    })(marker, location);
+                }
+                
+                // Fit map to show all markers
+                routeMap.fitBounds(bounds);
+                
+                /* Old code
                 optimizedLocations.forEach(function(location, index) {
                     var position;
-                    if (index < response.routes[0].legs.length) {
+                    
+                    // For a circular route returning to home:
+                    // - Home (index 0) is at the start of leg 0
+                    // - Business at index i is at the start of leg i
+                    // - The last position (return to home) is at the end of the last leg
+                    
+                    if (index === 0) {
+                        // Home location - start of first leg
+                        position = response.routes[0].legs[0].start_location;
+                    } else if (index < response.routes[0].legs.length) {
+                        // Business locations - start of their respective legs
                         position = response.routes[0].legs[index].start_location;
                     } else {
+                        // This shouldn't happen in a circular route, but just in case
                         position = response.routes[0].legs[response.routes[0].legs.length - 1].end_location;
                     }
+                    
+                    console.log('Creating marker for:', location.name, 'at position:', position);
+                    
+                    // Create numbered marker
+                    var markerColor = (location.type === 'start' || location.type === 'home') ? '4285F4' : 'EA4335';
+                    var markerNumber = index + 1;
                     
                     var marker = new google.maps.Marker({
                         position: position,
                         map: routeMap,
                         title: location.name + '\n' + location.address,
-                        label: {
-                            text: (index + 1).toString(),
-                            color: 'white',
-                            fontSize: '12px',
-                            fontWeight: 'bold'
-                        },
                         icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 20,
-                            fillColor: location.type === 'start' || location.type === 'home' ? '#4285F4' : '#EA4335',
-                            fillOpacity: 1,
-                            strokeColor: 'white',
-                            strokeWeight: 2
+                            url: 'https://chart.googleapis.com/chart?chst=d_map_pin_letter_withshadow&chld=' + markerNumber + '|' + markerColor + '|FFFFFF',
+                            scaledSize: new google.maps.Size(40, 60),
+                            origin: new google.maps.Point(0, 0),
+                            anchor: new google.maps.Point(20, 60)
                         }
                     });
                     
@@ -1087,6 +1283,7 @@ echo '<div class="col-12">';
                         infoWindow.open(routeMap, marker);
                     });
                 });
+                */
                 
                 // Log route details
                 var route = response.routes[0];
@@ -1361,12 +1558,12 @@ if (typeof bootstrap === 'undefined') {
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="changeLocationModalLabel">Change Home Location</h5>
+                <h5 class="modal-title" id="changeLocationModalLabel">Change Starting Location</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="home-address-input" class="form-label">Enter your home address</label>
+                    <label for="home-address-input" class="form-label">Enter your starting tour address</label>
                     <input type="text" class="form-control" id="home-address-input" 
                            placeholder="Enter address..." 
                            value="<?php echo htmlspecialchars($homeaddress); ?>">
@@ -1376,7 +1573,7 @@ if (typeof bootstrap === 'undefined') {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="confirm-home-location">Update Home Location</button>
+                <button type="button" class="btn btn-primary" id="confirm-home-location">Update Location</button>
             </div>
         </div>
     </div>
@@ -1399,9 +1596,14 @@ function initializeHomeLocationModal() {
     
     // Initialize when modal opens
     document.getElementById('changeLocationModal').addEventListener('shown.bs.modal', function() {
+    // Select all text in the input field when modal opens
+    var addressInput = document.getElementById('home-address-input');
+    addressInput.focus();
+    addressInput.select();
+    
     if (!homeAutocomplete) {
         homeAutocomplete = new google.maps.places.Autocomplete(
-            document.getElementById('home-address-input'),
+            addressInput,
             { types: ['address'] }
         );
         
@@ -1409,8 +1611,13 @@ function initializeHomeLocationModal() {
             var place = homeAutocomplete.getPlace();
             
             if (place.geometry) {
+                // Remove USA from the end of the address
+                var cleanAddress = place.formatted_address;
+                cleanAddress = cleanAddress.replace(/, USA$/, '');
+                cleanAddress = cleanAddress.replace(/, United States$/, '');
+                
                 selectedHomeLocation = {
-                    address: place.formatted_address,
+                    address: cleanAddress,
                     lat: place.geometry.location.lat(),
                     lng: place.geometry.location.lng()
                 };
@@ -1451,25 +1658,46 @@ function initializeHomeLocationModal() {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: 'action=update_home_location&address=' + encodeURIComponent(selectedHomeLocation.address) +
-                  '&lat=' + selectedHomeLocation.lat + '&lng=' + selectedHomeLocation.lng
+                  '&lat=' + selectedHomeLocation.lat + '&lng=' + selectedHomeLocation.lng +
+                  '&tour_date=' + encodeURIComponent('<?php echo $date; ?>')
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Remove USA from display address
+                var displayAddress = selectedHomeLocation.address.replace(/, USA$/, '').replace(/, United States$/, '');
+                
                 // Update the display
                 document.querySelector('[data-location]').setAttribute('data-location', selectedHomeLocation.address);
-                document.querySelector('.text-xs.text-muted').textContent = selectedHomeLocation.address;
+                document.querySelector('.text-xs.text-muted').textContent = displayAddress;
                 
                 // Update our locations array
                 locations[0].address = selectedHomeLocation.address;
                 locations[0].lat = selectedHomeLocation.lat;
                 locations[0].lng = selectedHomeLocation.lng;
                 
+                // Mark all business locations as needing re-geocoding since search context changed
+                console.log('Home location changed. Marking businesses for re-geocoding...');
+                console.log('Current locations:', locations);
+                
+                locations.forEach(function(location, index) {
+                    if (location.type === 'business' && index > 0) {
+                        console.log('Marking for re-geocoding:', location.name);
+                        location.needsGeocoding = true;
+                        // Clear existing coordinates to force re-geocoding
+                        location.lat = null;
+                        location.lng = null;
+                    }
+                });
+                
+                console.log('Updated locations array:', locations);
+                
                 // Close modal
                 bootstrap.Modal.getInstance(document.getElementById('changeLocationModal')).hide();
                 
-                // Trigger map redraw
-                loadGoogleMaps();
+                // Re-geocode all businesses with new home location context
+                console.log('Calling geocodeMissingAddresses...');
+                geocodeMissingAddresses();
             }
         });
     }
