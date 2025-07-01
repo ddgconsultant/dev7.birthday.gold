@@ -445,6 +445,143 @@ $additionalstyles = '<style>
     background: white;
     z-index: 1;
 }
+
+/* Print styles */
+@media print {
+    /* Hide non-print elements */
+    .bg_header,
+    .bg_user_profileheader,
+    nav,
+    header,
+    footer,
+    .modal,
+    .modal-backdrop,
+    .btn,
+    .card-header-actions,
+    #sortable,
+    #api-status,
+    .row:not(.print-content) {
+        display: none !important;
+    }
+    
+    /* Hide any skip links or text before main content */
+    body > :first-child:not(.container) {
+        display: none !important;
+    }
+    
+    /* Force print content to start at top of page */
+    .print-content {
+        page-break-before: avoid !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Force page layout for print */
+    @page {
+        size: letter;
+        margin: 0.5in;
+    }
+    
+    /* Reset layout for proper printing */
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+    
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .row.print-content {
+        display: flex !important;
+        flex-direction: column !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    
+    .col-lg-4, .col-lg-8 {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: none !important;
+    }
+    
+    /* Style cards for print */
+    .card {
+        border: 1px solid #ddd !important;
+        margin-bottom: 20px !important;
+        break-inside: avoid;
+    }
+    
+    /* Keep map header with map */
+    .col-lg-8 .card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    
+    .card-header {
+        background: #f8f9fa !important;
+        padding: 10px 15px !important;
+        font-weight: bold !important;
+        font-size: 14pt !important;
+        border-bottom: 1px solid #ddd !important;
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+    
+    .card-body {
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 15px !important;
+    }
+    
+    /* Show full directions without scroll */
+    #directions-panel {
+        max-height: none !important;
+        overflow: visible !important;
+        font-size: 11pt !important;
+        line-height: 1.4 !important;
+    }
+    
+    /* Directions on first page(s) - will naturally flow */
+    .col-lg-4 {
+        margin-bottom: 30px !important;
+    }
+    
+    /* Map on new page after directions */
+    .col-lg-8 {
+        page-break-before: always;
+    }
+    
+    /* Map sizing for print */
+    #route-map {
+        height: 700px !important;
+        width: 100% !important;
+    }
+    
+    /* Ensure map prints properly */
+    .gm-style img {
+        max-width: none !important;
+    }
+    
+    /* Add title directly above directions card */
+    .col-lg-4 .card::before {
+        content: "Tour Directions for ' . $formattedDate . '";
+        display: block;
+        font-size: 20pt;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+        width: 100%;
+    }
+}
 </style>';
 
 // Page setup
@@ -474,7 +611,7 @@ echo '<div class="col-12">';
             <div class="card-body">
                 <div class="small text-muted mb-4">Actions</div>
                 <div class="text-center">
-                    <button class="btn btn-primary" onclick="window.print()">Download PDF</button>
+                    <button class="btn btn-primary" onclick="window.print()">Print/Download Directions</button>
                 </div>
             </div>
         </div>
@@ -665,7 +802,7 @@ echo '<div class="col-12">';
     </div>
 </div>
 
-<div class="row">
+<div class="row print-content">
     <div class="col-lg-4 mb-4">
         <!-- STEPS CARD-->
         <div class="card h-100 border-start-lg border-start-secondary">
