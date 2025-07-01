@@ -1284,10 +1284,32 @@ echo '<div class="col-12">';
         `;
     };
     
+    // Handle Google Maps authentication errors
+    window.gm_authFailure = function() {
+        console.error('Google Maps authentication failed!');
+        document.getElementById('api-status').className = 'error';
+        document.getElementById('api-status').style.display = 'block';
+        document.getElementById('api-status').innerHTML = `
+            <strong>Google Maps Error:</strong> Authentication failed.<br>
+            Possible causes:<br>
+            • API key is invalid or expired<br>
+            • This domain is not authorized<br>
+            • Required APIs are not enabled (Maps JavaScript API, Places API, Geocoding API)<br>
+            • Billing is not enabled on the Google Cloud project
+        `;
+    };
+    
     // Load Google Maps
     function loadGoogleMaps() {
         console.log('Loading Google Maps API...');
         document.getElementById('api-status').textContent = 'Loading Google Maps API...';
+        
+        <?php if (empty($sitesettings['GOOGLEAPI']['mainkey'])): ?>
+        console.error('Google Maps API key is not configured!');
+        document.getElementById('api-status').className = 'error';
+        document.getElementById('api-status').textContent = 'Error: Google Maps API key is not configured. Please contact support.';
+        return;
+        <?php endif; ?>
         
         var script = document.createElement('script');
         script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places,marker&callback=initMap&v=weekly';
@@ -1303,7 +1325,10 @@ echo '<div class="col-12">';
         script.onerror = function() {
             console.error('Failed to load Google Maps script');
             document.getElementById('api-status').className = 'error';
-            document.getElementById('api-status').textContent = 'Failed to load Google Maps API script';
+            document.getElementById('api-status').textContent = 'Failed to load Google Maps API script - Check API key configuration';
+            
+            // Log the actual error for debugging
+            console.error('API Key used:', '<?php echo substr($sitesettings['GOOGLEAPI']['mainkey'] ?? 'NOT_SET', 0, 10); ?>...');
         };
         
         document.head.appendChild(script);
