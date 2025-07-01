@@ -1,6 +1,42 @@
 <?php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+// Helper function to get user attribute
+function getUserAttribute($database, $userId, $type, $name) {
+    $query = "SELECT description, string_value, value FROM bg_user_attributes 
+              WHERE user_id = :user_id 
+              AND type = :type 
+              AND name = :name 
+              AND status = 'active' 
+              LIMIT 1";
+    $stmt = $database->prepare($query);
+    $stmt->execute([
+        ':user_id' => $userId,
+        ':type' => $type,
+        ':name' => $name
+    ]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+// Note: Tour history tracking removed for simplicity
+// Tours are tracked in bg_user_tours
+// Business locations are stored in bg_company_locations
+// User home location is stored as a preference in bg_user_attributes
+
+// Helper function to get company locations
+function getCompanyLocations($database, $companyId) {
+    $query = "SELECT * FROM bg_company_locations 
+              WHERE company_id = :company_id 
+              AND status = 'active' 
+              ORDER BY is_verified DESC, create_dt DESC";
+    
+    $stmt = $database->prepare($query);
+    $stmt->execute([':company_id' => $companyId]);
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
 // Handle AJAX requests
 if (isset($_POST['action'])) {
     header('Content-Type: application/json');
@@ -11,10 +47,57 @@ if (isset($_POST['action'])) {
             $lat = $_POST['lat'] ?? null;
             $lng = $_POST['lng'] ?? null;
             
-            // Store in session for this demo (in production, save to user profile)
+            // Store in session for immediate use
             $_SESSION['tour_home_address'] = $address;
             $_SESSION['tour_home_lat'] = $lat;
             $_SESSION['tour_home_lng'] = $lng;
+            
+            // Save as tour location
+            $locationData = [
+                'address' => $address,
+                'lat' => $lat,
+                'lng' => $lng,
+                'city' => $_POST['city'] ?? '',
+                'state' => $_POST['state'] ?? '',
+                'zip' => $_POST['zip'] ?? ''
+            ];
+            
+            // Update the default home location
+            $defaultLocationData = json_encode($locationData);
+            $checkQuery = "SELECT attribute_id FROM bg_user_attributes 
+                          WHERE user_id = :user_id 
+                          AND type = 'tour_settings' 
+                          AND name = 'default_home_location' 
+                          AND status = 'active'";
+            $stmt = $database->prepare($checkQuery);
+            $stmt->execute([':user_id' => $current_user_data['user_id']]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($existing) {
+                // Update existing
+                $updateQuery = "UPDATE bg_user_attributes 
+                               SET description = :description, 
+                                   string_value = :address,
+                                   modify_dt = NOW() 
+                               WHERE attribute_id = :attribute_id";
+                $stmt = $database->prepare($updateQuery);
+                $stmt->execute([
+                    ':description' => $defaultLocationData,
+                    ':address' => $address,
+                    ':attribute_id' => $existing['attribute_id']
+                ]);
+            } else {
+                // Insert new
+                $insertQuery = "INSERT INTO bg_user_attributes 
+                               (user_id, type, name, description, status, category, string_value) 
+                               VALUES (:user_id, 'tour_settings', 'default_home_location', :description, 'active', 'preferences', :address)";
+                $stmt = $database->prepare($insertQuery);
+                $stmt->execute([
+                    ':user_id' => $current_user_data['user_id'],
+                    ':description' => $defaultLocationData,
+                    ':address' => $address
+                ]);
+            }
             
             echo json_encode(['success' => true, 'address' => $address]);
             exit;
@@ -28,6 +111,78 @@ if (isset($_POST['action'])) {
             $locations = $app->getTourCompanyLocations($tour_companies, $user_lat, $user_lng);
             
             echo json_encode(['success' => true, 'locations' => $locations]);
+            exit;
+            
+        case 'save_business_location':
+            $companyId = $_POST['company_id'] ?? '';
+            $companyName = $_POST['company_name'] ?? '';
+            $address = $_POST['address'] ?? '';
+            $lat = $_POST['lat'] ?? null;
+            $lng = $_POST['lng'] ?? null;
+            
+            // Parse address to extract components
+            $addressParts = array_map('trim', explode(',', $address));
+            $city = '';
+            $state = '';
+            $zip = '';
+            
+            if (count($addressParts) >= 3) {
+                // Assume format: street, city, state zip
+                $city = $addressParts[1];
+                $stateZip = trim($addressParts[2]);
+                $stateZipParts = explode(' ', $stateZip);
+                if (count($stateZipParts) >= 2) {
+                    $state = $stateZipParts[0];
+                    $zip = $stateZipParts[1];
+                }
+            }
+            
+            // Check if this location already exists for this company
+            $checkQuery = "SELECT location_id FROM bg_company_locations 
+                          WHERE company_id = :company_id 
+                          AND address = :address 
+                          AND status = 'active'";
+            $stmt = $database->prepare($checkQuery);
+            $stmt->execute([
+                ':company_id' => $companyId,
+                ':address' => $addressParts[0] ?? $address
+            ]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$existing) {
+                // Insert new location
+                $insertQuery = "INSERT INTO bg_company_locations 
+                               (company_id, source, address, city, state, zip_code, latitude, longitude, is_verified) 
+                               VALUES (:company_id, 'tour_geocoding', :address, :city, :state, :zip, :lat, :lng, 1)";
+                $stmt = $database->prepare($insertQuery);
+                $stmt->execute([
+                    ':company_id' => $companyId,
+                    ':address' => $addressParts[0] ?? $address,
+                    ':city' => $city,
+                    ':state' => $state,
+                    ':zip' => $zip,
+                    ':lat' => $lat,
+                    ':lng' => $lng
+                ]);
+                $locationId = $database->lastInsertId();
+            } else {
+                // Update existing location with coordinates
+                $updateQuery = "UPDATE bg_company_locations 
+                               SET latitude = :lat, 
+                                   longitude = :lng, 
+                                   is_verified = 1,
+                                   modify_dt = NOW() 
+                               WHERE location_id = :location_id";
+                $stmt = $database->prepare($updateQuery);
+                $stmt->execute([
+                    ':lat' => $lat,
+                    ':lng' => $lng,
+                    ':location_id' => $existing['location_id']
+                ]);
+                $locationId = $existing['location_id'];
+            }
+            
+            echo json_encode(['success' => true, 'location_id' => $locationId]);
             exit;
     }
 }
@@ -43,7 +198,47 @@ $companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $listofcompanies = [];
 foreach ($companies as $item_company) {  
-    $company_data = $app->getcompany($item_company['company_id']);    
+    $company_data = $app->getcompany($item_company['company_id']);
+    
+    // Check if we have verified locations in bg_company_locations
+    $verifiedLocation = null;
+    if ($company_data) {
+        $locationQuery = "SELECT * FROM bg_company_locations 
+                         WHERE company_id = :company_id 
+                         AND status = 'active' 
+                         AND is_verified = 1 
+                         AND latitude IS NOT NULL 
+                         AND longitude IS NOT NULL 
+                         ORDER BY modify_dt DESC 
+                         LIMIT 1";
+        $stmt = $database->prepare($locationQuery);
+        $stmt->execute([':company_id' => $item_company['company_id']]);
+        $verifiedLocation = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // If we have a verified location, update the company data
+        if ($verifiedLocation) {
+            // Only update address fields if they're not empty in the verified location
+            if (!empty($verifiedLocation['address'])) {
+                $company_data['address'] = $verifiedLocation['address'];
+            }
+            if (!empty($verifiedLocation['city'])) {
+                $company_data['city'] = $verifiedLocation['city'];
+            }
+            if (!empty($verifiedLocation['state'])) {
+                $company_data['state'] = $verifiedLocation['state'];
+            }
+            if (!empty($verifiedLocation['zip_code'])) {
+                $company_data['zip_code'] = $verifiedLocation['zip_code'];
+            }
+            
+            // Always update coordinates if available
+            $company_data['latitude'] = $verifiedLocation['latitude'];
+            $company_data['longitude'] = $verifiedLocation['longitude'];
+            $company_data['has_verified_location'] = true;
+            $company_data['location_id'] = $verifiedLocation['location_id'];
+        }
+    }
+    
     $listofcompanies[] = $item_company + ['data' => $company_data];
 }
 
@@ -51,10 +246,49 @@ foreach ($companies as $item_company) {
 $dateObject = new DateTime($date);
 $formattedDate = $dateObject->format('l, F j, Y');
 
-// Get home address - check session first, then use default
-$homeaddress = $_SESSION['tour_home_address'] ?? '10106 Atlanta Street, Parker, CO 80134';
-$home_lat = $_SESSION['tour_home_lat'] ?? null;
-$home_lng = $_SESSION['tour_home_lng'] ?? null;
+// Get home address - check default home location, then fallback
+$homeaddress = '10106 Atlanta Street, Parker, CO 80134'; // default fallback
+$home_lat = null;
+$home_lng = null;
+
+// Get user's default home location
+$homeData = getUserAttribute($database, $current_user_data['user_id'], 'tour_settings', 'default_home_location');
+
+if ($homeData && !empty($homeData['description'])) {
+    $locationData = json_decode($homeData['description'], true);
+    if ($locationData) {
+        $homeaddress = $locationData['address'] ?? $homeaddress;
+        $home_lat = $locationData['lat'] ?? null;
+        $home_lng = $locationData['lng'] ?? null;
+    }
+} else {
+    // Check session as fallback
+    $homeaddress = $_SESSION['tour_home_address'] ?? $homeaddress;
+    $home_lat = $_SESSION['tour_home_lat'] ?? null;
+    $home_lng = $_SESSION['tour_home_lng'] ?? null;
+}
+
+// Update session for this request
+$_SESSION['tour_home_address'] = $homeaddress;
+$_SESSION['tour_home_lat'] = $home_lat;
+$_SESSION['tour_home_lng'] = $home_lng;
+
+// Parse home address to get city, state, zip
+$home_parts = array_map('trim', explode(',', $homeaddress));
+$home_city = '';
+$home_state = '';
+$home_zip = '';
+
+if (count($home_parts) >= 3) {
+    // Assume format: street, city, state zip
+    $home_city = $home_parts[1];
+    $state_zip = trim($home_parts[2]);
+    $state_zip_parts = explode(' ', $state_zip);
+    if (count($state_zip_parts) >= 2) {
+        $home_state = $state_zip_parts[0];
+        $home_zip = $state_zip_parts[1];
+    }
+}
 
 // Add styles
 $additionalstyles = '<style>
@@ -137,6 +371,11 @@ $additionalstyles = '<style>
     padding: 15px;
     border-radius: 5px;
     margin: 10px 0;
+}
+
+/* Fix Google autocomplete z-index for modals */
+.pac-container {
+    z-index: 10000 !important;
 }
 
 /* Hanging bullet styles for directions - timeline style */
@@ -239,25 +478,35 @@ echo '<div class="col-12">';
                         // Check if we have a full address
                         $hasFullAddress = !empty($item_company['address']) && strlen(trim($item_company['address'])) > 0;
                         
-                        // Use user city/state if business does not have them
-                        $businessCity = !empty($item_company['city']) ? $item_company['city'] : $current_user_data['profile_city'];
-                        $businessState = !empty($item_company['state']) ? $item_company['state'] : $current_user_data['profile_state'];
-                        $businessZip = !empty($item_company['zip_code']) ? $item_company['zip_code'] : $current_user_data['profile_zip_code'];
+                        // Check if we have coordinates (which means location is already known)
+                        $hasCoordinates = !empty($item_company['latitude']) && !empty($item_company['longitude']);
                         
-                        $companyaddress = $hasFullAddress ? 
-                            $item_company['address'].', '.$businessCity.', '.$businessState.' '.$businessZip :
-                            $businessCity.', '.$businessState.' '.$businessZip;
+                        // Use home location city/state if business does not have them
+                        $businessCity = !empty($item_company['city']) ? $item_company['city'] : $home_city;
+                        $businessState = !empty($item_company['state']) ? $item_company['state'] : $home_state;
+                        $businessZip = !empty($item_company['zip_code']) ? $item_company['zip_code'] : $home_zip;
+                        
+                        // Build the display address
+                        if ($hasFullAddress) {
+                            $companyaddress = $item_company['address'].', '.$businessCity.', '.$businessState.' '.$businessZip;
+                        } else if ($businessCity && $businessState) {
+                            $companyaddress = $businessCity.', '.$businessState.' '.$businessZip;
+                        } else {
+                            $companyaddress = 'Location pending';
+                        }
                 ?>
                 <!-- Business location -->
-                <div class="sortable_item">
+                <div class="sortable_item" data-company-id="<?php echo $item_company['company_id']; ?>" data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
                     <div class="d-flex align-items-center justify-content-between px-4" data-location="<?php echo $companyaddress; ?>">
                         <div class="d-flex align-items-center">
                             <img src="<?php echo $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']); ?>" style="width:32px" alt="" />  
                             <div class="ms-4">
                                 <div class="small fw-bold"><?php echo $item_company['company_name']; ?></div>
-                                <div class="text-xs text-muted">
-                                    <?php if (!$hasFullAddress): ?>
-                                        <span class="text-warning">📍 Searching for location in <?php echo $businessCity; ?></span>
+                                <div class="text-xs text-muted company-address" id="address-<?php echo $item_company['company_id']; ?>">
+                                    <?php if ($hasCoordinates && !$hasFullAddress): ?>
+                                        <span class="text-success">📍 <?php echo $businessCity; ?>, <?php echo $businessState; ?> (Located)</span>
+                                    <?php elseif (!$hasFullAddress): ?>
+                                        <span class="text-warning">📍 Searching for location in <?php echo $home_city; ?></span>
                                     <?php else: ?>
                                         <?php echo $companyaddress; ?>
                                     <?php endif; ?>
@@ -363,10 +612,10 @@ echo '<div class="col-12">';
                 // Check if we have a full address or just city/state
                 $hasFullAddress = !empty($item_company['address']) && strlen(trim($item_company['address'])) > 0;
                 
-                // Use user's city/state if business doesn't have them
-                $businessCity = !empty($item_company['city']) ? $item_company['city'] : $current_user_data['profile_city'];
-                $businessState = !empty($item_company['state']) ? $item_company['state'] : $current_user_data['profile_state'];
-                $businessZip = !empty($item_company['zip_code']) ? $item_company['zip_code'] : $current_user_data['profile_zip_code'];
+                // Use home location city/state if business doesn't have them
+                $businessCity = !empty($item_company['city']) ? $item_company['city'] : $home_city;
+                $businessState = !empty($item_company['state']) ? $item_company['state'] : $home_state;
+                $businessZip = !empty($item_company['zip_code']) ? $item_company['zip_code'] : $home_zip;
                 
                 $companyaddress = $hasFullAddress ? 
                     $item_company['address'].', '.$businessCity.', '.$businessState.' '.$businessZip :
@@ -376,7 +625,9 @@ echo '<div class="col-12">';
             name: <?php echo json_encode($item_company['company_name']); ?>,
             company_id: <?php echo json_encode($item_company['company_id']); ?>,
             address: <?php echo json_encode($companyaddress); ?>,
-            needsGeocoding: <?php echo json_encode(!$hasFullAddress); ?>,
+            needsGeocoding: <?php echo json_encode(!$hasCoordinates); ?>,
+            lat: <?php echo json_encode($item_company['latitude'] ?? null); ?>,
+            lng: <?php echo json_encode($item_company['longitude'] ?? null); ?>,
             city: <?php echo json_encode($businessCity); ?>,
             state: <?php echo json_encode($businessState); ?>,
             reward: <?php echo json_encode($item_company['description'] ?? ''); ?>,
@@ -425,6 +676,31 @@ echo '<div class="col-12">';
     
     // Make initMap global
     window.initMap = initMap;
+    
+    // Function to save business location to database
+    function saveTourBusinessLocation(companyId, companyName, address, lat, lng) {
+        fetch(window.location.pathname, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=save_business_location' +
+                  '&company_id=' + encodeURIComponent(companyId) +
+                  '&company_name=' + encodeURIComponent(companyName) +
+                  '&address=' + encodeURIComponent(address) +
+                  '&lat=' + lat +
+                  '&lng=' + lng
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Business location saved with ID:', data.location_id);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving business location:', error);
+        });
+    }
     
     // Error handler for authentication failures
     window.gm_authFailure = function() {
@@ -491,13 +767,19 @@ echo '<div class="col-12">';
         var companiesNeedingLocation = [];
         locations.forEach(function(location, index) {
             if (location.needsGeocoding && location.type === 'business') {
-                companiesNeedingLocation.push({
-                    index: index,
-                    company_id: location.company_id,
-                    company_name: location.name,
-                    city: location.city,
-                    state: location.state
-                });
+                // Check if we already have coordinates from bg_company_locations
+                if (location.lat && location.lng) {
+                    console.log('Location already has coordinates:', location.name, location.lat, location.lng);
+                    location.needsGeocoding = false;
+                } else {
+                    companiesNeedingLocation.push({
+                        index: index,
+                        company_id: location.company_id,
+                        company_name: location.name,
+                        city: location.city,
+                        state: location.state
+                    });
+                }
             }
         });
         
@@ -577,7 +859,12 @@ echo '<div class="col-12">';
                         locations[originalIndex].needsGeocoding = false;
                         
                         // Update the display
-                        updateBusinessDisplay(locations[originalIndex].name, fullAddress);
+                        console.log('Updating display for:', locations[originalIndex].name, 'with address:', fullAddress);
+                        updateBusinessDisplay(locations[originalIndex].name, fullAddress, serverLocation.company_id);
+                        
+                        // Save the business location to database
+                        saveTourBusinessLocation(serverLocation.company_id, locations[originalIndex].name, fullAddress, 
+                                               serverLocation.latitude, serverLocation.longitude);
                     }
                 });
                 
@@ -595,17 +882,56 @@ echo '<div class="col-12">';
     }
     
     // Function to update business display with new address
-    function updateBusinessDisplay(businessName, newAddress) {
+    function updateBusinessDisplay(businessName, newAddress, companyId) {
+        console.log('updateBusinessDisplay called with:', businessName, newAddress, companyId);
+        
+        // Strategy 1: Try to find by company ID (most reliable)
+        if (companyId) {
+            var addressElement = $('#address-' + companyId);
+            if (addressElement.length > 0) {
+                console.log('Found by ID! Updating address element');
+                addressElement.html(newAddress);
+                // Also update the data-location
+                addressElement.closest('.sortable_item').find('[data-location]').attr('data-location', newAddress);
+                return;
+            }
+        }
+        
+        // Strategy 2: Try to find by data attribute
+        var sortableItem = $('.sortable_item[data-company-name="' + businessName + '"]');
+        if (sortableItem.length > 0) {
+            console.log('Found by data attribute! Updating...');
+            var addressEl = sortableItem.find('.company-address');
+            addressEl.html(newAddress);
+            sortableItem.find('[data-location]').attr('data-location', newAddress);
+            return;
+        }
+        
+        // Strategy 3: Original method with improved selectors
         $('.sortable_item').each(function() {
-            var nameElement = $(this).find('.small.fw-bold');
-            if (nameElement.text() === businessName) {
-                // Update the address display
-                $(this).find('.text-xs.text-muted').html(newAddress);
-                // Update the data-location attribute
-                $(this).find('[data-location]').attr('data-location', newAddress);
-                return false; // break the loop
+            var $item = $(this);
+            var nameElement = $item.find('.small.fw-bold').first();
+            var currentName = nameElement.text().trim();
+            
+            if (currentName === businessName.trim()) {
+                console.log('Found by text match! Updating...');
+                // Find address element more reliably
+                var addressEl = $item.find('.text-xs.text-muted.company-address');
+                if (addressEl.length === 0) {
+                    // Fallback to original selector
+                    addressEl = $item.find('.text-xs.text-muted');
+                }
+                
+                if (addressEl.length > 0) {
+                    addressEl.html(newAddress);
+                    $item.find('[data-location]').attr('data-location', newAddress);
+                    console.log('Updated successfully');
+                    return false;
+                }
             }
         });
+        
+        console.error('Failed to update display for:', businessName);
     }
     
     // Create custom directions panel
@@ -1038,6 +1364,8 @@ document.getElementById('confirm-location').addEventListener('click', function()
     if (selectedLocation && currentBusinessIndex > -1) {
         // Update the location in our array
         locations[currentBusinessIndex].address = selectedLocation.address;
+        locations[currentBusinessIndex].lat = selectedLocation.location.lat();
+        locations[currentBusinessIndex].lng = selectedLocation.location.lng();
         
         // Update the display
         var addressDiv = currentBusinessElement.querySelector('.text-xs.text-muted');
@@ -1050,6 +1378,12 @@ document.getElementById('confirm-location').addEventListener('click', function()
         if (locationDiv) {
             locationDiv.setAttribute('data-location', selectedLocation.address);
         }
+        
+        // Save the new location to database
+        var companyId = currentBusinessElement.getAttribute('data-company-id');
+        var companyName = locations[currentBusinessIndex].name;
+        saveTourBusinessLocation(companyId, companyName, selectedLocation.address, 
+                               selectedLocation.location.lat(), selectedLocation.location.lng());
         
         // Show update map button
         document.getElementById('draw_map').style.display = 'inline-block';
@@ -1076,6 +1410,28 @@ document.getElementById('location-search').addEventListener('input', function(e)
 </div><!-- End col-md-9 -->
 </div><!-- End row -->
 </div><!-- End container -->
+
+<?php if (isset($_GET['debug'])): ?>
+<!-- Debug: Show tour companies and locations -->
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5>Tour Debug Info for <?php echo $date; ?></h5>
+        </div>
+        <div class="card-body">
+            <h6>Companies on Tour:</h6>
+            <pre><?php echo json_encode($listofcompanies, JSON_PRETTY_PRINT); ?></pre>
+            
+            <h6>Home Location:</h6>
+            <pre><?php echo json_encode([
+                'address' => $homeaddress,
+                'lat' => $home_lat,
+                'lng' => $home_lng
+            ], JSON_PRETTY_PRINT); ?></pre>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Bootstrap JS if not already loaded -->
 <script>
@@ -1256,4 +1612,27 @@ function closeChangeLocationModal() {
 <?php
 // Footer breaks Google Maps, so we skip it
 $app->outputpage();
+
+/* 
+LOCATION DATA STORAGE:
+
+1. TOURS (bg_user_tours):
+   - Stores which companies are on a user's tour for specific dates
+   - Links users to companies via company_id and calendar_dt
+
+2. BUSINESS LOCATIONS (bg_company_locations):
+   - Permanent storage of all company locations
+   - source: 'tour_geocoding' when discovered via tour
+   - is_verified: 1 when geocoded with lat/lng
+   - Can have multiple locations per company
+   - Shared across all users
+
+3. USER HOME LOCATION (bg_user_attributes):
+   - Default home location:
+     - type: 'tour_settings'
+     - name: 'default_home_location'
+     - category: 'preferences'
+     - description: JSON with address, lat, lng, city, state, zip
+   - Applied to all tours for this user
+*/
 ?>
