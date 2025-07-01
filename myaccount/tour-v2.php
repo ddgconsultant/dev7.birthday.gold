@@ -1599,7 +1599,7 @@ echo '<div class="col-12">';
         routeMap = new google.maps.Map(routeMapElement, {
             zoom: 13,
             center: {lat: 39.7392, lng: -104.9903}, // Denver, CO
-            mapId: 'DEMO_MAP_ID' // Required for AdvancedMarkerElement
+            mapId: '9cd54b1058579fe87b380337' // Birthday Gold Tour Map ID for AdvancedMarkerElement
         });
         
         directionsService = new google.maps.DirectionsService();
@@ -1930,7 +1930,7 @@ $(document).on('click', '.pick-location', function(e) {
             locationPickerMap = new google.maps.Map(document.getElementById('location-map'), {
                 zoom: 10,
                 center: {lat: 39.7392, lng: -104.9903},
-                mapId: 'DEMO_MAP_ID' // Required for AdvancedMarkerElement
+                mapId: '9cd54b1058579fe87b380337' // Birthday Gold Tour Map ID for AdvancedMarkerElement
             });
         }
         
@@ -2334,7 +2334,7 @@ function initializeHomeLocationModal() {
                     homeLocationMap = new google.maps.Map(document.getElementById('home-location-map'), {
                         center: place.geometry.location,
                         zoom: 15,
-                        mapId: 'DEMO_MAP_ID' // Required for AdvancedMarkerElement
+                        mapId: '9cd54b1058579fe87b380337' // Birthday Gold Tour Map ID for AdvancedMarkerElement
                     });
                 }
                 

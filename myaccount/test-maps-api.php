@@ -60,7 +60,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
             var map = new google.maps.Map(document.getElementById('map'), {
                 center: {lat: 39.7392, lng: -104.9903},
                 zoom: 12,
-                mapId: 'DEMO_MAP_ID' // Required for AdvancedMarkerElement
+                mapId: '9cd54b1058579fe87b380337' // Birthday Gold Tour Map ID for AdvancedMarkerElement
             });
             
             document.getElementById('status').innerHTML = '<p class="success">✓ Google Maps loaded successfully!</p>';
@@ -106,19 +106,20 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
             <li>Check that billing is enabled on your Google Cloud project</li>
             <li>Ensure this domain (<?php echo $_SERVER['HTTP_HOST']; ?>) is in the API key restrictions</li>
             <li>Verify all required APIs are enabled</li>
-            <li><strong>Map ID:</strong> Currently using 'DEMO_MAP_ID'. For production, create a Map ID in Google Cloud Console → Maps → Map Management</li>
+            <li><strong>Map ID:</strong> Using production Map ID: 9cd54b1058579fe87b380337</li>
         </ol>
     </div>
     
     <div class="info">
         <h2>Note on Map IDs:</h2>
-        <p>To use AdvancedMarkerElement (new marker system), you need a Map ID. The code currently uses 'DEMO_MAP_ID' which works for testing.</p>
-        <p>For production use:</p>
-        <ol>
-            <li>Go to Google Cloud Console → Maps → Map Management</li>
-            <li>Create a new Map ID</li>
-            <li>Update the code to use your Map ID instead of 'DEMO_MAP_ID'</li>
-        </ol>
+        <p>To use AdvancedMarkerElement (new marker system), you need a Map ID.</p>
+        <p><strong>Current Map ID:</strong> 9cd54b1058579fe87b380337 (birthday-gold-www)</p>
+        <p>This Map ID is configured for:</p>
+        <ul>
+            <li>JavaScript maps (Vector style)</li>
+            <li>No tilt or rotation</li>
+            <li>Optimized for tour route display</li>
+        </ul>
     </div>
 </body>
 </html>
