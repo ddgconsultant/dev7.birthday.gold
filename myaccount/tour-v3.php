@@ -603,9 +603,16 @@ foreach ($listofcompanies as &$company_item) {
 $additionalstyles = '<style>
 /* Mobile-first responsive design */
 .mobile-container {
-    padding: 0;
-    margin: 0;
+    padding: 0 15px;
+    margin: 0 auto;
     max-width: 100%;
+    padding-bottom: 100px; /* Space for FAB */
+}
+
+/* Mobile header styling */
+.mobile-header {
+    margin: -15px -15px 0 -15px; /* Negative margins to counter container padding */
+    border-radius: 0;
 }
 
 /* Mobile tabs navigation */
@@ -618,6 +625,7 @@ $additionalstyles = '<style>
     position: sticky;
     top: 0;
     z-index: 100;
+    margin: 0 -15px; /* Full width */
 }
 
 .mobile-tab {
@@ -641,13 +649,13 @@ $additionalstyles = '<style>
 }
 
 .mobile-tab-content {
-    display: none;
+    display: none !important;
     padding: 16px;
     animation: fadeIn 0.3s ease;
 }
 
 .mobile-tab-content.active {
-    display: block;
+    display: block !important;
 }
 
 @keyframes fadeIn {
@@ -1098,7 +1106,7 @@ $additionalstyles = '<style>
     }
     
     /* Map sizing for print */
-    #route-map {
+    #map {
         height: 700px !important;
         width: 100% !important;
     }
@@ -1351,7 +1359,6 @@ echo '<div class="mobile-container">';
             </div>
             <?php endif; ?>
         </div>
-                </div>
                 <?php
                     }
                 }
@@ -1455,28 +1462,7 @@ echo '<div class="mobile-container">';
     </div>
 </div>
 
-<div class="row print-content">
-    <div class="col-lg-4 mb-4">
-        <!-- STEPS CARD-->
-        <div class="card h-100 border-start-lg border-start-secondary">
-            <div class="card-header">Turn-by-Turn Directions</div>
-            <div class="card-body" style="max-height: 800px; overflow-y: auto;">
-                <div id="directions-panel"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAP card-->
-    <div class="col-lg-8 mb-4">
-        <div class="card">
-            <div class="card-header">Map and Direction</div>
-            <div class="card-body p-0">
-                <!-- Map will be displayed here -->
-                <div id="route-map" style="height: 800px;"></div>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Desktop layout removed - using mobile tabs instead -->
 
 
     <script>
@@ -1503,6 +1489,14 @@ echo '<div class="mobile-container">';
             setTimeout(loadDirections, 100);
         }
     }
+    
+    // Ensure only businesses tab is visible on load
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.mobile-tab-content').forEach(tab => {
+            tab.style.display = 'none';
+        });
+        document.getElementById('businesses-tab').style.display = 'block';
+    });
     
     function showQuickActions() {
         // Create bottom sheet for quick actions
@@ -1951,7 +1945,7 @@ echo '<div class="mobile-container">';
         }
         
         // Initialize route map
-        var routeMapElement = document.getElementById('route-map');
+        var routeMapElement = document.getElementById('map');
         routeMap = new google.maps.Map(routeMapElement, {
             zoom: 13,
             center: {lat: 39.7392, lng: -104.9903} // Denver, CO
