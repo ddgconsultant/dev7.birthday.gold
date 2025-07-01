@@ -190,29 +190,47 @@
                     const locationLatLng = waypoint.location;
                     const locationTitle = waypoint.title;
 
-                    const locationMarkerIcon = {
-                        url: "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
-                        scaledSize: new google.maps.Size(40, 40),
-                    };
+                    // Create yellow pin element for locations
+                    const locationPin = document.createElement('div');
+                    locationPin.style.backgroundColor = '#FFD500';
+                    locationPin.style.width = '40px';
+                    locationPin.style.height = '40px';
+                    locationPin.style.borderRadius = '50%';
+                    locationPin.style.border = '3px solid white';
+                    locationPin.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
 
-                    const locationMarker = new google.maps.Marker({
+                    const locationMarker = new google.maps.marker.AdvancedMarkerElement({
                         position: locationLatLng,
                         map: map,
                         title: locationTitle,
-                        icon: locationMarkerIcon,
+                        content: locationPin,
                     });
 
                     if (index === 0) {
                         homeLatLng = locationLatLng;
-                        const homeMarkerIcon = {
-                            url: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-                            scaledSize: new google.maps.Size(40, 40),
-                        };
-                        const homeMarker = new google.maps.Marker({
+                        // Create blue home pin element
+                        const homePin = document.createElement('div');
+                        homePin.style.backgroundColor = '#4285F4';
+                        homePin.style.width = '40px';
+                        homePin.style.height = '40px';
+                        homePin.style.borderRadius = '50%';
+                        homePin.style.border = '3px solid white';
+                        homePin.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                        homePin.style.display = 'flex';
+                        homePin.style.alignItems = 'center';
+                        homePin.style.justifyContent = 'center';
+                        
+                        const homeIcon = document.createElement('div');
+                        homeIcon.textContent = '🏠';
+                        homeIcon.style.fontSize = '20px';
+                        
+                        homePin.appendChild(homeIcon);
+                        
+                        const homeMarker = new google.maps.marker.AdvancedMarkerElement({
                             position: homeLatLng,
                             map: map,
                             title: "Your Home",
-                            icon: homeMarkerIcon,
+                            content: homePin,
                         });
                     }
 
@@ -323,7 +341,7 @@
 
     function loadMapScript() {
         const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCtO04U0nKVeodiS0TL12ib8MDEtwdANOM&libraries=places&callback=initMap`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCtO04U0nKVeodiS0TL12ib8MDEtwdANOM&libraries=places,marker&callback=initMap&v=weekly`;
         script.defer = true;
         script.async = true;
         document.body.appendChild(script);

@@ -407,7 +407,7 @@ echo '<div class="col-12">';
         document.getElementById('api-status').textContent = 'Loading Google Maps API...';
         
         var script = document.createElement('script');
-        script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places&callback=initMap';
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places,marker&callback=initMap&v=weekly';
         script.async = true;
         script.defer = true;
         
@@ -717,24 +717,31 @@ echo '<div class="col-12">';
                         position = response.routes[0].legs[response.routes[0].legs.length - 1].end_location;
                     }
                     
-                    var marker = new google.maps.Marker({
+                    // Create pin element for AdvancedMarkerElement
+                    var pinBackground = document.createElement('div');
+                    pinBackground.style.backgroundColor = location.type === 'start' || location.type === 'home' ? '#4285F4' : '#EA4335';
+                    pinBackground.style.width = '40px';
+                    pinBackground.style.height = '40px';
+                    pinBackground.style.borderRadius = '50%';
+                    pinBackground.style.border = '2px solid white';
+                    pinBackground.style.display = 'flex';
+                    pinBackground.style.alignItems = 'center';
+                    pinBackground.style.justifyContent = 'center';
+                    pinBackground.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                    
+                    var pinLabel = document.createElement('div');
+                    pinLabel.textContent = (index + 1).toString();
+                    pinLabel.style.color = 'white';
+                    pinLabel.style.fontSize = '12px';
+                    pinLabel.style.fontWeight = 'bold';
+                    
+                    pinBackground.appendChild(pinLabel);
+                    
+                    var marker = new google.maps.marker.AdvancedMarkerElement({
                         position: position,
                         map: routeMap,
                         title: location.name + '\n' + location.address,
-                        label: {
-                            text: (index + 1).toString(),
-                            color: 'white',
-                            fontSize: '12px',
-                            fontWeight: 'bold'
-                        },
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 20,
-                            fillColor: location.type === 'start' || location.type === 'home' ? '#4285F4' : '#EA4335',
-                            fillOpacity: 1,
-                            strokeColor: 'white',
-                            strokeWeight: 2
-                        }
+                        content: pinBackground
                     });
                     
                     // Add info window with business name prominently displayed
@@ -915,10 +922,20 @@ function displayLocationResults(results) {
         resultsDiv.appendChild(item);
         
         // Add marker to map
-        var marker = new google.maps.Marker({
+        // Create pin element for location picker
+        var locationPin = document.createElement('div');
+        locationPin.style.backgroundColor = '#EA4335';
+        locationPin.style.width = '24px';
+        locationPin.style.height = '24px';
+        locationPin.style.borderRadius = '50%';
+        locationPin.style.border = '2px solid white';
+        locationPin.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+        
+        var marker = new google.maps.marker.AdvancedMarkerElement({
             position: place.geometry.location,
             map: locationPickerMap,
-            title: place.name
+            title: place.name,
+            content: locationPin
         });
         
         marker.addListener('click', function() {

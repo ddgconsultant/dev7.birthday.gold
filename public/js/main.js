@@ -774,10 +774,20 @@ var locations = [
 ];
 locations.forEach(function(location) {
 
-  var marker = new google.maps.Marker({
+  // Create pin element
+  var pin = document.createElement('div');
+  pin.style.backgroundColor = '#EA4335';
+  pin.style.width = '24px';
+  pin.style.height = '24px';
+  pin.style.borderRadius = '50%';
+  pin.style.border = '2px solid white';
+  pin.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+  
+  var marker = new google.maps.marker.AdvancedMarkerElement({
     position: {lat: location.lat, lng: location.lng},
     map: map,
-    title: location.name
+    title: location.name,
+    content: pin
   });
 
 });

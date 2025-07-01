@@ -1192,7 +1192,7 @@ echo '<div class="col-12">';
         document.getElementById('api-status').textContent = 'Loading Google Maps API...';
         
         var script = document.createElement('script');
-        script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places&callback=initMap';
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['mainkey']; ?>&libraries=places,marker&callback=initMap&v=weekly';
         script.async = true;
         script.defer = true;
         
@@ -1555,25 +1555,32 @@ echo '<div class="col-12">';
                         markerPosition = response.routes[0].legs[i - 1].end_location;
                     }
                     
-                    // Create a simple numbered marker
-                    var marker = new google.maps.Marker({
+                    // Create pin element for AdvancedMarkerElement
+                    var pinBackground = document.createElement('div');
+                    pinBackground.style.backgroundColor = (i === 0) ? '#4285F4' : '#EA4335';
+                    pinBackground.style.width = '30px';
+                    pinBackground.style.height = '30px';
+                    pinBackground.style.borderRadius = '50%';
+                    pinBackground.style.border = '2px solid white';
+                    pinBackground.style.display = 'flex';
+                    pinBackground.style.alignItems = 'center';
+                    pinBackground.style.justifyContent = 'center';
+                    pinBackground.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                    
+                    var pinLabel = document.createElement('div');
+                    pinLabel.textContent = (i + 1).toString();
+                    pinLabel.style.color = 'white';
+                    pinLabel.style.fontSize = '14px';
+                    pinLabel.style.fontWeight = 'bold';
+                    
+                    pinBackground.appendChild(pinLabel);
+                    
+                    // Create a simple numbered marker using AdvancedMarkerElement
+                    var marker = new google.maps.marker.AdvancedMarkerElement({
                         position: markerPosition,
                         map: routeMap,
                         title: location.name,
-                        label: {
-                            text: (i + 1).toString(),
-                            color: 'white',
-                            fontSize: '14px',
-                            fontWeight: 'bold'
-                        },
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 12,
-                            fillColor: (i === 0) ? '#4285F4' : '#EA4335',
-                            fillOpacity: 1,
-                            strokeColor: 'white',
-                            strokeWeight: 2
-                        }
+                        content: pinBackground
                     });
                     
                     bounds.extend(markerPosition);
@@ -1593,7 +1600,10 @@ echo '<div class="col-12">';
                         });
                         
                         marker.addListener('click', function() {
-                            infoWindow.open(routeMap, marker);
+                            infoWindow.open({
+                                anchor: marker,
+                                map: routeMap
+                            });
                         });
                     })(marker, location);
                 }
@@ -1892,18 +1902,20 @@ function displayLocationResults(locations) {
         
         // Add marker to map
         var position = {lat: parseFloat(location.latitude), lng: parseFloat(location.longitude)};
-        var marker = new google.maps.Marker({
+        // Create pin element for location picker
+        var locationPin = document.createElement('div');
+        locationPin.style.backgroundColor = color;
+        locationPin.style.width = '24px';
+        locationPin.style.height = '24px';
+        locationPin.style.borderRadius = '50%';
+        locationPin.style.border = '2px solid white';
+        locationPin.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+        
+        var marker = new google.maps.marker.AdvancedMarkerElement({
             position: position,
             map: locationPickerMap,
             title: location.full_address,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 10,
-                fillColor: color,
-                fillOpacity: 1,
-                strokeColor: 'white',
-                strokeWeight: 2
-            }
+            content: locationPin
         });
         
         // Store the marker reference
@@ -2179,13 +2191,32 @@ function initializeHomeLocationModal() {
                 homeLocationMap.setCenter(place.geometry.location);
                 
                 if (homeLocationMarker) {
-                    homeLocationMarker.setMap(null);
+                    homeLocationMarker.map = null;
                 }
                 
-                homeLocationMarker = new google.maps.Marker({
+                // Create home pin element
+                var homePin = document.createElement('div');
+                homePin.style.backgroundColor = '#4285F4';
+                homePin.style.width = '30px';
+                homePin.style.height = '30px';
+                homePin.style.borderRadius = '50%';
+                homePin.style.border = '2px solid white';
+                homePin.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                homePin.style.display = 'flex';
+                homePin.style.alignItems = 'center';
+                homePin.style.justifyContent = 'center';
+                
+                var homeIcon = document.createElement('div');
+                homeIcon.textContent = '🏠';
+                homeIcon.style.fontSize = '16px';
+                
+                homePin.appendChild(homeIcon);
+                
+                homeLocationMarker = new google.maps.marker.AdvancedMarkerElement({
                     position: place.geometry.location,
                     map: homeLocationMap,
-                    title: 'Home Location'
+                    title: 'Home Location',
+                    content: homePin
                 });
             }
         });
