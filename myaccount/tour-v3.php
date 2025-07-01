@@ -1238,8 +1238,8 @@ echo '<div class="mobile-container">';
                     </div>
                 </div>
             </div>
-            <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-outline-secondary btn-sm w-100" onclick="openChangeLocationModal(event)">
+            <div class="d-flex gap-2 mt-3 justify-content-end">
+                <button class="btn btn-outline-secondary btn-sm" onclick="openChangeLocationModal(event)">
                     <i class="bi bi-geo-alt"></i> Change Location
                 </button>
             </div>
@@ -1330,14 +1330,14 @@ echo '<div class="mobile-container">';
             </div>
             
             <?php if (!($item_company['data']['is_out_of_range'] ?? false)): ?>
-            <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-outline-secondary btn-sm flex-fill pick-location" 
+            <div class="d-flex gap-2 mt-3 justify-content-end">
+                <button class="btn btn-outline-secondary btn-sm pick-location" 
                         data-company-id="<?php echo $item_company['company_id']; ?>" 
                         data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
                     <i class="bi bi-geo"></i> Change Location
                 </button>
                 <a href="/myaccount/enrollments-individual?company_id=<?php echo $item_company['company_id']; ?>" 
-                   class="btn btn-primary btn-sm flex-fill">
+                   class="btn btn-primary btn-sm">
                     <i class="bi bi-box-arrow-up-right"></i> View Details
                 </a>
             </div>
