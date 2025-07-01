@@ -102,17 +102,6 @@ if (isset($_POST['action'])) {
             echo json_encode(['success' => true, 'address' => $address]);
             exit;
             
-        case 'get_tour_locations':
-            $tour_companies = json_decode($_POST['companies'], true);
-            $user_lat = $_POST['lat'] ?? null;
-            $user_lng = $_POST['lng'] ?? null;
-            
-            // Get locations using the new App methods
-            $locations = $app->getTourCompanyLocations($tour_companies, $user_lat, $user_lng);
-            
-            echo json_encode(['success' => true, 'locations' => $locations]);
-            exit;
-            
         case 'save_business_location':
             $companyId = $_POST['company_id'] ?? '';
             $companyName = $_POST['company_name'] ?? '';
@@ -759,179 +748,104 @@ echo '<div class="col-12">';
     </script>
 
     <script>
-    // Function to geocode missing addresses using server-side lookup
+    // Function to geocode missing addresses
     function geocodeMissingAddresses() {
         console.log('Starting geocodeMissingAddresses...');
+        var geocodePromises = [];
+        var placesService = new google.maps.places.PlacesService(document.createElement('div'));
         
-        // Collect companies that need geocoding
-        var companiesNeedingLocation = [];
+        console.log('Checking locations for geocoding needs:', locations);
+        
         locations.forEach(function(location, index) {
+            console.log('Checking location:', location.name, 'needsGeocoding:', location.needsGeocoding);
+            
+            // Skip if we already have coordinates
+            if (location.lat && location.lng) {
+                console.log('Location already has coordinates:', location.name, location.lat, location.lng);
+                location.needsGeocoding = false;
+                return;
+            }
+            
             if (location.needsGeocoding && location.type === 'business') {
-                // Check if we already have coordinates from bg_company_locations
-                if (location.lat && location.lng) {
-                    console.log('Location already has coordinates:', location.name, location.lat, location.lng);
-                    location.needsGeocoding = false;
-                } else {
-                    companiesNeedingLocation.push({
-                        index: index,
-                        company_id: location.company_id,
-                        company_name: location.name,
-                        city: location.city,
-                        state: location.state
+                var promise = new Promise(function(resolve) {
+                    var searchQuery = location.name + ' near ' + location.city + ', ' + location.state;
+                    console.log('Searching for:', searchQuery);
+                    
+                    var request = {
+                        query: searchQuery,
+                        fields: ['name', 'geometry', 'formatted_address']
+                    };
+                    
+                    placesService.textSearch(request, function(results, status) {
+                        if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                            // Use the first result
+                            var place = results[0];
+                            console.log('Found location for', location.name, ':', place.formatted_address);
+                            
+                            // Update the location
+                            locations[index].address = place.formatted_address;
+                            locations[index].lat = place.geometry.location.lat();
+                            locations[index].lng = place.geometry.location.lng();
+                            locations[index].needsGeocoding = false;
+                            
+                            // Update the display on the page
+                            updateBusinessDisplay(location.name, place.formatted_address);
+                            
+                            // Save to database
+                            saveTourBusinessLocation(location.company_id, location.name, place.formatted_address, 
+                                                   place.geometry.location.lat(), place.geometry.location.lng());
+                        } else {
+                            console.error('Could not find location for', location.name);
+                        }
+                        resolve();
                     });
-                }
+                });
+                geocodePromises.push(promise);
             }
         });
         
-        if (companiesNeedingLocation.length === 0) {
-            // No geocoding needed, load directions immediately
-            loadDirections();
-            return;
+        // Also geocode home if needed
+        if (!locations[0].lat || !locations[0].lng) {
+            var homePromise = new Promise(function(resolve) {
+                var geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address: locations[0].address }, function(results, status) {
+                    if (status === 'OK') {
+                        locations[0].lat = results[0].geometry.location.lat();
+                        locations[0].lng = results[0].geometry.location.lng();
+                        console.log('Geocoded home location');
+                    } else {
+                        console.error('Failed to geocode home address');
+                    }
+                    resolve();
+                });
+            });
+            geocodePromises.push(homePromise);
         }
         
-        // Get home location coordinates
-        var homeLat = locations[0].lat || <?php echo $home_lat ?: 'null'; ?>;
-        var homeLng = locations[0].lng || <?php echo $home_lng ?: 'null'; ?>;
-        
-        // If we don't have home coordinates, get them first
-        if (!homeLat || !homeLng) {
-            // Use Google Geocoding for home address
-            var geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ address: locations[0].address }, function(results, status) {
-                if (status === 'OK') {
-                    homeLat = results[0].geometry.location.lat();
-                    homeLng = results[0].geometry.location.lng();
-                    locations[0].lat = homeLat;
-                    locations[0].lng = homeLng;
-                    
-                    // Now fetch business locations
-                    fetchBusinessLocations(companiesNeedingLocation, homeLat, homeLng);
-                } else {
-                    console.error('Failed to geocode home address');
-                    loadDirections(); // Try to continue anyway
-                }
+        // Wait for all geocoding to complete, then load directions
+        if (geocodePromises.length > 0) {
+            Promise.all(geocodePromises).then(function() {
+                console.log('All geocoding complete, loading directions...');
+                loadDirections();
             });
         } else {
-            fetchBusinessLocations(companiesNeedingLocation, homeLat, homeLng);
+            // No geocoding needed, load directions immediately
+            loadDirections();
         }
-    }
-    
-    // Fetch business locations from server
-    function fetchBusinessLocations(companiesNeedingLocation, homeLat, homeLng) {
-        console.log('Fetching business locations from server...');
-        
-        // Prepare company data
-        var companies = companiesNeedingLocation.map(function(item) {
-            return {
-                company_id: item.company_id,
-                company_name: item.company_name,
-                city: item.city,
-                state: item.state
-            };
-        });
-        
-        // Call server to get locations
-        fetch(window.location.pathname, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'action=get_tour_locations&companies=' + encodeURIComponent(JSON.stringify(companies)) +
-                  '&lat=' + homeLat + '&lng=' + homeLng
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.locations) {
-                // Update our locations with the server results
-                data.locations.forEach(function(serverLocation, idx) {
-                    if (serverLocation) {
-                        var originalIndex = companiesNeedingLocation[idx].index;
-                        
-                        // Build full address
-                        var fullAddress = serverLocation.address + ', ' + 
-                                        serverLocation.city + ', ' + 
-                                        serverLocation.state + ' ' + 
-                                        serverLocation.zip_code;
-                        
-                        locations[originalIndex].address = fullAddress;
-                        locations[originalIndex].lat = parseFloat(serverLocation.latitude);
-                        locations[originalIndex].lng = parseFloat(serverLocation.longitude);
-                        locations[originalIndex].needsGeocoding = false;
-                        
-                        // Update the display
-                        console.log('Updating display for:', locations[originalIndex].name, 'with address:', fullAddress);
-                        updateBusinessDisplay(locations[originalIndex].name, fullAddress, serverLocation.company_id);
-                        
-                        // Save the business location to database
-                        saveTourBusinessLocation(serverLocation.company_id, locations[originalIndex].name, fullAddress, 
-                                               serverLocation.latitude, serverLocation.longitude);
-                    }
-                });
-                
-                console.log('All locations updated, loading directions...');
-                loadDirections();
-            } else {
-                console.error('Failed to get locations from server');
-                loadDirections(); // Try to continue anyway
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching locations:', error);
-            loadDirections(); // Try to continue anyway
-        });
     }
     
     // Function to update business display with new address
-    function updateBusinessDisplay(businessName, newAddress, companyId) {
-        console.log('updateBusinessDisplay called with:', businessName, newAddress, companyId);
-        
-        // Strategy 1: Try to find by company ID (most reliable)
-        if (companyId) {
-            var addressElement = $('#address-' + companyId);
-            if (addressElement.length > 0) {
-                console.log('Found by ID! Updating address element');
-                addressElement.html(newAddress);
-                // Also update the data-location
-                addressElement.closest('.sortable_item').find('[data-location]').attr('data-location', newAddress);
-                return;
-            }
-        }
-        
-        // Strategy 2: Try to find by data attribute
-        var sortableItem = $('.sortable_item[data-company-name="' + businessName + '"]');
-        if (sortableItem.length > 0) {
-            console.log('Found by data attribute! Updating...');
-            var addressEl = sortableItem.find('.company-address');
-            addressEl.html(newAddress);
-            sortableItem.find('[data-location]').attr('data-location', newAddress);
-            return;
-        }
-        
-        // Strategy 3: Original method with improved selectors
+    function updateBusinessDisplay(businessName, newAddress) {
         $('.sortable_item').each(function() {
-            var $item = $(this);
-            var nameElement = $item.find('.small.fw-bold').first();
-            var currentName = nameElement.text().trim();
-            
-            if (currentName === businessName.trim()) {
-                console.log('Found by text match! Updating...');
-                // Find address element more reliably
-                var addressEl = $item.find('.text-xs.text-muted.company-address');
-                if (addressEl.length === 0) {
-                    // Fallback to original selector
-                    addressEl = $item.find('.text-xs.text-muted');
-                }
-                
-                if (addressEl.length > 0) {
-                    addressEl.html(newAddress);
-                    $item.find('[data-location]').attr('data-location', newAddress);
-                    console.log('Updated successfully');
-                    return false;
-                }
+            var nameElement = $(this).find('.small.fw-bold');
+            if (nameElement.text() === businessName) {
+                // Update the address display
+                $(this).find('.text-xs.text-muted').html(newAddress);
+                // Update the data-location attribute
+                $(this).find('[data-location]').attr('data-location', newAddress);
+                return false; // break the loop
             }
         });
-        
-        console.error('Failed to update display for:', businessName);
     }
     
     // Create custom directions panel
