@@ -634,6 +634,7 @@ $additionalstyles = '<style>
     padding: 12px 16px;
     text-align: center;
     border: none;
+    border-radius: 0;
     background: white;
     color: #6c757d;
     font-weight: 500;
@@ -645,6 +646,10 @@ $additionalstyles = '<style>
 .mobile-tab.active {
     color: #0d6efd;
     border-bottom: 3px solid #0d6efd;
+    background: #f8f9fa;
+}
+
+.mobile-tab:hover {
     background: #f8f9fa;
 }
 
@@ -709,35 +714,9 @@ $additionalstyles = '<style>
     line-height: 1.4;
 }
 
-.business-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-}
+/* Business actions uses Bootstrap gap utilities */
 
-.mobile-btn {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    background: white;
-    color: #495057;
-    font-size: 14px;
-    font-weight: 500;
-    text-align: center;
-    transition: all 0.2s ease;
-    text-decoration: none;
-}
-
-.mobile-btn:active {
-    transform: scale(0.95);
-}
-
-.mobile-btn-primary {
-    background: #0d6efd;
-    color: white;
-    border-color: #0d6efd;
-}
+/* Use Bootstrap button classes instead of custom styles */
 
 /* Mobile map container */
 .mobile-map-container {
@@ -790,7 +769,7 @@ $additionalstyles = '<style>
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: #0d6efd;
+    background: var(--bs-primary);
     color: white;
     border: none;
     box-shadow: 0 4px 12px rgba(13,110,253,0.4);
@@ -802,8 +781,13 @@ $additionalstyles = '<style>
     transition: all 0.3s ease;
 }
 
+.fab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(13,110,253,0.5);
+}
+
 .fab:active {
-    transform: scale(0.9);
+    transform: scale(0.95);
 }
 
 /* Bottom sheet modal */
@@ -1146,10 +1130,10 @@ echo '<div class="mobile-container">';
             <small class="text-muted"><?php echo $formattedDate; ?></small>
         </div>
         <div class="d-flex gap-2">
-            <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="btn btn-sm btn-outline-primary">
+            <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="btn btn-sm btn-primary" title="Add Businesses">
                 <i class="bi bi-plus-circle"></i>
             </a>
-            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+            <button class="btn btn-sm btn-secondary" onclick="window.print()" title="Print">
                 <i class="bi bi-printer"></i>
             </button>
         </div>
@@ -1254,8 +1238,8 @@ echo '<div class="mobile-container">';
                     </div>
                 </div>
             </div>
-            <div class="business-actions">
-                <button class="mobile-btn" onclick="openChangeLocationModal(event)">
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-outline-secondary btn-sm w-100" onclick="openChangeLocationModal(event)">
                     <i class="bi bi-geo-alt"></i> Change Location
                 </button>
             </div>
@@ -1346,14 +1330,14 @@ echo '<div class="mobile-container">';
             </div>
             
             <?php if (!($item_company['data']['is_out_of_range'] ?? false)): ?>
-            <div class="business-actions">
-                <button class="mobile-btn pick-location" 
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-outline-secondary btn-sm flex-fill pick-location" 
                         data-company-id="<?php echo $item_company['company_id']; ?>" 
                         data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
                     <i class="bi bi-geo"></i> Change Location
                 </button>
                 <a href="/myaccount/enrollments-individual?company_id=<?php echo $item_company['company_id']; ?>" 
-                   class="mobile-btn mobile-btn-primary">
+                   class="btn btn-primary btn-sm flex-fill">
                     <i class="bi bi-box-arrow-up-right"></i> View Details
                 </a>
             </div>
@@ -1369,7 +1353,7 @@ echo '<div class="mobile-container">';
     <!-- Reorder notice and button -->
     <div class="text-center mt-3">
         <p class="text-muted small mb-2"><i class="bi bi-arrows-move"></i> Drag businesses to reorder</p>
-        <button class="btn btn-primary draw_map" id="draw_map" style="display: none;" onclick="DrawNewMap()">
+        <button class="btn btn-primary btn-sm draw_map" id="draw_map" style="display: none;" onclick="DrawNewMap()">
             <i class="bi bi-arrow-clockwise"></i> Update Route
         </button>
     </div>
@@ -1379,7 +1363,7 @@ echo '<div class="mobile-container">';
 <div id="map-tab" class="mobile-tab-content">
     <div class="mobile-map-container" id="map"></div>
     <div class="text-center mt-2">
-        <button class="btn btn-sm btn-outline-primary" onclick="loadDirections()">
+        <button class="btn btn-sm btn-primary" onclick="loadDirections()">
             <i class="bi bi-arrow-repeat"></i> Refresh Map
         </button>
     </div>
@@ -1390,7 +1374,7 @@ echo '<div class="mobile-container">';
     <div class="mobile-directions">
         <div class="mobile-directions-header">
             <h6 class="mobile-directions-title">Turn-by-Turn Directions</h6>
-            <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+            <button class="btn btn-sm btn-secondary" onclick="window.print()">
                 <i class="bi bi-printer"></i>
             </button>
         </div>
@@ -1508,13 +1492,13 @@ echo '<div class="mobile-container">';
                 <button class="btn-close" onclick="this.closest('.bottom-sheet').remove()"></button>
             </div>
             <div class="bottom-sheet-content">
-                <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="mobile-btn w-100 mb-2">
+                <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="btn btn-primary w-100 mb-2">
                     <i class="bi bi-plus-circle"></i> Add More Businesses
                 </a>
-                <button class="mobile-btn w-100 mb-2" onclick="window.print(); this.closest('.bottom-sheet').remove()">
+                <button class="btn btn-outline-secondary w-100 mb-2" onclick="window.print(); this.closest('.bottom-sheet').remove()">
                     <i class="bi bi-printer"></i> Print Directions
                 </button>
-                <button class="mobile-btn w-100" onclick="shareRoute(); this.closest('.bottom-sheet').remove()">
+                <button class="btn btn-outline-primary w-100" onclick="shareRoute(); this.closest('.bottom-sheet').remove()">
                     <i class="bi bi-share"></i> Share Route
                 </button>
             </div>
