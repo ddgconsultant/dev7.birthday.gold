@@ -27,6 +27,12 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
             <p class="error">✗ API Key is NOT configured</p>
         <?php endif; ?>
         
+        <?php if (!empty($sitesettings['GOOGLEAPI']['mapid'])): ?>
+            <p class="success">✓ Map ID is configured: <?php echo $sitesettings['GOOGLEAPI']['mapid']; ?></p>
+        <?php else: ?>
+            <p class="info">ℹ Map ID not in config, using default: 9cd54b1058579fe87b380337</p>
+        <?php endif; ?>
+        
         <p><strong>Current Domain:</strong> <?php echo $_SERVER['HTTP_HOST']; ?></p>
         <p><strong>Protocol:</strong> <?php echo (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'HTTPS' : 'HTTP'; ?></p>
     </div>
@@ -60,7 +66,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
             var map = new google.maps.Map(document.getElementById('map'), {
                 center: {lat: 39.7392, lng: -104.9903},
                 zoom: 12,
-                mapId: '9cd54b1058579fe87b380337' // Birthday Gold Tour Map ID for AdvancedMarkerElement
+                mapId: '<?php echo $sitesettings['GOOGLEAPI']['mapid'] ?? '9cd54b1058579fe87b380337'; ?>' // Birthday Gold Tour Map ID for AdvancedMarkerElement
             });
             
             document.getElementById('status').innerHTML = '<p class="success">✓ Google Maps loaded successfully!</p>';
@@ -113,7 +119,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
     <div class="info">
         <h2>Note on Map IDs:</h2>
         <p>To use AdvancedMarkerElement (new marker system), you need a Map ID.</p>
-        <p><strong>Current Map ID:</strong> 9cd54b1058579fe87b380337 (birthday-gold-www)</p>
+        <p><strong>Current Map ID:</strong> <?php echo $sitesettings['GOOGLEAPI']['mapid'] ?? '9cd54b1058579fe87b380337'; ?> (birthday-gold-www)</p>
         <p>This Map ID is configured for:</p>
         <ul>
             <li>JavaScript maps (Vector style)</li>
