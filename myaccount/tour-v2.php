@@ -2684,13 +2684,9 @@ function getTestingLinks() {
         waypoints.push(encodeURIComponent(tourLocations[i].address));
     }
     
-    // Generate Apple Maps URL
-    var appleMapsUrl = 'https://maps.apple.com/?dirflg=d';
-    appleMapsUrl += '&daddr=' + origin;  // Starting location
-    for (var i = 0; i < waypoints.length; i++) {
-        appleMapsUrl += '&daddr=' + waypoints[i];
-    }
-    appleMapsUrl += '&daddr=' + destination;
+    // Generate Apple Maps URL (only works for simple A to B)
+    var appleMapsUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
+    var appleMapsNote = waypoints.length > 0 ? ' (Note: Shows only start to end - waypoints not supported)' : '';
     
     // Generate Google Maps URL
     var allStops = [origin].concat(waypoints).concat([destination]);
@@ -2714,7 +2710,7 @@ function getTestingLinks() {
     var modalBody = $('<div class="modal-body">').appendTo(modalContent);
     
     // Apple Maps section
-    $('<h6>Apple Maps URL (iPhone)</h6>').appendTo(modalBody);
+    $('<h6>Apple Maps URL (iPhone)' + appleMapsNote + '</h6>').appendTo(modalBody);
     var appleInput = $('<input type="text" class="form-control mb-2" readonly>').val(appleMapsUrl).appendTo(modalBody);
     var appleButtons = $('<div class="mb-4">').appendTo(modalBody);
     $('<button class="btn btn-sm btn-primary me-2">Copy</button>').click(function() {
@@ -2726,7 +2722,8 @@ function getTestingLinks() {
     $('<a class="btn btn-sm btn-secondary" target="_blank">Test in Browser</a>').attr('href', appleMapsUrl).appendTo(appleButtons);
     
     // Google Maps section
-    $('<h6>Google Maps URL (Android)</h6>').appendTo(modalBody);
+    var googleMapsNote = waypoints.length > 0 ? ' (Recommended for multi-stop tours)' : '';
+    $('<h6>Google Maps URL (Android/iPhone with waypoints)' + googleMapsNote + '</h6>').appendTo(modalBody);
     var googleInput = $('<input type="text" class="form-control mb-2" readonly>').val(googleMapsUrl).appendTo(modalBody);
     var googleButtons = $('<div class="mb-4">').appendTo(modalBody);
     $('<button class="btn btn-sm btn-primary me-2">Copy</button>').click(function() {
@@ -2814,22 +2811,17 @@ function sendToPhone() {
     var navigationUrl = '';
     
     if (phoneType === 'iphone' || phoneType === 'ios') {
-        // Apple Maps URL format - supports multiple daddr parameters for waypoints
-        console.log('iPhone detected - using Apple Maps');
-        
-        // Build URL with multiple daddr parameters
-        // Include starting location as first daddr since we have a specific tour start point
-        var appleMapsUrl = 'https://maps.apple.com/?dirflg=d';
-        
-        // Add all stops in order
-        appleMapsUrl += '&daddr=' + origin;  // Starting location
-        for (var i = 0; i < waypoints.length; i++) {
-            appleMapsUrl += '&daddr=' + waypoints[i];
+        // Apple Maps doesn't reliably support waypoints via URL
+        // Use Google Maps for multi-stop navigation on iPhone
+        if (waypoints.length > 0) {
+            console.log('iPhone detected with waypoints - using Google Maps for multi-stop support');
+            var allStops = [origin].concat(waypoints).concat([destination]);
+            navigationUrl = 'https://www.google.com/maps/dir/' + allStops.join('/');
+        } else {
+            // Simple A to B navigation - use native Apple Maps
+            console.log('iPhone detected without waypoints - using Apple Maps');
+            navigationUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
         }
-        appleMapsUrl += '&daddr=' + destination;  // Final destination
-        
-        navigationUrl = appleMapsUrl;
-        console.log('Apple Maps URL with ' + (waypoints.length + 2) + ' stops (including start)');
     } else {
         // Google Maps URL format (Android and fallback)
         // Use the dir/ format which better handles multiple waypoints
