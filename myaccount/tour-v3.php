@@ -434,7 +434,11 @@ if (isset($_POST['action'])) {
             
             if (!$shortCodeData || !isset($shortCodeData['shorturl'])) {
                 ob_end_clean();
-                echo json_encode(['success' => false, 'message' => 'Failed to create short URL']);
+                $errorMsg = 'Failed to create short URL';
+                if ($debug && $shortCodeData) {
+                    $errorMsg .= ' - API Response: ' . json_encode($shortCodeData);
+                }
+                echo json_encode(['success' => false, 'message' => $errorMsg]);
                 exit;
             }
             
