@@ -2666,6 +2666,9 @@ function sendToPhone() {
     console.log('Tour locations:', tourLocations.length, 'businesses');
     console.log('Waypoints:', waypoints.length, 'intermediate stops');
     console.log('Full tour:', tourLocations.map(function(loc) { return loc.name + ': ' + loc.address; }));
+    console.log('Waypoints array:', waypoints);
+    console.log('Origin:', decodeURIComponent(origin));
+    console.log('Destination:', decodeURIComponent(destination));
     
     // Determine phone type with fallbacks
     var phoneType = '<?php echo $current_user_data['profile_phone_type'] ?? 'unknown'; ?>';
@@ -2695,7 +2698,7 @@ function sendToPhone() {
         if (waypoints.length > 0) {
             // Apple Maps doesn't support waypoints in URL, so we'll use Google Maps as fallback
             navigationUrl = 'https://maps.google.com/maps?saddr=' + origin + '&daddr=' + destination;
-            navigationUrl += '&waypoints=' + waypoints.join('|');
+            navigationUrl += '&waypoints=' + waypoints.join('%7C'); // %7C is URL-encoded |
             navigationUrl += '&dirflg=d'; // Driving directions
         } else {
             // No waypoints, can use Apple Maps
@@ -2705,13 +2708,25 @@ function sendToPhone() {
         // Google Maps URL format (Android and fallback)
         navigationUrl = 'https://maps.google.com/maps?saddr=' + origin + '&daddr=' + destination;
         if (waypoints.length > 0) {
-            navigationUrl += '&waypoints=' + waypoints.join('|');
+            // Join waypoints with | separator (Google Maps format)
+            navigationUrl += '&waypoints=' + waypoints.join('%7C'); // %7C is URL-encoded |
         }
         navigationUrl += '&dirflg=d'; // Driving directions
     }
     
     console.log('Navigation URL:', navigationUrl);
     console.log('Phone type:', phoneType);
+    
+    // Parse and display the URL components for debugging
+    if (window.location.search.includes('debug')) {
+        var urlParts = navigationUrl.split('?')[1].split('&');
+        console.log('=== URL COMPONENTS ===');
+        urlParts.forEach(function(part) {
+            var keyValue = part.split('=');
+            console.log(keyValue[0] + ':', decodeURIComponent(keyValue[1] || ''));
+        });
+        console.log('===================');
+    }
     
     // Check for debug mode
     var isDebug = window.location.search.includes('debug');
@@ -2756,6 +2771,13 @@ function sendToPhone() {
             
             if (response.success) {
                 alert(response.message);
+                
+                // In debug mode, offer to test the navigation URL
+                if (isDebug && response.debug && response.debug.shortened_url) {
+                    if (confirm('Debug Mode: Would you like to test the navigation URL in a new tab?')) {
+                        window.open(response.debug.original_url, '_blank');
+                    }
+                }
             } else {
                 alert(response.message || 'Failed to send navigation link. Please try again.');
             }
