@@ -3144,10 +3144,12 @@ function sendToPhone() {
         // Apple Maps URL format
         if (waypoints.length > 0) {
             // Apple Maps doesn't support waypoints in URL, so we'll use Google Maps dir/ format
+            console.log('iPhone detected with waypoints - using Google Maps fallback');
             var allStops = [origin].concat(waypoints).concat([destination]);
             navigationUrl = 'https://www.google.com/maps/dir/' + allStops.join('/');
         } else {
             // No waypoints, can use Apple Maps
+            console.log('iPhone detected without waypoints - using Apple Maps');
             navigationUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
         }
     } else {
@@ -3235,6 +3237,14 @@ function sendToPhone() {
                 if (isDebug && response.debug && response.debug.shortened_url) {
                     if (confirm('Debug Mode: Would you like to test the navigation URL in a new tab?')) {
                         window.open(response.debug.original_url, '_blank');
+                    }
+                    
+                    // If iPhone and has waypoints, also offer to test Apple Maps without waypoints
+                    if ((phoneType === 'iphone' || phoneType === 'ios') && response.debug.original_url.includes('/dir/')) {
+                        if (confirm('Debug Mode (iPhone): Also test simple Apple Maps URL (start to end only)?')) {
+                            var simpleAppleUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
+                            window.open(simpleAppleUrl, '_blank');
+                        }
                     }
                 }
             } else {
