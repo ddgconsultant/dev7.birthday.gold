@@ -3141,17 +3141,22 @@ function sendToPhone() {
     var navigationUrl = '';
     
     if (phoneType === 'iphone' || phoneType === 'ios') {
-        // Apple Maps URL format
-        if (waypoints.length > 0) {
-            // Apple Maps doesn't support waypoints in URL, so we'll use Google Maps dir/ format
-            console.log('iPhone detected with waypoints - using Google Maps fallback');
-            var allStops = [origin].concat(waypoints).concat([destination]);
-            navigationUrl = 'https://www.google.com/maps/dir/' + allStops.join('/');
-        } else {
-            // No waypoints, can use Apple Maps
-            console.log('iPhone detected without waypoints - using Apple Maps');
-            navigationUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
+        // Apple Maps URL format - supports multiple daddr parameters for waypoints
+        console.log('iPhone detected - using Apple Maps');
+        
+        // Build URL with multiple daddr parameters
+        // Include starting location as first daddr since we have a specific tour start point
+        var appleMapsUrl = 'https://maps.apple.com/?dirflg=d';
+        
+        // Add all stops in order
+        appleMapsUrl += '&daddr=' + origin;  // Starting location
+        for (var i = 0; i < waypoints.length; i++) {
+            appleMapsUrl += '&daddr=' + waypoints[i];
         }
+        appleMapsUrl += '&daddr=' + destination;  // Final destination
+        
+        navigationUrl = appleMapsUrl;
+        console.log('Apple Maps URL with ' + (waypoints.length + 2) + ' stops (including start)');
     } else {
         // Google Maps URL format (Android and fallback)
         // Use the dir/ format which better handles multiple waypoints
@@ -3239,11 +3244,11 @@ function sendToPhone() {
                         window.open(response.debug.original_url, '_blank');
                     }
                     
-                    // If iPhone and has waypoints, also offer to test Apple Maps without waypoints
-                    if ((phoneType === 'iphone' || phoneType === 'ios') && response.debug.original_url.includes('/dir/')) {
-                        if (confirm('Debug Mode (iPhone): Also test simple Apple Maps URL (start to end only)?')) {
-                            var simpleAppleUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
-                            window.open(simpleAppleUrl, '_blank');
+                    // If iPhone, offer to test with maps:// scheme for direct app opening
+                    if (phoneType === 'iphone' || phoneType === 'ios') {
+                        if (confirm('Debug Mode (iPhone): Also test with maps:// scheme for direct app opening?')) {
+                            var mapsSchemeUrl = response.debug.original_url.replace('https://', 'maps://');
+                            window.location.href = mapsSchemeUrl;
                         }
                     }
                 }
