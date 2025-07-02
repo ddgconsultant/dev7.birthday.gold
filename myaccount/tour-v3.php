@@ -428,13 +428,15 @@ if (isset($_POST['action'])) {
             }
             
             // Use app->getshortcode to shorten the URL
-            $shortUrl = $app->getshortcode($navigationUrl, 'tour_nav_' . $tourDate);
+            $shortCodeData = $app->getshortcode($navigationUrl, 'tour_nav_' . $tourDate);
             
-            if (!$shortUrl) {
+            if (!$shortCodeData || !isset($shortCodeData['shorturl'])) {
                 ob_end_clean();
                 echo json_encode(['success' => false, 'message' => 'Failed to create short URL']);
                 exit;
             }
+            
+            $shortUrl = $shortCodeData['shorturl'];
             
             // Build debug info
             $debugInfo = [];
@@ -452,7 +454,8 @@ if (isset($_POST['action'])) {
                     'apple_maps_url' => $appleMapsUrl,
                     'google_maps_url' => $googleMapsUrl,
                     'phone_type' => $phoneType,
-                    'phone_number' => substr($phoneNumber, 0, -4) . 'XXXX' // Partially hide for privacy
+                    'phone_number' => substr($phoneNumber, 0, -4) . 'XXXX', // Partially hide for privacy
+                    'shortcode_data' => $shortCodeData // Include full response for debugging
                 ];
             }
             
@@ -461,11 +464,9 @@ if (isset($_POST['action'])) {
             
             // Send SMS using the SMS gateway
             try {
-                // Include SMS functions
-                require_once($dir['classes'] . '/class.sms.php');
-                
-                // Send SMS
-                $smsResult = sendSingleMessage($phoneNumber, $message);
+                // SMS class should already be loaded via $addClasses at top of file
+                // Send SMS using the class method
+                $smsResult = $sms->sendSingleMessage($phoneNumber, $message);
                 
                 if ($smsResult && isset($smsResult['status']) && $smsResult['status'] !== 'Failed') {
                     ob_end_clean();
