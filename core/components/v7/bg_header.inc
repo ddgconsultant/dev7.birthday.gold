@@ -69,13 +69,11 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 $currentPath = $_SERVER['REQUEST_URI'];
 $scriptName = $_SERVER['SCRIPT_NAME'];
 
-// Check if we're on the home page - be thorough
-$isHomePage = ($currentPage === 'index' || 
-               $currentPage === '' || 
+// Check if we're on the home page - ONLY the root index page
+$isHomePage = ($scriptName === '/index.php' || 
                $currentPath === '/' || 
                $currentPath === '/index' ||
-               $currentPath === '/index.php' ||
-               $scriptName === '/index.php');
+               $currentPath === '/index.php');
 
 $isBrowsePage = in_array($currentPage, ['browse', 'rewards', 'browse-rewards']);
 $isHelpPage = in_array($currentPage, ['help', 'support', 'faq']);

@@ -431,6 +431,14 @@ foreach ($classes as $class) {
         $telegramsmsservice = new TelegramSMSService($telegramToken, $telegramAPI, $database);
         break;
       // -----------------------------------------
+      case 'sms':
+        $smsConfig = [
+          'server' => $sitesettings['sms']['server'] ?? 'https://sms.bd.gold',
+          'api_key' => $sitesettings['sms']['api_key'] ?? ''
+        ];
+        $$className = new $className($smsConfig);
+        break;
+      // -----------------------------------------
       case 'chat':
         $$className = new $className($sitesettings['chat']);
         break;

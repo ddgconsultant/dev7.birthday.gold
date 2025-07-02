@@ -1,668 +1,1439 @@
-<?php
+<?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-// Ensure admin access
-if (!$account->isadmin()) {
-    header('Location: /');
-    exit;
-}
+#-------------------------------------------------------------------------------
+# PAGE SETUP
+#-------------------------------------------------------------------------------
+$page_title = "Enhanced User Management - Birthday Gold";
+$page_description = "Advanced user management with real-time search and filtering";
 
-// Get parameters
-$page = (int)($_GET['page'] ?? 1);
-$limit = (int)($_GET['limit'] ?? 25);
-$offset = ($page - 1) * $limit;
+#-------------------------------------------------------------------------------
+# PREP VARIABLES
+#-------------------------------------------------------------------------------
+$p_displaylength = 180;
+$searchTerm = '';
+$initialLoadCount = 50; // Initial users to load
+$loadMoreCount = 25; // Users to load per scroll
 
-// Filters
-$search = $_GET['search'] ?? '';
-$userType = $_GET['userType'] ?? '';
-$plan = $_GET['plan'] ?? '';
-$status = $_GET['status'] ?? '';
-$sortBy = $_GET['sortBy'] ?? 'newest';
-
-// Build query conditions
-$conditions = [];
-$params = [];
-
-// Always exclude sensitive system users
-$conditions[] = "u.username NOT IN ('system', 'admin', 'root')";
-
-// Check if we have real users
-$checkRealUsers = $database->prepare("SELECT COUNT(*) as count FROM bg_users WHERE type = 'real'");
-$checkRealUsers->execute();
-$result = $checkRealUsers->fetch(PDO::FETCH_ASSOC);
-$hasRealUsers = $result && $result['count'] > 0;
-
-if ($userType) {
-    $conditions[] = "u.type = :userType";
-    $params[':userType'] = $userType;
-} else if ($hasRealUsers) {
-    // Default to real users if they exist
-    $conditions[] = "u.type = 'real'";
-}
-
-if ($plan) {
-    $conditions[] = "u.account_plan = :plan";
-    $params[':plan'] = $plan;
-}
-
-if ($status) {
-    $conditions[] = "u.status = :status";
-    $params[':status'] = $status;
-}
-
-if ($search) {
-    $searchLike = "%$search%";
-    $conditions[] = "(u.first_name LIKE :search OR u.last_name LIKE :search OR u.username LIKE :search OR u.email LIKE :search)";
-    $params[':search'] = $searchLike;
-} else if (empty($userType) && empty($plan) && empty($status)) {
-    // Default: show users from last 2 weeks when no filters are active
-    $checkSql = "SELECT COUNT(*) FROM bg_users WHERE 1=1";
-    if ($hasRealUsers) {
-        $checkSql .= " AND type = 'real'";
+#-------------------------------------------------------------------------------
+# HANDLE THE PROFILE UPDATE ATTEMPT
+#-------------------------------------------------------------------------------
+if ($app->formposted()) {
+    if (isset($_POST['formtype']) && ($_POST['formtype'] == 'changedisplaylength')) {
+        $p_displaylength = $_POST['displaylength'];
     }
-    $checkSql .= " AND create_dt >= DATE_SUB(NOW(), INTERVAL 14 DAY)";
-    $checkResult = $database->prepare($checkSql);
-    $checkResult->execute();
-    $row = $checkResult->fetch(PDO::FETCH_ASSOC);
-    $recentCount = $row ? $row['count'] : 0;
+}
+
+#-------------------------------------------------------------------------------
+# DISPLAY PAGE
+#-------------------------------------------------------------------------------
+switch ($p_displaylength) {
+    case 'all':
+        $userlimitsql = '';
+        break;
+    default:
+        $userlimitsql = " and u.create_dt >= CURDATE() - INTERVAL $p_displaylength DAY";
+        break;
+}
+
+// Clean, Professional User Management CSS
+$additionalstyles .= '
+<style>
+/* Clean Professional Styles - Less is More */
+.main-content {
+    min-height: calc(100vh - 200px);
+    padding: 2rem 1rem;
+    background-color: #f8f9fa;
+}
+
+.container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Consistent spacing */
+.mb-4 {
+    margin-bottom: 1.5rem !important;
+}
+
+.mb-3 {
+    margin-bottom: 1rem !important;
+}
+
+/* Header Section - Clean and readable */
+h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.text-muted {
+    color: #6c757d !important;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+/* Search Bar - Simple and functional */
+.search-box {
+    max-width: 100%;
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+    padding-left: 2.75rem;
+    font-size: 0.9375rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.search-box::before {
+    content: "\\F52A";
+    font-family: "bootstrap-icons";
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: #6c757d;
+    z-index: 10;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+}
+
+/* Stats Cards - Clean and Simple */
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.25rem;
+    border: 1px solid #e9ecef;
+    text-align: center;
+    transition: border-color 0.2s ease;
+}
+
+.stat-card:hover {
+    border-color: #dee2e6;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #0d6efd;
+    margin-bottom: 0.25rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+    font-size: 0.8125rem;
+    color: #6c757d;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* Filter Section - Functional */
+.filter-section {
+    background: transparent;
+    padding: 0;
+    border: none;
+}
+
+.filter-section h5 {
+    font-weight: 600;
+    color: #212529;
+    font-size: 1rem;
+}
+
+.form-select {
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    background: white;
+    transition: border-color 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+}
+
+/* User List Container */
+.user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+/* User List Item - Clean Professional Design */
+.user-item {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: visible;
+}
+
+.user-item:hover {
+    border-color: #dee2e6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.user-item-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.user-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid #e9ecef;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.user-info-top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+}
+
+.user-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #212529;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-badges {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Clean Badge Styles */
+.badge {
+    font-size: 0.6875rem !important;
+    padding: 0.1875rem 0.5rem !important;
+    font-weight: 500 !important;
+    border-radius: 4px;
+    white-space: nowrap;
+    border: none !important;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* Use Bootstraps default badge colors - theyre already well-designed */
+.badge.text-bg-success {
+    background-color: #198754 !important;
+}
+
+.badge.text-bg-warning {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.badge.text-bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.badge.text-bg-info {
+    background-color: #0dcaf0 !important;
+    color: #000 !important;
+}
+
+.badge.text-bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.badge.text-bg-primary {
+    background-color: #0d6efd !important;
+}
+
+.user-details {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-size: 0.8125rem;
+    color: #6c757d;
+    flex-wrap: wrap;
+}
+
+.user-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-detail-item i {
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    color: #adb5bd;
+}
+
+.user-stats {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.user-stat {
+    text-align: center;
+    min-width: 60px;
+}
+
+.user-stat-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.user-stat-label {
+    font-size: 0.6875rem;
+    color: #6c757d;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    margin-top: 0.125rem;
+}
+
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+}
+
+/* Professional Button Styles */
+.user-actions .btn {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.user-actions .btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.user-actions .btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.user-actions .btn-outline-secondary {
+    background: transparent;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+}
+
+.user-actions .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #495057;
+}
+
+/* Dropdown Styling */
+.user-actions .dropdown {
+    position: static;
+}
+
+.user-actions .dropdown-menu {
+    z-index: 105000;
+    position: absolute;
+    right: 0;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    padding: 0.25rem;
+    min-width: 180px;
+}
+
+.dropdown-item {
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    transition: background-color 0.15s ease;
+    font-size: 0.875rem;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item i {
+    width: 16px;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+/* Loading States */
+.loading-spinner {
+    text-align: center;
+    padding: 4rem;
+}
+
+.loading-spinner .spinner-border {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-width: 0.2rem;
+    color: #0d6efd;
+}
+
+.skeleton-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.02), transparent);
+    animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.skeleton-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    background: #e9ecef;
+    border-radius: 8px;
+}
+
+.skeleton-info {
+    flex: 1;
+}
+
+.skeleton-line {
+    background: #e9ecef;
+    height: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+/* Load More Button */
+.load-more-container {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.load-more-btn {
+    padding: 0.625rem 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    background-color: #0d6efd;
+    border: 1px solid #0d6efd;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.load-more-btn:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.load-more-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* No Results */
+.no-results {
+    text-align: center;
+    padding: 4rem;
+    color: #6c757d;
+}
+
+.no-results i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #dee2e6;
+}
+
+.no-results h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Verified Badge Icon */
+.bi-patch-check-fill {
+    color: #0d6efd !important;
+    font-size: 0.875rem !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1199px) {
+    .user-stats {
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 991px) {
+    .user-item-content {
+        flex-wrap: wrap;
+    }
     
-    if ($recentCount >= 30) {
-        $conditions[] = "u.create_dt >= DATE_SUB(NOW(), INTERVAL 14 DAY)";
-    }
-}
-
-// Ensure we have at least one condition
-if (empty($conditions)) {
-    $conditions[] = "1=1";
-}
-
-$whereClause = implode(' AND ', $conditions);
-
-// Determine sort order
-$orderBy = match($sortBy) {
-    'oldest' => 'u.create_dt ASC',
-    'name' => 'u.first_name ASC, u.last_name ASC',
-    'recent_login' => 'lt.last_login_dt DESC',
-    default => 'u.create_dt DESC'
-};
-
-// Get user statistics
-$statsData = [];
-try {
-    // Total users
-    if ($hasRealUsers) {
-        $totalStmt = $database->prepare("SELECT COUNT(*) FROM bg_users WHERE type = 'real'");
-    } else {
-        $totalStmt = $database->prepare("SELECT COUNT(*) FROM bg_users WHERE username NOT IN ('system', 'admin', 'root')");
-    }
-    $totalStmt->execute();
-    $statsData['totalUsers'] = $totalStmt->fetchColumn();
-
-    // New users today
-    if ($hasRealUsers) {
-        $todayStmt = $database->prepare("SELECT COUNT(*) FROM bg_users WHERE type = 'real' AND DATE(create_dt) = CURDATE()");
-    } else {
-        $todayStmt = $database->prepare("SELECT COUNT(*) FROM bg_users WHERE username NOT IN ('system', 'admin', 'root') AND DATE(create_dt) = CURDATE()");
-    }
-    $todayStmt->execute();
-    $statsData['newToday'] = $todayStmt->fetchColumn();
-
-    // Paid users
-    if ($hasRealUsers) {
-        $paidStmt = $database->prepare("SELECT COUNT(*) FROM bg_users WHERE type = 'real' AND account_plan != 'free' AND account_plan IS NOT NULL");
-    } else {
-        $paidStmt = $database->prepare("SELECT COUNT(*) FROM bg_users WHERE username NOT IN ('system', 'admin', 'root') AND account_plan != 'free' AND account_plan IS NOT NULL");
-    }
-    $paidStmt->execute();
-    $statsData['paidUsers'] = $paidStmt->fetchColumn();
-
-    // Active users (logged in within last 30 days)
-    if ($hasRealUsers) {
-        $activeStmt = $database->prepare("
-            SELECT COUNT(DISTINCT u.user_id)
-            FROM bg_users u
-            INNER JOIN bg_logintracking lt ON u.user_id = lt.user_id
-            WHERE u.type = 'real' 
-            AND lt.modify_dt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-            AND lt.status = 'A'
-        ");
-    } else {
-        $activeStmt = $database->prepare("
-            SELECT COUNT(DISTINCT u.user_id)
-            FROM bg_users u
-            INNER JOIN bg_logintracking lt ON u.user_id = lt.user_id
-            WHERE u.username NOT IN ('system', 'admin', 'root')
-            AND lt.modify_dt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-            AND lt.status = 'A'
-        ");
-    }
-    $activeStmt->execute();
-    $statsData['activeUsers'] = $activeStmt->fetchColumn();
-    
-    $statsData['activeRate'] = $statsData['totalUsers'] > 0 ? round(($statsData['activeUsers'] / $statsData['totalUsers']) * 100, 1) : 0;
-} catch (Exception $e) {
-    // Set defaults if stats fail
-    $statsData = [
-        'totalUsers' => 0,
-        'newToday' => 0,
-        'paidUsers' => 0,
-        'activeUsers' => 0,
-        'activeRate' => 0
-    ];
-}
-
-// Count total users for pagination
-$countSql = "SELECT COUNT(DISTINCT u.user_id) as total FROM bg_users u WHERE $whereClause";
-$countStmt = $database->prepare($countSql);
-foreach ($params as $key => $value) {
-    $countStmt->bindValue($key, $value);
-}
-$countStmt->execute();
-$totalUsers = $countStmt->fetchColumn();
-$totalPages = ceil($totalUsers / $limit);
-
-// Get users with pagination
-$sql = "
-    SELECT 
-        u.user_id,
-        u.first_name,
-        u.last_name,
-        u.username,
-        u.email,
-        u.birthdate,
-        u.phone_number as phone,
-        u.city,
-        u.state,
-        u.country,
-        u.status,
-        u.account_plan,
-        u.account_type,
-        u.create_dt,
-        u.modify_dt,
-        DATEDIFF(NOW(), u.create_dt) as days_old,
-        TIMESTAMPDIFF(YEAR, u.birthdate, CURDATE()) as age,
-        a.description as avatar,
-        lt.last_login_dt,
-        admin_attr.description as account_admin,
-        staff_attr.description as account_staff
-    FROM bg_users u
-    LEFT JOIN bg_user_attributes a ON u.user_id = a.user_id 
-        AND a.name = 'avatar' 
-        AND a.category = 'primary' 
-        AND a.status = 'active'
-    LEFT JOIN bg_user_attributes admin_attr ON u.user_id = admin_attr.user_id 
-        AND admin_attr.name = 'account_admin' 
-        AND admin_attr.status = 'active'
-    LEFT JOIN bg_user_attributes staff_attr ON u.user_id = staff_attr.user_id 
-        AND staff_attr.name = 'account_staff' 
-        AND staff_attr.status = 'active'
-    LEFT JOIN (
-        SELECT user_id, MAX(modify_dt) as last_login_dt 
-        FROM bg_logintracking 
-        WHERE status = 'A' 
-        GROUP BY user_id
-    ) lt ON u.user_id = lt.user_id
-    WHERE $whereClause
-    ORDER BY $orderBy
-    LIMIT :limit OFFSET :offset
-";
-
-$stmt = $database->prepare($sql);
-foreach ($params as $key => $value) {
-    $stmt->bindValue($key, $value);
-}
-$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-$stmt->execute();
-
-$users = [];
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    // Clean up avatar URL
-    if ($row['avatar']) {
-        $row['avatar'] = str_replace('cdn.birthday.gold', $website['cdnurl'], $row['avatar']);
+    .user-info {
+        width: calc(100% - 58px);
     }
     
-    // Add badges/flags based on attributes
-    $row['is_admin'] = !empty($row['account_admin']) && $row['account_admin'] !== 'N';
-    $row['is_staff'] = !empty($row['account_staff']) && $row['account_staff'] !== 'N';
-    $row['is_verified'] = $account->isverified('*', $row['user_id']);
+    .user-stats {
+        margin-left: 58px;
+        margin-top: 0.75rem;
+        width: calc(100% - 58px);
+    }
     
-    $users[] = $row;
+    .user-actions {
+        margin-left: auto;
+        margin-top: 0;
+    }
 }
 
-$newheader = 'x';
+@media (max-width: 767px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .text-muted {
+        font-size: 0.875rem;
+    }
+    
+    .user-details {
+        gap: 0.5rem;
+    }
+    
+    .user-detail-item {
+        font-size: 0.75rem;
+    }
+    
+    .user-stats {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .user-actions {
+        margin-left: 0;
+        margin-top: 0.75rem;
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .user-item {
+        padding: 0.875rem;
+    }
+    
+    .search-input {
+        font-size: 0.875rem;
+        padding: 0.625rem 1rem;
+        padding-left: 2.5rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+    }
+}
+
+/* Back Button */
+.back-button {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 100;
+}
+
+.back-button .btn {
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+
+.back-button .btn:hover {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+/* Smooth transitions for interactive elements */
+a, button, input, select, .btn {
+    transition: all 0.15s ease;
+}
+
+/* Focus states for accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Ensure dropdowns dont get cut off */
+.user-item {
+    position: relative;
+}
+
+.user-actions {
+    position: relative;
+    z-index: 2;
+}
+
+/* Animation for page load - subtle */
+.user-item {
+    animation: fadeIn 0.3s ease-out;
+    animation-fill-mode: both;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Stagger animation for multiple items */
+.user-item:nth-child(1) { animation-delay: 0.05s; }
+.user-item:nth-child(2) { animation-delay: 0.1s; }
+.user-item:nth-child(3) { animation-delay: 0.15s; }
+.user-item:nth-child(4) { animation-delay: 0.2s; }
+.user-item:nth-child(5) { animation-delay: 0.25s; }
+
+/* Remove animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .back-button,
+    .user-actions,
+    .filter-section,
+    .search-box {
+        display: none !important;
+    }
+    
+    .user-item {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}
+</style>
+';
+
+// Add Bootstrap Icons
+$additionalheaders = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">';
+
+$bodycontentclass = '';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+#include($dir['core_components'] . '/bg_admin_leftpanel.inc');
+
+// Get initial stats
+$totalUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE type='real'");
+$totalUsers->execute();
+$totalUsersCount = $totalUsers->fetch(PDO::FETCH_ASSOC)['total'];
+
+$activeUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE type='real' AND status='active'");
+$activeUsers->execute();
+$activeUsersCount = $activeUsers->fetch(PDO::FETCH_ASSOC)['total'];
+
+$newUsersToday = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE type='real' AND DATE(create_dt) = CURDATE()");
+$newUsersToday->execute();
+$newUsersTodayCount = $newUsersToday->fetch(PDO::FETCH_ASSOC)['total'];
+
+$paidUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE type='real' AND account_plan != 'free'");
+$paidUsers->execute();
+$paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
 ?>
 
-<!-- Enhanced User List with Dynamic Search and Pagination -->
-<section class="mt-0 pt-0 main-content container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">User Management</h2>
-        <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-primary" id="exportBtn">
-                <i class="bi bi-download"></i> Export
-            </button>
-            <a href="/admin/" class="btn btn-sm btn-outline-secondary">Back to Admin</a>
-        </div>
-    </div>
-
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Total Users</h6>
-                            <h3 class="mb-0"><?= number_format($statsData['totalUsers']) ?></h3>
-                        </div>
-                        <div class="text-primary">
-                            <i class="bi bi-people-fill fs-1"></i>
-                        </div>
+<div class="container-fluid main-content">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header with Search in same row -->
+            <div class="row align-items-center mb-4">
+                <div class="col-md-6">
+                    <h1 class="mb-2">Enhanced User Management</h1>
+                    <p class="text-muted mb-0">Advanced user search with real-time filtering</p>
+                </div>
+                <div class="col-md-6">
+                    <div class="search-box ms-auto">
+                        <input 
+                            type="text" 
+                            class="search-input" 
+                            placeholder="Search users by name, email, username..."
+                            id="userSearch"
+                        >
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">New Today</h6>
-                            <h3 class="mb-0"><?= $statsData['newToday'] ?></h3>
-                        </div>
-                        <div class="text-success">
-                            <i class="bi bi-person-plus-fill fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Paid Users</h6>
-                            <h3 class="mb-0"><?= number_format($statsData['paidUsers']) ?></h3>
-                        </div>
-                        <div class="text-warning">
-                            <i class="bi bi-credit-card-fill fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-muted mb-1">Active Rate</h6>
-                            <h3 class="mb-0"><?= $statsData['activeRate'] ?>%</h3>
-                        </div>
-                        <div class="text-info">
-                            <i class="bi bi-activity fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Search and Filters -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <form method="get" action="" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">Search users</label>
-                    <input type="text" class="form-control" name="search" value="<?= htmlspecialchars($search) ?>" 
-                           placeholder="Search by name, email, username...">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">User Type</label>
-                    <select class="form-select" name="userType">
-                        <option value="">All Users</option>
-                        <option value="real" <?= $userType === 'real' ? 'selected' : '' ?>>Real Users</option>
-                        <option value="test" <?= $userType === 'test' ? 'selected' : '' ?>>Test Users</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Plan</label>
-                    <select class="form-select" name="plan">
-                        <option value="">All Plans</option>
-                        <option value="free" <?= $plan === 'free' ? 'selected' : '' ?>>Free</option>
-                        <option value="silver" <?= $plan === 'silver' ? 'selected' : '' ?>>Silver</option>
-                        <option value="gold" <?= $plan === 'gold' ? 'selected' : '' ?>>Gold</option>
-                        <option value="platinum" <?= $plan === 'platinum' ? 'selected' : '' ?>>Platinum</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" name="status">
-                        <option value="">All Status</option>
-                        <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Active</option>
-                        <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive</option>
-                        <option value="locked" <?= $status === 'locked' ? 'selected' : '' ?>>Locked</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Sort By</label>
-                    <select class="form-select" name="sortBy">
-                        <option value="newest" <?= $sortBy === 'newest' ? 'selected' : '' ?>>Newest First</option>
-                        <option value="oldest" <?= $sortBy === 'oldest' ? 'selected' : '' ?>>Oldest First</option>
-                        <option value="name" <?= $sortBy === 'name' ? 'selected' : '' ?>>Name</option>
-                        <option value="recent_login" <?= $sortBy === 'recent_login' ? 'selected' : '' ?>>Recent Login</option>
-                    </select>
-                </div>
-                <div class="col-md-1">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-search"></i> Search
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Users Table -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>User</th>
-                            <th>Contact</th>
-                            <th>Plan</th>
-                            <th>Status</th>
-                            <th>Joined</th>
-                            <th>Last Login</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($users)): ?>
-                            <tr>
-                                <td colspan="7" class="text-center py-5 text-muted">
-                                    No users found matching your criteria.
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($users as $user): ?>
-                                <tr class="align-middle" style="cursor: pointer;" 
-                                    onclick="window.location.href='/admin/user-details.php?id=<?= $user['user_id'] ?>'">
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <img src="<?= $user['avatar'] ?: '/public/images/defaultavatar.png' ?>" 
-                                                 class="rounded-circle me-3 avatar-sm" alt="Avatar">
-                                            <div>
-                                                <div class="fw-semibold">
-                                                    <?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?>
-                                                    <?php if ($user['is_admin']): ?>
-                                                        <span class="badge bg-danger ms-1">Admin</span>
-                                                    <?php elseif ($user['is_staff']): ?>
-                                                        <span class="badge bg-info ms-1">Staff</span>
-                                                    <?php endif; ?>
-                                                    <?php if ($user['is_verified']): ?>
-                                                        <i class="bi bi-patch-check-fill text-primary ms-1"></i>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <div class="small text-muted">@<?= htmlspecialchars($user['username'] ?: 'N/A') ?></div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div><?= htmlspecialchars($user['email']) ?></div>
-                                        <?php if ($user['phone']): ?>
-                                            <div class="small text-muted"><?= htmlspecialchars($user['phone']) ?></div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php
-                                        $planClass = match($user['account_plan']) {
-                                            'platinum' => 'bg-dark',
-                                            'gold' => 'bg-warning text-dark',
-                                            'silver' => 'bg-secondary',
-                                            default => 'bg-light text-dark'
-                                        };
-                                        ?>
-                                        <span class="badge <?= $planClass ?>">
-                                            <?= ucfirst($user['account_plan'] ?: 'free') ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <?php
-                                        $statusClass = match($user['status']) {
-                                            'active' => 'bg-success',
-                                            'inactive' => 'bg-secondary',
-                                            'locked' => 'bg-danger',
-                                            'pending' => 'bg-warning text-dark',
-                                            default => 'bg-secondary'
-                                        };
-                                        ?>
-                                        <span class="badge <?= $statusClass ?>">
-                                            <?= ucfirst($user['status'] ?: 'Active') ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div><?= date('M d, Y', strtotime($user['create_dt'])) ?></div>
-                                        <div class="small text-muted"><?= $user['days_old'] ?> days ago</div>
-                                    </td>
-                                    <td>
-                                        <?php if ($user['last_login_dt']): ?>
-                                            <?= date('M d, Y', strtotime($user['last_login_dt'])) ?>
-                                        <?php else: ?>
-                                            <span class="text-muted">Never</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-primary" 
-                                                onclick="event.stopPropagation(); viewUserDetails(<?= $user['user_id'] ?>)">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-secondary" 
-                                                onclick="event.stopPropagation(); editUser(<?= $user['user_id'] ?>)">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
             </div>
             
-            <!-- Pagination -->
-            <?php if ($totalPages > 1): ?>
-                <div class="card-footer border-0 d-flex justify-content-between align-items-center">
-                    <div class="text-muted">
-                        Showing <?= ($offset + 1) ?> to <?= min($offset + $limit, $totalUsers) ?> of <?= $totalUsers ?> entries
+            <!-- Quick Stats -->
+            <div class="row mb-4">
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-value"><?php echo number_format($totalUsersCount); ?></div>
+                        <div class="stat-label">Total Users</div>
                     </div>
-                    <nav>
-                        <ul class="pagination mb-0">
-                            <!-- Previous -->
-                            <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                                <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>">
-                                    <i class="bi bi-chevron-left"></i>
-                                </a>
-                            </li>
-                            
-                            <!-- Page Numbers -->
-                            <?php
-                            $startPage = max(1, $page - 2);
-                            $endPage = min($totalPages, $page + 2);
-                            
-                            if ($startPage > 1): ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>">1</a>
-                                </li>
-                                <?php if ($startPage > 2): ?>
-                                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                            
-                            <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-                                <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>">
-                                        <?= $i ?>
-                                    </a>
-                                </li>
-                            <?php endfor; ?>
-                            
-                            <?php if ($endPage < $totalPages): ?>
-                                <?php if ($endPage < $totalPages - 1): ?>
-                                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                                <?php endif; ?>
-                                <li class="page-item">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $totalPages])) ?>">
-                                        <?= $totalPages ?>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                            
-                            <!-- Next -->
-                            <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                                <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>">
-                                    <i class="bi bi-chevron-right"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
                 </div>
-            <?php endif; ?>
-        </div>
-    </div>
-</section>
-
-<!-- User Details Modal -->
-<div class="modal fade" id="userDetailsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">User Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-value"><?php echo number_format($activeUsersCount); ?></div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-value"><?php echo number_format($newUsersTodayCount); ?></div>
+                        <div class="stat-label">New Today</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-value"><?php echo number_format($paidUsersCount); ?></div>
+                        <div class="stat-label">Paid Users</div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-body" id="userDetailsContent">
-                <!-- Content will be loaded here -->
+            
+            <!-- Filter Section -->
+            <div class="filter-section mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-2">
+                        <h5 class="mb-0">Quick Filters</h5>
+                    </div>
+                    <div class="col-md-10">
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="suspended">Suspended</option>
+                                    <option value="validated">Validated</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="planFilter">
+                                    <option value="">All Plans</option>
+                                    <option value="free">Free</option>
+                                    <option value="basic">Basic</option>
+                                    <option value="premium">Premium</option>
+                                    <option value="vip">VIP</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="typeFilter">
+                                    <option value="">All Types</option>
+                                    <option value="individual">Individual</option>
+                                    <option value="business">Business</option>
+                                    <option value="parental">Parental</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="dayFilter">
+                                    <option value="180">Last 180 Days</option>
+                                    <option value="90">Last 90 Days</option>
+                                    <option value="30">Last 30 Days</option>
+                                    <option value="7">Last 7 Days</option>
+                                    <option value="1">Today</option>
+                                    <option value="all">All Time</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    
+    <!-- User List -->
+    <div class="user-list" id="userList">
+        <!-- Users will be loaded here via AJAX -->
+        <?php
+        // Load initial users for fallback
+        $initialUsersSql = "
+            SELECT 
+                u.user_id,
+                u.first_name,
+                u.last_name,
+                u.username,
+                u.email,
+                u.birthdate,
+                u.city,
+                u.state,
+                u.status,
+                u.account_plan,
+                u.account_type,
+                u.create_dt,
+                a.description as avatar
+            FROM bg_users u
+            LEFT JOIN bg_user_attributes a ON u.user_id = a.user_id 
+                AND a.name = 'avatar' 
+                AND a.category = 'primary' 
+                AND a.status = 'active'
+            WHERE u.type = 'real'
+            ORDER BY u.create_dt DESC
+            LIMIT 20
+        ";
+        
+        $initialStmt = $database->prepare($initialUsersSql);
+        $initialStmt->execute();
+        
+        while ($user = $initialStmt->fetch(PDO::FETCH_ASSOC)) {
+            $avatar = $user['avatar'] ?: '/public/avatars/problemavatar.png';
+            $avatar = str_replace('cdn.birthday.gold', $website['cdnurl'], $avatar);
+            $location = trim(($user['city'] ?: '') . ($user['city'] && $user['state'] ? ', ' : '') . ($user['state'] ?: '')) ?: 'Unknown';
+            
+            // Get badges
+            $isAdmin = $account->isadmin(['user_id' => $user['user_id']]);
+            $isStaff = $account->isstaff('*', $user['user_id']);
+            $isVerified = $account->isverified('*', $user['user_id']);
+            
+            // Determine badge colors
+            $statusColors = [
+                'active' => 'success',
+                'pending' => 'warning',
+                'suspended' => 'danger',
+                'validated' => 'info'
+            ];
+            $statusColor = $statusColors[$user['status']] ?? 'secondary';
+            
+            $planColors = [
+                'free' => 'secondary',
+                'basic' => 'primary',
+                'premium' => 'warning',
+                'vip' => 'danger'
+            ];
+            $planColor = $planColors[$user['account_plan']] ?? 'secondary';
+            ?>
+            <div class="user-item" data-user-id="<?php echo $user['user_id']; ?>">
+                <div class="user-item-content">
+                    <img src="<?php echo htmlspecialchars($avatar); ?>" alt="" class="user-avatar">
+                    <div class="user-info">
+                        <div class="user-info-top">
+                            <div class="user-name"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></div>
+                            <div class="user-badges">
+                                <span class="badge text-bg-<?php echo $statusColor; ?>"><?php echo htmlspecialchars($user['status']); ?></span>
+                                <span class="badge text-bg-<?php echo $planColor; ?>"><?php echo htmlspecialchars($user['account_plan'] ?: 'free'); ?></span>
+                                <?php if ($isStaff): ?>
+                                    <span class="badge text-bg-danger">staff</span>
+                                <?php endif; ?>
+                                <?php if ($isAdmin): ?>
+                                    <span class="badge text-bg-danger">admin</span>
+                                <?php endif; ?>
+                                <?php if ($isVerified): ?>
+                                    <i class="bi bi-patch-check-fill text-primary" style="font-size: 1rem;"></i>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="user-details">
+                            <div class="user-detail-item">
+                                <i class="bi bi-envelope"></i>
+                                <span><?php echo htmlspecialchars($user['email']); ?></span>
+                            </div>
+                            <div class="user-detail-item">
+                                <i class="bi bi-person"></i>
+                                <span>@<?php echo htmlspecialchars($user['username']); ?></span>
+                            </div>
+                            <div class="user-detail-item">
+                                <i class="bi bi-geo-alt"></i>
+                                <span><?php echo htmlspecialchars($location); ?></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="user-stats">
+                        <div class="user-stat">
+                            <div class="user-stat-value"><?php echo date('M d', strtotime($user['create_dt'])); ?></div>
+                            <div class="user-stat-label">Joined</div>
+                        </div>
+                        <div class="user-stat">
+                            <div class="user-stat-value"><?php echo $user['birthdate'] ? date('M d', strtotime($user['birthdate'])) : '-'; ?></div>
+                            <div class="user-stat-label">Birthday</div>
+                        </div>
+                    </div>
+                    <div class="user-actions">
+                        <a href="/admin/user-details?u=<?php echo $qik->encodeId($user['user_id']); ?>" class="btn btn-primary btn-sm">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <?php if ($user['status'] !== 'pending'): ?>
+                                <li><a class="dropdown-item" href="/myaccount/myaccount_actions/switch2user?id=<?php echo $qik->encodeId($user['user_id']); ?>&aid=<?php echo $qik->encodeId($current_user_data['user_id']); ?>&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>"><i class="bi bi-person-badge"></i> Impersonate</a></li>
+                                <?php endif; ?>
+                                <li><a class="dropdown-item" href="#"><i class="bi bi-envelope"></i> Send Email</a></li>
+                                <?php if ($user['status'] === 'pending' || $user['status'] === 'validated'): ?>
+                                <li><a class="dropdown-item" href="/validate-account?id=<?php echo $user['user_id']; ?>&adminsendagainrequest=1&aid=<?php echo $current_user_data['user_id']; ?>&act=resend&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>"><i class="bi bi-check-circle"></i> Send Validation</a></li>
+                                <?php endif; ?>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash"></i> Delete User</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php
+        }
+        ?>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div class="loading-spinner" id="loadingSpinner" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading users...</p>
+    </div>
+    
+    <!-- No Results Message -->
+    <div class="no-results" id="noResults" style="display: none;">
+        <i class="bi bi-search"></i>
+        <h4>No users found</h4>
+        <p>Try adjusting your search or filters</p>
+    </div>
+    
+            <!-- Load More Button -->
+            <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+                <button class="btn btn-primary load-more-btn" id="loadMoreBtn">
+                    Load More Users
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-.stats-card {
-    transition: transform 0.2s;
-}
+<!-- Back to Admin Button -->
+<div class="back-button">
+    <a href="/admin/" class="btn btn-light">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
 
-.stats-card:hover {
-    transform: translateY(-2px);
-}
+<!-- User Item Template -->
+<template id="userItemTemplate">
+    <div class="user-item" data-user-id="">
+        <div class="user-item-content">
+            <img src="" alt="" class="user-avatar">
+            <div class="user-info">
+                <div class="user-info-top">
+                    <div class="user-name"></div>
+                    <div class="user-badges"></div>
+                </div>
+                <div class="user-details">
+                    <div class="user-detail-item">
+                        <i class="bi bi-envelope"></i>
+                        <span class="email"></span>
+                    </div>
+                    <div class="user-detail-item">
+                        <i class="bi bi-person"></i>
+                        <span class="username"></span>
+                    </div>
+                    <div class="user-detail-item">
+                        <i class="bi bi-geo-alt"></i>
+                        <span class="location"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="user-stats">
+                <div class="user-stat">
+                    <div class="user-stat-value joined-date"></div>
+                    <div class="user-stat-label">Joined</div>
+                </div>
+                <div class="user-stat">
+                    <div class="user-stat-value birthday-date"></div>
+                    <div class="user-stat-label">Birthday</div>
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="" class="btn btn-primary btn-sm view-details-btn">
+                    <i class="bi bi-eye"></i> View
+                </a>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item impersonate-link" href="#"><i class="bi bi-person-badge"></i> Impersonate</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-envelope"></i> Send Email</a></li>
+                        <li><a class="dropdown-item validate-link" href="#"><i class="bi bi-check-circle"></i> Send Validation</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash"></i> Delete User</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
 
-.avatar-sm {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-}
-
-.table > :not(caption) > * > * {
-    padding: 1rem 0.75rem;
-}
-
-.pagination {
-    gap: 0.25rem;
-}
-
-.pagination .page-link {
-    border-radius: 0.25rem;
-    margin: 0 2px;
-}
-</style>
+<!-- Skeleton Card Template -->
+<template id="skeletonCardTemplate">
+    <div class="skeleton-card">
+        <div class="skeleton-header">
+            <div class="skeleton-avatar"></div>
+            <div class="skeleton-info">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+            </div>
+        </div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+    </div>
+</template>
 
 <script>
-// Export functionality
-document.getElementById('exportBtn').addEventListener('click', function() {
-    const queryParams = new URLSearchParams(window.location.search);
-    queryParams.set('export', 'csv');
-    window.location.href = '/admin/export-users.php?' + queryParams.toString();
-});
-
-// View user details
-function viewUserDetails(userId) {
-    // Load user details via AJAX
-    fetch('/admin/user_components/get_userdetails.php?id=' + userId)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const user = data.user;
-                const content = `
-                    <div class="row">
-                        <div class="col-md-4 text-center">
-                            <img src="${user.avatar || '/public/images/defaultavatar.png'}" 
-                                 class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
-                            <h5>${user.first_name} ${user.last_name}</h5>
-                            <p class="text-muted">@${user.username || 'N/A'}</p>
-                        </div>
-                        <div class="col-md-8">
-                            <h6 class="text-muted mb-3">User Information</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Email:</strong></td>
-                                    <td>${user.email}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Phone:</strong></td>
-                                    <td>${user.phone || 'N/A'}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Birthday:</strong></td>
-                                    <td>${user.birthdate || 'N/A'} (Age: ${user.age || 'N/A'})</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Location:</strong></td>
-                                    <td>${user.city || ''} ${user.state || ''} ${user.country || ''}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Account Plan:</strong></td>
-                                    <td><span class="badge bg-secondary">${user.account_plan || 'free'}</span></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Status:</strong></td>
-                                    <td><span class="badge bg-success">${user.status}</span></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Joined:</strong></td>
-                                    <td>${new Date(user.create_dt).toLocaleDateString()}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Last Login:</strong></td>
-                                    <td>${user.last_login_dt ? new Date(user.last_login_dt).toLocaleDateString() : 'Never'}</td>
-                                </tr>
-                            </table>
-                            
-                            <div class="mt-4">
-                                <a href="/admin/user-details.php?id=${userId}" class="btn btn-primary btn-sm">
-                                    View Full Details
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('userDetailsContent').innerHTML = content;
-                const modal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
-                modal.show();
-            }
-        })
-        .catch(error => {
-            console.error('Error loading user details:', error);
+// User Management System with Lazy Loading
+class UserManager {
+    constructor() {
+        this.users = [];
+        this.filteredUsers = [];
+        this.currentOffset = 0;
+        this.batchSize = <?php echo $initialLoadCount; ?>;
+        this.loadMoreSize = <?php echo $loadMoreCount; ?>;
+        this.isLoading = false;
+        this.hasMore = true;
+        this.searchTimeout = null;
+        this.filters = {
+            search: '',
+            status: '',
+            plan: '',
+            type: '',
+            days: '180'
+        };
+        
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        // Check if we already have some users loaded (fallback PHP)
+        const existingItems = document.querySelectorAll('.user-item').length;
+        if (existingItems > 0) {
+            // We have fallback users, just set up for load more
+            this.currentOffset = existingItems;
+            this.showLoadMore();
+        } else {
+            // No fallback users, load via AJAX
+            this.loadInitialUsers();
+        }
+    }
+    
+    bindEvents() {
+        // Search input
+        document.getElementById('userSearch').addEventListener('input', (e) => {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.filters.search = e.target.value;
+                this.resetAndReload();
+            }, 300);
         });
+        
+        // Filter changes
+        document.getElementById('statusFilter').addEventListener('change', (e) => {
+            this.filters.status = e.target.value;
+            this.resetAndReload();
+        });
+        
+        document.getElementById('planFilter').addEventListener('change', (e) => {
+            this.filters.plan = e.target.value;
+            this.resetAndReload();
+        });
+        
+        document.getElementById('typeFilter').addEventListener('change', (e) => {
+            this.filters.type = e.target.value;
+            this.resetAndReload();
+        });
+        
+        document.getElementById('dayFilter').addEventListener('change', (e) => {
+            this.filters.days = e.target.value;
+            this.resetAndReload();
+        });
+        
+        // Load more button
+        document.getElementById('loadMoreBtn').addEventListener('click', () => {
+            this.loadMoreUsers();
+        });
+        
+        // Infinite scroll
+        window.addEventListener('scroll', () => {
+            if (this.shouldLoadMore()) {
+                this.loadMoreUsers();
+            }
+        });
+    }
+    
+    shouldLoadMore() {
+        if (this.isLoading || !this.hasMore) return false;
+        
+        const scrollPosition = window.scrollY + window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        
+        return scrollPosition > documentHeight - 500;
+    }
+    
+    resetAndReload() {
+        this.currentOffset = 0;
+        this.hasMore = true;
+        this.users = [];
+        document.getElementById('userList').innerHTML = '';
+        this.loadInitialUsers();
+    }
+    
+    async loadInitialUsers() {
+        this.showLoading();
+        this.hideNoResults();
+        
+        try {
+            const users = await this.fetchUsers(0, this.batchSize);
+            this.users = users;
+            this.renderUsers(users, true);
+            
+            if (users.length < this.batchSize) {
+                this.hasMore = false;
+                this.hideLoadMore();
+            } else {
+                this.showLoadMore();
+            }
+            
+            this.currentOffset = this.batchSize;
+        } catch (error) {
+            console.error('Error loading users:', error);
+        } finally {
+            this.hideLoading();
+        }
+    }
+    
+    async loadMoreUsers() {
+        if (this.isLoading || !this.hasMore) return;
+        
+        this.isLoading = true;
+        this.showLoadingMore();
+        
+        try {
+            const users = await this.fetchUsers(this.currentOffset, this.loadMoreSize);
+            this.users = this.users.concat(users);
+            this.renderUsers(users, false);
+            
+            if (users.length < this.loadMoreSize) {
+                this.hasMore = false;
+                this.hideLoadMore();
+            }
+            
+            this.currentOffset += this.loadMoreSize;
+        } catch (error) {
+            console.error('Error loading more users:', error);
+        } finally {
+            this.isLoading = false;
+            this.hideLoadingMore();
+        }
+    }
+    
+    async fetchUsers(offset, limit) {
+        const params = new URLSearchParams({
+            offset: offset,
+            limit: limit,
+            ...this.filters
+        });
+        
+        try {
+            const response = await fetch(`/api/admin/users?${params}`, {
+                headers: {
+                    'X-Claude-Code-Key': '<?php echo $sitesettings['app']['CLAUDE_CODE_AUTH_KEY'] ?? ''; ?>'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch users');
+            }
+            
+            const data = await response.json();
+            return data.users || [];
+        } catch (error) {
+            console.error('API error, falling back to empty result:', error);
+            // Return empty array to prevent breaking the UI
+            return [];
+        }
+    }
+    
+    renderUsers(users, clear = false) {
+        const list = document.getElementById('userList');
+        
+        if (clear) {
+            list.innerHTML = '';
+        }
+        
+        if (users.length === 0 && this.users.length === 0) {
+            this.showNoResults();
+            return;
+        }
+        
+        const template = document.getElementById('userItemTemplate');
+        
+        users.forEach(user => {
+            const item = template.content.cloneNode(true);
+            
+            // Set user data
+            item.querySelector('.user-item').dataset.userId = user.user_id;
+            item.querySelector('.user-avatar').src = user.avatar || '/public/avatars/problemavatar.png';
+            item.querySelector('.user-name').textContent = `${user.first_name} ${user.last_name}`;
+            item.querySelector('.username').textContent = `@${user.username}`;
+            item.querySelector('.email').textContent = user.email;
+            
+            // Location
+            const location = [user.city, user.state].filter(Boolean).join(', ') || 'Unknown';
+            item.querySelector('.location').textContent = location;
+            
+            // Dates
+            item.querySelector('.joined-date').textContent = this.formatShortDate(user.create_dt);
+            item.querySelector('.birthday-date').textContent = user.birthdate ? this.formatShortDate(user.birthdate) : '-';
+            
+            // Badges
+            const badgesContainer = item.querySelector('.user-badges');
+            
+            // Status badge
+            const statusBadge = this.createBadge(user.status, this.getStatusColor(user.status));
+            badgesContainer.appendChild(statusBadge);
+            
+            // Plan badge
+            const planBadge = this.createBadge(user.account_plan || 'free', this.getPlanColor(user.account_plan));
+            badgesContainer.appendChild(planBadge);
+            
+            // Staff/Admin badges
+            if (user.is_staff) {
+                const staffBadge = this.createBadge('staff', 'danger');
+                badgesContainer.appendChild(staffBadge);
+            }
+            
+            if (user.is_admin) {
+                const adminBadge = this.createBadge('admin', 'danger');
+                badgesContainer.appendChild(adminBadge);
+            }
+            
+            // Verified badge
+            if (user.is_verified) {
+                const verifiedIcon = document.createElement('i');
+                verifiedIcon.className = 'bi bi-patch-check-fill text-primary';
+                verifiedIcon.style.fontSize = '1rem';
+                badgesContainer.appendChild(verifiedIcon);
+            }
+            
+            // Actions
+            const detailsBtn = item.querySelector('.view-details-btn');
+            detailsBtn.href = `/admin/user-details?u=${this.encodeId(user.user_id)}`;
+            
+            // Impersonate link
+            if (user.status !== 'pending') {
+                const impersonateLink = item.querySelector('.impersonate-link');
+                impersonateLink.href = `/myaccount/myaccount_actions/switch2user?id=${this.encodeId(user.user_id)}&aid=${this.encodeId(<?php echo $current_user_data['user_id']; ?>)}&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>`;
+            } else {
+                item.querySelector('.impersonate-link').parentElement.style.display = 'none';
+            }
+            
+            // Validation link
+            if (user.status === 'pending' || user.status === 'validated') {
+                const validateLink = item.querySelector('.validate-link');
+                validateLink.href = `/validate-account?id=${user.user_id}&adminsendagainrequest=1&aid=<?php echo $current_user_data['user_id']; ?>&act=resend&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>`;
+            } else {
+                item.querySelector('.validate-link').parentElement.style.display = 'none';
+            }
+            
+            list.appendChild(item);
+        });
+    }
+    
+    createBadge(text, colorClass) {
+        const badge = document.createElement('span');
+        badge.className = `badge text-bg-${colorClass}`;
+        badge.textContent = text;
+        return badge;
+    }
+    
+    getStatusColor(status) {
+        const colors = {
+            'active': 'success',
+            'pending': 'warning',
+            'suspended': 'danger',
+            'validated': 'info'
+        };
+        return colors[status] || 'secondary';
+    }
+    
+    getPlanColor(plan) {
+        const colors = {
+            'free': 'secondary',
+            'basic': 'primary',
+            'premium': 'warning',
+            'vip': 'danger'
+        };
+        return colors[plan] || 'secondary';
+    }
+    
+    getTypeColor(type) {
+        const colors = {
+            'individual': 'primary',
+            'business': 'success',
+            'parental': 'info'
+        };
+        return colors[type] || 'secondary';
+    }
+    
+    formatDate(dateString) {
+        if (!dateString) return 'Unknown';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 1) {
+            return 'Today';
+        } else if (diffDays < 2) {
+            return 'Yesterday';
+        } else if (diffDays < 7) {
+            return `${diffDays} days ago`;
+        } else {
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+    }
+    
+    formatShortDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    
+    encodeId(id) {
+        // This should match your PHP encoding method
+        return btoa(id).replace(/=/g, '');
+    }
+    
+    showLoading() {
+        document.getElementById('loadingSpinner').style.display = 'block';
+        this.hideLoadMore();
+    }
+    
+    hideLoading() {
+        document.getElementById('loadingSpinner').style.display = 'none';
+    }
+    
+    showLoadingMore() {
+        const btn = document.getElementById('loadMoreBtn');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+        btn.disabled = true;
+    }
+    
+    hideLoadingMore() {
+        const btn = document.getElementById('loadMoreBtn');
+        btn.innerHTML = 'Load More Users';
+        btn.disabled = false;
+    }
+    
+    showLoadMore() {
+        document.getElementById('loadMoreContainer').style.display = 'block';
+    }
+    
+    hideLoadMore() {
+        document.getElementById('loadMoreContainer').style.display = 'none';
+    }
+    
+    showNoResults() {
+        document.getElementById('noResults').style.display = 'block';
+        this.hideLoadMore();
+    }
+    
+    hideNoResults() {
+        document.getElementById('noResults').style.display = 'none';
+    }
 }
 
-// Edit user
-function editUser(userId) {
-    window.location.href = '/admin/user-details.php?id=' + userId + '&edit=1';
-}
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Initialize user manager
+    window.userManager = new UserManager();
+});
 </script>
 
 <?php

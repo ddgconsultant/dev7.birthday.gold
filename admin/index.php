@@ -8,20 +8,9 @@ $page_title = "Admin Dashboard - Birthday Gold";
 $page_description = "Birthday Gold administrative dashboard and management tools";
 
 // Modern Admin Dashboard CSS inspired by help page design
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 /* Modern Admin Dashboard Styles */
-.main-content {
-    min-height: calc(100vh - 200px);
-    padding: 2rem 1rem;
-    background: #f8f9fa;
-}
-
-.admin-container {
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-}
 
 /* Header Section */
 .admin-header {
@@ -45,7 +34,7 @@ $additionalstyles = '
 /* Search Bar */
 .search-box {
     max-width: 600px;
-    margin: 0 auto 3rem;
+    margin: 2rem auto;
 }
 
 .search-input {
@@ -244,6 +233,7 @@ $additionalstyles = '
 $bodycontentclass = '';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+include($dir['core_components'] . '/bg_admin_leftpanel.inc');
 
 // Get enrollment count for badge
 $enrollmentCount = $app->admin_getenrollments();
@@ -252,12 +242,13 @@ $enrollmentCount = $app->admin_getenrollments();
 $businessHours = $app->bg_businesshours();
 ?>
 
-<div class="main-content">
-    <div class="admin-container">
+<div class="container-fluid main-content">
+    <div class="row">
+        <div class="col-12">
         <!-- Header -->
         <div class="admin-header">
             <h1>Admin Dashboard</h1>
-            <p>Manage your Birthday Gold platform with powerful administrative tools</p>
+            <p>Manage the Birthday Gold platform with powerful administrative tools</p>
         </div>
         
         <!-- Search Bar -->
@@ -807,6 +798,7 @@ $businessHours = $app->bg_businesshours();
             </a>
         </div>
         <?php endif; ?>
+        </div>
     </div>
 </div>
 

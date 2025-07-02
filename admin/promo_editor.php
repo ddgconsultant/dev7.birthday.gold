@@ -190,49 +190,131 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Main page display
 $bodycontentclass='';
+$header_flush = true; // Flush header to top
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_admin_leftpanel.inc');
+// Removed admin left panel for full width
 ?>
 
 <?php
 ?>
 
 <style>
-.promo-editor-container {
-    max-width: 1400px;
-    margin: 0 auto;
+/* Modern Promo Editor Styles */
+.main-content {
+    min-height: calc(100vh - 200px);
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    background: #f8f9fa;
 }
 
+.promo-editor-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Header Section */
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.page-header p {
+    font-size: 1.25rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Main Card Styling */
+.main-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.card-header.bg-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+    border: none;
+    padding: 1.25rem 1.5rem;
+}
+
+.card-header h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.btn-light {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-light:hover {
+    background: white;
+    transform: translateY(-1px);
+}
+
+/* Table Styling */
 .promo-table {
     font-size: 0.9rem;
+}
+
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .promo-code {
     font-family: 'Courier New', monospace;
     font-weight: bold;
     font-size: 1.1em;
+    color: #0d6efd;
 }
 
 .discount-badge {
     font-size: 0.875rem;
     padding: 0.25rem 0.5rem;
+    border-radius: 6px;
 }
 
 .status-badge {
     font-size: 0.75rem;
     padding: 0.2rem 0.4rem;
+    border-radius: 4px;
 }
 
 .promo-actions {
     white-space: nowrap;
 }
 
+/* Test Section - Modern Card Style */
 .test-section {
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 1.5rem;
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 2rem;
     margin-top: 2rem;
+    transition: all 0.2s ease;
+}
+
+.test-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.test-section h5 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1.5rem;
 }
 
 /* Modal styling */
@@ -266,6 +348,43 @@ include($dir['core_components'] . '/bg_admin_leftpanel.inc');
     background-color: var(--bs-gray-100);
 }
 
+/* Action Buttons */
+.btn-action {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 767px) {
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .page-header p {
+        font-size: 1rem;
+    }
+    
+    .card-header h4 {
+        font-size: 1.1rem;
+    }
+    
+    .promo-table {
+        font-size: 0.8rem;
+    }
+    
+    .promo-actions .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+}
+
 /* Notification styling */
 .notification {
     position: fixed;
@@ -273,6 +392,9 @@ include($dir['core_components'] . '/bg_admin_leftpanel.inc');
     right: 20px;
     z-index: 9999;
     animation: slideIn 0.3s ease;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
 }
 
 @keyframes slideIn {
@@ -302,27 +424,32 @@ include($dir['core_components'] . '/bg_admin_leftpanel.inc');
 }
 </style>
 
-<div class="container-fluid main-content">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <div class="row align-items-center">
-                        <div class="col">
-                            <h4 class="mb-0">
-                                <i class="bi bi-tags"></i> Promo Code Editor
-                            </h4>
-                        </div>
-                        <div class="col-auto">
-                            <button class="btn btn-light btn-sm" onclick="createPromo()">
-                                <i class="bi bi-plus-circle"></i> Create New Promo
-                            </button>
-                        </div>
+<div class="main-content">
+    <div class="promo-editor-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Promo Code Manager</h1>
+            <p>Create and manage promotional codes for your products</p>
+        </div>
+        
+        <!-- Main Content Card -->
+        <div class="card main-card">
+            <div class="card-header bg-primary text-white">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h4 class="mb-0">
+                            <i class="bi bi-tags"></i> Active Promo Codes
+                        </h4>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-light btn-sm" onclick="createPromo()">
+                            <i class="bi bi-plus-circle"></i> Create New Promo
+                        </button>
                     </div>
                 </div>
-                
-                <div class="card-body">
-                    <div class="promo-editor-container">
+            </div>
+            
+            <div class="card-body">
                         <!-- Promo codes table -->
                         <div class="table-responsive">
                             <table class="table table-hover promo-table">
@@ -604,10 +731,10 @@ function displayPromos(promos) {
                 <td>${usage}</td>
                 <td>${statusBadge}</td>
                 <td class="promo-actions">
-                    <button class="btn btn-sm btn-outline-primary" onclick="editPromo(${promo.id})" title="Edit">
+                    <button class="btn btn-action btn-outline-primary" onclick="editPromo(${promo.id})" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deletePromo(${promo.id}, '${promo.code}')" title="Delete">
+                    <button class="btn btn-action btn-outline-danger" onclick="deletePromo(${promo.id}, '${promo.code}')" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
