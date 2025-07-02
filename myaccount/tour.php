@@ -1040,39 +1040,41 @@ include($dir['core_components'] . '/bg_user_profileheader.inc');
 echo '<div class="container">';
 ?>
 
-<div class="tour-container">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-3">
-                <i class="fas fa-route"></i> My Birthday Tour
-                <small class="text-muted d-block d-md-inline-block ms-md-2" style="font-size: 0.6em;">
-                    <?php echo date('l, F j, Y', strtotime($date)); ?>
-                </small>
-            </h2>
-            
-            <!-- Stats badges -->
-            <div class="stats-container">
-                <span class="stat-badge" data-bs-toggle="modal" data-bs-target="#statsModal">
-                    <i class="fas fa-store"></i> 
-                    <span id="business-count"><?php echo count($listofcompanies); ?></span> businesses
-                </span>
-                <?php 
-                $outOfRangeCount = 0;
-                foreach ($listofcompanies as $company) {
-                    if (isset($company['data']['is_out_of_range']) && $company['data']['is_out_of_range']) {
-                        $outOfRangeCount++;
-                    }
+<!-- Page Title and Stats (shown on all screen sizes) -->
+<div class="row mb-3">
+    <div class="col-12">
+        <h2 class="mb-3">
+            <i class="fas fa-route"></i> My Birthday Tour
+            <small class="text-muted d-block d-md-inline-block ms-md-2" style="font-size: 0.6em;">
+                <?php echo date('l, F j, Y', strtotime($date)); ?>
+            </small>
+        </h2>
+        
+        <!-- Stats badges -->
+        <div class="stats-container">
+            <span class="stat-badge" data-bs-toggle="modal" data-bs-target="#statsModal">
+                <i class="fas fa-store"></i> 
+                <span id="business-count"><?php echo count($listofcompanies); ?></span> businesses
+            </span>
+            <?php 
+            $outOfRangeCount = 0;
+            foreach ($listofcompanies as $company) {
+                if (isset($company['data']['is_out_of_range']) && $company['data']['is_out_of_range']) {
+                    $outOfRangeCount++;
                 }
-                if ($outOfRangeCount > 0): ?>
-                <span class="stat-badge bg-warning text-dark" data-bs-toggle="modal" data-bs-target="#outOfRangeModal">
-                    <i class="fas fa-exclamation-triangle"></i> 
-                    <?php echo $outOfRangeCount; ?> out of range
-                </span>
-                <?php endif; ?>
-            </div>
+            }
+            if ($outOfRangeCount > 0): ?>
+            <span class="stat-badge bg-warning text-dark" data-bs-toggle="modal" data-bs-target="#outOfRangeModal">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <?php echo $outOfRangeCount; ?> out of range
+            </span>
+            <?php endif; ?>
         </div>
     </div>
-    
+</div>
+
+<!-- Mobile Layout (shown on small/medium screens) -->
+<div class="tour-container d-lg-none">
     <!-- Mobile tab navigation -->
     <ul class="nav nav-tabs d-flex" role="tablist">
         <li class="nav-item flex-fill" role="presentation">
@@ -1202,6 +1204,165 @@ echo '<div class="container">';
                 <div class="loading">
                     <i class="fas fa-spinner"></i>
                     <p>Loading directions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Desktop Layout (shown on large/xl screens) -->
+<div class="d-none d-lg-block">
+    <div class="row">
+        <div class="col-lg-4">
+            <!-- Left Panel with List and Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Tour Businesses</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Home Location Card -->
+                    <div class="alert alert-info">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    <i class="fas fa-home"></i> Starting Tour Location
+                                </h6>
+                                <p class="mb-0 small" data-location="<?php echo htmlspecialchars($homeaddress); ?>">
+                                    <?php echo !empty($homeaddress) ? htmlspecialchars($homeaddress) : 'No starting location set'; ?>
+                                </p>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openChangeLocationModal(event)">
+                                <i class="fas fa-edit"></i> Change
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Drag to Reorder Note -->
+                    <div class="alert alert-light text-center">
+                        <i class="fas fa-grip-vertical"></i> Drag businesses to reorder
+                    </div>
+
+                    <!-- Business List -->
+                    <div id="sortable-container-desktop">
+                        <?php foreach ($listofcompanies as $index => $company): 
+                            $businessData = $company['data'] ?? [];
+                            $isOutOfRange = $businessData['is_out_of_range'] ?? false;
+                            $distance = $businessData['distance_from_home'] ?? null;
+                            $hasVerifiedLocation = $businessData['has_verified_location'] ?? false;
+                            $isForcedLocation = $businessData['is_forced_location'] ?? false;
+                        ?>
+                        <div class="card mb-2 sortable_item <?php echo $isOutOfRange ? 'out-of-range' : ''; ?>" 
+                             data-company-id="<?php echo $company['company_id']; ?>"
+                             data-location="<?php echo htmlspecialchars($businessData['address'] ?? ''); ?>"
+                             data-lat="<?php echo $businessData['latitude'] ?? ''; ?>"
+                             data-lng="<?php echo $businessData['longitude'] ?? ''; ?>">
+                            <div class="card-body p-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-grip-vertical drag-handle me-2" style="cursor: move;"></i>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0">
+                                            <?php echo htmlspecialchars($businessData['business_name'] ?? 'Unknown Business'); ?>
+                                            <?php if ($isOutOfRange): ?>
+                                                <span class="badge bg-warning">Out of Range</span>
+                                            <?php endif; ?>
+                                            <?php if ($isForcedLocation): ?>
+                                                <i class="fas fa-thumbtack text-primary" title="Pinned location"></i>
+                                            <?php endif; ?>
+                                        </h6>
+                                        <small class="text-muted">
+                                            <?php 
+                                            $fullAddress = trim(($businessData['address'] ?? '') . ', ' . 
+                                                              ($businessData['city'] ?? '') . ', ' . 
+                                                              ($businessData['state'] ?? '') . ' ' . 
+                                                              ($businessData['zip_code'] ?? ''));
+                                            $fullAddress = rtrim($fullAddress, ', ');
+                                            echo htmlspecialchars($fullAddress);
+                                            ?>
+                                        </small>
+                                        <?php if ($distance !== null): ?>
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-route"></i> <?php echo $distance; ?> miles
+                                        </small>
+                                        <?php endif; ?>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-secondary change-location-btn" 
+                                            data-company-id="<?php echo $company['company_id']; ?>"
+                                            data-company-name="<?php echo htmlspecialchars($businessData['business_name'] ?? ''); ?>">
+                                        <i class="fas fa-map-pin"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-3">
+                        <button id="draw_map_desktop" class="btn btn-primary w-100 mb-2" onclick="DrawNewMap();">
+                            <i class="fas fa-route"></i> Update Route
+                        </button>
+                        
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button class="btn btn-outline-primary w-100" onclick="window.print();">
+                                    <i class="fas fa-print"></i> Print
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-primary w-100" onclick="document.getElementById('send-to-phone-form').style.display='block';">
+                                    <i class="fas fa-mobile-alt"></i> Send to Phone
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Send to Phone Form -->
+                        <div id="send-to-phone-form" class="mt-2" style="display:none;">
+                            <div class="alert alert-info">
+                                <h6>Send to Phone</h6>
+                                <p class="mb-2 small">Phone: <?php echo htmlspecialchars($current_user_data['phone'] ?? 'No phone'); ?></p>
+                                <button class="btn btn-sm btn-success send-to-phone-btn w-100">
+                                    <i class="fas fa-sms"></i> Send Navigation Link
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- Right Panel with Map and Directions -->
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#desktop-map-view" type="button">
+                                <i class="fas fa-map-marked-alt"></i> Map
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#desktop-directions" type="button">
+                                <i class="fas fa-directions"></i> Directions
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body p-0">
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="desktop-map-view">
+                            <div id="map-desktop" style="height: 600px;"></div>
+                        </div>
+                        <div class="tab-pane fade" id="desktop-directions">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div id="route-map-desktop" style="height: 400px;"></div>
+                                </div>
+                                <div class="col-12">
+                                    <div id="directions-panel-desktop" style="height: 400px; overflow-y: auto;" class="p-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1366,20 +1527,34 @@ locations.unshift({
     type: 'home'
 });
 
-// Sortable functionality
+// Sortable functionality for both mobile and desktop
 $(function() {
-    $("#sortable-container").sortable({
+    // Initialize sortable for both containers
+    $("#sortable-container, #sortable-container-desktop").sortable({
         handle: ".drag-handle",
         placeholder: "sortable-placeholder",
+        connectWith: "#sortable-container, #sortable-container-desktop",
         update: function(event, ui) {
             // Show update button when order changes
-            document.getElementById('draw_map').style.display = 'inline-block';
+            var drawBtn = document.getElementById('draw_map');
+            var drawBtnDesktop = document.getElementById('draw_map_desktop');
+            if (drawBtn) drawBtn.style.display = 'inline-block';
+            if (drawBtnDesktop) drawBtnDesktop.style.display = 'inline-block';
             
-            // Get new order
+            // Get new order from the updated container
             var order = [];
-            $('.sortable_item').each(function() {
+            $(this).find('.sortable_item').each(function() {
                 order.push($(this).data('company-id'));
             });
+            
+            // Sync the order to the other container
+            var otherContainer = this.id === 'sortable-container' ? '#sortable-container-desktop' : '#sortable-container';
+            if ($(otherContainer).length) {
+                $(otherContainer).empty();
+                $(this).find('.sortable_item').each(function() {
+                    $(otherContainer).append($(this).clone());
+                });
+            }
             
             // Update order in database
             $.ajax({
@@ -1395,20 +1570,49 @@ $(function() {
     });
 });
 
-// Tab change handlers
-document.getElementById('map-tab').addEventListener('shown.bs.tab', function() {
-    if (!map) {
-        initializeMap();
-    } else {
-        google.maps.event.trigger(map, 'resize');
-        if (locations.length > 0) {
-            fitMapToBounds();
+// Tab change handlers for mobile
+var mapTab = document.getElementById('map-tab');
+if (mapTab) {
+    mapTab.addEventListener('shown.bs.tab', function() {
+        if (!mapMobile) {
+            initMapInstance('map', 'mobile');
+        } else {
+            google.maps.event.trigger(mapMobile, 'resize');
+            if (locations.length > 0) {
+                fitMapToBounds(mapMobile);
+            }
         }
-    }
-});
+    });
+}
 
-document.getElementById('directions-tab').addEventListener('shown.bs.tab', function() {
-    loadDirections();
+var directionsTab = document.getElementById('directions-tab');
+if (directionsTab) {
+    directionsTab.addEventListener('shown.bs.tab', function() {
+        loadDirections('mobile');
+    });
+}
+
+// Initialize desktop maps when tabs are shown
+$(document).ready(function() {
+    // Desktop map tab handler
+    $('[data-bs-target="#desktop-map-view"]').on('shown.bs.tab', function() {
+        if (!mapDesktop) {
+            initMapInstance('map-desktop', 'desktop');
+        } else {
+            google.maps.event.trigger(mapDesktop, 'resize');
+            fitMapToBounds(mapDesktop);
+        }
+    });
+    
+    // Desktop directions tab handler
+    $('[data-bs-target="#desktop-directions"]').on('shown.bs.tab', function() {
+        loadDirections('desktop');
+    });
+    
+    // Initialize desktop map if visible on load
+    if ($('#desktop-map-view.active').length) {
+        initMapInstance('map-desktop', 'desktop');
+    }
 });
 
 // Initialize Google Maps
@@ -1422,23 +1626,51 @@ function initMap() {
     }
 }
 
+// Global variables for maps
+var mapMobile, mapDesktop, mapRouteMobile, mapRouteDesktop;
+
 function initializeMap() {
-    if (!document.getElementById('map')) return;
+    // Initialize mobile map if visible
+    var mapElementMobile = document.getElementById('map');
+    if (mapElementMobile && mapElementMobile.offsetParent !== null) {
+        initMapInstance('map', 'mobile');
+    }
     
-    var centerLat = locations[0].lat || 39.7392;
-    var centerLng = locations[0].lng || -104.9903;
+    // Initialize desktop map if visible
+    var mapElementDesktop = document.getElementById('map-desktop');
+    if (mapElementDesktop && mapElementDesktop.offsetParent !== null) {
+        initMapInstance('map-desktop', 'desktop');
+    }
+}
+
+function initMapInstance(elementId, type) {
+    var mapElement = document.getElementById(elementId);
+    if (!mapElement) return;
     
-    map = new google.maps.Map(document.getElementById('map'), {
+    var centerLat = locations[0] && locations[0].lat ? locations[0].lat : 39.7392;
+    var centerLng = locations[0] && locations[0].lng ? locations[0].lng : -104.9903;
+    
+    var mapInstance = new google.maps.Map(mapElement, {
         center: {lat: centerLat, lng: centerLng},
         zoom: 12,
         mapId: mapId
     });
     
+    // Store map instance
+    if (type === 'mobile') {
+        mapMobile = mapInstance;
+        map = mapInstance; // For backward compatibility
+    } else {
+        mapDesktop = mapInstance;
+    }
+    
     // Add markers
-    addMarkersToMap();
+    addMarkersToMap(mapInstance);
 }
 
-function addMarkersToMap() {
+function addMarkersToMap(mapInstance) {
+    if (!mapInstance) mapInstance = map;
+    
     // Clear existing markers
     markers.forEach(marker => marker.setMap(null));
     markers = [];
@@ -1475,7 +1707,7 @@ function addMarkersToMap() {
             
             var marker = new google.maps.marker.AdvancedMarkerElement({
                 position: {lat: parseFloat(location.lat), lng: parseFloat(location.lng)},
-                map: map,
+                map: mapInstance,
                 title: location.name,
                 content: pinElement
             });
@@ -1484,17 +1716,18 @@ function addMarkersToMap() {
         }
     });
     
-    fitMapToBounds();
+    fitMapToBounds(mapInstance);
 }
 
-function fitMapToBounds() {
-    if (!map || markers.length === 0) return;
+function fitMapToBounds(mapInstance) {
+    if (!mapInstance) mapInstance = map;
+    if (!mapInstance || markers.length === 0) return;
     
     var bounds = new google.maps.LatLngBounds();
     markers.forEach(marker => {
         bounds.extend(marker.position);
     });
-    map.fitBounds(bounds);
+    mapInstance.fitBounds(bounds);
 }
 
 function recenterMap() {
@@ -1505,33 +1738,57 @@ function recenterMap() {
 }
 
 // Directions functionality
-function loadDirections() {
-    console.log('Loading directions...');
+function loadDirections(type) {
+    console.log('Loading directions for ' + type + '...');
     
     if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
         console.error('Google Maps not loaded yet!');
         return;
     }
     
+    var routeMapElement, directionsPanelElement, routeMapInstance;
+    
+    if (type === 'desktop') {
+        routeMapElement = document.getElementById('route-map-desktop');
+        directionsPanelElement = document.getElementById('directions-panel-desktop');
+        routeMapInstance = mapRouteDesktop;
+    } else {
+        routeMapElement = document.getElementById('route-map');
+        directionsPanelElement = document.getElementById('directions-panel');
+        routeMapInstance = mapRouteMobile || routeMap;
+    }
+    
     // Initialize route map if needed
-    if (!routeMap) {
-        var routeMapElement = document.getElementById('route-map');
-        routeMap = new google.maps.Map(routeMapElement, {
+    if (!routeMapInstance && routeMapElement) {
+        routeMapInstance = new google.maps.Map(routeMapElement, {
             zoom: 13,
             center: {lat: 39.7392, lng: -104.9903},
             mapId: mapId
         });
         
-        directionsService = new google.maps.DirectionsService();
+        if (type === 'desktop') {
+            mapRouteDesktop = routeMapInstance;
+        } else {
+            mapRouteMobile = routeMapInstance;
+            routeMap = routeMapInstance; // Backward compatibility
+        }
+        
+        if (!directionsService) {
+            directionsService = new google.maps.DirectionsService();
+        }
+        
         directionsRenderer = new google.maps.DirectionsRenderer({
-            map: routeMap,
-            suppressMarkers: true
+            map: routeMapInstance,
+            suppressMarkers: true,
+            panel: directionsPanelElement
         });
     }
     
     // Check if we have enough locations
     if (locations.length < 2) {
-        document.getElementById('directions-panel').innerHTML = '<div class="alert alert-warning">No businesses found for this date. Add businesses to your tour first.</div>';
+        if (directionsPanelElement) {
+            directionsPanelElement.innerHTML = '<div class="alert alert-warning">No businesses found for this date. Add businesses to your tour first.</div>';
+        }
         return;
     }
     
@@ -1551,7 +1808,9 @@ function loadDirections() {
     
     // Check if we have any waypoints after filtering
     if (waypoints.length === 0) {
-        document.getElementById('directions-panel').innerHTML = '<div class="alert alert-warning">All businesses are more than 100 miles away. No route can be calculated.</div>';
+        if (directionsPanelElement) {
+            directionsPanelElement.innerHTML = '<div class="alert alert-warning">All businesses are more than 100 miles away. No route can be calculated.</div>';
+        }
         return;
     }
     
@@ -1579,18 +1838,21 @@ function loadDirections() {
             });
             
             // Create custom directions panel
-            createCustomDirectionsPanel(response, optimizedLocations);
+            createCustomDirectionsPanel(response, optimizedLocations, directionsPanelElement);
             
             // Add custom markers
-            addRouteMarkers(optimizedLocations);
+            addRouteMarkers(optimizedLocations, routeMapInstance);
         } else {
-            document.getElementById('directions-panel').innerHTML = '<div class="alert alert-danger">Directions request failed: ' + status + '</div>';
+            if (directionsPanelElement) {
+                directionsPanelElement.innerHTML = '<div class="alert alert-danger">Directions request failed: ' + status + '</div>';
+            }
         }
     });
 }
 
-function createCustomDirectionsPanel(response, locations) {
-    var panel = document.getElementById('directions-panel');
+function createCustomDirectionsPanel(response, locations, panelElement) {
+    if (!panelElement) return;
+    var panel = panelElement;
     var html = '<div class="directions-content">';
     
     // Add each leg of the journey
@@ -1643,7 +1905,9 @@ function createCustomDirectionsPanel(response, locations) {
     panel.innerHTML = html;
 }
 
-function addRouteMarkers(optimizedLocations) {
+function addRouteMarkers(optimizedLocations, mapInstance) {
+    if (!mapInstance) mapInstance = routeMap;
+    
     optimizedLocations.forEach(function(location, index) {
         if (location.lat && location.lng) {
             var pinElement = document.createElement('div');
@@ -1673,7 +1937,7 @@ function addRouteMarkers(optimizedLocations) {
             
             new google.maps.marker.AdvancedMarkerElement({
                 position: {lat: parseFloat(location.lat), lng: parseFloat(location.lng)},
-                map: routeMap,
+                map: mapInstance,
                 title: location.name,
                 content: pinElement
             });
@@ -1721,9 +1985,12 @@ function geocodeMissingAddresses() {
     });
     
     if (needsGeocoding.length === 0) {
-        // All addresses are geocoded, update the map
-        if (map) {
-            addMarkersToMap();
+        // All addresses are geocoded, update both maps
+        if (mapMobile) {
+            addMarkersToMap(mapMobile);
+        }
+        if (mapDesktop) {
+            addMarkersToMap(mapDesktop);
         }
         return;
     }
@@ -1732,9 +1999,12 @@ function geocodeMissingAddresses() {
     var index = 0;
     function geocodeNext() {
         if (index >= needsGeocoding.length) {
-            // Done geocoding, update map
-            if (map) {
-                addMarkersToMap();
+            // Done geocoding, update both maps
+            if (mapMobile) {
+                addMarkersToMap(mapMobile);
+            }
+            if (mapDesktop) {
+                addMarkersToMap(mapDesktop);
             }
             return;
         }
