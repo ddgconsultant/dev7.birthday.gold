@@ -1030,10 +1030,17 @@ $additionalstyles = '
 }
 </style>';
 
+// Initialize iframe mode variable
+$is_iframe_mode = isset($_GET['iframe']) && $_GET['iframe'] == '1';
+
+// Page includes
+include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+include($dir['core_components'] . '/bg_user_profileheader.inc');
+echo '<div class="container">';
 ?>
 
-<div class="container tour-container">
+<div class="tour-container">
     <div class="row">
         <div class="col-12">
             <h2 class="mb-3">
@@ -2315,4 +2322,10 @@ LOCATION DATA STORAGE:
      - description: JSON with address, lat, lng, city, state, zip
    - Applied to all tours for this user
 */
+
+// Close container
+echo '</div>';
+
+// Include footer
+include($dir['core_components'] . '/bg_footer.inc');
 ?>
