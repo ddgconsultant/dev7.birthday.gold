@@ -3144,7 +3144,7 @@ function sendToPhone() {
         // Apple Maps URL format
         if (waypoints.length > 0) {
             // Apple Maps doesn't support waypoints in URL, so we'll use Google Maps dir/ format
-            var allStops = [origin].concat(waypoints.map(decodeURIComponent)).concat([decodeURIComponent(destination)]);
+            var allStops = [origin].concat(waypoints).concat([destination]);
             navigationUrl = 'https://www.google.com/maps/dir/' + allStops.join('/');
         } else {
             // No waypoints, can use Apple Maps
@@ -3155,7 +3155,7 @@ function sendToPhone() {
         // Use the dir/ format which better handles multiple waypoints
         if (waypoints.length > 0) {
             // Build the full route with all stops
-            var allStops = [origin].concat(waypoints.map(decodeURIComponent)).concat([decodeURIComponent(destination)]);
+            var allStops = [origin].concat(waypoints).concat([destination]);
             navigationUrl = 'https://www.google.com/maps/dir/' + allStops.join('/');
         } else {
             // Simple two-point navigation
@@ -3168,12 +3168,22 @@ function sendToPhone() {
     
     // Parse and display the URL components for debugging
     if (window.location.search.includes('debug')) {
-        var urlParts = navigationUrl.split('?')[1].split('&');
         console.log('=== URL COMPONENTS ===');
-        urlParts.forEach(function(part) {
-            var keyValue = part.split('=');
-            console.log(keyValue[0] + ':', decodeURIComponent(keyValue[1] || ''));
-        });
+        if (navigationUrl.includes('/dir/')) {
+            // For dir/ format, show the stops
+            var dirParts = navigationUrl.split('/dir/')[1].split('/');
+            console.log('Stops (' + dirParts.length + ' total):');
+            dirParts.forEach(function(stop, index) {
+                console.log('  Stop ' + (index + 1) + ':', decodeURIComponent(stop));
+            });
+        } else if (navigationUrl.includes('?')) {
+            // For query string format
+            var urlParts = navigationUrl.split('?')[1].split('&');
+            urlParts.forEach(function(part) {
+                var keyValue = part.split('=');
+                console.log(keyValue[0] + ':', decodeURIComponent(keyValue[1] || ''));
+            });
+        }
         console.log('===================');
     }
     
