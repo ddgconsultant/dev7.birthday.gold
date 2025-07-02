@@ -393,6 +393,7 @@ if (isset($_POST['action'])) {
             $phoneType = $_POST['phone_type'] ?? '';
             $tourDate = $_POST['tour_date'] ?? date('Y-m-d');
             $debug = isset($_GET['debug']) || isset($_POST['debug']);
+            $previewOnly = isset($_POST['preview_only']) && $_POST['preview_only'];
             
             if (!$navigationUrl) {
                 ob_end_clean();
@@ -461,6 +462,25 @@ if (isset($_POST['action'])) {
             
             // Create SMS message
             $message = "Your Birthday Tour navigation link for " . date('M j, Y', strtotime($tourDate)) . ":\n" . $shortUrl . "\n\nTap to open in " . ($phoneType === 'iphone' || $phoneType === 'ios' ? 'Maps' : 'Google Maps');
+            
+            // If preview only mode, return without sending SMS
+            if ($previewOnly) {
+                ob_end_clean();
+                $response = [
+                    'success' => true, 
+                    'message' => 'Preview mode - SMS not sent',
+                    'preview' => [
+                        'message' => $message,
+                        'short_url' => $shortUrl,
+                        'phone_number' => substr($phoneNumber, 0, -4) . 'XXXX'
+                    ]
+                ];
+                if ($debug) {
+                    $response['debug'] = $debugInfo;
+                }
+                echo json_encode($response);
+                exit;
+            }
             
             // Send SMS using the SMS gateway
             try {
@@ -3089,7 +3109,7 @@ function sendToPhone() {
     }
     
     // Determine phone type and build appropriate URL
-    var phoneType = '<?php echo $current_user_data['phone_type'] ?? 'unknown'; ?>';
+    var phoneType = '<?php echo $current_user_data['profile_phone_type'] ?? 'unknown'; ?>';
     var navigationUrl = '';
     
     if (phoneType === 'iphone' || phoneType === 'ios') {
