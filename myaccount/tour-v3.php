@@ -391,6 +391,7 @@ if (isset($_POST['action'])) {
         case 'send_to_phone':
             $navigationUrl = $_POST['navigation_url'] ?? '';
             $phoneType = $_POST['phone_type'] ?? '';
+            $phoneTypeSource = $_POST['phone_type_source'] ?? 'unknown';
             $tourDate = $_POST['tour_date'] ?? date('Y-m-d');
             $debug = isset($_GET['debug']) || isset($_POST['debug']);
             $previewOnly = isset($_POST['preview_only']) && $_POST['preview_only'];
@@ -455,6 +456,7 @@ if (isset($_POST['action'])) {
                     'apple_maps_url' => $appleMapsUrl,
                     'google_maps_url' => $googleMapsUrl,
                     'phone_type' => $phoneType,
+                    'phone_type_source' => $phoneTypeSource,
                     'phone_number' => substr($phoneNumber, 0, -4) . 'XXXX', // Partially hide for privacy
                     'shortcode_data' => $shortCodeData // Include full response for debugging
                 ];
@@ -3108,20 +3110,43 @@ function sendToPhone() {
         waypoints.push(encodeURIComponent(tourLocations[i].address));
     }
     
-    // Determine phone type and build appropriate URL
+    console.log('Tour locations:', tourLocations.length, 'businesses');
+    console.log('Waypoints:', waypoints.length, 'intermediate stops');
+    console.log('Full tour:', tourLocations.map(function(loc) { return loc.name + ': ' + loc.address; }));
+    
+    // Determine phone type with fallbacks
     var phoneType = '<?php echo $current_user_data['profile_phone_type'] ?? 'unknown'; ?>';
+    var phoneTypeSource = 'profile';
+    
+    // If unknown, try to detect from user agent
+    if (phoneType === 'unknown') {
+        var userAgent = navigator.userAgent.toLowerCase();
+        if (/iphone|ipad|ipod/.test(userAgent)) {
+            phoneType = 'iphone';
+            phoneTypeSource = 'user_agent';
+        } else if (/android/.test(userAgent)) {
+            phoneType = 'android';
+            phoneTypeSource = 'user_agent';
+        } else {
+            // Default to Android/Google
+            phoneType = 'android';
+            phoneTypeSource = 'default';
+        }
+    }
+    
+    console.log('Phone type:', phoneType, '(source:', phoneTypeSource + ')');
     var navigationUrl = '';
     
     if (phoneType === 'iphone' || phoneType === 'ios') {
         // Apple Maps URL format
-        navigationUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
         if (waypoints.length > 0) {
             // Apple Maps doesn't support waypoints in URL, so we'll use Google Maps as fallback
             navigationUrl = 'https://maps.google.com/maps?saddr=' + origin + '&daddr=' + destination;
-            if (waypoints.length > 0) {
-                navigationUrl += '&waypoints=' + waypoints.join('|');
-            }
+            navigationUrl += '&waypoints=' + waypoints.join('|');
             navigationUrl += '&dirflg=d'; // Driving directions
+        } else {
+            // No waypoints, can use Apple Maps
+            navigationUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
         }
     } else {
         // Google Maps URL format (Android and fallback)
@@ -3146,6 +3171,7 @@ function sendToPhone() {
             action: 'send_to_phone',
             navigation_url: navigationUrl,
             phone_type: phoneType,
+            phone_type_source: phoneTypeSource,
             tour_date: '<?php echo $date; ?>',
             debug: isDebug ? 1 : 0
         },
@@ -3157,13 +3183,22 @@ function sendToPhone() {
                 console.log('Apple Maps URL:', response.debug.apple_maps_url);
                 console.log('Google Maps URL:', response.debug.google_maps_url);
                 console.log('Phone Type:', response.debug.phone_type);
+                console.log('Phone Type Source:', response.debug.phone_type_source);
                 console.log('Phone Number:', response.debug.phone_number);
+                console.log('Shortcode Data:', response.debug.shortcode_data);
                 if (response.sms_result) {
                     console.log('SMS Result:', response.sms_result);
                 }
                 if (response.sms_error) {
                     console.log('SMS Error:', response.sms_error);
                 }
+            }
+            
+            if (response.preview) {
+                console.log('=== SMS PREVIEW ===');
+                console.log('Message:', response.preview.message);
+                console.log('Short URL:', response.preview.short_url);
+                console.log('Phone:', response.preview.phone_number);
             }
             
             if (response.success) {
