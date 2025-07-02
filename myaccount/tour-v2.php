@@ -438,6 +438,12 @@ if (isset($_POST['action'])) {
                 if (!$shortCodeData || !isset($shortCodeData['shorturl'])) {
                     $apiUrl = 'https://bd.gold/api.php?url=' . urlencode($navigationUrl) . '&cust=' . urlencode('tour_nav_' . $tourDate);
                     
+                    // Log the API URL for debugging
+                    if ($debug) {
+                        error_log('Shortener API URL: ' . $apiUrl);
+                        error_log('Navigation URL: ' . $navigationUrl);
+                    }
+                    
                     $ch = curl_init();
                     curl_setopt($ch, CURLOPT_URL, $apiUrl);
                     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -469,6 +475,8 @@ if (isset($_POST['action'])) {
                             } else {
                                 $errorMsg .= ' - Raw Response: ' . substr($apiResponse, 0, 200);
                             }
+                            $errorMsg .= "\n\nNavigation URL being shortened:\n" . $navigationUrl;
+                            $errorMsg .= "\n\nFull API URL:\n" . $apiUrl;
                         }
                         echo json_encode(['success' => false, 'message' => $errorMsg]);
                         exit;

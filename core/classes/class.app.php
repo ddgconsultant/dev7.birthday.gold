@@ -1027,8 +1027,27 @@ GROUP BY
     $baseurl = 'https://bd.gold/';
     $apiUrl = $baseurl . "api.php?" . $querystring;
 
-    // Fetch the data from the API
-    $apiResponse = file_get_contents($apiUrl);
+    // Try file_get_contents first with SSL context
+    $context = stream_context_create([
+        "ssl" => [
+            "verify_peer" => false,
+            "verify_peer_name" => false,
+        ],
+    ]);
+    
+    $apiResponse = @file_get_contents($apiUrl, false, $context);
+    
+    // If file_get_contents fails, try cURL
+    if ($apiResponse === false) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        $apiResponse = curl_exec($ch);
+        curl_close($ch);
+    }
 
 
     // Strip out the non-JSON parts
