@@ -121,6 +121,13 @@ $additionalstyles = '
     font-size: 1.25rem;
 }
 
+.admin-icon img {
+    max-width: 40px;
+    max-height: 40px;
+    width: auto;
+    height: auto;
+}
+
 /* Icon background colors by category */
 .icon-productivity { background: #e7f3ff; color: #0066cc; }
 .icon-user { background: #e8f5e9; color: #2e7d32; }
@@ -267,7 +274,7 @@ $businessHours = $app->bg_businesshours();
         <?php if ($account->isadmin()): ?>
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value"><?php echo number_format($db->bg_activeusers()); ?></div>
+                <div class="stat-value"><?php echo isset($database) && method_exists($database, 'bg_activeusers') ? number_format($database->bg_activeusers()) : '0'; ?></div>
                 <div class="stat-label">Active Users</div>
             </div>
             <div class="stat-card">
@@ -275,7 +282,7 @@ $businessHours = $app->bg_businesshours();
                 <div class="stat-label">Pending Enrollments</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value"><?php echo number_format($db->bg_sessioncount()); ?></div>
+                <div class="stat-value"><?php echo isset($database) && method_exists($database, 'bg_sessioncount') ? number_format($database->bg_sessioncount()) : '0'; ?></div>
                 <div class="stat-label">Active Sessions</div>
             </div>
             <div class="stat-card">
@@ -304,7 +311,7 @@ $businessHours = $app->bg_businesshours();
             
             <a href="/admin/redirect-leantime" target="_blank" class="admin-card">
                 <div class="admin-icon icon-productivity">
-                    <i class="bi bi-kanban"></i>
+                    <img src="/public/images/system_icons/io.leantime.cloudronapp.png" alt="" width="40">
                 </div>
                 <div class="admin-content">
                     <h3 class="admin-card-title">Leantime</h3>
@@ -314,7 +321,7 @@ $businessHours = $app->bg_businesshours();
             
             <a href="/admin/manage-pageeditor" class="admin-card">
                 <div class="admin-icon icon-productivity">
-                    <i class="bi bi-pencil-square"></i>
+                    <img src="/public/images/system_icons/pageeditor-icon.png" alt="" width="40">
                 </div>
                 <div class="admin-content">
                     <h3 class="admin-card-title">Page Editor</h3>
@@ -432,7 +439,7 @@ $businessHours = $app->bg_businesshours();
         <div class="admin-grid">
             <a href="/admin/redirect-metabase" target="_blank" class="admin-card">
                 <div class="admin-icon icon-system">
-                    <i class="bi bi-graph-up"></i>
+                    <img src="/public/images/system_icons/com.metabase.cloudronapp.png" alt="" width="40">
                 </div>
                 <div class="admin-content">
                     <h3 class="admin-card-title">Metabase</h3>
@@ -442,7 +449,7 @@ $businessHours = $app->bg_businesshours();
             
             <a href="/admin/redirect-netdata" target="_blank" class="admin-card">
                 <div class="admin-icon icon-system">
-                    <i class="bi bi-speedometer2"></i>
+                    <img src="/public/assets/logos/netdata.png" alt="" width="40">
                 </div>
                 <div class="admin-content">
                     <h3 class="admin-card-title">System Performance</h3>
@@ -541,7 +548,7 @@ $businessHours = $app->bg_businesshours();
         <div class="admin-grid">
             <a href="/admin/redirect-cloudron" target="_blank" class="admin-card">
                 <div class="admin-icon icon-system">
-                    <i class="bi bi-cloud"></i>
+                    <img src="/public/images/system_icons/io.cloudron.buildservice.png" alt="" width="40">
                 </div>
                 <div class="admin-content">
                     <h3 class="admin-card-title">Cloudron</h3>

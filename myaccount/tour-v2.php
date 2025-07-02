@@ -1,4 +1,5 @@
 <?php
+$addClasses[] = 'sms';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Helper function to get user attribute
@@ -386,6 +387,116 @@ if (isset($_POST['action'])) {
                 echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
             }
             exit;
+            
+        case 'send_to_phone':
+            $navigationUrl = $_POST['navigation_url'] ?? '';
+            $phoneType = $_POST['phone_type'] ?? '';
+            $tourDate = $_POST['tour_date'] ?? date('Y-m-d');
+            $debug = isset($_GET['debug']) || isset($_POST['debug']);
+            
+            if (!$navigationUrl) {
+                ob_end_clean();
+                echo json_encode(['success' => false, 'message' => 'Missing navigation URL']);
+                exit;
+            }
+            
+            // Get user's phone number
+            $phoneQuery = "SELECT string_value FROM bg_user_attributes 
+                          WHERE user_id = :user_id 
+                          AND type = 'profile' 
+                          AND name = 'profile_phone_number' 
+                          AND status = 'active' 
+                          LIMIT 1";
+            $stmt = $database->prepare($phoneQuery);
+            $stmt->execute([':user_id' => $current_user_data['user_id']]);
+            $phoneData = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$phoneData || empty($phoneData['string_value'])) {
+                ob_end_clean();
+                echo json_encode(['success' => false, 'message' => 'No phone number found. Please update your profile.']);
+                exit;
+            }
+            
+            $phoneNumber = $phoneData['string_value'];
+            
+            // Clean phone number (remove non-digits)
+            $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
+            
+            // Ensure it has country code (assume US if 10 digits)
+            if (strlen($phoneNumber) == 10) {
+                $phoneNumber = '1' . $phoneNumber;
+            }
+            
+            // Use app->getshortcode to shorten the URL
+            $shortUrl = $app->getshortcode($navigationUrl, 'tour_nav_' . $tourDate);
+            
+            if (!$shortUrl) {
+                ob_end_clean();
+                echo json_encode(['success' => false, 'message' => 'Failed to create short URL']);
+                exit;
+            }
+            
+            // Build debug info
+            $debugInfo = [];
+            if ($debug) {
+                // Create platform-specific URLs for debug
+                $parsedUrl = parse_url($navigationUrl);
+                parse_str($parsedUrl['query'] ?? '', $params);
+                
+                $appleMapsUrl = 'https://maps.apple.com/?saddr=' . ($params['saddr'] ?? '') . '&daddr=' . ($params['daddr'] ?? '');
+                $googleMapsUrl = $navigationUrl;
+                
+                $debugInfo = [
+                    'original_url' => $navigationUrl,
+                    'shortened_url' => $shortUrl,
+                    'apple_maps_url' => $appleMapsUrl,
+                    'google_maps_url' => $googleMapsUrl,
+                    'phone_type' => $phoneType,
+                    'phone_number' => substr($phoneNumber, 0, -4) . 'XXXX' // Partially hide for privacy
+                ];
+            }
+            
+            // Create SMS message
+            $message = "Your Birthday Tour navigation link for " . date('M j, Y', strtotime($tourDate)) . ":\n" . $shortUrl . "\n\nTap to open in " . ($phoneType === 'iphone' || $phoneType === 'ios' ? 'Maps' : 'Google Maps');
+            
+            // Send SMS using the SMS gateway
+            try {
+                // Include SMS functions
+                require_once($dir['classes'] . '/class.sms.php');
+                
+                // Send SMS
+                $smsResult = sendSingleMessage($phoneNumber, $message);
+                
+                if ($smsResult && isset($smsResult['status']) && $smsResult['status'] !== 'Failed') {
+                    ob_end_clean();
+                    $response = ['success' => true, 'message' => 'Navigation link sent to your phone!'];
+                    if ($debug) {
+                        $response['debug'] = $debugInfo;
+                        $response['sms_result'] = $smsResult;
+                    }
+                    echo json_encode($response);
+                    exit;
+                } else {
+                    // If SMS fails, still return the URL
+                    ob_end_clean();
+                    $response = ['success' => true, 'message' => 'Navigation URL created: ' . $shortUrl, 'url' => $shortUrl];
+                    if ($debug) {
+                        $response['debug'] = $debugInfo;
+                        $response['sms_error'] = $smsResult['error'] ?? 'Unknown SMS error';
+                    }
+                    echo json_encode($response);
+                    exit;
+                }
+                
+            } catch (Exception $e) {
+                ob_end_clean();
+                $response = ['success' => false, 'message' => 'Failed to send SMS: ' . $e->getMessage()];
+                if ($debug) {
+                    $response['debug'] = $debugInfo;
+                }
+                echo json_encode($response);
+                exit;
+            }
     }
 }
 
@@ -896,7 +1007,12 @@ echo '<div class="col-12">';
             <div class="card-body">
                 <div class="small text-muted mb-4">Actions</div>
                 <div class="text-center">
-                    <button class="btn btn-primary" onclick="window.print()">Print/Download Directions</button>
+                    <button class="btn btn-primary me-2" onclick="sendToPhone()">
+                        <i class="bi bi-phone"></i> Send to Phone
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Print/Download
+                    </button>
                 </div>
             </div>
         </div>
@@ -2492,6 +2608,106 @@ function closeChangeLocationModal() {
     if (backdrop) {
         backdrop.remove();
     }
+}
+
+// Send to phone functionality
+function sendToPhone() {
+    console.log('Send to phone clicked');
+    
+    // Check if we have locations
+    if (locations.length < 2) {
+        alert('Please add businesses to your tour first.');
+        return;
+    }
+    
+    // Filter out out-of-range businesses
+    var tourLocations = locations.filter(function(loc, index) {
+        return index === 0 || !loc.isOutOfRange; // Include home and in-range businesses
+    });
+    
+    if (tourLocations.length < 2) {
+        alert('No in-range businesses found for navigation.');
+        return;
+    }
+    
+    // Build waypoints string for navigation URL
+    var origin = encodeURIComponent(tourLocations[0].address);
+    var destination = encodeURIComponent(tourLocations[tourLocations.length - 1].address);
+    var waypoints = [];
+    
+    // Add intermediate stops as waypoints
+    for (var i = 1; i < tourLocations.length - 1; i++) {
+        waypoints.push(encodeURIComponent(tourLocations[i].address));
+    }
+    
+    // Determine phone type and build appropriate URL
+    var phoneType = '<?php echo $current_user_data['phone_type'] ?? 'unknown'; ?>';
+    var navigationUrl = '';
+    
+    if (phoneType === 'iphone' || phoneType === 'ios') {
+        // Apple Maps URL format
+        navigationUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
+        if (waypoints.length > 0) {
+            // Apple Maps doesn't support waypoints in URL, so we'll use Google Maps as fallback
+            navigationUrl = 'https://maps.google.com/maps?saddr=' + origin + '&daddr=' + destination;
+            if (waypoints.length > 0) {
+                navigationUrl += '&waypoints=' + waypoints.join('|');
+            }
+            navigationUrl += '&dirflg=d'; // Driving directions
+        }
+    } else {
+        // Google Maps URL format (Android and fallback)
+        navigationUrl = 'https://maps.google.com/maps?saddr=' + origin + '&daddr=' + destination;
+        if (waypoints.length > 0) {
+            navigationUrl += '&waypoints=' + waypoints.join('|');
+        }
+        navigationUrl += '&dirflg=d'; // Driving directions
+    }
+    
+    console.log('Navigation URL:', navigationUrl);
+    console.log('Phone type:', phoneType);
+    
+    // Check for debug mode
+    var isDebug = window.location.search.includes('debug');
+    
+    // Send to server to shorten and text
+    $.ajax({
+        url: '/myaccount/tour-v2.php' + (isDebug ? '?debug=1' : ''),
+        method: 'POST',
+        data: {
+            action: 'send_to_phone',
+            navigation_url: navigationUrl,
+            phone_type: phoneType,
+            tour_date: '<?php echo $date; ?>',
+            debug: isDebug ? 1 : 0
+        },
+        success: function(response) {
+            if (response.debug) {
+                console.log('=== SEND TO PHONE DEBUG INFO ===');
+                console.log('Original URL:', response.debug.original_url);
+                console.log('Shortened URL:', response.debug.shortened_url);
+                console.log('Apple Maps URL:', response.debug.apple_maps_url);
+                console.log('Google Maps URL:', response.debug.google_maps_url);
+                console.log('Phone Type:', response.debug.phone_type);
+                console.log('Phone Number:', response.debug.phone_number);
+                if (response.sms_result) {
+                    console.log('SMS Result:', response.sms_result);
+                }
+                if (response.sms_error) {
+                    console.log('SMS Error:', response.sms_error);
+                }
+            }
+            
+            if (response.success) {
+                alert(response.message);
+            } else {
+                alert(response.message || 'Failed to send navigation link. Please try again.');
+            }
+        },
+        error: function() {
+            alert('Failed to send navigation link. Please try again.');
+        }
+    });
 }
 </script>
 
