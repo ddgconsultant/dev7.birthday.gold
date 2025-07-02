@@ -481,6 +481,17 @@ if (isset($_POST['action'])) {
             // Create SMS message
             $message = "Your Birthday Tour navigation link for " . date('M j, Y', strtotime($tourDate)) . ":\n" . $shortUrl . "\n\nTap to open in " . ($phoneType === 'iphone' || $phoneType === 'ios' ? 'Maps' : 'Google Maps');
             
+            // Format phone number for display (show last 4 digits)
+            $displayPhone = '';
+            if (strlen($phoneNumber) >= 10) {
+                $displayPhone = '(' . substr($phoneNumber, -10, 3) . ') ' . substr($phoneNumber, -7, 3) . '-' . substr($phoneNumber, -4);
+                if (strlen($phoneNumber) > 10) {
+                    $displayPhone = '+' . substr($phoneNumber, 0, -10) . ' ' . $displayPhone;
+                }
+            } else {
+                $displayPhone = $phoneNumber;
+            }
+            
             // If preview only mode, return without sending SMS
             if ($previewOnly) {
                 ob_end_clean();
@@ -490,7 +501,8 @@ if (isset($_POST['action'])) {
                     'preview' => [
                         'message' => $message,
                         'short_url' => $shortUrl,
-                        'phone_number' => substr($phoneNumber, 0, -4) . 'XXXX'
+                        'phone_number' => $displayPhone,
+                        'raw_phone' => $phoneNumber
                     ]
                 ];
                 if ($debug) {
@@ -508,20 +520,36 @@ if (isset($_POST['action'])) {
                 
                 if ($smsResult && isset($smsResult['status']) && $smsResult['status'] !== 'Failed') {
                     ob_end_clean();
-                    $response = ['success' => true, 'message' => 'Navigation link sent to your phone!'];
+                    $response = [
+                        'success' => true, 
+                        'message' => 'Navigation link sent to ' . $displayPhone . '!',
+                        'phone_number' => $displayPhone,
+                        'short_url' => $shortUrl,
+                        'sms_status' => 'sent'
+                    ];
                     if ($debug) {
                         $response['debug'] = $debugInfo;
                         $response['sms_result'] = $smsResult;
+                        $response['message_text'] = $message;
                     }
                     echo json_encode($response);
                     exit;
                 } else {
                     // If SMS fails, still return the URL
                     ob_end_clean();
-                    $response = ['success' => true, 'message' => 'Navigation URL created: ' . $shortUrl, 'url' => $shortUrl];
+                    $errorMessage = isset($smsResult['error']) ? $smsResult['error'] : 'SMS gateway returned failure status';
+                    $response = [
+                        'success' => true, 
+                        'message' => 'Navigation URL created but SMS failed to send to ' . $displayPhone . '. URL: ' . $shortUrl,
+                        'url' => $shortUrl,
+                        'phone_number' => $displayPhone,
+                        'sms_status' => 'failed',
+                        'sms_error' => $errorMessage
+                    ];
                     if ($debug) {
                         $response['debug'] = $debugInfo;
-                        $response['sms_error'] = $smsResult['error'] ?? 'Unknown SMS error';
+                        $response['sms_result'] = $smsResult;
+                        $response['message_text'] = $message;
                     }
                     echo json_encode($response);
                     exit;
@@ -529,9 +557,16 @@ if (isset($_POST['action'])) {
                 
             } catch (Exception $e) {
                 ob_end_clean();
-                $response = ['success' => false, 'message' => 'Failed to send SMS: ' . $e->getMessage()];
+                $response = [
+                    'success' => false, 
+                    'message' => 'Failed to send SMS to ' . $displayPhone . ': ' . $e->getMessage(),
+                    'phone_number' => $displayPhone,
+                    'short_url' => $shortUrl,
+                    'sms_status' => 'error'
+                ];
                 if ($debug) {
                     $response['debug'] = $debugInfo;
+                    $response['message_text'] = $message;
                 }
                 echo json_encode($response);
                 exit;

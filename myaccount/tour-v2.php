@@ -402,24 +402,32 @@ if (isset($_POST['action'])) {
                 exit;
             }
             
-            // Get user's phone number
-            $phoneQuery = "SELECT string_value FROM bg_user_attributes 
-                          WHERE user_id = :user_id 
-                          AND type = 'profile' 
-                          AND name = 'profile_phone_number' 
-                          AND status = 'active' 
-                          LIMIT 1";
-            $stmt = $database->prepare($phoneQuery);
-            $stmt->execute([':user_id' => $current_user_data['user_id']]);
-            $phoneData = $stmt->fetch(PDO::FETCH_ASSOC);
+            // Check for test phone number in debug mode
+            $testPhone = $_POST['test_phone'] ?? null;
             
-            if (!$phoneData || empty($phoneData['string_value'])) {
-                ob_end_clean();
-                echo json_encode(['success' => false, 'message' => 'No phone number found. Please update your profile.']);
-                exit;
+            if ($debug && $testPhone) {
+                // Use test phone number in debug mode
+                $phoneNumber = $testPhone;
+            } else {
+                // Get user's phone number from profile
+                $phoneQuery = "SELECT string_value FROM bg_user_attributes 
+                              WHERE user_id = :user_id 
+                              AND type = 'profile' 
+                              AND name = 'profile_phone_number' 
+                              AND status = 'active' 
+                              LIMIT 1";
+                $stmt = $database->prepare($phoneQuery);
+                $stmt->execute([':user_id' => $current_user_data['user_id']]);
+                $phoneData = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$phoneData || empty($phoneData['string_value'])) {
+                    ob_end_clean();
+                    echo json_encode(['success' => false, 'message' => 'No phone number found. Please update your profile.']);
+                    exit;
+                }
+                
+                $phoneNumber = $phoneData['string_value'];
             }
-            
-            $phoneNumber = $phoneData['string_value'];
             
             // Clean phone number (remove non-digits)
             $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
@@ -515,6 +523,17 @@ if (isset($_POST['action'])) {
             // Create SMS message
             $message = "Your Birthday Tour navigation link for " . date('M j, Y', strtotime($tourDate)) . ":\n" . $shortUrl . "\n\nTap to open in " . ($phoneType === 'iphone' || $phoneType === 'ios' ? 'Maps' : 'Google Maps');
             
+            // Format phone number for display (show last 4 digits)
+            $displayPhone = '';
+            if (strlen($phoneNumber) >= 10) {
+                $displayPhone = '(' . substr($phoneNumber, -10, 3) . ') ' . substr($phoneNumber, -7, 3) . '-' . substr($phoneNumber, -4);
+                if (strlen($phoneNumber) > 10) {
+                    $displayPhone = '+' . substr($phoneNumber, 0, -10) . ' ' . $displayPhone;
+                }
+            } else {
+                $displayPhone = $phoneNumber;
+            }
+            
             // If preview only mode, return without sending SMS
             if ($previewOnly) {
                 ob_end_clean();
@@ -524,7 +543,8 @@ if (isset($_POST['action'])) {
                     'preview' => [
                         'message' => $message,
                         'short_url' => $shortUrl,
-                        'phone_number' => substr($phoneNumber, 0, -4) . 'XXXX'
+                        'phone_number' => $displayPhone,
+                        'raw_phone' => $phoneNumber
                     ]
                 ];
                 if ($debug) {
@@ -542,20 +562,36 @@ if (isset($_POST['action'])) {
                 
                 if ($smsResult && isset($smsResult['status']) && $smsResult['status'] !== 'Failed') {
                     ob_end_clean();
-                    $response = ['success' => true, 'message' => 'Navigation link sent to your phone!'];
+                    $response = [
+                        'success' => true, 
+                        'message' => 'Navigation link sent to ' . $displayPhone . '!',
+                        'phone_number' => $displayPhone,
+                        'short_url' => $shortUrl,
+                        'sms_status' => 'sent'
+                    ];
                     if ($debug) {
                         $response['debug'] = $debugInfo;
                         $response['sms_result'] = $smsResult;
+                        $response['message_text'] = $message;
                     }
                     echo json_encode($response);
                     exit;
                 } else {
                     // If SMS fails, still return the URL
                     ob_end_clean();
-                    $response = ['success' => true, 'message' => 'Navigation URL created: ' . $shortUrl, 'url' => $shortUrl];
+                    $errorMessage = isset($smsResult['error']) ? $smsResult['error'] : 'SMS gateway returned failure status';
+                    $response = [
+                        'success' => true, 
+                        'message' => 'Navigation URL created but SMS failed to send to ' . $displayPhone . '. URL: ' . $shortUrl,
+                        'url' => $shortUrl,
+                        'phone_number' => $displayPhone,
+                        'sms_status' => 'failed',
+                        'sms_error' => $errorMessage
+                    ];
                     if ($debug) {
                         $response['debug'] = $debugInfo;
-                        $response['sms_error'] = $smsResult['error'] ?? 'Unknown SMS error';
+                        $response['sms_result'] = $smsResult;
+                        $response['message_text'] = $message;
                     }
                     echo json_encode($response);
                     exit;
@@ -563,9 +599,16 @@ if (isset($_POST['action'])) {
                 
             } catch (Exception $e) {
                 ob_end_clean();
-                $response = ['success' => false, 'message' => 'Failed to send SMS: ' . $e->getMessage()];
+                $response = [
+                    'success' => false, 
+                    'message' => 'Failed to send SMS to ' . $displayPhone . ': ' . $e->getMessage(),
+                    'phone_number' => $displayPhone,
+                    'short_url' => $shortUrl,
+                    'sms_status' => 'error'
+                ];
                 if ($debug) {
                     $response['debug'] = $debugInfo;
+                    $response['message_text'] = $message;
                 }
                 echo json_encode($response);
                 exit;
@@ -2912,6 +2955,16 @@ function sendToPhone() {
     // Check for debug mode
     var isDebug = window.location.search.includes('debug');
     
+    // In debug mode, allow custom phone number
+    var testPhoneNumber = null;
+    if (isDebug) {
+        var customPhone = prompt('Debug Mode: Enter a phone number to test SMS sending (or leave blank to use your profile number):');
+        if (customPhone && customPhone.trim()) {
+            testPhoneNumber = customPhone.trim();
+            console.log('Using test phone number:', testPhoneNumber);
+        }
+    }
+    
     // Send to server to shorten and text
     $.ajax({
         url: '/myaccount/tour-v2.php' + (isDebug ? '?debug=1' : ''),
@@ -2922,7 +2975,8 @@ function sendToPhone() {
             phone_type: phoneType,
             phone_type_source: phoneTypeSource,
             tour_date: '<?php echo $date; ?>',
-            debug: isDebug ? 1 : 0
+            debug: isDebug ? 1 : 0,
+            test_phone: testPhoneNumber
         },
         success: function(response) {
             if (response.debug) {
@@ -2951,7 +3005,40 @@ function sendToPhone() {
             }
             
             if (response.success) {
-                alert(response.message);
+                // Create a more informative message
+                var message = response.message;
+                
+                // Show phone number if available
+                if (response.phone_number) {
+                    message += '\n\nPhone: ' + response.phone_number;
+                }
+                
+                // Show SMS status
+                if (response.sms_status === 'sent') {
+                    message += '\nSMS Status: ✓ Sent successfully';
+                } else if (response.sms_status === 'failed') {
+                    message += '\nSMS Status: ✗ Failed';
+                    if (response.sms_error) {
+                        message += '\nError: ' + response.sms_error;
+                    }
+                }
+                
+                // Show the short URL if SMS failed
+                if (response.url) {
+                    message += '\n\nYou can manually copy this link:\n' + response.url;
+                }
+                
+                // In debug mode, show more details
+                if (isDebug && response.debug) {
+                    message += '\n\n=== DEBUG INFO ===';
+                    message += '\nOriginal URL: ' + response.debug.original_url;
+                    message += '\nShortened URL: ' + response.debug.shortened_url;
+                    if (response.message_text) {
+                        message += '\n\nSMS Message Text:\n' + response.message_text;
+                    }
+                }
+                
+                alert(message);
                 
                 // In debug mode, offer to test the navigation URL
                 if (isDebug && response.debug && response.debug.shortened_url) {
@@ -2968,7 +3055,17 @@ function sendToPhone() {
                     }
                 }
             } else {
-                alert(response.message || 'Failed to send navigation link. Please try again.');
+                var errorMessage = response.message || 'Failed to send navigation link. Please try again.';
+                
+                if (response.phone_number) {
+                    errorMessage += '\n\nPhone: ' + response.phone_number;
+                }
+                
+                if (response.short_url) {
+                    errorMessage += '\n\nShortened URL: ' + response.short_url;
+                }
+                
+                alert(errorMessage);
             }
         },
         error: function() {
