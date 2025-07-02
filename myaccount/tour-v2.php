@@ -430,15 +430,53 @@ if (isset($_POST['action'])) {
             }
             
             // Use app->getshortcode to shorten the URL
-            $shortCodeData = $app->getshortcode($navigationUrl, 'tour_nav_' . $tourDate);
-            
-            if (!$shortCodeData || !isset($shortCodeData['shorturl'])) {
-                ob_end_clean();
-                $errorMsg = 'Failed to create short URL';
-                if ($debug && $shortCodeData) {
-                    $errorMsg .= ' - API Response: ' . json_encode($shortCodeData);
+            try {
+                // First try the built-in method
+                $shortCodeData = @$app->getshortcode($navigationUrl, 'tour_nav_' . $tourDate);
+                
+                // If that fails, try direct cURL
+                if (!$shortCodeData || !isset($shortCodeData['shorturl'])) {
+                    $apiUrl = 'https://bd.gold/api.php?url=' . urlencode($navigationUrl) . '&cust=' . urlencode('tour_nav_' . $tourDate);
+                    
+                    $ch = curl_init();
+                    curl_setopt($ch, CURLOPT_URL, $apiUrl);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                    $apiResponse = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+                    
+                    if ($apiResponse) {
+                        // Extract JSON from response
+                        $jsonStartPos = strpos($apiResponse, '{');
+                        $jsonEndPos = strrpos($apiResponse, '}');
+                        
+                        if ($jsonStartPos !== false && $jsonEndPos !== false) {
+                            $json = substr($apiResponse, $jsonStartPos, $jsonEndPos - $jsonStartPos + 1);
+                            $shortCodeData = json_decode($json, true);
+                        }
+                    }
+                    
+                    if (!$shortCodeData || !isset($shortCodeData['shorturl'])) {
+                        ob_end_clean();
+                        $errorMsg = 'Failed to create short URL';
+                        if ($debug) {
+                            $errorMsg .= ' - Navigation URL length: ' . strlen($navigationUrl);
+                            $errorMsg .= ' - HTTP Code: ' . $httpCode;
+                            if ($shortCodeData) {
+                                $errorMsg .= ' - API Response: ' . json_encode($shortCodeData);
+                            } else {
+                                $errorMsg .= ' - Raw Response: ' . substr($apiResponse, 0, 200);
+                            }
+                        }
+                        echo json_encode(['success' => false, 'message' => $errorMsg]);
+                        exit;
+                    }
                 }
-                echo json_encode(['success' => false, 'message' => $errorMsg]);
+            } catch (Exception $e) {
+                ob_end_clean();
+                echo json_encode(['success' => false, 'message' => 'URL shortening error: ' . $e->getMessage()]);
                 exit;
             }
             
