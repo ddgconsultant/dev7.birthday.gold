@@ -2567,7 +2567,7 @@ function sendToPhone() {
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=<?php echo $sitesettings['GOOGLEAPI']['browser_key'] ?? ''; ?>&libraries=places,marker&callback=initMap&v=weekly"></script>
 
 <?php
-// Footer
+// Footer breaks Google Maps, so we skip it and just output the page
 $app->outputpage();
 
 /* 
@@ -2592,10 +2592,4 @@ LOCATION DATA STORAGE:
      - description: JSON with address, lat, lng, city, state, zip
    - Applied to all tours for this user
 */
-
-// Close container
-echo '</div>';
-
-// Include footer
-include($dir['core_components'] . '/bg_footer.inc');
 ?>
