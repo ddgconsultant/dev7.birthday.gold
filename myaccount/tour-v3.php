@@ -1292,6 +1292,11 @@ echo '<div class="mobile-container">';
             <button class="btn btn-sm btn-secondary" onclick="sendToPhone()" title="Send to phone">
                 <i class="bi bi-phone"></i>
             </button>
+            <?php if (isset($_GET['debug'])): ?>
+            <button class="btn btn-sm btn-outline-secondary" onclick="getTestingLinks()" title="Get test links">
+                <i class="bi bi-bug"></i>
+            </button>
+            <?php endif; ?>
             <button class="btn btn-sm btn-secondary" onclick="window.print()" title="Print">
                 <i class="bi bi-printer"></i>
             </button>
@@ -3078,6 +3083,102 @@ function closeChangeLocationModal() {
     if (backdrop) {
         backdrop.remove();
     }
+}
+
+// Get testing links for both platforms
+function getTestingLinks() {
+    // Check if we have locations
+    if (locations.length < 2) {
+        alert('Please add businesses to your tour first.');
+        return;
+    }
+    
+    // Filter out out-of-range businesses
+    var tourLocations = locations.filter(function(loc, index) {
+        return index === 0 || !loc.isOutOfRange;
+    });
+    
+    if (tourLocations.length < 2) {
+        alert('No in-range businesses found for navigation.');
+        return;
+    }
+    
+    // Build waypoints
+    var origin = encodeURIComponent(tourLocations[0].address);
+    var destination = encodeURIComponent(tourLocations[tourLocations.length - 1].address);
+    var waypoints = [];
+    
+    for (var i = 1; i < tourLocations.length - 1; i++) {
+        waypoints.push(encodeURIComponent(tourLocations[i].address));
+    }
+    
+    // Generate Apple Maps URL
+    var appleMapsUrl = 'https://maps.apple.com/?dirflg=d';
+    appleMapsUrl += '&daddr=' + origin;  // Starting location
+    for (var i = 0; i < waypoints.length; i++) {
+        appleMapsUrl += '&daddr=' + waypoints[i];
+    }
+    appleMapsUrl += '&daddr=' + destination;
+    
+    // Generate Google Maps URL
+    var allStops = [origin].concat(waypoints).concat([destination]);
+    var googleMapsUrl = 'https://www.google.com/maps/dir/' + allStops.join('/');
+    
+    // Show links in a modal or alert
+    var message = '=== TESTING LINKS ===\n\n';
+    message += 'APPLE MAPS (iPhone):\n' + appleMapsUrl + '\n\n';
+    message += 'GOOGLE MAPS (Android):\n' + googleMapsUrl + '\n\n';
+    message += 'Copy these URLs to test on different devices.';
+    
+    // Create a modal with copyable links
+    var modal = $('<div class="modal fade" tabindex="-1">');
+    var modalDialog = $('<div class="modal-dialog modal-lg">').appendTo(modal);
+    var modalContent = $('<div class="modal-content">').appendTo(modalDialog);
+    
+    var modalHeader = $('<div class="modal-header">').appendTo(modalContent);
+    $('<h5 class="modal-title">Navigation Testing Links</h5>').appendTo(modalHeader);
+    $('<button type="button" class="btn-close" data-bs-dismiss="modal"></button>').appendTo(modalHeader);
+    
+    var modalBody = $('<div class="modal-body">').appendTo(modalContent);
+    
+    // Apple Maps section
+    $('<h6>Apple Maps URL (iPhone)</h6>').appendTo(modalBody);
+    var appleInput = $('<input type="text" class="form-control mb-2" readonly>').val(appleMapsUrl).appendTo(modalBody);
+    var appleButtons = $('<div class="mb-4">').appendTo(modalBody);
+    $('<button class="btn btn-sm btn-primary me-2">Copy</button>').click(function() {
+        appleInput.select();
+        document.execCommand('copy');
+        $(this).text('Copied!');
+        setTimeout(() => $(this).text('Copy'), 2000);
+    }).appendTo(appleButtons);
+    $('<a class="btn btn-sm btn-secondary" target="_blank">Test in Browser</a>').attr('href', appleMapsUrl).appendTo(appleButtons);
+    
+    // Google Maps section
+    $('<h6>Google Maps URL (Android)</h6>').appendTo(modalBody);
+    var googleInput = $('<input type="text" class="form-control mb-2" readonly>').val(googleMapsUrl).appendTo(modalBody);
+    var googleButtons = $('<div class="mb-4">').appendTo(modalBody);
+    $('<button class="btn btn-sm btn-primary me-2">Copy</button>').click(function() {
+        googleInput.select();
+        document.execCommand('copy');
+        $(this).text('Copied!');
+        setTimeout(() => $(this).text('Copy'), 2000);
+    }).appendTo(googleButtons);
+    $('<a class="btn btn-sm btn-secondary" target="_blank">Test in Browser</a>').attr('href', googleMapsUrl).appendTo(googleButtons);
+    
+    // Tour details
+    $('<h6>Tour Details</h6>').appendTo(modalBody);
+    var details = $('<ul>').appendTo(modalBody);
+    tourLocations.forEach(function(loc, index) {
+        $('<li>').text('Stop ' + (index + 1) + ': ' + loc.name + ' - ' + loc.address).appendTo(details);
+    });
+    
+    modal.appendTo('body');
+    modal.modal('show');
+    
+    // Clean up when closed
+    modal.on('hidden.bs.modal', function() {
+        modal.remove();
+    });
 }
 
 // Send to phone functionality
