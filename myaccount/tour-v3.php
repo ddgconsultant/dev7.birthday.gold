@@ -3143,21 +3143,24 @@ function sendToPhone() {
     if (phoneType === 'iphone' || phoneType === 'ios') {
         // Apple Maps URL format
         if (waypoints.length > 0) {
-            // Apple Maps doesn't support waypoints in URL, so we'll use Google Maps as fallback
-            navigationUrl = 'https://maps.google.com/maps?saddr=' + origin + '&daddr=' + destination;
-            navigationUrl += '&waypoints=' + waypoints.join('%7C'); // %7C is URL-encoded |
-            navigationUrl += '&dirflg=d'; // Driving directions
+            // Apple Maps doesn't support waypoints in URL, so we'll use Google Maps dir/ format
+            var allStops = [origin].concat(waypoints.map(decodeURIComponent)).concat([decodeURIComponent(destination)]);
+            navigationUrl = 'https://www.google.com/maps/dir/' + allStops.join('/');
         } else {
             // No waypoints, can use Apple Maps
             navigationUrl = 'https://maps.apple.com/?saddr=' + origin + '&daddr=' + destination;
         }
     } else {
         // Google Maps URL format (Android and fallback)
-        navigationUrl = 'https://maps.google.com/maps?saddr=' + origin + '&daddr=' + destination;
+        // Use the dir/ format which better handles multiple waypoints
         if (waypoints.length > 0) {
-            navigationUrl += '&waypoints=' + waypoints.join('%7C'); // %7C is URL-encoded |
+            // Build the full route with all stops
+            var allStops = [origin].concat(waypoints.map(decodeURIComponent)).concat([decodeURIComponent(destination)]);
+            navigationUrl = 'https://www.google.com/maps/dir/' + allStops.join('/');
+        } else {
+            // Simple two-point navigation
+            navigationUrl = 'https://maps.google.com/maps?saddr=' + origin + '&daddr=' + destination + '&dirflg=d';
         }
-        navigationUrl += '&dirflg=d'; // Driving directions
     }
     
     console.log('Navigation URL:', navigationUrl);
