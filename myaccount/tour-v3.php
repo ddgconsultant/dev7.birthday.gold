@@ -603,19 +603,20 @@ foreach ($listofcompanies as &$company_item) {
 $additionalstyles = '<style>
 /* Mobile-first responsive design */
 .mobile-container {
-    padding: 0 15px;
-    margin: 0 auto;
+    padding: 0 15px; /* Standard container padding */
+    margin: 0;
     max-width: 100%;
     padding-bottom: 100px; /* Space for FAB */
 }
 
 /* Mobile header styling */
 .mobile-header {
-    margin: -15px -15px 0 -15px; /* Negative margins to counter container padding */
+    padding: 1rem;
     border-radius: 0;
+    margin: 0 -15px; /* Extend header to full width */
 }
 
-/* Mobile tabs navigation */
+/* Mobile tabs navigation - full width */
 .mobile-tabs {
     display: flex;
     background: white;
@@ -625,7 +626,7 @@ $additionalstyles = '<style>
     position: sticky;
     top: 0;
     z-index: 100;
-    margin: 0 -15px; /* Full width */
+    margin: 0 -15px; /* Negative margin to extend tabs to full width */
 }
 
 .mobile-tab {
@@ -655,12 +656,20 @@ $additionalstyles = '<style>
 
 .mobile-tab-content {
     display: none !important;
-    padding: 16px;
+    padding: 1rem;
     animation: fadeIn 0.3s ease;
 }
 
 .mobile-tab-content.active {
     display: block !important;
+}
+
+/* Map container should be full width */
+.mobile-map-container {
+    height: 50vh;
+    min-height: 300px;
+    width: 100%;
+    overflow: hidden;
 }
 
 @keyframes fadeIn {
@@ -723,16 +732,6 @@ $additionalstyles = '<style>
 /* Business actions uses Bootstrap gap utilities */
 
 /* Use Bootstrap button classes instead of custom styles */
-
-/* Mobile map container */
-.mobile-map-container {
-    height: 50vh;
-    min-height: 300px;
-    width: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 16px;
-}
 
 /* Mobile directions panel */
 .mobile-directions {
@@ -835,23 +834,31 @@ $additionalstyles = '<style>
         padding: 20px;
     }
     
+    .mobile-header {
+        border-radius: 12px 12px 0 0;
+        margin: 0;
+    }
+    
+    .mobile-tabs {
+        border-radius: 0 0 12px 12px;
+        margin-bottom: 20px;
+        margin-left: 0;
+        margin-right: 0;
+        padding: 0;
+    }
+    
     .mobile-map-container {
         height: 70vh;
+        border-radius: 12px;
     }
     
     .business-card {
         padding: 20px;
     }
-    
-    .mobile-tabs {
-        border-radius: 12px;
-        margin-bottom: 20px;
-    }
 }
 
 /* Override existing sortable styles for mobile */
 .sortable_item {
-    cursor: move;
     transition: all 0.2s ease;
 }
 
@@ -859,7 +866,6 @@ $additionalstyles = '<style>
 .sortable_item.out-of-range {
     opacity: 0.5;
     background-color: #f8f9fa;
-    cursor: not-allowed;
 }
 
 .sortable_item.out-of-range .sortable_item_handle {
@@ -953,6 +959,16 @@ $additionalstyles = '<style>
 /* Fix Google autocomplete z-index for modals */
 .pac-container {
     z-index: 10000 !important;
+}
+
+/* Interactive badge styles */
+.badge[role="button"] {
+    transition: all 0.2s ease;
+}
+
+.badge[role="button"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 /* Hanging bullet styles for directions - timeline style */
@@ -1129,7 +1145,7 @@ echo '<div class="mobile-container">';
 ?>
 
 <!-- Mobile Header -->
-<div class="mobile-header bg-white shadow-sm p-3 mb-3">
+<div class="mobile-header bg-white shadow-sm mb-3">
     <div class="d-flex justify-content-between align-items-center">
         <div>
             <h5 class="mb-1">Birthday Tour</h5>
@@ -1145,7 +1161,9 @@ echo '<div class="mobile-container">';
         </div>
     </div>
     <div class="mt-2">
-        <span class="badge bg-primary"><?php echo count($listofcompanies); ?> businesses</span>
+        <span class="badge bg-primary" role="button" data-bs-toggle="modal" data-bs-target="#businessCountModal" style="cursor: pointer;">
+            <?php echo count($listofcompanies); ?> businesses
+        </span>
         <?php
         $outOfRangeCount = 0;
         foreach ($listofcompanies as $company) {
@@ -1154,7 +1172,9 @@ echo '<div class="mobile-container">';
             }
         }
         if ($outOfRangeCount > 0): ?>
-            <span class="badge bg-danger"><?php echo $outOfRangeCount; ?> out of range</span>
+            <span class="badge bg-danger" role="button" data-bs-toggle="modal" data-bs-target="#outOfRangeModal" style="cursor: pointer;">
+                <?php echo $outOfRangeCount; ?> out of range
+            </span>
         <?php endif; ?>
     </div>
 </div>
@@ -1324,7 +1344,7 @@ echo '<div class="mobile-container">';
                             <i class="bi bi-geo-alt"></i> <?php echo $companyaddress; ?>
                         <?php endif; ?>
                         <?php if (!empty($item_company['is_forced_location'])): ?>
-                            <span class="badge bg-info text-white ms-1" style="font-size: 10px;">Locked</span>
+                            <span class="badge bg-info text-white ms-1" style="font-size: 10px;">Pinned</span>
                         <?php endif; ?>
                     </div>
                     <?php if (!empty($item_company['description'])): ?>
@@ -1340,7 +1360,7 @@ echo '<div class="mobile-container">';
                 <button class="btn btn-outline-secondary btn-sm pick-location" 
                         data-company-id="<?php echo $item_company['company_id']; ?>" 
                         data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
-                    <i class="bi bi-geo"></i> Change Location
+                    <i class="bi bi-geo-alt"></i> Change Location
                 </button>
                 <a href="/myaccount/enrollments-individual?company_id=<?php echo $item_company['company_id']; ?>" 
                    class="btn btn-primary btn-sm">
@@ -1358,7 +1378,7 @@ echo '<div class="mobile-container">';
     
     <!-- Reorder notice and button -->
     <div class="text-center mt-3">
-        <p class="text-muted small mb-2"><i class="bi bi-arrows-move"></i> Drag businesses to reorder</p>
+        <p class="text-muted small mb-2"><i class="bi bi-grip-vertical"></i> Drag businesses to reorder</p>
         <button class="btn btn-primary btn-sm draw_map" id="draw_map" style="display: none;" onclick="DrawNewMap()">
             <i class="bi bi-arrow-clockwise"></i> Update Route
         </button>
@@ -1434,7 +1454,7 @@ echo '<div class="mobile-container">';
                         <div class="form-check mt-3" id="force-location-container" style="display: none;">
                             <input class="form-check-input" type="checkbox" id="force-location-check">
                             <label class="form-check-label" for="force-location-check">
-                                <strong>Force this location</strong><br>
+                                <strong>Pin this location</strong><br>
                                 <small class="text-muted">Keep this location even when starting location changes</small>
                             </label>
                         </div>
@@ -1447,6 +1467,66 @@ echo '<div class="mobile-container">';
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="confirm-location" disabled>Use Selected Location</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Business Count Modal -->
+<div class="modal fade" id="businessCountModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tour Businesses</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Your tour includes <strong><?php echo count($listofcompanies); ?> businesses</strong> that you're enrolled in.</p>
+                <p>The tour will guide you to visit each business location to collect your birthday rewards.</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> <strong>Tips:</strong>
+                    <ul class="mb-0">
+                        <li>Call ahead to confirm reward availability</li>
+                        <li>Some rewards may require showing ID</li>
+                        <li>Check business hours before visiting</li>
+                        <li>Drag businesses to reorder your route</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add More Businesses
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Out of Range Modal -->
+<div class="modal fade" id="outOfRangeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Out of Range Businesses</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong><?php echo $outOfRangeCount; ?> businesses</strong> are more than 100 miles from your starting location.</p>
+                <p>These businesses are:</p>
+                <ul>
+                    <li>Shown with reduced visibility (grayed out)</li>
+                    <li>Excluded from the driving route</li>
+                    <li>Not included in turn-by-turn directions</li>
+                </ul>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> <strong>Why are they excluded?</strong>
+                    <p class="mb-0">Businesses over 100 miles away would significantly increase your driving time. We recommend visiting these on a separate trip or when you're traveling to that area.</p>
+                </div>
+                <p class="mt-3">You can still view their details, but they won't be part of today's route.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Understood</button>
             </div>
         </div>
     </div>
@@ -2207,7 +2287,6 @@ window.addEventListener('load', function() {
             handle: ".sortable_item_handle",
             axis: "y",
             items: ".sortable_item:not(.out-of-range)",
-            cursor: "move",
             start: function(event, ui) {
                 jQuery(this).addClass('sorting-active');
                 console.log('Started sorting');
@@ -2230,9 +2309,12 @@ window.addEventListener('load', function() {
 
 // Function to reload map after reordering
 function DrawNewMap() {
+    console.log('DrawNewMap called');
+    console.log('Original locations:', locations);
+    
     // Update locations based on new order
     var newLocations = [{
-        name: "Your Home",
+        name: locations[0].name, // Keep the original name
         address: locations[0].address,
         lat: locations[0].lat,
         lng: locations[0].lng,
@@ -2241,23 +2323,33 @@ function DrawNewMap() {
     
     $('.sortable_item').each(function() {
         var $item = $(this);
-        var businessName = $item.find('.small.fw-bold').text().trim();
-        var isOutOfRange = $item.hasClass('out-of-range');
+        var businessName = $item.data('company-name');
+        var isOutOfRange = $item.data('out-of-range') === 'true';
         
-        // Remove the distance badge text if present
-        var distanceBadgeText = $item.find('.out-of-range-badge').text();
-        if (distanceBadgeText) {
-            businessName = businessName.replace(distanceBadgeText, '').trim();
+        console.log('Processing business:', businessName, 'Out of range:', isOutOfRange);
+        
+        // Skip out of range businesses
+        if (isOutOfRange) {
+            return true; // continue to next iteration
         }
         
         // Find the business in original locations
+        var found = false;
         for (var i = 1; i < locations.length; i++) {
             if (locations[i].name === businessName) {
                 newLocations.push(locations[i]);
+                found = true;
+                console.log('Found business in locations:', locations[i]);
                 break;
             }
         }
+        
+        if (!found) {
+            console.log('Business not found in locations array:', businessName);
+        }
     });
+    
+    console.log('New locations after reorder:', newLocations);
     
     // Update global locations array
     locations = newLocations;

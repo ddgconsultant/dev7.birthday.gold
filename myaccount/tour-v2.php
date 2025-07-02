@@ -603,7 +603,6 @@ foreach ($listofcompanies as &$company_item) {
 $additionalstyles = '<style>
 /* Sortable styles */
 .sortable_item {
-    cursor: move;
     transition: all 0.2s ease;
 }
 
@@ -611,7 +610,6 @@ $additionalstyles = '<style>
 .sortable_item.out-of-range {
     opacity: 0.5;
     background-color: #f8f9fa;
-    cursor: not-allowed;
 }
 
 .sortable_item.out-of-range .sortable_item_handle {
@@ -1054,7 +1052,7 @@ echo '<div class="col-12">';
                                         <?php echo $companyaddress; ?>
                                     <?php endif; ?>
                                     <?php if (!empty($item_company['is_forced_location'])): ?>
-                                        <span class="badge bg-info text-white ms-1">Forced</span>
+                                        <span class="badge bg-info text-white ms-1">Pinned</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -1073,7 +1071,7 @@ echo '<div class="col-12">';
                 
                 <!-- Draw new map button -->
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <p class="text-muted small mb-2"><i class="bi bi-info-circle"></i> Drag businesses to reorder your tour route</p>
+                    <p class="text-muted small mb-2"><i class="bi bi-grip-vertical"></i> Drag businesses to reorder your tour route</p>
                     <button class="btn btn-secondary draw_map" id="draw_map" style="display: none;" onclick="DrawNewMap()">
                         <i class="bi bi-arrow-clockwise"></i> Update Map with New Route
                     </button>
@@ -1117,7 +1115,7 @@ echo '<div class="col-12">';
                         <div class="form-check mt-3" id="force-location-container" style="display: none;">
                             <input class="form-check-input" type="checkbox" id="force-location-check">
                             <label class="form-check-label" for="force-location-check">
-                                <strong>Force this location</strong><br>
+                                <strong>Pin this location</strong><br>
                                 <small class="text-muted">Keep this location even when starting location changes</small>
                             </label>
                         </div>
@@ -1831,7 +1829,6 @@ window.addEventListener('load', function() {
             handle: ".sortable_item_handle",
             axis: "y",
             items: ".sortable_item:not(.out-of-range)",
-            cursor: "move",
             start: function(event, ui) {
                 jQuery(this).addClass('sorting-active');
                 console.log('Started sorting');
@@ -1854,9 +1851,12 @@ window.addEventListener('load', function() {
 
 // Function to reload map after reordering
 function DrawNewMap() {
+    console.log('DrawNewMap called');
+    console.log('Original locations:', locations);
+    
     // Update locations based on new order
     var newLocations = [{
-        name: "Your Home",
+        name: locations[0].name, // Keep the original name
         address: locations[0].address,
         lat: locations[0].lat,
         lng: locations[0].lng,
@@ -1865,8 +1865,16 @@ function DrawNewMap() {
     
     $('.sortable_item').each(function() {
         var $item = $(this);
+        var isOutOfRange = $item.data('out-of-range') === 'true';
+        
+        console.log('Processing item, out of range:', isOutOfRange);
+        
+        // Skip out of range businesses
+        if (isOutOfRange) {
+            return true; // continue to next iteration
+        }
+        
         var businessName = $item.find('.small.fw-bold').text().trim();
-        var isOutOfRange = $item.hasClass('out-of-range');
         
         // Remove the distance badge text if present
         var distanceBadgeText = $item.find('.out-of-range-badge').text();
@@ -1874,14 +1882,25 @@ function DrawNewMap() {
             businessName = businessName.replace(distanceBadgeText, '').trim();
         }
         
+        console.log('Business name after cleanup:', businessName);
+        
         // Find the business in original locations
+        var found = false;
         for (var i = 1; i < locations.length; i++) {
             if (locations[i].name === businessName) {
                 newLocations.push(locations[i]);
+                found = true;
+                console.log('Found business in locations:', locations[i]);
                 break;
             }
         }
+        
+        if (!found) {
+            console.log('Business not found in locations array:', businessName);
+        }
     });
+    
+    console.log('New locations after reorder:', newLocations);
     
     // Update global locations array
     locations = newLocations;

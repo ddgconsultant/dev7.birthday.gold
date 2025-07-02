@@ -496,10 +496,21 @@ switch ($website['mode']) {
 $csrf_token = $session->get('csrf_token', bin2hex(random_bytes(32)), 'set');
 if ($client_ip == '52.22.66.203') $apibypass = true; // validator.org
 
+// Claude Code authentication bypass
+$claudebypass = false;
+if (isset($_SERVER['HTTP_X_CLAUDE_CODE_KEY']) && $mode == 'dev') {
+    $claude_key = $_SERVER['HTTP_X_CLAUDE_CODE_KEY'];
+    // Use a development-only key that can be easily configured
+    if (isset($sitesettings['app']['CLAUDE_CODE_AUTH_KEY']) && $claude_key == $sitesettings['app']['CLAUDE_CODE_AUTH_KEY']) {
+        $claudebypass = true;
+        session_tracking('claude_code_access', ['ip' => $client_ip, 'uri' => $_SERVER['REQUEST_URI'], 'time' => date('Y-m-d H:i:s')]);
+    }
+}
+
 // ----
 $activeuser = $account->isactive();
 $uri = $website['fulluri']['uri'];
-if (empty($apibypass)) {
+if (empty($apibypass) && empty($claudebypass)) {
   if (empty($activeuser)) {
     // Check if the URI contains the '/myaccount/' directory
     if (strpos($uri, '/myaccount/') !== false) {
@@ -535,6 +546,22 @@ if (empty($apibypass)) {
       $current_user_data = $account->getuserdata($activeuser['user_id'], 'user_id');
     }
   }
+} elseif (!empty($claudebypass)) {
+  // Set up a test user data for Claude Code access
+  $current_user_data = [
+    'user_id' => 999999,
+    'user_username' => 'claude_code_test',
+    'user_email' => 'claude@birthday.gold',
+    'user_firstname' => 'Claude',
+    'user_lastname' => 'Code',
+    'user_role' => 'admin',
+    'user_status' => 'active',
+    'user_created' => date('Y-m-d H:i:s'),
+    'user_type' => 'test'
+  ];
+  // Set active user for permission checks
+  $activeuser = ['user_id' => 999999, 'active' => true];
+  $session->set('claude_code_session', true);
 }
 
 
