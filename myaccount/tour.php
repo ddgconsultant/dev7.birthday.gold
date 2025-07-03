@@ -1004,6 +1004,70 @@ $additionalstyles = '<style>
         border-radius: 4px;
         margin-left: 0.5rem;
     }
+    
+    /* Pick location link styling on mobile */
+    .sortable_item .pick-location {
+        font-size: 0.875rem;
+    }
+    
+    /* Sortable handle styling on mobile */
+    .sortable_item .sortable_item_handle {
+        padding: 4px 8px;
+        margin: 0;
+    }
+    
+    /* Adjust icon size on mobile for better touch targets */
+    .sortable_item .sortable_item_handle i {
+        font-size: 1.25rem;
+    }
+    
+    /* Ensure spinner is visible in buttons */
+    .btn .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.2em;
+    }
+    
+    /* Fix turn-by-turn directions scrolling on mobile/iPad */
+    .mobile-directions {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 200px); /* Adjust based on header height */
+        max-height: 600px;
+    }
+    
+    .mobile-directions-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        flex-shrink: 0;
+    }
+    
+    .mobile-directions-title {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    
+    #directions-panel-mobile {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        padding: 1rem !important;
+    }
+    
+    /* Ensure proper height for the directions tab content */
+    #directions-tab.mobile-tab-content {
+        height: calc(100vh - 150px);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #directions-tab #route-map-mobile {
+        flex-shrink: 0;
+    }
 }
 
 @media (min-width: 992px) {
@@ -1024,6 +1088,39 @@ $additionalstyles = '<style>
 /* Sortable styles */
 .sortable_item {
     transition: all 0.2s ease;
+}
+
+/* Fix wrapping of pick location and drag handle on all screen sizes */
+.sortable_item .ms-4.small {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.sortable_item .pick-location {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Control flex layout of sortable items */
+.sortable_item > div > .d-flex:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sortable_item .ms-4:not(.small) {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+/* Apply ellipsis to business address on mobile to save space */
+.sortable_item .company-address {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
 }
 
 /* Out of range business styles */
@@ -1769,7 +1866,7 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
     <!-- Reorder notice and button -->
     <div class="text-center mt-3">
         <p class="text-muted small mb-2"><i class="bi bi-grip-vertical"></i> Drag businesses to reorder</p>
-        <button class="btn btn-primary btn-sm draw_map" id="draw_map_mobile" style="display: none;" onclick="DrawNewMap()">
+        <button class="btn btn-primary btn-sm draw_map" id="draw_map_mobile" style="display: none;" onclick="console.log('Mobile update button clicked'); DrawNewMap()">
             <i class="bi bi-arrow-clockwise"></i> Update Route
         </button>
     </div>
@@ -2847,6 +2944,8 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
     </script>
 
 <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
+<!-- jQuery UI Touch Punch for touch device support -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
 <script>
 // Touch support for jQuery UI sortable
 // This enables drag and drop on touch devices like iPad
@@ -2971,6 +3070,7 @@ window.addEventListener('load', function() {
             handle: ".sortable_item_handle",
             axis: "y",
             items: ".sortable_item:not(.out-of-range)",
+            tolerance: "pointer",
             start: function(event, ui) {
                 jQuery(this).addClass('sorting-active');
                 console.log('Started sorting (mobile)');
@@ -2981,6 +3081,15 @@ window.addEventListener('load', function() {
                 // Update the desktop list order to match mobile
                 updateDesktopOrderFromMobile();
                 // Show the mobile update button
+                var mobileButton = document.getElementById("draw_map_mobile");
+                if (mobileButton) {
+                    mobileButton.style.display = "inline-block";
+                    console.log('Mobile update button shown');
+                }
+            },
+            update: function(event, ui) {
+                console.log('Mobile sortable order changed');
+                // Also show button on update event
                 var mobileButton = document.getElementById("draw_map_mobile");
                 if (mobileButton) {
                     mobileButton.style.display = "inline-block";
@@ -3025,19 +3134,31 @@ function DrawNewMap() {
     console.log('Original locations:', locations);
     console.log('Original location names:', locations.map(function(loc) { return loc.name; }));
     
-    // Debug: Check what sortable items we have
-    console.log('Number of sortable items found:', $('.sortable_item').length);
+    // Show spinner on both buttons
+    var desktopBtn = $('#draw_map');
+    var mobileBtn = $('#draw_map_mobile');
+    var originalDesktopHtml = desktopBtn.html();
+    var originalMobileHtml = mobileBtn.html();
     
-    // Update locations based on new order
-    var newLocations = [{
-        name: locations[0].name, // Keep the original name
-        address: locations[0].address,
-        lat: locations[0].lat,
-        lng: locations[0].lng,
-        type: "home"
-    }];
+    // Add spinner to active button
+    var spinnerHtml = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Updating...';
+    desktopBtn.prop('disabled', true).html(spinnerHtml);
+    mobileBtn.prop('disabled', true).html(spinnerHtml);
     
-    $('.sortable_item').each(function(index) {
+    try {
+        // Debug: Check what sortable items we have
+        console.log('Number of sortable items found:', $('.sortable_item').length);
+        
+        // Update locations based on new order
+        var newLocations = [{
+            name: locations[0].name, // Keep the original name
+            address: locations[0].address,
+            lat: locations[0].lat,
+            lng: locations[0].lng,
+            type: "home"
+        }];
+        
+        $('.sortable_item').each(function(index) {
         var $item = $(this);
         var isOutOfRange = $item.data('out-of-range') === 'true';
         
@@ -3058,7 +3179,9 @@ function DrawNewMap() {
         // Find the business in original locations
         var found = false;
         for (var i = 1; i < locations.length; i++) {
+            console.log('Comparing:', locations[i].name, '===', businessName);
             if (locations[i].name === businessName) {
+                // Push the location regardless of coordinates - geocoding will handle missing coords
                 newLocations.push(locations[i]);
                 found = true;
                 console.log('Found business in locations:', locations[i]);
@@ -3067,7 +3190,8 @@ function DrawNewMap() {
         }
         
         if (!found) {
-            console.log('Business not found in locations array:', businessName);
+            console.error('Business not found in locations array:', businessName);
+            console.log('Available businesses in locations:', locations.map(function(loc) { return loc.name; }));
         }
     });
     
@@ -3082,18 +3206,31 @@ function DrawNewMap() {
     console.log('Updated location names:', locations.map(function(loc) { return loc.name; }));
     
     // Reload the map with new order
-    loadDirections();
+    setTimeout(function() {
+        loadDirections();
+        
+        // Also update mobile directions if visible
+        if (window.innerWidth < 992) {
+            loadMobileDirections();
+        }
+        
+        // Restore buttons after a short delay to show completion
+        setTimeout(function() {
+            desktopBtn.prop('disabled', false).html(originalDesktopHtml);
+            mobileBtn.prop('disabled', false).html(originalMobileHtml);
+            
+            // Hide the buttons after successful update
+            desktopBtn.hide();
+            mobileBtn.hide();
+        }, 500);
+    }, 100);
     
-    // Also update mobile directions if visible
-    if (window.innerWidth < 992) {
-        loadMobileDirections();
-    }
-    
-    // Hide the buttons after redrawing
-    document.getElementById("draw_map").style.display = "none";
-    var mobileButton = document.getElementById("draw_map_mobile");
-    if (mobileButton) {
-        mobileButton.style.display = "none";
+    } catch (error) {
+        console.error('Error in DrawNewMap:', error);
+        // Restore buttons on error
+        desktopBtn.prop('disabled', false).html(originalDesktopHtml);
+        mobileBtn.prop('disabled', false).html(originalMobileHtml);
+        alert('Error updating map. Please try again.');
     }
 }
 

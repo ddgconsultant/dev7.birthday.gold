@@ -219,3 +219,121 @@ npm test
 - Navigation: `col` (fills available space)
 - Buttons: `col-auto ms-auto` (flush right)
 - This ensures proper responsive behavior
+
+## Coding Patterns and Standards
+
+### Bootstrap 5 Implementation
+- **Primary Framework**: Bootstrap 5.3.x (loaded from CDN)
+- **Grid System**: Use Bootstrap's 12-column grid with responsive breakpoints
+- **Components**: Utilize Bootstrap components (cards, modals, alerts, etc.) before custom solutions
+- **Utilities**: Leverage Bootstrap utility classes for spacing, colors, and responsive design
+
+### Include File System (.inc files)
+- **Component Includes**: Located in `/core/components/v3/` and `/core/components/v7/`
+- **Page Structure**:
+  ```php
+  include 'bg_pagestart.inc';    // HTML head, meta tags, CSS/JS includes
+  include 'bg_header.inc';       // Site header and navigation
+  // Page content here
+  include 'bg_footer.inc';       // Footer and closing tags
+  ```
+- **Conditional Includes**: Use variables to control include behavior (e.g., `$header_flush = true`)
+- **Path Resolution**: Use `$installpath` for absolute paths to includes
+
+### PHP Coding Standards
+- **File Naming**: 
+  - Classes: `class.{name}.php` (lowercase)
+  - Includes: `{component}.inc` or `{component}.inc.php`
+  - Pages: `{pagename}.php` (lowercase, no spaces)
+- **Variable Naming**: 
+  - Use descriptive names with underscores: `$user_id`, `$session_token`
+  - Global variables from site-controller: `$site`, `$mode`, `$installpath`
+- **Database Queries**:
+  - Always use prepared statements via PDO
+  - Use the Database class methods: `query()`, `get_rows()`, `get_row()`
+  - Escape output with `htmlspecialchars()` or `$system->cleanforhtml()`
+
+### Frontend Development
+- **CSS Organization**:
+  - Main styles: `/public/css/core-v3-main.css`
+  - Component styles: `/public/css/bg_{component}.css`
+  - Use `$additionalstyles` array for page-specific CSS
+- **JavaScript**:
+  - jQuery 3.6.0 is available globally
+  - Main scripts: `/public/js/core-v3-main.js`
+  - Component scripts: `/public/js/{component}.js`
+  - Use `$additionalscripts` array for page-specific JS
+
+### Bootstrap 5 Specific Patterns
+- **Forms**:
+  ```html
+  <div class="mb-3">
+    <label for="fieldname" class="form-label">Label</label>
+    <input type="text" class="form-control" id="fieldname" name="fieldname">
+  </div>
+  ```
+- **Buttons**:
+  - Primary actions: `btn btn-primary`
+  - Secondary actions: `btn btn-secondary`
+  - Danger/Delete: `btn btn-danger`
+  - Custom border radius: `style="border-radius: 25px"`
+- **Cards**: Use for content sections and forms
+  ```html
+  <div class="card">
+    <div class="card-header">Title</div>
+    <div class="card-body">Content</div>
+  </div>
+  ```
+- **Responsive Utilities**:
+  - Hide on mobile: `d-none d-md-block`
+  - Mobile only: `d-block d-md-none`
+  - Responsive columns: `col-12 col-md-6 col-lg-4`
+
+### Page Layout Pattern
+```php
+<?php
+// Standard page setup
+include '../core/site-controller.php';
+$pagetitle = "Page Title";
+$additionalstyles = [];
+$additionalscripts = [];
+
+// Page logic here
+
+// Output
+include $installpath . 'core/components/v3/bg_pagestart.inc';
+include $installpath . 'core/components/v3/bg_header.inc';
+?>
+
+<div class="container mt-4">
+    <!-- Page content -->
+</div>
+
+<?php
+include $installpath . 'core/components/v3/bg_footer.inc';
+?>
+```
+
+### AJAX Patterns
+- AJAX endpoints in `/myaccount/ajax/` or `/admin/ajax/`
+- Return JSON responses: `header('Content-Type: application/json')`
+- Use POST for data modifications, GET for retrievals
+- Include CSRF token validation for POST requests
+
+### Error Handling
+- Development mode: Errors displayed (`$errormode = 'showerrors'`)
+- Production mode: Errors logged to `bg_errors` table
+- User-friendly error messages via `$system->addmessage()`
+- Redirect with messages: `$system->addmessage('error', 'Error text'); header('Location: ...');`
+
+### Session Management
+- Sessions initialized in site-controller.php
+- Access user data: `$account->getuser()` or `$_SESSION['user']`
+- Check authentication: `if ($account->isloggedin()) { ... }`
+- Role checking: `if ($account->checkrole('admin')) { ... }`
+
+### Mobile Responsiveness
+- Mobile-first approach using Bootstrap breakpoints
+- Test at: 576px (sm), 768px (md), 992px (lg), 1200px (xl)
+- Use Bootstrap's responsive utilities extensively
+- Touch-friendly UI elements (minimum 44px touch targets)
