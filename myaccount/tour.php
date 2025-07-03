@@ -1320,8 +1320,15 @@ include($dir['core_components'] . '/bg_user_profileheader.inc');
 #include($dir['core_components'] . '/bg_user_leftpanel.inc');
 echo '<div class="container">';
 // Start the myaccount layout
-echo '<div class="col-12">';
+echo '<div class="col-12" style="margin-top: 3rem;">';
 ?>
+<style>
+@media (min-width: 992px) {
+    .container > .col-12 {
+        margin-top: 5rem !important;
+    }
+}
+</style>
 
 <!-- Alert Container -->
 <div id="alert-container" style="position: fixed; top: 80px; right: 20px; z-index: 9999; max-width: 400px;"></div>
@@ -1369,44 +1376,8 @@ echo '<div class="col-12">';
     </div>
 </div>
 
-<!-- Desktop Header -->
-<div class="row desktop-only">
-    <div class="col-lg-8 mb-4">
-        <!-- DATE card -->
-        <div class="card h-100 border-start-lg border-start-primary">
-            <div class="card-body">
-                <div class="small text-muted">Your Tour:</div>
-                <div class="h3 my-3"><?php echo $formattedDate; ?></div>
-                Consists of <?php echo count($listofcompanies); ?> businesses
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4 mb-4">
-        <!-- ACTIONS card -->
-        <div class="card h-100 border-start-lg border-start-success">
-            <div class="card-body">
-                <div class="small text-muted mb-3">Actions</div>
-                <div class="d-grid gap-2">
-                    <button class="btn btn-primary" onclick="sendToPhone()">
-                        <i class="bi bi-phone me-2"></i>Send to Phone
-                    </button>
-                    <button class="btn btn-secondary" onclick="window.print()">
-                        <i class="bi bi-printer me-2"></i>Print Tour
-                    </button>
-                    <?php if (isset($_GET['debug'])): ?>
-                    <div class="mt-2">
-                        <button class="btn btn-sm btn-outline-secondary w-100" onclick="getTestingLinks()">
-                            <i class="bi bi-bug me-2"></i>Get Test Links
-                        </button>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<hr class="mt-0 mb-4 desktop-only">
+<!-- Desktop Header - Compressed -->
+<div class="desktop-only mb-4"></div>
 
 <!-- Mobile Tab Navigation -->
 <div class="mobile-tabs mobile-only">
@@ -1426,10 +1397,67 @@ echo '<div class="col-12">';
     <div class="col-lg-12 mb-4">
         <!-- CELEBRATION TOUR COMPANIES card-->
         <div class="card card-header-actions mb-4">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <h2 class="mb-0">Celebration Tour</h2>
-                <div>
-                    <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="btn btn-sm btn-primary" type="button">Add More Businesses</a>
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <h2 class="mb-0">Celebration Tour - <?php echo $formattedDate; ?></h2>
+                        <small class="text-muted">
+                            <?php
+                            $businessCount = count($listofcompanies);
+                            $outOfRangeCount = 0;
+                            foreach ($listofcompanies as $company) {
+                                if ($company['data']['is_out_of_range'] ?? false) {
+                                    $outOfRangeCount++;
+                                }
+                            }
+                            
+                            // Determine if tour is today or tomorrow
+                            $tourDateObj = new DateTime($date);
+                            $todayObj = new DateTime('today');
+                            $tomorrowObj = new DateTime('tomorrow');
+                            
+                            $whenText = 'on ' . $tourDateObj->format('F j');
+                            if ($tourDateObj->format('Y-m-d') == $todayObj->format('Y-m-d')) {
+                                $whenText = 'today';
+                            } elseif ($tourDateObj->format('Y-m-d') == $tomorrowObj->format('Y-m-d')) {
+                                $whenText = 'tomorrow';
+                            }
+                            
+                            // Fun dynamic messages
+                            $messages = [
+                                'Grab all your freebies from',
+                                'Collect birthday rewards at',
+                                'Score free treats from',
+                                'Get your birthday goodies from',
+                                'Claim your birthday perks at'
+                            ];
+                            $message = $messages[array_rand($messages)];
+                            
+                            echo $message . ' <strong>' . $businessCount . ' ' . ($businessCount == 1 ? 'business' : 'businesses') . '</strong> ' . $whenText;
+                            
+                            if ($outOfRangeCount > 0): ?>
+                                <span class="text-danger">(<?php echo $outOfRangeCount; ?> out of range)</span>
+                            <?php endif; ?>
+                        </small>
+                    </div>
+                    <div class="col ms-auto text-end">
+                        <div class="btn-group" role="group">
+                            <a href="/myaccount/tour-build?date=<?php echo $date; ?>" class="btn btn-sm btn-outline-primary" title="Add businesses">
+                                <i class="bi bi-plus-circle"></i> Add
+                            </a>
+                            <button class="btn btn-sm btn-outline-primary" onclick="sendToPhone()" title="Send to phone">
+                                <i class="bi bi-phone"></i> Send
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()" title="Print tour">
+                                <i class="bi bi-printer"></i> Print
+                            </button>
+                            <?php if (isset($_GET['debug'])): ?>
+                            <button class="btn btn-sm btn-outline-warning" onclick="getTestingLinks()" title="Debug">
+                                <i class="bi bi-bug"></i>
+                            </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="card-body" id="sortable">
@@ -1682,8 +1710,8 @@ echo '<div class="col-12">';
              data-company-id="<?php echo $item_company['company_id']; ?>">
             
             <?php if (!$isOutOfRange): ?>
-            <div class="sortable_item_handle position-absolute top-0 end-0 p-2" style="cursor: grab;">
-                <i class="bi bi-grip-vertical text-muted"></i>
+            <div class="sortable_item_handle position-absolute" style="top: 1rem; right: 0.5rem; cursor: grab; padding: 0.5rem;">
+                <i class="bi bi-grip-vertical text-muted h5 mb-0"></i>
             </div>
             <?php endif; ?>
             
@@ -1726,7 +1754,7 @@ echo '<div class="col-12">';
                 <button class="btn btn-outline-secondary btn-sm pick-location" 
                         data-company-id="<?php echo $item_company['company_id']; ?>" 
                         data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
-                    <i class="bi bi-geo-alt"></i> Change Location
+                    <i class="bi bi-geo-alt"></i> Pick Location
                 </button>
                 <a href="/myaccount/enrollments-individual?company_id=<?php echo $item_company['company_id']; ?>" 
                    class="btn btn-primary btn-sm">
@@ -3900,12 +3928,16 @@ function sendToPhone() {
     
     // Disable all send buttons while processing
     $('button[onclick="sendToPhone()"]').prop('disabled', true).each(function() {
-        if ($(this).hasClass('btn-sm')) {
+        var $btn = $(this);
+        if ($btn.closest('.mobile-only').length > 0) {
             // Mobile button (icon only)
-            $(this).html('<span class="spinner-border spinner-border-sm" role="status"></span>');
+            $btn.html('<span class="spinner-border spinner-border-sm" role="status"></span>');
+        } else if ($btn.closest('.btn-group').length > 0) {
+            // Desktop compressed header button
+            $btn.html('<span class="spinner-border spinner-border-sm" role="status"></span>');
         } else {
-            // Desktop button (icon + text)
-            $(this).html('<span class="spinner-border spinner-border-sm me-2" role="status"></span>Sending...');
+            // Other desktop button (if any)
+            $btn.html('<span class="spinner-border spinner-border-sm me-2" role="status"></span>Sending...');
         }
     });
     
@@ -4104,14 +4136,18 @@ function sendToPhone() {
                 
                 // Reset flags and buttons
                 smsInProgress = false;
-                // Re-enable desktop button
+                // Re-enable all send buttons
                 $('button[onclick="sendToPhone()"]').prop('disabled', false).each(function() {
-                    if ($(this).hasClass('btn-sm')) {
+                    var $btn = $(this);
+                    if ($btn.closest('.mobile-only').length > 0) {
                         // Mobile button (icon only)
-                        $(this).html('<i class="bi bi-phone"></i>');
+                        $btn.html('<i class="bi bi-phone"></i>');
+                    } else if ($btn.closest('.btn-group').length > 0) {
+                        // Desktop compressed header button
+                        $btn.html('<i class="bi bi-phone"></i> Send');
                     } else {
-                        // Desktop button (icon + text)
-                        $(this).html('<i class="bi bi-phone me-1"></i>Send to Phone');
+                        // Other desktop button (if any)
+                        $btn.html('<i class="bi bi-phone me-1"></i>Send to Phone');
                     }
                 });
                 
@@ -4149,14 +4185,18 @@ function sendToPhone() {
                 
                 // Reset flags and buttons on error
                 smsInProgress = false;
-                // Re-enable desktop button
+                // Re-enable all send buttons
                 $('button[onclick="sendToPhone()"]').prop('disabled', false).each(function() {
-                    if ($(this).hasClass('btn-sm')) {
+                    var $btn = $(this);
+                    if ($btn.closest('.mobile-only').length > 0) {
                         // Mobile button (icon only)
-                        $(this).html('<i class="bi bi-phone"></i>');
+                        $btn.html('<i class="bi bi-phone"></i>');
+                    } else if ($btn.closest('.btn-group').length > 0) {
+                        // Desktop compressed header button
+                        $btn.html('<i class="bi bi-phone"></i> Send');
                     } else {
-                        // Desktop button (icon + text)
-                        $(this).html('<i class="bi bi-phone me-1"></i>Send to Phone');
+                        // Other desktop button (if any)
+                        $btn.html('<i class="bi bi-phone me-1"></i>Send to Phone');
                     }
                 });
             }
