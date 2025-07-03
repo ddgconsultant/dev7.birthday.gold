@@ -1013,6 +1013,11 @@ GROUP BY
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function getshortcode($input_url, $input_code = '', $input_pass = '')
   {
+    global $database;
+    
+    // Add a small delay to prevent hitting the service too fast
+    usleep(100000); // 100ms delay
+    
     // URL encode the parameters
 
     $urlParam = 'url=' . urlencode($input_url);
@@ -1027,6 +1032,10 @@ GROUP BY
     $baseurl = 'https://bd.gold/';
     $apiUrl = $baseurl . "api.php?" . $querystring;
 
+    // Log the attempt
+    $start_time = microtime(true);
+    $error_msg = '';
+    
     // Try file_get_contents first with SSL context
     $context = stream_context_create([
         "ssl" => [
@@ -1036,6 +1045,7 @@ GROUP BY
     ]);
     
     $apiResponse = @file_get_contents($apiUrl, false, $context);
+    $method_used = 'file_get_contents';
     
     // If file_get_contents fails, try cURL
     if ($apiResponse === false) {
@@ -1046,17 +1056,56 @@ GROUP BY
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         $apiResponse = curl_exec($ch);
+        $curl_error = curl_error($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+        $method_used = 'cURL';
+        
+        if ($apiResponse === false) {
+            $error_msg = "Both file_get_contents and cURL failed. cURL error: " . $curl_error;
+            
+            // Log the failure to database
+            try {
+                $sql = "INSERT INTO bg_errors (type, message, file, line, request_url, create_dt) VALUES (?, ?, ?, ?, ?, NOW())";
+                $stmt = $database->prepare($sql);
+                $stmt->execute(['shortener_fail', $error_msg, __FILE__, __LINE__, $apiUrl]);
+            } catch (Exception $e) {
+                // Ignore database logging errors
+            }
+            
+            return false;
+        }
     }
 
+    // Check if we got any response
+    if (empty($apiResponse)) {
+        $error_msg = "Empty response from shortener service";
+        // Log to database
+        try {
+            $sql = "INSERT INTO bg_errors (type, message, file, line, request_url, create_dt) VALUES (?, ?, ?, ?, ?, NOW())";
+            $stmt = $database->prepare($sql);
+            $stmt->execute(['shortener_empty', $error_msg, __FILE__, __LINE__, $apiUrl]);
+        } catch (Exception $e) {
+            // Ignore database logging errors
+        }
+        return false;
+    }
 
     // Strip out the non-JSON parts
     $jsonStartPos = strpos($apiResponse, '{');
     $jsonEndPos = strrpos($apiResponse, '}');
 
     if ($jsonStartPos === false || $jsonEndPos === false) {
-      echo "No valid JSON found in the response";
-      return;
+      $error_msg = "No valid JSON found in the response. Response: " . substr($apiResponse, 0, 200);
+      // Log to database
+      try {
+          $sql = "INSERT INTO bg_errors (type, message, file, line, request_url, create_dt) VALUES (?, ?, ?, ?, ?, NOW())";
+          $stmt = $database->prepare($sql);
+          $stmt->execute(['shortener_json', $error_msg, __FILE__, __LINE__, $apiUrl]);
+      } catch (Exception $e) {
+          // Ignore database logging errors
+      }
+      return false;
     }
 
     $json = substr($apiResponse, $jsonStartPos, $jsonEndPos - $jsonStartPos + 1);
@@ -1065,13 +1114,32 @@ GROUP BY
     $data = json_decode($json, true);
 
     if ($data === null && json_last_error() !== JSON_ERROR_NONE) {
-      echo 'JSON decoding error: ' . json_last_error_msg();
+      $error_msg = 'JSON decoding error: ' . json_last_error_msg() . '. JSON: ' . substr($json, 0, 200);
+      // Log to database
+      try {
+          $sql = "INSERT INTO bg_errors (type, message, file, line, request_url, create_dt) VALUES (?, ?, ?, ?, ?, NOW())";
+          $stmt = $database->prepare($sql);
+          $stmt->execute(['shortener_decode', $error_msg, __FILE__, __LINE__, $apiUrl]);
+      } catch (Exception $e) {
+          // Ignore database logging errors
+      }
       return false;
     }
     #breakpoint($data);
 
     if (isset($data['shorturl'])) {
       $data['shortcode'] = str_replace($baseurl, '', $data['shorturl']);
+      
+      // Log successful shortening
+      $elapsed_time = round((microtime(true) - $start_time) * 1000, 2);
+      try {
+          $sql = "INSERT INTO bg_errors (type, message, file, line, request_url, create_dt) VALUES (?, ?, ?, ?, ?, NOW())";
+          $stmt = $database->prepare($sql);
+          $success_msg = "Shortener success via " . $method_used . " in " . $elapsed_time . "ms";
+          $stmt->execute(['shortener_success', $success_msg, __FILE__, __LINE__, $data['shorturl']]);
+      } catch (Exception $e) {
+          // Ignore database logging errors
+      }
     }
     ### returns $data['longurl'] (orginal URL), $data['shorturl'] (shortened url), $data['stats'],  $data['shortcode'] (just code)
     return $data;

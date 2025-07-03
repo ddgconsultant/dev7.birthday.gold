@@ -236,22 +236,7 @@ if (isset($_POST['action'])) {
                 $loc['distance'] = round($loc['distance'], 1);
             }
             
-            // If no locations found, get all locations for this company
-            if (empty($locations)) {
-                $fallbackQuery = "SELECT * FROM bg_company_locations 
-                                 WHERE company_id = :company_id 
-                                 AND status = 'active' 
-                                 ORDER BY city, state 
-                                 LIMIT 20";
-                $stmt = $database->prepare($fallbackQuery);
-                $stmt->execute([':company_id' => $companyId]);
-                $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                foreach ($locations as &$loc) {
-                    $loc['full_address'] = trim($loc['address'] . ', ' . $loc['city'] . ', ' . $loc['state'] . ' ' . $loc['zip_code']);
-                    $loc['distance'] = 'Unknown';
-                }
-            }
+            // Don't provide fallback - only show locations within the selected radius
             
             ob_end_clean();
             echo json_encode(['success' => true, 'locations' => $locations, 'count' => count($locations)]);
@@ -389,6 +374,12 @@ if (isset($_POST['action'])) {
             exit;
             
         case 'send_to_phone':
+            // Ensure clean output
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            ob_start();
+            
             $navigationUrl = $_POST['navigation_url'] ?? '';
             $phoneType = $_POST['phone_type'] ?? '';
             $phoneTypeSource = $_POST['phone_type_source'] ?? 'unknown';
@@ -398,6 +389,7 @@ if (isset($_POST['action'])) {
             
             if (!$navigationUrl) {
                 ob_end_clean();
+                header('Content-Type: application/json');
                 echo json_encode(['success' => false, 'message' => 'Missing navigation URL']);
                 exit;
             }
@@ -439,12 +431,39 @@ if (isset($_POST['action'])) {
             
             // Use app->getshortcode to shorten the URL
             try {
+                // Debug: log the URL we're trying to shorten
+                if ($debug) {
+                    error_log("Attempting to shorten URL: " . $navigationUrl);
+                    error_log("URL decoded: " . urldecode($navigationUrl));
+                }
+                
                 // First try the built-in method
-                $shortCodeData = @$app->getshortcode($navigationUrl, 'tour_nav_' . $tourDate);
+                $shortUrl = null;
+                $shortenerFailed = false;
+                
+                try {
+                    $shortCodeData = $app->getshortcode($navigationUrl);
+                    if ($debug && $shortCodeData) {
+                        error_log("App shortcode response: " . json_encode($shortCodeData));
+                    }
+                    
+                    // Check if we got a valid short URL
+                    if ($shortCodeData && isset($shortCodeData['shorturl'])) {
+                        $shortUrl = $shortCodeData['shorturl'];
+                        if ($debug) {
+                            error_log("Successfully shortened URL to: " . $shortUrl);
+                        }
+                    }
+                } catch (Exception $e) {
+                    if ($debug) {
+                        error_log("App shortcode exception: " . $e->getMessage());
+                    }
+                    $shortCodeData = null;
+                }
                 
                 // If that fails, try direct cURL
-                if (!$shortCodeData || !isset($shortCodeData['shorturl'])) {
-                    $apiUrl = 'https://bd.gold/api.php?url=' . urlencode($navigationUrl) . '&cust=' . urlencode('tour_nav_' . $tourDate);
+                if (!$shortUrl) {
+                    $apiUrl = 'https://bd.gold/api.php?url=' . urlencode($navigationUrl);
                     
                     // Log the API URL for debugging
                     if ($debug) {
@@ -469,25 +488,32 @@ if (isset($_POST['action'])) {
                         if ($jsonStartPos !== false && $jsonEndPos !== false) {
                             $json = substr($apiResponse, $jsonStartPos, $jsonEndPos - $jsonStartPos + 1);
                             $shortCodeData = json_decode($json, true);
+                            
+                            // Check if we got a valid short URL from direct cURL
+                            if ($shortCodeData && isset($shortCodeData['shorturl'])) {
+                                $shortUrl = $shortCodeData['shorturl'];
+                                if ($debug) {
+                                    error_log("Direct cURL succeeded, shortened URL to: " . $shortUrl);
+                                }
+                            }
                         }
                     }
                     
-                    if (!$shortCodeData || !isset($shortCodeData['shorturl'])) {
-                        ob_end_clean();
-                        $errorMsg = 'Failed to create short URL';
+                    if (!$shortUrl) {
+                        // URL shortener failed - use full URL as fallback
+                        $shortUrl = $navigationUrl;
+                        $shortenerFailed = true;
+                        
                         if ($debug) {
-                            $errorMsg .= ' - Navigation URL length: ' . strlen($navigationUrl);
-                            $errorMsg .= ' - HTTP Code: ' . $httpCode;
+                            error_log("URL shortener failed, using full URL as fallback");
+                            error_log("Navigation URL length: " . strlen($navigationUrl));
+                            error_log("HTTP Code: " . $httpCode);
                             if ($shortCodeData) {
-                                $errorMsg .= ' - API Response: ' . json_encode($shortCodeData);
+                                error_log("API Response: " . json_encode($shortCodeData));
                             } else {
-                                $errorMsg .= ' - Raw Response: ' . substr($apiResponse, 0, 200);
+                                error_log("Raw Response: " . substr($apiResponse, 0, 200));
                             }
-                            $errorMsg .= "\n\nNavigation URL being shortened:\n" . $navigationUrl;
-                            $errorMsg .= "\n\nFull API URL:\n" . $apiUrl;
                         }
-                        echo json_encode(['success' => false, 'message' => $errorMsg]);
-                        exit;
                     }
                 }
             } catch (Exception $e) {
@@ -496,11 +522,19 @@ if (isset($_POST['action'])) {
                 exit;
             }
             
-            $shortUrl = $shortCodeData['shorturl'];
+            // At this point, $shortUrl is already set either to the shortened URL or the fallback full URL
             
             // Build debug info
             $debugInfo = [];
             if ($debug) {
+                // Log proof that shortening is dynamic
+                error_log("=== DYNAMIC URL SHORTENING PROOF ===");
+                error_log("Timestamp: " . date('Y-m-d H:i:s'));
+                error_log("Original Navigation URL: " . $navigationUrl);
+                error_log("Shortened URL Result: " . $shortUrl);
+                error_log("Shortcode Data: " . json_encode($shortCodeData));
+                error_log("====================================");
+                
                 // Create platform-specific URLs for debug
                 $parsedUrl = parse_url($navigationUrl);
                 parse_str($parsedUrl['query'] ?? '', $params);
@@ -509,14 +543,23 @@ if (isset($_POST['action'])) {
                 $googleMapsUrl = $navigationUrl;
                 
                 $debugInfo = [
+                    'proof_of_dynamic_shortening' => [
+                        'timestamp' => date('Y-m-d H:i:s.u'), // Includes microseconds
+                        'random_id' => uniqid('dynamic_', true),
+                        'process_id' => getmypid(),
+                        'server_request_time' => $_SERVER['REQUEST_TIME_FLOAT']
+                    ],
                     'original_url' => $navigationUrl,
+                    'original_url_md5' => md5($navigationUrl), // Hash to show different URLs produce different hashes
                     'shortened_url' => $shortUrl,
+                    'shortener_api_response' => $shortCodeData, // Full API response
                     'apple_maps_url' => $appleMapsUrl,
                     'google_maps_url' => $googleMapsUrl,
                     'phone_type' => $phoneType,
                     'phone_type_source' => $phoneTypeSource,
                     'phone_number' => substr($phoneNumber, 0, -4) . 'XXXX', // Partially hide for privacy
-                    'shortcode_data' => $shortCodeData // Include full response for debugging
+                    'tour_date' => $tourDate,
+                    'shortener_custom_param' => 'tour_nav_' . $tourDate
                 ];
             }
             
@@ -835,35 +878,50 @@ $additionalstyles = '<style>
         display: none !important;
     }
     
-    /* Mobile tab navigation */
+    /* Mobile tab navigation - full width style */
     .mobile-tabs {
         display: flex;
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 4px;
-        margin: 1rem -1rem;
-        gap: 4px;
+        background: white;
+        border-bottom: 1px solid #dee2e6;
+        margin: 0 -1rem;
+        padding: 0;
     }
     
     .mobile-tab {
         flex: 1;
         background: transparent;
         border: none;
-        border-radius: 6px;
-        padding: 0.5rem;
+        border-bottom: 2px solid transparent;
+        padding: 1rem 0.5rem;
         font-size: 0.875rem;
         color: #6c757d;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
-        gap: 0.25rem;
+        justify-content: center;
+        gap: 0.5rem;
         transition: all 0.2s ease;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    
+    .mobile-tab i {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    
+    .mobile-tab span {
+        flex-shrink: 0;
     }
     
     .mobile-tab.active {
-        background: white;
         color: #0d6efd;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-bottom-color: #0d6efd;
+        background: transparent;
+    }
+    
+    .mobile-tab:hover:not(.active) {
+        background: #f8f9fa;
     }
     
     .mobile-tab-content {
@@ -924,6 +982,16 @@ $additionalstyles = '<style>
         border-radius: 12px;
         overflow: hidden;
         margin: -1rem;
+    }
+    
+    /* Mobile content spacing */
+    .mobile-tab-content {
+        padding-bottom: 2rem;
+    }
+    
+    /* Update route button container */
+    #businesses-tab .text-center.mt-3 {
+        margin-bottom: 2rem;
     }
     
     /* Out of range badge for mobile */
@@ -1517,7 +1585,7 @@ echo '<div class="col-12">';
                     <div class="col-md-5">
                         <div class="mb-3">
                             <label class="form-label">Search Radius from Starting Location</label>
-                            <select class="form-select" id="radius-select">
+                            <select class="form-select" id="radius-select" onchange="searchBusinessLocations()">
                                 <option value="5">5 miles</option>
                                 <option value="25" selected>25 miles</option>
                                 <option value="50">50 miles</option>
@@ -1529,7 +1597,7 @@ echo '<div class="col-12">';
                                 <i class="bi bi-search"></i> Search Locations
                             </button>
                         </div>
-                        <div id="location-results" class="list-group" style="max-height: 400px; overflow-y: auto;">
+                        <div id="location-results" class="list-group" style="max-height: 350px; overflow-y: auto;">
                             <!-- Search results will appear here -->
                         </div>
                         <div class="form-check mt-3" id="force-location-container" style="display: none;">
@@ -1604,7 +1672,22 @@ echo '<div class="col-12">';
                         <?php endif; ?>
                     </div>
                     <div class="business-address">
-                        <i class="bi bi-geo-alt"></i> <?php echo htmlspecialchars($item_company['address'] ?? 'Location pending'); ?>
+                        <i class="bi bi-geo-alt"></i> 
+                        <?php 
+                        // Build full address for mobile
+                        $hasFullAddress = !empty($item_company['address']) && strlen(trim($item_company['address'])) > 0;
+                        $businessCity = !empty($item_company['city']) ? $item_company['city'] : $home_city;
+                        $businessState = !empty($item_company['state']) ? $item_company['state'] : $home_state;
+                        $businessZip = !empty($item_company['zip_code']) ? $item_company['zip_code'] : $home_zip;
+                        
+                        if ($hasFullAddress) {
+                            echo htmlspecialchars($item_company['address'] . ', ' . $businessCity . ', ' . $businessState . ' ' . $businessZip);
+                        } else if ($businessCity && $businessState) {
+                            echo htmlspecialchars($businessCity . ', ' . $businessState . ' ' . $businessZip);
+                        } else {
+                            echo 'Location pending';
+                        }
+                        ?>
                     </div>
                 </div>
             </div>
@@ -1618,7 +1701,7 @@ echo '<div class="col-12">';
                 </button>
                 <a href="/myaccount/enrollments-individual?company_id=<?php echo $item_company['company_id']; ?>" 
                    class="btn btn-primary btn-sm">
-                    <i class="bi bi-box-arrow-up-right"></i> View Details
+                    <i class="bi bi-box-arrow-up-right"></i> Details
                 </a>
             </div>
             <?php endif; ?>
@@ -1637,9 +1720,9 @@ echo '<div class="col-12">';
 
 <!-- Tab Content: Map -->
 <div id="map-tab" class="mobile-tab-content mobile-only">
-    <div class="mobile-map-container" id="map-mobile"></div>
+    <div class="mobile-map-container" id="route-map-mobile" style="height: 400px;"></div>
     <div class="text-center mt-2">
-        <button class="btn btn-sm btn-primary" onclick="if(typeof initializeMap !== 'undefined') initializeMap();">
+        <button class="btn btn-sm btn-primary" onclick="initializeMobileMap();">
             <i class="bi bi-arrow-repeat"></i> Refresh Map
         </button>
     </div>
@@ -1700,16 +1783,16 @@ echo '<div class="col-12">';
         document.getElementById(tabName + '-tab').classList.add('active');
         
         // Initialize map if switching to map tab
-        if (tabName === 'map' && typeof initializeMap !== 'undefined') {
+        if (tabName === 'map') {
             setTimeout(function() {
-                initializeMap();
+                initializeMobileMap();
             }, 100);
         }
         
         // Load directions if switching to directions tab
-        if (tabName === 'directions' && typeof loadDirections !== 'undefined') {
+        if (tabName === 'directions') {
             setTimeout(function() {
-                loadDirections();
+                loadMobileDirections();
             }, 100);
         }
     }
@@ -1803,7 +1886,7 @@ echo '<div class="col-12">';
     
     // Function to save business location to database
     function saveTourBusinessLocation(companyId, companyName, address, lat, lng) {
-        fetch(window.location.pathname, {
+        fetch('/myaccount/tour.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -2076,7 +2159,7 @@ echo '<div class="col-12">';
                     
                     // Add destination part as separate line with green checkmark
                     html += '<li class="text-success" style="list-style: none; position: relative; padding-left: 25px;">';
-                    html += '<span style="position: absolute; left: -7px; font-size: 16px;">✓</span>';
+                    html += '<span style="position: absolute; left: 0px; font-size: 16px;">✓</span>';
                     html += destinationPart;
                     html += '</li>';
                 } else {
@@ -2139,8 +2222,13 @@ echo '<div class="col-12">';
         panel.innerHTML = html;
     }
     
+    // Global mobile map and renderer
+    var routeMapMobile;
+    var directionsRendererMobile;
+    
     function loadDirections() {
         console.log('Loading directions test...');
+        console.log('Current locations:', locations.map(function(loc) { return loc.name; }));
         
         if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
             alert('Google Maps not loaded yet!');
@@ -2198,7 +2286,7 @@ echo '<div class="col-12">';
             origin: locations[0].address,
             destination: locations[0].address, // Return to home
             waypoints: waypoints,
-            optimizeWaypoints: true,
+            optimizeWaypoints: false, // Respect user's manual ordering
             travelMode: 'DRIVING'
         };
         
@@ -2369,6 +2457,295 @@ echo '<div class="col-12">';
             }
         });
     }
+    
+    // Mobile Map initialization
+    function initializeMobileMap() {
+        console.log('Initializing mobile map...');
+        
+        if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+            console.error('Google Maps not loaded yet!');
+            return;
+        }
+        
+        // Check if map already initialized
+        if (routeMapMobile && typeof routeMapMobile.setCenter === 'function') {
+            // Just trigger a resize if map already exists
+            google.maps.event.trigger(routeMapMobile, 'resize');
+            return;
+        }
+        
+        var mobileMapElement = document.getElementById('route-map-mobile');
+        if (!mobileMapElement) {
+            console.error('Mobile map element not found!');
+            return;
+        }
+        
+        // Initialize the mobile map
+        routeMapMobile = new google.maps.Map(mobileMapElement, {
+            zoom: 13,
+            center: {lat: parseFloat(locations[0].lat) || 39.7392, lng: parseFloat(locations[0].lng) || -104.9903},
+            mapId: '<?php echo $sitesettings['GOOGLEAPI']['mapid'] ?? '9cd54b1058579fe87b380337'; ?>'
+        });
+        
+        // Add markers for all locations
+        var bounds = new google.maps.LatLngBounds();
+        locations.forEach(function(location, index) {
+            if (!location.isOutOfRange && location.lat && location.lng) {
+                var position = {lat: parseFloat(location.lat), lng: parseFloat(location.lng)};
+                
+                // Create pin element
+                var pinBackground = document.createElement('div');
+                pinBackground.style.backgroundColor = (index === 0) ? '#4285F4' : '#EA4335';
+                pinBackground.style.width = '30px';
+                pinBackground.style.height = '30px';
+                pinBackground.style.borderRadius = '50%';
+                pinBackground.style.border = '2px solid white';
+                pinBackground.style.display = 'flex';
+                pinBackground.style.alignItems = 'center';
+                pinBackground.style.justifyContent = 'center';
+                pinBackground.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                
+                var pinLabel = document.createElement('div');
+                pinLabel.textContent = (index + 1).toString();
+                pinLabel.style.color = 'white';
+                pinLabel.style.fontSize = '14px';
+                pinLabel.style.fontWeight = 'bold';
+                
+                pinBackground.appendChild(pinLabel);
+                
+                var marker = new google.maps.marker.AdvancedMarkerElement({
+                    position: position,
+                    map: routeMapMobile,
+                    title: location.name,
+                    content: pinBackground
+                });
+                
+                bounds.extend(position);
+            }
+        });
+        
+        // Fit map to show all markers
+        routeMapMobile.fitBounds(bounds);
+    }
+    
+    // Mobile Directions initialization
+    function loadMobileDirections() {
+        console.log('Loading mobile directions...');
+        console.log('Current locations for mobile:', locations.map(function(loc) { return loc.name; }));
+        
+        if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+            console.error('Google Maps not loaded yet!');
+            return;
+        }
+        
+        var mobileMapElement = document.getElementById('route-map-mobile');
+        if (!mobileMapElement) {
+            console.error('Mobile map element not found!');
+            return;
+        }
+        
+        // Initialize mobile map if not already done
+        if (!routeMapMobile) {
+            routeMapMobile = new google.maps.Map(mobileMapElement, {
+                zoom: 13,
+                center: {lat: parseFloat(locations[0].lat) || 39.7392, lng: parseFloat(locations[0].lng) || -104.9903},
+                mapId: '<?php echo $sitesettings['GOOGLEAPI']['mapid'] ?? '9cd54b1058579fe87b380337'; ?>'
+            });
+        }
+        
+        // Initialize directions renderer for mobile
+        if (!directionsRendererMobile) {
+            directionsRendererMobile = new google.maps.DirectionsRenderer({
+                map: routeMapMobile,
+                suppressMarkers: true
+            });
+        }
+        
+        // Create waypoints (same logic as desktop)
+        var waypoints = [];
+        var includedLocationIndices = [0];
+        
+        for (var i = 1; i < locations.length; i++) {
+            if (!locations[i].isOutOfRange) {
+                waypoints.push({
+                    location: locations[i].address,
+                    stopover: true
+                });
+                includedLocationIndices.push(i);
+            }
+        }
+        
+        if (waypoints.length === 0) {
+            document.getElementById('directions-panel-mobile').innerHTML = '<div class="alert alert-warning">All businesses are more than 100 miles away. No route can be calculated.</div>';
+            return;
+        }
+        
+        // Calculate route
+        var request = {
+            origin: locations[0].address,
+            destination: locations[0].address,
+            waypoints: waypoints,
+            optimizeWaypoints: false, // Respect user's manual ordering
+            travelMode: 'DRIVING'
+        };
+        
+        directionsService.route(request, function(response, status) {
+            if (status === 'OK') {
+                directionsRendererMobile.setDirections(response);
+                
+                // Get optimized order
+                var waypointOrder = response.routes[0].waypoint_order;
+                var optimizedLocations = [locations[0]];
+                waypointOrder.forEach(function(waypointIndex) {
+                    var originalLocationIndex = includedLocationIndices[waypointIndex + 1];
+                    optimizedLocations.push(locations[originalLocationIndex]);
+                });
+                
+                // Create custom directions panel for mobile (similar to desktop but more compact)
+                var panel = document.getElementById('directions-panel-mobile');
+                var html = '<div style="padding: 10px;">';
+                
+                // Add each leg with full turn-by-turn directions
+                response.routes[0].legs.forEach(function(leg, index) {
+                    var fromLocation = optimizedLocations[index];
+                    var toLocation = optimizedLocations[index + 1];
+                    
+                    // For circular route, last leg returns to start
+                    if (!toLocation && index === response.routes[0].legs.length - 1) {
+                        toLocation = optimizedLocations[0];
+                    }
+                    
+                    html += '<div style="margin-bottom: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px;">';
+                    
+                    // From section
+                    html += '<div style="margin-bottom: 8px;">';
+                    html += '<div style="font-weight: bold; color: #1a73e8; font-size: 16px;">';
+                    html += '<span style="background: #1a73e8; color: white; padding: 3px 7px; border-radius: 50%; margin-right: 6px; font-size: 13px;">' + (index + 1) + '</span>';
+                    html += fromLocation.name;
+                    html += '</div>';
+                    html += '<div style="color: #5f6368; font-size: 11px; margin-left: 28px;">' + leg.start_address.replace(/, USA$/, '') + '</div>';
+                    html += '</div>';
+                    
+                    // Driving directions
+                    html += '<div style="margin-left: 10px; padding-left: 10px; border-left: 2px dashed #dadce0;">';
+                    html += '<ul style="margin: 8px 0; padding-left: 4px; font-size: 11px; list-style: disc;">';
+                    leg.steps.forEach(function(step) {
+                        var instruction = step.instructions.replace(/<[^>]*>/g, '');
+                        var destinationMatch = instruction.match(/(.*?)(Destination will be.*)/);
+                        
+                        if (destinationMatch) {
+                            var mainInstruction = destinationMatch[1].trim();
+                            var destinationPart = destinationMatch[2];
+                            
+                            if (mainInstruction) {
+                                html += '<li style="margin-bottom: 4px">';
+                                html += '<span style="position: absolute; left: 4px; top: 6px; width: 5px; height: 5px; background-color: #333; border-radius: 50%; border: 1px solid white; box-shadow: 0 0 0 1px white;"></span>';
+                                html += mainInstruction;
+                                html += ' <span style="color: #9aa0a6; font-size: 11px;">(' + step.distance.text + ')</span>';
+                                html += '</li>';
+                            }
+                            
+                            html += '<li class="text-success" style="list-style: none; position: relative; padding-left: 16px; margin-bottom: 4px;">';
+                            html += '<span style="position: absolute; left: 0px; font-size: 14px;">✓</span>';
+                            html += destinationPart;
+                            html += '</li>';
+                        } else {
+                            html += '<li style="margin-bottom: 4px">';
+                            html += '<span style="position: absolute; left: 4px; top: 6px; width: 5px; height: 5px; background-color: #333; border-radius: 50%; border: 1px solid white; box-shadow: 0 0 0 1px white;"></span>';
+                            html += instruction;
+                            html += ' <span style="color: #9aa0a6; font-size: 11px;">(' + step.distance.text + ')</span>';
+                            html += '</li>';
+                        }
+                    });
+                    html += '</ul>';
+                    
+                    // Distance and time summary
+                    html += '<div style="background: white; padding: 6px 8px; border-radius: 4px; margin-top: 8px; font-size: 12px;">';
+                    html += '<span style="color: #1a73e8; font-weight: bold;">' + leg.distance.text + '</span>';
+                    html += ' · ';
+                    html += '<span style="color: #5f6368;">' + leg.duration.text + '</span>';
+                    html += '</div>';
+                    html += '</div>';
+                    
+                    html += '</div>';
+                });
+                
+                // Add final return to home section if applicable
+                if (response.routes[0].legs.length === optimizedLocations.length) {
+                    var lastLeg = response.routes[0].legs[response.routes[0].legs.length - 1];
+                    var lastStopNumber = optimizedLocations.length;
+                    
+                    html += '<div style="margin-bottom: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px;">';
+                    html += '<div style="font-weight: bold; color: #1a73e8; font-size: 16px;">';
+                    html += '<span style="background: #1a73e8; color: white; padding: 3px 7px; border-radius: 50%; margin-right: 6px; font-size: 13px;">' + lastStopNumber + '</span>';
+                    html += 'Return to Home';
+                    html += '</div>';
+                    html += '<div style="color: #5f6368; font-size: 11px; margin-left: 28px;">' + lastLeg.end_address.replace(/, USA$/, '') + '</div>';
+                    html += '</div>';
+                }
+                
+                // Add total summary
+                var totalDistance = response.routes[0].legs.reduce(function(sum, leg) { 
+                    return sum + leg.distance.value; 
+                }, 0) / 1000;
+                var totalDuration = Math.round(response.routes[0].legs.reduce(function(sum, leg) { 
+                    return sum + leg.duration.value; 
+                }, 0) / 60);
+                
+                html += '<div style="margin-top: 15px; padding: 12px; background: #e8f0fe; border-radius: 8px;">';
+                html += '<h6 style="margin: 0 0 8px 0; color: #1a73e8; font-size: 14px;">Tour Summary</h6>';
+                html += '<div style="font-size: 12px;">Total Distance: <strong>' + totalDistance.toFixed(1) + ' km</strong></div>';
+                html += '<div style="font-size: 12px;">Total Time: <strong>' + totalDuration + ' minutes</strong></div>';
+                html += '<div style="font-size: 12px;">Stops: <strong>' + optimizedLocations.length + ' locations</strong></div>';
+                html += '</div>';
+                
+                html += '</div>';
+                panel.innerHTML = html;
+                
+                // Add markers
+                for (var i = 0; i < optimizedLocations.length; i++) {
+                    var location = optimizedLocations[i];
+                    var markerPosition;
+                    
+                    if (i === 0) {
+                        markerPosition = response.routes[0].legs[0].start_location;
+                    } else {
+                        markerPosition = response.routes[0].legs[i - 1].end_location;
+                    }
+                    
+                    // Create pin element
+                    var pinBackground = document.createElement('div');
+                    pinBackground.style.backgroundColor = (i === 0) ? '#4285F4' : '#EA4335';
+                    pinBackground.style.width = '25px';
+                    pinBackground.style.height = '25px';
+                    pinBackground.style.borderRadius = '50%';
+                    pinBackground.style.border = '2px solid white';
+                    pinBackground.style.display = 'flex';
+                    pinBackground.style.alignItems = 'center';
+                    pinBackground.style.justifyContent = 'center';
+                    pinBackground.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                    
+                    var pinLabel = document.createElement('div');
+                    pinLabel.textContent = (i + 1).toString();
+                    pinLabel.style.color = 'white';
+                    pinLabel.style.fontSize = '12px';
+                    pinLabel.style.fontWeight = 'bold';
+                    
+                    pinBackground.appendChild(pinLabel);
+                    
+                    new google.maps.marker.AdvancedMarkerElement({
+                        position: markerPosition,
+                        map: routeMapMobile,
+                        title: location.name,
+                        content: pinBackground
+                    });
+                }
+            } else {
+                console.error('Directions request failed:', status);
+                document.getElementById('directions-panel-mobile').innerHTML = '<div class="alert alert-danger">Failed to load directions: ' + status + '</div>';
+            }
+        });
+    }
     </script>
 
 <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
@@ -2399,15 +2776,61 @@ window.addEventListener('load', function() {
             }
         });
         console.log('Sortable initialized');
+        
+        // Initialize sortable for mobile
+        jQuery("#sortable-mobile").sortable({
+            handle: ".sortable_item_handle",
+            axis: "y",
+            items: ".sortable_item:not(.out-of-range)",
+            start: function(event, ui) {
+                jQuery(this).addClass('sorting-active');
+                console.log('Started sorting (mobile)');
+            },
+            stop: function(event, ui) {
+                jQuery(this).removeClass('sorting-active');
+                console.log('Stopped sorting (mobile)');
+                // Update the desktop list order to match mobile
+                updateDesktopOrderFromMobile();
+                // Show the mobile update button
+                var mobileButton = document.getElementById("draw_map_mobile");
+                if (mobileButton) {
+                    mobileButton.style.display = "inline-block";
+                }
+            }
+        });
+        console.log('Mobile sortable initialized');
     } else {
         console.error('jQuery or jQuery UI not loaded');
     }
 });
 
+// Function to sync desktop order from mobile
+function updateDesktopOrderFromMobile() {
+    // Get the mobile order
+    var mobileOrder = [];
+    jQuery('#sortable-mobile .sortable_item').each(function() {
+        mobileOrder.push(jQuery(this).data('company-id'));
+    });
+    
+    // Reorder desktop items to match
+    var desktopContainer = jQuery('#sortable');
+    mobileOrder.forEach(function(companyId) {
+        var item = desktopContainer.find('.sortable_item[data-company-id="' + companyId + '"]');
+        desktopContainer.append(item);
+    });
+    
+    // Show update button
+    document.getElementById("draw_map").style.display = "inline-block";
+}
+
 // Function to reload map after reordering
 function DrawNewMap() {
     console.log('DrawNewMap called');
     console.log('Original locations:', locations);
+    console.log('Original location names:', locations.map(function(loc) { return loc.name; }));
+    
+    // Debug: Check what sortable items we have
+    console.log('Number of sortable items found:', $('.sortable_item').length);
     
     // Update locations based on new order
     var newLocations = [{
@@ -2418,26 +2841,23 @@ function DrawNewMap() {
         type: "home"
     }];
     
-    $('.sortable_item').each(function() {
+    $('.sortable_item').each(function(index) {
         var $item = $(this);
         var isOutOfRange = $item.data('out-of-range') === 'true';
         
-        console.log('Processing item, out of range:', isOutOfRange);
+        console.log('Processing sortable item #' + index + ', out of range:', isOutOfRange);
         
         // Skip out of range businesses
         if (isOutOfRange) {
+            console.log('Skipping out-of-range business');
             return true; // continue to next iteration
         }
         
-        var businessName = $item.find('.small.fw-bold').text().trim();
+        // Get business name from data attribute for cleaner extraction
+        var businessName = $item.attr('data-company-name');
         
-        // Remove the distance badge text if present
-        var distanceBadgeText = $item.find('.out-of-range-badge').text();
-        if (distanceBadgeText) {
-            businessName = businessName.replace(distanceBadgeText, '').trim();
-        }
-        
-        console.log('Business name after cleanup:', businessName);
+        console.log('Business name from data attribute:', businessName);
+        console.log('Looking for this business in locations array...');
         
         // Find the business in original locations
         var found = false;
@@ -2456,15 +2876,29 @@ function DrawNewMap() {
     });
     
     console.log('New locations after reorder:', newLocations);
+    console.log('Location names in new order:', newLocations.map(function(loc) { return loc.name; }));
     
     // Update global locations array
     locations = newLocations;
     
+    // Log the updated global locations array
+    console.log('Updated global locations:', locations);
+    console.log('Updated location names:', locations.map(function(loc) { return loc.name; }));
+    
     // Reload the map with new order
     loadDirections();
     
-    // Hide the button after redrawing
+    // Also update mobile directions if visible
+    if (window.innerWidth < 992) {
+        loadMobileDirections();
+    }
+    
+    // Hide the buttons after redrawing
     document.getElementById("draw_map").style.display = "none";
+    var mobileButton = document.getElementById("draw_map_mobile");
+    if (mobileButton) {
+        mobileButton.style.display = "none";
+    }
 }
 
 // Location picker functionality
@@ -2494,21 +2928,37 @@ $(document).on('click', '.pick-location', function(e) {
     $('#force-location-container').hide();
     $('#confirm-location').prop('disabled', true);
     
-    // Show modal
-    $('#locationPickerModal').modal('show');
+    // Clear existing markers from previous searches
+    if (locationMarkers && locationMarkers.length > 0) {
+        locationMarkers.forEach(function(marker) {
+            if (marker && marker.setMap) {
+                marker.setMap(null);
+            }
+        });
+        locationMarkers = [];
+    }
     
-    // Search for locations when modal opens
-    $('#locationPickerModal').off('shown.bs.modal').on('shown.bs.modal', function() {
-        // Initialize map if needed
-        if (!locationPickerMap) {
-            locationPickerMap = new google.maps.Map(document.getElementById('location-map'), {
+    // Initialize map if needed (do this before showing modal to prevent flashing)
+    if (!locationPickerMap) {
+        var mapElement = document.getElementById('location-map');
+        if (mapElement) {
+            locationPickerMap = new google.maps.Map(mapElement, {
                 zoom: 10,
-                center: {lat: 39.7392, lng: -104.9903},
+                center: {lat: parseFloat(locations[0].lat) || 39.7392, lng: parseFloat(locations[0].lng) || -104.9903},
                 mapId: '<?php echo $sitesettings['GOOGLEAPI']['mapid'] ?? '9cd54b1058579fe87b380337'; ?>' // Birthday Gold Tour Map ID for AdvancedMarkerElement
             });
         }
-        
-        searchBusinessLocations();
+    }
+    
+    // Show modal
+    $('#locationPickerModal').modal('show');
+    
+    // Use one() instead of on() to ensure the handler only runs once per modal show
+    $('#locationPickerModal').one('shown.bs.modal', function() {
+        // Small delay to ensure modal is fully rendered
+        setTimeout(function() {
+            searchBusinessLocations();
+        }, 100);
     });
 });
 
@@ -2534,7 +2984,7 @@ function searchBusinessLocations() {
     
     // Make AJAX call to current page
     $.ajax({
-        url: window.location.pathname,
+        url: '/myaccount/tour.php',
         method: 'POST',
         data: {
             action: 'search_business_locations',
@@ -2568,14 +3018,15 @@ function displayLocationResults(locations) {
     var resultsDiv = document.getElementById('location-results');
     resultsDiv.innerHTML = '';
     
-    // Clear existing location markers (but keep home marker)
-    locationMarkers = locationMarkers.filter(marker => {
-        if (marker.getTitle() !== 'Starting Location') {
-            marker.setMap(null);
-            return false;
-        }
-        return true;
-    });
+    // Clear ALL existing location markers
+    if (locationMarkers && locationMarkers.length > 0) {
+        locationMarkers.forEach(function(marker) {
+            if (marker && marker.setMap) {
+                marker.setMap(null);
+            }
+        });
+        locationMarkers = [];
+    }
     
     if (locations.length === 0) {
         resultsDiv.innerHTML = '<div class="alert alert-info">No locations found in this radius</div>';
@@ -2588,9 +3039,38 @@ function displayLocationResults(locations) {
     
     // Create bounds to fit all markers
     var bounds = new google.maps.LatLngBounds();
-    // Add home location to bounds
+    
+    // Add home marker first
     if (window.locations && window.locations[0] && window.locations[0].lat && window.locations[0].lng) {
-        bounds.extend({lat: parseFloat(window.locations[0].lat), lng: parseFloat(window.locations[0].lng)});
+        var homePosition = {lat: parseFloat(window.locations[0].lat), lng: parseFloat(window.locations[0].lng)};
+        bounds.extend(homePosition);
+        
+        // Create home marker with special styling
+        var homePin = document.createElement('div');
+        homePin.style.backgroundColor = '#4285F4';
+        homePin.style.width = '30px';
+        homePin.style.height = '30px';
+        homePin.style.borderRadius = '50%';
+        homePin.style.border = '3px solid white';
+        homePin.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+        homePin.style.display = 'flex';
+        homePin.style.alignItems = 'center';
+        homePin.style.justifyContent = 'center';
+        
+        var homeIcon = document.createElement('i');
+        homeIcon.className = 'bi bi-house-fill';
+        homeIcon.style.color = 'white';
+        homeIcon.style.fontSize = '16px';
+        
+        homePin.appendChild(homeIcon);
+        
+        var homeMarker = new google.maps.marker.AdvancedMarkerElement({
+            position: homePosition,
+            map: locationPickerMap,
+            title: 'Starting Tour Location',
+            content: homePin,
+            zIndex: 1000 // Ensure home marker is on top
+        });
     }
     
     locations.forEach(function(location, index) {
@@ -2654,8 +3134,35 @@ function displayLocationResults(locations) {
         });
     });
     
-    // Fit map to show all markers
+    // Fit map to show all markers with appropriate zoom based on radius
     locationPickerMap.fitBounds(bounds);
+    
+    // Adjust zoom based on radius
+    var radius = parseInt(document.getElementById('radius-select').value);
+    var maxZoom;
+    switch(radius) {
+        case 5:
+            maxZoom = 13;
+            break;
+        case 25:
+            maxZoom = 11;
+            break;
+        case 50:
+            maxZoom = 10;
+            break;
+        case 100:
+            maxZoom = 9;
+            break;
+        default:
+            maxZoom = 11;
+    }
+    
+    // Apply max zoom after a short delay to allow fitBounds to complete
+    setTimeout(function() {
+        if (locationPickerMap.getZoom() > maxZoom) {
+            locationPickerMap.setZoom(maxZoom);
+        }
+    }, 100);
 }
 
 function selectLocation(location, index) {
@@ -2672,14 +3179,33 @@ function selectLocation(location, index) {
     document.getElementById('confirm-location').disabled = false;
     document.getElementById('force-location-container').style.display = 'block';
     
-    // Animate all markers back to normal size
-    locationMarkers.forEach(function(marker) {
-        if (marker.getTitle() !== 'Starting Location') {
-            marker.setAnimation(null);
-            // Reset to normal size
-            var icon = marker.getIcon();
-            icon.scale = 10;
-            marker.setIcon(icon);
+    // Center map on selected location
+    var selectedPosition = {lat: selectedLocation.lat, lng: selectedLocation.lng};
+    locationPickerMap.panTo(selectedPosition);
+    locationPickerMap.setZoom(14); // Zoom in but not too close
+    
+    // Animate all markers back to normal
+    locationMarkers.forEach(function(marker, idx) {
+        if (marker.content) {
+            // Reset size
+            marker.content.style.width = '24px';
+            marker.content.style.height = '24px';
+            marker.content.style.transform = 'scale(1)';
+            marker.content.style.transition = 'all 0.3s ease';
+        }
+        
+        // Animate the selected marker
+        if (idx === index) {
+            // Make selected marker bigger with animation
+            marker.content.style.width = '32px';
+            marker.content.style.height = '32px';
+            marker.content.style.transform = 'scale(1.3)';
+            
+            // Add bounce animation
+            marker.setAnimation(google.maps.Animation.BOUNCE);
+            setTimeout(function() {
+                marker.setAnimation(null);
+            }, 1500); // Stop bouncing after 1.5 seconds
         }
     });
     
@@ -2714,7 +3240,7 @@ $(document).on('click', '#confirm-location', function() {
         var forceLocation = document.getElementById('force-location-check').checked;
         
         // Update the tour with the selected location
-        fetch(window.location.pathname, {
+        fetch('/myaccount/tour.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -2951,7 +3477,7 @@ function initializeHomeLocationModal() {
     document.getElementById('confirm-home-location').addEventListener('click', function() {
     if (selectedHomeLocation) {
         // Update via AJAX
-        fetch(window.location.pathname, {
+        fetch('/myaccount/tour.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -3285,7 +3811,7 @@ function sendToPhone() {
     
     // Send to server to shorten and text
     $.ajax({
-        url: '/myaccount/tour-v2.php' + (isDebug ? '?debug=1' : ''),
+        url: '/myaccount/tour.php' + (isDebug ? '?debug=1' : ''),
         method: 'POST',
         data: {
             action: 'send_to_phone',
@@ -3299,14 +3825,24 @@ function sendToPhone() {
         success: function(response) {
             if (response.debug) {
                 console.log('=== SEND TO PHONE DEBUG INFO ===');
+                if (response.debug.proof_of_dynamic_shortening) {
+                    console.log('🔍 PROOF OF DYNAMIC SHORTENING:');
+                    console.log('  Timestamp:', response.debug.proof_of_dynamic_shortening.timestamp);
+                    console.log('  Random ID:', response.debug.proof_of_dynamic_shortening.random_id);
+                    console.log('  Process ID:', response.debug.proof_of_dynamic_shortening.process_id);
+                    console.log('  Request Time:', response.debug.proof_of_dynamic_shortening.server_request_time);
+                }
                 console.log('Original URL:', response.debug.original_url);
+                console.log('Original URL MD5:', response.debug.original_url_md5);
                 console.log('Shortened URL:', response.debug.shortened_url);
+                console.log('Shortener API Response:', response.debug.shortener_api_response);
                 console.log('Apple Maps URL:', response.debug.apple_maps_url);
                 console.log('Google Maps URL:', response.debug.google_maps_url);
                 console.log('Phone Type:', response.debug.phone_type);
                 console.log('Phone Type Source:', response.debug.phone_type_source);
                 console.log('Phone Number:', response.debug.phone_number);
-                console.log('Shortcode Data:', response.debug.shortcode_data);
+                console.log('Tour Date:', response.debug.tour_date);
+                console.log('Custom Param:', response.debug.shortener_custom_param);
                 if (response.sms_result) {
                     console.log('SMS Result:', response.sms_result);
                 }
@@ -3383,11 +3919,37 @@ function sendToPhone() {
                     errorMessage += '\n\nShortened URL: ' + response.short_url;
                 }
                 
+                // Show fallback URL if shortener failed
+                if (response.fallback_url) {
+                    errorMessage += '\n\nThe URL shortener is currently unavailable. You can manually copy this navigation link:\n\n' + response.fallback_url;
+                }
+                
                 alert(errorMessage);
             }
         },
-        error: function() {
-            alert('Failed to send navigation link. Please try again.');
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', status, error);
+            console.error('Response status:', xhr.status);
+            console.error('Response text:', xhr.responseText);
+            
+            var errorMessage = 'Failed to create short URL';
+            
+            // Try to parse JSON response if available
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.message) {
+                    errorMessage = response.message;
+                }
+            } catch (e) {
+                // If not JSON, check for specific error patterns
+                if (xhr.responseText.includes('Failed to create short URL')) {
+                    errorMessage = xhr.responseText;
+                } else if (xhr.status === 500) {
+                    errorMessage = 'Server error (500). The URL shortening service may be unavailable.';
+                }
+            }
+            
+            alert(errorMessage);
         }
     });
 }

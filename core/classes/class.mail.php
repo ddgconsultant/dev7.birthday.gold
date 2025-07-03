@@ -173,8 +173,17 @@ Cheers!<br>birthday.gold
 </p>
 ';
     $shortcode = $app->getshortcode($input['validatelink']);
+    
+    // Check if shortener failed and use original URL as fallback
+    if ($shortcode === false || !isset($shortcode['shorturl'])) {
+        $shorturl = $input['validatelink']; // Use original URL if shortener fails
+        error_log("[MAIL] Shortener failed for verification email, using original URL");
+    } else {
+        $shorturl = $shortcode['shorturl'];
+    }
+    
     $search = array('{{VERIFICATION_CODE}}', $input['validatelink']);
-    $replace = array($verificationcode_tag, $shortcode['shorturl']);
+    $replace = array($verificationcode_tag, $shorturl);
 
     $message['body'] = str_replace($search, $replace, $message['body']);
 
