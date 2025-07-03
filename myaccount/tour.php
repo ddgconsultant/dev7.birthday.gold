@@ -236,7 +236,7 @@ if (isset($_POST['action'])) {
                 $loc['distance'] = round($loc['distance'], 1);
             }
             
-            // Don't provide fallback - only show locations within the selected radius
+            // Do not provide fallback - only show locations within the selected radius
             
             ob_end_clean();
             echo json_encode(['success' => true, 'locations' => $locations, 'count' => count($locations)]);
@@ -401,7 +401,7 @@ if (isset($_POST['action'])) {
                 // Use test phone number in debug mode
                 $phoneNumber = $testPhone;
             } else {
-                // Get user's phone number from profile
+                // Get user phone number from profile
                 $phoneQuery = "SELECT string_value FROM bg_user_attributes 
                               WHERE user_id = :user_id 
                               AND type = 'profile' 
@@ -431,7 +431,7 @@ if (isset($_POST['action'])) {
             
             // Use app->getshortcode to shorten the URL
             try {
-                // Debug: log the URL we're trying to shorten
+                // Debug: log the URL we are trying to shorten
                 if ($debug) {
                     error_log("Attempting to shorten URL: " . $navigationUrl);
                     error_log("URL decoded: " . urldecode($navigationUrl));
@@ -564,7 +564,7 @@ if (isset($_POST['action'])) {
             }
             
             // Create SMS message
-            $message = "Your Birthday Tour navigation link for " . date('M j, Y', strtotime($tourDate)) . ":\n" . $shortUrl . "\n\nTap to open in " . ($phoneType === 'iphone' || $phoneType === 'ios' ? 'Maps' : 'Google Maps');
+            $message = "Your Birthday.Gold " . date('M j, Y', strtotime($tourDate)) . " Tour navigation link::\n\n" . $shortUrl . "\n\nTap to open in " . ($phoneType === 'iphone' || $phoneType === 'ios' ? 'Maps' : 'Google Maps');
             
             // Format phone number for display (show last 4 digits)
             $displayPhone = '';
@@ -728,7 +728,7 @@ foreach ($companies as $item_company) {
             
             // If we have a verified location, update the company data
             if ($verifiedLocation) {
-                // Only update address fields if they're not empty in the verified location
+                // Only update address fields if they are not empty in the verified location
                 if (!empty($verifiedLocation['address'])) {
                     $company_data['address'] = $verifiedLocation['address'];
                 }
@@ -782,7 +782,7 @@ $homeaddress = '10106 Atlanta Street, Parker, CO 80134'; // default fallback
 $home_lat = null;
 $home_lng = null;
 
-// Get user's default home location
+// Get user default home location
 $homeData = getUserAttribute($database, $current_user_data['user_id'], 'tour_settings', 'default_home_location');
 
 if ($homeData && !empty($homeData['description'])) {
@@ -1059,6 +1059,16 @@ $additionalstyles = '<style>
     cursor: grab;
     color: #6c757d;
     transition: color 0.2s ease;
+    /* Make touch target larger for iPad */
+    padding: 8px;
+    margin: -8px;
+    /* Prevent text selection on touch */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* Prevent iOS callout on long press */
+    -webkit-touch-callout: none;
 }
 
 .sortable_item_handle:hover {
@@ -1068,6 +1078,20 @@ $additionalstyles = '<style>
 .sortable_item_handle:active {
     cursor: grabbing;
     color: #212529;
+}
+
+/* Touch-specific styles */
+@media (hover: none) and (pointer: coarse) {
+    .sortable_item_handle {
+        /* Larger touch target for touch devices */
+        padding: 12px;
+        margin: -12px;
+    }
+    
+    .sortable_item {
+        /* Prevent iOS bounce effect */
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
 #directions-panel {
@@ -1299,6 +1323,9 @@ echo '<div class="container">';
 echo '<div class="col-12">';
 ?>
 
+<!-- Alert Container -->
+<div id="alert-container" style="position: fixed; top: 80px; right: 20px; z-index: 9999; max-width: 400px;"></div>
+
 <!-- Mobile Header -->
 <div class="mobile-only">
     <div class="d-flex justify-content-between align-items-start mb-3">
@@ -1358,19 +1385,21 @@ echo '<div class="col-12">';
         <!-- ACTIONS card -->
         <div class="card h-100 border-start-lg border-start-success">
             <div class="card-body">
-                <div class="small text-muted mb-4">Actions</div>
-                <div class="text-center">
-                    <button class="btn btn-primary me-2" onclick="sendToPhone()">
-                        <i class="bi bi-phone"></i> Send to Phone
+                <div class="small text-muted mb-3">Actions</div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" onclick="sendToPhone()">
+                        <i class="bi bi-phone me-2"></i>Send to Phone
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.print()">
+                        <i class="bi bi-printer me-2"></i>Print Tour
                     </button>
                     <?php if (isset($_GET['debug'])): ?>
-                    <button class="btn btn-outline-secondary" onclick="getTestingLinks()">
-                        <i class="bi bi-bug"></i> Get Test Links
-                    </button>
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-secondary w-100" onclick="getTestingLinks()">
+                            <i class="bi bi-bug me-2"></i>Get Test Links
+                        </button>
+                    </div>
                     <?php endif; ?>
-                    <button class="btn btn-secondary" onclick="window.print()">
-                        <i class="bi bi-printer"></i> Print/Download
-                    </button>
                 </div>
             </div>
         </div>
@@ -1417,7 +1446,7 @@ echo '<div class="col-12">';
                                 $displayHomeAddress = preg_replace('/, United States$/', '', $displayHomeAddress);
                                 echo $displayHomeAddress;
                                 
-                                // Get user's profile mailing address
+                                // Get user profile mailing address
                                 $profileAddress = getUserAttribute($database, $current_user_data['user_id'], 'profile', 'profile_mailing_address');
                                 $profileCity = getUserAttribute($database, $current_user_data['user_id'], 'profile', 'profile_city');
                                 $profileState = getUserAttribute($database, $current_user_data['user_id'], 'profile', 'profile_state');
@@ -1797,6 +1826,47 @@ echo '<div class="col-12">';
         }
     }
 
+    // Set document title for printing/PDF
+    var originalTitle = document.title;
+    var tourDate = <?php echo json_encode($date); ?>;
+    var formattedTourDate = <?php echo json_encode($dateObject->format('F j, Y')); ?>;
+    
+    // Set print title when print dialog opens
+    window.addEventListener('beforeprint', function() {
+        document.title = 'Birthday.Gold - My Tour ' + formattedTourDate + '.pdf';
+    });
+    
+    // Restore original title after printing
+    window.addEventListener('afterprint', function() {
+        document.title = originalTitle;
+    });
+    
+    // Bootstrap alert function
+    function showAlert(message, type = 'success', duration = 5000) {
+        var alertId = 'alert-' + Date.now();
+        var alertHtml = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show shadow" role="alert">
+                <div class="d-flex align-items-start">
+                    <div class="flex-grow-1">
+                        ${message.replace(/\n/g, '<br>')}
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        $('#alert-container').prepend(alertHtml);
+        
+        // Auto-dismiss after duration
+        if (duration > 0) {
+            setTimeout(function() {
+                $('#' + alertId).fadeOut(400, function() {
+                    $(this).remove();
+                });
+            }, duration);
+        }
+    }
+    
     // Map initialization
     var routeMap;
     var directionsService;
@@ -1818,7 +1888,7 @@ echo '<div class="col-12">';
                 // Check if we have a full address or just city/state
                 $hasFullAddress = !empty($item_company['address']) && strlen(trim($item_company['address'])) > 0;
                 
-                // Use home location city/state if business doesn't have them
+                // Use home location city/state if business does not have them
                 $businessCity = !empty($item_company['city']) ? $item_company['city'] : $home_city;
                 $businessState = !empty($item_company['state']) ? $item_company['state'] : $home_state;
                 $businessZip = !empty($item_company['zip_code']) ? $item_company['zip_code'] : $home_zip;
@@ -2750,6 +2820,97 @@ echo '<div class="col-12">';
 
 <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
 <script>
+// Touch support for jQuery UI sortable
+// This enables drag and drop on touch devices like iPad
+(function($) {
+    // Detect touch support
+    var supportTouch = 'ontouchend' in document;
+    
+    // Ignore if no touch support
+    if (!supportTouch) {
+        return;
+    }
+    
+    // Add touch-to-mouse event mapping
+    $.fn.addTouch = function() {
+        this.each(function(i, el) {
+            // Track touch state
+            var touching = false;
+            
+            el.addEventListener('touchstart', function(e) {
+                if (e.touches.length !== 1) return;
+                
+                var touch = e.touches[0];
+                touching = true;
+                
+                // Find the handle element
+                var handle = $(e.target).closest('.sortable_item_handle');
+                if (handle.length === 0) return;
+                
+                // Simulate mousedown on the handle
+                var mouseEvent = new MouseEvent('mousedown', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    screenX: touch.screenX,
+                    screenY: touch.screenY,
+                    pageX: touch.pageX,
+                    pageY: touch.pageY
+                });
+                
+                handle[0].dispatchEvent(mouseEvent);
+                e.preventDefault();
+            });
+            
+            el.addEventListener('touchmove', function(e) {
+                if (!touching || e.touches.length !== 1) return;
+                
+                var touch = e.touches[0];
+                
+                // Simulate mousemove
+                var mouseEvent = new MouseEvent('mousemove', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    screenX: touch.screenX,
+                    screenY: touch.screenY,
+                    pageX: touch.pageX,
+                    pageY: touch.pageY
+                });
+                
+                document.dispatchEvent(mouseEvent);
+                e.preventDefault();
+            });
+            
+            el.addEventListener('touchend', function(e) {
+                if (!touching) return;
+                
+                touching = false;
+                
+                // Simulate mouseup
+                var mouseEvent = new MouseEvent('mouseup', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                });
+                
+                document.dispatchEvent(mouseEvent);
+                e.preventDefault();
+            });
+            
+            el.addEventListener('touchcancel', function(e) {
+                touching = false;
+            });
+        });
+        
+        return this;
+    };
+})(jQuery);
+
 // Wait for page to fully load
 window.addEventListener('load', function() {
     console.log('Initializing sortable...');
@@ -2799,6 +2960,13 @@ window.addEventListener('load', function() {
             }
         });
         console.log('Mobile sortable initialized');
+        
+        // Add touch support for iPads and other touch devices
+        if ('ontouchend' in document) {
+            console.log('Touch device detected, adding touch support for sortable');
+            jQuery('#sortable').addTouch();
+            jQuery('#sortable-mobile').addTouch();
+        }
     } else {
         console.error('jQuery or jQuery UI not loaded');
     }
@@ -3688,12 +3856,32 @@ function getTestingLinks() {
 }
 
 // Send to phone functionality
+// Track last SMS send time
+var lastSmsSentTime = 0;
+var smsInProgress = false;
+
 function sendToPhone() {
     console.log('Send to phone clicked');
     
+    // Check if SMS is already in progress
+    if (smsInProgress) {
+        showAlert('<strong>Please wait...</strong><br>Your previous request is still being processed.', 'warning', 3000);
+        return;
+    }
+    
+    // Check rate limit (60 seconds)
+    var currentTime = Date.now();
+    var timeSinceLastSms = (currentTime - lastSmsSentTime) / 1000; // Convert to seconds
+    
+    if (lastSmsSentTime > 0 && timeSinceLastSms < 60) {
+        var remainingTime = Math.ceil(60 - timeSinceLastSms);
+        showAlert('<strong>Please wait</strong><br>You can send another SMS in ' + remainingTime + ' seconds.', 'warning', 4000);
+        return;
+    }
+    
     // Check if we have locations
     if (locations.length < 2) {
-        alert('Please add businesses to your tour first.');
+        showAlert('<strong>No businesses in tour</strong><br>Please add businesses to your tour first.', 'danger', 5000);
         return;
     }
     
@@ -3703,9 +3891,23 @@ function sendToPhone() {
     });
     
     if (tourLocations.length < 2) {
-        alert('No in-range businesses found for navigation.');
+        showAlert('<strong>No in-range businesses</strong><br>No businesses within range were found for navigation.', 'danger', 5000);
         return;
     }
+    
+    // Set in-progress flag
+    smsInProgress = true;
+    
+    // Disable all send buttons while processing
+    $('button[onclick="sendToPhone()"]').prop('disabled', true).each(function() {
+        if ($(this).hasClass('btn-sm')) {
+            // Mobile button (icon only)
+            $(this).html('<span class="spinner-border spinner-border-sm" role="status"></span>');
+        } else {
+            // Desktop button (icon + text)
+            $(this).html('<span class="spinner-border spinner-border-sm me-2" role="status"></span>Sending...');
+        }
+    });
     
     // Build waypoints string for navigation URL
     var origin = encodeURIComponent(tourLocations[0].address);
@@ -3860,39 +4062,58 @@ function sendToPhone() {
             
             if (response.success) {
                 // Create a more informative message
-                var message = response.message;
+                var message = '<strong>' + response.message + '</strong>';
                 
                 // Show phone number if available
                 if (response.phone_number) {
-                    message += '\n\nPhone: ' + response.phone_number;
+                    message += '<br><br>Phone: ' + response.phone_number;
                 }
                 
                 // Show SMS status
                 if (response.sms_status === 'sent') {
-                    message += '\nSMS Status: ✓ Sent successfully';
+                    message += '<br>SMS Status: <i class="bi bi-check-circle-fill text-success"></i> Sent successfully';
                 } else if (response.sms_status === 'failed') {
-                    message += '\nSMS Status: ✗ Failed';
+                    message += '<br>SMS Status: <i class="bi bi-x-circle-fill text-danger"></i> Failed';
                     if (response.sms_error) {
-                        message += '\nError: ' + response.sms_error;
+                        message += '<br>Error: ' + response.sms_error;
                     }
                 }
                 
                 // Show the short URL if SMS failed
                 if (response.url) {
-                    message += '\n\nYou can manually copy this link:\n' + response.url;
+                    message += '<br><br>You can manually copy this link:<br><code>' + response.url + '</code>';
                 }
                 
                 // In debug mode, show more details
                 if (isDebug && response.debug) {
-                    message += '\n\n=== DEBUG INFO ===';
-                    message += '\nOriginal URL: ' + response.debug.original_url;
-                    message += '\nShortened URL: ' + response.debug.shortened_url;
+                    message += '<br><br><strong>=== DEBUG INFO ===</strong>';
+                    message += '<br>Original URL: <small>' + response.debug.original_url + '</small>';
+                    message += '<br>Shortened URL: <small>' + response.debug.shortened_url + '</small>';
                     if (response.message_text) {
-                        message += '\n\nSMS Message Text:\n' + response.message_text;
+                        message += '<br><br>SMS Message Text:<br><pre class="mb-0">' + response.message_text + '</pre>';
                     }
                 }
                 
-                alert(message);
+                // Show success alert
+                showAlert(message, 'success', 8000);
+                
+                // Update last sent time only on successful SMS send
+                if (response.sms_status === 'sent') {
+                    lastSmsSentTime = Date.now();
+                }
+                
+                // Reset flags and buttons
+                smsInProgress = false;
+                // Re-enable desktop button
+                $('button[onclick="sendToPhone()"]').prop('disabled', false).each(function() {
+                    if ($(this).hasClass('btn-sm')) {
+                        // Mobile button (icon only)
+                        $(this).html('<i class="bi bi-phone"></i>');
+                    } else {
+                        // Desktop button (icon + text)
+                        $(this).html('<i class="bi bi-phone me-1"></i>Send to Phone');
+                    }
+                });
                 
                 // In debug mode, offer to test the navigation URL
                 if (isDebug && response.debug && response.debug.shortened_url) {
@@ -3909,22 +4130,35 @@ function sendToPhone() {
                     }
                 }
             } else {
-                var errorMessage = response.message || 'Failed to send navigation link. Please try again.';
+                var errorMessage = '<strong>' + (response.message || 'Failed to send navigation link. Please try again.') + '</strong>';
                 
                 if (response.phone_number) {
-                    errorMessage += '\n\nPhone: ' + response.phone_number;
+                    errorMessage += '<br><br>Phone: ' + response.phone_number;
                 }
                 
                 if (response.short_url) {
-                    errorMessage += '\n\nShortened URL: ' + response.short_url;
+                    errorMessage += '<br><br>Shortened URL: <code>' + response.short_url + '</code>';
                 }
                 
                 // Show fallback URL if shortener failed
                 if (response.fallback_url) {
-                    errorMessage += '\n\nThe URL shortener is currently unavailable. You can manually copy this navigation link:\n\n' + response.fallback_url;
+                    errorMessage += '<br><br>The URL shortener is currently unavailable. You can manually copy this navigation link:<br><code style="word-break: break-all;">' + response.fallback_url + '</code>';
                 }
                 
-                alert(errorMessage);
+                showAlert(errorMessage, 'danger', 10000);
+                
+                // Reset flags and buttons on error
+                smsInProgress = false;
+                // Re-enable desktop button
+                $('button[onclick="sendToPhone()"]').prop('disabled', false).each(function() {
+                    if ($(this).hasClass('btn-sm')) {
+                        // Mobile button (icon only)
+                        $(this).html('<i class="bi bi-phone"></i>');
+                    } else {
+                        // Desktop button (icon + text)
+                        $(this).html('<i class="bi bi-phone me-1"></i>Send to Phone');
+                    }
+                });
             }
         },
         error: function(xhr, status, error) {
@@ -3949,7 +4183,11 @@ function sendToPhone() {
                 }
             }
             
-            alert(errorMessage);
+            showAlert('<strong>Error:</strong> ' + errorMessage, 'danger', 10000);
+            
+            // Reset flags and buttons on AJAX error
+            smsInProgress = false;
+            $('button[onclick="sendToPhone()"]').prop('disabled', false).html('<i class="bi bi-phone me-1"></i>Send to Phone');
         }
     });
 }
