@@ -80,118 +80,194 @@ echo '
 
     <!-- Account page navigation ===============================================-->
     <div class="container  mt-5">
+        <h1 class="mb-4">Your Celebration Tours</h1>
+        
         <div class="row">
-            <div class="card m-0 p-0">
+            
+            <?PHP
+            $user_id = $current_user_data['user_id'];
+            $currentDate = new DateTime();
+            
+            // Get all tours
+            $stmt = $database->prepare("SELECT * FROM bg_user_tours WHERE user_id = :user_id and status='active' order by calendar_dt desc");
+            $stmt->execute([':user_id' => $user_id]);
+            $all_tours = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Separate tours into upcoming and past
+            $upcoming_tours = [];
+            $past_tours = [];
+            
+            foreach ($all_tours as $tour) {
+                $tourDate = new DateTime($tour['calendar_dt']);
+                if ($tourDate >= $currentDate) {
+                    $upcoming_tours[] = $tour;
+                } else {
+                    $past_tours[] = $tour;
+                }
+            }
+            
+            // Count tours by date
+            $upcoming_dates = [];
+            $past_dates = [];
+            
+            foreach ($upcoming_tours as $tour) {
+                if (!isset($upcoming_dates[$tour['calendar_dt']])) {
+                    $upcoming_dates[$tour['calendar_dt']] = 0;
+                }
+                $upcoming_dates[$tour['calendar_dt']]++;
+            }
+            
+            foreach ($past_tours as $tour) {
+                if (!isset($past_dates[$tour['calendar_dt']])) {
+                    $past_dates[$tour['calendar_dt']] = 0;
+                }
+                $past_dates[$tour['calendar_dt']]++;
+            }
+            
+            // Debug: Show what we're counting
+            if (isset($_GET['debug'])) {
+                echo '<pre>Total tours: ' . count($all_tours) . '</pre>';
+                echo '<pre>Upcoming tours: ' . count($upcoming_tours) . '</pre>';
+                echo '<pre>Past tours: ' . count($past_tours) . '</pre>';
+                echo '<pre>Unique upcoming dates: ' . count($upcoming_dates) . '</pre>';
+                echo '<pre>Unique past dates: ' . count($past_dates) . '</pre>';
+                echo '<pre>Upcoming dates detail: ' . print_r($upcoming_dates, true) . '</pre>';
+                echo '<pre>Past dates detail: ' . print_r($past_dates, true) . '</pre>';
+            }
+            ?>
+            
+            <!-- Upcoming Tours -->
+            <div class="card m-0 p-0 mb-4">
                 <div class="card-header">
-                    Your Celebration Tours
+                    <h5 class="mb-0">Upcoming Tours <span class="badge bg-primary"><?php echo count($upcoming_dates); ?></span></h5>
                 </div>
 
                 <div class="card-body">
+                    <?php if (empty($upcoming_tours)) { ?>
+                        <p class="text-muted">No upcoming tours scheduled.</p>
+                    <?php } else { ?>
+                        <div class="accordion" id="accordionUpcoming">
+                            <?PHP
+                            $first_upcoming = true;
+                            $processed_dates = [];
+                            
+                            foreach ($upcoming_dates as $date => $count) {
+                                $expanded = $first_upcoming ? 'true' : 'false';
+                                $expanded_show = $first_upcoming ? 'show' : '';
+                                $collapsed = $first_upcoming ? '' : 'collapsed';
+                                $first_upcoming = false;
+                                
+                                $formattedDate = date("l, F j, Y", strtotime($date));
+                                
+                                echo '
+                                <div class="accordion-item p-1">
+                                    <h2 class="accordion-header d-flex align-items-center justify-content-between bg-light">
+                                        <button class="accordion-button ' . $collapsed . ' bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUpcoming' . $date . '" aria-expanded="' . $expanded . '" aria-controls="collapseUpcoming' . $date . '">
+                                            Tour Date: <b class="ps-2">' . $formattedDate . '</b> <span class="badge bg-secondary ms-2">' . $count . ' businesses</span>
+                                        </button>
+                                        <a class="button btn btn-primary m-2" href="/myaccount/tour?date=' . $date . '">Map</a>
+                                    </h2>
+                                    <div id="collapseUpcoming' . $date . '" class="accordion-collapse collapse ' . $expanded_show . '" data-bs-parent="#accordionUpcoming">
+                                        <div class="accordion-body">';
+                                
+                                // Display ALL companies for this date
+                                foreach ($upcoming_tours as $tour) {
+                                    if ($tour['calendar_dt'] == $date) {
+                                        $item_company = $app->getcompany($tour['company_id']);
+                                        if (!empty($item_company)) {
+                                            if (!empty($item_company['address'])) {
+                                                $companyaddress = $item_company['address'] . ', ' . $item_company['city'] . ', ' . $item_company['state'] . '  ' . $item_company['zip_code'];
+                                            } else {
+                                                $companyaddress = $current_user_data['profile_city'] . ', ' . $current_user_data['profile_state'] . '  ' . $current_user_data['profile_zip_code'];
+                                            }
+                                            
+                                            echo '
+                                            <div class="sortable_item">
+                                                <div class="d-flex align-items-center justify-content-between px-4" data-location="' . $companyaddress . '">
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="' . $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']) . '" style="width:32px" alt="" />  
+                                                        <div class="ms-4">
+                                                            <div class="small fw-bold">' . $item_company['company_name'] . '</div>
+                                                            <div class="text-xs text-muted">' . $companyaddress . '</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <hr>
+                                            </div>';
+                                        }
+                                    }
+                                }
+                                
+                                echo '</div></div></div>';
+                            }
+                            ?>
+                        </div>
+                    <?php } ?>
+                </div>
+            </div>
 
+            <!-- Past Tours -->
+            <div class="card m-0 p-0">
+                <div class="card-header">
+                    <h5 class="mb-0">Past Tours <span class="badge bg-secondary"><?php echo count($past_dates); ?></span></h5>
+                </div>
 
-                    <div class="accordion" id="accordionExample">
-
-
-                        <?PHP
-                        $user_id = $current_user_data['user_id'];
-
-                        $currenttour = '';
-                        $stmt =  $database->prepare("SELECT * FROM bg_user_tours WHERE user_id = :user_id and status='active' order by calendar_dt desc");
-                        $stmt->execute([':user_id' => $user_id]);
-                        $tours = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                        foreach ($tours as $tour) {
-                            $companylistoutput = '';
-
-
-
-                            if ($currenttour != $tour['calendar_dt']) {
+                <div class="card-body">
+                    <?php if (empty($past_tours)) { ?>
+                        <p class="text-muted">No past tours.</p>
+                    <?php } else { ?>
+                        <div class="accordion" id="accordionPast">
+                            <?PHP
+                            foreach ($past_dates as $date => $count) {
                                 $expanded = 'false';
                                 $expanded_show = '';
                                 $collapsed = 'collapsed';
-
-
-                                if ($currenttour != '') {
-                                    #end the previous accordian
-
-                                    echo '  
-</div>
-</div>
-</div>
-';
-                                } else {
-                                    $expanded = 'true';
-                                    $expanded_show = 'show';
-                                    $collapsed = 'collapsed';
-                                }
-
-                                $currenttour = $tour['calendar_dt'];
-                                $formattedDate = date("l, F j, Y", strtotime($tour['calendar_dt']));
-
-                                $tourDate = new DateTime($tour['calendar_dt']);
-                                $currentDate = new DateTime();
-
-                                if ($tourDate < $currentDate) {
-                                    $showmap = false;
-                                } else {
-                                    $showmap = true;
-                                }
-
+                                
+                                $formattedDate = date("l, F j, Y", strtotime($date));
+                                
                                 echo '
-<!-- Tour Accordian -->
-<div class="accordion-item p-1">
-<h2 class="accordion-header d-flex align-items-center justify-content-between  bg-light">
-
-<button class="accordion-button ' . $collapsed . '  bg-light"  type="button" data-bs-toggle="collapse" data-bs-target="#collapse' . $tour['calendar_dt'] . '" aria-expanded="' . $expanded . '" aria-controls="collapse' . $tour['calendar_dt'] . '">
-Tour Date: <b class="ps-2"> ' . $formattedDate . '</b>
-</button>
-';
-                                if ($showmap) echo '   <a class="button btn  btn-primary m-2 " href="/myaccount/tour?date=' . $tour['calendar_dt'] . '">Map</a>';
-
-                                echo '
-</h2>
-<div id="collapse' . $tour['calendar_dt'] . '" class="accordion-collapse collapse ' . $expanded_show . '" data-bs-parent="#accordionExample">
-<div class="accordion-body">
-';
-                            }
-
-                            $item_company = $app->getcompany($tour['company_id']);
-                            if (!empty($item_company)) {
-                                if (!empty($company['address'])) {
-                                    $companyaddress = $item_company['address'] . ', ' . $item_company['city'] . ', ' . $item_company['state'] . '  ' . $item_company['zip_code'];
-                                } else {
-                                    $companyaddress = $current_user_data['profile_city'] . ', ' . $current_user_data['profile_state'] . '  ' . $current_user_data['profile_zip_code'];
+                                <div class="accordion-item p-1">
+                                    <h2 class="accordion-header d-flex align-items-center justify-content-between bg-light">
+                                        <button class="accordion-button ' . $collapsed . ' bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePast' . $date . '" aria-expanded="' . $expanded . '" aria-controls="collapsePast' . $date . '">
+                                            Tour Date: <b class="ps-2">' . $formattedDate . '</b> <span class="badge bg-secondary ms-2">' . $count . ' businesses</span>
+                                        </button>
+                                    </h2>
+                                    <div id="collapsePast' . $date . '" class="accordion-collapse collapse ' . $expanded_show . '" data-bs-parent="#accordionPast">
+                                        <div class="accordion-body">';
+                                
+                                // Display ALL companies for this date
+                                foreach ($past_tours as $tour) {
+                                    if ($tour['calendar_dt'] == $date) {
+                                        $item_company = $app->getcompany($tour['company_id']);
+                                        if (!empty($item_company)) {
+                                            if (!empty($item_company['address'])) {
+                                                $companyaddress = $item_company['address'] . ', ' . $item_company['city'] . ', ' . $item_company['state'] . '  ' . $item_company['zip_code'];
+                                            } else {
+                                                $companyaddress = $current_user_data['profile_city'] . ', ' . $current_user_data['profile_state'] . '  ' . $current_user_data['profile_zip_code'];
+                                            }
+                                            
+                                            echo '
+                                            <div class="sortable_item">
+                                                <div class="d-flex align-items-center justify-content-between px-4" data-location="' . $companyaddress . '">
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="' . $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']) . '" style="width:32px" alt="" />  
+                                                        <div class="ms-4">
+                                                            <div class="small fw-bold">' . $item_company['company_name'] . '</div>
+                                                            <div class="text-xs text-muted">' . $companyaddress . '</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <hr>
+                                            </div>';
+                                        }
+                                    }
                                 }
-                                $companylistoutput .= '
-<!-- Other locations -->
-<div class="sortable_item">
-<div class="d-flex align-items-center justify-content-between px-4" data-location="' . $companyaddress . '">
-<div class="d-flex align-items-center">
-<img src="' . $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']) . '" style="width:32px" alt="" />  
-<div class="ms-4">
-<div class="small fw-bold">' . $item_company['company_name'] . '</div>
-<div class="text-xs text-muted">' . $companyaddress . '</div>
-</div>
-</div>
-
-</div>
-<hr>
-</div>
-';
-
-
-                                echo $companylistoutput . '
-';
+                                
+                                echo '</div></div></div>';
                             }
-                        }
-
-                        echo '  
-</div>
-</div>
-</div>
-';
-                        ?>
-
-                    </div>
+                            ?>
+                        </div>
+                    <?php } ?>
                 </div>
             </div>
         </div>
