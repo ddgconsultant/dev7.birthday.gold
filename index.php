@@ -211,7 +211,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
         </h1>
         
         <p class="hero-subtitle">
-        You Pick the Birthday Rewards, We Take Care of Enrollment<br>
+            <span class="tagline-main">You Pick the Birthday Rewards,<br class="tagline-break"> We Take Care of Enrollment</span><br>
             No forms. No hassle. Just freebies.
         </p>
         

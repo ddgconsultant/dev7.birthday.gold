@@ -15,9 +15,18 @@ include($dir['core_components'] . '/bg_header.inc');
 
 $additionalstyles .= '
 <style>
+/* Keep only highlight styling for accents */
+.highlight {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+}
+
 /* Hero Section */
 .how-hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
     color: white;
     padding: 4rem 0;
     text-align: center;
@@ -37,8 +46,8 @@ $additionalstyles .= '
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.1); opacity: 0.3; }
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 0.5; }
 }
 
 .how-hero h1 {
@@ -47,15 +56,18 @@ $additionalstyles .= '
     margin-bottom: 1rem;
     position: relative;
     z-index: 1;
+    color: #fff;
+    letter-spacing: 0.5px;
 }
 
 .how-hero .lead {
     font-size: 1.5rem;
-    font-weight: 300;
+    font-weight: 400;
     margin-bottom: 2rem;
-    opacity: 0.95;
+    color: #fff;
     position: relative;
     z-index: 1;
+    opacity: 1;
 }
 
 .how-hero .stats {
@@ -73,13 +85,17 @@ $additionalstyles .= '
 
 .stat-number {
     font-size: 2.5rem;
-    font-weight: 700;
+    font-weight: 800;
     display: block;
+    color: #FFD700;
 }
 
 .stat-label {
     font-size: 1rem;
-    opacity: 0.9;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 500;
 }
 
 /* Process Section */
@@ -146,9 +162,9 @@ $additionalstyles .= '
     z-index: 1;
 }
 
-.step-1 .step-icon { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); }
-.step-2 .step-icon { background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); }
-.step-3 .step-icon { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+.step-1 .step-icon { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+.step-2 .step-icon { background: linear-gradient(135deg, #7209b7 0%, #f72585 100%); }
+.step-3 .step-icon { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
 
 .step-card h3 {
     font-size: 1.75rem;
@@ -190,9 +206,9 @@ $additionalstyles .= '
     color: white;
 }
 
-.step-1 .step-content li::before { background: #f59e0b; }
-.step-2 .step-content li::before { background: #3b82f6; }
-.step-3 .step-content li::before { background: #22c55e; }
+.step-1 .step-content li::before { background: #FFD700; }
+.step-2 .step-content li::before { background: #7209b7; }
+.step-3 .step-content li::before { background: #FFD700; }
 
 /* CTA Section */
 .cta-section {
@@ -215,8 +231,8 @@ $additionalstyles .= '
 }
 
 .btn-get-started {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #1a1a2e;
     border: none;
     padding: 1rem 3rem;
     border-radius: 50rem;
@@ -225,13 +241,13 @@ $additionalstyles .= '
     text-decoration: none;
     display: inline-block;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
 }
 
 .btn-get-started:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-    color: white;
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+    color: #1a1a2e;
 }
 
 /* Mobile Responsive */
@@ -300,8 +316,8 @@ echo '
 <!-- Hero Section -->
 <div class="how-hero">
     <div class="container">
-        <h1 class="fade-in-up">Turn Your Birthday Into Pure Gold</h1>
-        <p class="lead fade-in-up">The easiest way to collect birthday rewards from your favorite brands</p>
+        <h1 class="fade-in-up">Turn Your Birthday Into <span class="highlight">Pure Gold</span></h1>
+        <p class="lead fade-in-up">The easiest way to collect <span style="color: #FFD700; font-weight: 600;">birthday rewards</span> from your favorite brands</p>
         
         <div class="stats fade-in-up">
             <div class="stat-item">
@@ -325,7 +341,7 @@ echo '
     <div class="container">
         <div class="section-header">
             <h2>How It Works</h2>
-            <p>Get started in minutes with our simple 3-step process</p>
+            <p>Get started in <span class="highlight">minutes</span> with our simple 3-step process</p>
         </div>
         
         <div class="row g-4">
