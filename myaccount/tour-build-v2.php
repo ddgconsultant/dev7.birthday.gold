@@ -617,6 +617,43 @@ $additionalstyles = '
     display: none;
 }
 
+/* Pulse animations for save button */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+.save-btn.pulse {
+    animation: pulse 2s;
+}
+
+/* Continuous subtle pulse for initial attention */
+@keyframes subtlePulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+.save-btn.subtle-pulse:not(:disabled) {
+    animation: subtlePulse 2s infinite;
+}
+
 /* Mobile responsive */
 @media (max-width: 576px) {
     .calendar-widget {
@@ -637,14 +674,29 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 include($dir['core_components'] . '/bg_user_profileheader.inc');
 
+// Close any open containers from includes and start fresh
 echo '
-<div class="container main-content mt-5">
-    <!-- Page Title -->
-    <div class="row mb-4">
+</div></div></div></div>
+
+<!-- Tour Builder Page Content -->
+<div class="container" style="margin-top: 100px;">
+    <!-- Page Title Row -->
+    <div class="row">
         <div class="col-12">
             <h1 class="fw-bold mb-2">Build Your Birthday Tour</h1>
-            <p class="text-muted">' . $tag . '</p>
+            <p class="text-muted mb-4">' . $tag . '</p>
         </div>
+    </div>
+    
+    <!-- Auto-save Consideration: Currently saves on explicit button click only.
+         Could implement auto-save with AJAX every X seconds or on each change.
+         For now, we show warning when navigating away with unsaved changes. -->
+    
+    <!-- Unsaved Changes Alert -->
+    <div class="alert alert-warning alert-dismissible fade show d-none" role="alert" id="unsavedAlert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Unsaved Changes!</strong> You have made changes to your tour selection. Do not forget to save before leaving this page.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     
     <form name="myTourForm" id="myTourForm" action="/myaccount/tour-build-v2" method="POST">
@@ -688,6 +740,7 @@ echo '
                         <span>Your Birthday</span>
                     </div>
                 </div>
+                </div>
             </div>
             
             <!-- Step 2: Company Selection -->
@@ -710,7 +763,7 @@ if (!empty($selectedDate)) {
                     </button>
                 </div>
                 
-                <div style="max-height: 600px; overflow-y: auto;">';
+                <div style="max-height: 600px; overflow-y: auto; overflow-x: hidden;">';
         
         foreach ($companies as $company) {
             $iconHTML = $company['isChecked']
@@ -761,15 +814,6 @@ if (!empty($selectedDate)) {
 echo '
             </div>
             
-            <!-- Step 3: Review & Save -->
-            <div class="tour-card ' . (empty($selectedDate) || !$showbusinesses ? 'inactive-section' : '') . '">
-                <div class="step-header">
-                    <span class="step-number">3</span>
-                    <span class="step-title">Review and save your tour</span>
-                </div>
-                <p class="text-muted">Review your selections in the sidebar and click "Save Tour" when ready.</p>
-            </div>
-            
         </div>
         
         <!-- Sidebar -->
@@ -817,6 +861,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const companyCount = document.getElementById("companyCount");
     const selectedList = document.getElementById("selectedList");
     const selectedCard = document.getElementById("selectedCard");
+    let hasUnsavedChanges = false;
+    const originalSelections = [];
+    let hasEverSelected = false;
     
     const checkboxes = document.querySelectorAll(".addcompany");
     checkboxes.forEach(checkbox => {
@@ -826,8 +873,15 @@ document.addEventListener("DOMContentLoaded", function() {
             const companyName = checkbox.getAttribute("data-company");
             const companyId = checkbox.value;
             selectedCompanies.push({ id: companyId, name: companyName });
+            originalSelections.push(companyId);
         }
     });
+    
+    // If there are initial selections, start the pulse
+    if (selectedCompanies.length > 0) {
+        hasEverSelected = true;
+        saveTourBtn.classList.add("subtle-pulse");
+    }
     
     const companyItems = document.querySelectorAll(".company-item");
     companyItems.forEach(item => {
@@ -846,6 +900,26 @@ document.addEventListener("DOMContentLoaded", function() {
         const companyName = checkbox.getAttribute("data-company");
         const companyItem = checkbox.closest(".company-item");
         const label = checkbox.nextElementSibling;
+        
+        // Track changes for unsaved warning
+        const wasOriginallySelected = originalSelections.includes(companyId);
+        const isNowSelected = checkbox.checked;
+        
+        // Only mark as having unsaved changes if the state actually changed from original
+        if ((wasOriginallySelected && !isNowSelected) || (!wasOriginallySelected && isNowSelected)) {
+            hasUnsavedChanges = true;
+            document.getElementById("unsavedAlert").classList.remove("d-none");
+        }
+        
+        // Check if we are back to original state
+        const currentSelections = Array.from(document.querySelectorAll(".addcompany:checked")).map(cb => cb.value);
+        const sameAsOriginal = currentSelections.length === originalSelections.length && 
+                              currentSelections.every(id => originalSelections.includes(id));
+        
+        if (sameAsOriginal) {
+            hasUnsavedChanges = false;
+            document.getElementById("unsavedAlert").classList.add("d-none");
+        }
         
         if (checkbox.checked) {
             if (!selectedCompanies.find(c => c.id === companyId)) {
@@ -876,6 +950,30 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         
         updateSelectedDisplay();
+        
+        // Start continuous pulse after first selection
+        if (!hasEverSelected && selectedCompanies.length > 0) {
+            hasEverSelected = true;
+            saveTourBtn.classList.add("subtle-pulse");
+        }
+        
+        // Remove pulse if no selections
+        if (selectedCompanies.length === 0) {
+            saveTourBtn.classList.remove("subtle-pulse");
+            hasEverSelected = false;
+        }
+        
+        // Do a stronger pulse when changes are made (if not the first selection)
+        if (hasUnsavedChanges && !saveTourBtn.disabled && hasEverSelected) {
+            saveTourBtn.classList.remove("subtle-pulse");
+            saveTourBtn.classList.add("pulse");
+            setTimeout(() => {
+                saveTourBtn.classList.remove("pulse");
+                if (selectedCompanies.length > 0) {
+                    saveTourBtn.classList.add("subtle-pulse");
+                }
+            }, 2000);
+        }
     }
     
     function updateSelectedDisplay() {
@@ -932,8 +1030,25 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     updateSelectedDisplay();
+    
+    // Add warning when navigating away with unsaved changes
+    window.addEventListener("beforeunload", function (e) {
+        if (hasUnsavedChanges) {
+            const confirmationMessage = "You have unsaved changes. Are you sure you want to leave?";
+            (e || window.event).returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
+    });
+    
+    // Mark changes as saved when form is submitted
+    document.getElementById("myTourForm").addEventListener("submit", function() {
+        hasUnsavedChanges = false;
+    });
 });
 </script>
+
+</div>
+<!-- End Tour Builder Container -->
 ';
 
 if (!empty($transferpage['message'])) {
