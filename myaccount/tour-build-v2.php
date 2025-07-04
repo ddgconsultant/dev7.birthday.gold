@@ -190,6 +190,14 @@ function buildCalendarMonth($year, $month, $tourlistdates, $birthdayDate, $selec
     for ($i = 0; $i < $remainingCells; $i++) {
         $calendar .= '<div class="calendar-day empty"></div>';
     }
+
+    $calendarerase='';
+    for ($i = 0; $i < 7; $i++) {
+        $calendarerase .= '<div class="calendar-day empty"></div>';
+    }
+    // Remove all occurrences of $calendarerase from $calendar
+$calendar = str_replace($calendarerase, '', $calendar);
+
     
     $calendar .= '</div>'; // Close grid
     $calendar .= '</div>'; // Close widget
@@ -461,7 +469,7 @@ $additionalstyles = '
 
 .company-item:hover {
     background: #e9ecef;
-    transform: translateX(4px);
+    transform: translateY(-4px);
 }
 
 .company-item.selected {
@@ -617,43 +625,6 @@ $additionalstyles = '
     display: none;
 }
 
-/* Pulse animations for save button */
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
-    }
-    70% {
-        transform: scale(1.05);
-        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
-    }
-}
-
-.save-btn.pulse {
-    animation: pulse 2s;
-}
-
-/* Continuous subtle pulse for initial attention */
-@keyframes subtlePulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4);
-    }
-    70% {
-        box-shadow: 0 0 0 6px rgba(40, 167, 69, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
-    }
-}
-
-.save-btn.subtle-pulse:not(:disabled) {
-    animation: subtlePulse 2s infinite;
-}
-
 /* Mobile responsive */
 @media (max-width: 576px) {
     .calendar-widget {
@@ -674,29 +645,13 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 include($dir['core_components'] . '/bg_user_profileheader.inc');
 
-// Close any open containers from includes and start fresh
 echo '
-</div></div></div></div>
-
-<!-- Tour Builder Page Content -->
-<div class="container" style="margin-top: 100px;">
-    <!-- Page Title Row -->
+<div class="container" style="margin-top: 70px;">
     <div class="row">
         <div class="col-12">
             <h1 class="fw-bold mb-2">Build Your Birthday Tour</h1>
-            <p class="text-muted mb-4">' . $tag . '</p>
+            <p class="text-muted mb-5">' . $tag . '</p>
         </div>
-    </div>
-    
-    <!-- Auto-save Consideration: Currently saves on explicit button click only.
-         Could implement auto-save with AJAX every X seconds or on each change.
-         For now, we show warning when navigating away with unsaved changes. -->
-    
-    <!-- Unsaved Changes Alert -->
-    <div class="alert alert-warning alert-dismissible fade show d-none" role="alert" id="unsavedAlert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        <strong>Unsaved Changes!</strong> You have made changes to your tour selection. Do not forget to save before leaving this page.
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     
     <form name="myTourForm" id="myTourForm" action="/myaccount/tour-build-v2" method="POST">
@@ -712,17 +667,10 @@ echo '
             <div class="tour-card">
                 <div class="step-header">
                     <span class="step-number">1</span>
-                    <span class="step-title">Select a date for your tour</span>
-                </div>
-                
-                <div class="date-info">
-                    <div>Tour dates available: <strong>' . $birthdates['planstart_shortformatted'] . '</strong> to <strong>' . $birthdates['planend_shortformatted'] . '</strong></div>
-                    <div class="birthday">Your Birthday: ' . $birthdates['recent'] . '</div>
-                </div>
-                
-                ' . buildCalendarMonth($calYear, $calMonth, $tourlistdates, $birthdates['recent'], $selectedDate, $icalendar_start_date, $icalendar_end_date) . '
-                
-                <div class="calendar-legend">
+                    <span class="step-title">Select a date for your tour </span>
+                    <span>Dates available: <strong>' . $birthdates['planstart_shortformatted'] . '</strong> to <strong>' . $birthdates['planend_shortformatted'] . '</strong></span>
+
+    <div class="calendar-legend">
                     <div class="legend-item">
                         <div class="legend-color available"></div>
                         <span>Available</span>
@@ -740,7 +688,14 @@ echo '
                         <span>Your Birthday</span>
                     </div>
                 </div>
+
                 </div>
+                
+            
+                
+                ' . buildCalendarMonth($calYear, $calMonth, $tourlistdates, $birthdates['recent'], $selectedDate, $icalendar_start_date, $icalendar_end_date) . '
+                
+            
             </div>
             
             <!-- Step 2: Company Selection -->
@@ -763,7 +718,7 @@ if (!empty($selectedDate)) {
                     </button>
                 </div>
                 
-                <div style="max-height: 600px; overflow-y: auto; overflow-x: hidden;">';
+                <div class="py-2" style="max-height: 600px; overflow-y: auto; overflow-x: hidden;">';
         
         foreach ($companies as $company) {
             $iconHTML = $company['isChecked']
@@ -788,7 +743,7 @@ if (!empty($selectedDate)) {
                             <p class="company-description">' . htmlspecialchars($company['short_description'] ?? $company['description']) . '</p>
                         </div>
                         <div class="company-apps">
-                            <span class="app-links">' . $company['appicon'] . '</span>
+                            <span class="app-links" style="display: none;">' . $company['appicon'] . '</span>
                             <span class="qr-codes" style="display: none;">' . $company['qrcode'] . '</span>
                         </div>
                     </div>';
@@ -846,7 +801,7 @@ echo '
             </div>
             
             <!-- Save Button -->
-            <button type="submit" class="save-btn" id="saveTourBtn" disabled>
+            <button type="submit" class="save-btn mb-5" id="saveTourBtn" disabled>
                 <i class="bi bi-check-circle me-2"></i>Save Tour
             </button>
         </div>
@@ -863,7 +818,6 @@ document.addEventListener("DOMContentLoaded", function() {
     const selectedCard = document.getElementById("selectedCard");
     let hasUnsavedChanges = false;
     const originalSelections = [];
-    let hasEverSelected = false;
     
     const checkboxes = document.querySelectorAll(".addcompany");
     checkboxes.forEach(checkbox => {
@@ -876,12 +830,6 @@ document.addEventListener("DOMContentLoaded", function() {
             originalSelections.push(companyId);
         }
     });
-    
-    // If there are initial selections, start the pulse
-    if (selectedCompanies.length > 0) {
-        hasEverSelected = true;
-        saveTourBtn.classList.add("subtle-pulse");
-    }
     
     const companyItems = document.querySelectorAll(".company-item");
     companyItems.forEach(item => {
@@ -901,24 +849,11 @@ document.addEventListener("DOMContentLoaded", function() {
         const companyItem = checkbox.closest(".company-item");
         const label = checkbox.nextElementSibling;
         
-        // Track changes for unsaved warning
+        // Track changes
         const wasOriginallySelected = originalSelections.includes(companyId);
         const isNowSelected = checkbox.checked;
-        
-        // Only mark as having unsaved changes if the state actually changed from original
         if ((wasOriginallySelected && !isNowSelected) || (!wasOriginallySelected && isNowSelected)) {
             hasUnsavedChanges = true;
-            document.getElementById("unsavedAlert").classList.remove("d-none");
-        }
-        
-        // Check if we are back to original state
-        const currentSelections = Array.from(document.querySelectorAll(".addcompany:checked")).map(cb => cb.value);
-        const sameAsOriginal = currentSelections.length === originalSelections.length && 
-                              currentSelections.every(id => originalSelections.includes(id));
-        
-        if (sameAsOriginal) {
-            hasUnsavedChanges = false;
-            document.getElementById("unsavedAlert").classList.add("d-none");
         }
         
         if (checkbox.checked) {
@@ -950,30 +885,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         
         updateSelectedDisplay();
-        
-        // Start continuous pulse after first selection
-        if (!hasEverSelected && selectedCompanies.length > 0) {
-            hasEverSelected = true;
-            saveTourBtn.classList.add("subtle-pulse");
-        }
-        
-        // Remove pulse if no selections
-        if (selectedCompanies.length === 0) {
-            saveTourBtn.classList.remove("subtle-pulse");
-            hasEverSelected = false;
-        }
-        
-        // Do a stronger pulse when changes are made (if not the first selection)
-        if (hasUnsavedChanges && !saveTourBtn.disabled && hasEverSelected) {
-            saveTourBtn.classList.remove("subtle-pulse");
-            saveTourBtn.classList.add("pulse");
-            setTimeout(() => {
-                saveTourBtn.classList.remove("pulse");
-                if (selectedCompanies.length > 0) {
-                    saveTourBtn.classList.add("subtle-pulse");
-                }
-            }, 2000);
-        }
     }
     
     function updateSelectedDisplay() {
@@ -1030,25 +941,8 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     
     updateSelectedDisplay();
-    
-    // Add warning when navigating away with unsaved changes
-    window.addEventListener("beforeunload", function (e) {
-        if (hasUnsavedChanges) {
-            const confirmationMessage = "You have unsaved changes. Are you sure you want to leave?";
-            (e || window.event).returnValue = confirmationMessage;
-            return confirmationMessage;
-        }
-    });
-    
-    // Mark changes as saved when form is submitted
-    document.getElementById("myTourForm").addEventListener("submit", function() {
-        hasUnsavedChanges = false;
-    });
 });
 </script>
-
-</div>
-<!-- End Tour Builder Container -->
 ';
 
 if (!empty($transferpage['message'])) {
