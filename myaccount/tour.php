@@ -950,12 +950,33 @@ $additionalstyles = '<style>
     }
     
     .business-logo {
-        width: 48px;
-        height: 48px;
+        width: 56px;
+        height: 56px;
         border-radius: 8px;
         object-fit: contain;
         background: #f8f9fa;
         padding: 4px;
+        transition: transform 0.2s ease;
+    }
+    
+    .business-logo-clickable:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .business-name-clickable:hover {
+        text-decoration: underline;
+        color: #0d6efd;
+    }
+    
+    /* Mobile pick location link styling */
+    .pick-location {
+        transition: opacity 0.2s ease;
+    }
+    
+    .pick-location:hover {
+        opacity: 0.8;
+        text-decoration: underline !important;
     }
     
     .business-info {
@@ -1144,6 +1165,7 @@ $additionalstyles = '<style>
         overflow-y: auto !important;
         overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important;
+        padding: 0 !important; /* Remove padding for more room */
         /* Force scrollbar to always show on iOS */
         ::-webkit-scrollbar {
             -webkit-appearance: none;
@@ -1151,14 +1173,16 @@ $additionalstyles = '<style>
         }
     }
     
-    /* Remove margins and padding from turn-by-turn content */
+    /* Remove margins and use minimal padding from turn-by-turn content */
     #directions-panel > div {
         margin: 0 !important;
-        padding: 10px !important; /* Minimal padding */
+        padding: 5px !important; /* Very minimal padding */
     }
     
     #directions-panel > div > div {
-        margin-bottom: 10px !important; /* Reduce spacing between items */
+        margin-bottom: 8px !important; /* Reduce spacing between items */
+        padding-left: 5px !important;
+        padding-right: 5px !important;
     }
     
     #directions-panel ul {
@@ -1204,6 +1228,43 @@ $additionalstyles = '<style>
 .directions-card-body {
     max-height: 800px;
     overflow-y: auto;
+    /* Remove all padding for more text room */
+    padding: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Specifically target the desktop directions panel content */
+.desktop-only .directions-card-body #directions-panel > div {
+    padding: 10px !important;
+    margin: 0 !important;
+}
+
+/* Override Bootstrap default card-body padding */
+.card-body.directions-card-body {
+    padding: 0 !important;
+}
+
+/* Desktop business logo hover effects */
+.business-logo-clickable {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 8px;
+}
+
+.business-logo-clickable:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.business-name-clickable {
+    transition: color 0.2s ease;
+}
+
+.business-name-clickable:hover {
+    color: #0d6efd;
+    text-decoration: underline;
 }
 
 /* Out of range business styles */
@@ -1758,9 +1819,9 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
                      data-out-of-range="<?php echo ($item_company['data']['is_out_of_range'] ?? false) ? 'true' : 'false'; ?>">
                     <div class="d-flex align-items-center justify-content-between px-4" data-location="<?php echo $companyaddress; ?>">
                         <div class="d-flex align-items-center">
-                            <img src="<?php echo $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']); ?>" style="width:32px" alt="" />  
+                            <img src="<?php echo $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']); ?>" class="business-logo-clickable" style="width:48px; cursor: pointer;" alt="" data-company-id="<?php echo $item_company['company_id']; ?>" data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>" />  
                             <div class="ms-4">
-                                <div class="small fw-bold">
+                                <div class="small fw-bold business-name-clickable" style="cursor: pointer;" data-company-id="<?php echo $item_company['company_id']; ?>" data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
                                     <?php echo $item_company['company_name']; ?>
                                     <?php if ($item_company['data']['is_out_of_range'] ?? false): ?>
                                         <span class="out-of-range-badge">
@@ -1783,7 +1844,7 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
                             </div>
                         </div>
                         <div class="ms-4 small">
-                            <a href="javascript:void(0);" class="pick-location me-2" data-company-id="<?php echo $item_company['company_id']; ?>" data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">Pick Different Location</a>
+                            <a href="javascript:void(0);" class="pick-location me-2" data-company-id="<?php echo $item_company['company_id']; ?>" data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>"><i class="bi bi-geo-alt text-primary"></i> Pick Different Location</a>
                             <div class="btn btn-sm sortable_item_handle" title="Drag to reorder"><i class="bi bi-grip-vertical h4"></i></div>
                         </div>
                     </div>
@@ -1897,10 +1958,13 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
             
             <div class="business-card-header">
                 <img src="<?php echo $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']); ?>" 
-                     class="business-logo" 
-                     alt="<?php echo htmlspecialchars($item_company['company_name']); ?>">
+                     class="business-logo business-logo-clickable" 
+                     alt="<?php echo htmlspecialchars($item_company['company_name']); ?>"
+                     style="cursor: pointer;"
+                     data-company-id="<?php echo $item_company['company_id']; ?>"
+                     data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
                 <div class="business-info">
-                    <div class="business-name">
+                    <div class="business-name business-name-clickable" style="cursor: pointer;" data-company-id="<?php echo $item_company['company_id']; ?>" data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
                         <?php echo htmlspecialchars($item_company['company_name']); ?>
                         <?php if ($isOutOfRange): ?>
                             <span class="out-of-range-badge">
@@ -1930,15 +1994,12 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
             </div>
             
             <?php if (!$isOutOfRange): ?>
-            <div class="d-flex gap-2 mt-3 justify-content-end">
-                <button class="btn btn-outline-secondary btn-sm pick-location" 
-                        data-company-id="<?php echo $item_company['company_id']; ?>" 
-                        data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
-                    <i class="bi bi-geo-alt"></i> Pick Location
-                </button>
-                <a href="/myaccount/enrollments-individual?company_id=<?php echo $item_company['company_id']; ?>" 
-                   class="btn btn-primary btn-sm">
-                    <i class="bi bi-box-arrow-up-right"></i> Details
+            <div class="text-end mt-2">
+                <a href="javascript:void(0);" 
+                   class="pick-location text-decoration-none small" 
+                   data-company-id="<?php echo $item_company['company_id']; ?>" 
+                   data-company-name="<?php echo htmlspecialchars($item_company['company_name']); ?>">
+                    <i class="bi bi-geo-alt text-primary"></i> Pick Different Location
                 </a>
             </div>
             <?php endif; ?>
@@ -2447,9 +2508,9 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
             
             // Distance and time at the end
             html += '<div style="background: white; padding: 8px; border-radius: 4px; margin-top: 10px;">';
-            html += '<span style="color: #1a73e8; font-weight: bold;">' + leg.distance.text + '</span>';
+            html += '<span style="color: #1a73e8; font-weight: bold; font-size: 14px;">' + leg.distance.text + '</span>';
             html += ' · ';
-            html += '<span style="color: #5f6368;">' + leg.duration.text + '</span>';
+            html += '<span style="color: #5f6368; font-size: 14px;">' + leg.duration.text + '</span>';
             html += '</div>';
             
             html += '</div>';
@@ -2939,9 +3000,9 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
                     
                     // Distance and time summary
                     html += '<div style="background: white; padding: 6px 8px; border-radius: 4px; margin-top: 8px; font-size: 12px;">';
-                    html += '<span style="color: #1a73e8; font-weight: bold;">' + leg.distance.text + '</span>';
+                    html += '<span style="color: #1a73e8; font-weight: bold; font-size: 11px;">' + leg.distance.text + '</span>';
                     html += ' · ';
-                    html += '<span style="color: #5f6368;">' + leg.duration.text + '</span>';
+                    html += '<span style="color: #5f6368; font-size: 11px;">' + leg.duration.text + '</span>';
                     html += '</div>';
                     html += '</div>';
                     
@@ -4478,7 +4539,127 @@ function sendToPhone() {
         }
     });
 }
+
+$(document).on('click', '.business-logo-clickable, .business-name-clickable', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    var companyId = $(this).data('company-id');
+    var companyName = $(this).data('company-name');
+    
+    console.log('Company clicked:', companyName, 'ID:', companyId);
+    
+    if (!companyId) {
+        alert('Company ID not found');
+        return;
+    }
+    
+    $('#businessDetailsModal').modal('show');
+    $('#businessDetailsModalLabel').text(companyName);
+    $('#businessDetailsContent').html('<div class="text-center p-4"><div class="spinner-border" role="status"></div><p class="mt-2">Loading business details...</p></div>');
+    
+    $.ajax({
+        url: '/myaccount/ajax/get-business-details.php',
+        method: 'GET',
+        data: { company_id: companyId },
+        success: function(response) {
+            if (response.success) {
+                var company = response.company;
+                var html = '<div class="container-fluid">';
+                
+                html += '<div class="row mb-3">';
+                html += '<div class="col-auto">';
+                html += '<img src="' + company.logo + '" class="img-fluid" style="max-width: 100px; border-radius: 8px;">';
+                html += '</div>';
+                html += '<div class="col">';
+                if (company.reward) {
+                    html += '<h6 class="text-primary mb-2">Birthday Reward</h6>';
+                    html += '<p class="mb-0">' + company.reward + '</p>';
+                }
+                html += '</div>';
+                html += '</div>';
+                
+                html += '<hr>';
+                
+                html += '<div class="row">';
+                html += '<div class="col-md-6">';
+                
+                if (company.address) {
+                    html += '<h6 class="mb-2">Address</h6>';
+                    html += '<p>' + company.address + '<br>';
+                    html += company.city + ', ' + company.state + ' ' + company.zip + '</p>';
+                }
+                
+                if (company.phone) {
+                    html += '<h6 class="mb-2">Phone</h6>';
+                    html += '<p><a href="tel:' + company.phone + '">' + company.phone + '</a></p>';
+                }
+                
+                if (company.website) {
+                    html += '<h6 class="mb-2">Website</h6>';
+                    html += '<p><a href="' + company.website + '" target="_blank">' + company.website + '</a></p>';
+                }
+                
+                html += '</div>';
+                html += '<div class="col-md-6">';
+                
+                if (company.hours && Object.keys(company.hours).length > 0) {
+                    html += '<h6 class="mb-2">Hours</h6>';
+                    html += '<div class="small">';
+                    var daysOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                    daysOrder.forEach(function(day) {
+                        if (company.hours[day]) {
+                            html += '<div><strong>' + day + ':</strong> ' + company.hours[day] + '</div>';
+                        }
+                    });
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                html += '</div>';
+                
+                if (company.notes) {
+                    html += '<hr>';
+                    html += '<h6 class="mb-2">Notes</h6>';
+                    html += '<p class="small">' + company.notes + '</p>';
+                }
+                
+                html += '</div>';
+                
+                $('#businessDetailsContent').html(html);
+            } else {
+                $('#businessDetailsContent').html('<div class="alert alert-danger">Failed to load business details: ' + (response.message || 'Unknown error') + '</div>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', status, error);
+            console.error('Response:', xhr.responseText);
+            $('#businessDetailsContent').html('<div class="alert alert-danger">Failed to load business details. Please try again.<br><small>Error: ' + error + '</small></div>');
+        }
+    });
+});
 </script>
+
+<!-- Business Details Modal -->
+<div class="modal fade" id="businessDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="businessDetailsModalLabel">Business Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="businessDetailsContent">
+                <div class="text-center p-4">
+                    <div class="spinner-border" role="status"></div>
+                    <p class="mt-2">Loading business details...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <?php
 // Footer breaks Google Maps, so we skip it

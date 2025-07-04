@@ -185,7 +185,7 @@ npm test
 - Real processes in test mode (no fake data/messages)
 - Test mode (`?test=1`) bypasses account lifecycle but uses real validation
 - Always check `headers_sent()` before redirects in production code
-- **NEVER use apostrophes in PHP comments** - Always use unconjugated forms (e.g., "do not" instead of "don't", "cannot" instead of "can't", "it is" instead of "it's")
+- **NEVER use apostrophes in ANY comments (PHP, JavaScript, CSS)** - Always use unconjugated forms (e.g., "do not" instead of "don't", "cannot" instead of "can't", "it is" instead of "it's")
 
 ### Database Enhancements
 - Added `numeric_only` flag to `getvalidationcodes()` function
