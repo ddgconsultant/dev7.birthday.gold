@@ -901,7 +901,9 @@ document.addEventListener("DOMContentLoaded", function() {
         if (dateCard.classList.contains("collapsed")) {
             // When collapsed
             if (selectedDate) {
-                const dateObj = new Date(selectedDate);
+                // Parse date parts to avoid timezone issues
+                const [year, month, day] = selectedDate.split(\'-\').map(num => parseInt(num));
+                const dateObj = new Date(year, month - 1, day); // month is 0-indexed
                 const options = { weekday: \'long\', year: \'numeric\', month: \'long\', day: \'numeric\' };
                 dateStepTitle.textContent = \'Your Tour Date\';
                 selectedDateInfo.innerHTML = \': <strong>\' + dateObj.toLocaleDateString(\'en-US\', options) + \'</strong>\';
@@ -909,7 +911,9 @@ document.addEventListener("DOMContentLoaded", function() {
         } else {
             // When open
             if (selectedDate) {
-                const dateObj = new Date(selectedDate);
+                // Parse date parts to avoid timezone issues
+                const [year, month, day] = selectedDate.split(\'-\').map(num => parseInt(num));
+                const dateObj = new Date(year, month - 1, day); // month is 0-indexed
                 const options = { weekday: \'long\', year: \'numeric\', month: \'long\', day: \'numeric\' };
                 dateStepTitle.textContent = \'Change Your Tour Date\';
                 selectedDateInfo.innerHTML = \': <strong>\' + dateObj.toLocaleDateString(\'en-US\', options) + \'</strong>\';

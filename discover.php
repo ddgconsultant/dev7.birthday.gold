@@ -53,10 +53,20 @@ if ($enablesearch)
 ';
 
 
-foreach ($loop_companies as $item_company) {
+foreach ($loop_companies as $index => $item_company) {
+    // Load first 8 images immediately, lazy load the rest
+    $isEager = $index < 8;
+    $imgSrc = $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']);
+    
     echo '<div class="col-6 col-md-4 col-lg-3 logo-item mb-3">
 <div class="card h-100 ">
-<img class="img-fluid" src="' . $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']) . '" alt="">
+<div class="logo-image-wrapper" style="position: relative; padding-bottom: 75%; background: #f8f9fa;">
+<img class="img-fluid lazy-image" 
+     ' . ($isEager ? 'src="' . $imgSrc . '"' : 'data-src="' . $imgSrc . '" src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'75\'%3E%3Crect width=\'100\' height=\'75\' fill=\'%23f8f9fa\'/%3E%3C/svg%3E"') . ' 
+     loading="' . ($isEager ? 'eager' : 'lazy') . '" 
+     alt="' . htmlspecialchars($item_company['company_name']) . ' logo"
+     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
+</div>
 <div class="card-body">
 <h5 class="card-title">' . $item_company['company_name'] . '</h5>
 </div>
@@ -98,6 +108,60 @@ if ($enablesearch)
 </script>
 ";
 }
+
+// Add lazy loading script
+echo '
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Check if native lazy loading is supported
+    if ("loading" in HTMLImageElement.prototype) {
+        // Native lazy loading is supported, just load data-src images
+        const lazyImages = document.querySelectorAll("img[data-src]");
+        lazyImages.forEach(img => {
+            img.src = img.dataset.src;
+            img.removeAttribute("data-src");
+        });
+    } else {
+        // Fallback for browsers that do not support native lazy loading
+        const lazyImages = document.querySelectorAll("img[data-src]");
+        const imageObserver = new IntersectionObserver(function(entries, observer) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.removeAttribute("data-src");
+                    img.classList.add("loaded");
+                    imageObserver.unobserve(img);
+                }
+            });
+        }, {
+            rootMargin: "50px 0px" // Start loading 50px before the image enters viewport
+        });
+
+        lazyImages.forEach(function(img) {
+            imageObserver.observe(img);
+        });
+    }
+});
+
+// Add smooth fade-in effect
+</script>
+
+<style>
+.lazy-image {
+    transition: opacity 0.3s ease-in-out;
+}
+.lazy-image:not(.loaded) {
+    opacity: 0.8;
+}
+.lazy-image.loaded {
+    opacity: 1;
+}
+.logo-image-wrapper {
+    overflow: hidden;
+}
+</style>
+';
 
 include($dir['core_components'] . '/bg_footer.inc');
       $app->outputpage();
