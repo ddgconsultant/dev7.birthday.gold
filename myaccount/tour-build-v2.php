@@ -78,7 +78,7 @@ values (:user_id, :company_id, :calendar_dt, :start_dt, :end_dt,  now(), now(), 
 $apptype = $current_user_data['profile_phone_type'];
 
 if (!empty($_GET['date'])) {
-    $sql = "SELECT uc.*, c.company_name , c.appgoogle, c.appapple , c.description, c.short_description 
+    $sql = "SELECT uc.*, c.company_name, c.appgoogle, c.appapple, c.description, c.short_description 
 FROM bg_user_companies uc, bg_companies c WHERE uc.company_id=c.company_id 
 and user_id = " . $current_user_data['user_id'] . ' and uc.status in ("success", "existing")  order by uc.modify_dt desc ';
     $output = '';
@@ -103,6 +103,11 @@ and user_id = " . $current_user_data['user_id'] . ' and uc.status in ("success",
         $row['isChecked'] = $isChecked;
         $row['appicon'] = $appicon;
         $row['qrcode'] = $qrcode;
+        
+        // Get full company data including logo
+        $company_data = $app->getcompany($row['company_id']);
+        $row['company_logo'] = $company_data['company_logo'] ?? '';
+        
         $companies[] = $row;
     }
 }
@@ -229,12 +234,12 @@ $daysUntilNextBirthday = $interval->days;
 if ($daysUntilNextBirthday === 0) {
     $tag = "Happy Birthday, today you turned {$currentAge}!";
 } elseif ($daysUntilNextBirthday > 335) {
-    $tag = "On {$birthDateThisYear->format('Y-m-d')}, you turned {$currentAge}.";
+    $tag = "On {$birthDateThisYear->format('l, F dS, Y')}, you turned {$currentAge}.";
 } elseif ($daysUntilNextBirthday <= 30 && $today > $birthDateThisYear) {
-    $tag = "On {$birthDateThisYear->format('Y-m-d')}, you just turned {$currentAge}.";
+    $tag = "On {$birthDateThisYear->format('l, F dS, Y')}, you just turned {$currentAge}.";
 } elseif ($daysUntilNextBirthday <= 395) {
     $newAge = $currentAge + 1;
-    $tag = "On {$birthDateNextYear->format('Y-m-d')}, you'll be {$newAge}.";
+    $tag = "On {$birthDateNextYear->format('l, F dS, Y')}, you'll be {$newAge}.";
 } else {
     $tag = 'Error';
 }
@@ -252,6 +257,33 @@ $additionalstyles = '
     padding: 2rem;
     margin-bottom: 2rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.tour-card .card-content {
+    max-height: 1000px;
+    transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, transform 0.3s ease;
+    overflow: hidden;
+    transform-origin: top;
+}
+
+.tour-card.collapsed .card-content {
+    max-height: 0;
+    opacity: 0;
+    transform: scaleY(0);
+}
+
+/* Hide legend when collapsed */
+.tour-card.collapsed .calendar-legend {
+    display: none;
+}
+
+/* Keep selected date visible in header */
+.step-header .selected-date-info {
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+    font-weight: 400;
+    display: inline-block;
 }
 
 .step-header {
@@ -261,6 +293,26 @@ $additionalstyles = '
     margin: -2rem -2rem 1.5rem -2rem;
     border-radius: 12px 12px 0 0;
     text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.step-header.collapsible:hover {
+    background: #218838;
+}
+
+.step-header .collapse-icon {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.3s ease;
+    font-size: 1.2rem;
+}
+
+.step-header.collapsed .collapse-icon {
+    transform: translateY(-50%) rotate(180deg);
 }
 
 .step-number {
@@ -365,6 +417,16 @@ $additionalstyles = '
     color: white;
     border: 2px solid #28a745;
     font-weight: bold;
+    animation: pulse 0.5s ease;
+}
+
+/* Keep selected date highlighted even when calendar is collapsed */
+.calendar-day.selected:after {
+    content: "✓";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.75rem;
 }
 
 .calendar-day.booked {
@@ -491,6 +553,16 @@ $additionalstyles = '
     flex: 1;
 }
 
+.company-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    margin-right: 1rem;
+    border-radius: 8px;
+    background: #fff;
+    padding: 4px;
+}
+
 .company-name {
     font-weight: 600;
     margin-bottom: 0.25rem;
@@ -597,28 +669,20 @@ $additionalstyles = '
     pointer-events: none;
 }
 
-/* View toggle */
-.view-toggle {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-    margin-bottom: 1rem;
-}
-
-.view-toggle button {
-    padding: 0.5rem 1rem;
+/* Select all container */
+.select-all-container {
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
     border: 1px solid #dee2e6;
-    background: white;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
 }
 
-.view-toggle button.active {
-    background: #28a745;
-    color: white;
-    border-color: #28a745;
+.select-all-container label {
+    cursor: pointer;
+}
+
+.select-all-container label:hover i {
+    color: #28a745 !important;
 }
 
 .qrcode {
@@ -664,13 +728,15 @@ echo '
         <div class="col-lg-8 mb-4">
             
             <!-- Step 1: Date Selection -->
-            <div class="tour-card">
-                <div class="step-header">
+            <div class="tour-card" id="dateCard">
+                <div class="step-header collapsible" id="dateStepHeader">
                     <span class="step-number">1</span>
-                    <span class="step-title">Select a date for your tour </span>
-                    <span>Dates available: <strong>' . $birthdates['planstart_shortformatted'] . '</strong> to <strong>' . $birthdates['planend_shortformatted'] . '</strong></span>
+                    <span class="step-title" id="dateStepTitle">Select a date for your tour</span>
+                    <span class="selected-date-info" id="selectedDateInfo"></span>
+                    <i class="bi bi-chevron-down collapse-icon"></i>
+                    
 
-    <div class="calendar-legend">
+    <div class="calendar-legend" id="calendarLegend">
                     <div class="legend-item">
                         <div class="legend-color available"></div>
                         <span>Available</span>
@@ -691,10 +757,9 @@ echo '
 
                 </div>
                 
-            
-                
+                <div class="card-content">
                 ' . buildCalendarMonth($calYear, $calMonth, $tourlistdates, $birthdates['recent'], $selectedDate, $icalendar_start_date, $icalendar_end_date) . '
-                
+                </div>
             
             </div>
             
@@ -709,13 +774,14 @@ echo '
 if (!empty($selectedDate)) {
     if ($showbusinesses && !empty($companies)) {
         echo '
-                <div class="view-toggle">
-                    <button type="button" class="active" id="showLinksBtn">
-                        <i class="bi bi-link-45deg"></i> Links
-                    </button>
-                    <button type="button" id="showQRBtn">
-                        <i class="bi bi-qr-code-scan"></i> QR Codes
-                    </button>
+                <div class="select-all-container mb-3">
+                    <div class="d-flex align-items-center">
+                        <input class="form-check-input d-none" type="checkbox" id="selectAllCheckbox">
+                        <label class="form-check-label h3 mb-0 me-3" for="selectAllCheckbox">
+                            <i class="bi bi-square text-muted" id="selectAllIcon"></i>
+                        </label>
+                        <span class="fw-bold">All ' . ucfirst($website['biznames']) . '</span>
+                    </div>
                 </div>
                 
                 <div class="py-2" style="max-height: 600px; overflow-y: auto; overflow-x: hidden;">';
@@ -738,6 +804,9 @@ if (!empty($selectedDate)) {
                                 ' . $iconHTML . '
                             </label>
                         </div>
+                                        <img src="' . $display->companyimage($company['company_id'] . '/' . $company['company_logo']) . '" 
+                             class="company-logo" 
+                             alt="' . htmlspecialchars($company['company_name']) . '">
                         <div class="company-info">
                             <div class="company-name">' . htmlspecialchars($company['company_name']) . '</div>
                             <p class="company-description">' . htmlspecialchars($company['short_description'] ?? $company['description']) . '</p>
@@ -818,6 +887,76 @@ document.addEventListener("DOMContentLoaded", function() {
     const selectedCard = document.getElementById("selectedCard");
     let hasUnsavedChanges = false;
     const originalSelections = [];
+    
+    // Calendar collapse functionality
+    const dateCard = document.getElementById("dateCard");
+    const dateStepHeader = document.getElementById("dateStepHeader");
+    const dateStepTitle = document.getElementById("dateStepTitle");
+    const selectedDateInfo = document.getElementById("selectedDateInfo");
+    const selectedDate = document.getElementById("calendar_date").value;
+    
+    function updateDateDisplay() {
+        const dateRangeText = \'Dates available: ' . $birthdates['planstart_shortformatted'] . ' to ' . $birthdates['planend_shortformatted'] . '\';
+        
+        if (dateCard.classList.contains("collapsed")) {
+            // When collapsed
+            if (selectedDate) {
+                const dateObj = new Date(selectedDate);
+                const options = { weekday: \'long\', year: \'numeric\', month: \'long\', day: \'numeric\' };
+                dateStepTitle.textContent = \'Your Tour Date\';
+                selectedDateInfo.innerHTML = \': <strong>\' + dateObj.toLocaleDateString(\'en-US\', options) + \'</strong>\';
+            }
+        } else {
+            // When open
+            if (selectedDate) {
+                const dateObj = new Date(selectedDate);
+                const options = { weekday: \'long\', year: \'numeric\', month: \'long\', day: \'numeric\' };
+                dateStepTitle.textContent = \'Change Your Tour Date\';
+                selectedDateInfo.innerHTML = \': <strong>\' + dateObj.toLocaleDateString(\'en-US\', options) + \'</strong>\';
+            } else {
+                dateStepTitle.textContent = \'Select a date for your tour\';
+                selectedDateInfo.innerHTML = \': \' + dateRangeText;
+            }
+        }
+    }
+    
+    // Auto-collapse calendar if date is already selected
+    if (selectedDate) {
+        // Use setTimeout to ensure smooth animation on page load
+        setTimeout(function() {
+            dateCard.classList.add("collapsed");
+            dateStepHeader.classList.add("collapsed");
+            document.getElementById("calendarLegend").style.display = "none";
+            updateDateDisplay();
+        }, 100);
+    }
+    
+    // Toggle calendar on header click with smooth animation
+    dateStepHeader.addEventListener("click", function() {
+        // Toggle the collapsed state
+        dateCard.classList.toggle("collapsed");
+        dateStepHeader.classList.toggle("collapsed");
+        
+        // Move legend in/out of step header based on state
+        const legend = document.getElementById("calendarLegend");
+        if (dateCard.classList.contains("collapsed")) {
+            // Hide legend when collapsed
+            legend.style.display = "none";
+        } else {
+            // Show legend when expanded
+            setTimeout(function() {
+                legend.style.display = "flex";
+            }, 300);
+        }
+        
+        // Update the date display after animation starts
+        setTimeout(updateDateDisplay, 100);
+    });
+    
+    // Update display when page loads if no date selected
+    if (!selectedDate) {
+        updateDateDisplay();
+    }
     
     const checkboxes = document.querySelectorAll(".addcompany");
     checkboxes.forEach(checkbox => {
@@ -921,23 +1060,66 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
     
-    const showLinksBtn = document.getElementById("showLinksBtn");
-    const showQRBtn = document.getElementById("showQRBtn");
-    
-    if (showLinksBtn && showQRBtn) {
-        showLinksBtn.addEventListener("click", function() {
-            showLinksBtn.classList.add("active");
-            showQRBtn.classList.remove("active");
-            document.querySelectorAll(".app-links").forEach(el => el.style.display = "block");
-            document.querySelectorAll(".qr-codes").forEach(el => el.style.display = "none");
+    // Select All functionality
+    const selectAllCheckbox = document.getElementById("selectAllCheckbox");
+    if (selectAllCheckbox) {
+        // Set initial state based on whether all are checked
+        function updateSelectAllState() {
+            const allCheckboxes = document.querySelectorAll(".addcompany");
+            const checkedCheckboxes = document.querySelectorAll(".addcompany:checked");
+            const selectAllIcon = document.getElementById("selectAllIcon");
+            
+            if (allCheckboxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.disabled = true;
+                selectAllIcon.className = "bi bi-square text-muted";
+            } else {
+                selectAllCheckbox.disabled = false;
+                if (allCheckboxes.length === checkedCheckboxes.length && checkedCheckboxes.length > 0) {
+                    selectAllCheckbox.checked = true;
+                    selectAllIcon.className = "bi bi-check-square-fill text-success";
+                } else if (checkedCheckboxes.length > 0) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = true;
+                    selectAllIcon.className = "bi bi-dash-square-fill text-primary";
+                } else {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllIcon.className = "bi bi-square text-muted";
+                }
+            }
+        }
+        
+        // Handle select all toggle
+        selectAllCheckbox.addEventListener("change", function() {
+            const isChecked = this.checked;
+            const allCheckboxes = document.querySelectorAll(".addcompany");
+            const selectAllIcon = document.getElementById("selectAllIcon");
+            
+            // Update icon
+            if (isChecked) {
+                selectAllIcon.className = "bi bi-check-square-fill text-success";
+            } else {
+                selectAllIcon.className = "bi bi-square text-muted";
+            }
+            
+            allCheckboxes.forEach(checkbox => {
+                if (checkbox.checked !== isChecked) {
+                    checkbox.checked = isChecked;
+                    checkbox.dispatchEvent(new Event("change"));
+                }
+            });
         });
         
-        showQRBtn.addEventListener("click", function() {
-            showQRBtn.classList.add("active");
-            showLinksBtn.classList.remove("active");
-            document.querySelectorAll(".app-links").forEach(el => el.style.display = "none");
-            document.querySelectorAll(".qr-codes").forEach(el => el.style.display = "block");
+        // Update select all state when individual checkboxes change
+        document.addEventListener("change", function(e) {
+            if (e.target.classList.contains("addcompany")) {
+                updateSelectAllState();
+            }
         });
+        
+        // Initial state
+        updateSelectAllState();
     }
     
     updateSelectedDisplay();
