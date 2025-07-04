@@ -78,7 +78,6 @@ $additionalstyles = '
 .section-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #212529;
     margin-bottom: 0.5rem;
 }
 
@@ -331,7 +330,7 @@ include($dir['core_components'] . '/bg_header.inc');
         
         <!-- Self Help Section -->
         <div class="section-header">
-            <h2 class="section-title">Self Help Resources</h2>
+            <h2 class="section-title text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2">Self Help Resources</h2>
             <p class="section-subtitle">Quick answers to common questions</p>
         </div>
         
@@ -369,7 +368,7 @@ include($dir['core_components'] . '/bg_header.inc');
         
         <!-- Community Help Section -->
         <div class="section-header" style="margin-top: 3rem;">
-            <h2 class="section-title">Community Help</h2>
+            <h2 class="section-title text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2">Community Help</h2>
             <p class="section-subtitle">Connect with other Birthday Gold users</p>
         </div>
         
@@ -387,7 +386,7 @@ include($dir['core_components'] . '/bg_header.inc');
         
         <!-- Customer Service Section -->
         <div class="section-header" style="margin-top: 3rem;">
-            <h2 class="section-title">Customer Service</h2>
+            <h2 class="section-title text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2">Customer Service</h2>
             <p class="section-subtitle">Get direct help from our support team</p>
         </div>
         
