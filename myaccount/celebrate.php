@@ -396,7 +396,7 @@ $additionalstyles .= '
                     }
                     
                     if ($buildable) {
-                        echo '<a class="btn btn-login mb-3" href="/myaccount/tour-build-v2">Build A Celebration Tour</a>';
+                        echo '<a class="btn btn-login mb-3" href="/myaccount/tour-build">Build A Celebration Tour</a>';
                     } else {
                         echo '<button class="btn btn-login mb-3" disabled>Build A Tour (unavailable)</button>' . $tag;
                     }
