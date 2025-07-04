@@ -925,12 +925,12 @@ $additionalstyles = '<style>
     }
     
     .mobile-tab-content {
-        display: none;
+        display: none !important;
         margin-top: 1rem;
     }
     
     .mobile-tab-content.active {
-        display: block;
+        display: block !important;
     }
     
     /* Mobile business cards */
@@ -1032,8 +1032,10 @@ $additionalstyles = '<style>
     .mobile-directions {
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 200px); /* Adjust based on header height */
-        max-height: 600px;
+        height: 50vh; /* Take half the viewport height */
+        min-height: 300px;
+        max-height: 500px;
+        overflow: hidden;
     }
     
     .mobile-directions-header {
@@ -1052,21 +1054,25 @@ $additionalstyles = '<style>
     }
     
     #directions-panel-mobile {
-        flex: 1;
+        flex: 1 1 auto;
         overflow-y: auto;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
         padding: 1rem !important;
+        min-height: 0; /* Important for flexbox scrolling */
     }
     
     /* Ensure proper height for the directions tab content */
-    #directions-tab.mobile-tab-content {
+    #directions-tab.mobile-tab-content.active {
         height: calc(100vh - 150px);
-        display: flex;
+        display: flex !important;
         flex-direction: column;
+        overflow: hidden;
     }
     
-    #directions-tab #route-map-mobile {
+    #directions-tab #route-map-mobile-directions {
         flex-shrink: 0;
+        height: 300px;
     }
 }
 
@@ -1088,6 +1094,77 @@ $additionalstyles = '<style>
 /* Sortable styles */
 .sortable_item {
     transition: all 0.2s ease;
+}
+
+/* Fix scrolling on iPad for desktop view */
+@media (pointer: coarse) {
+    /* This targets touch devices including iPad */
+    #directions-panel {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .directions-card-body {
+        -webkit-overflow-scrolling: touch !important;
+        /* Fix for iOS scrolling issues */
+        position: relative;
+        overflow-y: scroll !important;
+        overflow-x: hidden;
+    }
+    
+    /* Force GPU acceleration for smooth scrolling */
+    .directions-card-body::-webkit-scrollbar {
+        -webkit-appearance: none;
+        width: 7px;
+    }
+    
+    .directions-card-body::-webkit-scrollbar-thumb {
+        border-radius: 4px;
+        background-color: rgba(0, 0, 0, .5);
+        -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+    }
+}
+
+/* iPad landscape turn-by-turn directions fix */
+@media (pointer: coarse) and (min-width: 992px) {
+    /* Make the directions card match map height using flexbox */
+    .col-lg-4 .card.border-start-lg {
+        display: flex;
+        flex-direction: column;
+        height: 846px !important; /* Match total map card height including header */
+    }
+    
+    .col-lg-4 .card-header {
+        flex-shrink: 0;
+    }
+    
+    /* Set the card body to fill remaining space and scroll */
+    .directions-card-body {
+        flex: 1 1 auto;
+        min-height: 0; /* Critical for flexbox scrolling */
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        /* Force scrollbar to always show on iOS */
+        ::-webkit-scrollbar {
+            -webkit-appearance: none;
+            width: 7px;
+        }
+    }
+    
+    /* Remove margins and padding from turn-by-turn content */
+    #directions-panel > div {
+        margin: 0 !important;
+        padding: 10px !important; /* Minimal padding */
+    }
+    
+    #directions-panel > div > div {
+        margin-bottom: 10px !important; /* Reduce spacing between items */
+    }
+    
+    #directions-panel ul {
+        margin-bottom: 0 !important;
+        margin-top: 5px !important;
+    }
 }
 
 /* Fix wrapping of pick location and drag handle on all screen sizes */
@@ -1121,6 +1198,12 @@ $additionalstyles = '<style>
     text-overflow: ellipsis;
     white-space: nowrap;
     display: block;
+}
+
+/* Directions card body base styles */
+.directions-card-body {
+    max-height: 800px;
+    overflow-y: auto;
 }
 
 /* Out of range business styles */
@@ -1714,7 +1797,7 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
                 <!-- Draw new map button -->
                 <div style="text-align: center; margin-bottom: 20px;">
                     <p class="text-muted small mb-2"><i class="bi bi-grip-vertical"></i> Drag businesses to reorder your tour route</p>
-                    <button class="btn btn-secondary draw_map" id="draw_map" style="display: none;" onclick="DrawNewMap()">
+                    <button class="btn btn-secondary draw_map" id="draw_map" style="display: none;" onclick="console.log('Desktop update button clicked'); DrawNewMap()">
                         <i class="bi bi-arrow-clockwise"></i> Update Map with New Route
                     </button>
                 </div>
@@ -1875,11 +1958,6 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
 <!-- Tab Content: Map -->
 <div id="map-tab" class="mobile-tab-content mobile-only">
     <div class="mobile-map-container" id="route-map-mobile" style="height: 400px;"></div>
-    <div class="text-center mt-2">
-        <button class="btn btn-sm btn-primary" onclick="initializeMobileMap();">
-            <i class="bi bi-arrow-repeat"></i> Refresh Map
-        </button>
-    </div>
 </div>
 
 <!-- Tab Content: Directions -->
@@ -1893,7 +1971,7 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
         </div>
         <div id="directions-panel-mobile" style="padding: 1rem;"></div>
     </div>
-    <div id="route-map-mobile" style="height: 300px;"></div>
+    <div id="route-map-mobile-directions" style="height: 300px;"></div>
 </div>
 
 <div class="row print-content desktop-only">
@@ -1901,7 +1979,7 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
         <!-- STEPS CARD-->
         <div class="card h-100 border-start-lg border-start-secondary">
             <div class="card-header">Turn-by-Turn Directions</div>
-            <div class="card-body" style="max-height: 800px; overflow-y: auto;">
+            <div class="card-body directions-card-body">
                 <div id="directions-panel"></div>
             </div>
         </div>
@@ -2110,7 +2188,7 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
         document.getElementById('api-status').className = 'error';
         document.getElementById('api-status').innerHTML = `
             <strong>Authentication Failed!</strong><br>
-            This usually means the API key is restricted and doesn't allow domain: ${window.location.hostname}<br>
+            This usually means the API key is restricted and does not allow domain: ${window.location.hostname}<br>
             Please check the Google Cloud Console and add this domain to the allowed list.
         `;
     };
@@ -2798,6 +2876,11 @@ echo '<div class="col-12" style="margin-top: 3rem;">';
                 
                 // Create custom directions panel for mobile (similar to desktop but more compact)
                 var panel = document.getElementById('directions-panel-mobile');
+                if (!panel) {
+                    console.error('Mobile directions panel not found!');
+                    return;
+                }
+                console.log('Rendering mobile directions to panel:', panel);
                 var html = '<div style="padding: 10px;">';
                 
                 // Add each leg with full turn-by-turn directions
@@ -3060,6 +3143,15 @@ window.addEventListener('load', function() {
                 const drawNewMapButton = document.getElementById("draw_map");
                 if (drawNewMapButton) {
                     drawNewMapButton.style.display = "inline-block";
+                    console.log('Desktop update button shown');
+                }
+            },
+            update: function(event, ui) {
+                console.log('Desktop sortable order changed');
+                // Also show button on update event
+                const drawNewMapButton = document.getElementById("draw_map");
+                if (drawNewMapButton) {
+                    drawNewMapButton.style.display = "inline-block";
                 }
             }
         });
@@ -3098,11 +3190,9 @@ window.addEventListener('load', function() {
         });
         console.log('Mobile sortable initialized');
         
-        // Add touch support for iPads and other touch devices
+        // Touch support is automatically enabled by jQuery UI Touch Punch
         if ('ontouchend' in document) {
-            console.log('Touch device detected, adding touch support for sortable');
-            jQuery('#sortable').addTouch();
-            jQuery('#sortable-mobile').addTouch();
+            console.log('Touch device detected, touch support enabled via Touch Punch');
         }
     } else {
         console.error('jQuery or jQuery UI not loaded');
@@ -3135,15 +3225,26 @@ function DrawNewMap() {
     console.log('Original location names:', locations.map(function(loc) { return loc.name; }));
     
     // Show spinner on both buttons
-    var desktopBtn = $('#draw_map');
-    var mobileBtn = $('#draw_map_mobile');
-    var originalDesktopHtml = desktopBtn.html();
-    var originalMobileHtml = mobileBtn.html();
+    var desktopBtn = document.getElementById('draw_map');
+    var mobileBtn = document.getElementById('draw_map_mobile');
+    
+    // Store original HTML
+    var originalDesktopHtml = desktopBtn ? desktopBtn.innerHTML : '';
+    var originalMobileHtml = mobileBtn ? mobileBtn.innerHTML : '';
     
     // Add spinner to active button
-    var spinnerHtml = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Updating...';
-    desktopBtn.prop('disabled', true).html(spinnerHtml);
-    mobileBtn.prop('disabled', true).html(spinnerHtml);
+    var spinnerHtml = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Updating...';
+    
+    if (desktopBtn) {
+        desktopBtn.disabled = true;
+        desktopBtn.innerHTML = spinnerHtml;
+    }
+    if (mobileBtn) {
+        mobileBtn.disabled = true;
+        mobileBtn.innerHTML = spinnerHtml;
+    }
+    
+    console.log('Spinner should be visible now');
     
     try {
         // Debug: Check what sortable items we have
@@ -3207,29 +3308,38 @@ function DrawNewMap() {
     
     // Reload the map with new order
     setTimeout(function() {
+        // Always update both desktop and mobile views
+        console.log('Updating both desktop and mobile directions');
         loadDirections();
-        
-        // Also update mobile directions if visible
-        if (window.innerWidth < 992) {
-            loadMobileDirections();
-        }
+        loadMobileDirections();
         
         // Restore buttons after a short delay to show completion
         setTimeout(function() {
-            desktopBtn.prop('disabled', false).html(originalDesktopHtml);
-            mobileBtn.prop('disabled', false).html(originalMobileHtml);
-            
-            // Hide the buttons after successful update
-            desktopBtn.hide();
-            mobileBtn.hide();
+            if (desktopBtn) {
+                desktopBtn.disabled = false;
+                desktopBtn.innerHTML = originalDesktopHtml;
+                desktopBtn.style.display = 'none';
+            }
+            if (mobileBtn) {
+                mobileBtn.disabled = false;
+                mobileBtn.innerHTML = originalMobileHtml;
+                mobileBtn.style.display = 'none';
+            }
+            console.log('Map update completed, buttons hidden');
         }, 500);
     }, 100);
     
     } catch (error) {
         console.error('Error in DrawNewMap:', error);
         // Restore buttons on error
-        desktopBtn.prop('disabled', false).html(originalDesktopHtml);
-        mobileBtn.prop('disabled', false).html(originalMobileHtml);
+        if (desktopBtn) {
+            desktopBtn.disabled = false;
+            desktopBtn.innerHTML = originalDesktopHtml;
+        }
+        if (mobileBtn) {
+            mobileBtn.disabled = false;
+            mobileBtn.innerHTML = originalMobileHtml;
+        }
         alert('Error updating map. Please try again.');
     }
 }
@@ -4119,7 +4229,7 @@ function sendToPhone() {
     var navigationUrl = '';
     
     if (phoneType === 'iphone' || phoneType === 'ios') {
-        // Apple Maps doesn't reliably support waypoints via URL
+        // Apple Maps does not reliably support waypoints via URL
         // Use Google Maps for multi-stop navigation on iPhone
         if (waypoints.length > 0) {
             console.log('iPhone detected with waypoints - using Google Maps for multi-stop support');

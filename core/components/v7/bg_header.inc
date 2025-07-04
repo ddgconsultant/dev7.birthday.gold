@@ -153,7 +153,7 @@ if ($isHomePage) {
             <!-- Logo/Brand -->
             <div class="col-auto">
                 <a class="navbar-brand header-logo" href="/">
-                    <img class="home-logo" src="//cdn.birthday.gold/public/images/logo/birthday.gold_logo.png" alt="Birthday Gold" style="height: 40px;">
+                    <img class="home-logo" src="//cdn.birthday.gold/public/images/logo/birthday.gold_logo-white.png" alt="Birthday Gold" style="height: 40px;">
                 </a>
             </div>
             
