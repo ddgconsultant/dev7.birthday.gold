@@ -73,8 +73,7 @@ class Account
           session_tracking('bg_rememberme_loginsuccess', $response);
         } else {
           // failed -- invalidate the cookies
-          setcookie('bgralid', '', time() - 3600, "/"); // Invalidate the 'bgralid' cookie
-          setcookie('bgraltoken', '', time() - 3600, "/"); // Invalidate the 'bgraltoken' cookie
+          $this->clearRememberMeCookies();
           return false;
         }
         break;
@@ -411,6 +410,34 @@ if ($savedatatosession) {
                   }
 
           return $user;
+      }
+      
+      return false;
+  }
+
+  /**
+   * Get user data by phone number from bg_user_attributes
+   * @param string $phone The phone number to search for
+   * @return array|false User data array or false if not found
+   */
+  public function getUserByPhone($phone) {
+      // Clean phone number - remove all non-numeric characters
+      $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+      
+      // First find user_id from bg_user_attributes
+      $sql = "SELECT user_id FROM bg_user_attributes 
+              WHERE name = 'profile_phone_number' 
+              AND string_value = :phone 
+              AND type = 'profile' 
+              AND status = 'active' 
+              LIMIT 1";
+      
+      $stmt = $this->db->prepare($sql);
+      $stmt->execute(['phone' => $cleanPhone]);
+      
+      if ($result = $stmt->fetch(PDO::FETCH_ASSOC)) {
+          // Found user, now get full user data
+          return $this->getuserdata($result['user_id'], 'user_id');
       }
       
       return false;
@@ -2811,6 +2838,27 @@ id="date'. $display_start_date->format('Y-m-d').'" value="'. $display_start_date
 
 
 
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Clear all rememberme related cookies
+   * Used when logging out or when deleting a device from login history
+   */
+  public function clearRememberMeCookies()
+  {
+    // Set cookies to expire in the past to delete them
+    $expire_time = time() - 3600; // 1 hour ago
+    $cookie_path = '/';
+    $cookie_domain = ''; // Let PHP determine the domain
+    $secure = true; // HTTPS only
+    $httponly = true; // HTTP only, no JavaScript access
+    
+    // Clear all possible rememberme cookie names
+    // Note: Different parts of the codebase may use different cookie names
+    setcookie('bgralid', '', $expire_time, $cookie_path, $cookie_domain, $secure, $httponly);
+    setcookie('bgraltoken', '', $expire_time, $cookie_path, $cookie_domain, $secure, $httponly);
+    setcookie('bgdeviceid', '', $expire_time, $cookie_path, $cookie_domain, $secure, $httponly);
+    setcookie('bg_device_id', '', $expire_time, $cookie_path, $cookie_domain, $secure, $httponly);
+  }
 
 
 }

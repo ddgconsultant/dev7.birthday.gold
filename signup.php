@@ -443,7 +443,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                 </div>
                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#accountTypeInfoModal" title="Learn more">
                     <i class="bi bi-info-circle learn-more-icon d-inline d-md-none"></i>
-                    <span class="learn-more-text d-none d-md-inline">More info</span>
+                    <span class="learn-more-text d-none d-md-inline">Learn More</span>
                 </button>
             </div>
 

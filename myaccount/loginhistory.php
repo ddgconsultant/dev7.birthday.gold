@@ -42,8 +42,18 @@ if (isset($_REQUEST['act']) && ($_REQUEST['act'] == 'delete') && ($app->formpost
   // Retrieve the list of devices to delete
   $deviceList = explode(',', $_REQUEST['devicelist']);
   #breakpoint($deviceList);
+  
+  // Get current device ID from cookies to check if we need to clear cookies
+  $current_device_id = $_COOKIE['bg_device_id'] ?? $_COOKIE['bgdeviceid'] ?? null;
+  $should_clear_cookies = false;
+  
   foreach ($deviceList as $device_id) {
       if (!empty($device_id)) {
+          // Check if this is the current device
+          if ($current_device_id === $device_id) {
+              $should_clear_cookies = true;
+          }
+          
           // Mark the device as deleted in bg_user_attributes
           $sql = "UPDATE bg_user_attributes SET `status`='deleted', modify_dt=NOW() 
                   WHERE user_id=:user_id AND type='bg_rememberme_set' AND name=:device_id AND `status`='A'";
@@ -56,6 +66,11 @@ if (isset($_REQUEST['act']) && ($_REQUEST['act'] == 'delete') && ($app->formpost
           $stmt = $database->prepare($sql);
           $stmt->execute([':user_id' => $current_user_data['user_id'], ':device_id' => $device_id]);
       }
+  }
+  
+  // If the current device was deleted, clear the rememberme cookies
+  if ($should_clear_cookies) {
+      $account->clearRememberMeCookies();
   }
 
   $goto = '/myaccount/loginhistory';

@@ -59,13 +59,13 @@ foreach ($loop_companies as $index => $item_company) {
     $imgSrc = $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']);
     
     echo '<div class="col-6 col-md-4 col-lg-3 logo-item mb-3">
-<div class="card h-100 ">
-<div class="logo-image-wrapper" style="position: relative; padding-bottom: 75%; background: #f8f9fa;">
+<div class="card h-100">
+<div class="logo-image-wrapper d-flex align-items-center justify-content-center" style="min-height: 150px; background: #f8f9fa;">
 <img class="img-fluid lazy-image" 
-     ' . ($isEager ? 'src="' . $imgSrc . '"' : 'data-src="' . $imgSrc . '" src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'75\'%3E%3Crect width=\'100\' height=\'75\' fill=\'%23f8f9fa\'/%3E%3C/svg%3E"') . ' 
+     ' . ($isEager ? 'src="' . $imgSrc . '"' : 'data-src="' . $imgSrc . '" src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%23f8f9fa\'/%3E%3C/svg%3E"') . ' 
      loading="' . ($isEager ? 'eager' : 'lazy') . '" 
      alt="' . htmlspecialchars($item_company['company_name']) . ' logo"
-     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;">
+     style="max-width: 100%; max-height: 150px; width: auto; height: auto;">
 </div>
 <div class="card-body">
 <h5 class="card-title">' . $item_company['company_name'] . '</h5>
@@ -159,6 +159,15 @@ document.addEventListener("DOMContentLoaded", function() {
 }
 .logo-image-wrapper {
     overflow: hidden;
+    padding: 1rem;
+}
+.logo-item .card {
+    height: 100%;
+    transition: transform 0.2s ease-in-out;
+}
+.logo-item .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 </style>
 ';

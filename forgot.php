@@ -1,5 +1,6 @@
 <?php
 $addClasses[] = 'Mail';
+$addClasses[] = 'SMS';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $errormessage = '';
@@ -19,11 +20,61 @@ if ($app->formposted()) {
         // Update throttle timestamp
         $_SESSION[$throttle_key] = $current_time;
         
-        $email = trim($_POST['email'] ?? '');
+        $reset_type = $_POST['reset_type'] ?? 'email';
         $sendcount = 1;
-        $response = $account->getuserdata($email, 'email');
         
-        if (!empty($response['user_id'])) {
+        if ($reset_type === 'phone') {
+            // Phone number reset
+            $phone = preg_replace('/[^0-9]/', '', $_POST['phone'] ?? '');
+            
+            if (strlen($phone) >= 10) {
+                $response = $account->getUserByPhone($phone);
+                
+                if (!empty($response['user_id'])) {
+                    $fullname = $response['first_name'];
+                    
+                    $validatedata['rawdata'] = $phone;
+                    $validatedata['user_id'] = $response['user_id'];
+                    $validatedata['sendcount'] = $sendcount;
+                    $validatedata['type'] = 'forgotpassword';
+                    $validationcodes = $app->getvalidationcodes($validatedata);
+                    
+                    // Create reset URL for SMS (same format as email)
+                    $reset_link = $website['fullurl'] . '/resetpassword?t=' . $validationcodes['long'];
+                    
+                    // Get shortened URL for SMS
+                    $short_data = $app->getshortcode($reset_link);
+                    
+                    // Send SMS via SMS service
+                    if ($short_data && isset($short_data['shorturl'])) {
+                        $sms_message = "Birthday Gold: Reset your password: " . $short_data['shorturl'];
+                    } else {
+                        // Fallback to full URL if shortening fails
+                        $sms_message = "Birthday Gold: Reset your password: " . $reset_link;
+                    }
+                    
+                    try {
+                        $sms->sendSingleMessage($phone, $sms_message);
+                    } catch (Exception $e) {
+                        // Log error but continue showing success
+                        error_log("SMS sending failed: " . $e->getMessage());
+                    }
+                    
+                    // For now, show success page with the link
+                    $sent_to = 'Phone ending in ' . substr($phone, -4);
+                    $show_success = true;
+                } else {
+                    $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Unable to find an account with that phone number.</div>';
+                }
+            } else {
+                $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Please enter a valid phone number.</div>';
+            }
+        } else {
+            // Email reset (existing code)
+            $email = trim($_POST['email'] ?? '');
+            $response = $account->getuserdata($email, 'email');
+            
+            if (!empty($response['user_id'])) {
         $fullname = $response['first_name'];
         $message['toemail'] = $email;
         $message['fullname'] = $fullname;
@@ -38,12 +89,20 @@ if ($app->formposted()) {
         $message['validatelink'] = $link;
         $message['validationcode'] = $local_validationcode = $validationcodes['mini'];
 
-        $mail->sendPasswordResetEmail($message);
-
-        #-------------------------------------------------------------------------------
-        # DISPLAY SUCCESS PAGE
-        #-------------------------------------------------------------------------------   
-        $page_title = "Password Reset Email Sent - Birthday Gold";
+                $mail->sendPasswordResetEmail($message);
+                
+                $sent_to = htmlspecialchars($email);
+                $show_success = true;
+            } else {
+                $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Unable to find an account with that email address.</div>';
+            }
+        }
+        
+        if (!empty($show_success)) {
+            #-------------------------------------------------------------------------------
+            # DISPLAY SUCCESS PAGE
+            #-------------------------------------------------------------------------------   
+            $page_title = "Password Reset Sent - Birthday Gold";
         
         $additionalstyles = '
         <style>
@@ -152,22 +211,32 @@ if ($app->formposted()) {
             <div class="success-container">
                 <div class="success-card">
                     <div class="success-icon">
-                        <i class="bi bi-envelope-check"></i>
+                        <i class="bi bi-<?php echo ($reset_type === 'phone') ? 'phone' : 'envelope-check'; ?>"></i>
                     </div>
                     
-                    <h1>Check Your Email</h1>
+                    <h1><?php echo ($reset_type === 'phone') ? 'Check Your Phone' : 'Check Your Email'; ?></h1>
                     
                     <p class="success-text">We've sent a password reset link to:</p>
                     
                     <div class="email-display">
-                        <?php echo htmlspecialchars($email); ?>
+                        <?php echo $sent_to; ?>
                     </div>
                     
-                    <p class="success-text">Click the link in the email to reset your password.</p>
+                    <p class="success-text">
+                        <?php if ($reset_type === 'phone'): ?>
+                            Click the link in the text message to reset your password.
+                        <?php else: ?>
+                            Click the link in the email to reset your password.
+                        <?php endif; ?>
+                    </p>
                     
                     <div class="tip-box">
                         <i class="bi bi-lightbulb"></i>
-                        <strong>Tip:</strong> Don't forget to check your spam or junk folder if you don't see the email in your inbox.
+                        <?php if ($reset_type === 'phone'): ?>
+                            <strong>Tip:</strong> The link will expire in 24 hours. If you don't receive the text, check your phone number and try again.
+                        <?php else: ?>
+                            <strong>Tip:</strong> Don't forget to check your spam or junk folder if you don't see the email in your inbox.
+                        <?php endif; ?>
                     </div>
                     
                     <a href="/login" class="btn-back">Back to Login</a>
@@ -176,11 +245,9 @@ if ($app->formposted()) {
         </div>
         
         <?php
-        include($dir['core_components'] . '/bg_footer.inc');
-        $app->outputpage();
-        exit;
-        } else {
-            $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Unable to find an account with that email address.</div>';
+            include($dir['core_components'] . '/bg_footer.inc');
+            $app->outputpage();
+            exit;
         }
     }
 }
@@ -261,6 +328,46 @@ $additionalstyles = '
 /* Form Section */
 .forgot-body {
     padding: 0 1.5rem 2rem;
+}
+
+/* Tab Switch for Email/Phone */
+.reset-tabs {
+    display: flex;
+    background: #f1f3f5;
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 1.5rem;
+}
+
+.reset-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.reset-tab.active {
+    background: white;
+    color: var(--bs-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.reset-tab:hover:not(.active) {
+    color: #495057;
+}
+
+.reset-tab i {
+    font-size: 1rem;
 }
 
 .form-group {
@@ -656,7 +763,22 @@ include($dir['core_components'] . '/bg_header.inc');
                     <form method="POST" action="/forgot" id="forgotForm">
                         <?php echo $display->inputcsrf_token(); ?>
                         
-                        <div class="form-group">
+                        <!-- Tab Switch -->
+                        <div class="reset-tabs">
+                            <button type="button" class="reset-tab active" data-type="email">
+                                <i class="bi bi-envelope"></i>
+                                Email
+                            </button>
+                            <button type="button" class="reset-tab" data-type="phone">
+                                <i class="bi bi-phone"></i>
+                                Phone
+                            </button>
+                        </div>
+                        
+                        <input type="hidden" name="reset_type" id="reset_type" value="email">
+                        
+                        <!-- Email Input -->
+                        <div class="form-group" id="email-group">
                             <label class="form-label" for="email">Email Address</label>
                             <input 
                                 type="email" 
@@ -671,6 +793,24 @@ include($dir['core_components'] . '/bg_header.inc');
                             >
                             <div class="help-text">
                                 We'll send a password reset link to this email
+                            </div>
+                        </div>
+                        
+                        <!-- Phone Input -->
+                        <div class="form-group" id="phone-group" style="display: none;">
+                            <label class="form-label" for="phone">Phone Number</label>
+                            <input 
+                                type="tel" 
+                                name="phone" 
+                                id="phone" 
+                                class="form-control" 
+                                placeholder="(555) 123-4567" 
+                                autocomplete="tel"
+                                value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
+                                disabled
+                            >
+                            <div class="help-text">
+                                We'll send a password reset link via SMS
                             </div>
                         </div>
                         
@@ -703,6 +843,77 @@ document.addEventListener("DOMContentLoaded", function() {
     const forgotForm = document.getElementById("forgotForm");
     const submitBtn = document.getElementById("submitBtn");
     const emailInput = document.getElementById("email");
+    const phoneInput = document.getElementById("phone");
+    const resetTypeInput = document.getElementById("reset_type");
+    const emailGroup = document.getElementById("email-group");
+    const phoneGroup = document.getElementById("phone-group");
+    const tabs = document.querySelectorAll(".reset-tab");
+    
+    // Tab switching
+    tabs.forEach(tab => {
+        tab.addEventListener("click", function() {
+            tabs.forEach(t => t.classList.remove("active"));
+            this.classList.add("active");
+            
+            const type = this.getAttribute("data-type");
+            resetTypeInput.value = type;
+            
+            // Update header text and button based on type
+            const headerText = document.querySelector(".forgot-header p");
+            const submitBtnSpan = submitBtn.querySelector("span");
+            
+            if (type === "email") {
+                emailGroup.style.display = "block";
+                phoneGroup.style.display = "none";
+                emailInput.required = true;
+                emailInput.disabled = false;
+                phoneInput.required = false;
+                phoneInput.disabled = true;
+                emailInput.focus();
+                if (headerText) {
+                    headerText.textContent = "Enter your email to reset it";
+                }
+                if (submitBtnSpan && !submitBtn.disabled) {
+                    submitBtnSpan.textContent = "Send Reset Link";
+                }
+            } else {
+                emailGroup.style.display = "none";
+                phoneGroup.style.display = "block";
+                emailInput.required = false;
+                emailInput.disabled = true;
+                phoneInput.required = true;
+                phoneInput.disabled = false;
+                phoneInput.focus();
+                if (headerText) {
+                    headerText.textContent = "Enter your phone number to reset it";
+                }
+                if (submitBtnSpan && !submitBtn.disabled) {
+                    submitBtnSpan.textContent = "Send Reset SMS";
+                }
+            }
+        });
+    });
+    
+    // Phone number formatting
+    if (phoneInput) {
+        phoneInput.addEventListener("input", function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            let formattedValue = "";
+            
+            if (value.length > 0) {
+                if (value.length <= 3) {
+                    formattedValue = `(${value}`;
+                } else if (value.length <= 6) {
+                    formattedValue = `(${value.slice(0, 3)}) ${value.slice(3)}`;
+                } else {
+                    formattedValue = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
+                }
+            }
+            
+            e.target.value = formattedValue;
+            this.classList.remove("is-invalid");
+        });
+    }
     
     // Check if there is a throttle message and start countdown
     const alertContainer = document.querySelector(".alert-warning");
@@ -729,13 +940,26 @@ document.addEventListener("DOMContentLoaded", function() {
     
     if (forgotForm) {
         forgotForm.addEventListener("submit", function(e) {
-            // Basic email validation
-            const email = emailInput.value.trim();
-            if (!email || !email.includes("@")) {
-                e.preventDefault();
-                emailInput.classList.add("is-invalid");
-                emailInput.focus();
-                return false;
+            const resetType = resetTypeInput.value;
+            
+            if (resetType === "email") {
+                // Basic email validation
+                const email = emailInput.value.trim();
+                if (!email || !email.includes("@")) {
+                    e.preventDefault();
+                    emailInput.classList.add("is-invalid");
+                    emailInput.focus();
+                    return false;
+                }
+            } else {
+                // Phone validation
+                const phone = phoneInput.value.replace(/\D/g, "");
+                if (phone.length < 10) {
+                    e.preventDefault();
+                    phoneInput.classList.add("is-invalid");
+                    phoneInput.focus();
+                    return false;
+                }
             }
             
             // Add loading state
