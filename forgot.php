@@ -520,13 +520,14 @@ $additionalstyles = '
 /* Loading State */
 .btn-submit.loading {
     pointer-events: none;
+    min-height: 48px; /* Maintain button height */
 }
 
 .btn-submit.loading::after {
     content: "";
     position: absolute;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     margin: auto;
     top: 0;
     left: 0;
@@ -539,7 +540,7 @@ $additionalstyles = '
 }
 
 .btn-submit.loading span {
-    opacity: 0;
+    visibility: hidden; /* Use visibility instead of opacity to maintain space */
 }
 
 @keyframes spin {
@@ -965,7 +966,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // Add loading state
             submitBtn.classList.add("loading");
             submitBtn.disabled = true;
-            submitBtn.textContent = "";
+            // Dont clear textContent to maintain button height
         });
     }
     

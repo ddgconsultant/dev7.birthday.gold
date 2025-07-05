@@ -108,7 +108,33 @@ if ($formdata = $app->formposted()) {
 
 
 $transferpage = $system->startpostpage();
+$additionalstyles.='
+<style>
+/* Email Input Field */
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: white;
+    color: #212529;
+}
 
+.form-control:focus {
+    outline: none;
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+.form-control::placeholder {
+    color: #adb5bd;
+
+}
+    
+    </style>
+    ';
 #-------------------------------------------------------------------------------
 # ASK USER FOR NEW PASSWORDS
 #-------------------------------------------------------------------------------
@@ -128,7 +154,7 @@ echo '<div class="container my-5  mx-auto main-content">
 
 
 $formhead='
-<h1 class="py-4">Reset Password</h1>
+<h1 class="py-4 text-center">Reset Password</h1>
 <div class="row">'.
 $display->formaterrormessage($transferpage['message']).'
 ' . $userfullname . '
@@ -174,7 +200,9 @@ echo '
 <label class="small mb-1" for="inputconfirmPassword">Confirm Password</label>
 <input class="form-control"  name="inputconfirmPassword"  id="inputconfirmPassword" type="password" placeholder="Confirm password">
 </div>
+<div class="text-end">
 <button class="btn btn-lg btn-primary px-5 mt-3" type="submit">Save</button>
+</div>
 </form>
 
 ';
