@@ -326,7 +326,7 @@ echo '
         <span class="stat-label">Businesses</span>
     </div>
     <div class="stat-item">
-        <span class="stat-number counter">50000</span>
+        <span class="stat-number counter">50K</span>
         <!-- Two spans: large and small screen -->
         <span class="stat-label d-none d-sm-inline">Happy Members</span>
         <span class="stat-label d-inline d-sm-none">Members</span>
@@ -422,84 +422,12 @@ echo '
 ';
 
 
-// Initialize animations
+// Counter animation
 $footerattribute['postfooter'] = '
 <script>
-// Simple counter animation that works with modern jQuery
-function animateValue(element, start, end, duration) {
-    const range = end - start;
-    const increment = end > start ? 1 : -1;
-    const stepTime = Math.abs(Math.floor(duration / range));
-    let current = start;
-    
-    const timer = setInterval(function() {
-        current += increment;
-        let display = current;
-        
-        // Format large numbers
-        if (current >= 1000) {
-            display = (current / 1000).toFixed(0) + "K";
-        }
-        
-        // Check if element text includes $ or +
-        const originalText = element.getAttribute("data-original") || element.textContent;
-        const hasPrefix = originalText.includes("$");
-        const hasSuffix = originalText.includes("+");
-        
-        let finalText = display;
-        if (hasPrefix) finalText = "$" + finalText;
-        if (hasSuffix) finalText = finalText + "+";
-        
-        element.textContent = finalText;
-        
-        if (current === end) {
-            clearInterval(timer);
-        }
-    }, stepTime);
-}
-
-// Initialize counters on scroll
-document.addEventListener("DOMContentLoaded", function() {
-    const counters = document.querySelectorAll(".counter");
-    const countersArray = Array.from(counters);
-    let animated = false;
-    
-    // Store original values
-    countersArray.forEach(counter => {
-        counter.setAttribute("data-original", counter.textContent);
-    });
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting && !animated) {
-                animated = true;
-                
-                countersArray.forEach(counter => {
-                    const text = counter.textContent;
-                    const value = parseInt(text.replace(/[^0-9]/g, ""));
-                    
-                    // Set initial value
-                    if (text.includes("$")) {
-                        counter.textContent = "$0";
-                    } else {
-                        counter.textContent = "0";
-                    }
-                    
-                    // Animate after a small delay
-                    setTimeout(() => {
-                        animateValue(counter, 0, value, 2000);
-                    }, 200);
-                });
-            }
-        });
-    }, { threshold: 0.5 });
-    
-    // Observe the stats container
-    const statsContainer = document.querySelector(".stats");
-    if (statsContainer) {
-        observer.observe(statsContainer);
-    }
-});
+(function(){function a(e,s,t,n){let r=t-s,i=Math.abs(Math.floor(n/r)),o=s,l=e.getAttribute("data-original")||e.textContent,c=l.includes("$"),d=l.includes("+"),u=parseInt(l.replace(/[^0-9]/g,""))>=1e3,f=setInterval(function(){o+=1;let a=o;u&&o>=1e3&&(a=Math.floor(o/1e3)+"K");let s=a;c&&(s="$"+s),d&&!u&&(s=s+"+"),e.textContent=s,o>=t&&clearInterval(f)},i)}document.addEventListener("DOMContentLoaded",function(){let e=document.querySelectorAll(".counter"),s=Array.from(e),t=!1;s.forEach(e=>e.setAttribute("data-original",e.textContent));let n=new IntersectionObserver(e=>{e.forEach(e=>{e.isIntersecting&&!t&&(t=!0,s.forEach(e=>{let s=e.textContent,t=parseInt(s.replace(/[^0-9]/g,""));e.textContent=s.includes("$")?"$0":"0",setTimeout(()=>a(e,0,t,2e3),200)}))})},{threshold:.5}),r=document.querySelector(".stats");r&&n.observe(r)})})();
+</script>
+';
 
 // Fade in animation on scroll
 document.addEventListener("DOMContentLoaded", function() {
