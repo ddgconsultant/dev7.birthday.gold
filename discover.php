@@ -65,7 +65,7 @@ foreach ($loop_companies as $index => $item_company) {
      ' . ($isEager ? 'src="' . $imgSrc . '"' : 'data-src="' . $imgSrc . '" src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%23f8f9fa\'/%3E%3C/svg%3E"') . ' 
      loading="' . ($isEager ? 'eager' : 'lazy') . '" 
      alt="' . htmlspecialchars($item_company['company_name']) . ' logo"
-     style="max-width: 100%; max-height: 150px; width: auto; height: auto;">
+     style="width: 100%; height: auto; object-fit: contain;">
 </div>
 <div class="card-body">
 <h5 class="card-title">' . $item_company['company_name'] . '</h5>
@@ -159,7 +159,6 @@ document.addEventListener("DOMContentLoaded", function() {
 }
 .logo-image-wrapper {
     overflow: hidden;
-    padding: 1rem;
 }
 .logo-item .card {
     height: 100%;

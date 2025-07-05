@@ -20,17 +20,33 @@ $showCloseButton = $closeCount < 3; // Hide close button after 3 closes
 ?>
 
 <!-- Cookie Consent Banner -->
-<div id="cookieConsentBanner" class="cookie-banner">
-    <div class="cookie-content">
-        <div class="cookie-header">
-            <h5>🍪 Birthday Treats for Your Browser Too!</h5>
-            <?php if ($showCloseButton): ?>
-            <button id="closeCookieBanner" class="btn-close btn-close-white" aria-label="Close"></button>
-            <?php endif; ?>
-        </div>
-        <p>We use cookies to make your Birthday.Gold experience sparkle! ✨ Just like how we help you collect birthday rewards, these cookies help us remember your preferences and improve your experience. <a href="/legalhub/cookies" class="cookie-link">Manage your cookie preferences</a> or check the <a href="https://gdpr-info.eu/art-6-gdpr/" class="cookie-link" target="_blank">regulations</a> that require us to ask for your consent.</p>
-        
-        <div class="cookie-controls">
+<div id="cookieConsentBanner" class="cookie-banner position-fixed bottom-0 start-0 end-0 text-white">
+    <div class="cookie-content mx-auto" style="max-width: 1200px;">
+    <div class="cookie-header d-flex justify-content-between align-items-center mb-3">
+    <!-- Large screen heading -->
+    <h5 class="d-none d-sm-block mb-0 text-warning">🍪 Birthday Treats for Your Browser Too!</h5>
+    <!-- Small screen heading -->
+    <h5 class="d-block d-sm-none mb-0 text-warning">🍪 Browser Cookies</h5>
+
+    <?php if ($showCloseButton): ?>
+    <button id="closeCookieBanner" class="btn-close btn-close-white" aria-label="Close"></button>
+    <?php endif; ?>
+</div>
+
+<p>
+    <!-- Large screen text -->
+    <span class="d-none d-sm-inline">
+        We use cookies to make your Birthday.Gold experience sparkle! ✨ Just like how we help you collect birthday rewards, these cookies help us remember your preferences and improve your experience.
+    </span>
+    <!-- Small screen text -->
+    <span class="d-inline d-sm-none">
+        We use cookies to improve your Birthday.Gold experience and remember your preferences.
+    </span>
+    <a href="/legalhub/cookies" class="text-warning text-decoration-underline">Manage your cookie preferences</a> or check the
+    <a href="https://gdpr-info.eu/art-6-gdpr/" class="text-warning text-decoration-underline" target="_blank">regulations</a> that require us to ask for your consent.
+</p>
+
+        <div class="cookie-controls mt-3">
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="requiredCookie" checked disabled>
                 <label class="form-check-label" for="requiredCookie">Required Cookies</label>
@@ -49,136 +65,47 @@ $showCloseButton = $closeCount < 3; // Hide close button after 3 closes
             </div>
         </div>
         
-        <div class="cookie-actions">
-            <button id="acceptAll" class="cookie-btn primary-btn">Accept All</button>
-            <button id="acceptSelected" class="cookie-btn secondary-btn">Accept Selected</button>
-            <button id="rejectAll" class="cookie-btn secondary-btn">Reject All</button>
+        <div class="cookie-actions d-flex gap-2 flex-wrap mt-3">
+            <button id="acceptAll" class="btn btn-warning text-dark">Accept All</button>
+            <button id="acceptSelected" class="btn btn-outline-warning">Accept Selected</button>
+            <button id="rejectAll" class="btn btn-outline-warning">Reject All</button>
         </div>
     </div>
 </div>
 
 <style>
-/* Cookie Banner Styles */
 .cookie-banner {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: #1e1e1e;
-    color: #fff;
+    background-color: rgb(62, 51, 5);
     z-index: 9999;
     font-size: 0.9rem;
-    box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease-in-out;
 
     /* Squiggly top border */
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='12'><path d='M0,6 Q25,0 50,6 T100,6' fill='transparent' stroke='%23ffc107' stroke-width='2'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='12'><path d='M0,6 Q25,0 50,6 T100,6' fill='transparent' stroke='%23ffc107' stroke-width='7'/></svg>");
     background-repeat: repeat-x;
     background-position: top left;
     background-size: 100px 12px;
     padding-top: 12px;
 }
 
-
 .cookie-banner.hidden {
     transform: translateY(100%);
 }
 
 .cookie-content {
-    max-width: 1200px;
-    margin: 0 auto;
     padding: 1.25rem;
 }
 
-.cookie-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.cookie-header h5 {
-    margin: 0;
-    color: var(--bs-secondary);
-}
-
-.cookie-link {
-    color: var(--bs-secondary);
-    text-decoration: underline;
-}
-
-.cookie-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin: 1rem 0;
-}
-
-.form-check {
-    margin-right: 1.5rem;
-}
-
-.form-check-input:checked {
-    background-color: var(--bs-secondary);
-    border-color: var(--bs-secondary);
-}
-
-.cookie-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
-
-.cookie-btn {
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.25rem;
-    font-weight: 400;
-    text-align: center;
-    cursor: pointer;
-    border: 1px solid transparent;
-    font-size: 0.9rem;
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
-}
-
-.primary-btn {
-    background-color: var(--bs-secondary);
-    color: #000;
-}
-
-.primary-btn:hover {
+/* Custom button hover states */
+.btn-warning:hover {
     background-color: #d9ad00;
 }
 
-.secondary-btn {
-    background-color: transparent;
-    border-color: var(--bs-secondary);
-    color: var(--bs-secondary);
-}
-
-.secondary-btn:hover {
+.btn-outline-warning:hover {
     background-color: rgba(255, 199, 0, 0.1);
 }
-
-@media (max-width: 768px) {
-    .cookie-controls {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .form-check {
-        margin-right: 0;
-    }
-    
-    .cookie-actions {
-        flex-direction: column;
-    }
-    
-    .cookie-btn {
-        margin-bottom: 0.5rem;
-        width: 100%;
-    }
-}
 </style>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

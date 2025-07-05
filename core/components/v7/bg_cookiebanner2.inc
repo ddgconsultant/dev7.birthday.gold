@@ -15,38 +15,58 @@ $closeCount = isset($_COOKIE['bdgold_banner_closed']) ? intval($_COOKIE['bdgold_
 $showCloseButton = $closeCount < 3;
 ?>
 
-
-
 <!-- Cookie Banner -->
-<div id="cookieConsentBanner" class="cookie-banner">
-    <div class="cookie-content">
-        <div class="cookie-header">
-            <h5>🍪 Birthday Treats for Your Browser Too!</h5>
-            <?php if ($showCloseButton): ?>
-            <button id="closeCookieBanner" class="btn-close btn-close-white" aria-label="Close"></button>
-            <?php endif; ?>
-        </div>
-        <p>
-            We use cookies to make your Birthday.Gold experience sparkle! ✨ Just like how we help you collect birthday rewards, these cookies help us remember your preferences and improve your experience. 
-            <a href="/legalhub/cookies" class="cookie-link">Manage your cookie preferences</a> or check the 
-            <a href="<?php echo $cookieinfolink; ?>" class="cookie-linkx" target="_blank">regulations</a> that require us to ask for your consent.
-        </p>
-        <div class="cookie-actions">
-            <button id="acceptAll" class="cookie-btn primary-btn">Accept All</button>
-            <button id="managePreferences" class="cookie-btn secondary-btn" onclick="window.location.href='/legalhub/cookies'">Manage Preferences</button>
-            <button id="rejectAll" class="cookie-btn secondary-btn">Reject All</button>
-        </div>
+<div id="cookieConsentBanner" class="cookie-banner position-fixed bottom-0 start-0 end-0 text-white">
+  <div class="cookie-content mx-auto" style="max-width: 1200px;">
+    <div class="cookie-header d-flex justify-content-between align-items-center mb-3">
+      <!-- Large screen heading -->
+      <h5 class="d-none d-sm-block mb-0 text-warning">🍪 Birthday Treats for Your Browser Too!</h5>
+      <!-- Small screen heading -->
+      <h5 class="d-block d-sm-none mb-0 text-warning">🍪 Browser Cookies</h5>
+
+      <?php if ($showCloseButton): ?>
+      <button id="closeCookieBanner" class="btn-close btn-close-white" aria-label="Close"></button>
+      <?php endif; ?>
     </div>
+
+    <p>
+      <!-- Large screen text -->
+      <span class="d-none d-sm-inline">
+        We use cookies to make your Birthday.Gold experience sparkle! ✨ Just like how we help you collect birthday rewards, these cookies help us remember your preferences and improve your experience.
+      </span>
+      <!-- Small screen text -->
+      <span class="d-inline d-sm-none">
+        We use cookies to improve your Birthday.Gold experience and remember your preferences.
+      </span>
+    </p>
+    <a href="/legalhub/cookies" class="text-warning text-decoration-underline">Manage your cookie preferences</a> or check the
+    <a href="<?php echo $cookieinfolink; ?>" class="text-white text-decoration-underline" target="_blank">regulations</a> that require us to ask for your consent.
+
+    <!-- Actions -->
+    <div class="cookie-actions d-flex gap-2 flex-wrap mt-3">
+  <button id="acceptAll" class="btn btn-warning text-dark flex-fill flex-sm-grow-0">
+    <span class="d-none d-sm-inline">Accept All</span>
+    <span class="d-inline d-sm-none">Accept</span>
+  </button>
+  <button id="rejectAll" class="btn btn-outline-warning flex-fill flex-sm-grow-0">
+    <span class="d-none d-sm-inline">Reject All</span>
+    <span class="d-inline d-sm-none">Reject</span>
+  </button>
+  <button id="managePreferences" class="btn btn-outline-warning flex-fill flex-sm-grow-0" onclick="window.location.href='/legalhub/cookies'">
+    <span class="d-none d-sm-inline">Manage Preferences</span>
+    <span class="d-inline d-sm-none">Manage</span>
+  </button>
 </div>
+
+
+
+  </div>
+</div>
+
 
 <style>
 .cookie-banner {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color:rgb(62, 51, 5);
-    color: #fff;
+    background-color: rgb(62, 51, 5);
     z-index: 9999;
     font-size: 0.9rem;
     transition: transform 0.3s ease-in-out;
@@ -64,80 +84,19 @@ $showCloseButton = $closeCount < 3;
 }
 
 .cookie-content {
-    max-width: 1200px;
-    margin: 0 auto;
     padding: 1.25rem;
 }
 
-.cookie-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.cookie-header h5 {
-    margin: 0;
-    color: var(--bs-secondary);
-}
-
-.cookie-link {
-    color: var(--bs-secondary);
-    text-decoration: underline;
-}
-
-.cookie-linkx {
-    color: white;
-    text-decoration: underline;
-}
-
-.cookie-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
-
-.cookie-btn {
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.25rem;
-    font-weight: 400;
-    text-align: center;
-    cursor: pointer;
-    border: 1px solid transparent;
-    font-size: 0.9rem;
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
-}
-
-.primary-btn {
-    background-color: var(--bs-secondary);
-    color: #000;
-}
-
-.primary-btn:hover {
+/* Custom button hover states */
+.btn-warning:hover {
     background-color: #d9ad00;
 }
 
-.secondary-btn {
-    background-color: transparent;
-    border-color: var(--bs-secondary);
-    color: var(--bs-secondary);
-}
-
-.secondary-btn:hover {
+.btn-outline-warning:hover {
     background-color: rgba(255, 199, 0, 0.1);
 }
-
-@media (max-width: 768px) {
-    .cookie-actions {
-        flex-direction: column;
-    }
-    
-    .cookie-btn {
-        margin-bottom: 0.5rem;
-        width: 100%;
-    }
-}
 </style>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
