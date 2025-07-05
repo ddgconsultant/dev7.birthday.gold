@@ -5,12 +5,14 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 $autologin_days_length = 45;
 $errormessage = '';
 
+// Get user's login method preference
+$preferred_method = $account->getLoginMethodPreference();
 
 #-------------------------------------------------------------------------------
 # PREP LOGIN ATTEMPT VARIABLES
 #-------------------------------------------------------------------------------
 $doautologin = false;
-$login_method = $_POST['login_type'] ?? 'email';
+$login_method = $_POST['login_type'] ?? $preferred_method;
 
 if ($login_method === 'phone') {
     $username = !empty($_POST['phone']) ? preg_replace('/[^0-9]/', '', $_POST['phone']) : '';
@@ -100,8 +102,13 @@ if ($show_captcha && !$app->validateCaptcha()) {
   // see if we were actually successful
   if ($app->formposted() || $doautologin) {
     if ($response) {  // TRUE LOGIN - SUCCESSFUL
-
-
+      
+      // Set login method preference based on how they logged in
+      if ($login_method === 'phone') {
+        $account->setLoginMethodPreference('phone');
+      } else {
+        $account->setLoginMethodPreference('email');
+      }
       
       $session->set('login_attempts', 0);
 
@@ -820,20 +827,20 @@ $additionalstyles = '
                         ?>
                         
                         <div class="login-tabs">
-                            <button type="button" class="login-tab active" data-type="email">
+                            <button type="button" class="login-tab <?php echo $preferred_method === 'email' ? 'active' : ''; ?>" data-type="email">
                                 <i class="bi bi-envelope"></i>
                                 Email
                             </button>
-                            <button type="button" class="login-tab" data-type="phone">
+                            <button type="button" class="login-tab <?php echo $preferred_method === 'phone' ? 'active' : ''; ?>" data-type="phone">
                                 <i class="bi bi-phone"></i>
                                 Phone
                             </button>
                         </div>
                         
-                        <input type="hidden" name="login_type" id="login_type" value="email">
+                        <input type="hidden" name="login_type" id="login_type" value="<?php echo $preferred_method; ?>">
                         
                         <!-- Email Input -->
-                        <div class="form-group" id="email-group">
+                        <div class="form-group" id="email-group" style="<?php echo $preferred_method === 'email' ? '' : 'display: none;'; ?>">
                             <label class="form-label" for="email">Email or Username</label>
                             <input 
                                 type="text" 
@@ -843,13 +850,13 @@ $additionalstyles = '
                                 placeholder="name@example.com" 
                                 autocomplete="username"
                                 value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
-                                required
-                                autofocus
+                                <?php echo $preferred_method === 'email' ? 'required' : ''; ?>
+                                <?php echo $preferred_method === 'email' ? 'autofocus' : ''; ?>
                             >
                         </div>
                         
                         <!-- Phone Input -->
-                        <div class="form-group" id="phone-group" style="display: none;">
+                        <div class="form-group" id="phone-group" style="<?php echo $preferred_method === 'phone' ? '' : 'display: none;'; ?>">
                             <label class="form-label" for="phone">Phone Number</label>
                             <input 
                                 type="tel" 
@@ -859,6 +866,8 @@ $additionalstyles = '
                                 placeholder="(555) 123-4567" 
                                 autocomplete="tel"
                                 value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
+                                <?php echo $preferred_method === 'phone' ? 'required' : ''; ?>
+                                <?php echo $preferred_method === 'phone' ? 'autofocus' : ''; ?>
                             >
                         </div>
                         

@@ -732,6 +732,40 @@ WHERE uc.company_id=c.company_id and user_id = " . $userid . " " . $statuscriter
 
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function setLoginMethodPreference($method = 'email') {
+    // Set a cookie to remember the user's preferred login method
+    // Valid methods: 'email' or 'phone'
+    if (!in_array($method, ['email', 'phone'])) {
+      $method = 'email'; // Default to email if invalid
+    }
+    
+    setcookie('bdgold_login_method', $method, [
+      'expires' => time() + (86400 * 365), // 1 year
+      'path' => '/',
+      'domain' => '.birthday.gold',
+      'secure' => true,
+      'httponly' => true,
+      'samesite' => 'Lax'
+    ]);
+    
+    return true;
+  }
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function getLoginMethodPreference() {
+    // Get the user's preferred login method from cookie
+    // Returns 'email' or 'phone', defaults to 'email'
+    $method = $_COOKIE['bdgold_login_method'] ?? 'email';
+    
+    // Validate the method
+    if (!in_array($method, ['email', 'phone'])) {
+      $method = 'email';
+    }
+    
+    return $method;
+  }
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function getBirthdates($birthdate = '', $plandetails = [])
   {
     global $mode;

@@ -5,6 +5,9 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $errormessage = '';
 
+// Get user's login method preference
+$preferred_method = $account->getLoginMethodPreference();
+
 #-------------------------------------------------------------------------------
 # PROCESS POST ATTEMPT
 #-------------------------------------------------------------------------------
@@ -63,6 +66,9 @@ if ($app->formposted()) {
                     // For now, show success page with the link
                     $sent_to = 'Phone ending in ' . substr($phone, -4);
                     $show_success = true;
+                    
+                    // Set preference for phone
+                    $account->setLoginMethodPreference('phone');
                 } else {
                     $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Unable to find an account with that phone number.</div>';
                 }
@@ -93,6 +99,9 @@ if ($app->formposted()) {
                 
                 $sent_to = htmlspecialchars($email);
                 $show_success = true;
+                
+                // Set preference for email
+                $account->setLoginMethodPreference('email');
             } else {
                 $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Unable to find an account with that email address.</div>';
             }
@@ -766,20 +775,20 @@ include($dir['core_components'] . '/bg_header.inc');
                         
                         <!-- Tab Switch -->
                         <div class="reset-tabs">
-                            <button type="button" class="reset-tab active" data-type="email">
+                            <button type="button" class="reset-tab <?php echo $preferred_method === 'email' ? 'active' : ''; ?>" data-type="email">
                                 <i class="bi bi-envelope"></i>
                                 Email
                             </button>
-                            <button type="button" class="reset-tab" data-type="phone">
+                            <button type="button" class="reset-tab <?php echo $preferred_method === 'phone' ? 'active' : ''; ?>" data-type="phone">
                                 <i class="bi bi-phone"></i>
                                 Phone
                             </button>
                         </div>
                         
-                        <input type="hidden" name="reset_type" id="reset_type" value="email">
+                        <input type="hidden" name="reset_type" id="reset_type" value="<?php echo $preferred_method; ?>">
                         
                         <!-- Email Input -->
-                        <div class="form-group" id="email-group">
+                        <div class="form-group" id="email-group" style="<?php echo $preferred_method === 'email' ? '' : 'display: none;'; ?>">
                             <label class="form-label" for="email">Email Address</label>
                             <input 
                                 type="email" 
@@ -789,8 +798,8 @@ include($dir['core_components'] . '/bg_header.inc');
                                 placeholder="name@example.com" 
                                 autocomplete="email"
                                 value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
-                                required
-                                autofocus
+                                <?php echo $preferred_method === 'email' ? 'required' : ''; ?>
+                                <?php echo $preferred_method === 'email' ? 'autofocus' : ''; ?>
                             >
                             <div class="help-text">
                                 We'll send a password reset link to this email
@@ -798,7 +807,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         </div>
                         
                         <!-- Phone Input -->
-                        <div class="form-group" id="phone-group" style="display: none;">
+                        <div class="form-group" id="phone-group" style="<?php echo $preferred_method === 'phone' ? '' : 'display: none;'; ?>">
                             <label class="form-label" for="phone">Phone Number</label>
                             <input 
                                 type="tel" 
@@ -808,7 +817,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                 placeholder="(555) 123-4567" 
                                 autocomplete="tel"
                                 value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
-                                disabled
+                                <?php echo $preferred_method === 'phone' ? 'required' : 'disabled'; ?>
                             >
                             <div class="help-text">
                                 We'll send a password reset link via SMS
