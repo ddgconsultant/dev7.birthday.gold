@@ -30,148 +30,7 @@ $headerattribute['additional_head'] = '
 #-------------------------------------------------------------------------------
 
 $additionalstyles .= '<link href="/public/css/v3/theme.css" rel="stylesheet" id="style-default">
-<link rel="stylesheet" href="/public/css/homepage.css">
-<style>
-/* Fix floating elements initial position */
-.floating-elements {
-    pointer-events: none; /* Ensure they dont interfere with clicks */
-}
-.float-element {
-    transform: translateY(100vh); /* Start offscreen */
-}
-
-/* Make header black transparent on homepage only */
-.home-header {
-    background-color: rgba(0, 0, 0, 0.8) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: none !important;
-}
-
-/* Ensure header text is visible with white shadow */
-header a, header .nav-link, header .navbar-brand {
-    color: #fff !important;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2), 0 0 20px rgba(255, 255, 255, 0.2);
-}
-
-/* Add stronger white shadow for navigation links */
-.home-header .nav-link {
-    font-weight: 600;
-}
-
-/* Push navigation further right and prevent wrapping */
-.home-header .center-nav {
-    padding-right: 1rem;
-    white-space: nowrap;
-}
-
-/* Ensure buttons do not wrap text */
-.home-header .btn {
-    white-space: nowrap;
-}
-
-/* Adjust navigation positioning to be closer to buttons */
-@media (min-width: 992px) {
-    .home-header .center-nav {
-        margin-right: 0;
-        padding-right: 0.5rem;
-    }
-}
-
-/* Sign Up button - Bootstrap Secondary style */
-.home-header .btn-secondary {
-    background-color: transparent !important;
-    border: 2px solid var(--bs-secondary) !important;
-    color: var(--bs-secondary) !important;
-    border-radius: 25px !important;
-    padding: 0.375rem 1.5rem !important;
-}
-
-.home-header .btn-secondary:hover {
-    background-color: var(--bs-secondary) !important;
-    color: #fff !important;
-    border-color: var(--bs-secondary) !important;
-}
-
-/* Login button - Bootstrap Primary style (transparent) */
-.home-header .btn-primary,
-.home-header .login-btn {
-    background-color: transparent !important;
-    border: 2px solid var(--bs-primary) !important;
-    color: var(--bs-primary) !important;
-    border-radius: 25px !important;
-    padding: 0.375rem 1.5rem !important;
-}
-
-.home-header .btn-primary:hover,
-.home-header .login-btn:hover {
-    background-color: var(--bs-primary) !important;
-    color: #fff !important;
-    border-color: var(--bs-primary) !important;
-}
-
-/* Logo also needs white glow for visibility */
-.home-header .home-logo {
-    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
-}
-
-/* Fix avatar dropdown menu visibility */
-.home-header .dropdown-menu,
-.dropdown-menu {
-    background-color: white !important;
-    border: 1px solid rgba(0,0,0,0.15) !important;
-}
-
-.home-header .dropdown-item,
-.dropdown-menu .dropdown-item,
-.dropdown-menu .dropdown-item a {
-    color: #212529 !important;
-    text-shadow: none !important;
-}
-
-.home-header .dropdown-item:hover,
-.home-header .dropdown-item:focus,
-.dropdown-menu .dropdown-item:hover,
-.dropdown-menu .dropdown-item:focus {
-    background-color: #f8f9fa !important;
-    color: #212529 !important;
-}
-
-/* Ensure dropdown dividers are visible */
-.home-header .dropdown-divider,
-.dropdown-menu .dropdown-divider {
-    border-color: rgba(0,0,0,0.1) !important;
-}
-
-/* Fix any dropdown headers */
-.home-header .dropdown-header,
-.dropdown-menu .dropdown-header {
-    color: #6c757d !important;
-    text-shadow: none !important;
-}
-
-/* Ensure all text within dropdowns is black */
-.dropdown-menu * {
-    color: #212529 !important;
-    text-shadow: none !important;
-}
-
-/* Special handling for links within dropdown items */
-.dropdown-menu a,
-.dropdown-menu a:hover,
-.dropdown-menu a:focus {
-    color: #212529 !important;
-    text-decoration: none !important;
-}
-
-/* Override any inherited white color from body */
-.dropdown-menu,
-.dropdown-menu .dropdown-item,
-.dropdown-menu .dropdown-item * {
-    color: #212529 !important;
-}
-</style>';
+<link rel="stylesheet" href="/public/css/homepage.css">';
 $bodycontentclass='class="d-flex"';
 $header_flush = true; // Homepage should have content flush with header
 
@@ -188,17 +47,16 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
 <!-- Simple gradient background -->
 <div class="page-bg"></div>
 
-<!-- Floating Elements (loaded after page) -->
-<div class="floating-elements" id="floatingElements">
-    <div class="float-element" style="left: 10%; animation-delay: 0s;">🎂</div>
-    <div class="float-element" style="left: 30%; animation-delay: 5s;">🎉</div>
-    <div class="float-element" style="left: 50%; animation-delay: 10s;">🎈</div>
-    <div class="float-element" style="left: 70%; animation-delay: 15s;">🎊</div>
-    <div class="float-element" style="left: 90%; animation-delay: 20s;">✨</div>
-</div>
-
 <!-- Hero Section -->
 <section class="hero">
+    <!-- Floating Elements (loaded after page) -->
+    <div class="floating-elements" id="floatingElements">
+        <div class="float-element" style="left: 10%; animation-delay: 0s;">🎂</div>
+        <div class="float-element" style="left: 30%; animation-delay: 5s;">🎉</div>
+        <div class="float-element" style="left: 50%; animation-delay: 10s;">🎈</div>
+        <div class="float-element" style="left: 70%; animation-delay: 15s;">🎊</div>
+        <div class="float-element" style="left: 90%; animation-delay: 20s;">✨</div>
+    </div>
     <div class="hero-content">
         <div class="hero-badge">
             <i class="bi bi-stars"></i>
@@ -258,35 +116,6 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
 ';
 
 
-  $additionalstyles.='
-<style > 
-.logo-banner-sandbox { overflow: hidden; box-sizing: border-box; position: relative; width: 100%; padding-top: 1rem; height: 100px !important; }
-.logo-banner-content-sandbox { display: flex; white-space: nowrap; animation: scroll-sandbox 45s linear infinite; align-items: center; height: 100%; }
-/* Faster animation for mobile devices */
-@media (max-width:767px) {
-.logo-banner-content-sandbox {  animation-duration: 20s;         /* Adjust the duration as needed for mobile */ }
-}
-.logo-banner-content-sandbox img { height: 48px; margin: 0 40px; filter: brightness(0) invert(1); opacity: 0.9; }
-@keyframes scroll-sandbox {
-0% { transform: translateX(0); }
-100% { transform: translateX(-100%); }
-}
-</style > <style > .managetext h1.fs-7 { font-size: 2.5rem;     /* Default font size */ }
-.managetext p.lead { font-size: 1.5rem;     /* Default font size */ }
-@media (max-width:576px) {
-.managetext h1.fs-7 { font-size: 1.5rem; }
-.managetext p.lead { font-size: 1rem; }
-}
-@media (min-width:576px) and (max-width:768px) {
-.managetext h1.fs-7 { font-size: 2rem; }
-.managetext p.lead { font-size: 1.25rem; }
-}
-@media (min-width:768px) {
-.managetext h1.fs-7 { font-size: 2.5rem; }
-.managetext p.lead { font-size: 1.5rem; }
-}
-</style >
-';
 $usecarousel=1;
 $brands[0]='<div class="carousel-logos">
                     <div class="trust-logo">Starbucks</div>
