@@ -425,9 +425,9 @@ echo '
 // Counter animation
 $footerattribute['postfooter'] = '
 <script>
-(function(){function a(e,s,t,n){let r=t-s,i=Math.abs(Math.floor(n/r)),o=s,l=e.getAttribute("data-original")||e.textContent,c=l.includes("$"),d=l.includes("+"),u=parseInt(l.replace(/[^0-9]/g,""))>=1e3,f=setInterval(function(){o+=1;let a=o;u&&o>=1e3&&(a=Math.floor(o/1e3)+"K");let s=a;c&&(s="$"+s),d&&!u&&(s=s+"+"),e.textContent=s,o>=t&&clearInterval(f)},i)}document.addEventListener("DOMContentLoaded",function(){let e=document.querySelectorAll(".counter"),s=Array.from(e),t=!1;s.forEach(e=>e.setAttribute("data-original",e.textContent));let n=new IntersectionObserver(e=>{e.forEach(e=>{e.isIntersecting&&!t&&(t=!0,s.forEach(e=>{let s=e.textContent,t=parseInt(s.replace(/[^0-9]/g,""));e.textContent=s.includes("$")?"$0":"0",setTimeout(()=>a(e,0,t,2e3),200)}))})},{threshold:.5}),r=document.querySelector(".stats");r&&n.observe(r)})})();
-</script>
-';
+(function(){function a(e,s,t,n){let r=t-s,i=Math.abs(Math.floor(n/r)),o=s,l=e.getAttribute("data-original")||e.textContent,c=l.includes("$"),d=l.includes("+"),u=l.includes("K"),f=setInterval(function(){o+=1;let a=o;u&&(a=o>=1e3?Math.floor(o/1e3)+"K":o);let s=a;c&&(s="$"+s),d&&(s=s+"+"),e.textContent=s,o>=t&&clearInterval(f)},i)}document.addEventListener("DOMContentLoaded",function(){let e=document.querySelectorAll(".counter"),s=Array.from(e),t=!1;s.forEach(e=>e.setAttribute("data-original",e.textContent));let n=new IntersectionObserver(e=>{e.forEach(e=>{e.isIntersecting&&!t&&(t=!0,s.forEach(e=>{let s=e.textContent,t=s.includes("K")?parseInt(s.replace(/[^0-9]/g,""))*1e3:parseInt(s.replace(/[^0-9]/g,""));e.textContent=s.includes("$")?"$0":"0",setTimeout(()=>a(e,0,t,2e3),200)}))})},{threshold:.5}),r=document.querySelector(".stats");r&&n.observe(r)})})();
+
+
 
 // Fade in animation on scroll
 document.addEventListener("DOMContentLoaded", function() {
