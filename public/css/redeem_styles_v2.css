@@ -2,10 +2,13 @@
    REDEEM PAGE STYLES V2 - Clean & Modern
    ================================= */
 
-* {
-    box-sizing: border-box !important;
+/* Root variables - leveraging Bootstrap */
+:root {
+    --redeem-primary: var(--bs-primary);
+    --redeem-success: var(--bs-success);
+    --redeem-border: var(--bs-border-color);
+    --redeem-text-muted: var(--bs-secondary-color);
 }
-
 
 /* Card Container */
 .redeem-container {
@@ -15,8 +18,8 @@
 }
 
 .redeem-card {
-    background: white;
-    border-radius: 12px;
+    background: var(--bs-body-bg);
+    border-radius: var(--bs-border-radius-lg);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     overflow: hidden;
 }
@@ -30,23 +33,23 @@
 .redeem-header h1 {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #212529;
+    color: var(--bs-heading-color);
     margin-bottom: 0.5rem;
 }
 
 .redeem-header p {
     font-size: 1rem;
-    color: #6c757d;
+    color: var(--bs-secondary-color);
     margin: 0;
 }
 
-/* Gift Badge */
+/* Gift Badge - Keep green for gift context */
 .gift-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: #e8f5e8;
-    color: #198754;
+    background: rgba(var(--bs-success-rgb), 0.1);
+    color: var(--bs-success);
     padding: 0.5rem 1rem;
     border-radius: 50px;
     font-size: 0.875rem;
@@ -63,6 +66,7 @@
     padding: 0 1.5rem 2rem;
 }
 
+/* Use Bootstrap mb-3 class instead */
 .form-group {
     margin-bottom: 1.5rem;
 }
@@ -71,7 +75,7 @@
     display: block;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #495057;
+    color: var(--bs-body-color);
     margin-bottom: 0.5rem;
 }
 
@@ -84,36 +88,37 @@
     width: 100%;
     padding: 1rem 1.25rem;
     font-size: 1.25rem;
-    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    font-family: var(--bs-font-monospace);
     font-weight: 500;
     text-align: center;
     letter-spacing: 3px;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
+    border: 2px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
     transition: all 0.2s ease;
-    background: white;
-    color: #212529;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
 }
 
 .code-input:focus {
     outline: none;
-    border-color: #198754;
-    box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1);
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.1);
 }
 
 .code-input::placeholder {
-    color: #adb5bd;
+    color: var(--bs-secondary-color);
     font-size: 1rem;
     letter-spacing: 2px;
+    opacity: 0.65;
 }
 
-/* Submit Button - Cleaner */
+/* Submit Button - Using primary like login page */
 .btn-redeem {
     width: 100%;
     padding: 0.875rem 1.5rem;
     font-size: 1rem;
     font-weight: 600;
-    background: #198754;
+    background: var(--bs-primary);
     color: white;
     border: none;
     border-radius: 8px;
@@ -124,9 +129,10 @@
 }
 
 .btn-redeem:hover:not(:disabled) {
-    background: #157347;
+    background: var(--bs-primary);
+    filter: brightness(0.9);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2);
+    box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.2);
 }
 
 .btn-redeem:active {
@@ -134,7 +140,7 @@
 }
 
 .btn-redeem:disabled {
-    background: #6c757d;
+    background: var(--bs-secondary);
     cursor: not-allowed;
     opacity: 0.65;
 }
@@ -142,7 +148,7 @@
 /* Help Text */
 .help-text {
     font-size: 0.8125rem;
-    color: #6c757d;
+    color: var(--bs-secondary-color);
     text-align: center;
     margin-top: 0.5rem;
 }
@@ -161,14 +167,14 @@
     right: 20%;
     top: 50%;
     height: 1px;
-    background: #e9ecef;
+    background: var(--bs-border-color);
 }
 
 .divider span {
-    background: white;
+    background: var(--bs-body-bg);
     padding: 0 0.75rem;
     position: relative;
-    color: #adb5bd;
+    color: var(--bs-secondary-color);
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -178,18 +184,19 @@
 .alt-actions {
     text-align: center;
     font-size: 0.875rem;
-    color: #6c757d;
+    color: var(--bs-secondary-color);
 }
 
 .alt-actions a {
-    color: #198754;
+    color: var(--bs-primary);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.2s ease;
 }
 
 .alt-actions a:hover {
-    color: #157347;
+    color: var(--bs-primary);
+    filter: brightness(0.8);
     text-decoration: underline;
 }
 
@@ -198,27 +205,7 @@
     margin-bottom: 1.5rem;
 }
 
-.alert {
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    border: 1px solid transparent;
-}
-
-.alert-success {
-    background: #d1e7dd;
-    color: #0f5132;
-    border-color: #badbcc;
-}
-
-.alert-danger {
-    background: #f8d7da;
-    color: #842029;
-    border-color: #f5c2c7;
-}
+/* Use Bootstrap alert classes instead */
 
 /* Loading State */
 .btn-redeem.loading {
@@ -252,11 +239,11 @@
 
 /* Invalid input state */
 .code-input.is-invalid {
-    border-color: #dc3545;
+    border-color: var(--bs-danger);
 }
 
 .code-input.is-invalid:focus {
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--bs-danger-rgb), 0.1);
 }
 
 /* Success animation */
@@ -267,7 +254,7 @@
 }
 
 .code-input.is-valid {
-    border-color: #198754;
+    border-color: var(--bs-success);
     animation: success-pulse 0.3s ease;
 }
 
@@ -317,23 +304,24 @@
     
     /* Welcome content for desktop */
     .welcome-content {
-        color: #212529;
+        color: var(--bs-body-color);
     }
     
     .welcome-content h2 {
         font-size: 2.5rem;
         font-weight: 700;
+        color: var(--bs-heading-color);
         margin-bottom: 1.5rem;
         line-height: 1.2;
     }
     
     .welcome-content h2 span {
-        color: #198754;
+        color: var(--bs-primary);
     }
     
     .welcome-content p {
         font-size: 1.25rem;
-        color: #6c757d;
+        color: var(--bs-secondary-color);
         margin-bottom: 2rem;
         line-height: 1.6;
     }
@@ -354,25 +342,25 @@
         flex-shrink: 0;
         width: 48px;
         height: 48px;
-        background: var(--bs-secondary);
+        background: rgba(var(--bs-primary-rgb), 0.1);
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #198754;
+        color: var(--bs-primary);
         font-size: 1.25rem;
     }
     
     .feature-text h3 {
         font-size: 1rem;
         font-weight: 600;
-        color: #212529;
+        color: var(--bs-heading-color);
         margin-bottom: 0.25rem;
     }
     
     .feature-text p {
         font-size: 0.875rem;
-        color: #6c757d;
+        color: var(--bs-secondary-color);
         margin: 0;
         line-height: 1.4;
     }
