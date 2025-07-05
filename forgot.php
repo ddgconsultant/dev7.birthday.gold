@@ -8,11 +8,22 @@ $errormessage = '';
 # PROCESS POST ATTEMPT
 #-------------------------------------------------------------------------------
 if ($app->formposted()) {
-    $email = trim($_POST['email'] ?? '');
-    $sendcount = 1;
-    $response = $account->getuserdata($email, 'email');
+    // Check throttle - 15 second limit between requests
+    $throttle_key = 'forgot_password_throttle';
+    $current_time = time();
     
-    if (!empty($response['user_id'])) {
+    if (isset($_SESSION[$throttle_key]) && ($current_time - $_SESSION[$throttle_key]) < 15) {
+        $seconds_remaining = 15 - ($current_time - $_SESSION[$throttle_key]);
+        $errormessage = '<div class="alert alert-warning"><i class="bi bi-clock"></i> Please wait ' . $seconds_remaining . ' seconds before requesting another password reset.</div>';
+    } else {
+        // Update throttle timestamp
+        $_SESSION[$throttle_key] = $current_time;
+        
+        $email = trim($_POST['email'] ?? '');
+        $sendcount = 1;
+        $response = $account->getuserdata($email, 'email');
+        
+        if (!empty($response['user_id'])) {
         $fullname = $response['first_name'];
         $message['toemail'] = $email;
         $message['fullname'] = $fullname;
@@ -168,8 +179,9 @@ if ($app->formposted()) {
         include($dir['core_components'] . '/bg_footer.inc');
         $app->outputpage();
         exit;
-    } else {
-        $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Unable to find an account with that email address.</div>';
+        } else {
+            $errormessage = '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Unable to find an account with that email address.</div>';
+        }
     }
 }
 
@@ -187,12 +199,19 @@ $additionalstyles = '
     box-sizing: border-box !important;
 }
 
+/* Main content wrapper for vertical centering */
+.main-content {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    padding: 2rem 0;
+}
 
 /* Card Container */
 .forgot-container {
     width: 100%;
     max-width: 480px;
-    margin: 2rem auto;
+    margin: 0 auto 4rem;
 }
 
 .forgot-card {
@@ -385,6 +404,12 @@ $additionalstyles = '
     border-color: #f5c2c7;
 }
 
+.alert-warning {
+    background: #fff3cd;
+    color: #664d03;
+    border-color: #ffecb5;
+}
+
 /* Loading State */
 .btn-submit.loading {
     pointer-events: none;
@@ -433,11 +458,13 @@ $additionalstyles = '
 
 /* Tablet & Desktop Styles */
 @media (min-width: 768px) {
-
+    .main-content {
+        padding: 3rem 0;
+    }
     
     .forgot-container {
         max-width: 480px;
-        margin: 3rem auto;
+        margin: 0 auto 5rem;
     }
     
     .forgot-header {
@@ -455,7 +482,9 @@ $additionalstyles = '
 
 /* Large Desktop - Enhanced Layout */
 @media (min-width: 992px) {
-
+    .main-content {
+        padding: 4rem 0;
+    }
     
     .forgot-wrapper {
         width: 100%;
@@ -465,6 +494,7 @@ $additionalstyles = '
         gap: 4rem;
         align-items: center;
         padding: 0 2rem;
+        margin: auto;
     }
     
     /* Welcome content for desktop */
@@ -603,7 +633,7 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         
         <!-- Forgot Card -->
-        <div class="forgot-container mb-md-5">
+        <div class="forgot-container">
             <div class="forgot-card">
                 <!-- Header Section -->
                 <div class="forgot-header">
@@ -673,6 +703,29 @@ document.addEventListener("DOMContentLoaded", function() {
     const forgotForm = document.getElementById("forgotForm");
     const submitBtn = document.getElementById("submitBtn");
     const emailInput = document.getElementById("email");
+    
+    // Check if there is a throttle message and start countdown
+    const alertContainer = document.querySelector(".alert-warning");
+    if (alertContainer && alertContainer.textContent.includes("Please wait")) {
+        const match = alertContainer.textContent.match(/(\d+) seconds/);
+        if (match) {
+            let seconds = parseInt(match[1]);
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span>Wait ${seconds}s</span>`;
+            
+            const countdown = setInterval(function() {
+                seconds--;
+                if (seconds > 0) {
+                    submitBtn.innerHTML = `<span>Wait ${seconds}s</span>`;
+                } else {
+                    clearInterval(countdown);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<span>Send Reset Link</span>`;
+                    alertContainer.style.display = "none";
+                }
+            }, 1000);
+        }
+    }
     
     if (forgotForm) {
         forgotForm.addEventListener("submit", function(e) {
