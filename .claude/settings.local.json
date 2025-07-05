@@ -31,7 +31,10 @@
       "Bash(cat:*)",
       "Bash(/usr/bin/php:*)",
       "Bash(/mnt/c/UwAmp/bin/php/php-7.2.7/php.exe -l /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin/index.php)",
-      "Bash(/mnt/c/UwAmp/bin/php/php-7.2.7/php -l admin/index.php)"
+      "Bash(/mnt/c/UwAmp/bin/php/php-7.2.7/php -l admin/index.php)",
+      "WebFetch(domain:www.getoutline.com)",
+      "Bash(chmod:*)",
+      "WebFetch(domain:docs.birthdaygold.cloud)"
     ]
   },
   "enableAllProjectMcpServers": false

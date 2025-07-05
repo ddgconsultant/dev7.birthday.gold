@@ -917,6 +917,16 @@ small.text-muted,
     font-weight: 500;
 }
 
+/* Style for when a red year is selected - only the selected value */
+#birth_year.has-danger-selection {
+    color: #dc3545 !important;
+}
+
+/* Ensure non-danger options stay normal color */
+#birth_year option:not(.text-danger) {
+    color: #495057 !important;
+}
+
 /* Fix Chrome autofill background */
 .contact-field input:-webkit-autofill,
 .contact-field input:-webkit-autofill:hover,
@@ -1251,6 +1261,26 @@ document.addEventListener('DOMContentLoaded', function() {
     if (birthMonth) birthMonth.addEventListener('change', updateBirthdayField);
     if (birthDay) birthDay.addEventListener('change', updateBirthdayField);
     if (birthYear) birthYear.addEventListener('change', updateBirthdayField);
+    
+    // Handle birth year dropdown styling for underage years
+    const birthYearSelect = document.getElementById('birth_year');
+    if (birthYearSelect) {
+        // Function to check if selected year has text-danger class
+        function updateYearStyling() {
+            const selectedOption = birthYearSelect.options[birthYearSelect.selectedIndex];
+            if (selectedOption && selectedOption.classList.contains('text-danger')) {
+                birthYearSelect.classList.add('has-danger-selection');
+            } else {
+                birthYearSelect.classList.remove('has-danger-selection');
+            }
+        }
+        
+        // Check on page load
+        updateYearStyling();
+        
+        // Check on change
+        birthYearSelect.addEventListener('change', updateYearStyling);
+    }
 });
 
 // Phone number formatting

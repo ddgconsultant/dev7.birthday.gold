@@ -717,6 +717,37 @@ GROUP BY
 
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Prevent visual collisions in verification codes
+   * Replaces visually similar characters with 'H' to avoid confusion
+   * @param string $code The verification code to process
+   * @return string The processed code with collisions removed
+   */
+  public function preventCodeCollisions($code) {
+      // Map of characters to replace with 'H' to avoid visual confusion
+      $collisionMap = array(
+          '0' => 'A', // Zero looks like letter O or D
+          'O' => 'C', // Letter O looks like zero or Q
+          '1' => 'F', // One looks like letter I or lowercase l
+          'I' => 'H', // Letter I looks like one
+          '5' => 'K', // Five looks like letter S
+          'S' => 'H', // Letter S looks like five
+          'l' => 'W', // Lowercase l looks like one or I
+          'o' => 'R', // Lowercase o looks like zero
+          'Z' => 'T', // Z looks like 2
+          '2' => 'Y', // 2 looks like Z
+          'G' => 'P', // G looks like 6
+          '6' => '3', // 6 looks like G
+          'B' => '4', // B looks like 8
+          '8' => '9', // 8 looks like B
+          'Q' => 'X', // Q looks like O
+          'D' => 'V'  // D looks like 0
+      );
+      
+      // Replace each collision character substitute
+      return strtr($code, $collisionMap);
+  }
+
   public function getvalidationcodes($input = '')
 {
     // Register new user
@@ -751,6 +782,9 @@ GROUP BY
         // Original alphanumeric code generation
         $code1 = md5($extendedrawdata);
         $minicode = substr($code1, 0, 1) . substr($code1, -5);
+        // Convert to uppercase and prevent visual collisions
+        $minicode = strtoupper($minicode);
+        $minicode = $this->preventCodeCollisions($minicode);
     }
     
     $longcode = sha1($extendedrawdata);
@@ -796,8 +830,11 @@ GROUP BY
           $existingCode = $stmt->fetch(PDO::FETCH_ASSOC);
         // If a valid unexpired code exists, return it
         if ($existingCode) {
+            // Return existing code as-is (it should already be uppercase with collisions prevented)
+            $minicode = $existingCode['validation_minicode'];
+            
             $output = [
-                'mini' => $existingCode['validation_minicode'],
+                'mini' => $minicode,
                 'long' => $existingCode['validation_code'],
                 'code' => $existingCode['validation_code'],
                 'validation_id' => $existingCode['validation_id'],
@@ -884,10 +921,20 @@ GROUP BY
     $status = $input['status'] ?? 'pending';
     $updatestatus = $input['updatestatus'] ?? 'validated';
 
+    // Apply uppercase to minicode for comparison (codes in DB should already have collisions prevented)
+    if (!empty($minicode) && !is_numeric($minicode)) {
+        $minicode = strtoupper($minicode);
+    }
+
     $validationcode = $longcode;
     $criteria = ' where validation_code=:code and validation_type=:validation_type and expire_dt>=now() and (`status`="' . $status . '" or `status`="validated" ) ';
     if (empty($longcode)) {
-      $validationcode = $minicode;
+      // For minicode, apply collision prevention before checking
+      if (!empty($minicode) && !is_numeric($minicode)) {
+          $validationcode = $this->preventCodeCollisions($minicode);
+      } else {
+          $validationcode = $minicode;
+      }
       $criteria = ' where validation_minicode=:code and validation_type=:validation_type and expire_dt>=now() and (`status`="' . $status . '" or `status`="validated" )';
     }
 
