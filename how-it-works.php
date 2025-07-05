@@ -14,13 +14,6 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
 
-// Add animation libraries in head
-$additionalstyles .= '
-<script src="/public/js/waypoints.min.js"></script>
-<script src="/public/js/jquery.counterup.min.js"></script>
-<script src="/public/js/wow.min.js"></script>
-';
-
 $additionalstyles .= '
 <style>
 /* Keep only highlight styling for accents */
@@ -432,33 +425,80 @@ echo '
 // Initialize animations
 $footerattribute['postfooter'] = '
 <script>
-// Wait for all scripts to load
-window.addEventListener('load', function() {
-    // Small delay to ensure all scripts are ready
-    setTimeout(function() {
-        // Debug checks
-        console.log("jQuery loaded:", typeof jQuery !== "undefined");
-        console.log("Waypoints loaded:", typeof jQuery.fn.waypoint !== "undefined");
-        console.log("CounterUp loaded:", typeof jQuery.fn.counterUp !== "undefined");
-        console.log("Counter elements found:", jQuery(".counter").length);
+// Simple counter animation that works with modern jQuery
+function animateValue(element, start, end, duration) {
+    const range = end - start;
+    const increment = end > start ? 1 : -1;
+    const stepTime = Math.abs(Math.floor(duration / range));
+    let current = start;
+    
+    const timer = setInterval(function() {
+        current += increment;
+        let display = current;
         
-        // Initialize CounterUp
-        if (typeof jQuery !== "undefined" && typeof jQuery.fn.counterUp !== "undefined") {
-            jQuery(".counter").counterUp({
-                delay: 10,
-                time: 2000
-            });
-            console.log("CounterUp initialized successfully");
-        } else {
-            console.error("Required libraries not loaded");
+        // Format large numbers
+        if (current >= 1000) {
+            display = (current / 1000).toFixed(0) + "K";
         }
         
-        // Initialize WOW.js if available
-        if (typeof WOW !== "undefined") {
-            new WOW().init();
-            console.log("WOW.js initialized");
+        // Check if element text includes $ or +
+        const originalText = element.getAttribute("data-original") || element.textContent;
+        const hasPrefix = originalText.includes("$");
+        const hasSuffix = originalText.includes("+");
+        
+        let finalText = display;
+        if (hasPrefix) finalText = "$" + finalText;
+        if (hasSuffix) finalText = finalText + "+";
+        
+        element.textContent = finalText;
+        
+        if (current === end) {
+            clearInterval(timer);
         }
-    }, 100);
+    }, stepTime);
+}
+
+// Initialize counters on scroll
+document.addEventListener("DOMContentLoaded", function() {
+    const counters = document.querySelectorAll(".counter");
+    const countersArray = Array.from(counters);
+    let animated = false;
+    
+    // Store original values
+    countersArray.forEach(counter => {
+        counter.setAttribute("data-original", counter.textContent);
+    });
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !animated) {
+                animated = true;
+                
+                countersArray.forEach(counter => {
+                    const text = counter.textContent;
+                    const value = parseInt(text.replace(/[^0-9]/g, ""));
+                    
+                    // Set initial value
+                    if (text.includes("$")) {
+                        counter.textContent = "$0";
+                    } else {
+                        counter.textContent = "0";
+                    }
+                    
+                    // Animate after a small delay
+                    setTimeout(() => {
+                        animateValue(counter, 0, value, 2000);
+                    }, 200);
+                });
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    // Observe the stats container
+    const statsContainer = document.querySelector(".stats");
+    if (statsContainer) {
+        observer.observe(statsContainer);
+    }
 });
 
 // Fade in animation on scroll
