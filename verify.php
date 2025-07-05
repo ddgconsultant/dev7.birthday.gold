@@ -46,20 +46,48 @@ if (!$test_mode && (empty($userregistrationdata) ||
 
 // Handle AJAX validation request
 if (isset($_POST['ajax']) && $_POST['ajax'] == 'validate' && isset($_POST['code'])) {
+    // Suppress error output for AJAX requests
+    ini_set('display_errors', 0);
+    error_reporting(0);
+    
+    // Start output buffering to catch any unwanted output
+    ob_start();
+    
+    // Check for any output before setting header
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    
     header('Content-Type: application/json');
     
-    $submitted_code = strtoupper(trim($_POST['code']));
-    
-    // Check if test mode is passed via POST
-    $ajax_test_mode = isset($_POST['test']) && $_POST['test'] == '1';
-    $ajax_test_type = isset($_POST['type']) ? $_POST['type'] : 'alphanumeric';
-    
-    // Always use real validation (no fake test validation)
-    $checkdata = array();
-    $checkdata['mini'] = $submitted_code;
-    $checkdata['type'] = 'email';
-    
-    $response = $app->checkvalidationcodes($checkdata);
+    try {
+        $submitted_code = strtoupper(trim($_POST['code']));
+        
+        // Check if test mode is passed via POST
+        $ajax_test_mode = isset($_POST['test']) && $_POST['test'] == '1';
+        $ajax_test_type = isset($_POST['type']) ? $_POST['type'] : 'alphanumeric';
+        
+        // Debug logging
+        error_log('[VERIFY] Submitted code: ' . $submitted_code);
+        
+        // Always use real validation (no fake test validation)
+        $checkdata = array();
+        $checkdata['mini'] = $submitted_code;
+        $checkdata['type'] = 'email';
+        
+        // Add user_id if available
+        if (!empty($userregistrationdata['user_id'])) {
+            $checkdata['user_id'] = $userregistrationdata['user_id'];
+        }
+        
+        $response = $app->checkvalidationcodes($checkdata);
+        error_log('[VERIFY] Validation response: ' . print_r($response, true));
+    } catch (Exception $e) {
+        error_log('[VERIFY] Exception: ' . $e->getMessage());
+        ob_clean();
+        echo json_encode(['success' => false, 'message' => 'An error occurred during validation.']);
+        exit();
+    }
     
     if ($response !== false && isset($response['validated']) && $response['validated'] && isset($response[0]['user_id']) && !empty($response[0]['user_id'])) {
         // Validation successful
@@ -86,7 +114,39 @@ if (isset($_POST['ajax']) && $_POST['ajax'] == 'validate' && isset($_POST['code'
             $signup_process = json_decode($signup_process['description'], true);
         }
         
+        // Debug logging
+        error_log('[VERIFY] User data for redirect: ' . json_encode([
+            'user_id' => $userid,
+            'status' => $process_user_data['status'] ?? 'unknown',
+            'account_plan' => $process_user_data['account_plan'] ?? 'unknown',
+            'account_type' => $process_user_data['account_type'] ?? 'unknown'
+        ]));
+        error_log('[VERIFY] Signup process data: ' . json_encode($signup_process));
+        error_log('[VERIFY] Registration data account_cost: ' . ($userregistrationdata['account_cost'] ?? 'not set'));
+        error_log('[VERIFY] Registration data account_plan: ' . ($userregistrationdata['account_plan'] ?? 'not set'));
+        
         $gotourl = '/checkout'; // Default
+        
+        // Check if this is a free account
+        $is_free_account = false;
+        
+        // Check account_plan in database
+        if ($process_user_data['account_plan'] == 'free') {
+            $is_free_account = true;
+            error_log('[VERIFY] Free account detected via database account_plan');
+        }
+        
+        // Check account_cost in session data
+        if (isset($userregistrationdata['account_cost']) && ($userregistrationdata['account_cost'] == 0 || $userregistrationdata['account_cost'] == '0')) {
+            $is_free_account = true;
+            error_log('[VERIFY] Free account detected via session account_cost: ' . $userregistrationdata['account_cost']);
+        }
+        
+        // Check account_plan in session data
+        if (isset($userregistrationdata['account_plan']) && $userregistrationdata['account_plan'] == 'free') {
+            $is_free_account = true;
+            error_log('[VERIFY] Free account detected via session account_plan');
+        }
         
         switch (true) {
             case isset($signup_process['parental']):
@@ -98,7 +158,8 @@ if (isset($_POST['ajax']) && $_POST['ajax'] == 'validate' && isset($_POST['code'
             case isset($signup_process['business']):
                 $gotourl = '/setup-business';
                 break;
-            case ($process_user_data['status'] == 'validated' && $process_user_data['account_plan'] == 'free'):
+            case ($process_user_data['status'] == 'validated' && $is_free_account):
+                error_log('[VERIFY] Processing free account activation');
                 $params = ['status' => 'active'];
                 $account->updateSettings($process_user_data['user_id'], $params);
                 $account->login($process_user_data['user_id'], $sitesettings['app']['APP_AUTOLOGIN'], 'user_id');
@@ -117,12 +178,17 @@ if (isset($_POST['ajax']) && $_POST['ajax'] == 'validate' && isset($_POST['code'
                 break;
         }
         
+        // Clear any output that might have been generated
+        ob_clean();
         echo json_encode(['success' => true, 'redirect' => $gotourl]);
-        exit;
+        exit();
     } else {
         // Validation failed
+        error_log('[VERIFY] Validation failed - response: ' . print_r($response, true));
+        // Clear any output that might have been generated
+        ob_clean();
         echo json_encode(['success' => false, 'message' => 'Invalid verification code. Please try again.']);
-        exit;
+        exit();
     }
 }
 
@@ -219,6 +285,7 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
     $validatedata = array();
     $validatedata['rawdata'] = $contact_value;
     $validatedata['sendcount'] = $sendcount;
+    $validatedata['type'] = 'email'; // Explicitly set type
     
     // In test mode, use a numeric user_id for database compatibility
     if ($test_mode || $ajax_test_mode || (isset($userregistrationdata['account_type']) && $userregistrationdata['account_type'] == 'test')) {
@@ -692,7 +759,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </button>
 
             <div class="resend-section">
-                <p class="resend-text">Didn't receive the code?</p>
+                <p class="resend-text">Didn't receive the code? 
                 <a href="/verify?action=resend<?php echo $test_mode ? '&test=1' : ''; ?>" class="resend-link" id="resendLink">
                     Send a new code
                 </a>
@@ -915,7 +982,27 @@ include($dir['core_components'] . '/bg_header.inc');
                         body: params.toString()
                     });
 
-                    const data = await response.json();
+                    // Check if response is ok
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    // Try to parse JSON
+                    let data;
+                    const responseText = await response.text();
+                    
+                    try {
+                        data = JSON.parse(responseText);
+                    } catch (jsonError) {
+                        console.error('JSON parse error:', jsonError);
+                        console.error('Response text:', responseText);
+                        
+                        // Check if it's a PHP error
+                        if (responseText.includes('PHP Error') || responseText.includes('Warning:') || responseText.includes('Notice:')) {
+                            throw new Error('Server error occurred. Please check server logs.');
+                        }
+                        throw new Error('Invalid response format');
+                    }
 
                     if (data.success) {
                         this.showSuccess(data.redirect);
@@ -923,6 +1010,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         this.showError(data.message || 'Invalid verification code. Please try again.');
                     }
                 } catch (error) {
+                    console.error('Verification error:', error);
                     this.showError('An error occurred. Please try again.');
                 }
 
@@ -984,6 +1072,45 @@ include($dir['core_components'] . '/bg_header.inc');
         let verificationInput;
         document.addEventListener('DOMContentLoaded', () => {
             verificationInput = new VerificationCodeInput();
+            
+            // Handle PHP success message for non-AJAX resend
+            const phpSuccessAlert = document.querySelector('.alert-success');
+            const resendLink = document.getElementById('resendLink');
+            
+            if (phpSuccessAlert && phpSuccessAlert.textContent.includes('New code sent successfully')) {
+                // Immediately disable the resend link
+                if (resendLink) {
+                    resendLink.classList.add('disabled');
+                    resendLink.style.pointerEvents = 'none';
+                    resendLink.style.opacity = '0.5';
+                    resendLink.textContent = 'Please wait...';
+                }
+                
+                // After 8 seconds, change to spam folder warning
+                setTimeout(() => {
+                    phpSuccessAlert.innerHTML = '<i class="bi bi-exclamation-triangle text-warning me-2"></i>Don\'t forget to check your spam folder';
+                    phpSuccessAlert.style.backgroundColor = '#fff3cd';
+                    phpSuccessAlert.style.borderColor = '#ffeaa7';
+                    phpSuccessAlert.style.color = '#856404';
+                    
+                    // After another 5 seconds, hide the alert and re-enable link
+                    setTimeout(() => {
+                        phpSuccessAlert.style.transition = 'opacity 0.5s ease-out';
+                        phpSuccessAlert.style.opacity = '0';
+                        setTimeout(() => {
+                            phpSuccessAlert.style.display = 'none';
+                            
+                            // Re-enable the resend link
+                            if (resendLink) {
+                                resendLink.classList.remove('disabled');
+                                resendLink.style.pointerEvents = '';
+                                resendLink.style.opacity = '';
+                                resendLink.textContent = 'Send a new code';
+                            }
+                        }, 500);
+                    }, 5000);
+                }, 8000);
+            }
         });
 
         // Resend code functionality
@@ -1021,27 +1148,12 @@ include($dir['core_components'] . '/bg_header.inc');
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Disable link and show countdown
+                    // Disable link immediately
                     resendLink.classList.add('disabled');
-                    countdown.style.display = 'block';
-                    
-                    let seconds = 60;
-                    countdownTimer.textContent = seconds;
-                    
-                    if (resendCountdown) {
-                        clearInterval(resendCountdown);
-                    }
-                    
-                    resendCountdown = setInterval(() => {
-                        seconds--;
-                        countdownTimer.textContent = seconds;
-                        
-                        if (seconds <= 0) {
-                            clearInterval(resendCountdown);
-                            resendLink.classList.remove('disabled');
-                            countdown.style.display = 'none';
-                        }
-                    }, 1000);
+                    resendLink.style.pointerEvents = 'none';
+                    resendLink.style.opacity = '0.5';
+                    resendLink.textContent = 'Please wait...';
+                    countdown.style.display = 'none'; // Hide countdown initially
                     
                     // Reset form
                     verificationInput.reset();
@@ -1049,11 +1161,41 @@ include($dir['core_components'] . '/bg_header.inc');
                     // Show success message
                     const subtitle = document.querySelector('.verification-subtitle');
                     const originalText = subtitle.innerHTML;
-                    subtitle.innerHTML = '<i class="bi bi-check-circle text-success me-2"></i>New code sent!';
+                    subtitle.innerHTML = '<i class="bi bi-check-circle text-success me-2"></i>New code sent successfully';
                     
+                    // After 8 seconds, show spam folder warning
                     setTimeout(() => {
-                        subtitle.innerHTML = originalText;
-                    }, 3000);
+                        subtitle.innerHTML = '<i class="bi bi-exclamation-triangle text-warning me-2"></i>Don\'t forget to check your spam folder';
+                        
+                        // After another 5 seconds, restore original text and start countdown
+                        setTimeout(() => {
+                            subtitle.innerHTML = originalText;
+                            
+                            // Now start the 60-second countdown
+                            countdown.style.display = 'block';
+                            resendLink.textContent = 'Send a new code';
+                            resendLink.style.opacity = '';
+                            
+                            let seconds = 60;
+                            countdownTimer.textContent = seconds;
+                            
+                            if (resendCountdown) {
+                                clearInterval(resendCountdown);
+                            }
+                            
+                            resendCountdown = setInterval(() => {
+                                seconds--;
+                                countdownTimer.textContent = seconds;
+                                
+                                if (seconds <= 0) {
+                                    clearInterval(resendCountdown);
+                                    resendLink.classList.remove('disabled');
+                                    resendLink.style.pointerEvents = '';
+                                    countdown.style.display = 'none';
+                                }
+                            }, 1000);
+                        }, 5000);
+                    }, 8000);
                 } else {
                     alert(data.message || 'Failed to send new code. Please try again.');
                 }
