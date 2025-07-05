@@ -3376,7 +3376,7 @@ function bg_businesshours() {
         $status = 'open';
     } else {
         $disabledClass = 'text-muted disabled-content';
-        $afterhourtag = '<i class="bi bi-clock-history me-3 text-danger"> Unavailable After Hours</i>';
+        $afterhourtag = '<i class="bi bi-clock-history me-3 text-warning"> Currently outside of business hours - we will be happy to help you during our regular hours</i>';
         $status = $isHoliday ? 'holiday' : 'closed';
     }
     

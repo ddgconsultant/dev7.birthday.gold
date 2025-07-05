@@ -16,74 +16,15 @@ $workingHoursString = $businessHours['display']['workingHoursString'];
 // Modern Minimalist CSS
 $additionalstyles = '
 <style>
-/* Modern Minimalist Help Center Styles */
-.main-content {
-    min-height: calc(100vh - 200px);
-    padding: 2rem 1rem;
-    background: #f8f9fa;
-}
 
-.help-container {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-/* Header Section */
-.help-header {
-    text-align: center;
-    margin-bottom: 3rem;
-}
-
-.help-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #212529;
-    margin-bottom: 0.5rem;
-}
-
-.help-header p {
-    font-size: 1.25rem;
-    color: #6c757d;
-    margin: 0;
-}
-
-/* Search Bar */
-.search-box {
-    max-width: 600px;
-    margin: 0 auto 3rem;
-}
-
-.search-input {
-    width: 100%;
-    padding: 1rem 1.5rem;
-    font-size: 1.125rem;
-    border: 2px solid #dee2e6;
-    border-radius: 50px;
-    transition: all 0.2s ease;
-    background: white;
-}
-
-.search-input:focus {
-    outline: none;
+/* Search Bar Focus */
+.form-control:focus {
     border-color: var(--bs-primary);
     box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
 }
 
-/* Section Headers */
-.section-header {
-    margin-bottom: 2rem;
-}
-
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-}
-
-.section-subtitle {
-    font-size: 1rem;
-    color: #6c757d;
+.form-control::placeholder {
+    color: #adb5bd;
 }
 
 /* Help Cards Grid */
@@ -139,27 +80,6 @@ $additionalstyles = '
     margin-bottom: 0.25rem;
 }
 
-.help-card-text {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin: 0;
-    line-height: 1.5;
-}
-
-/* Business Hours Alert */
-.business-hours-alert {
-    background: #fff3cd;
-    border: 1px solid #ffecb5;
-    border-radius: 8px;
-    padding: 1rem 1.5rem;
-    margin-bottom: 2rem;
-    color: #664d03;
-}
-
-.business-hours-alert i {
-    color: #f0ad4e;
-    margin-right: 0.5rem;
-}
 
 /* Disabled state */
 .disabled-content {
@@ -178,29 +98,36 @@ $additionalstyles = '
     border-color: #e9ecef;
 }
 
-/* Social Links */
-.social-section {
-    background: white;
+/* After Hours Container */
+.after-hours-container {
+    grid-column: 1 / -1;
+    border: 2px dashed #ffc107;
     border-radius: 12px;
-    padding: 2rem;
+    padding: 1rem;
+    background-color: #fff8e1;
+    margin-bottom: 1rem;
+}
+
+.after-hours-notice {
     text-align: center;
-    margin-top: 3rem;
-    border: 1px solid #e9ecef;
+    color: #856404;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
 }
 
-.social-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #212529;
-    margin-bottom: 1.5rem;
+.after-hours-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
 }
 
-.social-links {
-    display: flex;
-    justify-content: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+@media (min-width: 768px) {
+    .after-hours-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
+
 
 .social-link {
     width: 44px;
@@ -257,42 +184,16 @@ $additionalstyles = '
     opacity: 0.9;
 }
 
-/* Holiday Alert */
-.holiday-alert {
-    background: #f8d7da;
-    border: 1px solid #f5c2c7;
-    border-radius: 8px;
-    padding: 1rem 1.5rem;
-    margin-bottom: 2rem;
-    color: #842029;
-}
 
-/* Responsive */
+/* Responsive Grid */
 @media (max-width: 767px) {
-    .help-header h1 {
-        font-size: 2rem;
-    }
-    
-    .help-header p {
-        font-size: 1rem;
-    }
-    
     .help-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
-    .search-input {
-        font-size: 1rem;
-        padding: 0.875rem 1.25rem;
-    }
 }
 
 @media (min-width: 768px) {
-    .main-content {
-        padding: 3rem 2rem;
-    }
-    
     .help-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -310,28 +211,29 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="main-content">
-    <div class="help-container">
+<div class="main-content py-4 py-md-5 bg-light">
+    <div class="container" style="max-width: 1200px;">
         <!-- Header -->
-        <div class="help-header">
-            <h1>How can we help you?</h1>
-            <p>Find answers to your questions or get in touch with our support team</p>
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold text-dark mb-2">How can we help you?</h1>
+            <p class="fs-4 text-muted m-0">Find answers to your questions or get in touch with our support team</p>
         </div>
         
         <!-- Search Bar -->
-        <div class="search-box">
+        <div class="mx-auto mb-5" style="max-width: 600px;">
             <input 
                 type="text" 
-                class="search-input" 
+                class="form-control form-control-lg rounded-pill px-4" 
                 placeholder="Search for help..."
                 id="helpSearch"
+                style="border-width: 2px;"
             >
         </div>
         
         <!-- Self Help Section -->
-        <div class="section-header">
-            <h2 class="section-title text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2">Self Help Resources</h2>
-            <p class="section-subtitle">Quick answers to common questions</p>
+        <div class="mb-4">
+            <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Self Help Resources</h2>
+            <p class="text-muted">Quick answers to common questions</p>
         </div>
         
         <div class="help-grid">
@@ -341,7 +243,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 <div class="help-content">
                     <h3 class="help-card-title">Frequently Asked Questions</h3>
-                    <p class="help-card-text">Get answers to common issues and questions</p>
+                    <p class="text-muted small mb-0 lh-base">Get answers to common issues and questions</p>
                 </div>
             </a>
             
@@ -351,7 +253,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 <div class="help-content">
                     <h3 class="help-card-title">How It Works</h3>
-                    <p class="help-card-text">Learn how Birthday Gold celebrates you</p>
+                    <p class="text-muted small mb-0 lh-base">Learn how Birthday Gold celebrates you</p>
                 </div>
             </a>
             
@@ -361,15 +263,15 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 <div class="help-content">
                     <h3 class="help-card-title">Plans and Pricing</h3>
-                    <p class="help-card-text">Find the plan that works best for you</p>
+                    <p class="text-muted small mb-0 lh-base">Find the plan that works best for you</p>
                 </div>
             </a>
         </div>
         
         <!-- Community Help Section -->
-        <div class="section-header" style="margin-top: 3rem;">
-            <h2 class="section-title text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2">Community Help</h2>
-            <p class="section-subtitle">Connect with other Birthday Gold users</p>
+        <div class="mb-4 mt-5">
+            <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Community Help</h2>
+            <p class="text-muted">Connect with other Birthday Gold users</p>
         </div>
         
         <div class="help-grid">
@@ -379,68 +281,79 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 <div class="help-content">
                     <h3 class="help-card-title">Community Forum</h3>
-                    <p class="help-card-text">Engage with other users on our forum</p>
+                    <p class="text-muted small mb-0 lh-base">Engage with other users on our forum</p>
                 </div>
             </a>
         </div>
         
         <!-- Customer Service Section -->
-        <div class="section-header" style="margin-top: 3rem;">
-            <h2 class="section-title text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2">Customer Service</h2>
-            <p class="section-subtitle">Get direct help from our support team</p>
+        <div class="mb-4 mt-5">
+            <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Customer Service</h2>
+            <p class="text-muted">Get direct help from our support team</p>
         </div>
         
         <?php
         // Display holiday alert if applicable
         if (!empty($businessHours['display']['alertMessage'])) {
-            echo '<div class="holiday-alert">' . $businessHours['display']['alertMessage'] . '</div>';
-        }
-        
-        // Display after hours alert if applicable
-        if (!empty($afterhourtag)) {
-            echo '<div class="business-hours-alert">';
-            echo '<i class="bi bi-clock"></i> ';
-            echo strip_tags($afterhourtag, '<strong>');
-            echo '</div>';
+            echo '<div class="alert alert-danger mb-4">' . $businessHours['display']['alertMessage'] . '</div>';
         }
         ?>
         
-        <div class="help-grid <?php echo $disabledClass; ?>">
-            <a href="/chat" target="chatwindow" class="help-card">
-                <div class="help-icon">
-                    <i class="bi bi-chat-dots"></i>
-                </div>
-                <div class="help-content">
-                    <h3 class="help-card-title">Chat with an Agent</h3>
-                    <p class="help-card-text">Get online help fast with co-browsing available</p>
-                </div>
-            </a>
-            
-            <a href="tel:877-234-6532" class="help-card">
-                <div class="help-icon">
-                    <i class="bi bi-telephone"></i>
-                </div>
-                <div class="help-content">
-                    <h3 class="help-card-title">Call / Text Us</h3>
-                    <p class="help-card-text">Speak with us during office hours<br><?php echo $workingHoursString; ?></p>
-                </div>
-            </a>
-            
+        <div class="help-grid">
             <a href="/contact" class="help-card">
                 <div class="help-icon">
                     <i class="bi bi-envelope"></i>
                 </div>
                 <div class="help-content">
                     <h3 class="help-card-title">Contact Form</h3>
-                    <p class="help-card-text">Send us a message and we'll get back to you</p>
+                    <p class="text-muted small mb-0 lh-base">Send us a message and we'll get back to you</p>
                 </div>
             </a>
+            
+            <?php if (!empty($afterhourtag)): ?>
+            <!-- After Hours Container -->
+            <div class="after-hours-container">
+                <div class="after-hours-notice">
+                    <i class="bi bi-clock text-warning"></i>
+                    <span class="ms-2">Available during business hours</span>
+                </div>
+                <div class="after-hours-cards">
+            <?php endif; ?>
+            
+            <div class="<?php echo $disabledClass; ?>">
+                <a href="/chat" target="chatwindow" class="help-card">
+                    <div class="help-icon">
+                        <i class="bi bi-chat-dots"></i>
+                    </div>
+                    <div class="help-content">
+                        <h3 class="help-card-title">Chat with an Agent</h3>
+                        <p class="text-muted small mb-0 lh-base">Get online help fast with co-browsing available</p>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="<?php echo $disabledClass; ?>">
+                <a href="tel:877-234-6532" class="help-card">
+                    <div class="help-icon">
+                        <i class="bi bi-telephone"></i>
+                    </div>
+                    <div class="help-content">
+                        <h3 class="help-card-title">Call / Text Us</h3>
+                        <p class="text-muted small mb-0 lh-base">Speak with us during office hours<br><?php echo $workingHoursString; ?></p>
+                    </div>
+                </a>
+            </div>
+            
+            <?php if (!empty($afterhourtag)): ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         
         <!-- Social Links -->
-        <div class="social-section">
-            <h3 class="social-title">Connect with us on social media</h3>
-            <div class="social-links">
+        <div class="bg-white rounded p-4 text-center mt-5 border">
+            <h3 class="h5 fw-semibold text-dark mb-4">Connect with us on social media</h3>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
                 <a href="https://twitter.com/birthday_gold" target="_blank" class="social-link" title="Twitter">
                     <i class="bi bi-twitter-x"></i>
                 </a>
@@ -481,7 +394,7 @@ document.addEventListener("DOMContentLoaded", function() {
             
             helpCards.forEach(card => {
                 const title = card.querySelector(".help-card-title").textContent.toLowerCase();
-                const text = card.querySelector(".help-card-text").textContent.toLowerCase();
+                const text = card.querySelector(".text-muted").textContent.toLowerCase();
                 
                 if (title.includes(searchTerm) || text.includes(searchTerm)) {
                     card.style.display = "";
