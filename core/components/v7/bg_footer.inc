@@ -432,11 +432,6 @@ $additionalstyles .= "
     .footer-mobilemin .footer-mobile-min {
         display: block !important;
     }
-    
-    /* Hide entire footer on mobile when using mobilenonemin */
-    .footer-mobilenonemin {
-        display: none !important;
-    }
 }
 
 /* Responsive Design */
@@ -457,16 +452,6 @@ $additionalstyles .= "
     /* Hide minimal footer on desktop */
     .footer-mobilemin .footer-mobile-min {
         display: none !important;
-    }
-    
-    /* Show footer on desktop when using mobilenonemin */
-    .footer-mobilenonemin {
-        display: block !important;
-    }
-    
-    /* Show minimal footer content on desktop for mobilenonemin */
-    .footer-mobilenonemin .footer-desktop-min {
-        display: block !important;
     }
 }
 

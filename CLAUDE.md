@@ -337,3 +337,103 @@ include $installpath . 'core/components/v3/bg_footer.inc';
 - Test at: 576px (sm), 768px (md), 992px (lg), 1200px (xl)
 - Use Bootstrap's responsive utilities extensively
 - Touch-friendly UI elements (minimum 44px touch targets)
+## Documentation Process
+
+### Posting to docs.birthdaygold.cloud
+
+When creating documentation for new features or processes, post them to the Birthday Gold documentation site:
+
+```bash
+python3 /mnt/w/BIRTHDAY_SERVER/outline_api/post_content_directly.py \
+  --title="[Category]: [Feature Name]" \
+  --content="[Markdown content]" \
+  --publish
+```
+
+### Documentation Standards
+
+Follow the Birthday Gold documentation template:
+- **Title Format**: `[Category]: [Feature/Process Name]` (e.g., "Account: Multi-Method Login System")
+- **Section Headers**: Use emojis (✅, 📁, 🧰, 🐍, 🖥️, 🌐, 🚀)
+- **Structure**:
+  1. Overview
+  2. ✅ Feature Implementation
+  3. 📁 File Structure
+  4. 🧰 Key Components
+  5. 🐍 Core Functions (with code examples)
+  6. 🖥️ User Experience Flow
+  7. 🌐 Implementation Details
+  8. ✅ Testing Checklist
+  9. 🚀 Security Considerations
+  10. **Intent** section (with horizontal rules)
+  11. **Technical Details** section (dates, files, commits)
+  12. Future Enhancements
+
+### Quick Documentation Command
+
+Post documentation without creating local files:
+```bash
+# Generate content inline and post directly
+python3 /mnt/w/BIRTHDAY_SERVER/outline_api/post_content_directly.py \
+  --title="Feature: New Feature Name" \
+  --content="# Content here..." \
+  --collection="752557d2-4486-42cd-aff2-8efa8bed3ee8" \
+  --publish
+```
+
+Default collection: BG-Internal (`752557d2-4486-42cd-aff2-8efa8bed3ee8`)
+
+### Example Documentation Template
+
+When asked to document a feature, use this structure:
+
+```markdown
+# [Category]: [Feature Name]
+
+## Overview
+Brief description of the feature and its purpose.
+
+## ✅ Feature Implementation
+
+### 📁 1. File Structure
+List of modified/created files
+
+### 🧰 2. Key Components
+Main components and their roles
+
+### 🐍 3. Core Functions
+Code examples with syntax highlighting
+
+### 🖥️ 4. User Experience Flow
+Step-by-step user interaction
+
+### 🌐 5. Implementation Details
+Technical specifications
+
+### ✅ 6. Testing Checklist
+- [ ] Test item 1
+- [ ] Test item 2
+
+### 🚀 7. Security Considerations
+Security measures and validations
+
+---
+
+**Intent:**
+Purpose and use cases
+
+---
+
+**Technical Details:**
+* **Implementation Date:** [Date]
+* **Pages:** relevant files
+* **Classes:** relevant classes
+* **Database Tables:** relevant tables
+* **Commits:** commit hashes
+
+---
+
+## Future Enhancements
+Potential improvements
+```
+EOF < /dev/null
