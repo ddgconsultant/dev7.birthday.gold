@@ -2,10 +2,11 @@
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 
+$avg_reward_value = 500; // This can be changed easily
 
 $pagedata['pagetitle']='How Birthday Gold Works - Get Birthday Rewards Automatically';
 $pagedata['metakeywords']='How Birthday Gold Works, Birthday Rewards Process, Automatic Birthday Enrollment, Birthday Freebies System';
-$pagedata['metadescriptions']='Learn how Birthday Gold automatically enrolls you in birthday reward programs from 500+ businesses. Simple 3-step process to get $500+ in birthday treats!';
+$pagedata['metadescriptions']='Learn how Birthday Gold automatically enrolls you in birthday reward programs from 500+ businesses. Simple 3-step process to get $' . $avg_reward_value . '+ in birthday treats!';
 
 
 
@@ -321,15 +322,15 @@ echo '
         
         <div class="stats fade-in-up">
             <div class="stat-item">
-                <span class="stat-number">' . $website['numberofbiz'] . '+</span>
+                <span class="stat-number" data-target="' . $website['numberofbiz'] . '">0</span>
                 <span class="stat-label">Businesses</span>
             </div>
             <div class="stat-item">
-                <span class="stat-number">50K+</span>
+                <span class="stat-number" data-target="50000">0</span>
                 <span class="stat-label">Happy Members</span>
             </div>
             <div class="stat-item">
-                <span class="stat-number">$500+</span>
+                <span class="stat-number" data-target="' . $avg_reward_value . '" data-prefix="$">0</span>
                 <span class="stat-label">Avg. Value</span>
             </div>
         </div>
@@ -396,7 +397,7 @@ echo '
                             <li>Get reminders before rewards arrive</li>
                             <li>Access all rewards in one dashboard</li>
                             <li>Redeem at stores or online easily</li>
-                            <li>Celebrate with treats worth $500+</li>
+                            <li>Celebrate with treats worth $' . $avg_reward_value . '+</li>
                         </ul>
                     </div>
                 </div>
@@ -416,9 +417,33 @@ echo '
 ';
 
 
-// Add scroll animations
+// Add scroll animations and count-up
 $footerattribute['postfooter'] = '
 <script>
+// Count-up animation
+function animateNumber(element, start, end, duration, prefix = "", suffix = "+") {
+    const range = end - start;
+    const increment = end > start ? 1 : -1;
+    const stepTime = Math.abs(Math.floor(duration / range));
+    let current = start;
+    
+    const timer = setInterval(() => {
+        current += increment * Math.ceil(range / (duration / stepTime));
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            current = end;
+            clearInterval(timer);
+        }
+        
+        // Format the display
+        let display = current;
+        if (current >= 1000) {
+            display = (current / 1000).toFixed(0) + "K";
+        }
+        
+        element.textContent = prefix + display + suffix;
+    }, stepTime);
+}
+
 // Fade in animation on scroll
 document.addEventListener("DOMContentLoaded", function() {
     const fadeElements = document.querySelectorAll(".fade-in-up");
@@ -435,6 +460,25 @@ document.addEventListener("DOMContentLoaded", function() {
     fadeElements.forEach(el => {
         el.style.animationPlayState = "paused";
         fadeInObserver.observe(el);
+    });
+    
+    // Count-up animation for stats
+    const statNumbers = document.querySelectorAll(".stat-number");
+    const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const element = entry.target;
+                const target = parseInt(element.dataset.target);
+                const prefix = element.dataset.prefix || "";
+                
+                animateNumber(element, 0, target, 2000, prefix);
+                statsObserver.unobserve(element);
+            }
+        });
+    }, { threshold: 0.5 });
+    
+    statNumbers.forEach(stat => {
+        statsObserver.observe(stat);
     });
 });
 </script>
