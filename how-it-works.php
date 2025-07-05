@@ -14,6 +14,13 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
 
+// Add animation libraries in head
+$additionalstyles .= '
+<script src="/public/js/waypoints.min.js"></script>
+<script src="/public/js/jquery.counterup.min.js"></script>
+<script src="/public/js/wow.min.js"></script>
+';
+
 $additionalstyles .= '
 <style>
 /* Keep only highlight styling for accents */
@@ -322,17 +329,17 @@ echo '
         
    <div class="stats fade-in-up">
     <div class="stat-item">
-        <span class="stat-number counter" data-suffix="+">' . $website['numberofbiz'] . '</span>
+        <span class="stat-number counter">' . $website['numberofbiz'] . '+</span>
         <span class="stat-label">Businesses</span>
     </div>
     <div class="stat-item">
-        <span class="stat-number counter">50K</span>
+        <span class="stat-number counter">50000</span>
         <!-- Two spans: large and small screen -->
         <span class="stat-label d-none d-sm-inline">Happy Members</span>
         <span class="stat-label d-inline d-sm-none">Members</span>
     </div>
     <div class="stat-item">
-        <span class="stat-number counter" data-suffix="+">$' . $avg_reward_value . '</span>
+        <span class="stat-number counter">$' . $avg_reward_value . '+</span>
         <!-- Two spans: large and small screen -->
         <span class="stat-label d-none d-sm-inline">Avg. Value</span>
         <span class="stat-label d-inline d-sm-none">Value</span>
@@ -422,25 +429,36 @@ echo '
 ';
 
 
-// Add animation libraries and initialization
-$footerattribute['bottomfooter'] = '
-<!-- Animation Libraries -->
-<script src="/public/js/wow.min.js"></script>
-<script src="/public/js/waypoints.min.js"></script>
-<script src="/public/js/jquery.counterup.min.js"></script>
-';
-
+// Initialize animations
 $footerattribute['postfooter'] = '
 <script>
-// Initialize WOW.js
-new WOW().init();
-
-// Initialize Counter Up
-jQuery(document).ready(function($) {
-    $(".counter").counterUp({
-        delay: 10,
-        time: 2000
-    });
+// Wait for all scripts to load
+window.addEventListener('load', function() {
+    // Small delay to ensure all scripts are ready
+    setTimeout(function() {
+        // Debug checks
+        console.log("jQuery loaded:", typeof jQuery !== "undefined");
+        console.log("Waypoints loaded:", typeof jQuery.fn.waypoint !== "undefined");
+        console.log("CounterUp loaded:", typeof jQuery.fn.counterUp !== "undefined");
+        console.log("Counter elements found:", jQuery(".counter").length);
+        
+        // Initialize CounterUp
+        if (typeof jQuery !== "undefined" && typeof jQuery.fn.counterUp !== "undefined") {
+            jQuery(".counter").counterUp({
+                delay: 10,
+                time: 2000
+            });
+            console.log("CounterUp initialized successfully");
+        } else {
+            console.error("Required libraries not loaded");
+        }
+        
+        // Initialize WOW.js if available
+        if (typeof WOW !== "undefined") {
+            new WOW().init();
+            console.log("WOW.js initialized");
+        }
+    }, 100);
 });
 
 // Fade in animation on scroll
