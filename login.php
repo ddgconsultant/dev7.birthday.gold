@@ -10,15 +10,21 @@ $errormessage = '';
 # PREP LOGIN ATTEMPT VARIABLES
 #-------------------------------------------------------------------------------
 $doautologin = false;
-$username = !empty($_POST['email']) ? $_POST['email'] : 
-            (!empty($_POST['email1']) ? $_POST['email1'] : 
-            (!empty($_POST['email2']) ? $_POST['email2'] : ''));
+$login_method = $_POST['login_type'] ?? 'email';
+
+if ($login_method === 'phone') {
+    $username = !empty($_POST['phone']) ? preg_replace('/[^0-9]/', '', $_POST['phone']) : '';
+    $logintype = 'phone';
+} else {
+    $username = !empty($_POST['email']) ? $_POST['email'] : 
+                (!empty($_POST['email1']) ? $_POST['email1'] : 
+                (!empty($_POST['email2']) ? $_POST['email2'] : ''));
+    $logintype = 'any';
+}
 
 $password = !empty($_POST['password']) ? $_POST['password'] : 
             (!empty($_POST['password1']) ? $_POST['password1'] : 
             (!empty($_POST['password2']) ? $_POST['password2'] : ''));
-
-$logintype = 'any';
 
 $login_attempts = $session->get('login_attempts', 0, true);
 $show_captcha = $login_attempts >= 3;
@@ -271,6 +277,46 @@ $additionalstyles = '
     font-size: 1rem;
     color: #6c757d;
     margin: 0;
+}
+
+/* Tab Switch for Email/Phone */
+.login-tabs {
+    display: flex;
+    background: #f1f3f5;
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 1.5rem;
+}
+
+.login-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.login-tab.active {
+    background: white;
+    color: var(--bs-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.login-tab:hover:not(.active) {
+    color: #495057;
+}
+
+.login-tab i {
+    font-size: 1rem;
 }
 
 /* Login Badge */
@@ -773,7 +819,21 @@ $additionalstyles = '
                         }
                         ?>
                         
-                        <div class="form-group">
+                        <div class="login-tabs">
+                            <button type="button" class="login-tab active" data-type="email">
+                                <i class="bi bi-envelope"></i>
+                                Email
+                            </button>
+                            <button type="button" class="login-tab" data-type="phone">
+                                <i class="bi bi-phone"></i>
+                                Phone
+                            </button>
+                        </div>
+                        
+                        <input type="hidden" name="login_type" id="login_type" value="email">
+                        
+                        <!-- Email Input -->
+                        <div class="form-group" id="email-group">
                             <label class="form-label" for="email">Email or Username</label>
                             <input 
                                 type="text" 
@@ -785,6 +845,20 @@ $additionalstyles = '
                                 value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
                                 required
                                 autofocus
+                            >
+                        </div>
+                        
+                        <!-- Phone Input -->
+                        <div class="form-group" id="phone-group" style="display: none;">
+                            <label class="form-label" for="phone">Phone Number</label>
+                            <input 
+                                type="tel" 
+                                name="phone" 
+                                id="phone" 
+                                class="form-control" 
+                                placeholder="(555) 123-4567" 
+                                autocomplete="tel"
+                                value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
                             >
                         </div>
                         
@@ -858,8 +932,42 @@ document.addEventListener("DOMContentLoaded", function() {
     const loginForm = document.getElementById("loginForm");
     const loginBtn = document.getElementById("loginBtn");
     const emailInput = document.getElementById("email");
+    const phoneInput = document.getElementById("phone");
     const passwordInput = document.getElementById("password");
     const togglePasswordBtn = document.getElementById("togglePassword");
+    const loginTabs = document.querySelectorAll(".login-tab");
+    const loginTypeInput = document.getElementById("login_type");
+    const emailGroup = document.getElementById("email-group");
+    const phoneGroup = document.getElementById("phone-group");
+    
+    // Tab switching
+    loginTabs.forEach(tab => {
+        tab.addEventListener("click", function() {
+            const type = this.dataset.type;
+            
+            // Update active tab
+            loginTabs.forEach(t => t.classList.remove("active"));
+            this.classList.add("active");
+            
+            // Update hidden input
+            loginTypeInput.value = type;
+            
+            // Show/hide appropriate input
+            if (type === "phone") {
+                emailGroup.style.display = "none";
+                phoneGroup.style.display = "block";
+                emailInput.removeAttribute("required");
+                phoneInput.setAttribute("required", "");
+                phoneInput.focus();
+            } else {
+                emailGroup.style.display = "block";
+                phoneGroup.style.display = "none";
+                phoneInput.removeAttribute("required");
+                emailInput.setAttribute("required", "");
+                emailInput.focus();
+            }
+        });
+    });
     
     // Password visibility toggle
     if (togglePasswordBtn) {
@@ -874,6 +982,26 @@ document.addEventListener("DOMContentLoaded", function() {
                 icon.classList.remove("bi-eye-slash-fill");
                 icon.classList.add("bi-eye-fill");
             }
+        });
+    }
+    
+    // Phone formatting
+    if (phoneInput) {
+        phoneInput.addEventListener("input", function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            let formattedValue = "";
+            
+            if (value.length > 0) {
+                if (value.length <= 3) {
+                    formattedValue = `(${value}`;
+                } else if (value.length <= 6) {
+                    formattedValue = `(${value.slice(0, 3)}) ${value.slice(3)}`;
+                } else {
+                    formattedValue = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
+                }
+            }
+            
+            e.target.value = formattedValue;
         });
     }
     

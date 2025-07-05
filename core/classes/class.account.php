@@ -40,6 +40,23 @@ class Account
         $params = ['input' => $input, 'input2' => $input, 'input3' => $input];
         break;
         //--------------------------------------
+      case 'phone':
+        // For phone login, we need to look in bg_user_attributes table
+        // The input should be just digits at this point
+        $cleanPhone = preg_replace('/[^0-9]/', '', $rawinput);
+        
+        // First find user_id from bg_user_attributes
+        $sql = "SELECT u.* FROM bg_users u
+                INNER JOIN bg_user_attributes ua ON u.user_id = ua.user_id
+                WHERE ua.name = 'profile_phone_number' 
+                AND ua.string_value = :phone 
+                AND ua.type = 'profile' 
+                AND ua.status = 'active'
+                AND u.status = 'active'
+                LIMIT 1";
+        $params = ['phone' => $cleanPhone];
+        break;
+        //--------------------------------------
       case 'giftcode':
         $sql = 'SELECT * FROM bg_users WHERE feature_giftcode = :input and `status`="giftlock" limit 1';
         $params = ['input' => $input];
