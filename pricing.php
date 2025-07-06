@@ -153,30 +153,67 @@ body {
     text-decoration: underline;
 }
 
+/* Hard header */
+.pricing-header-hard {
+    background: #212529;
+    color: white;
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.pricing-header-hard h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.pricing-header-hard p {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 0;
+}
+
 /* Section headers */
 .plan-section {
     margin-bottom: 3rem;
 }
 
 .section-header {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: #212529;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     padding-bottom: 0.75rem;
-    border-bottom: 3px solid #dee2e6;
+    border-bottom: 3px solid #198754;
+}
+
+.section-caption {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .signup-header h1 {
+    .pricing-header-hard h1 {
         font-size: 2rem;
     }
     
-    .signup-header p {
-        font-size: 1.1rem;
+    .pricing-header-hard p {
+        font-size: 1rem;
+    }
+    
+    .pricing-header-hard {
+        padding: 2rem 0;
+    }
+    
+    .section-header {
+        font-size: 1.5rem;
+    }
+    
+    .section-caption {
+        font-size: 1rem;
     }
     
     .signup-form-container {
@@ -190,14 +227,16 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
+<!-- Hard Header -->
+<div class="pricing-header-hard">
+    <div class="container">
+        <h1>Birthday Gold Pricing</h1>
+        <p>Choose the perfect plan for your birthday rewards journey</p>
+    </div>
+</div>
+
 <!-- Main Container -->
 <div class="signup-container">
-    <!-- Header -->
-    <div class="signup-header">
-        <h1>Choose Your Perfect Plan 🎂</h1>
-        <p>Select the plan that best fits your needs. Takes less than 60 seconds!</p>
-    </div>
-
     <!-- Form Container -->
     <div class="signup-form-container">
 
@@ -210,19 +249,29 @@ include($dir['core_components'] . '/bg_header.inc');
                 $plansByType[$plan['account_type']][] = $plan;
             }
             
-            // Display sections in specific order
+            // Display sections in specific order with captions
             $sections = [
-                'user' => 'INDIVIDUAL',
-                'parental' => 'FAMILY', 
-                'giftcertificate' => 'GIFT'
+                'user' => [
+                    'title' => 'Individual',
+                    'caption' => 'Perfect for celebrating your own birthday with exclusive rewards'
+                ],
+                'parental' => [
+                    'title' => 'Family',
+                    'caption' => 'Manage birthday rewards for your entire family in one account'
+                ],
+                'giftcertificate' => [
+                    'title' => 'Gift',
+                    'caption' => 'Give the gift of birthday rewards to someone special'
+                ]
             ];
             
-            foreach ($sections as $accountType => $sectionTitle):
+            foreach ($sections as $accountType => $sectionInfo):
                 if (!isset($plansByType[$accountType])) continue;
             ?>
-                <!-- <?php echo $sectionTitle; ?> Section -->
+                <!-- <?php echo $sectionInfo['title']; ?> Section -->
                 <div class="plan-section mb-5">
-                    <h3 class="section-header"><?php echo $sectionTitle; ?></h3>
+                    <h3 class="section-header"><?php echo $sectionInfo['title']; ?></h3>
+                    <p class="section-caption"><?php echo $sectionInfo['caption']; ?></p>
                     <div class="row g-4 justify-content-center">
                         <?php
                         foreach ($plansByType[$accountType] as $plan):
