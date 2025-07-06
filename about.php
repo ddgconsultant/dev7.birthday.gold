@@ -1,82 +1,280 @@
 <?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-
 $pagedata['pagetitle']='Birthday Freebies Service Online - Birthday Gold';
 $pagedata['metakeywords']='Birthday Freebies, Birthday Freebies Online, Birthday Freebies Near Me, Birthday Freebies Service, Freebies on Birthday';
 $pagedata['metadescriptions']='Get the best Birthday Freebies Online & Near Me! Enjoy exclusive Freebies on Birthday with our top Birthday Freebies Service. Sign up now!';
 
+// About Page Styles
+$additionalstyles = '
+<style>
+/* Hero Section - Matching how-it-works style */
+.about-hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
+    color: white;
+    padding: 4rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.about-hero::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 0.5; }
+}
+
+.about-hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+.about-hero .lead {
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin-bottom: 2rem;
+    color: #fff;
+    position: relative;
+    z-index: 1;
+    opacity: 1;
+}
+
+/* Content Section - Compact */
+.about-content {
+    padding: 2rem 0;
+}
+
+.about-image-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    height: 100%;
+    max-height: 900px; /* Reduced by 40% from 350px */
+}
+
+.about-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.about-image-wrapper:hover img {
+    transform: scale(1.05);
+}
+
+
+
+
+
+/* Feature grid - matching login page */
+.feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.feature-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: var(--bs-secondary);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bs-primary);
+    font-size: 1.25rem;
+}
+
+.feature-text h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.feature-text p {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Mission Box - Improved readability */
+.mission-box {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, #0b5ed7 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1.5rem;
+}
+
+
+/* Responsive */
+@media (max-width: 768px) {
+    .about-hero h1 {
+        font-size: 2rem;
+    }
+    
+    .about-image-wrapper {
+        min-height: 250px;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Single column grid on mobile */
+    .feature-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    /* Compact features on mobile */
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+    
+    .feature-text h3 {
+        font-size: 0.9rem;
+    }
+    
+    .feature-text p {
+        font-size: 0.8rem;
+    }
+    
+    .about-text {
+        padding: 1rem !important;
+    }
+    
+    .mission-box {
+        padding: 1rem;
+    }
+    
+    .mission-box h4 {
+        font-size: 1.1rem;
+    }
+    
+    .mission-box p {
+        font-size: 0.9rem !important;
+    }
+}
+</style>
+';
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-
 ?>
-<!-- Navbar End -->
 
-
-
-
-    <!-- About Start -->
-    <div class="container-xxl py-6 flex-grow-1">
-        <div class="container">
-            <div class="row g-5">
-                <div class="col-lg-6">
-                    <div class="position-relative overflow-hidden pt-5 h-100" style="min-height: 400px;">
-                       <img class="position-absolute w-100 h-100" src="/public/images/IMG_6318.jpg" alt="" style="object-fit: cover;">
-                       <!--    <img class="position-absolute top-0 start-0 bg-white pe-3 pb-3" src="/public/images/IMG_6318.jpg" alt="" style="width: 200px; height: 200px;"> -->
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="h-100">
-                        <h6 class="text-primary text-uppercase mb-2">About Us</h6>
-
-                        <?PHP
-
-
-if (!empty($enableadminpageeditor)) {    $admin->admineditor('body-1'); }
-### ADMIN PAGE EDITOR: START-body-1 ###
-echo '
-<h1>Birthday Freebies Service Online</h1>
-<h2 class="mb-4">Celebrate Your Birthday with Us!</h2>
-<p>At Birthday.Gold, our mission is simple: we want everyone to enjoy their birthdays to the fullest. It all started when we saw someone joyfully celebrating with birthday freebies, but they didn’t share how they got them. We realized that not everyone knows the ins and outs of signing up for these perks or navigating the process to claim them. It’s more than just walking into a business and asking for your birthday treat—it can be a bit complicated.</p>
-<p class="mb-4">That’s why we’re here to make it easy for you. With Birthday.Gold, all you have to do is sign up for our service, select your favorite businesses, and we’ll handle the rest. You’ll receive notifications, a handy map of where to go, and all that’s left for you to do is celebrate and enjoy!
-</p>
-<div class="row g-2 mb-4 pb-2">
-    <div class="col-sm-6">
-    <i class="bi bi-check2-square text-success me-2"></i>Sign up for our service.
-    </div>
-    <div class="col-sm-6">
-    <i class="bi bi-check2-square text-success me-2"></i>Select '.$website['biznames'].' rewards.
-    </div>
-    <div class="col-sm-6">
-    <i class="bi bi-check2-square text-success me-2"></i>Get notified and get a map.
-    </div>
-    <div class="col-sm-6">
-    <i class="bi bi-check2-square text-success me-2"></i>Celebrate and enjoy.
+<!-- Hero Section -->
+<div class="about-hero">
+    <div class="container text-center">
+        <h1>About Birthday.Gold</h1>
+        <p class="lead">Making birthdays more special since 2021</p>
     </div>
 </div>
-<div class="row g-4">
-    <div class="col-sm-6">
-        <a class="btn btn-primary py-3 px-5" href="/how">Learn More</a>
-    </div>
-';
-### ADMIN PAGE EDITOR: END-body-1 ###
-?>
 
-                        <div class="col-sm-6">
-                        
+<!-- Main Content -->
+<div class="container about-content">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-5">
+            <div class="about-image-wrapper">
+                <img src="/public/images/IMG_6318.jpg" alt="Birthday celebration">
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="about-text p-4">
+                <span class="badge bg-primary px-3 py-2 mb-3">Our Story</span>
+                
+                <?PHP
+                if (!empty($enableadminpageeditor)) { $admin->admineditor('body-1'); }
+                ### ADMIN PAGE EDITOR: START-body-1 ###
+                echo '
+                <h2 class="h2 fw-bold mb-3">Celebrate Your Birthday with Us!</h2>
+                <p class="fs-5 text-muted lh-base mb-3">At Birthday.Gold, our mission is simple: we want everyone to enjoy their birthdays to the fullest. It all started when we saw someone joyfully celebrating with birthday freebies, but they did not share how they got them. We realized that not everyone knows the ins and outs of signing up for these perks or navigating the process to claim them. It is more than just walking into a business and asking for your birthday treat—it can be a bit complicated.</p>
+                <p class="fs-5 text-muted lh-base mb-4">That is why we are here to make it easy for you. With Birthday.Gold, all you have to do is sign up for our service, select your favorite businesses, and we will handle the rest. You will receive notifications, a handy map of where to go, and all that is left for you to do is celebrate and enjoy!</p>
+                ';
+                ### ADMIN PAGE EDITOR: END-body-1 ###
+                ?>
+                
+                <div class="feature-grid my-lg-5">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="bi bi-person-plus"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Easy Sign Up</h3>
+                            <p>Quick registration to start collecting birthday rewards</p>
                         </div>
                     </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="bi bi-shop"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Select Businesses</h3>
+                            <p>Choose from <?php echo $website['biznames']; ?>+ birthday reward programs</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="bi bi-bell"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Smart Notifications</h3>
+                            <p>Get reminders and maps to claim your rewards</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="bi bi-gift"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Celebrate & Save</h3>
+                            <p>Enjoy free treats and discounts all month long</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mission Box -->
+                <div class="mission-box text-white my-lg-5">
+                    <h4 class="h4 fw-bold text-white mb-3">Our Mission</h4>
+                    <p class="text-white fs-5 lh-base mb-3 fst-italic" style="font-family: 'Georgia', 'Times New Roman', serif; letter-spacing: 0.5px;">To make every birthday special by connecting people with amazing birthday rewards from their favorite local businesses.</p>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="/signup" class="btn btn-primary btn-lg px-4 me-3">Start Free</a>
+                    <a href="/how" class="btn btn-outline-primary btn-lg px-4">Learn More</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-<!-- About End -->
-
-
-
-
 
 <?PHP
 include($dir['core_components'] . '/bg_footer.inc');
