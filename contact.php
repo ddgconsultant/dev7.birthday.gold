@@ -159,6 +159,31 @@ $additionalstyles .= '
         padding-right: 0;
     }
     
+    /* Remove container padding on contact page */
+    .contact-content .card {
+        margin: 0;
+    }
+    
+    /* Ensure form fills the card */
+    .contact-content form {
+        padding: 1.5rem;
+    }
+    
+    /* Remove default Bootstrap card spacing */
+    .contact-content .card-header {
+        border-radius: 0;
+        border: none;
+    }
+    
+    .contact-content .card-body {
+        padding: 0;
+    }
+    
+    /* Adjust row margins */
+    .contact-content .row {
+        margin: 0;
+    }
+    
     h6 {
         font-size: 0.875rem !important;
         margin-bottom: 0.5rem !important;
@@ -193,17 +218,17 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="page-wrapper">
         <div class="container">
             <div class="contact-content">
-            <div class="row g-5">
+            <div class="row g-0">
                 <div class="card">
                     <div class="card-header">
                         <h2 class="h4 mb-0">If you need to reach us, please use this form.</h2>
                     </div>
                     <div class="card-body">
     <?PHP echo $errormessage; ?>
-                <div class="col-lg" data-wow-delay="0.5s">
+                <div class="col-12">
                     <form method="post" action="/contact">
                   <?PHP echo $display->inputcsrf_token(); ?>
-                        <div class="row g-3">
+                        <div class="row gx-3 gy-2">
                             <div class="col-md-6">
                                 <div class="form-floating">
                                     <input type="text" class="form-control border-0 bg-light" name="name" id="contact_name" placeholder="Your Name">
@@ -255,8 +280,8 @@ echo '
                 // Check if the current hour is within business hours
                 if ($currentHour >= $businessHoursStart && $currentHour < $businessHoursEnd) {
                     echo '
-                        <hr class="my-3">
-                        <div class="pt-3">
+                        <hr class="my-3 mx-4">
+                        <div class="pt-3 px-4">
                             <h6 class="text-primary text-uppercase mb-2">Call Us</h6>
                             <p class="mb-2">Need to talk to us on the phone.</p>
                             <p class="h5 mb-2"><a href="tel:877-234-6532">1-877-BDGOLD-2</a> <span class="text-muted small">(877-234-6532)</span></p>
