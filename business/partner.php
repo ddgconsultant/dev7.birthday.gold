@@ -278,7 +278,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Hero Section -->
 <div class="partner-hero">
     <div class="container">
-        <h1>Become a Birthday Gold Partner</h1>
+        <h1 class="text-white">Become a Birthday.Gold Partner</h1>
         <p>Join thousands of businesses offering birthday rewards to build customer loyalty</p>
         <a href="#apply-form" class="btn-partner-cta">Apply to Become a Partner</a>
     </div>
