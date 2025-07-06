@@ -73,39 +73,12 @@ body {
     padding: 0 15px;
 }
 
-/* Match signup heading styles */
-.signup-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.signup-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: #212529;
-}
-
-.signup-header p {
-    font-size: 1.2rem;
-    color: #6c757d;
-    margin-bottom: 0;
-}
-
 /* Match signup container styling */
 .signup-form-container {
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     padding: 2rem;
-}
-
-/* Headings to match signup */
-.section-title {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    color: #212529;
-    font-weight: 600;
 }
 
 /* Plan selection button */
@@ -232,7 +205,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Hard Header -->
 <div class="pricing-header-hard">
     <div class="container">
-        <h1>Birthday Gold Pricing</h1>
+        <h1>Birthday.Gold Pricing</h1>
         <p>Choose the perfect plan for your birthday rewards journey</p>
     </div>
 </div>
