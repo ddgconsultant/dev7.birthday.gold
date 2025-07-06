@@ -52,86 +52,61 @@ if (isset($_REQUEST['ajax_action'])) {
     }
 }
 
+// Header flush setting for signup-style pages
+$header_flush = true;
+
 // Additional styles
 $additionalstyles = '
-<link rel="stylesheet" href="/public/css/common-hero.css">
 <link href="/public/css/signup_styles.css" rel="stylesheet">
 <style>
-/* Pricing Page Specific Styles */
-.pricing-hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
-    color: white;
-    padding: 4rem 0;
+/* Override body background to match signup */
+body {
+    background-color: #f8f9fa !important;
+}
+
+/* Main container to match signup layout */
+.signup-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 15px;
+}
+
+/* Match signup heading styles */
+.signup-header {
     text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.pricing-hero::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-}
-
-.pricing-hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 1;
-    color: #fff;
-    letter-spacing: 0.5px;
-}
-
-.pricing-hero p {
-    font-size: 1.5rem;
-    font-weight: 400;
     margin-bottom: 2rem;
-    color: #fff;
-    position: relative;
-    z-index: 1;
-    opacity: 1;
 }
 
-/* Main content area */
-.main-content {
-    max-width: 1000px !important;
-    margin: 2rem auto !important;
-    overflow-x: hidden !important;
+.signup-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #212529;
 }
 
-/* Pricing container */
-.pricing-container {
+.signup-header p {
+    font-size: 1.2rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Match signup container styling */
+.signup-form-container {
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     padding: 2rem;
 }
 
-/* Headings */
-.pricing-container h3 {
-    font-size: 1.1rem !important;
-    margin-bottom: 1rem !important;
+/* Headings to match signup */
+.section-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
     color: #212529;
+    font-weight: 600;
 }
 
-/* Override some signup styles for pricing page */
-.plan-card {
-    cursor: pointer !important;
-}
-
-/* Add hover effect for plan selection */
-.plan-card:hover {
-    border-color: #198754 !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-}
-
-/* CTA button */
+/* Plan selection button */
 .btn-select-plan {
     width: 100%;
     padding: 0.875rem 1.5rem;
@@ -160,66 +135,35 @@ $additionalstyles = '
     cursor: not-allowed;
 }
 
-/* Info boxes */
-.info-section {
-    margin-top: 3rem;
-    padding-top: 3rem;
-    border-top: 1px solid #dee2e6;
-}
-
-.info-box {
+/* Bottom links section */
+.bottom-links {
     text-align: center;
-    padding: 2rem;
-    background: #f8f9fa;
-    border-radius: 12px;
-    margin-bottom: 1rem;
-}
-
-.info-box i {
-    font-size: 3rem;
-    color: var(--bs-primary);
-    margin-bottom: 1rem;
-}
-
-.info-box h4 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-}
-
-.info-box p {
+    margin-top: 2rem;
     color: #6c757d;
-    margin: 0;
+}
+
+.bottom-links a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.bottom-links a:hover {
+    text-decoration: underline;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .pricing-hero h1 {
+    .signup-header h1 {
         font-size: 2rem;
     }
     
-    .pricing-hero p {
-        font-size: 1.2rem;
+    .signup-header p {
+        font-size: 1.1rem;
     }
     
-    .pricing-container {
+    .signup-form-container {
         padding: 1.5rem;
     }
-}
-
-/* Price display enhancement for pricing page */
-.plan-price {
-    font-size: 2rem !important;
-}
-
-/* Loading state */
-.plans-loading {
-    text-align: center;
-    padding: 3rem;
-}
-
-.plans-loading .spinner-border {
-    width: 3rem;
-    height: 3rem;
 }
 </style>
 ';
@@ -228,18 +172,17 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<!-- Pricing Hero Section -->
-<div class="pricing-hero">
-    <div class="container text-center">
-        <h1>Choose Your Perfect Plan</h1>
-        <p>Start collecting birthday rewards from <?php echo $website['biznames']; ?>+ businesses</p>
+<!-- Main Container -->
+<div class="signup-container">
+    <!-- Header -->
+    <div class="signup-header">
+        <h1>Choose Your Perfect Plan 🎂</h1>
+        <p>Choose your account type and plan below. Takes less than 60 seconds!</p>
     </div>
-</div>
 
-<!-- Main Content Area -->
-<div class="main-content">
-    <div class="pricing-container">
-        <h3 class="pt-0 mt-0">Pick who this for:</h3>
+    <!-- Form Container -->
+    <div class="signup-form-container">
+        <h3 class="section-title">Pick who this for:</h3>
         
         <!-- Account Type Selector -->
         <div class="account-type-selector" id="accountTypeSelector">
@@ -273,7 +216,7 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
 
         <!-- Plan Selection -->
-        <h3 class="mt-5 pt-md-5 pt-sm-2">Pick the plan:</h3>
+        <h3 class="section-title mt-5 pt-md-5 pt-sm-2">Pick the plan:</h3>
 
         <!-- Dynamic Plan Grid -->
         <div id="planGrid">
@@ -410,31 +353,10 @@ include($dir['core_components'] . '/bg_header.inc');
         </button>
     </div>
 
-    <!-- Info Section -->
-    <div class="info-section">
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="info-box">
-                    <i class="bi bi-shield-check"></i>
-                    <h4>Secure & Safe</h4>
-                    <p>Your data is protected with enterprise-grade security</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="info-box">
-                    <i class="bi bi-clock-history"></i>
-                    <h4>Cancel Anytime</h4>
-                    <p>No contracts, no hidden fees. Cancel whenever you want</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="info-box">
-                    <i class="bi bi-headset"></i>
-                    <h4>24/7 Support</h4>
-                    <p>Our team is here to help you get the most out of Birthday Gold</p>
-                </div>
-            </div>
-        </div>
+    <!-- Bottom Links -->
+    <div class="bottom-links">
+        <p>Already have an account? <a href="/login">Sign in</a></p>
+        <p>Have a gift certificate? <a href="/register?giftcertificate">Redeem here</a></p>
     </div>
 </div>
 
