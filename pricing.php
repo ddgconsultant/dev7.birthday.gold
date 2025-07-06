@@ -166,12 +166,14 @@ body {
     font-size: 2.5rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
+    color: white !important;
 }
 
 .pricing-header-hard p {
     font-size: 1.2rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: white !important;
     margin-bottom: 0;
+    opacity: 0.9;
 }
 
 /* Section headers */
