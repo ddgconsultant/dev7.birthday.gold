@@ -7,52 +7,8 @@ $pagedata['metadescriptions']='Get the best Birthday Freebies Online & Near Me! 
 
 // About Page Styles
 $additionalstyles = '
+<link rel="stylesheet" href="/public/css/common-hero.css">
 <style>
-/* Hero Section - Matching how-it-works style */
-.about-hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
-    color: white;
-    padding: 4rem 0;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.about-hero::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.1); opacity: 0.5; }
-}
-
-.about-hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 1;
-    color: #fff;
-    letter-spacing: 0.5px;
-}
-
-.about-hero .lead {
-    font-size: 1.5rem;
-    font-weight: 400;
-    margin-bottom: 2rem;
-    color: #fff;
-    position: relative;
-    z-index: 1;
-    opacity: 1;
-}
 
 /* Content Section - Compact */
 .about-content {
@@ -135,10 +91,6 @@ $additionalstyles = '
 
 /* Responsive */
 @media (max-width: 768px) {
-    .about-hero h1 {
-        font-size: 2rem;
-    }
-    
     .about-image-wrapper {
         min-height: 250px;
         margin-bottom: 1.5rem;

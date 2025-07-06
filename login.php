@@ -250,9 +250,6 @@ $additionalstyles = '
     box-sizing: border-box !important;
 }
 
-/* Main Content Container */
-
-
 /* Card Container */
 .login-container {
     width: 100%;
@@ -560,69 +557,13 @@ $additionalstyles = '
     100% { transform: rotate(360deg); }
 }
 
-/* Invalid input state */
-.form-control.is-invalid {
-    border-color: #dc3545;
-}
-
-.form-control.is-invalid:focus {
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
-}
-
 /* CAPTCHA Integration */
 .captcha-wrapper {
     margin-bottom: 1.5rem;
 }
 
-/* CAPTCHA Styles */
-.captcha-container {
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.captcha-options {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0.5rem !important;
-    margin-top: 1rem !important;
-}
-
-.captcha-option {
-    width: 100% !important;
-    height: auto !important;
-    aspect-ratio: 1 !important;
-    padding: 0.5rem !important;
-    cursor: pointer !important;
-    border: 2px solid #dee2e6 !important;
-    border-radius: 6px !important;
-    transition: all 0.2s ease !important;
-    background: white !important;
-}
-
-.captcha-option:hover {
-    border-color: var(--bs-primary) !important;
-    transform: translateY(-2px) !important;
-}
-
-.captcha-option.selected {
-    border-color: var(--bs-primary) !important;
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1) !important;
-}
-
-.captcha-option img,
-.captcha-option i {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    font-size: 1.5rem !important;
-}
-
-
 /* Tablet & Desktop Styles */
 @media (min-width: 768px) {
-
-    
     .login-container {
         max-width: 480px;
         margin: 3rem auto;
@@ -643,7 +584,6 @@ $additionalstyles = '
 
 /* Large Desktop - Enhanced Layout */
 @media (min-width: 992px) {
-
     .login-wrapper {
         width: 100%;
         max-width: 1200px;
@@ -744,7 +684,7 @@ $additionalstyles = '
     <div class="login-wrapper">
         <!-- Welcome content - Desktop only -->
         <div class="welcome-content d-none d-lg-block">
-            <h2>Welcome back to <span>Birthday Gold</span></h2>
+            <h2>Welcome back to <span>Birthday.Gold</span></h2>
             <p>Sign in to access your birthday rewards dashboard and never miss another celebration.</p>
             
             <div class="feature-grid">
@@ -923,7 +863,7 @@ $additionalstyles = '
                     
                     <!-- Alternative Actions -->
                     <div class="alt-actions">
-                        New to Birthday Gold? <a href="/signup">Create account</a>
+                        New to Birthday.Gold? <a href="/signup">Create account</a>
                         <br>
                         Have a gift certificate? <a href="/redeem">Redeem it</a>
                     </div>

@@ -89,7 +89,14 @@ displaypage:
 
 // Add page-specific styles
 $additionalstyles .= '
+<link rel="stylesheet" href="/public/css/common-hero.css">
 <style>
+    /* Additional margin for contact hero */
+    .contact-hero {
+        margin-bottom: 3rem;
+    }
+    
+    
     body {
         margin: 0;
         padding: 0;
@@ -100,10 +107,7 @@ $additionalstyles .= '
     
     .page-wrapper {
         flex: 1 0 auto;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: 2rem 0;
+        padding: 0 0 2rem 0;
     }
     
     /* Footer specific styles */
@@ -149,8 +153,10 @@ $additionalstyles .= '
         font-size: 0.9rem;
     }
     
-    .card {
-        padding: 1.5rem;
+    /* Remove horizontal padding from card-body */
+    .card-body {
+        padding-left: 0;
+        padding-right: 0;
     }
     
     h6 {
@@ -174,19 +180,27 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
 ?>
-<!-- Navbar End -->
 
+<!-- Contact Hero Section -->
+<div class="contact-hero">
+    <div class="container text-center">
+        <h1>Contact Us</h1>
+        <p>We're here to help with your birthday rewards</p>
+    </div>
+</div>
 
-    <!-- Contact Start -->
-    <div class="page-wrapper">
+<!-- Contact Start -->
+<div class="page-wrapper">
         <div class="container">
             <div class="contact-content">
             <div class="row g-5">
                 <div class="card">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">If you need to reach us, please use this form.</h2>
+                    </div>
+                    <div class="card-body">
     <?PHP echo $errormessage; ?>
                 <div class="col-lg" data-wow-delay="0.5s">
-                    <h6 class="text-primary text-uppercase mb-2">Contact Us</h6>
-                    <h2 class="h4 mb-3">If you need to reach us, please use this form.</h2>
                     <form method="post" action="/contact">
                   <?PHP echo $display->inputcsrf_token(); ?>
                         <div class="row g-3">
@@ -254,6 +268,7 @@ echo '
                 
 
 echo '       </div>
+                    </div> <!-- End card-body -->
 </div>
         </div>
             </div> <!-- End contact-content -->

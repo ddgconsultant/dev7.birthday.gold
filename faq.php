@@ -18,52 +18,8 @@ $adminenabledpage=true;
 
 // Modern FAQ Page Styles
 $additionalstyles = '
+<link rel="stylesheet" href="/public/css/common-hero.css">
 <style>
-/* Hero Section - Matching about page style */
-.faq-hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
-    color: white;
-    padding: 4rem 0;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.faq-hero::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.1); opacity: 0.5; }
-}
-
-.faq-hero h1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 1;
-    color: #fff;
-    letter-spacing: 0.5px;
-}
-
-.faq-hero p {
-    font-size: 1.5rem;
-    font-weight: 400;
-    margin-bottom: 2rem;
-    color: #fff;
-    position: relative;
-    z-index: 1;
-    opacity: 1;
-}
 
 /* Search Box */
 .faq-search {
@@ -227,14 +183,6 @@ $additionalstyles = '
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .faq-hero h1 {
-        font-size: 2rem;
-    }
-    
-    .faq-hero p {
-        font-size: 1.2rem;
-    }
-    
     .category-title {
         font-size: 1.5rem;
     }

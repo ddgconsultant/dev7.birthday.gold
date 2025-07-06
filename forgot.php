@@ -566,12 +566,6 @@ $additionalstyles = '
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
 }
 
-/* Success animation */
-@keyframes success-pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
 
 /* Tablet & Desktop Styles */
 @media (min-width: 768px) {
