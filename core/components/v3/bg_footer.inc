@@ -151,6 +151,8 @@ case 'min':
     <a href="/" class="text-secondary text-decoration-none">HOME</a>
     <span class="px-5">|</span>
     <a href="/help" class="text-secondary text-decoration-none">HELP</a>
+    <span class="px-5">|</span>
+    <a href="/business/partner" class="text-secondary text-decoration-none">PARTNERS</a>
     <span class="px-5"></span>
     <span >Copyright &copy;'.date('Y').'</span>
     </span>
@@ -246,6 +248,7 @@ echo '<div class="col-md-7 col-lg-5 col-sm-12" id="footer-column-2">
         <li class="mb-1"><a class="link-600" href="/about">About</a></li>
         <li class="mb-1"><a class="link-600" href="/contact">Contact Us</a></li>
         <li class="mb-1"><a class="link-600" href="/careers">Careers</a></li>
+        <li class="mb-1"><a class="link-600" href="/business/partner">Become a Partner</a></li>
         <li class="mb-1"><a class="link-600" href="/discover">Discover</a></li>
         <li class="mb-1"><a class="link-600" href="/legalhub/">Legal</a></li>
         <li class="mb-1"><a class="link-600" href="/legalhub/terms">Terms & Conditions</a></li>
