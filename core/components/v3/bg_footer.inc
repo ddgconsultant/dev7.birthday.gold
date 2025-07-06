@@ -256,7 +256,7 @@ echo '<div class="col-md-7 col-lg-5 col-sm-12" id="footer-column-2">
       <h4 class="text-uppercase text-white opacity-85 mb-3 d-none d-md-block">Account</h4>
        <h4 class="text-uppercase text-white opacity-85 mb-3 d-md-none">&nbsp;</h4>
       <ul class="list-unstyled footer-links">
-        <li class="mb-1"><a class="link-600" href="/plans">Plans / Pricing</a></li>
+        <li class="mb-1"><a class="link-600" href="/pricing">Plans / Pricing</a></li>
         <li class="mb-1"><a class="link-600" href="/how-it-works">How It Works</a></li>
         <li class="mb-1"><a class="link-600" href="/register?giftcertificate">Gift Certificates</a></li>
         <li class="mb-1"><a class="link-600" href="/faq">FAQs</a></li>

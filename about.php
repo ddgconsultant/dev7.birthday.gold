@@ -144,7 +144,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="about-hero">
     <div class="container text-center">
         <h1>About Birthday.Gold</h1>
-        <p class="lead">Making birthdays more special since 2021</p>
+        <p class="lead">Making birthdays more special since 2023</p>
     </div>
 </div>
 
