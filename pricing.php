@@ -10,8 +10,10 @@ $pagedata['metadescriptions'] = 'Choose the perfect Birthday Gold plan for you. 
 // Initialize ProductManager
 $productManager = new ProductManager($database, $qik);
 
-// Get available plans for 'individual' account type (most common)
-$availablePlans = $productManager->getProductsWithFeatures('individual', 'v3');
+// Get available plans for different account types
+$individualPlans = $productManager->getProductsWithFeatures('individual', 'v3');
+$familyPlans = $productManager->getProductsWithFeatures('family', 'v3');
+$giftPlans = $productManager->getProductsWithFeatures('gift', 'v3');
 
 // Additional styles
 $additionalstyles = '
@@ -62,6 +64,9 @@ $additionalstyles = '
 /* Section Headers - Matching help.php style */
 .section-header {
     margin-bottom: 1rem;
+}
+
+.section-header:not(:first-child) {
     margin-top: 3rem;
 }
 
@@ -134,50 +139,18 @@ $additionalstyles = '
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Comparison Table */
-.comparison-section {
-    background: white;
-    padding: 3rem 0;
-    margin-top: 3rem;
-    border-radius: 12px;
-}
-
-.comparison-table {
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-.comparison-table table {
-    width: 100%;
-}
-
-.comparison-table th {
-    background: #f8f9fa;
-    padding: 1rem;
-    font-weight: 600;
-    text-align: center;
-    border: 1px solid #dee2e6;
-}
-
-.comparison-table td {
-    padding: 1rem;
-    text-align: center;
-    border: 1px solid #dee2e6;
-}
-
-.comparison-table .feature-name {
-    text-align: left;
-    font-weight: 500;
-}
-
-.check-icon {
-    color: #28a745;
+/* Category Icons */
+.category-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #e8f5e8;
+    border-radius: 50%;
+    margin-right: 0.75rem;
     font-size: 1.25rem;
-}
-
-.x-icon {
-    color: #dc3545;
-    font-size: 1.25rem;
+    color: var(--bs-primary);
 }
 
 /* FAQ Accordion */
@@ -227,6 +200,15 @@ $additionalstyles = '
     margin-bottom: 2rem;
 }
 
+/* No plans message */
+.no-plans-message {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 12px;
+    color: #6c757d;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .pricing-hero h1 {
@@ -241,8 +223,11 @@ $additionalstyles = '
         font-size: 1.5rem;
     }
     
-    .comparison-section {
-        display: none; /* Hide comparison table on mobile */
+    .category-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 1rem;
+        margin-right: 0.5rem;
     }
 }
 </style>
@@ -264,27 +249,31 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="main-content">
     <div class="container" style="max-width: 1000px;">
         
-        <!-- Plans Section -->
+        <!-- Just Me Plans Section -->
         <div class="section-header">
-            <h2 class="section-title">Available Plans</h2>
-            <p class="section-description">Select the plan that works best for you</p>
+            <h2 class="section-title">
+                <span class="category-icon"><i class="bi bi-person"></i></span>
+                Just Me
+            </h2>
+            <p class="section-description">Perfect for individuals who want to celebrate their own birthday</p>
         </div>
         
-        <!-- Plan Cards using Bootstrap Grid -->
-        <div id="planGrid">
-            <div class="row g-4 justify-content-center">
+        <!-- Individual Plan Cards -->
+        <?php if (!empty($individualPlans)): ?>
+        <div id="individualPlanGrid">
+            <div class="row g-4 justify-content-center mb-5">
                 <?php
                 // Determine column classes based on plan count
                 $colClasses = '';
-                if (count($availablePlans) == 2) {
+                if (count($individualPlans) == 2) {
                     $colClasses = 'col-12 col-md-6';
-                } elseif (count($availablePlans) == 3) {
+                } elseif (count($individualPlans) == 3) {
                     $colClasses = 'col-12 col-md-4';
                 } else {
                     $colClasses = 'col-12 col-md-6 col-lg-4';
                 }
                 
-                foreach ($availablePlans as $plan):
+                foreach ($individualPlans as $plan):
                     $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
                     
                     // Dynamic icon based on plan name
@@ -334,7 +323,7 @@ include($dir['core_components'] . '/bg_header.inc');
                             <?php endif; ?>
                             
                             <div class="plan-action">
-                                <a href="/signup?plan=<?php echo $plan['encoded_id']; ?>" 
+                                <a href="/signup?account_type=individual&plan=<?php echo $plan['encoded_id']; ?>" 
                                    class="btn btn-get-plan <?php echo $isRecommended ? 'btn-warning' : 'btn-primary'; ?>">
                                     Get Started
                                 </a>
@@ -345,65 +334,179 @@ include($dir['core_components'] . '/bg_header.inc');
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php else: ?>
+        <div class="no-plans-message">
+            <p>No individual plans available at this time.</p>
+        </div>
+        <?php endif; ?>
         
-        <!-- Comparison Section -->
-        <div class="comparison-section">
-            <div class="section-header">
-                <h2 class="section-title">Compare Plans</h2>
-                <p class="section-description">See what's included in each plan</p>
-            </div>
-            
-            <div class="comparison-table table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th class="feature-name">Features</th>
-                            <th>Free</th>
-                            <th style="background: #fff8e1;">Gold <span class="badge bg-warning text-dark">Popular</span></th>
-                            <th>Lifetime</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="feature-name">Birthday Rewards Access</td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                        </tr>
-                        <tr>
-                            <td class="feature-name">Number of Businesses</td>
-                            <td>Limited</td>
-                            <td><?php echo $website['biznames']; ?>+</td>
-                            <td><?php echo $website['biznames']; ?>+</td>
-                        </tr>
-                        <tr>
-                            <td class="feature-name">Auto-Enrollment</td>
-                            <td><i class="bi bi-x-circle-fill x-icon"></i></td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                        </tr>
-                        <tr>
-                            <td class="feature-name">Mobile Reminders</td>
-                            <td><i class="bi bi-x-circle-fill x-icon"></i></td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                        </tr>
-                        <tr>
-                            <td class="feature-name">Priority Support</td>
-                            <td><i class="bi bi-x-circle-fill x-icon"></i></td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                        </tr>
-                        <tr>
-                            <td class="feature-name">Lifetime Updates</td>
-                            <td><i class="bi bi-x-circle-fill x-icon"></i></td>
-                            <td><i class="bi bi-x-circle-fill x-icon"></i></td>
-                            <td><i class="bi bi-check-circle-fill check-icon"></i></td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- My Family Plans Section -->
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="category-icon"><i class="bi bi-people"></i></span>
+                My Family
+            </h2>
+            <p class="section-description">Share the birthday joy with your loved ones</p>
+        </div>
+        
+        <!-- Family Plan Cards -->
+        <?php if (!empty($familyPlans)): ?>
+        <div id="familyPlanGrid">
+            <div class="row g-4 justify-content-center mb-5">
+                <?php
+                // Determine column classes based on plan count
+                $colClasses = '';
+                if (count($familyPlans) == 2) {
+                    $colClasses = 'col-12 col-md-6';
+                } elseif (count($familyPlans) == 3) {
+                    $colClasses = 'col-12 col-md-4';
+                } else {
+                    $colClasses = 'col-12 col-md-6 col-lg-4';
+                }
+                
+                foreach ($familyPlans as $plan):
+                    $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
+                    
+                    // Dynamic icon based on plan name
+                    $planIcon = 'bi-people-fill';
+                ?>
+                <div class="<?php echo $colClasses; ?>">
+                    <div class="plan-card-wrapper h-100">
+                        <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?>">
+                            
+                            <?php if ($isRecommended): ?>
+                                <div class="recommended-badge">POPULAR</div>
+                            <?php endif; ?>
+                            
+                            <div class="plan-header">
+                                <div class="plan-icon">
+                                    <i class="bi <?php echo $planIcon; ?>"></i>
+                                </div>
+                                <h3 class="plan-title"><?php echo htmlspecialchars($plan['account_name']); ?></h3>
+                            </div>
+                            
+                            <div class="plan-price"><?php echo $qik->convertamount($plan['price']); ?></div>
+                            <div class="plan-price-note">
+                                <?php
+                                if ($plan['price'] == 0) {
+                                    echo 'Forever free';
+                                } elseif (strpos(strtolower($plan['account_plan']), 'life') !== false) {
+                                    echo 'One-time payment • Lifetime access';
+                                } else {
+                                    echo 'One-time payment';
+                                }
+                                ?>
+                            </div>
+                            
+                            <?php if (!empty($plan['features'])): ?>
+                                <ul class="plan-features">
+                                    <?php foreach ($plan['features'] as $feature): ?>
+                                        <li><?php echo htmlspecialchars($feature['value']); ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                            
+                            <div class="plan-action">
+                                <a href="/signup?account_type=family&plan=<?php echo $plan['encoded_id']; ?>" 
+                                   class="btn btn-get-plan <?php echo $isRecommended ? 'btn-warning' : 'btn-primary'; ?>">
+                                    Get Started
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
             </div>
         </div>
+        <?php else: ?>
+        <div class="no-plans-message">
+            <p>No family plans available at this time.</p>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Gift Certificate Plans Section -->
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="category-icon"><i class="bi bi-gift"></i></span>
+                Gift Certificate
+            </h2>
+            <p class="section-description">Give the gift of birthday rewards to someone special</p>
+        </div>
+        
+        <!-- Gift Plan Cards -->
+        <?php if (!empty($giftPlans)): ?>
+        <div id="giftPlanGrid">
+            <div class="row g-4 justify-content-center mb-5">
+                <?php
+                // Determine column classes based on plan count
+                $colClasses = '';
+                if (count($giftPlans) == 2) {
+                    $colClasses = 'col-12 col-md-6';
+                } elseif (count($giftPlans) == 3) {
+                    $colClasses = 'col-12 col-md-4';
+                } else {
+                    $colClasses = 'col-12 col-md-6 col-lg-4';
+                }
+                
+                foreach ($giftPlans as $plan):
+                    $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
+                    
+                    // Dynamic icon based on plan name
+                    $planIcon = 'bi-gift-fill';
+                ?>
+                <div class="<?php echo $colClasses; ?>">
+                    <div class="plan-card-wrapper h-100">
+                        <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?>">
+                            
+                            <?php if ($isRecommended): ?>
+                                <div class="recommended-badge">POPULAR</div>
+                            <?php endif; ?>
+                            
+                            <div class="plan-header">
+                                <div class="plan-icon">
+                                    <i class="bi <?php echo $planIcon; ?>"></i>
+                                </div>
+                                <h3 class="plan-title"><?php echo htmlspecialchars($plan['account_name']); ?></h3>
+                            </div>
+                            
+                            <div class="plan-price"><?php echo $qik->convertamount($plan['price']); ?></div>
+                            <div class="plan-price-note">
+                                <?php
+                                if ($plan['price'] == 0) {
+                                    echo 'Forever free';
+                                } elseif (strpos(strtolower($plan['account_plan']), 'life') !== false) {
+                                    echo 'One-time payment • Lifetime access';
+                                } else {
+                                    echo 'One-time payment';
+                                }
+                                ?>
+                            </div>
+                            
+                            <?php if (!empty($plan['features'])): ?>
+                                <ul class="plan-features">
+                                    <?php foreach ($plan['features'] as $feature): ?>
+                                        <li><?php echo htmlspecialchars($feature['value']); ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                            
+                            <div class="plan-action">
+                                <a href="/register?giftcertificate&plan=<?php echo $plan['encoded_id']; ?>" 
+                                   class="btn btn-get-plan <?php echo $isRecommended ? 'btn-warning' : 'btn-primary'; ?>">
+                                    Purchase Gift
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php else: ?>
+        <div class="no-plans-message">
+            <p>No gift certificate plans available at this time.</p>
+        </div>
+        <?php endif; ?>
         
         <!-- FAQ Section -->
         <div class="section-header mt-5">
@@ -417,12 +520,12 @@ include($dir['core_components'] . '/bg_header.inc');
                     <div class="accordion-item">
                         <h3 class="accordion-header">
                             <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-                                What's included in the Free plan?
+                                What's the difference between individual and family plans?
                             </button>
                         </h3>
                         <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#pricingFAQ">
                             <div class="accordion-body">
-                                The Free plan gives you access to select birthday rewards. You can browse available offers and manually sign up for the ones you want. Perfect for trying out Birthday Gold!
+                                Individual plans are perfect for celebrating your own birthday with rewards from <?php echo $website['biznames']; ?>+ businesses. Family plans allow you to manage birthday rewards for multiple family members from one account, making it easy to ensure everyone in your family enjoys their special day!
                             </div>
                         </div>
                     </div>
@@ -443,12 +546,12 @@ include($dir['core_components'] . '/bg_header.inc');
                     <div class="accordion-item">
                         <h3 class="accordion-header">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-                                What's special about the Lifetime plan?
+                                How do gift certificates work?
                             </button>
                         </h3>
                         <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
                             <div class="accordion-body">
-                                The Lifetime plan is a one-time payment that gives you all Gold benefits forever, plus any new features we add in the future. It's perfect for those who want to lock in their access and never worry about renewals.
+                                Gift certificates are the perfect birthday gift! When you purchase a gift certificate, you'll receive a unique code that the recipient can redeem to activate their Birthday Gold membership. They'll get all the benefits of the plan you choose, and you'll be the hero who gave them a year of birthday rewards!
                             </div>
                         </div>
                     </div>
@@ -461,7 +564,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         </h3>
                         <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
                             <div class="accordion-body">
-                                Absolutely! You can start with the Free plan and upgrade to Gold or Lifetime anytime. Your account data and preferences will carry over seamlessly.
+                                Absolutely! You can start with any plan and upgrade anytime. Your account data and preferences will carry over seamlessly. If you have an individual plan and want to add family members, or if you want to upgrade from Free to Gold, it's just a few clicks away!
                             </div>
                         </div>
                     </div>
