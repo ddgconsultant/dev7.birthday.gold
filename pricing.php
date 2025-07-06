@@ -1,13 +1,14 @@
 <?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.productmanager.php');
 
 // Page metadata
 $pagedata['pagetitle'] = 'Pricing Plans - Birthday Gold';
 $pagedata['metakeywords'] = 'Birthday Gold Pricing, Birthday Rewards Plans, Birthday Deals Pricing';
 $pagedata['metadescriptions'] = 'Choose the perfect Birthday Gold plan for you. Free, Gold, and Lifetime options available. Start collecting birthday rewards from 500+ businesses!';
 
-// Get product manager instance
-$productManager = new ProductManager($database);
+// Initialize ProductManager
+$productManager = new ProductManager($database, $qik);
 
 // Get available plans for 'individual' account type (most common)
 $availablePlans = $productManager->getProductsWithFeatures('individual', 'v3');
