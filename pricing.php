@@ -58,7 +58,7 @@ if (isset($_REQUEST['ajax_action'])) {
 $header_flush = true;
 
 // Additional styles
-$additionalstyles = '
+$additionalstyles .= '
 <link href="/public/css/signup_styles.css" rel="stylesheet">
 <style>
 /* Override body background to match signup */
@@ -73,12 +73,39 @@ body {
     padding: 0 15px;
 }
 
+/* Match signup heading styles */
+.signup-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.signup-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #212529;
+}
+
+.signup-header p {
+    font-size: 1.2rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
 /* Match signup container styling */
 .signup-form-container {
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     padding: 2rem;
+}
+
+/* Headings to match signup */
+.section-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #212529;
+    font-weight: 600;
 }
 
 /* Plan selection button */
@@ -128,30 +155,11 @@ body {
 
 /* Hard header */
 .pricing-header-hard {
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
+    background: #212529;
     color: white;
     padding: 3rem 0;
     margin-bottom: 2rem;
     text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Animated background effect */
-.pricing-header-hard::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.1); opacity: 0.5; }
 }
 
 .pricing-header-hard h1 {
@@ -159,8 +167,6 @@ body {
     font-weight: 700;
     margin-bottom: 0.5rem;
     color: white !important;
-    position: relative;
-    z-index: 1;
 }
 
 .pricing-header-hard p {
@@ -168,8 +174,6 @@ body {
     color: white !important;
     margin-bottom: 0;
     opacity: 0.9;
-    position: relative;
-    z-index: 1;
 }
 
 /* Section headers */
@@ -227,7 +231,7 @@ include($dir['core_components'] . '/bg_header.inc');
 
 <!-- Hard Header -->
 <div class="pricing-header-hard">
-    <div class="container">
+    <div class="container pt-4">
         <h1>Birthday.Gold Pricing</h1>
         <p>Choose the perfect plan for your birthday rewards journey</p>
     </div>
