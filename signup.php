@@ -407,7 +407,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
         }
         ?>
 
-            <h3 class="pt-0 mt-0">Pick who this for:</h3>
+            <h3 class="pt-0 mt-0">Pick who this is for:</h3>
             
             <!-- Dynamic Account Type Selector -->
             <div class="account-type-selector" id="accountTypeSelector">

@@ -153,12 +153,20 @@ body {
     text-decoration: underline;
 }
 
-/* Account type label */
-.account-type-label {
-    text-align: center;
-    font-size: 0.85rem;
+/* Section headers */
+.plan-section {
+    margin-bottom: 3rem;
+}
+
+.section-header {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #212529;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid #dee2e6;
 }
 
 /* Mobile Responsive */
@@ -187,139 +195,111 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Header -->
     <div class="signup-header">
         <h1>Choose Your Perfect Plan 🎂</h1>
-        <p>Choose your account type and plan below. Takes less than 60 seconds!</p>
+        <p>Select the plan that best fits your needs. Takes less than 60 seconds!</p>
     </div>
 
     <!-- Form Container -->
     <div class="signup-form-container">
-        <h3 class="section-title">Pick who this for:</h3>
-        
-        <!-- Account Type Selector -->
-        <div class="account-type-selector" id="accountTypeSelector">
-            <?php
-            $displayedTypes = 0;
-            foreach ($accountTypes as $accountType) {
-                $config = $productManager->getAccountTypeConfig($accountType['account_type']);
-                $isActive = ($accountType['account_type'] == $selectedAccountType) ? 'active' : '';
-                
-                // Only show first 3 types directly
-                if ($displayedTypes < 3) {
-                    echo '<button class="account-type-btn ' . $isActive . '" data-account-type="' . $accountType['account_type'] . '">
-                            <i class="bi ' . $config['icon'] . '"></i><span>' . $config['short_label'] . '</span>
-                          </button>';
-                    $displayedTypes++;
-                }
-            }
-            ?>
-        </div>
 
-        <!-- Context Info -->
-        <div class="context-info" id="contextInfo">
-            <div class="info-text">
-                <i class="bi bi-info-circle info-icon"></i>
-                <span id="contextText"><?php echo $accountTypeConfig['context_text']; ?></span>
-            </div>
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#accountTypeInfoModal" title="Learn more">
-                <i class="bi bi-info-circle learn-more-icon d-inline d-md-none"></i>
-                <span class="learn-more-text d-none d-md-inline">Learn More</span>
-            </button>
-        </div>
-
-        <!-- Plan Selection -->
-        <h3 class="section-title mt-5 pt-md-5 pt-sm-2">Pick the plan:</h3>
-
-        <!-- All Plans Grid -->
+        <!-- All Plans Organized by Type -->
         <div id="planGrid">
-            <div class="row g-4 justify-content-center">
-                
-                <?php
-                // Display all plans with appropriate column sizing
-                // Use 3 columns for desktop, 1 for mobile
-                $colClasses = 'col-12 col-md-4';
-                
-                foreach ($availablePlans as $plan):
-                    $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
-                    
-                    // Dynamic icon based on plan name and account type
-                    $planIcon = 'bi-award'; // default
-                    if (strpos($plan['account_plan'], 'free') !== false) {
-                        $planIcon = 'bi-person';
-                    } elseif (strpos($plan['account_plan'], 'gold') !== false) {
-                        $planIcon = 'bi-star-fill';
-                    } elseif (strpos($plan['account_plan'], 'life') !== false) {
-                        $planIcon = 'bi-infinity';
-                    } elseif (strpos($plan['account_plan'], 'business') !== false) {
-                        $planIcon = 'bi-building';
-                    } elseif ($plan['account_type'] == 'parental' || strpos($plan['account_plan'], 'family') !== false) {
-                        $planIcon = 'bi-people';
-                    } elseif ($plan['account_type'] == 'giftcertificate') {
-                        $planIcon = 'bi-gift';
-                    }
-                    
-                    // Add account type label for clarity
-                    $accountTypeLabel = '';
-                    switch($plan['account_type']) {
-                        case 'user':
-                            $accountTypeLabel = 'Individual';
-                            break;
-                        case 'parental':
-                            $accountTypeLabel = 'Family';
-                            break;
-                        case 'business':
-                            $accountTypeLabel = 'Business';
-                            break;
-                        case 'giftcertificate':
-                            $accountTypeLabel = 'Gift';
-                            break;
-                    }
-                ?>
-                    <div class="<?php echo $colClasses; ?>">
-                        <div class="plan-card-wrapper h-100">
-                            <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?>" 
-                                 data-plan="<?php echo $plan['account_plan']; ?>" 
-                                 data-plan-id="<?php echo $plan['encoded_id']; ?>"
-                                 data-account-type="<?php echo $plan['account_type']; ?>"
-                                 data-price="<?php echo $plan['price']; ?>">
-                                
-                                <?php if ($isRecommended): ?>
-                                    <div class="recommended-badge">POPULAR</div>
-                                <?php endif; ?>
-                                
-                                <?php if ($accountTypeLabel): ?>
-                                    <div class="account-type-label text-muted small mb-2"><?php echo $accountTypeLabel; ?></div>
-                                <?php endif; ?>
-                                
-                                <div class="plan-header">
-                                    <div class="plan-icon">
-                                        <i class="bi <?php echo $planIcon; ?>"></i>
+            <?php
+            // Group plans by account type
+            $plansByType = [];
+            foreach ($availablePlans as $plan) {
+                $plansByType[$plan['account_type']][] = $plan;
+            }
+            
+            // Display sections in specific order
+            $sections = [
+                'user' => 'INDIVIDUAL',
+                'parental' => 'FAMILY', 
+                'giftcertificate' => 'GIFT'
+            ];
+            
+            foreach ($sections as $accountType => $sectionTitle):
+                if (!isset($plansByType[$accountType])) continue;
+            ?>
+                <!-- <?php echo $sectionTitle; ?> Section -->
+                <div class="plan-section mb-5">
+                    <h3 class="section-header"><?php echo $sectionTitle; ?></h3>
+                    <div class="row g-4 justify-content-center">
+                        <?php
+                        foreach ($plansByType[$accountType] as $plan):
+                            $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
+                            
+                            // Dynamic icon based on plan name and account type
+                            $planIcon = 'bi-award'; // default
+                            if (strpos($plan['account_plan'], 'free') !== false) {
+                                $planIcon = 'bi-person';
+                            } elseif (strpos($plan['account_plan'], 'gold') !== false) {
+                                $planIcon = 'bi-star-fill';
+                            } elseif (strpos($plan['account_plan'], 'life') !== false) {
+                                $planIcon = 'bi-infinity';
+                            } elseif (strpos($plan['account_plan'], 'business') !== false) {
+                                $planIcon = 'bi-building';
+                            } elseif ($accountType == 'parental' || strpos($plan['account_plan'], 'family') !== false) {
+                                $planIcon = 'bi-people';
+                            } elseif ($accountType == 'giftcertificate') {
+                                $planIcon = 'bi-gift';
+                            }
+                            
+                            // Column sizing based on number of plans in this section
+                            $plansInSection = count($plansByType[$accountType]);
+                            $colClasses = 'col-12';
+                            if ($plansInSection == 1) {
+                                $colClasses = 'col-12 col-md-6 col-lg-4';
+                            } elseif ($plansInSection == 2) {
+                                $colClasses = 'col-12 col-md-6';
+                            } else {
+                                $colClasses = 'col-12 col-md-6 col-lg-4';
+                            }
+                        ?>
+                            <div class="<?php echo $colClasses; ?>">
+                                <div class="plan-card-wrapper h-100">
+                                    <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?>" 
+                                         data-plan="<?php echo $plan['account_plan']; ?>" 
+                                         data-plan-id="<?php echo $plan['encoded_id']; ?>"
+                                         data-account-type="<?php echo $plan['account_type']; ?>"
+                                         data-price="<?php echo $plan['price']; ?>">
+                                        
+                                        <?php if ($isRecommended): ?>
+                                            <div class="recommended-badge">POPULAR</div>
+                                        <?php endif; ?>
+                                        
+                                        <div class="plan-header">
+                                            <div class="plan-icon">
+                                                <i class="bi <?php echo $planIcon; ?>"></i>
+                                            </div>
+                                            <h3 class="plan-title"><?php echo htmlspecialchars($plan['account_name']); ?></h3>
+                                        </div>
+                                        <div class="plan-price"><?php echo $qik->convertamount($plan['price']); ?></div>
+                                        <div class="plan-price-note">
+                                            <?php
+                                            if ($plan['price'] == 0) {
+                                                echo 'Forever free';
+                                            } elseif (strpos(strtolower($plan['account_plan']), 'life') !== false) {
+                                                echo 'Lifetime access';
+                                            } else {
+                                                echo 'One-time payment';
+                                            }
+                                            ?>
+                                        </div>
+                                        
+                                        <?php if (!empty($plan['features'])): ?>
+                                            <ul class="plan-features">
+                                                <?php foreach ($plan['features'] as $feature): ?>
+                                                    <li><?php echo htmlspecialchars($feature['value']); ?></li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        <?php endif; ?>
                                     </div>
-                                    <h3 class="plan-title"><?php echo htmlspecialchars($plan['account_name']); ?></h3>
                                 </div>
-                                <div class="plan-price"><?php echo $qik->convertamount($plan['price']); ?></div>
-                                <div class="plan-price-note">
-                                    <?php
-                                    if ($plan['price'] == 0) {
-                                        echo 'Forever free';
-                                    } elseif (strpos(strtolower($plan['account_plan']), 'life') !== false) {
-                                        echo 'Lifetime access';
-                                    } else {
-                                        echo 'One-time payment';
-                                    }
-                                    ?>
-                                </div>
-                                
-                                <?php if (!empty($plan['features'])): ?>
-                                    <ul class="plan-features">
-                                        <?php foreach ($plan['features'] as $feature): ?>
-                                            <li><?php echo htmlspecialchars($feature['value']); ?></li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                <?php endif; ?>
                             </div>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
-            </div> <!-- End row -->
+                </div>
+            <?php endforeach; ?>
         </div> <!-- End planGrid -->
 
         <!-- Continue Button -->
@@ -372,62 +352,12 @@ const pageData = {
 
 // Plan selection state
 let selectedPlan = null;
-let selectedAccountType = pageData.currentAccountType;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Set up account type switching
-    setupAccountTypeSwitching();
-    
     // Set up plan selection
     setupPlanSelection();
 });
-
-// Account type switching
-function setupAccountTypeSwitching() {
-    const accountTypeBtns = document.querySelectorAll('.account-type-btn');
-    
-    accountTypeBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const accountType = this.getAttribute('data-account-type');
-            if (accountType) {
-                // Update selected account type
-                selectedAccountType = accountType;
-                
-                // Update active button
-                document.querySelectorAll('.account-type-btn').forEach(b => {
-                    b.classList.remove('active');
-                });
-                this.classList.add('active');
-                
-                // Update context info
-                updateContextInfo(accountType);
-                
-                // Update button state if plan is selected
-                updateSelectButton();
-            }
-        });
-    });
-}
-
-// Update context info based on account type
-function updateContextInfo(accountType) {
-    const contextTexts = {
-        'individual': 'Perfect for individuals who want to celebrate their birthday with exclusive rewards',
-        'user': 'Perfect for individuals who want to celebrate their birthday with exclusive rewards',
-        'family': 'Manage birthday rewards for your entire family in one account',
-        'parental': 'Manage birthday rewards for your entire family in one account',
-        'gift': 'Give the gift of birthday rewards to someone special',
-        'giftcertificate': 'Give the gift of birthday rewards to someone special',
-        'business': 'Perfect for businesses wanting to offer birthday rewards'
-    };
-    
-    const contextText = contextTexts[accountType] || 'Select the account type that best fits your needs';
-    const contextElement = document.getElementById('contextText');
-    if (contextElement) {
-        contextElement.textContent = contextText;
-    }
-}
 
 // Plan selection
 function setupPlanSelection() {
@@ -478,13 +408,12 @@ function updateSelectButton() {
         
         // Add click handler
         btn.onclick = function() {
-            // Use the plan's account type and the selected account type from the buttons
-            // The plan's account type takes precedence
-            const accountType = selectedPlan.accountType || selectedAccountType;
+            // Use the plan's account type
+            const accountType = selectedPlan.accountType;
             
             // Determine the correct URL based on account type
             let signupUrl = '/signup';
-            if (accountType === 'giftcertificate' || selectedAccountType === 'giftcertificate') {
+            if (accountType === 'giftcertificate') {
                 signupUrl = '/register?giftcertificate';
             }
             
