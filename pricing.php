@@ -128,11 +128,30 @@ body {
 
 /* Hard header */
 .pricing-header-hard {
-    background: #212529;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
     color: white;
     padding: 3rem 0;
     margin-bottom: 2rem;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animated background effect */
+.pricing-header-hard::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 0.5; }
 }
 
 .pricing-header-hard h1 {
@@ -140,6 +159,8 @@ body {
     font-weight: 700;
     margin-bottom: 0.5rem;
     color: white !important;
+    position: relative;
+    z-index: 1;
 }
 
 .pricing-header-hard p {
@@ -147,6 +168,8 @@ body {
     color: white !important;
     margin-bottom: 0;
     opacity: 0.9;
+    position: relative;
+    z-index: 1;
 }
 
 /* Section headers */
