@@ -257,7 +257,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
             </a>
             
-            <a href="/plans" class="help-card">
+            <a href="/pricing" class="help-card">
                 <div class="help-icon">
                     <i class="bi bi-tag"></i>
                 </div>
