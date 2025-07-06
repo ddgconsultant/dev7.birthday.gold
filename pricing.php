@@ -17,11 +17,13 @@ $selectedVersion = $_REQUEST['version'] ?? $website['plan_version'];
 // Default to individual account type
 $selectedAccountType = $_REQUEST['account_type'] ?? 'individual';
 
-// Get available account types and plans
-$accountTypes = $productManager->getAvailableAccountTypes($selectedVersion);
-$availablePlans = $productManager->getProductsWithFeatures($selectedAccountType, $selectedVersion);
-$accountTypeConfig = $productManager->getAccountTypeConfig($selectedAccountType);
+// Get all available plans regardless of account type
+$availablePlans = $productManager->getAllProductsWithFeatures($selectedVersion);
 $planCount = count($availablePlans);
+
+// Get available account types for the selector
+$accountTypes = $productManager->getAvailableAccountTypes($selectedVersion);
+$accountTypeConfig = $productManager->getAccountTypeConfig($selectedAccountType);
 
 // Handle AJAX requests
 if (isset($_REQUEST['ajax_action'])) {
@@ -151,6 +153,14 @@ body {
     text-decoration: underline;
 }
 
+/* Account type label */
+.account-type-label {
+    text-align: center;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .signup-header h1 {
@@ -218,33 +228,19 @@ include($dir['core_components'] . '/bg_header.inc');
         <!-- Plan Selection -->
         <h3 class="section-title mt-5 pt-md-5 pt-sm-2">Pick the plan:</h3>
 
-        <!-- Dynamic Plan Grid -->
+        <!-- All Plans Grid -->
         <div id="planGrid">
-            <?php 
-            // Determine container structure based on plan count
-            if ($planCount == 1): 
-            ?>
-                <div class="row justify-content-center">
-                    <div class="col-12 col-md-8">
-            <?php else: ?>
-                <div class="row g-4 justify-content-center">
-            <?php endif; ?>
+            <div class="row g-4 justify-content-center">
                 
                 <?php
-                // Determine column classes for multiple cards
-                $colClasses = '';
-                if ($planCount == 2) {
-                    $colClasses = 'col-12 col-md-6';
-                } elseif ($planCount == 3) {
-                    $colClasses = 'col-12 col-md-4';
-                } else {
-                    $colClasses = 'col-12 col-md-6';
-                }
+                // Display all plans with appropriate column sizing
+                // Use 3 columns for desktop, 1 for mobile
+                $colClasses = 'col-12 col-md-4';
                 
                 foreach ($availablePlans as $plan):
                     $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
                     
-                    // Dynamic icon based on plan name
+                    // Dynamic icon based on plan name and account type
                     $planIcon = 'bi-award'; // default
                     if (strpos($plan['account_plan'], 'free') !== false) {
                         $planIcon = 'bi-person';
@@ -254,61 +250,43 @@ include($dir['core_components'] . '/bg_header.inc');
                         $planIcon = 'bi-infinity';
                     } elseif (strpos($plan['account_plan'], 'business') !== false) {
                         $planIcon = 'bi-building';
-                    } elseif (strpos($plan['account_plan'], 'family') !== false) {
+                    } elseif ($plan['account_type'] == 'parental' || strpos($plan['account_plan'], 'family') !== false) {
                         $planIcon = 'bi-people';
+                    } elseif ($plan['account_type'] == 'giftcertificate') {
+                        $planIcon = 'bi-gift';
                     }
                     
-                    // Use wrapper only for single plan
-                    if ($planCount == 1): 
+                    // Add account type label for clarity
+                    $accountTypeLabel = '';
+                    switch($plan['account_type']) {
+                        case 'user':
+                            $accountTypeLabel = 'Individual';
+                            break;
+                        case 'parental':
+                            $accountTypeLabel = 'Family';
+                            break;
+                        case 'business':
+                            $accountTypeLabel = 'Business';
+                            break;
+                        case 'giftcertificate':
+                            $accountTypeLabel = 'Gift';
+                            break;
+                    }
                 ?>
-                        <div class="plan-card-wrapper">
-                            <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?>" 
-                                 data-plan="<?php echo $plan['account_plan']; ?>" 
-                                 data-plan-id="<?php echo $plan['encoded_id']; ?>"
-                                 data-price="<?php echo $plan['price']; ?>">
-                                
-                                <?php if ($isRecommended): ?>
-                                    <div class="recommended-badge">POPULAR</div>
-                                <?php endif; ?>
-                                
-                                <div class="plan-header">
-                                    <div class="plan-icon">
-                                        <i class="bi <?php echo $planIcon; ?>"></i>
-                                    </div>
-                                    <h3 class="plan-title"><?php echo htmlspecialchars($plan['account_name']); ?></h3>
-                                </div>
-                                <div class="plan-price"><?php echo $qik->convertamount($plan['price']); ?></div>
-                                <div class="plan-price-note">
-                                    <?php
-                                    if ($plan['price'] == 0) {
-                                        echo 'Forever free';
-                                    } elseif (strpos(strtolower($plan['account_plan']), 'life') !== false) {
-                                        echo 'Lifetime access';
-                                    } else {
-                                        echo 'One-time payment';
-                                    }
-                                    ?>
-                                </div>
-                                
-                                <?php if (!empty($plan['features'])): ?>
-                                    <ul class="plan-features">
-                                        <?php foreach ($plan['features'] as $feature): ?>
-                                            <li><?php echo htmlspecialchars($feature['value']); ?></li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                <?php else: ?>
                     <div class="<?php echo $colClasses; ?>">
                         <div class="plan-card-wrapper h-100">
                             <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?>" 
                                  data-plan="<?php echo $plan['account_plan']; ?>" 
                                  data-plan-id="<?php echo $plan['encoded_id']; ?>"
+                                 data-account-type="<?php echo $plan['account_type']; ?>"
                                  data-price="<?php echo $plan['price']; ?>">
                                 
                                 <?php if ($isRecommended): ?>
                                     <div class="recommended-badge">POPULAR</div>
+                                <?php endif; ?>
+                                
+                                <?php if ($accountTypeLabel): ?>
+                                    <div class="account-type-label text-muted small mb-2"><?php echo $accountTypeLabel; ?></div>
                                 <?php endif; ?>
                                 
                                 <div class="plan-header">
@@ -340,10 +318,7 @@ include($dir['core_components'] . '/bg_header.inc');
                             </div>
                         </div>
                     </div>
-                <?php 
-                    endif;
-                endforeach; 
-                ?>
+                <?php endforeach; ?>
             </div> <!-- End row -->
         </div> <!-- End planGrid -->
 
@@ -392,9 +367,6 @@ include($dir['core_components'] . '/bg_header.inc');
 <script>
 // Store page data for JavaScript
 const pageData = {
-    ajaxUrl: '<?php echo $_SERVER['PHP_SELF']; ?>',
-    csrfToken: '<?php echo $session->get('csrf_token'); ?>',
-    selectedVersion: '<?php echo $selectedVersion; ?>',
     currentAccountType: '<?php echo $selectedAccountType; ?>'
 };
 
@@ -418,168 +390,43 @@ function setupAccountTypeSwitching() {
     accountTypeBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const accountType = this.getAttribute('data-account-type');
-            if (accountType && accountType !== selectedAccountType) {
-                switchAccountType(accountType);
+            if (accountType) {
+                // Update selected account type
+                selectedAccountType = accountType;
+                
+                // Update active button
+                document.querySelectorAll('.account-type-btn').forEach(b => {
+                    b.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Update context info
+                updateContextInfo(accountType);
+                
+                // Update button state if plan is selected
+                updateSelectButton();
             }
         });
     });
-}
-
-// Switch account type and load new plans
-function switchAccountType(accountType) {
-    // Update selected account type
-    selectedAccountType = accountType;
-    
-    // Update active button
-    document.querySelectorAll('.account-type-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelector(`.account-type-btn[data-account-type="${accountType}"]`).classList.add('active');
-    
-    // Show loading state
-    document.getElementById('planGrid').innerHTML = '<div class="plans-loading"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-3">Loading plans...</p></div>';
-    
-    // Reset selection
-    selectedPlan = null;
-    updateSelectButton();
-    
-    // Fetch new plans via AJAX
-    fetch(`${pageData.ajaxUrl}?ajax_action=get_plans&account_type=${accountType}&version=${pageData.selectedVersion}`, {
-        method: 'GET',
-        headers: {
-            'X-CSRF-Token': pageData.csrfToken
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            updatePlansDisplay(data.plans, accountType);
-            updateContextInfo(accountType);
-        }
-    })
-    .catch(error => {
-        console.error('Error loading plans:', error);
-        document.getElementById('planGrid').innerHTML = '<div class="alert alert-danger">Error loading plans. Please try again.</div>';
-    });
-}
-
-// Update plans display
-function updatePlansDisplay(plans, accountType) {
-    const planGrid = document.getElementById('planGrid');
-    let html = '';
-    
-    // Determine layout based on plan count
-    if (plans.length === 1) {
-        html = '<div class="row justify-content-center"><div class="col-12 col-md-8">';
-    } else {
-        html = '<div class="row g-4 justify-content-center">';
-    }
-    
-    // Determine column classes
-    let colClasses = '';
-    if (plans.length === 2) {
-        colClasses = 'col-12 col-md-6';
-    } else if (plans.length === 3) {
-        colClasses = 'col-12 col-md-4';
-    } else {
-        colClasses = 'col-12 col-md-6';
-    }
-    
-    // Generate plan cards
-    plans.forEach(plan => {
-        // Dynamic icon
-        let planIcon = 'bi-award';
-        if (plan.plan_code.includes('free')) {
-            planIcon = 'bi-person';
-        } else if (plan.plan_code.includes('gold')) {
-            planIcon = 'bi-star-fill';
-        } else if (plan.plan_code.includes('life')) {
-            planIcon = 'bi-infinity';
-        } else if (plan.plan_code.includes('family')) {
-            planIcon = 'bi-people';
-        }
-        
-        // Features list
-        let featuresHtml = '';
-        if (plan.features && plan.features.length > 0) {
-            featuresHtml = '<ul class="plan-features">';
-            plan.features.forEach(feature => {
-                featuresHtml += `<li>${feature}</li>`;
-            });
-            featuresHtml += '</ul>';
-        }
-        
-        // Price note
-        let priceNote = 'One-time payment';
-        if (plan.price == 0) {
-            priceNote = 'Forever free';
-        } else if (plan.plan_code.includes('life')) {
-            priceNote = 'Lifetime access';
-        }
-        
-        // Build card HTML
-        if (plans.length === 1) {
-            html += `
-                <div class="plan-card-wrapper">
-                    <div class="plan-card h-100${plan.is_recommended ? ' recommended' : ''}" 
-                         data-plan="${plan.plan_code}" 
-                         data-plan-id="${plan.id}"
-                         data-price="${plan.price}">
-                        ${plan.is_recommended ? '<div class="recommended-badge">POPULAR</div>' : ''}
-                        <div class="plan-header">
-                            <div class="plan-icon">
-                                <i class="bi ${planIcon}"></i>
-                            </div>
-                            <h3 class="plan-title">${plan.name}</h3>
-                        </div>
-                        <div class="plan-price">${plan.price_formatted}</div>
-                        <div class="plan-price-note">${priceNote}</div>
-                        ${featuresHtml}
-                    </div>
-                </div>`;
-        } else {
-            html += `
-                <div class="${colClasses}">
-                    <div class="plan-card-wrapper h-100">
-                        <div class="plan-card h-100${plan.is_recommended ? ' recommended' : ''}" 
-                             data-plan="${plan.plan_code}" 
-                             data-plan-id="${plan.id}"
-                             data-price="${plan.price}">
-                            ${plan.is_recommended ? '<div class="recommended-badge">POPULAR</div>' : ''}
-                            <div class="plan-header">
-                                <div class="plan-icon">
-                                    <i class="bi ${planIcon}"></i>
-                                </div>
-                                <h3 class="plan-title">${plan.name}</h3>
-                            </div>
-                            <div class="plan-price">${plan.price_formatted}</div>
-                            <div class="plan-price-note">${priceNote}</div>
-                            ${featuresHtml}
-                        </div>
-                    </div>
-                </div>`;
-        }
-    });
-    
-    html += '</div>';
-    planGrid.innerHTML = html;
-    
-    // Re-setup plan selection for new cards
-    setupPlanSelection();
 }
 
 // Update context info based on account type
 function updateContextInfo(accountType) {
     const contextTexts = {
         'individual': 'Perfect for individuals who want to celebrate their birthday with exclusive rewards',
+        'user': 'Perfect for individuals who want to celebrate their birthday with exclusive rewards',
         'family': 'Manage birthday rewards for your entire family in one account',
+        'parental': 'Manage birthday rewards for your entire family in one account',
         'gift': 'Give the gift of birthday rewards to someone special',
-        'business': 'Perfect for businesses wanting to offer birthday rewards',
-        'parental': 'Parents can manage birthday rewards for their children'
+        'giftcertificate': 'Give the gift of birthday rewards to someone special',
+        'business': 'Perfect for businesses wanting to offer birthday rewards'
     };
     
     const contextText = contextTexts[accountType] || 'Select the account type that best fits your needs';
-    document.getElementById('contextText').textContent = contextText;
+    const contextElement = document.getElementById('contextText');
+    if (contextElement) {
+        contextElement.textContent = contextText;
+    }
 }
 
 // Plan selection
@@ -604,6 +451,7 @@ function setupPlanSelection() {
             selectedPlan = {
                 id: this.getAttribute('data-plan-id'),
                 code: this.getAttribute('data-plan'),
+                accountType: this.getAttribute('data-account-type'),
                 price: this.getAttribute('data-price')
             };
             
@@ -630,14 +478,18 @@ function updateSelectButton() {
         
         // Add click handler
         btn.onclick = function() {
+            // Use the plan's account type and the selected account type from the buttons
+            // The plan's account type takes precedence
+            const accountType = selectedPlan.accountType || selectedAccountType;
+            
             // Determine the correct URL based on account type
             let signupUrl = '/signup';
-            if (selectedAccountType === 'gift') {
+            if (accountType === 'giftcertificate' || selectedAccountType === 'giftcertificate') {
                 signupUrl = '/register?giftcertificate';
             }
             
             // Redirect with selected plan and account type
-            window.location.href = `${signupUrl}?account_type=${selectedAccountType}&plan=${selectedPlan.id}`;
+            window.location.href = `${signupUrl}?account_type=${accountType}&plan=${selectedPlan.id}`;
         };
     } else {
         btn.disabled = true;

@@ -47,6 +47,33 @@ class ProductManager {
     
     
     /**
+     * Get all active products with features regardless of account type
+     * @param string $version Version (v2, v3, v7)
+     * @return array All products with their features
+     */
+    public function getAllProductsWithFeatures($version = 'v7') {
+        // Get all active products
+        $sql = "SELECT p.* 
+                FROM bg_products p 
+                WHERE p.version = :version 
+                AND p.status = 'active' 
+                AND p.display_grouping_status = 'active'
+                ORDER BY p.account_type, p.price ASC";
+        
+        $params = ['version' => $version];
+        
+        $products = $this->database->getrows($sql, $params);
+        
+        // Get features for each product
+        foreach ($products as &$product) {
+            $product['features'] = $this->getProductFeatures($product['id'], false, 'user');
+            $product['encoded_id'] = $this->qik ? $this->qik->encodeId($product['id']) : $product['id'];
+        }
+        
+        return $products;
+    }
+    
+    /**
      * Get single product by ID or plan name
      * @param mixed $identifier Product ID or plan name
      * @param string $identifierType 'id' or 'plan_name'
