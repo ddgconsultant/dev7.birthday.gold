@@ -445,6 +445,12 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
             </div>
         </div>
+        
+        <div class="text-center mt-4">
+            <a href="/business/api" class="btn btn-outline-primary btn-lg">
+                <i class="bi bi-code-slash me-2"></i>View API Documentation
+            </a>
+        </div>
     </div>
 </section>
 
