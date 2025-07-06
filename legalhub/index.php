@@ -100,6 +100,29 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
         </div>
         <div class="row justify-content-center">
 
+            <!-- Partner Terms Card -->
+            <div class="col-md-6 col-sm-12 mb-4">
+                <div class="card cursor-pointer" onclick="window.location.href='/legalhub/partnerterms';">
+                    <div class="card-header h5">
+                        Partner Terms and Conditions
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text my-3">Terms for businesses partnering with Birthday Gold. Learn about our partnership agreement and requirements.</p>
+                        <div class="d-md-flex">
+                            <div class="mb-2 mb-md-0">
+                                <a href="/legalhub/partnerterms" class="btn btn-primary">Partner Terms</a>
+                            </div>
+                            <div class="d-none d-md-inline mx-2 mt-1">
+                                -
+                            </div>
+                            <div>
+                                <a href="/legalhub/partnerterms?full" class="btn btn-sm btn-secondary mt-1">Full Partner Terms</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- CopyRight Card -->
             <div class="col-md-6 col-sm-12 mb-4">
                 <div class="card cursor-pointer" onclick="window.location.href='/legalhub/digitalrights';">

@@ -530,7 +530,7 @@ include($dir['core_components'] . '/bg_header.inc');
                             <div class="form-check mb-4">
                                 <input type="checkbox" class="form-check-input" id="agree_terms" name="agree_terms" required>
                                 <label class="form-check-label" for="agree_terms">
-                                    I agree to the Birthday Gold <a href="/terms" target="_blank">Partner Terms & Conditions</a>
+                                    I agree to the Birthday Gold <a href="/legalhub/partnerterms" target="_blank">Partner Terms & Conditions</a>
                                 </label>
                             </div>
                             
