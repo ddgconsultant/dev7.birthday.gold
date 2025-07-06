@@ -45,33 +45,68 @@ if (!empty($errors)) {
     exit();
 }
 
-// Store in database
+// Store in database using bg_companies and bg_company_attributes
 try {
-    $sql = "INSERT INTO bg_partner_applications (
-        business_name, business_type, contact_name, contact_email, 
-        contact_phone, locations, website, birthday_offer, 
-        additional_info, ip_address, created_at, status
+    // Start transaction
+    $database->beginTransaction();
+    
+    // Insert into bg_companies with status 'applied'
+    $sql = "INSERT INTO bg_companies (
+        parent_company_name, company_name, company_display_name, 
+        category, display_category, company_status, status, 
+        source, company_url, description, create_dt
     ) VALUES (
-        :business_name, :business_type, :contact_name, :contact_email,
-        :contact_phone, :locations, :website, :birthday_offer,
-        :additional_info, :ip_address, NOW(), 'pending'
+        :parent_company_name, :company_name, :company_display_name,
+        :category, :display_category, 'applied', 'applied',
+        'partner_application', :company_url, :description, NOW()
     )";
     
     $params = [
-        'business_name' => $form_data['business_name'],
-        'business_type' => $form_data['business_type'],
-        'contact_name' => $form_data['contact_name'],
-        'contact_email' => $form_data['contact_email'],
-        'contact_phone' => $form_data['contact_phone'],
-        'locations' => $form_data['locations'],
-        'website' => $form_data['website'],
-        'birthday_offer' => $form_data['birthday_offer'],
-        'additional_info' => $form_data['additional_info'],
-        'ip_address' => $client_ip
+        'parent_company_name' => $form_data['business_name'],
+        'company_name' => $form_data['business_name'],
+        'company_display_name' => $form_data['business_name'],
+        'category' => $form_data['business_type'],
+        'display_category' => ucfirst($form_data['business_type']),
+        'company_url' => $form_data['website'],
+        'description' => $form_data['birthday_offer']
     ];
     
     $database->query($sql, $params);
-    $application_id = $database->lastInsertId();
+    $company_id = $database->lastInsertId();
+    
+    // Insert attributes into bg_company_attributes with status 'pending'
+    $attributes = [
+        ['type' => 'partner_application', 'name' => 'contact_name', 'description' => $form_data['contact_name']],
+        ['type' => 'partner_application', 'name' => 'contact_email', 'description' => $form_data['contact_email']],
+        ['type' => 'partner_application', 'name' => 'contact_phone', 'description' => $form_data['contact_phone']],
+        ['type' => 'partner_application', 'name' => 'locations', 'description' => $form_data['locations']],
+        ['type' => 'partner_application', 'name' => 'birthday_offer', 'description' => $form_data['birthday_offer']],
+        ['type' => 'partner_application', 'name' => 'additional_info', 'description' => $form_data['additional_info']],
+        ['type' => 'partner_application', 'name' => 'application_ip', 'description' => $client_ip],
+        ['type' => 'partner_application', 'name' => 'application_date', 'description' => date('Y-m-d H:i:s')]
+    ];
+    
+    foreach ($attributes as $attr) {
+        $sql = "INSERT INTO bg_company_attributes (
+            company_id, type, name, description, status, create_dt, grouping
+        ) VALUES (
+            :company_id, :type, :name, :description, 'pending', NOW(), 'partner_application'
+        )";
+        
+        $params = [
+            'company_id' => $company_id,
+            'type' => $attr['type'],
+            'name' => $attr['name'],
+            'description' => $attr['description']
+        ];
+        
+        $database->query($sql, $params);
+    }
+    
+    // Commit transaction
+    $database->commit();
+    
+    $application_id = $company_id;
     
     // Send notification email to admin
     $admin_subject = "New Partner Application: " . $form_data['business_name'];
@@ -85,8 +120,8 @@ try {
     $admin_message .= "Website: " . $form_data['website'] . "\n";
     $admin_message .= "Birthday Offer: " . $form_data['birthday_offer'] . "\n";
     $admin_message .= "Additional Info: " . $form_data['additional_info'] . "\n\n";
-    $admin_message .= "Application ID: " . $application_id . "\n";
-    $admin_message .= "View in admin: https://dev7.birthday.gold/admin/partner-applications.php?id=" . $application_id;
+    $admin_message .= "Company ID: " . $application_id . "\n";
+    $admin_message .= "View in admin: https://dev7.birthday.gold/admin/companies.php?id=" . $application_id;
     
     // Send to admin email(s)
     $system->sendemail('partners@birthday.gold', $admin_subject, $admin_message);
@@ -108,9 +143,10 @@ try {
     
     // Log the application
     session_tracking('partner_application_submitted', [
-        'application_id' => $application_id,
+        'company_id' => $application_id,
         'business_name' => $form_data['business_name'],
-        'business_type' => $form_data['business_type']
+        'business_type' => $form_data['business_type'],
+        'source' => 'partner_application'
     ]);
     
     // Redirect to success page
@@ -118,6 +154,11 @@ try {
     exit();
     
 } catch (Exception $e) {
+    // Rollback transaction on error
+    if ($database->inTransaction()) {
+        $database->rollback();
+    }
+    
     // Log error
     error_log("Partner application error: " . $e->getMessage());
     
