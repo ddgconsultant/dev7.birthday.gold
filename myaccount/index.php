@@ -192,6 +192,18 @@ $additionalstyles .= "
 /* General styling for large screens */
 .icon-small { font-size: 2rem; }
 .h2-small { font-size: 1.5rem; }
+/* White background for action buttons */
+.content-block {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 2rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.content-block:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
 @media (max-width:767.98px) {
 /* Reduce icon size */
 .icon-small { font-size: 4rem !important; margin-right: 0.5rem; vertical-align: middle; }

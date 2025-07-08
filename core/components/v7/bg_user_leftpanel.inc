@@ -39,8 +39,8 @@ overflow: hidden;
 }
 
 .card-header-stats {
-background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-color: #333;
+background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
+color: white;
 padding: 1rem 1.5rem;
 font-size: 1.2rem;
 font-weight: 600;
@@ -118,16 +118,10 @@ transition: color 0.2s ease;
 color: #0056b3;
 }
 
-/* For items without links, create a flex container */
-.list-unstyled.list-userdetail li:not(:has(> a)) {
+/* Label styling */
+.list-label {
 display: flex;
-justify-content: space-between;
 align-items: center;
-}
-
-/* Ensure text before placeholder takes available space */
-.list-unstyled.list-userdetail li > span:first-of-type,
-.list-unstyled.list-userdetail li > a > span:first-of-type {
 flex-grow: 1;
 }
 
@@ -189,20 +183,24 @@ echo '
         </a>
         <ul class="list-unstyled list-userdetail">
             <li>
-                <i class="bi bi-calendar-day"></i> 
-                Next Birthdate
+                <span class="list-label">
+                    <i class="bi bi-calendar-day"></i> 
+                    Next Birthdate
+                </span>
                 <span class="placeholder" data-bs-toggle="tooltip" data-bs-placement="top" title="'. $till['formatted_date'].'">
                     '.$qik->plural2($till['days'], 'day').' away
                 </span>
             </li>
             <li>
-                <i class="bi bi-calendar-check"></i> 
-                Days Alive
+                <span class="list-label">
+                    <i class="bi bi-calendar-check"></i> 
+                    Days Alive
+                </span>
                 <span class="placeholder">' . number_format($alive['days']) . '</span>
             </li>
             <li>
                 <a href="'.$astrosign_horoscopelink.'" target="link">
-                    <span style="display: flex; align-items: center;">
+                    <span class="list-label">
                         <i class="bi bi-star"></i>
                         Astro Sign
                     </span>
@@ -228,33 +226,45 @@ echo '
         </a>
         <ul class="list-unstyled list-userdetail">
             <li>
-                <i class="bi bi-hourglass-split"></i> 
-                Available
+                <span class="list-label">
+                    <i class="bi bi-hourglass-split"></i> 
+                    Available
+                </span>
                 <span class="placeholder">' . $businessoutput['counts']['remaining'] . '</span>
             </li>
             <li>
-                <i class="bi bi-hourglass"></i> 
-                Pending
+                <span class="list-label">
+                    <i class="bi bi-hourglass"></i> 
+                    Pending
+                </span>
                 <span class="placeholder">' . $businessoutput['counts']['pending'] . '</span>
             </li>
             <li>
-                <i class="bi bi-check-circle"></i> 
-                Successful
+                <span class="list-label">
+                    <i class="bi bi-check-circle"></i> 
+                    Successful
+                </span>
                 <span class="placeholder">' . $businessoutput['counts']['success'] . '</span>
             </li>
             <li>
-                <i class="bi bi-x-circle"></i> 
-                Failed
+                <span class="list-label">
+                    <i class="bi bi-x-circle"></i> 
+                    Failed
+                </span>
                 <span class="placeholder">' . $businessoutput['counts']['failed'] . '</span>
             </li>
             <li>
-                <i class="bi bi-calendar-check"></i> 
-                Scheduled
+                <span class="list-label">
+                    <i class="bi bi-calendar-check"></i> 
+                    Scheduled
+                </span>
                 <span class="placeholder">' . $businessoutput['counts']['selected'] . '</span>
             </li>
             <li>
-                <i class="bi bi-gift"></i> 
-                # of Rewards
+                <span class="list-label">
+                    <i class="bi bi-gift"></i> 
+                    # of Rewards
+                </span>
                 <span class="placeholder">' . (count($user_reward_results ?? [])) . '</span>
             </li>
         </ul>
@@ -272,7 +282,7 @@ echo '
         <ul class="list-unstyled list-userdetail">
             <li>
                 <a href="/myaccount/plan-details">
-                    <span style="display: flex; align-items: center;">
+                    <span class="list-label">
                         <i class="bi bi-layout-text-sidebar-reverse"></i> 
                         Plan
                     </span>
@@ -280,8 +290,10 @@ echo '
                 </a>
             </li>
             <li>
-                <i class="bi bi-check2-circle"></i> 
-                Completion
+                <span class="list-label">
+                    <i class="bi bi-check2-circle"></i> 
+                    Completion
+                </span>
                 <span class="placeholder">
                     <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span><a class="text-600 ms-2" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>
                 </span>
@@ -290,26 +302,34 @@ echo '
 if ($enabledHonorFlags != 'none' ) {
     echo '
             <li>
-                <i class="bi bi-award"></i> 
-                Honor Classes
+                <span class="list-label">
+                    <i class="bi bi-award"></i> 
+                    Honor Classes
+                </span>
                 <span class="placeholder">' . ucwords($enabledHonorFlags) . '</span>
             </li>';
 }
 
 echo '
             <li>
-                <i class="bi bi-cake"></i> 
-                Birthdate
+                <span class="list-label">
+                    <i class="bi bi-cake"></i> 
+                    Birthdate
+                </span>
                 <span class="placeholder">' . $current_user_data['birthdate'] . '</span>
             </li>
             <li>
-                <i class="bi bi-calendar"></i> 
-                Joined
+                <span class="list-label">
+                    <i class="bi bi-calendar"></i> 
+                    Joined
+                </span>
                 <span class="placeholder">' . $accountanniversary['dtpart_year'] . '</span>
             </li>
             <li>
-                <i class="bi bi-geo-alt"></i> 
-                Location
+                <span class="list-label">
+                    <i class="bi bi-geo-alt"></i> 
+                    Location
+                </span>
                 <span class="placeholder">' . $location . '</span>
             </li>
         </ul>
@@ -333,7 +353,7 @@ echo '
         <ul class="list-unstyled list-userdetail">
             <li>
                 <a href="/myaccount/loginhistory">
-                    <span style="display: flex; align-items: center;">
+                    <span class="list-label">
                         <i class="bi bi-clock-history"></i> 
                         Last Login
                     </span>
@@ -341,8 +361,10 @@ echo '
                 </a>
             </li>
             <li>
-                <i class="bi bi-bar-chart-line"></i> 
-                Login Count
+                <span class="list-label">
+                    <i class="bi bi-bar-chart-line"></i> 
+                    Login Count
+                </span>
                 <span class="placeholder">' . $logincount . '</span>
             </li>
 ';
