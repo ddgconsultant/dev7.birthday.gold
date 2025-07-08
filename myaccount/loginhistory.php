@@ -150,19 +150,8 @@ $additionalstyles .= '
 
 .nav-tab-item.active {
     color: #0d6efd;
-    border-bottom-color: #0d6efd;
+    border-bottom-color: #0d6efd !important;
     background: none;
-}
-
-.nav-tab-item.active::after {
-    content: "";
-    position: absolute;
-    bottom: -3px;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: #0d6efd;
-    z-index: 1;
 }
 
 /* Settings tab aligned to the right */
@@ -299,23 +288,6 @@ $additionalstyles .= '
     border: none;
 }
 
-/* Ensure active border shows on all screen sizes */
-@media (max-width: 991px) {
-    .nav-tab-item.active {
-        border-bottom-color: #0d6efd;
-    }
-    
-    .nav-tab-item.active::after {
-        content: "";
-        position: absolute;
-        bottom: -3px;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: #0d6efd;
-        z-index: 1;
-    }
-}
 </style>
 ';
 
