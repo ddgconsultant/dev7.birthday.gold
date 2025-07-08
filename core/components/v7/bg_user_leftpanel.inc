@@ -155,6 +155,16 @@ background-color: transparent !important;
 display: inline !important;
 width: auto !important;
 height: auto !important;
+white-space: nowrap;
+}
+
+/* Ensure completion badge and pencil stay on same line */
+.placeholder .badge {
+margin-right: 0.25rem;
+}
+
+.placeholder a {
+display: inline !important;
 }
 </style>
 ";
@@ -295,7 +305,7 @@ echo '
                     Completion
                 </span>
                 <span class="placeholder">
-                    <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span><a class="text-600 ms-2" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>
+                    <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span>&nbsp;<a class="text-600" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>
                 </span>
             </li>';
             
