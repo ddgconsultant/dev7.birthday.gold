@@ -289,9 +289,23 @@ $additionalstyles = '
     position: relative;
     overflow: hidden;
     box-shadow: var(--shadow-md);
+    background-size: cover;
+    background-position: center;
 }
 
 .hero-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 100%);
+    z-index: 1;
+    border-radius: 24px;
+}
+
+.hero-section::after {
     content: "";
     position: absolute;
     top: -50%;
@@ -301,6 +315,7 @@ $additionalstyles = '
     background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
     opacity: 0.2;
     animation: pulse 4s ease-in-out infinite;
+    z-index: 2;
 }
 
 @keyframes pulse {
@@ -310,7 +325,23 @@ $additionalstyles = '
 
 .hero-content {
     position: relative;
-    z-index: 1;
+    z-index: 3;
+}
+
+/* Update text colors for banner background */
+.hero-section .profile-info h1 {
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    background: none;
+    -webkit-text-fill-color: white;
+}
+
+.hero-section .meta-item {
+    color: rgba(255,255,255,0.9);
+}
+
+.hero-section .meta-item span:first-child {
+    color: var(--primary-glow);
 }
 
 .profile-header {
@@ -323,7 +354,7 @@ $additionalstyles = '
 .avatar {
     width: 80px;
     height: 80px;
-    border-radius: 20px;
+    border-radius: 50%;
     background: var(--gradient-gold);
     display: flex;
     align-items: center;
@@ -333,18 +364,23 @@ $additionalstyles = '
     color: white;
     box-shadow: 0 0 30px rgba(245, 158, 11, 0.3);
     position: relative;
+    border: 3px solid white;
 }
 
 .avatar-badge {
     position: absolute;
     bottom: -5px;
     right: -5px;
-    background: var(--success);
+    background: var(--primary);
     color: white;
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
     border-radius: 100px;
     font-weight: 600;
+}
+
+.avatar-badge.free {
+    background: var(--secondary);
 }
 
 .profile-info h1 {
@@ -834,18 +870,17 @@ $additionalstyles = '
     }
 }
 
-/* Hide default header and left panel on this page */
-#header, .left-panel {
-    display: none;
+/* Space for the header */
+.account-container {
+    margin-top: 60px;
 }
 </style>';
 
 // Set flag to use custom layout
 $use_custom_layout = true;
+$header_flush = true; // This prevents extra spacing after header
 
 include($dir['core_components'] . '/bg_pagestart.inc');
-
-// Optionally include standard header if desired
 include($dir['core_components'] . '/bg_header.inc');
 
 ?>
@@ -855,13 +890,33 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Main Container -->
 <div class="account-container">
     <!-- Hero Profile Section -->
-    <section class="hero-section">
+    <?php 
+    // The cover banner is set in bg_user_profileheader.inc which handles all banner logic
+
+    
+include($dir['core_components'] . '/bg_user_profileheader.inc');
+   /*
+    <section class="hero-section" <?php if (!empty($coverbanner)): ?>style="background-image: url('<?php echo htmlspecialchars($coverbanner); ?>'); background-size: cover; background-position: center;"<?php endif; ?>>
         <div class="hero-content">
             <div class="profile-header">
-                <div class="avatar">
-                    <?php echo $initials; ?>
-                    <?php if($current_user_data['account_type'] == 'paid'): ?>
-                    <span class="avatar-badge">PRO</span>
+                <div class="avatar" <?php if (!empty($avatar) && $avatar != '/public/images/defaultavatar.png'): ?>style="background-image: url('<?php echo htmlspecialchars($avatar); ?>'); background-size: cover; background-position: center; border-radius: 50%;"<?php endif; ?>>
+                    <?php if (empty($avatar) || $avatar == '/public/images/defaultavatar.png'): ?>
+                        <?php echo $initials; ?>
+                    <?php endif; ?>
+                    <?php 
+                    // Show badge based on account type
+                    $badge_text = '';
+                    $badge_class = 'avatar-badge';
+                    if($current_user_data['account_type'] == 'paid') {
+                        $badge_text = 'GOLD';
+                    } elseif($current_user_data['account_type'] == 'free') {
+                        $badge_text = 'FREE';
+                        $badge_class .= ' free';
+                    }
+                    
+                    if($badge_text):
+                    ?>
+                    <span class="<?php echo $badge_class; ?>"><?php echo $badge_text; ?></span>
                     <?php endif; ?>
                 </div>
                 <div>
@@ -889,7 +944,7 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
     </section>
 
-    <?php
+ */
     // Display account messages
     if (!empty($message)) {
         echo $message;
@@ -912,13 +967,13 @@ include($dir['core_components'] . '/bg_header.inc');
     <section class="quick-actions">
         <a href="/myaccount/collect" class="action-card primary">
             <div class="action-icon">📋</div>
-            <h3 class="action-title">Pick Rewards</h3>
+            <h3 class="action-title">Pick</h3>
             <p class="action-description">Choose from <?php echo $website['numberofbiz']; ?>+ businesses and start earning birthday rewards</p>
         </a>
         
         <a href="/myaccount/redeem" class="action-card">
             <div class="action-icon">🎁</div>
-            <h3 class="action-title">Redeem Rewards</h3>
+            <h3 class="action-title">Redeem</h3>
             <p class="action-description">You have <?php echo $rewards_count; ?> rewards ready to claim</p>
         </a>
         
@@ -932,7 +987,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Main Grid -->
     <div class="main-grid">
         <!-- Left Column -->
-        <div class="main-content">
+        <div class="container">
             <?php
             // Profile completion alert (show if not complete)
             if ($profile_status !== 'complete') {

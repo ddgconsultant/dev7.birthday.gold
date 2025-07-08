@@ -214,26 +214,26 @@ if ($isHomePage) {
                             </div>
                         </li>
                         <li><hr class="dropdown-divider mt-0"></li>
-                        <li><a class="dropdown-item" href="/myaccount/"><i class="bi bi-person me-3"></i>Account Home</a></li>';
+                        <li><a class="dropdown-item text-black" href="/myaccount/"><i class="bi bi-person me-3"></i>Account Home</a></li>';
         }
         
         echo '
-                        <li><a class="dropdown-item" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>
-                        <li><a class="dropdown-item" href="/myaccount/preferences"><i class="bi bi-bell me-3"></i>Preferences</a></li>';
+                        <li><a class="dropdown-item text-black" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>
+                        <li><a class="dropdown-item text-black" href="/myaccount/preferences"><i class="bi bi-bell me-3"></i>Preferences</a></li>';
         
         if (($current_user_data['account_plan'] ?? '') !== 'free') {
             echo '
-                        <li><a class="dropdown-item" href="/myaccount/billing"><i class="bi bi-credit-card me-3"></i>Billing</a></li>';
+                        <li><a class="dropdown-item text-black" href="/myaccount/billing"><i class="bi bi-credit-card me-3"></i>Billing</a></li>';
         }
         
         if ($tmpheadervar_isUserStaff) {
             echo '
-                        <li><a class="dropdown-item" href="/staff"><i class="bi bi-person-badge me-3 text-warning"></i>Staff</a></li>';
+                        <li><a class="dropdown-item text-black" href="/staff"><i class="bi bi-person-badge me-3 text-warning"></i>Staff</a></li>';
         }
         
         if ($tmpheadervar_isUserAdmin) {
             echo '
-                        <li><a class="dropdown-item" href="/admin"><i class="bi bi-shield-lock me-3 text-danger"></i>Admin</a></li>';
+                        <li><a class="dropdown-item text-black" href="/admin"><i class="bi bi-shield-lock me-3 text-danger"></i>Admin</a></li>';
         }
         
         echo '
@@ -334,29 +334,29 @@ if ($isHomePage) {
                             </div>
                         </li>
                         <li><hr class="dropdown-divider mt-0"></li>
-                        <li><a class="dropdown-item" href="/myaccount/"><i class="bi bi-person me-3"></i>Account Home</a></li>';
+                        <li><a class="dropdown-item text-black" href="/myaccount/"><i class="bi bi-person me-3"></i>Account Home</a></li>';
         }
         
         // Regular menu items
         echo '
-                        <li><a class="dropdown-item" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>
-                        <li><a class="dropdown-item" href="/myaccount/preferences"><i class="bi bi-bell me-3"></i>Preferences</a></li>';
+                        <li><a class="dropdown-item text-black" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>
+                        <li><a class="dropdown-item text-black" href="/myaccount/preferences"><i class="bi bi-bell me-3"></i>Preferences</a></li>';
         
         // Only show billing for paid accounts
         if (($current_user_data['account_plan'] ?? '') !== 'free') {
             echo '
-                        <li><a class="dropdown-item" href="/myaccount/billing"><i class="bi bi-credit-card me-3"></i>Billing</a></li>';
+                        <li><a class="dropdown-item text-black" href="/myaccount/billing"><i class="bi bi-credit-card me-3"></i>Billing</a></li>';
         }
         
         // Staff/Admin links
         if ($tmpheadervar_isUserStaff) {
             echo '
-                        <li><a class="dropdown-item" href="/staff"><i class="bi bi-person-badge me-3 text-warning"></i>Staff</a></li>';
+                        <li><a class="dropdown-item text-black" href="/staff"><i class="bi bi-person-badge me-3 text-warning"></i>Staff</a></li>';
         }
         
         if ($tmpheadervar_isUserAdmin) {
             echo '
-                        <li><a class="dropdown-item" href="/admin"><i class="bi bi-shield-lock me-3 text-danger"></i>Admin</a></li>';
+                        <li><a class="dropdown-item text-black" href="/admin"><i class="bi bi-shield-lock me-3 text-danger"></i>Admin</a></li>';
         }
         
         echo '
