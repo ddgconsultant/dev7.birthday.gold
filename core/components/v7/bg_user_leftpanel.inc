@@ -145,6 +145,12 @@ padding: 0 !important;
 border: none !important;
 width: auto !important;
 height: auto !important;
+cursor: default !important;
+}
+
+/* Use pointer cursor for clickable placeholders */
+a .placeholder {
+cursor: pointer !important;
 }
 
 .badge {
@@ -163,6 +169,17 @@ background: none !important;
 background-color: transparent !important;
 width: auto !important;
 height: auto !important;
+cursor: default !important;
+}
+
+/* Override any inherited cursor styles */
+.list-userdetail li {
+cursor: default !important;
+}
+
+/* Pointer cursor for entire clickable list items */
+.list-userdetail li a {
+cursor: pointer !important;
 }
 
 
