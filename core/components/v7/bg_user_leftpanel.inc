@@ -103,6 +103,13 @@ color: #0056b3;
 font-weight: 500;
 color: #212529;
 margin-left: auto;
+background: none !important;
+background-color: transparent !important;
+display: inline !important;
+padding: 0 !important;
+border: none !important;
+width: auto !important;
+height: auto !important;
 }
 
 .badge {
@@ -114,28 +121,14 @@ font-size: 0.75rem;
 display: none;
 }
 
-/* Hide any progress bars or visual indicators in the left panel */
-.list-userdetail li::before,
-.list-userdetail li::after {
-display: none !important;
-}
-
-.list-userdetail li > div:not(.title-wrapper),
-.list-userdetail li > span:not(.placeholder):not(.badge) {
-display: none !important;
-}
-
-/* Ensure clean list items without extra elements */
-.list-userdetail li {
-position: relative;
+/* Force placeholder spans to display inline with no background */
+.list-userdetail .placeholder,
+.user-panel-card .placeholder {
 background: none !important;
-}
-
-/* Remove any background bars or indicators */
-.list-userdetail li > *[style*=\'width\'],
-.list-userdetail li > *[class*=\'progress\'],
-.list-userdetail li > *[class*=\'bar\'] {
-display: none !important;
+background-color: transparent !important;
+display: inline !important;
+width: auto !important;
+height: auto !important;
 }
 </style>
 ";
