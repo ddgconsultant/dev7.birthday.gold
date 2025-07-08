@@ -132,9 +132,9 @@ background: none !important;
 }
 
 /* Remove any background bars or indicators */
-.list-userdetail li > *[style*="width"],
-.list-userdetail li > *[class*="progress"],
-.list-userdetail li > *[class*="bar"] {
+.list-userdetail li > *[style*=\'width\'],
+.list-userdetail li > *[class*=\'progress\'],
+.list-userdetail li > *[class*=\'bar\'] {
 display: none !important;
 }
 </style>
