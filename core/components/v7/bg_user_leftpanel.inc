@@ -38,6 +38,21 @@ box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 overflow: hidden;
 }
 
+.card-header-stats {
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+color: white;
+padding: 1rem 1.5rem;
+font-size: 1.2rem;
+font-weight: 600;
+display: flex;
+align-items: center;
+gap: 0.5rem;
+}
+
+.card-header-stats i {
+font-size: 1.4rem;
+}
+
 .panel-section {
 padding: 1.5rem;
 border-bottom: 1px solid #e9ecef;
@@ -144,6 +159,12 @@ echo '
 <div class="' . $lefpanelcontent['panel_class'] . ' d-none d-md-block">
 ' . $lefpanelcontent['prepanel'] . '
 <div class="user-panel-card">
+    <!-- Card Header -->
+    <div class="card-header-stats">
+        <i class="bi bi-graph-up"></i>
+        Quick Stats
+    </div>
+    
     <!-- Personal Section -->
     <div class="panel-section">
         <a href="/myaccount/" class="section-header">
