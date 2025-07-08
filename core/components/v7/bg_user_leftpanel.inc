@@ -152,10 +152,8 @@ display: none;
 .user-panel-card .placeholder {
 background: none !important;
 background-color: transparent !important;
-display: inline !important;
 width: auto !important;
 height: auto !important;
-white-space: nowrap;
 }
 
 /* Ensure completion badge and pencil stay on same line */
@@ -309,10 +307,10 @@ echo '
                     <i class="bi bi-check2-circle"></i> 
                     Completion
                 </span>
-                <span class="placeholder">
+                <span class="placeholder" style="display: flex !important; align-items: center; justify-content: space-between; width: auto !important;">
                     <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span>
+                    <a class="text-600 ms-2" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>
                 </span>
-                <a class="text-600 ms-auto" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>
             </li>';
             
 if ($enabledHonorFlags != 'none' ) {
