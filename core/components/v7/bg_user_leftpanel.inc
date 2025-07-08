@@ -31,42 +31,111 @@ padding: 20px;
 margin-top: 60px;
 }
 
-.border-right {
-border-right: 1px solid lightgrey;
+.user-panel-card {
+background: white;
+border-radius: 12px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+overflow: hidden;
 }
 
-.title-wrapper {
+.panel-section {
+padding: 1.5rem;
+border-bottom: 1px solid #e9ecef;
+}
+
+.panel-section:last-child {
+border-bottom: none;
+}
+
+.section-header {
+font-size: 1.1rem;
+font-weight: 600;
+color: #333;
+margin-bottom: 1rem;
+padding-bottom: 0.75rem;
+border-bottom: 2px solid #f0f0f0;
+display: block;
+text-decoration: none;
+transition: color 0.2s ease;
+}
+
+.section-header:hover {
+color: #0056b3;
+text-decoration: none;
+}
+
+.section-header i {
+margin-right: 0.5rem;
+}
+
+.list-unstyled.list-userdetail {
+margin-bottom: 0;
+}
+
+.list-unstyled.list-userdetail li {
+padding: 0.5rem 0;
+font-size: 0.9rem;
+color: #495057;
 display: flex;
 align-items: center;
-margin-bottom: 5px; /* Adjust to your needs */
-}
-.title-wrapper h4 {
-margin: 0;
-white-space: nowrap;
-padding-right: 10px; /* Adjust space between text and line */
-}
-.title-wrapper .title-line {
-flex-grow: 1;
-height: 1px;
-background-color: #000; /* Adjust color of the line */
-}
-.list-unstyled.list-userdetail li {
-padding: 5px 0;
-font-size: .9rem; /* Adjust font size */
-}
-.list-unstyled.list-userdetail li i {
-margin-left: 10px; /* Add right margin to icons */
-margin-right: 10px; /* Add right margin to icons */
-}
-.placeholder {
-background: none !important; /* Remove the background */
-display: inline-block; /* Ensure it displays correctly inline */
-margin-left:5px;
-cursor: text !important;
 }
 
-a:hover .placeholder {
-cursor: pointer !important; /* Change the cursor to pointer on hover */
+.list-unstyled.list-userdetail li i {
+width: 20px;
+margin-right: 0.75rem;
+color: #6c757d;
+text-align: center;
+}
+
+.list-unstyled.list-userdetail li a {
+color: #495057;
+text-decoration: none;
+display: flex;
+align-items: center;
+transition: color 0.2s ease;
+}
+
+.list-unstyled.list-userdetail li a:hover {
+color: #0056b3;
+}
+
+.placeholder {
+font-weight: 500;
+color: #212529;
+margin-left: auto;
+}
+
+.badge {
+font-size: 0.75rem;
+}
+
+/* Remove old title wrapper styles */
+.title-wrapper {
+display: none;
+}
+
+/* Hide any progress bars or visual indicators in the left panel */
+.list-userdetail li::before,
+.list-userdetail li::after {
+display: none !important;
+}
+
+.list-userdetail li > div:not(.title-wrapper),
+.list-userdetail li > span:not(.placeholder):not(.badge) {
+display: none !important;
+}
+
+/* Ensure clean list items without extra elements */
+.list-userdetail li {
+position: relative;
+background: none !important;
+}
+
+/* Remove any background bars or indicators */
+.list-userdetail li > *[style*="width"],
+.list-userdetail li > *[class*="progress"],
+.list-userdetail li > *[class*="bar"] {
+display: none !important;
 }
 </style>
 ";
@@ -79,26 +148,36 @@ echo '
 <div class="' . $lefpanelcontent['body_class'] . ' random-text">
 <div class="row">
 
-<div class="' . $lefpanelcontent['panel_class'] . ' d-none d-md-block border-right">
+<div class="' . $lefpanelcontent['panel_class'] . ' d-none d-md-block">
 ' . $lefpanelcontent['prepanel'] . '
-<ul class="list-unstyled list-userdetail">
-<li>
-<div class="title-wrapper">
-<a href="/myaccount/" class="text-decoration-none"><h4>Personal</h4></a>
-<div class="title-line"></div>
-</div>
-</li>
-<li>
-    <i class="bi bi-calendar-day"></i> 
-    Next Birthdate: 
-    <span class="placeholder" data-bs-toggle="tooltip" data-bs-placement="top" title="'. $till['formatted_date'].'">
-        '.$qik->plural2($till['days'], 'day').' away
-    </span>
-</li>
-
-<li><i class="bi bi-calendar-day"></i> Days Alive: <span class="placeholder">' . number_format($alive['days']) . '</span></li>
-<li><a href="'.$astrosign_horoscopelink.'" target="link"><i class="bi bi-star"></i>Astro: <span class="placeholder">' . $user_astrosigndetails['name'] . '</span></a></li>
-';
+<div class="user-panel-card">
+    <!-- Personal Section -->
+    <div class="panel-section">
+        <a href="/myaccount/" class="section-header">
+            <i class="bi bi-person-circle"></i>Personal
+        </a>
+        <ul class="list-unstyled list-userdetail">
+            <li>
+                <i class="bi bi-calendar-day"></i> 
+                Next Birthdate
+                <span class="placeholder" data-bs-toggle="tooltip" data-bs-placement="top" title="'. $till['formatted_date'].'">
+                    '.$qik->plural2($till['days'], 'day').' away
+                </span>
+            </li>
+            <li>
+                <i class="bi bi-calendar-check"></i> 
+                Days Alive
+                <span class="placeholder">' . number_format($alive['days']) . '</span>
+            </li>
+            <li>
+                <a href="'.$astrosign_horoscopelink.'" target="link">
+                    <i class="bi bi-star"></i>
+                    Astro Sign
+                    <span class="placeholder">' . $user_astrosigndetails['name'] . '</span>
+                </a>
+            </li>
+        </ul>
+    </div>';
 // feature not enabled yet
 /*
 echo '<li><i class="bi bi-info-circle"></i> Fun Facts: <span class="placeholder">Interesting Fact</span></li>
@@ -108,61 +187,103 @@ echo '<li><i class="bi bi-info-circle"></i> Fun Facts: <span class="placeholder"
 
 //==================================================================================================================
 echo '
-</ul>
-<ul class="list-unstyled list-userdetail">
-<li>
-<div class="title-wrapper">
-<a href="/myaccount/enrollment-history" class="text-decoration-none"><h4>Enrollments</h4></a>
-<div class="title-line"></div>
-</div>
-</li>
-<li><i class="bi bi-hourglass-split"></i> Available: <span class="placeholder">' . $businessoutput['counts']['remaining'] . '</span></li>
-<li><i class="bi bi-hourglass-split"></i> Pending: <span class="placeholder">' . $businessoutput['counts']['pending'] . '</span></li>
-<li><i class="bi bi-check-circle"></i> Successful: <span class="placeholder">' . $businessoutput['counts']['success'] . '</span></li>
-<li><i class="bi bi-x-circle"></i> Failed: <span class="placeholder">' . $businessoutput['counts']['failed'] . '</span></li>
-<li><i class="bi bi-calendar-check"></i> Scheduled: <span class="placeholder">' . $businessoutput['counts']['selected'] . '</span></li>
-<li><i class="bi bi-calendar-check"></i> # of Rewards: <span class="placeholder">' . (count($user_reward_results ?? [])) . '</span></li>
-</ul>
-';
+    
+    <!-- Enrollments Section -->
+    <div class="panel-section">
+        <a href="/myaccount/enrollment-history" class="section-header">
+            <i class="bi bi-card-checklist"></i>Enrollments
+        </a>
+        <ul class="list-unstyled list-userdetail">
+            <li>
+                <i class="bi bi-hourglass-split"></i> 
+                Available
+                <span class="placeholder">' . $businessoutput['counts']['remaining'] . '</span>
+            </li>
+            <li>
+                <i class="bi bi-hourglass"></i> 
+                Pending
+                <span class="placeholder">' . $businessoutput['counts']['pending'] . '</span>
+            </li>
+            <li>
+                <i class="bi bi-check-circle"></i> 
+                Successful
+                <span class="placeholder">' . $businessoutput['counts']['success'] . '</span>
+            </li>
+            <li>
+                <i class="bi bi-x-circle"></i> 
+                Failed
+                <span class="placeholder">' . $businessoutput['counts']['failed'] . '</span>
+            </li>
+            <li>
+                <i class="bi bi-calendar-check"></i> 
+                Scheduled
+                <span class="placeholder">' . $businessoutput['counts']['selected'] . '</span>
+            </li>
+            <li>
+                <i class="bi bi-gift"></i> 
+                # of Rewards
+                <span class="placeholder">' . (count($user_reward_results ?? [])) . '</span>
+            </li>
+        </ul>
+    </div>';
 
 
 //==================================================================================================================
 echo '
-<ul class="list-unstyled list-userdetail">
-<li>
-<div class="title-wrapper">
-<a href="/myaccount/profile" class="text-decoration-none"><h4>Profile</h4></a>
-<div class="title-line"></div>
-</div>
-</li>
-<li><a class="align-items-start mb-2" href="/myaccount/plan-details"><i class="bi bi-layout-text-sidebar-reverse"></i> Plan: <span class="placeholder">' . $userplanname . '</span></a></li>
-<li><i class="bi bi-check2-circle"></i> Completion: <span class="placeholder">
-<!-- Visible only on small and larger screens -->
-<span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . ' me-2 d-none d-sm-inline">' . $profilecompletion['required_percentage'] . '% Completed</span>
-
-<!-- Visible only on extra small screens -->
-<span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . ' me-2 d-inline d-sm-none">' . $profilecompletion['required_percentage'] . '% Done</span>
-
-<a class="text-600" href="/myaccount/profile">
-<span data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><span class="fas fa-pencil-alt"></span></span>
-</a>
-</span></li>
-';
+    
+    <!-- Profile Section -->
+    <div class="panel-section">
+        <a href="/myaccount/profile" class="section-header">
+            <i class="bi bi-person-lines-fill"></i>Profile
+        </a>
+        <ul class="list-unstyled list-userdetail">
+            <li>
+                <a href="/myaccount/plan-details">
+                    <i class="bi bi-layout-text-sidebar-reverse"></i> 
+                    Plan
+                    <span class="placeholder">' . $userplanname . '</span>
+                </a>
+            </li>
+            <li>
+                <i class="bi bi-check2-circle"></i> 
+                Completion
+                <span class="placeholder">
+                    <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span>
+                    <a class="text-600 ms-2" href="/myaccount/profile">
+                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile">
+                            <i class="bi bi-pencil"></i>
+                        </span>
+                    </a>
+                </span>
+            </li>';
+            
 if ($enabledHonorFlags != 'none' ) {
-    echo '<li><i class="bi bi-award"></i> Honor Classes: <span class="placeholder">' . ucwords($enabledHonorFlags) . '</span></li>';
+    echo '
+            <li>
+                <i class="bi bi-award"></i> 
+                Honor Classes
+                <span class="placeholder">' . ucwords($enabledHonorFlags) . '</span>
+            </li>';
 }
-echo '
-<li><i class="bi bi-cake"></i> Birthdate: <span class="placeholder">' . $current_user_data['birthdate'] . '</span></li>
-';
 
-// feature not enabled yet
-/* echo '   <li><i class="bi bi-heart"></i> Anniversary: <span class="placeholder">MM/DD/YYYY</span></li>
-';
-*/
 echo '
-<li><i class="bi bi-calendar"></i> Joined: <span class="placeholder">' . $accountanniversary['dtpart_year'] . '</span></li>
-<li><i class="bi bi-geo-alt"></i> Location: <span class="placeholder">' . $location . '</span></li>
-';
+            <li>
+                <i class="bi bi-cake"></i> 
+                Birthdate
+                <span class="placeholder">' . $current_user_data['birthdate'] . '</span>
+            </li>
+            <li>
+                <i class="bi bi-calendar"></i> 
+                Joined
+                <span class="placeholder">' . $accountanniversary['dtpart_year'] . '</span>
+            </li>
+            <li>
+                <i class="bi bi-geo-alt"></i> 
+                Location
+                <span class="placeholder">' . $location . '</span>
+            </li>
+        </ul>
+    </div>';
 
 // feature not enabled yet
 /* echo '
@@ -173,16 +294,25 @@ echo '
 
 //==================================================================================================================
 echo '
-</ul>
-<ul class="list-unstyled list-userdetail  d-none d-xxl-block">
-<li>
-<div class="title-wrapper">
-<span class="text-decoration-none"><h4>Statistics</h4></span>
-<div class="title-line"></div>
-</div>
-</li>
-<li><a class="align-items-start mb-2" href="/myaccount/loginhistory"><i class="bi bi-clock-history"></i> Last Login: <span class="placeholder">' . $lastloginmessage['message'] . '</span></a></li>
-<li><i class="bi bi-bar-chart-line"></i> Login Count: <span class="placeholder">' . $logincount . '</span></li>
+    
+    <!-- Statistics Section (Larger screens only) -->
+    <div class="panel-section d-none d-xxl-block">
+        <a href="/myaccount/loginhistory" class="section-header">
+            <i class="bi bi-bar-chart-line"></i>Statistics
+        </a>
+        <ul class="list-unstyled list-userdetail">
+            <li>
+                <a href="/myaccount/loginhistory">
+                    <i class="bi bi-clock-history"></i> 
+                    Last Login
+                    <span class="placeholder">' . $lastloginmessage['message'] . '</span>
+                </a>
+            </li>
+            <li>
+                <i class="bi bi-bar-chart-line"></i> 
+                Login Count
+                <span class="placeholder">' . $logincount . '</span>
+            </li>
 ';
 
 // feature not enabled yet
@@ -193,8 +323,9 @@ echo '
 <li><i class="bi bi-award"></i> Achievements: <span class="placeholder">###</span></li>
 */
 echo '
-</ul>
-';
+        </ul>
+    </div>
+</div>'; // Close the card
 
 
 

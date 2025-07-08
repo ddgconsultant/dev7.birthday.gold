@@ -5,7 +5,9 @@
       "Bash(php:*)",
       "WebFetch(domain:dev7.birthday.gold)",
       "Bash(ls:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
