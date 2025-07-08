@@ -145,7 +145,7 @@ padding: 0 !important;
 border: none !important;
 width: auto !important;
 height: auto !important;
-cursor: default !important;
+cursor: text !important;
 }
 
 /* Use pointer cursor for clickable placeholders */
@@ -169,12 +169,12 @@ background: none !important;
 background-color: transparent !important;
 width: auto !important;
 height: auto !important;
-cursor: default !important;
+cursor: text !important;
 }
 
-/* Override any inherited cursor styles */
+/* Default cursor for list items */
 .list-userdetail li {
-cursor: default !important;
+cursor: default;
 }
 
 /* Pointer cursor for entire clickable list items */
