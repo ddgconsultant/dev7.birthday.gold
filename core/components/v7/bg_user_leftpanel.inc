@@ -39,8 +39,8 @@ overflow: hidden;
 }
 
 .card-header-stats {
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-color: white;
+background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+color: #333;
 padding: 1rem 1.5rem;
 font-size: 1.2rem;
 font-weight: 600;
@@ -93,6 +93,7 @@ font-size: 0.9rem;
 color: #495057;
 display: flex;
 align-items: center;
+justify-content: space-between;
 }
 
 .list-unstyled.list-userdetail li i {
@@ -100,6 +101,7 @@ width: 20px;
 margin-right: 0.75rem;
 color: #6c757d;
 text-align: center;
+flex-shrink: 0;
 }
 
 .list-unstyled.list-userdetail li a {
@@ -107,11 +109,26 @@ color: #495057;
 text-decoration: none;
 display: flex;
 align-items: center;
+justify-content: space-between;
+width: 100%;
 transition: color 0.2s ease;
 }
 
 .list-unstyled.list-userdetail li a:hover {
 color: #0056b3;
+}
+
+/* For items without links, create a flex container */
+.list-unstyled.list-userdetail li:not(:has(> a)) {
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+/* Ensure text before placeholder takes available space */
+.list-unstyled.list-userdetail li > span:first-of-type,
+.list-unstyled.list-userdetail li > a > span:first-of-type {
+flex-grow: 1;
 }
 
 .placeholder {
@@ -185,8 +202,10 @@ echo '
             </li>
             <li>
                 <a href="'.$astrosign_horoscopelink.'" target="link">
-                    <i class="bi bi-star"></i>
-                    Astro Sign
+                    <span style="display: flex; align-items: center;">
+                        <i class="bi bi-star"></i>
+                        Astro Sign
+                    </span>
                     <span class="placeholder">' . $user_astrosigndetails['name'] . '</span>
                 </a>
             </li>
@@ -253,8 +272,10 @@ echo '
         <ul class="list-unstyled list-userdetail">
             <li>
                 <a href="/myaccount/plan-details">
-                    <i class="bi bi-layout-text-sidebar-reverse"></i> 
-                    Plan
+                    <span style="display: flex; align-items: center;">
+                        <i class="bi bi-layout-text-sidebar-reverse"></i> 
+                        Plan
+                    </span>
                     <span class="placeholder">' . $userplanname . '</span>
                 </a>
             </li>
@@ -262,12 +283,7 @@ echo '
                 <i class="bi bi-check2-circle"></i> 
                 Completion
                 <span class="placeholder">
-                    <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span>
-                    <a class="text-600 ms-2" href="/myaccount/profile">
-                        <span data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile">
-                            <i class="bi bi-pencil"></i>
-                        </span>
-                    </a>
+                    <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span><a class="text-600 ms-2" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>
                 </span>
             </li>';
             
@@ -317,8 +333,10 @@ echo '
         <ul class="list-unstyled list-userdetail">
             <li>
                 <a href="/myaccount/loginhistory">
-                    <i class="bi bi-clock-history"></i> 
-                    Last Login
+                    <span style="display: flex; align-items: center;">
+                        <i class="bi bi-clock-history"></i> 
+                        Last Login
+                    </span>
                     <span class="placeholder">' . $lastloginmessage['message'] . '</span>
                 </a>
             </li>
