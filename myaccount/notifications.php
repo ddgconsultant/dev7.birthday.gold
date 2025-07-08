@@ -1,461 +1,211 @@
-<?PHP
+<?php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-$bodycontentclass='';
 $pagetitle = "Notifications";
+
+// Add custom styles for notifications
+$additionalstyles = '
+<style>
+    /* Clean modern tab navigation - like Material Design */
+    .nav-tabs-clean {
+        display: flex;
+        border-bottom: none;
+        padding: 0;
+        list-style: none;
+    }
+    
+    /* Container for tabs and gear button */
+    .tabs-container {
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 2rem;
+    }
+    
+    .nav-tab-clean {
+        position: relative;
+        margin-right: 2rem;
+    }
+    
+    .nav-tab-clean a {
+        display: block;
+        padding: 1rem 0;
+        text-decoration: none;
+        color: #666;
+        font-weight: 500;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: color 0.2s ease;
+        border: none;
+        background: none;
+    }
+    
+    .nav-tab-clean a:hover {
+        color: #333;
+    }
+    
+    .nav-tab-clean.active a {
+        color: #000;
+    }
+    
+    .nav-tab-clean.active::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: #000;
+    }
+    
+    .tab-badge {
+        display: inline-block;
+        min-width: 20px;
+        padding: 2px 6px;
+        margin-left: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1;
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        background-color: #dc3545;
+        border-radius: 10px;
+    }
+    
+    .notification-item {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: start;
+        gap: 1rem;
+        transition: background-color 0.2s;
+    }
+    
+    .notification-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .notification-content {
+        flex: 1;
+    }
+    
+    .notification-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .notification-text {
+        color: #666;
+        font-size: 14px;
+        margin: 0;
+    }
+    
+    .notification-time {
+        color: #999;
+        font-size: 12px;
+    }
+    
+    .tab-content {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+        </style>
+';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+
 include($dir['core_components'] . '/bg_user_profileheader.inc');
 
+/*
+  <div class="p-5 text-center text-muted">
+                <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+                <p class="mt-3">All notifications will appear here</p>
+            </div>
+            */
 
-$additionalstyles .= '
-    <style>
-        body {
-            padding: 20px;
-            background-color: #f8f9fa;
-        }
-        
-        /* Clean modern tab navigation - Mobile-first design */
-        .nav-tabs-clean {
-            display: flex !important;
-            border: none !important;
-            border-bottom: 1px solid #e0e0e0 !important;
-            margin-bottom: 0 !important;
-            padding: 0 !important;
-            list-style: none !important;
-            background: white !important;
-            justify-content: space-around !important;
-        }
-        
-        .nav-tabs-clean .nav-item {
-            flex: 1 !important;
-            text-align: center !important;
-            position: relative !important;
-            border: none !important;
-            margin: 0 !important;
-        }
-        
-        .nav-tabs-clean .nav-link {
-            display: block !important;
-            padding: 12px 16px !important;
-            text-decoration: none !important;
-            color: #666 !important;
-            font-weight: 400 !important;
-            font-size: 15px !important;
-            text-transform: none !important;
-            letter-spacing: normal !important;
-            transition: all 0.2s ease !important;
-            border: none !important;
-            background: none !important;
-            border-radius: 0 !important;
-            position: relative !important;
-        }
-        
-        .nav-tabs-clean .nav-link:hover {
-            color: #000 !important;
-            border: none !important;
-            background: rgba(0,0,0,0.05) !important;
-        }
-        
-        .nav-tabs-clean .nav-link.active {
-            color: #000 !important;
-            font-weight: 500 !important;
-            background: none !important;
-            border: none !important;
-            border-color: transparent !important;
-        }
-        
-        /* The underline indicator - positioned under the link */
-        .nav-tabs-clean .nav-link.active::after {
-            content: "" !important;
-            position: absolute !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 3px !important;
-            background-color: #007bff !important;
-        }
-        
-        /* Remove focus outlines */
-        .nav-tabs-clean .nav-link:focus {
-            box-shadow: none !important;
-            outline: none !important;
-        }
-        
-        /* Tab badge styling - positioned to the right */
-        .tab-badge {
-            display: inline-block !important;
-            min-width: 18px !important;
-            padding: 2px 5px !important;
-            margin-left: 8px !important;
-            font-size: 11px !important;
-            font-weight: 500 !important;
-            line-height: 1 !important;
-            color: #fff !important;
-            text-align: center !important;
-            white-space: nowrap !important;
-            vertical-align: middle !important;
-            background-color: #007bff !important;
-            border-radius: 10px !important;
-            position: relative !important;
-            top: -1px !important;
-        }
-        
-        /* Desktop styles - left aligned with spacing */
-        @media (min-width: 768px) {
-            .nav-tabs-clean {
-                justify-content: flex-start !important;
-                padding-left: 20px !important;
-            }
-            
-            .nav-tabs-clean .nav-item {
-                flex: none !important;
-                text-align: left !important;
-                margin-right: 32px !important;
-            }
-            
-            .nav-tabs-clean .nav-item:last-child {
-                margin-right: 0 !important;
-                margin-left: auto !important;
-                margin-right: 20px !important;
-            }
-            
-            .nav-tabs-clean .nav-link {
-                padding: 16px 0 !important;
-                font-size: 16px !important;
-            }
-            
-            .nav-tabs-clean .nav-link:hover {
-                background: none !important;
-                color: #007bff !important;
-            }
-            
-            /* Wider underline on desktop */
-            .nav-tabs-clean .nav-link.active::after {
-                height: 3px !important;
-                left: -8px !important;
-                width: calc(100% + 16px) !important;
-            }
-        }
-        
-        .notification-item {
-            padding: 16px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            align-items: start;
-            gap: 12px;
-            transition: background-color 0.2s;
-            background: white;
-        }
-        
-        .notification-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .notification-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        
-        .notification-content {
-            flex: 1;
-        }
-        
-        .notification-title {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            font-size: 15px;
-        }
-        
-        .notification-text {
-            color: #666;
-            font-size: 14px;
-            margin: 0;
-            line-height: 1.5;
-        }
-        
-        .notification-time {
-            color: #999;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-        
-        .tab-content {
-            background: #f8f9fa;
-            min-height: 400px;
-        }
-        
-        .tab-pane {
-            background: white;
-        }
-        
-        /* Additional mobile adjustments */
-        @media (max-width: 576px) {
-            .nav-tabs-clean .nav-link {
-                font-size: 14px !important;
-                padding: 10px 8px !important;
-            }
-        }
-    </style>
-';
 
-$additionalstyles .= '
-<style>
-.nav-tabs-clean {
-    border-bottom: 1px solid #e0e0e0;
-}
+$localcontent = array();
+$notification_counts = array();
+$nonotificationoutput = true;
 
-.nav-tabs-clean .nav-link {
-    border: none !important;
-    background: none !important;
-    color: #9e9e9e !important;
-    font-weight: 500;
-    text-transform: uppercase;
-    font-size: 16px; /* Larger label */
-    padding: 10px 0 !important;
-    margin-right: 24px;
-    position: relative;
-    border-radius: 0 !important; /* Remove rounded top corners */
+// Collect notifications for each filter
+$filters = array('unread', 'read', 'all');
+foreach ($filters as $filter) {
+    $_GET['notification_filter'] = $filter;
+    include($dir['core_components'] . '/user_notifications_display.inc');
+    $localcontent[$filter] = $notifications_output;
+    $notification_counts[$filter] = $notifications_count;
 }
-
-.nav-tabs-clean .nav-link:hover {
-    color: #000 !important;
-}
-
-.nav-tabs-clean .nav-link::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 2px;
-    width: 0;
-    background-color: #3f51b5;
-    transition: width 0.2s ease;
-}
-
-.nav-tabs-clean .nav-link:hover::after {
-    width: 100%; /* Wider underline on hover */
-}
-
-.nav-tabs-clean .nav-link.active {
-    color: #000 !important;
-    font-weight: 700 !important;
-}
-
-.nav-tabs-clean .nav-link.active::after {
-    width: 100%;
-    height: 2px;
-    background-color: #3f51b5;
-}
-</style>
-';
-$additionalstyles .= '
-<style>
-/* Make the label larger */
-.nav-tabs-clean .nav-link {
-    font-size: 17px !important;
-    padding: 12px 24px !important; /* wider tabs */
-}
-
-/* Keep the badge inline with label */
-.nav-tabs-clean .tab-badge {
-    display: inline-block !important;
-    vertical-align: middle !important;
-    margin-left: 6px !important;
-    margin-top: 0 !important;
-    position: static !important;
-}
-
-/* If you want the tabs to be even wider on desktop */
-@media (min-width: 768px) {
-    .nav-tabs-clean .nav-link {
-        padding: 16px 32px !important;
-        font-size: 18px !important;
-    }
-}
-</style>
-';
-$additionalstyles .= '
-<style>
-/* 1. Remove Bootstrap active tab background and border */
-.nav-tabs-clean .nav-link.active,
-.nav-tabs-clean .nav-link.active:focus,
-.nav-tabs-clean .nav-link.active:hover {
-    background-color: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-}
-
-/* 2. Remove all default tab borders */
-.nav-tabs-clean .nav-link,
-.nav-tabs-clean .nav-link:hover,
-.nav-tabs-clean .nav-link:focus {
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-}
-
-/* 3. Keep only the clean underline for the active tab */
-.nav-tabs-clean .nav-link.active::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background-color: #007bff;
-}
-
-/* 4. Make the tab label font larger and add spacing */
-.nav-tabs-clean .nav-link {
-    font-size: 18px !important;
-    padding: 14px 24px !important;
-}
-
-/* 5. Keep the badge inline to the right of the label */
-.nav-tabs-clean .tab-badge {
-    display: inline-block !important;
-    vertical-align: middle !important;
-    margin-left: 8px !important;
-    margin-top: 0 !important;
-    position: relative !important;
-    top: auto !important;
-}
-
-/* 6. Remove hover background effect */
-.nav-tabs-clean .nav-link:hover {
-    background-color: transparent !important;
-    color: #000 !important;
-}
-
-/* 7. Make tabs visually wider */
-.nav-tabs-clean .nav-item {
-    min-width: 120px !important;
-}
-
-/* 8. Remove any background highlight from active */
-.nav-tabs-clean .nav-link.active {
-    background: none !important;
-}
-</style>
-';
-
-$additionalstyles .= '
-<style>
-/* Remove the background and rounded corners more forcefully */
-.nav-tabs-clean .nav-item .nav-link.active,
-.nav-tabs-clean .nav-item .nav-link.active:focus,
-.nav-tabs-clean .nav-item .nav-link.active:hover {
-    background: none !important;
-    background-color: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-}
-
-/* Keep underline indicator clean and centered */
-.nav-tabs-clean .nav-item .nav-link.active::after {
-    content: "";
-    display: block;
-    width: 100%;
-    height: 3px;
-    background-color: #007bff;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-}
-
-/* Make label font larger */
-.nav-tabs-clean .nav-link {
-    font-size: 18px !important;
-    padding: 14px 24px !important;
-}
-
-/* Badge to the right of label, aligned vertically */
-.nav-tabs-clean .tab-badge {
-    display: inline-block !important;
-    vertical-align: middle !important;
-    margin-left: 8px !important;
-    margin-top: 0 !important;
-}
-
-/* Wider tabs */
-.nav-tabs-clean .nav-item {
-    min-width: 120px !important;
-}
-
-/* Remove hover background */
-.nav-tabs-clean .nav-link:hover {
-    background-color: transparent !important;
-    color: #000 !important;
-}
-</style>
-';
-
 ?>
-<div class="container main-content my-5 pt-lg-4">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+
+<div class="container my-lg-5 pt-4">
+    <div class="container mt-4">
+        <div class="mb-4">
             <h2>Notifications</h2>
         </div>
-        
-        <!-- Clean tab navigation -->
-        <ul class="nav nav-tabs nav-tabs-clean">
-            <li class="nav-item">
-                <a class="nav-link active" href="#unread" data-bs-toggle="tab">
-                    Unread
-                    <span class="tab-badge">3</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#read" data-bs-toggle="tab">
-                    Read
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#all" data-bs-toggle="tab">
-                    All
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#settings" data-bs-toggle="tab">
-                    <i class="bi bi-gear"></i>
-                </a>
-            </li>
-        </ul>
-        
+
+        <!-- Clean tab navigation with settings gear -->
+        <div class="d-flex justify-content-between align-items-center tabs-container">
+            <ul class="nav-tabs-clean mb-0">
+                <?php
+                $tab_labels = array('unread' => 'Unread', 'read' => 'Read', 'all' => 'All');
+                $is_first = true;
+                foreach ($tab_labels as $key => $label) {
+                    $active_class = $is_first ? ' active' : '';
+                    $badge = '';
+                    if ($key === 'unread' && $notification_counts[$key] > 0) {
+                        $badge = '<span class="tab-badge">' . $notification_counts[$key] . '</span>';
+                    }
+                    echo '
+                <li class="nav-tab-clean' . $active_class . '">
+                    <a href="#' . $key . '" data-bs-toggle="tab">
+                        ' . $label . '
+                        ' . $badge . '
+                    </a>
+                </li>';
+                    $is_first = false;
+                }
+                ?>
+            </ul>
+            <ul class="nav-tabs-clean mb-0">
+                <li class="nav-tab-clean">
+                    <a href="#settings" id="settingsButton">
+                        <i class="bi bi-gear-fill"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
         <!-- Tab content -->
         <div class="tab-content">
-            <div class="tab-pane fade show active" id="unread">
-                <?php 
-                $_GET['notification_filter'] = 'unread';
-                include($dir['core_components'] . '/user_notifications_display.inc'); 
-                ?>
-            </div>
-
-            <div class="tab-pane fade" id="read">
-                <?php 
-                $_GET['notification_filter'] = 'read';
-                include($dir['core_components'] . '/user_notifications_display.inc'); 
-                ?>
-            </div>
+            <?php
+            $is_first = true;
+            foreach ($localcontent as $key => $value) {
+                $active_classes = $is_first ? ' show active' : '';
+                echo '
+            <div class="tab-pane fade' . $active_classes . '" id="' . $key . '">
+                ' . $value . '
+            </div>';
+                $is_first = false;
+            }
+            ?>
             
-            <div class="tab-pane fade" id="all">
-                <?php 
-                $_GET['notification_filter'] = 'all';
-                include($dir['core_components'] . '/user_notifications_display.inc'); 
-                ?>
-            </div>
-
             <div class="tab-pane fade" id="settings">
-                <div class="p-4">
+                <div class="card px-4 mt-0 pt-0">
                     <?php include($dir['core_components'] . '/user_notification_settings.inc'); ?>
                 </div>
             </div>
@@ -463,7 +213,51 @@ $additionalstyles .= '
     </div>
 </div>
 
+<script>
+    // Handle tab switching
+    document.querySelectorAll('.nav-tab-clean a').forEach(function(tab) {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab-clean').forEach(function(t) {
+                t.classList.remove('active');
+            });
+
+            // Add active class to clicked tab
+            this.parentElement.classList.add('active');
+
+            // Show corresponding content
+            var target = this.getAttribute('href');
+            document.querySelectorAll('.tab-pane').forEach(function(pane) {
+                pane.classList.remove('show', 'active');
+            });
+            document.querySelector(target).classList.add('show', 'active');
+        });
+    });
+
+    // Handle settings button click
+    document.getElementById('settingsButton').addEventListener('click', function(e) {
+        e.preventDefault();
+
+        // Remove active class from all tabs
+        document.querySelectorAll('.nav-tab-clean').forEach(function(t) {
+            t.classList.remove('active');
+        });
+
+        // Add active class to settings tab
+        this.parentElement.classList.add('active');
+
+        // Show settings content
+        document.querySelectorAll('.tab-pane').forEach(function(pane) {
+            pane.classList.remove('show', 'active');
+        });
+        document.querySelector('#settings').classList.add('show', 'active');
+    });
+</script>
+
 <?php
 include($dir['core_components'] . '/bg_footer.inc');
+
 $app->outputpage();
 ?>

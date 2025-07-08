@@ -1,10 +1,22 @@
 <?php
+// always use single PHP BLOCK, ECHO block statements. 
+// Do not use Short Echo Tags, Short Tags, Multiple PHP Tags or Nowdoc/Heredoc syntax
+
+#-------------------------------------------------------------------------------
+# PREP VARIABLES PAGE
+#-------------------------------------------------------------------------------
 // Get current user ID
 $user_id = $current_user_data['user_id'];
 
 // Get filter from query parameter
 $filter = isset($_GET['notification_filter']) ? $_GET['notification_filter'] : 'all';
 
+// Initialize output variable
+$notifications_output = '';
+
+#-------------------------------------------------------------------------------
+# HANDLE PAGE ACTIONS
+#-------------------------------------------------------------------------------
 // Fetch notifications based on filter
 if ($filter === 'unread') {
     $query = "SELECT * FROM bg_user_notifications WHERE user_id = :user_id AND status = 'unread' ORDER BY create_dt DESC";
@@ -33,6 +45,9 @@ $typeIcons = [
     'email_notification' => 'envelope-fill'
 ];
 
+#-------------------------------------------------------------------------------
+# DISPLAY PAGE
+#-------------------------------------------------------------------------------
 // Render notifications
 if (count($notifications) > 0) {
     foreach ($notifications as $notification) {
@@ -48,15 +63,16 @@ if (count($notifications) > 0) {
                 $messageContent = trim(str_replace('<br><br>', '<br>', $matches[1]));
             }
         }
-        ?>
+        
+        $notifications_output .= '
         <div class="notification-item">
             <div class="notification-icon">
-                <i class="bi bi-<?php echo $iconClass; ?>"></i>
+                <i class="bi bi-' . $iconClass . '"></i>
             </div>
             <div class="notification-content">
-                <div class="notification-title"><?php echo htmlspecialchars($notification['title']); ?></div>
-                <p class="notification-text"><?php echo $messageContent; ?></p>
-                <div class="notification-time"><?php echo $timeElapsed['message']; ?></div>
+                <div class="notification-title">' . htmlspecialchars($notification['title']) . '</div>
+                <p class="notification-text">' . $messageContent . '</p>
+                <div class="notification-time">' . $timeElapsed['message'] . '</div>
             </div>
             <div class="notification-actions">
                 <div class="btn">
@@ -64,34 +80,38 @@ if (count($notifications) > 0) {
                         <i class="bi bi-three-dots-vertical"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><button class="dropdown-item" type="button" onclick="markNotification(<?php echo $notification['notification_id']; ?>, '<?php echo $isRead ? 'unread' : 'read'; ?>')">
-                            <i class="bi bi-check-circle"></i> Mark <?php echo $isRead ? 'Unread' : 'Read'; ?>
+                        <li><button class="dropdown-item" type="button" onclick="markNotification(' . $notification['notification_id'] . ', \'' . ($isRead ? 'unread' : 'read') . '\')">
+                            <i class="bi bi-check-circle"></i> Mark ' . ($isRead ? 'Unread' : 'Read') . '
                         </button></li>
-                        <li><button class="dropdown-item" type="button" onclick="deleteNotification(<?php echo $notification['notification_id']; ?>)">
+                        <li><button class="dropdown-item" type="button" onclick="deleteNotification(' . $notification['notification_id'] . ')">
                             <i class="bi bi-trash"></i> Delete
                         </button></li>
                     </ul>
                 </div>
             </div>
-        </div>
-        <?php
+        </div>';
     }
 } else {
-    ?>
+    $no_notifications_message = '';
+    if ($filter === 'unread') {
+        $no_notifications_message = 'No unread notifications';
+    } elseif ($filter === 'read') {
+        $no_notifications_message = 'No read notifications';
+    } else {
+        $no_notifications_message = 'No notifications';
+    }
+    
+    $notifications_output .= '
     <div class="p-5 text-center text-muted">
         <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
-        <p class="mt-3">
-            <?php 
-            if ($filter === 'unread') {
-                echo 'No unread notifications';
-            } elseif ($filter === 'read') {
-                echo 'No read notifications';
-            } else {
-                echo 'No notifications';
-            }
-            ?>
-        </p>
-    </div>
-    <?php
+        <p class="mt-3">' . $no_notifications_message . '</p>
+    </div>';
 }
-?>
+
+// Set notification count
+$notifications_count = count($notifications);
+
+// Output the notifications only if not suppressed
+if (empty($nonotificationoutput)) {
+    echo $notifications_output;
+}
