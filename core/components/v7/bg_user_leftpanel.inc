@@ -167,21 +167,9 @@ margin-right: 0.25rem;
 display: inline !important;
 }
 
-/* Special styling for completion line */
-.completion-placeholder {
-display: flex !important;
-align-items: center;
-justify-content: space-between;
-width: 100%;
-}
-
-.completion-placeholder .badge {
-margin-right: 0;
-}
-
-.completion-placeholder a {
-margin-left: auto;
-padding-left: 0.5rem;
+/* Ensure ms-auto works for pencil icon */
+.list-userdetail li .ms-auto {
+margin-left: auto !important;
 }
 </style>
 ";
@@ -321,10 +309,10 @@ echo '
                     <i class="bi bi-check2-circle"></i> 
                     Completion
                 </span>
-                <span class="placeholder completion-placeholder">
+                <span class="placeholder">
                     <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span>
-                    <a class="text-600" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>
                 </span>
+                <a class="text-600 ms-auto" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>
             </li>';
             
 if ($enabledHonorFlags != 'none' ) {
