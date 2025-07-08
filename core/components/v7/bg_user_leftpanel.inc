@@ -307,9 +307,9 @@ echo '
                     <i class="bi bi-check2-circle"></i> 
                     Completion
                 </span>
-                <span class="placeholder" style="display: flex !important; align-items: center; justify-content: space-between; width: auto !important;">
+                <span class="placeholder" style="display: flex !important; align-items: center; gap: 0.5rem;">
                     <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span>
-                    <a class="text-600 ms-2" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>
+                    <a class="text-600 text-end" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile" style="margin-left: auto;"><i class="bi bi-pencil"></i></a>
                 </span>
             </li>';
             
