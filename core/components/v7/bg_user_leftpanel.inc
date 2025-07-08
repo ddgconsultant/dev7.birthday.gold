@@ -145,12 +145,6 @@ padding: 0 !important;
 border: none !important;
 width: auto !important;
 height: auto !important;
-cursor: text !important;
-}
-
-/* Use pointer cursor for clickable placeholders */
-a .placeholder {
-cursor: pointer !important;
 }
 
 .badge {
@@ -169,17 +163,32 @@ background: none !important;
 background-color: transparent !important;
 width: auto !important;
 height: auto !important;
+}
+
+/* Default text cursor for non-link list items */
+.list-userdetail li {
+cursor: text;
+}
+
+/* Pointer cursor for list items that contain links */
+.list-userdetail li:has(> a) {
+cursor: pointer !important;
+}
+
+/* Ensure all elements inside linked items have pointer cursor */
+.list-userdetail li > a,
+.list-userdetail li > a * {
+cursor: pointer !important;
+}
+
+/* Text cursor for labels in non-linked items */
+.list-userdetail li:not(:has(> a)) .list-label {
 cursor: text !important;
 }
 
-/* Default cursor for list items */
-.list-userdetail li {
-cursor: default;
-}
-
-/* Pointer cursor for entire clickable list items */
-.list-userdetail li a {
-cursor: pointer !important;
+/* Text cursor for non-linked placeholders */
+.list-userdetail li:not(:has(> a)) .placeholder {
+cursor: text !important;
 }
 
 
@@ -213,7 +222,7 @@ echo '
 <div class="' . $lefpanelcontent['body_class'] . ' random-text">
 <div class="row">
 
-<div class="' . $lefpanelcontent['panel_class'] . ' d-none d-md-block">
+<div class="' . $lefpanelcontent['panel_class'] . ' d-none d-lg-block">
 ' . $lefpanelcontent['prepanel'] . '
 <div class="user-panel-card">
     <!-- Card Header -->

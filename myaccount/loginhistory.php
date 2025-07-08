@@ -118,13 +118,14 @@ $additionalstyles .= '
     margin: 0 auto;
 }
 
-/* Tab navigation without scrollbar */
+/* Tab navigation with active bottom border */
 .nav-tabs-modern {
     display: flex;
     border-bottom: 2px solid #e9ecef;
     margin-bottom: 2rem;
     gap: 0;
     overflow: hidden;
+    position: relative;
 }
 
 .nav-tab-item {
@@ -138,6 +139,7 @@ $additionalstyles .= '
     transition: all 0.2s ease;
     background: none;
     border-radius: 0;
+    position: relative;
 }
 
 .nav-tab-item:hover {
@@ -150,6 +152,22 @@ $additionalstyles .= '
     color: #0d6efd;
     border-bottom-color: #0d6efd;
     background: none;
+}
+
+.nav-tab-item.active::after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #0d6efd;
+    z-index: 1;
+}
+
+/* Settings tab aligned to the right */
+.nav-tab-item.settings-tab {
+    margin-left: auto;
 }
 
 /* Compact device cards for mobile */
@@ -284,7 +302,7 @@ $additionalstyles .= '
 ';
 
 
-echo '
+echo '<div class="col-12 col-lg-9">
 <div class="login-container">
 ';
 
@@ -297,41 +315,80 @@ echo '<div class="mb-4">
 
 // Tab navigation
 $device_result = $account->user_activedevices($workinguserdata['user_id']);
+echo '<nav class="nav-tabs-modern">';
+
+$loginHistoryActive = ($displaysection === '') ? 'active' : '';
+$devicesActive = ($displaysection === 'devices') ? 'active' : '';
+$settingsActive = ($displaysection === 'settings') ? 'active' : '';
+
+echo '<a href="/myaccount/loginhistory" class="nav-tab-item ' . $loginHistoryActive . '">
+        <i class="bi bi-clock-history me-2"></i>Login History
+      </a>';
+
 if (!empty($device_result)) {
-    echo '<nav class="nav-tabs-modern">';
-    
-    $loginHistoryActive = ($displaysection === '') ? 'active' : '';
-    $devicesActive = ($displaysection === 'devices') ? 'active' : '';
-    
-    echo '<a href="/myaccount/loginhistory" class="nav-tab-item ' . $loginHistoryActive . '">
-            <i class="bi bi-clock-history me-2"></i>Login History
-          </a>';
     echo '<a href="/myaccount/loginhistory?view=devices" class="nav-tab-item ' . $devicesActive . '">
             <i class="bi bi-shield-check me-2"></i>Trusted Devices
           </a>';
-    
-    echo '</nav>';
-} else {
-    $displaysection = '';
 }
+
+echo '<a href="/myaccount/loginhistory?view=settings" class="nav-tab-item settings-tab ' . $settingsActive . '">
+        <i class="bi bi-gear"></i>
+      </a>';
+
+echo '</nav>';
 
 
 
 switch ($displaysection) {
 // --------------------------
   case 'devices':
-  include('module_login/manage_devices_modern.inc');
+    include('module_login/manage_devices_modern.inc');
+    break;
+
+// --------------------------
+  case 'settings':
+    echo '<div class="settings-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear me-2"></i>Login Settings
+                </h5>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title mb-3">Security Preferences</h6>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="emailAlerts" checked>
+                        <label class="form-check-label" for="emailAlerts">
+                            Email me when a new device logs in
+                        </label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="locationTracking" checked>
+                        <label class="form-check-label" for="locationTracking">
+                            Track login locations
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="deviceRemember">
+                        <label class="form-check-label" for="deviceRemember">
+                            Remember devices for 30 days
+                        </label>
+                    </div>
+                </div>
+            </div>
+          </div>';
     break;
 
 // --------------------------
   default:
-  include('module_login/manage_history_modern.inc');
+    include('module_login/manage_history_timeline.inc');
     break;
 }
 
 
 
 echo '</div>'; // Close login-container
+echo '</div>'; // Close col-12 col-lg-9
 
 echo '  </div>
 </div>

@@ -7,6 +7,21 @@ $additionalstyles .= '
     position: relative;
 }
 
+/* Grid layout for medium and large screens */
+@media (min-width: 768px) {
+    .history-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    .history-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
 .history-entry {
     background: #fff;
     border: 1px solid #e9ecef;
@@ -15,6 +30,15 @@ $additionalstyles .= '
     margin-bottom: 1rem;
     transition: all 0.2s ease;
     position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 768px) {
+    .history-entry {
+        margin-bottom: 0;
+    }
 }
 
 .history-entry:hover {
@@ -49,6 +73,7 @@ $additionalstyles .= '
 .history-details {
     display: grid;
     gap: 0.5rem;
+    flex: 1;
 }
 
 .history-detail {
@@ -100,7 +125,8 @@ echo '<div class="history-container">
            onclick="return confirm(\'Delete all login history?\');">
            Clear History
         </a>
-    </div>';
+    </div>
+    <div class="history-grid">';
 
 // Fetch the login history
 $sql = "SELECT * FROM bg_logintracking 
@@ -123,7 +149,8 @@ if (empty($logins)) {
         <p class="mt-3 mb-0 text-muted">No login history available.</p>
         <p class="text-muted"><small>Your login history may have been recently cleared.</small></p>
     </div>';
-    echo '</div>';
+    echo '</div>'; // Close history-grid
+    echo '</div>'; // Close history-container
     return;
 }
 
@@ -215,5 +242,6 @@ foreach ($logins as $login) {
           </div>';
 }
 
-echo '</div>';
+echo '</div>'; // Close history-grid
+echo '</div>'; // Close history-container
 ?>
