@@ -70,13 +70,17 @@ margin-bottom: 1rem;
 padding-bottom: 0.75rem;
 border-bottom: 2px solid #f0f0f0;
 display: block;
-text-decoration: none;
-transition: color 0.2s ease;
+text-decoration: underline;
+text-decoration-style: dotted;
+text-decoration-color: #ddd;
+text-underline-offset: 0.3rem;
+transition: all 0.2s ease;
 }
 
 .section-header:hover {
 color: #0056b3;
-text-decoration: none;
+text-decoration-style: solid;
+text-decoration-color: #0056b3;
 }
 
 .section-header i {
@@ -106,16 +110,21 @@ flex-shrink: 0;
 
 .list-unstyled.list-userdetail li a {
 color: #495057;
-text-decoration: none;
+text-decoration: underline;
+text-decoration-style: dotted;
+text-decoration-color: #ccc;
+text-underline-offset: 0.2rem;
 display: flex;
 align-items: center;
 justify-content: space-between;
 width: 100%;
-transition: color 0.2s ease;
+transition: all 0.2s ease;
 }
 
 .list-unstyled.list-userdetail li a:hover {
 color: #0056b3;
+text-decoration-style: solid;
+text-decoration-color: #0056b3;
 }
 
 /* Label styling */
@@ -156,19 +165,26 @@ width: auto !important;
 height: auto !important;
 }
 
-/* Ensure completion badge and pencil stay on same line */
-.placeholder .badge {
-margin-right: 0.25rem;
-}
+
 
 .placeholder a {
 display: inline !important;
+}
+
+/* No underline for icon-only links like pencil */
+.placeholder a.text-600 {
+text-decoration: none !important;
+}
+
+.placeholder a.text-600:hover i {
+color: #0056b3;
 }
 
 /* Ensure ms-auto works for pencil icon */
 .list-userdetail li .ms-auto {
 margin-left: auto !important;
 }
+
 </style>
 ";
 
@@ -307,9 +323,9 @@ echo '
                     <i class="bi bi-check2-circle"></i> 
                     Completion
                 </span>
-                <span class="placeholder" style="display: flex !important; align-items: center; gap: 0.5rem;">
+                <span class="placeholder">
+                    <a class="text-600" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile"><i class="bi bi-pencil"></i></a>                    
                     <span class="badge rounded-pill bg-' . $profilecompletion['required_percentage_color'] . '">' . $profilecompletion['required_percentage'] . '%</span>
-                    <a class="text-600 text-end" href="/myaccount/profile" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit your profile" style="margin-left: auto;"><i class="bi bi-pencil"></i></a>
                 </span>
             </li>';
             
