@@ -188,11 +188,18 @@ $additionalstyles .= '
 
 .timeline-entry.compact .entry-details {
     display: flex;
-    gap: 1.5rem;
+    gap: 1rem;
+    flex: 1;
 }
 
 .timeline-entry.compact .entry-detail {
     font-size: 0.813rem;
+    flex: 0 0 auto;
+}
+
+.timeline-entry.compact .entry-detail:last-child {
+    flex: 1;
+    min-width: 0;
 }
 
 /* Expanded layout for fewer entries (<10) */
@@ -498,6 +505,10 @@ foreach ($loginsByPeriod as $yearMonth => $days) {
                                 <div class="entry-detail">
                                     <i class="bi bi-geo-alt"></i>
                                     <span>' . htmlspecialchars($location) . '</span>
+                                </div>
+                                <div class="entry-detail">
+                                    <i class="bi bi-wifi"></i>
+                                    <span>' . htmlspecialchars($ipAddress) . '</span>
                                 </div>
                                 <div class="entry-detail">
                                     <i class="bi bi-' . ($details['deviceType'] === 'Mobile' ? 'phone' : 'laptop') . '"></i>
