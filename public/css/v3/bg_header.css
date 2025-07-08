@@ -139,13 +139,38 @@ body {
   
     .avatar-menu .dropdown-menu {
       background-color: white !important;
-      color: black;
+      color: black !important;
     }
     .avatar-menu .dropdown-item {
-      color: black;
+      color: black !important;
     }
     .avatar-menu .dropdown-item:hover {
-      background-color: #f8f9fa;
+      background-color: #f8f9fa !important;
+      color: black !important;
+    }
+    .avatar-menu .dropdown-item:focus,
+    .avatar-menu .dropdown-item:active {
+      color: black !important;
+      background-color: #e9ecef !important;
+    }
+    /* Ensure all text in avatar menu is black */
+    .avatar-menu .dropdown-menu * {
+      color: black !important;
+    }
+    /* Additional specificity for dropdown links */
+    .avatar-menu .dropdown-menu a,
+    .avatar-menu .dropdown-menu .dropdown-item,
+    .avatar-menu .dropdown-menu .dropdown-item i {
+      color: black !important;
+    }
+    /* Fix for any Bootstrap overrides */
+    .dropdown-menu .dropdown-item {
+      color: black !important;
+    }
+    .dropdown-menu .dropdown-item:hover,
+    .dropdown-menu .dropdown-item:focus {
+      color: black !important;
+      background-color: #f8f9fa !important;
     }
     .avatar-placeholder {
       width: 40px !important;

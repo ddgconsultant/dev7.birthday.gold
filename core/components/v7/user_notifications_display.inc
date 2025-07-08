@@ -1,0 +1,97 @@
+<?php
+// Get current user ID
+$user_id = $current_user_data['user_id'];
+
+// Get filter from query parameter
+$filter = isset($_GET['notification_filter']) ? $_GET['notification_filter'] : 'all';
+
+// Fetch notifications based on filter
+if ($filter === 'unread') {
+    $query = "SELECT * FROM bg_user_notifications WHERE user_id = :user_id AND status = 'unread' ORDER BY create_dt DESC";
+} elseif ($filter === 'read') {
+    $query = "SELECT * FROM bg_user_notifications WHERE user_id = :user_id AND status = 'read' ORDER BY create_dt DESC LIMIT 50";
+} else {
+    $query = "SELECT * FROM bg_user_notifications WHERE user_id = :user_id ORDER BY create_dt DESC LIMIT 100";
+}
+
+$stmt = $database->prepare($query);
+$stmt->execute(['user_id' => $user_id]);
+$notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Icon mapping
+$typeIcons = [
+    'employee_onboarding' => 'person-badge',
+    'password_expiry' => 'key-fill',
+    'promotion' => 'arrow-up-circle-fill',
+    'maintenance' => 'tools',
+    'account_verification' => 'check-circle-fill',
+    'security_alert' => 'shield-exclamation',
+    'feature_update' => 'info-circle-fill',
+    'billing' => 'credit-card-fill',
+    'survey' => 'clipboard-data',
+    'community_event' => 'calendar-event',
+    'email_notification' => 'envelope-fill'
+];
+
+// Render notifications
+if (count($notifications) > 0) {
+    foreach ($notifications as $notification) {
+        $isRead = $notification['status'] === 'read';
+        $timeElapsed = $qik->timeago($notification['create_dt']);
+        $iconClass = isset($typeIcons[$notification['type']]) ? $typeIcons[$notification['type']] : 'bell-fill';
+        
+        // Extract message content for email notifications
+        $messageContent = $notification['message'];
+        if ($notification['type'] == 'email_notification') {
+            preg_match('/<!-- Message Content start -->(.*?)<!-- Message Content end -->/s', $messageContent, $matches);
+            if (isset($matches[1])) {
+                $messageContent = trim(str_replace('<br><br>', '<br>', $matches[1]));
+            }
+        }
+        ?>
+        <div class="notification-item">
+            <div class="notification-icon">
+                <i class="bi bi-<?php echo $iconClass; ?>"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title"><?php echo htmlspecialchars($notification['title']); ?></div>
+                <p class="notification-text"><?php echo $messageContent; ?></p>
+                <div class="notification-time"><?php echo $timeElapsed['message']; ?></div>
+            </div>
+            <div class="notification-actions">
+                <div class="btn">
+                    <button type="button" class="btn btn-light btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><button class="dropdown-item" type="button" onclick="markNotification(<?php echo $notification['notification_id']; ?>, '<?php echo $isRead ? 'unread' : 'read'; ?>')">
+                            <i class="bi bi-check-circle"></i> Mark <?php echo $isRead ? 'Unread' : 'Read'; ?>
+                        </button></li>
+                        <li><button class="dropdown-item" type="button" onclick="deleteNotification(<?php echo $notification['notification_id']; ?>)">
+                            <i class="bi bi-trash"></i> Delete
+                        </button></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+} else {
+    ?>
+    <div class="p-5 text-center text-muted">
+        <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+        <p class="mt-3">
+            <?php 
+            if ($filter === 'unread') {
+                echo 'No unread notifications';
+            } elseif ($filter === 'read') {
+                echo 'No read notifications';
+            } else {
+                echo 'No notifications';
+            }
+            ?>
+        </p>
+    </div>
+    <?php
+}
+?>

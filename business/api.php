@@ -355,7 +355,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Hero Section -->
 <div class="api-hero">
     <div class="container">
-        <h1>Birthday Gold Partner API</h1>
+        <h1 class="text-white pt-4">Birthday.Gold Partner API</h1>
         <p>Integrate birthday rewards directly into your business systems</p>
         <div class="mt-3">
             <a href="/business/partner" class="btn btn-outline-light">

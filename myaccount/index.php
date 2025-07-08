@@ -484,20 +484,20 @@ echo '
     <div class="content-panel mb-1 pb-1">
         <div class="d-flex justify-content-between align-items-center p-0 m-0">
             <h5 class="card-title mb-0">
-                <a href="/myaccount/account" class="fw-bold">Account Settings</a>
+                <a href="/myaccount/settings" class="fw-bold">Settings</a>
             </h5>
-            <a href="/myaccount/account">
+            <a href="/myaccount/settings">
                 <i class="bi bi-gear" style="font-size: 1.3rem;"></i>
             </a>
         </div>
 
         <div class="list-group no-border">
             <a href="/myaccount/account" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
-                <div><i class="bi bi-pencil-square me-2"></i>Update Information</div>
+                <div><i class="bi bi-pencil-square me-2"></i>Account Settings</div>
                 <i class="bi bi-chevron-right"></i>
             </a>
 
-            <a href="/myaccount/manage-notifications#settings" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+            <a href="/myaccount/notifications#settings" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
                 <div><i class="bi bi-bell me-2"></i>Manage Notifications</div>
                 <i class="bi bi-chevron-right"></i>
             </a>

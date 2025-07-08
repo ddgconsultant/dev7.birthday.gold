@@ -1,24 +1,40 @@
 <?php
 // Assume $database is an instance of your PDO database connection
-// Fetch recent notifications (1-3 days old)
-$recentdays=7;
-$recentQuery = "
-    SELECT *
-    FROM bg_user_notifications
-    WHERE create_dt >= NOW() - INTERVAL ".$recentdays." DAY
-    ORDER BY create_dt DESC
-";
-$recentNotifications = $database->query($recentQuery)->fetchAll(PDO::FETCH_ASSOC);
+// Get current user ID (assuming it's available in session or through account class)
+$user_id = isset($_SESSION['user']['user_id']) ? $_SESSION['user']['user_id'] : 0;
 
-// Fetch earlier notifications (older than 3 days)
-$earlierQuery = "
+// Fetch unread notifications
+$unreadQuery = "
     SELECT *
     FROM bg_user_notifications
-    WHERE create_dt < NOW() - INTERVAL ".$recentdays." DAY
+    WHERE user_id = :user_id AND status = 'unread'
     ORDER BY create_dt DESC
-    limit 30
 ";
-$earlierNotifications = $database->query($earlierQuery)->fetchAll(PDO::FETCH_ASSOC);
+$stmt = $database->prepare($unreadQuery);
+$stmt->execute(['user_id' => $user_id]);
+$unreadNotifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$unreadCount = count($unreadNotifications);
+
+// Fetch read notifications
+$readQuery = "
+    SELECT *
+    FROM bg_user_notifications
+    WHERE user_id = :user_id AND status = 'read'
+    ORDER BY create_dt DESC
+    LIMIT 50
+";
+$stmt = $database->prepare($readQuery);
+$stmt->execute(['user_id' => $user_id]);
+$readNotifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// For backward compatibility, keep recent and earlier arrays
+$recentdays=7;
+$recentNotifications = array_filter(array_merge($unreadNotifications, $readNotifications), function($n) use ($recentdays) {
+    return strtotime($n['create_dt']) >= strtotime("-{$recentdays} days");
+});
+$earlierNotifications = array_filter($readNotifications, function($n) use ($recentdays) {
+    return strtotime($n['create_dt']) < strtotime("-{$recentdays} days");
+});
 
 
 ###------------------------------------------------------------------------------------------------------------
@@ -52,7 +68,7 @@ $dropdownId = 'dropdown-' . $notification['notification_id'];
 $messageContent = $notification['message'];
 
 if ($notification['type']=='email_notification'){
-    $iconClass = ($isRead?'envelope-fill text-primary':'envelope-open text-success');
+    $iconClass = ($isRead?'envelope-open text-primary':'envelope-fill text-primary');
 
   // Use a regular expression to extract the content between the tags
 preg_match('/<!-- Message Content start -->(.*?)<!-- Message Content end -->/s', $messageContent, $matches);
@@ -66,32 +82,28 @@ if (isset($matches[1])) {
 }
 
 
-// Construct the HTML output with the Bootstrap icon
-$output.= '<div class="p-3 d-flex  align-items-start bg-light border-bottom osahan-post-header">
-    <div class="dropdown-list-image avatar me-2">
-        <i class="bi bi-' . $iconClass . ' rounded-circle avatar-img"></i>
+// Construct the HTML output with modern styling
+$output.= '<div class="notification-item">
+    <div class="notification-icon">
+        <i class="bi bi-' . $iconClass . '"></i>
     </div>
-
-    <div class="' . $boldClass . ' me-2 pe-4 flex-grow-1">
-        <div class="text-truncate ' . $boldClass . '">' . $notification['title'] . '</div>
-        <div class="small">' .   $extractedMessage . '</div>
+    <div class="notification-content">
+        <div class="notification-title">' . $notification['title'] . '</div>
+        <p class="notification-text">' . $extractedMessage . '</p>
+        <div class="notification-time">' . $timeElapsed['message'] . '</div>
     </div>
-
-    <div class="d-flex flex-column align-items-end">
-            <div class="btn-group mb-2">
-                <button type="button" class="btn btn-light btn-sm rounded" data-bs-toggle="dropdown" aria-expanded="false" id="' . $dropdownId . '">
-                    <i class="bi bi-three-dots-vertical"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="' . $dropdownId . '">
-                    <li><button class="dropdown-item" type="button"><i class="bi bi-trash"></i> Delete</button></li>
-                    <li><button class="dropdown-item" type="button"><i class="bi bi-x-circle"></i> Mark '.($isRead?'Unread':'Read').'</button></li>
-                    <li><button class="dropdown-item" type="button"><i class="bi bi-x-circle"></i> Turn Off</button></li>                    
-                </ul>
-            </div>
-         
-        <div class="text-right d-none d-md-block text-muted pt-1">' . $timeElapsed['message'] . ' ' . $readStatusIcon . '</div>
+    <div class="notification-actions">
+        <div class="btn-group">
+            <button type="button" class="btn btn-light btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><button class="dropdown-item" type="button"><i class="bi bi-check-circle"></i> Mark '.($isRead?'Unread':'Read').'</button></li>
+                <li><button class="dropdown-item" type="button"><i class="bi bi-trash"></i> Delete</button></li>
+                <li><button class="dropdown-item" type="button"><i class="bi bi-bell-slash"></i> Turn Off</button></li>                    
+            </ul>
+        </div>
     </div>
-
 </div>';
 
     }
@@ -120,29 +132,75 @@ $output.= '<div class="p-3 d-flex  align-items-start bg-light border-bottom osah
 
 */
 
-if (count($recentNotifications)>0) {
-echo '
-<div class="box shadow-sm rounded bg-white mb-3">
-    <div class="box-title border-bottom p-3">
-        <h6 class="text-primary fw-bold m-0">Recent</h6>
-    </div>
-    <div class="box-body p-0">
-          '. renderNotifications($recentNotifications, true).'
-    </div>
-</div>
-';
-}
+// Render both mobile and desktop views
+// Mobile view with separate tabs
+echo '<div class="mobile-notification-view">';
+    // Mobile view with separate tabs
+    echo '<div id="unread-notifications" class="notification-section">';
+    if (count($unreadNotifications) > 0) {
+        echo renderNotifications($unreadNotifications, true);
+    } else {
+        echo '<div class="text-center py-5 text-muted">
+                <i class="bi bi-bell-slash fs-1"></i>
+                <p class="mt-3">No unread notifications</p>
+              </div>';
+    }
+    echo '</div>';
+    
+    echo '<div id="read-notifications" class="notification-section" style="display:none;">';
+    if (count($readNotifications) > 0) {
+        echo renderNotifications($readNotifications, true);
+    } else {
+        echo '<div class="text-center py-5 text-muted">
+                <i class="bi bi-bell-slash fs-1"></i>
+                <p class="mt-3">No read notifications</p>
+              </div>';
+    }
+    echo '</div>';
+    
+    echo '<div id="all-notifications" class="notification-section" style="display:none;">';
+    if (count($recentNotifications) > 0 || count($earlierNotifications) > 0) {
+        if (count($recentNotifications) > 0) {
+            echo '<div class="notification-group">
+                    <h6 class="text-muted small text-uppercase mb-3">Recent</h6>
+                    '. renderNotifications($recentNotifications, true).'
+                  </div>';
+        }
+        if (count($earlierNotifications) > 0) {
+            echo '<div class="notification-group mt-4">
+                    <h6 class="text-muted small text-uppercase mb-3">Earlier</h6>
+                    '. renderNotifications($earlierNotifications, false).'
+                  </div>';
+        }
+    } else {
+        echo '<div class="text-center py-5 text-muted">
+                <i class="bi bi-bell-slash fs-1"></i>
+                <p class="mt-3">No notifications</p>
+              </div>';
+    }
+    echo '</div>';
+echo '</div>'; // close mobile-notification-view
 
+// Desktop view - show recent/earlier
+echo '<div class="desktop-notification-view">';
+    if (count($recentNotifications) > 0) {
+        echo '<div class="notification-group">
+                <h6 class="text-muted small text-uppercase mb-3">Recent</h6>
+                '. renderNotifications($recentNotifications, true).'
+              </div>';
+    }
 
-if (count($earlierNotifications)>0) {
-echo '
-<div class="box shadow-sm rounded bg-white mb-3">
-    <div class="box-title border-bottom p-3">
-        <h6 class="text-primary fw-bold m-0">Earlier</h6>
-    </div>
-    <div class="box-body p-0">
-        '. renderNotifications($earlierNotifications, false).'
-    </div>
-</div>
-';
-}
+    if (count($earlierNotifications) > 0) {
+        echo '<div class="notification-group mt-4">
+                <h6 class="text-muted small text-uppercase mb-3">Earlier</h6>
+                '. renderNotifications($earlierNotifications, false).'
+              </div>';
+    }
+    
+    if (count($recentNotifications) == 0 && count($earlierNotifications) == 0) {
+        echo '<div class="text-center py-5 text-muted">
+                <i class="bi bi-bell-slash fs-1"></i>
+                <p class="mt-3">No notifications</p>
+              </div>';
+    }
+echo '</div>'; // close desktop-notification-view

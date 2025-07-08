@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Tabs Mockup</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        /* Clean modern tab navigation - like Material Design */
+        .nav-tabs-clean {
+            display: flex;
+            border-bottom: none;
+            padding: 0;
+            list-style: none;
+        }
+        
+        /* Container for tabs and gear button */
+        .tabs-container {
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 2rem;
+        }
+        
+        .nav-tab-clean {
+            position: relative;
+            margin-right: 2rem;
+        }
+        
+        .nav-tab-clean a {
+            display: block;
+            padding: 1rem 0;
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: color 0.2s ease;
+            border: none;
+            background: none;
+        }
+        
+        .nav-tab-clean a:hover {
+            color: #333;
+        }
+        
+        .nav-tab-clean.active a {
+            color: #000;
+        }
+        
+        .nav-tab-clean.active::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #000;
+        }
+        
+        .tab-badge {
+            display: inline-block;
+            min-width: 20px;
+            padding: 2px 6px;
+            margin-left: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1;
+            color: #fff;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            background-color: #dc3545;
+            border-radius: 10px;
+        }
+        
+        .notification-item {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            transition: background-color 0.2s;
+        }
+        
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .notification-text {
+            color: #666;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .notification-time {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .tab-content {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="mb-4">
+            <h2>Notifications</h2>
+        </div>
+        
+        <!-- Clean tab navigation with settings gear -->
+        <div class="d-flex justify-content-between align-items-center tabs-container">
+            <ul class="nav-tabs-clean mb-0">
+                <li class="nav-tab-clean active">
+                    <a href="#unread" data-bs-toggle="tab">
+                        Unread
+                        <span class="tab-badge">3</span>
+                    </a>
+                </li>
+                <li class="nav-tab-clean">
+                    <a href="#read" data-bs-toggle="tab">
+                        Read
+                    </a>
+                </li>
+                <li class="nav-tab-clean">
+                    <a href="#all" data-bs-toggle="tab">
+                        All
+                    </a>
+                </li>
+            </ul>
+            <button class="btn btn-light btn-sm" id="settingsButton" style="margin-bottom: 1rem;">
+                <i class="bi bi-gear-fill"></i>
+            </button>
+        </div>
+        
+        <!-- Tab content -->
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="unread">
+                <div class="notification-item">
+                    <div class="notification-icon">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">New Birthday Reward Available</div>
+                        <p class="notification-text">You have a new birthday reward from Starbucks</p>
+                        <div class="notification-time">2 hours ago</div>
+                    </div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-icon">
+                        <i class="bi bi-gift-fill text-primary"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">Birthday Month Special</div>
+                        <p class="notification-text">Your birthday month rewards are now active</p>
+                        <div class="notification-time">5 hours ago</div>
+                    </div>
+                </div>
+                <div class="notification-item">
+                    <div class="notification-icon">
+                        <i class="bi bi-envelope-fill"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">Account Update</div>
+                        <p class="notification-text">Your profile information has been updated successfully</p>
+                        <div class="notification-time">1 day ago</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade" id="read">
+                <div class="notification-item">
+                    <div class="notification-icon">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">Welcome to Birthday Gold!</div>
+                        <p class="notification-text">Thank you for joining. Start adding your birthday to get rewards!</p>
+                        <div class="notification-time">1 week ago</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade" id="all">
+                <div class="p-5 text-center text-muted">
+                    <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+                    <p class="mt-3">All notifications will appear here</p>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade" id="settings">
+                <div class="p-4">
+                    <h5 class="mb-4">Notification Settings</h5>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                            <label class="form-check-label" for="emailNotifications">
+                                Email Notifications
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
+                            <label class="form-check-label" for="pushNotifications">
+                                Push Notifications
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="smsNotifications">
+                            <label class="form-check-label" for="smsNotifications">
+                                SMS Notifications
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h6 class="mb-3">Notification Types</h6>
+                    
+                    <div class="mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="birthdayReminders" checked>
+                            <label class="form-check-label" for="birthdayReminders">
+                                Birthday Reward Reminders
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="accountUpdates" checked>
+                            <label class="form-check-label" for="accountUpdates">
+                                Account Updates
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="promotions">
+                            <label class="form-check-label" for="promotions">
+                                Promotional Offers
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button class="btn btn-primary">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Handle tab switching
+        document.querySelectorAll('.nav-tab-clean a').forEach(function(tab) {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all tabs
+                document.querySelectorAll('.nav-tab-clean').forEach(function(t) {
+                    t.classList.remove('active');
+                });
+                
+                // Add active class to clicked tab
+                this.parentElement.classList.add('active');
+                
+                // Show corresponding content
+                var target = this.getAttribute('href');
+                document.querySelectorAll('.tab-pane').forEach(function(pane) {
+                    pane.classList.remove('show', 'active');
+                });
+                document.querySelector(target).classList.add('show', 'active');
+            });
+        });
+        
+        // Handle settings button click
+        document.getElementById('settingsButton').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab-clean').forEach(function(t) {
+                t.classList.remove('active');
+            });
+            
+            // Show settings content
+            document.querySelectorAll('.tab-pane').forEach(function(pane) {
+                pane.classList.remove('show', 'active');
+            });
+            document.querySelector('#settings').classList.add('show', 'active');
+        });
+    </script>
+</body>
+</html>

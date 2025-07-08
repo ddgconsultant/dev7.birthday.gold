@@ -1,6 +1,322 @@
 <?php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+// Page metadata
+$pagedata['pagetitle'] = 'Security Questions - Birthday Gold';
+$pagedata['metakeywords'] = 'Birthday Gold Security Questions, Account Recovery, Security Settings';
+$pagedata['metadescriptions'] = 'Set up security questions to help recover your Birthday Gold account and enhance security.';
+
+// Additional styles
+$additionalstyles = '
+<style>
+/* Security Questions Styles - Following security-settings pattern */
+.security-hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.security-hero::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.security-hero h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.security-hero p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 0;
+}
+
+/* Security Cards */
+.security-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.security-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.security-card-header {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.security-card-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+    color: #6f42c1;
+}
+
+.security-card-title {
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+.security-card-title h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: #212529;
+}
+
+.security-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.status-configured {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-not-configured {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.security-card-body {
+    padding: 1.5rem;
+}
+
+.security-description {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+/* Question Cards */
+.question-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.question-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.question-header {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.question-number {
+    width: 32px;
+    height: 32px;
+    background: #6f42c1;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.question-body {
+    padding: 1.5rem;
+}
+
+/* Form Styles */
+.form-select, .form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #6f42c1;
+    box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+}
+
+/* Button Styles */
+.btn-security-primary {
+    background: #198754;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-security-primary:hover {
+    background: #157347;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(25, 135, 84, 0.3);
+}
+
+.btn-security-secondary {
+    background: transparent;
+    color: #495057;
+    border: 2px solid #dee2e6;
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-security-secondary:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+}
+
+/* Alert Improvements */
+.alert {
+    border-radius: 8px;
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+.alert-info {
+    background: #e8f4fd;
+    color: #0c5460;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* Status Card */
+.status-card {
+    background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-card::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+}
+
+.status-card h4 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.status-card p {
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 0;
+}
+
+/* Back Link */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6f42c1;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.back-link:hover {
+    color: #5a32a3;
+    transform: translateX(-3px);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .security-hero h1 {
+        font-size: 1.75rem;
+    }
+    
+    .security-card-header {
+        flex-direction: column;
+        align-items: start;
+        gap: 1rem;
+    }
+    
+    .question-header {
+        padding: 1rem;
+    }
+    
+    .btn-security-primary,
+    .btn-security-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+';
+
 #-------------------------------------------------------------------------------
 # PREP VARIABLES PAGE
 #-------------------------------------------------------------------------------
@@ -191,7 +507,7 @@ $bodycontentclass = '';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
+#include($dir['core_components'] . '/bg_user_leftpanel.inc');
 
 
 
@@ -212,17 +528,17 @@ document.addEventListener("DOMContentLoaded", function() {
             
             if (this.value !== originalValue) {
                 answerDiv.innerHTML = `
-                    <label>New Answer Required:</label>
+                    <label class="form-label fw-semibold">New Answer Required:</label>
                     <input type="text" name="answer${questionNum}" class="form-control" required 
                            placeholder="Enter your new answer">
-                    <small class="text-danger">New answer required for changed question</small>
+                    <small class="text-danger mt-1 d-block"><i class="bi bi-exclamation-circle me-1"></i>New answer required for changed question</small>
                 `;
             } else {
                 answerDiv.innerHTML = `
-                    <label>Current Answer:</label>
+                    <label class="form-label fw-semibold">Current Answer:</label>
                     <input type="text" name="answer${questionNum}" class="form-control" 
                            placeholder="************">
-                    <small class="text-muted">Current answer is stored securely. Enter a new answer only if you want to change it.</small>
+                    <small class="text-muted mt-1 d-block"><i class="bi bi-lock-fill me-1"></i>Current answer is stored securely. Enter a new answer only if you want to change it.</small>
                 `;
             }
         });
@@ -231,28 +547,50 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>';
 
 echo '
-<div class="container main-content">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Security Questions</h2>
-    <a href="/myaccount/security-settings" class="btn btn-sm btn-primary">Security Settings</a>
-  </div>
+<div class="container my-4 pt-5">
+    
+    <!-- Back Link -->
+    <a href="/myaccount/security-settings" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Security Settings
+    </a>
+    
+    <!-- Security Hero Section -->
+    <div class="security-hero">
+        <h1 class="text-white">Security Questions</h1>
+        <p>Set up recovery questions to help protect your account</p>
+    </div>
 
 ';
 
 if ($has_security_questions && !isset($_POST['show_form'])) {
-    // Show status and change button
+    // Show status card
     echo '
-    <div class="card">
-        <div class="card-body">
-            <div class="alert alert-info">
-          <i class="bi bi-shield-lock"></i> Your security questions are configured.<br>
-                <small class="text-muted">Last updated: ' . $qik->timeago($latest_modify_dt)['message'] . '</small>
-                </div>
+    <div class="security-card">
+        <div class="security-card-header">
+            <div class="security-card-title">
+                <i class="bi bi-question-circle-fill security-card-icon"></i>
+                <h3>Security Questions Status</h3>
+            </div>
+            <div class="security-status">
+                <span class="status-badge status-configured">Configured</span>
+            </div>
+        </div>
+        <div class="security-card-body">
+            <p class="security-description">
+                Your security questions are set up and ready to help you recover your account if needed. 
+                These questions provide an additional layer of security and account recovery options.
+            </p>
+            
+            <div class="status-card">
+                <h4><i class="bi bi-shield-check me-2"></i>Questions Configured</h4>
+                <p>Last updated ' . $qik->timeago($latest_modify_dt)['message'] . '</p>
+            </div>
+            
             <form method="POST" action="">
                 '.$display->inputcsrf_token().'
                 <input type="hidden" name="show_form" value="1">
-                <button type="submit" class="btn btn-secondary">
-                    <i class="bi bi-pencil-square"></i> Change Security Questions
+                <button type="submit" class="btn btn-security-primary">
+                    <i class="bi bi-pencil-square me-2"></i>Change Security Questions
                 </button>
             </form>
         </div>
@@ -260,20 +598,36 @@ if ($has_security_questions && !isset($_POST['show_form'])) {
 } else {
     // Show form
     echo '
-    <p class="mb-4">' . 
-        ($has_security_questions ? 
-        'Update your security questions and answers below. You must provide a new answer when changing a question.' : 
-        'Please select three different security questions and provide answers. These will help you recover your account if needed.') . 
-    '</p>';
+    <div class="security-card mb-4">
+        <div class="security-card-header">
+            <div class="security-card-title">
+                <i class="bi bi-question-circle-fill security-card-icon"></i>
+                <h3>' . ($has_security_questions ? 'Update Security Questions' : 'Set Up Security Questions') . '</h3>
+            </div>
+            <div class="security-status">
+                <span class="status-badge ' . ($has_security_questions ? 'status-configured' : 'status-not-configured') . '">
+                    ' . ($has_security_questions ? 'Updating' : 'Setup Required') . '
+                </span>
+            </div>
+        </div>
+        <div class="security-card-body">
+            <p class="security-description">' . 
+                ($has_security_questions ? 
+                'Update your security questions and answers below. You must provide a new answer when changing a question.' : 
+                'Please select three different security questions and provide answers. These will help you recover your account if needed.') . 
+            '</p>';
 
     if ($success_message) {
-        echo '<div class="alert alert-success">' . htmlspecialchars($success_message) . '</div>';
+        echo '<div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i>' . htmlspecialchars($success_message) . '</div>';
     }
     if ($error_message) {
-        echo '<div class="alert alert-danger">' . htmlspecialchars($error_message) . '</div>';
+        echo '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>' . htmlspecialchars($error_message) . '</div>';
     }
 
     echo '
+        </div>
+    </div>
+    
     <form method="POST" action="">
         <input type="hidden" name="action" value="update_security_questions">
         '.$display->inputcsrf_token();
@@ -283,13 +637,16 @@ if ($has_security_questions && !isset($_POST['show_form'])) {
                      $current_questions['security_q' . $i]['question'] : '';
         
         echo '
-        <div class="question-block card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Security Question ' . $i . '</h5>
-                <div class="form-group mb-3">
-                    <label>Select Question:</label>
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">' . $i . '</div>
+                <h5 class="mb-0">Security Question ' . $i . '</h5>
+            </div>
+            <div class="question-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Select Question:</label>
                     <select name="question' . $i . '" 
-                            class="form-control" 
+                            class="form-select" 
                             required 
                             data-original-value="' . htmlspecialchars($current_q) . '">
                         <option value="">Choose a question...</option>';
@@ -303,36 +660,35 @@ if ($has_security_questions && !isset($_POST['show_form'])) {
         echo '
                     </select>
                 </div>
-                <div class="form-group" id="answer-section-' . $i . '">
-                    <label>' . ($has_security_questions ? 'Current Answer:' : 'Your Answer:') . '</label>
+                <div id="answer-section-' . $i . '">
+                    <label class="form-label fw-semibold">' . ($has_security_questions ? 'Current Answer:' : 'Your Answer:') . '</label>
                     <input type="text" 
                            name="answer' . $i . '" 
                            class="form-control" ' .
                            (!$has_security_questions ? 'required ' : '') . '
                            placeholder="' . ($has_security_questions ? '************' : 'Enter your answer') . '">
                     ' . ($has_security_questions ? 
-                        '<small class="text-muted">Current answer is stored securely. Enter a new answer only if you want to change it.</small>' : '') . '
+                        '<small class="text-muted mt-1 d-block"><i class="bi bi-lock-fill me-1"></i>Current answer is stored securely. Enter a new answer only if you want to change it.</small>' : 
+                        '<small class="text-muted mt-1 d-block"><i class="bi bi-info-circle me-1"></i>Choose a memorable answer that only you would know.</small>') . '
                 </div>
             </div>
         </div>';
     }
 
     echo '
-        <div class="mt-4">
-            ' . ($has_security_questions ? '
-            <a href="" class="btn btn-link">Cancel</a>
-            ' : '') . '
-            <button type="submit" class="btn btn-primary">
-                ' . ($has_security_questions ? 'Update' : 'Save') . ' Security Questions
+        <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-security-primary">
+                <i class="bi bi-check-circle me-2"></i>' . ($has_security_questions ? 'Update' : 'Save') . ' Security Questions
             </button>
+            ' . ($has_security_questions ? '
+            <a href="/myaccount/security-questions" class="btn btn-security-secondary">Cancel</a>
+            ' : '') . '
         </div>
     </form>';
 }
 
 echo '</div>';
-echo '</div>';
-echo '</div>';
-echo '</div>';
+echo '</div></div>';
 $display_footertype = '';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

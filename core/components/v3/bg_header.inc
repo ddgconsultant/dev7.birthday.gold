@@ -20,6 +20,7 @@ echo '
     }
 }
 </style>
+<link rel="stylesheet" href="/public/css/avatar-fix.css?v=<?php echo time(); ?>">
 </head>
 
 <body '.$bodyclass.'>

@@ -1970,7 +1970,7 @@ function generateCaptcha($size = 'large', $numberofoptions = 4)
         $icon = $options[$option];
         $value = ($option === $correctOption) ? $sessionId : bin2hex(random_bytes(8));
         $output .= '
-            <div class="mb-2 mx-2" style="max-width: 80px;">
+            <div class="mb-2 mx-1" style="max-width: 80px;">
                 <input type="radio" class="btn-check" name="recaptcha" id="option-' . $option . '" value="' . $value . '">
                 <label class="btn btn-outline-secondary w-100" for="option-' . $option . '" style="max-width: 80px;">
                     <i class="bi ' . $icon . ' ' . $sizetag . ' pt-2"></i>

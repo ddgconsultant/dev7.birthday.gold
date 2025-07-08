@@ -48,7 +48,9 @@ if ($lockout_until > $current_time) {
   session_tracking('login-lockout-attempt', [
       'email' => $username,
       'ip' => $_SERVER['REMOTE_ADDR'],
-      'minutes_remaining' => $minutes_remaining
+      'minutes_remaining' => $minutes_remaining,
+      'error_code' => 'LOGIN_LOCKOUT_ACTIVE',
+      'message' => $bg_login_messages[5]
   ]);
   
   $transferpagedata['message'] = $errormessage;
@@ -86,7 +88,10 @@ if ((!empty($username) && !empty($password)) || (strpos($logintype, 'rememberme'
 if ($show_captcha && !$app->validateCaptcha()) {
   $session->set('login_attempts', $login_attempts + 1);
   $errormessage = '<div class="alert alert-danger">Please complete the CAPTCHA correctly.</div>';
-  session_tracking('login-captcha-fail', $_REQUEST);
+  session_tracking('login-captcha-fail', array_merge($_REQUEST, [
+      'error_code' => 'CAPTCHA_FAIL',
+      'message' => 'Please complete the CAPTCHA correctly.'
+  ]));
   // Force return here to prevent login attempt
   $transferpagedata['message'] = $errormessage;
   $transferpagedata['url'] = '/login';
@@ -111,6 +116,14 @@ if ($show_captcha && !$app->validateCaptcha()) {
       }
       
       $session->set('login_attempts', 0);
+      
+      // Log successful login
+      session_tracking('login_success', [
+          'email' => $username,
+          'ip' => $_SERVER['REMOTE_ADDR'],
+          'login_method' => $login_method,
+          'login_type' => $logintype
+      ]);
 
       // Handle Remember Me functionality -- set new cookies
       if (isset($_POST['rememberme'])) {
@@ -201,7 +214,9 @@ if (!$response) {
       session_tracking('account_locked', [
           'email' => $username,
           'ip' => $_SERVER['REMOTE_ADDR'],
-          'lockout_until' => date('Y-m-d H:i:s', $lockout_until)
+          'lockout_until' => date('Y-m-d H:i:s', $lockout_until),
+          'error_code' => 'ACCOUNT_LOCKED_NEW',
+          'message' => $bg_login_messages[5]
       ]);
       
       $minutes_remaining = $bg_account_security['lockout_minutes'];
@@ -217,7 +232,17 @@ if (!$response) {
 
 
   } else {
-      $errormessage = '<div class="alert alert-danger">' . $bg_login_messages[min($login_attempts - 1, 4)] . '</div>';
+      $message_index = min($login_attempts - 1, 4);
+      $errormessage = '<div class="alert alert-danger">' . $bg_login_messages[$message_index] . '</div>';
+      
+      // Log the error code in session tracking
+      session_tracking('login_failed', [
+          'email' => $username,
+          'ip' => $_SERVER['REMOTE_ADDR'],
+          'attempt_number' => $login_attempts,
+          'error_code' => 'LOGIN_FAIL_' . $message_index,
+          'message' => $bg_login_messages[$message_index]
+      ]);
   }
 }
 

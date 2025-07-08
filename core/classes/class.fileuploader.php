@@ -285,6 +285,69 @@ if (!$response || !isset($response['decoded'])) {
 
 
  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+ public function listFilesWithPrefix($system, $bucketId, $prefix = '', $maxTotalFiles = 50000)
+ {
+     $authData = $this->authorizeAccount($system);
+     if (!$authData) {
+         return ['success' => false, 'message' => 'Authorization failed.'];
+     }
+
+     $allFiles = [];
+     $startFileName = null;
+     
+     do {
+         $url = $authData['apiUrl'] . '/b2api/v2/b2_list_file_names';
+         $headers = ['Authorization: ' . $authData['authorizationToken']];
+         
+         // Build request parameters
+         $postData = [
+             'bucketId' => $bucketId,
+             'maxFileCount' => 1000  // Get up to 1000 files per request
+         ];
+         
+         // Add prefix if provided
+         if ($prefix !== '') {
+             $postData['prefix'] = $prefix;
+         }
+         
+         // Add start file for pagination
+         if ($startFileName !== null) {
+             $postData['startFileName'] = $startFileName;
+         }
+         
+         $response = $system->curlRequest($url, $headers, $postData, 'POST');
+         
+         if (!$response || !isset($response['decoded']['files'])) {
+             // If this is the first request, return error
+             if (empty($allFiles)) {
+                 return ['success' => false, 'message' => 'Failed to list files.'];
+             }
+             // Otherwise return what we have so far
+             break;
+         }
+         
+         $files = $response['decoded']['files'];
+         $allFiles = array_merge($allFiles, $files);
+         
+         // Check if there are more files to fetch
+         $startFileName = $response['decoded']['nextFileName'] ?? null;
+         
+         // Safety limit to prevent infinite loops
+         if (count($allFiles) >= $maxTotalFiles) {
+             break;
+         }
+         
+     } while ($startFileName !== null);
+     
+     return [
+         'success' => true,
+         'files' => $allFiles,
+         'fileCount' => count($allFiles)
+     ];
+ }
+
+
+ # ##--------------------------------------------------------------------------------------------------------------------------------------------------
  private function authorizeAccount($system)
  {
      $authUrl = 'https://api.backblazeb2.com/b2api/v2/b2_authorize_account';

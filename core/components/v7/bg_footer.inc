@@ -36,12 +36,6 @@ $additionalstyles .= "
     --gray-900: #212529;
 }
 
-.footer {
-    padding: 20px 0 !important;
-    font-size: 0.6rem !important;
-    font-weight: 200 !important;
-    color: #6c757d !important;
-}
 
 .footer-links a {
     color: white !important;
@@ -65,27 +59,6 @@ $additionalstyles .= "
     color: var(--secondary) !important;
 }
 
-.icon-item {
-    display: inline-block;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    text-align: center;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.btn-outline-light {
-    border: 1px solid var(--bs-secondary);
-    color: var(--bs-secondary);
-    background-color: transparent;
-    text-decoration: none;
-}
-
-.btn-outline-light:hover, .btn-outline-light:focus {
-    background-color: var(--bs-secondary);
-    color: #fff;
-    text-decoration: none;
-}
-
 #emaillink a {
     color: var(--bs-secondary);
     text-decoration: none;
@@ -97,18 +70,6 @@ $additionalstyles .= "
     text-decoration: underline;
 }
 
-.btn-custom-secondary {
-    background-color: var(--bs-secondary);
-    border-color: var(--bs-secondary);
-    color: #fff;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.btn-custom-secondary:hover, .btn-custom-secondary:focus {
-    background-color: #b38f00;
-    border-color: #b38f00;
-    color: #fff;
-}
 
 /* Mobile-First Footer Enhancements ============================= */
 .main-footer {
@@ -139,20 +100,19 @@ $additionalstyles .= "
 }
 
 .social-link {
-    display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
+    width: 46px !important; 
     height: 36px;
     background: rgba(255, 255, 255, 0.1);
     color: white;
     border-radius: 50%;
     font-size: 1rem;
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
 }
 
 .social-link:hover {
-    background: var(--primary-gold);
+    background: var(--bs-secondary);
     color: var(--primary-dark);
 }
 
@@ -174,7 +134,7 @@ $additionalstyles .= "
 }
 
 .footer-links a:hover {
-    color: var(--primary-gold);
+    color: var(--bs-secondary);
 }
 
 .newsletter-signup input {
@@ -188,7 +148,7 @@ $additionalstyles .= "
 }
 
 .newsletter-signup .btn {
-    background: var(--primary-gold);
+    background: var(--bs-secondary);
     color: var(--primary-dark);
     border: none;
 }
@@ -468,7 +428,7 @@ $additionalstyles .= "
 ";
 
 // Handle sticky footer settings
-if (!empty($nostickyfooter)) { 
+if (!empty($nostickyfooter)) {
     $additionalstyles .= "<style>
     /*  NO STICKY FOOTER */
     body {
@@ -484,7 +444,7 @@ if (!empty($nostickyfooter)) {
     $nostickyfooter_tag = 'nostickyfooter';
 } else {
     $nostickyfooter_tag = '';
-}   
+}
 
 // Close the main tag that was opened in bg_header.inc
 if (!isset($newheader)) {
@@ -512,7 +472,7 @@ switch ($display_footertype ?? 'default') {
     case 'mobilemin':
         // Responsive footer - minimal on mobile, full on desktop
         echo '<footer class="main-footer footer-mobilemin">';
-        
+
         // Minimal footer for mobile (hidden on desktop via CSS)
         echo '
         <div class="footer-mobile-min" style="display: none;">
@@ -530,16 +490,16 @@ switch ($display_footertype ?? 'default') {
                 </div>
             </div>
         </div>';
-        
+
         // Full footer content (hidden on mobile via CSS)
         goto default_footer_content;
         break;
-        
+
     //------------------------------------
     case 'mobilenonemin':
         // Responsive footer - no footer on mobile, minimal on desktop
         echo '<footer class="main-footer footer-mobilenonemin">';
-        
+
         // Minimal footer for desktop only (hidden on mobile via CSS)
         echo '
         <div class="footer-desktop-min" style="display: none;">
@@ -563,10 +523,10 @@ switch ($display_footertype ?? 'default') {
                 </div>
             </div>
         </div>';
-        
+
         echo '</footer>';
         break;
-        
+
     //------------------------------------
     case 'none':
         // NO FOOTER
@@ -611,7 +571,7 @@ switch ($display_footertype ?? 'default') {
     default:
         default_footer:
         echo '<footer class="main-footer">';
-        
+
         default_footer_content:
         // Footer content
         echo '
@@ -622,29 +582,29 @@ switch ($display_footertype ?? 'default') {
                         <div class="col-12 col-md-6 col-lg-4">
                             <div class="footer-section">
                                 <h6 class="footer-title">Birthday.Gold</h6>';
-            
-            // Get footer monthly message
-            $CONTENT_footermessage = $session->get('CONTENT_footermessage', '');
-            if (empty($CONTENT_footermessage)) {
-                $CONTENT_footermessage = $database->fetchOne('SELECT CONCAT(id, "/", `rank`) id, "db" source, content FROM bg_content WHERE category="footer" AND type="message" AND `rank`=MONTH(NOW()) AND `status`="active"');
-                if (!$CONTENT_footermessage) {
-                    $CONTENT_footermessage = [
-                        'id' => "0",
-                        'source' => "default",
-                        'content' => 'Help us share the birthday magic - follow, tag, and spread the word about <span class="birthdaygold">@birthday.gold</span>! We want to make birthdays fun, easy and full of free treats for everyone. Follow us for deals and steals.'
-                    ];
-                }
-                $session->set('CONTENT_footermessage', $CONTENT_footermessage);
-            } else {
-                $CONTENT_footermessage['source'] = 'ses';
+
+        // Get footer monthly message
+        $CONTENT_footermessage = $session->get('CONTENT_footermessage', '');
+        if (empty($CONTENT_footermessage)) {
+            $CONTENT_footermessage = $database->fetchOne('SELECT CONCAT(id, "/", `rank`) id, "db" source, content FROM bg_content WHERE category="footer" AND type="message" AND `rank`=MONTH(NOW()) AND `status`="active"');
+            if (!$CONTENT_footermessage) {
+                $CONTENT_footermessage = [
+                    'id' => "0",
+                    'source' => "default",
+                    'content' => 'Help us share the birthday magic - follow, tag, and spread the word about <span class="birthdaygold">@birthday.gold</span>! We want to make birthdays fun, easy and full of free treats for everyone. Follow us for deals and steals.'
+                ];
             }
-            
-            echo '<p class="footer-text">' . $CONTENT_footermessage['content'] . '</p>';
-            
-            // Social links
-            
-// social media links
-echo '
+            $session->set('CONTENT_footermessage', $CONTENT_footermessage);
+        } else {
+            $CONTENT_footermessage['source'] = 'ses';
+        }
+
+        echo '<p class="footer-text">' . $CONTENT_footermessage['content'] . '</p>';
+
+        // Social links
+
+        // social media links
+        echo '
 <div class="social-links">
     ' . $display->socialapplink('twitter', 'https://twitter.com/birthday_gold') . '
     ' . $display->socialapplink('facebook', 'https://www.facebook.com/birthdaygold/') . '
@@ -656,7 +616,7 @@ echo '
 </div>
 
 ';
-/*
+        /*
 
             echo '
                                 <div class="social-links">
@@ -668,7 +628,7 @@ echo '
                                 ';
 */
 
-                     echo '                   </div>
+        echo '                   </div>
                         </div>
                         
                         <!-- Quick Links -->
@@ -679,19 +639,19 @@ echo '
                                     <li><a href="/how-it-works">How it Works</a></li>
                                     <li><a href="/discover">Browse Rewards</a></li>
                                     <li><a href="/pricing">Pricing</a></li>';
-            
-            // Show different links based on login status
-            if (!$isLoggedIn) {
-                echo '
+
+        // Show different links based on login status
+        if (!$isLoggedIn) {
+            echo '
                                     <li><a href="/signup">Sign Up</a></li>
                                     <li><a href="/login">Login</a></li>';
-            } else {
-                echo '
+        } else {
+            echo '
                                     <li><a href="/myaccount/">My Account</a></li>
                                     <li><a href="/myaccount/rewards">My Rewards</a></li>';
-            }
-            
-            echo '
+        }
+
+        echo '
                                 </ul>
                             </div>
                         </div>
@@ -727,10 +687,10 @@ echo '
                         
                         <!-- Newsletter / Business -->
                         <div class="col-6 col-md-3 col-lg-2">';
-                        
-            // Only show newsletter on non-account pages
-            if (!strpos($website['fulluri']['uri'], 'myaccount') && !strpos($website['fulluri']['uri'], 'mail')) {
-                echo '
+
+        // Only show newsletter on non-account pages
+        if (!strpos($website['fulluri']['uri'], 'myaccount') && !strpos($website['fulluri']['uri'], 'mail')) {
+            echo '
                             <div class="footer-section">
                                 <h6 class="footer-title">Newsletter</h6>
                                 <div class="newsletter-signup">
@@ -752,9 +712,9 @@ echo '
                                 </ul>
                                 -->
                             </div>';
-            } else {
-                // Show different content for account pages
-                echo '
+        } else {
+            // Show different content for account pages
+            echo '
                             <div class="footer-section">
                                 <h6 class="footer-title">Contact Us</h6>
                                 <p class="footer-text">
@@ -767,10 +727,10 @@ echo '
                                     <li><a href="/business/api">API Documentation</a></li>
                                 </ul>
                             </div>';
-                            $enableemailjs=true;
-            }
-            
-            echo '
+            $enableemailjs = true;
+        }
+
+        echo '
                         </div>
                     </div>
                     
@@ -783,29 +743,29 @@ echo '
                             <div class="col-12 col-md-6">
                                 <div class="footer-meta">
                                     <span class="text-muted small">v7.0 Mobile-First</span>';
-            
-            // Show user status in footer for logged in users
-            if ($isLoggedIn) {
-                $planName = $current_user_data['account_plan'] ?? 'Free';
-                echo '
+
+        // Show user status in footer for logged in users
+        if ($isLoggedIn) {
+            $planName = $current_user_data['account_plan'] ?? 'Free';
+            echo '
                                     <span class="text-muted small ms-3">
                                         <i class="bi bi-person-badge me-1"></i>' . ucfirst($planName) . ' Plan
                                     </span>';
-            }
-            
-            echo '
+        }
+
+        echo '
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>';
-        
+
         echo '</footer>';
-        
+
         // Email setup script
         if (!empty($enableemailjs)) {
-        echo '
+            echo '
         <script src="/public/js/email.js"></script>
         <script>
             document.addEventListener("DOMContentLoaded", function() {
@@ -862,9 +822,6 @@ echo $footeroutput;
 
 // Include more standard libraries
 echo '
-<!-- ===============================================-->
-<!--    Core JavaScripts -->
-<!-- ===============================================-->
 <script src="/public/assets/vendors/lodash/lodash.min.js"></script>
 <script src="/public/assets/vendors/list.js/list.min.js"></script>
 <script src="/public/assets/vendors/simplebar/simplebar.min.js"></script>
@@ -1045,7 +1002,7 @@ if (!$cookiePreferencesSet) {
         // Random selection between version 1 and 2
         $cookiebannerversion = rand(1, 2);
     }
-    $cookiebannerversion=2;
+    $cookiebannerversion = 2;
     // Include the appropriate cookie banner based on version
     $bannerFile = 'bg_cookiebanner' . $cookiebannerversion . '.inc';
     include($_SERVER['DOCUMENT_ROOT'] . '/core/components/' . $website['ui_version'] . '/' . $bannerFile);
@@ -1054,4 +1011,3 @@ if (!$cookiePreferencesSet) {
 echo '
 </body>
 </html>';
-?>
