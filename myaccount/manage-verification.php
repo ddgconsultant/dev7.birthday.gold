@@ -7,13 +7,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 
 #-------------------------------------------------------------------------------
-# PREP VARIABLES
-#-------------------------------------------------------------------------------
-
-
-
-
-#-------------------------------------------------------------------------------
 # HANDLE FORM ACTIONS
 #-------------------------------------------------------------------------------
 // Processing form submission
@@ -52,191 +45,475 @@ if ($app->formposted()) {
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 $bodycontentclass='';
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
 
-
-
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
-
-$additionalstyles.='
+$additionalstyles .= '
 <style>
-    h3 {
-       margin-top: 3.5rem !important;
-         margin-bottom: .5rem !important;
-    }
-        </style>
-        
-     
-<style>
-    .hanging-indent {
-        display: flex;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-    .hanging-indent i {
-        flex-shrink: 0;
-        margin-right: 10px; /* Space between icon and title */
-        font-size: 1.5rem; /* Adjust icon size if needed */
-        margin-top: 2px; /* Fine-tune the icon alignment to title */
-        vertical-align: top; /* Ensures icon stays aligned */
-    }
-    .hanging-indent .title-and-button {
-        display: flex;
-        align-items: center; /* Align button and title */
-    }
-    .hanging-indent .title-and-button button {
-        margin-left: 10px; /* Space between title and button */
-    }
+/* Modern Verification Page Styles - Integrated with BG Template */
+.verification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
 
+.verification-header h2 {
+    margin: 0;
+}
 
-       ul.custom-spacing li {
-        margin-bottom: 1rem; /* Increase spacing between list items */
-    }
+/* Progress Section */
+.progress-section {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.progress-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.progress-percentage {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f59e0b;
+}
+
+.progress-bar {
+    background: #e2e8f0;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.checklist {
+    display: grid;
+    gap: 1rem;
+}
+
+.checklist-item {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s;
+    border: 1px solid #e2e8f0;
+}
+
+.checklist-item:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.checklist-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.2rem;
+}
+
+.checklist-icon.completed {
+    background: #10b981;
+    color: white;
+}
+
+.checklist-icon.pending {
+    background: #e2e8f0;
+    color: #a0aec0;
+}
+
+.checklist-content {
+    flex: 1;
+}
+
+.checklist-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+    font-size: 1.1rem;
+}
+
+.checklist-description {
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+.checklist-action {
+    color: #f59e0b;
+    font-weight: 500;
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+.checklist-action:hover {
+    color: #d97706;
+}
+
+/* Benefits Section */
+.section {
+    margin-bottom: 3rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.benefit-card {
+    background: #f7fafc;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.2s;
+}
+
+.benefit-card:hover {
+    background: #edf2f7;
+    transform: translateY(-2px);
+}
+
+.benefit-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.benefit-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.benefit-description {
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+/* CTA Button - removed, using Bootstrap btn-success */
+
+/* FAQ Section */
+.faq-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-top: 3rem;
+}
+
+.faq-header {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 2rem;
+    text-align: center;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.faq-header:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: var(--bs-primary);
+    border-radius: 2px;
+}
+
+.faq-item {
+    padding: 1.5rem 0;
+}
+
+.faq-item:last-child {
+    padding-bottom: 0;
+}
+
+.faq-question {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.faq-answer {
+    color: #718096;
+    font-size: 0.9375rem;
+}
+
+/* Integration with existing styles */
+.content-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Override hanging-indent styles for checklist items */
+.checklist-item.hanging-indent {
+    padding: 1rem 1.25rem;
+    margin-bottom: 0;
+}
+
+.checklist-item .title-and-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.checklist-item .title-and-button strong {
+    font-size: 1.1rem !important;
+}
 </style>
 ';
 
-?>
-<div class="container main-content mt-0 pt-0">
-    <div class="row align-items-center">
-        <!-- Column for the heading -->
-        <div class="col-8">
-            <h2>Verified Accounts on Birthday.Gold</h2>
-        </div>
-        <!-- Column for the button -->
-        <div class="col-4 text-end">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#verificationModal">
-                Apply for Verification
-            </button>
-        </div>
-    </div>
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
+include($dir['core_components'] . '/bg_user_profileheader.inc');
 
 
-<div class="content-panel mt-3 p-4">
-    <p>At Birthday.Gold, we aim to create a trusted and engaging platform where users can enjoy exclusive rewards from their favorite brands. A verified account helps ensure that your profile is authentic, enhancing trust and credibility within our community. These accounts have a special badge that indicates their verified status. This helps brands and other users know that you are who you claim to be, giving you access to enhanced opportunities and offers.</p>
 
-    <h3>Benefits of Becoming a Verified Account</h3>
-    <ul class="custom-spacing">
-        <li><strong>Access to Exclusive Birthday Rewards:</strong> Verified users are given priority access to exclusive birthday rewards, promotions, and events from our partner brands.</li>
-        <li><strong>Enhanced Trust and Visibility:</strong> A verified badge adds credibility to your profile, making it easier for brands to engage with you and offer more personalized rewards.</li>
-        <li><strong>Increased Profile Exposure:</strong> Verified accounts may appear more prominently on Birthday.Gold’s platform, giving you more exposure to brands looking for verified users to provide special birthday offers.</li>
-        <li><strong>100 Enrollment Credits:</strong> You'll receive 100 Enrollment credits to enroll in even more rewards.</li>
-        </ul>
-
-    <h3>Who is Eligible to Become Verified?</h3>
-    <p>To be eligible for a verified badge, you must meet the following criteria:</p>
- <div class="ps-4">
- <ul class="list-unstyled">
-       
-
- <!-- Complete Profile Check -->
-<?php
+#-------------------------------------------------------------------------------
+# PREP VARIABLES
+#-------------------------------------------------------------------------------
+// Get actual user verification progress data
+// $profilecompletion is set in bg_user_profileheader.inc from user_getaccountdetails.inc
 $profileComplete = ($profilecompletion['required_percentage'] == 100);
-$icon = $profileComplete ? 'check-circle-fill text-success' : 'check-circle text-muted';
-$button = $profileComplete ? '' : '<a href="/myaccount/profile" class="btn btn-sm btn-danger py-0 mt-1 ms-3">Complete this task</a>';
-$message = $profileComplete 
-    ? 'Your profile is complete with your full name, phone number, and email address. Thank you!'
-    : 'Please complete your profile by adding your full name, phone number, and a valid email address.';
-
-echo '<li class="hanging-indent">
-    <i class="bi bi-' . $icon . '"></i>
-    <div>
-        <div class="title-and-button">
-            <strong class="fs-4">Profile Details:</strong>
-            ' . $button . '
-        </div>
-        <div>' . $message . '</div>
-    </div>
-</li>';
-?>
-
-
-<!-- Profile Picture Check -->
-<?php
 $hasAvatar = ($account->getUserAttribute($current_user_data['user_id'], 'avatar') != null);
-$icon = $hasAvatar ? 'check-circle-fill text-success' : 'check-circle text-muted';
-$button = $hasAvatar ? '' : '<a href="/myaccount/profile-pic" class="btn btn-sm btn-danger py-0 mt-1 ms-3">Complete this task</a>';
-$message = $hasAvatar 
-    ? 'You have successfully uploaded a profile picture. Looking good!'
-    : 'Please upload a profile picture to complete your verification.';
-
-echo '<li class="hanging-indent">
-    <i class="bi bi-' . $icon . '"></i>
-    <div>
-        <div class="title-and-button">
-            <strong class="fs-4">Profile Picture:</strong>
-            ' . $button . '
-        </div>
-        <div>' . $message . '</div>
-    </div>
-</li>';
-?>
-
-<!-- Authenticity Check -->
-<?php
 $hasVerification = ($account->getUserAttribute($current_user_data['user_id'], 'verification_id') != null);
-$icon = $hasVerification ? 'check-circle-fill text-success' : 'check-circle text-muted';
-$button = $hasVerification ? '' : '<a href="/myaccount/profile-verificationid" class="btn btn-sm btn-danger py-0 mt-1 ms-3">Complete this task</a>';
-$message = $hasVerification 
-    ? 'Your identity has been successfully verified with your government-issued ID. Thank you!'
-    : 'You need to provide valid identification to verify your identity, such as a government-issued ID (passport, driver\'s license, etc.).';
-
-echo '<li class="hanging-indent">
-    <i class="bi bi-' . $icon . '"></i>
-    <div>
-        <div class="title-and-button">
-            <strong class="fs-4">Authenticity:</strong>
-            ' . $button . '
-        </div>
-        <div>' . $message . '</div>
-    </div>
-</li>';
-?>
-
-<!-- Activity Check -->
-<?php
 #$postCount = $social->posts();
-$postCount=8;
+$postCount = 8; // Placeholder - would get actual count from social system
 $hasEnoughPosts = ($postCount > 5);
-$icon = $hasEnoughPosts ? 'check-circle-fill text-success' : 'check-circle text-muted';
-$button = $hasEnoughPosts ? '' : '<a href="/social" class="btn btn-sm btn-danger py-0 mt-1 ms-3">Complete this task</a>';
-$message = $hasEnoughPosts 
-    ? "You're an active member of our community with {$postCount} engaging posts. Keep it up!"
-    : "You need to be more active in our community. Currently you have ".$qik->plural2($postCount, 'post')." - make at least 5 engaging posts to complete this requirement.";
 
-echo '<li class="hanging-indent">
-    <i class="bi bi-' . $icon . '"></i>
-    <div>
-        <div class="title-and-button">
-            <strong class="fs-4">Activity:</strong>
-            ' . $button . '
-        </div>
-        <div>' . $message . '</div>
-    </div>
-</li>';
+// Calculate overall progress
+$totalRequirements = 4;
+$completedRequirements = 0;
+if ($profileComplete) $completedRequirements++;
+if ($hasAvatar) $completedRequirements++;
+if ($hasVerification) $completedRequirements++;
+if ($hasEnoughPosts) $completedRequirements++;
+$progressPercentage = round(($completedRequirements / $totalRequirements) * 100);
+$canApplyForVerification = ($completedRequirements === $totalRequirements);
+
+
+
+
 ?>
 
+<div class="container my-5 pt-5">
+    <div class="verification-header">
+        <h2>Account Verification</h2>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#verificationModal" <?php echo !$canApplyForVerification ? 'disabled' : ''; ?>>
+            Apply for Verification
+        </button>
+    </div>
 
-    </ul>
+    <div class="content-panel">
+        <p class="lead">Join our trusted community and unlock exclusive rewards by verifying your account. A verified badge shows that you're an authentic member of Birthday.Gold.</p>
+
+        <!-- Progress Section -->
+        <div class="progress-section">
+            <div class="progress-header">
+                <h3 class="progress-title">Verification Progress</h3>
+                <span class="progress-percentage"><?php echo $progressPercentage; ?>%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: <?php echo $progressPercentage; ?>%"></div>
+            </div>
+            <div class="checklist">
+                <!-- Profile Details Check -->
+                <div class="checklist-item hanging-indent">
+                    <div class="checklist-icon <?php echo $profileComplete ? 'completed' : 'pending'; ?>">
+                        <i class="bi bi-<?php echo $profileComplete ? 'check' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="checklist-content">
+                        <div class="title-and-button">
+                            <div>
+                                <div class="checklist-title">Profile Details</div>
+                                <div class="checklist-description">
+                                    <?php echo $profileComplete 
+                                        ? 'Your profile is complete with your full name, phone number, and email address. Thank you!'
+                                        : 'Please complete your profile by adding your full name, phone number, and a valid email address.'; ?>
+                                </div>
+                            </div>
+                            <?php if (!$profileComplete): ?>
+                                <a href="/myaccount/profile" class="btn btn-sm btn-danger">Complete this task</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Picture Check -->
+                <div class="checklist-item hanging-indent">
+                    <div class="checklist-icon <?php echo $hasAvatar ? 'completed' : 'pending'; ?>">
+                        <i class="bi bi-<?php echo $hasAvatar ? 'check' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="checklist-content">
+                        <div class="title-and-button">
+                            <div>
+                                <div class="checklist-title">Profile Picture</div>
+                                <div class="checklist-description">
+                                    <?php echo $hasAvatar 
+                                        ? 'You have successfully uploaded a profile picture. Looking good!'
+                                        : 'Please upload a profile picture to complete your verification.'; ?>
+                                </div>
+                            </div>
+                            <?php if (!$hasAvatar): ?>
+                                <a href="/myaccount/profile-pic" class="btn btn-sm btn-danger">Complete this task</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Identity Verification Check -->
+                <div class="checklist-item hanging-indent">
+                    <div class="checklist-icon <?php echo $hasVerification ? 'completed' : 'pending'; ?>">
+                        <i class="bi bi-<?php echo $hasVerification ? 'check' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="checklist-content">
+                        <div class="title-and-button">
+                            <div>
+                                <div class="checklist-title">Authenticity</div>
+                                <div class="checklist-description">
+                                    <?php echo $hasVerification 
+                                        ? 'Your identity has been successfully verified with your government-issued ID. Thank you!'
+                                        : 'You need to provide valid identification to verify your identity, such as a government-issued ID (passport, driver\'s license, etc.).'; ?>
+                                </div>
+                            </div>
+                            <?php if (!$hasVerification): ?>
+                                <a href="/myaccount/profile-verificationid" class="btn btn-sm btn-danger">Complete this task</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Community Activity Check -->
+                <div class="checklist-item hanging-indent">
+                    <div class="checklist-icon <?php echo $hasEnoughPosts ? 'completed' : 'pending'; ?>">
+                        <i class="bi bi-<?php echo $hasEnoughPosts ? 'check' : 'circle'; ?>"></i>
+                    </div>
+                    <div class="checklist-content">
+                        <div class="title-and-button">
+                            <div>
+                                <div class="checklist-title">Activity</div>
+                                <div class="checklist-description">
+                                    <?php echo $hasEnoughPosts 
+                                        ? "You're an active member of our community with {$postCount} engaging posts. Keep it up!"
+                                        : "You need to be more active in our community. Currently you have ".$qik->plural2($postCount, 'post')." - make at least 5 engaging posts to complete this requirement."; ?>
+                                </div>
+                            </div>
+                            <?php if (!$hasEnoughPosts): ?>
+                                <a href="/social" class="btn btn-sm btn-danger">Complete this task</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <?php if ($canApplyForVerification): ?>
+                    <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#verificationModal">
+                        <span>Apply for Verification</span>
+                        <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                <?php else: ?>
+                    <p style="font-size: 1rem; color: #718096;">Complete all requirements above to apply for verification</p>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Benefits Section -->
+        <section class="section">
+            <h2 class="section-title">Benefits of Being Verified</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon bg-warning">
+                        <i class="bi bi-gift-fill"></i>
+                    </div>
+                    <h3 class="benefit-title">Exclusive Birthday Rewards</h3>
+                    <p class="benefit-description">Get priority access to premium birthday rewards, promotions, and special events from our partner brands</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon bg-info">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <h3 class="benefit-title">Enhanced Trust & Visibility</h3>
+                    <p class="benefit-description">A verified badge builds credibility and makes your profile appear more prominently to brands</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon bg-success">
+                        <i class="bi bi-coin"></i>
+                    </div>
+                    <h3 class="benefit-title">100 Enrollment Credits</h3>
+                    <p class="benefit-description">Receive 100 enrollment credits to get started with even more birthday rewards</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="faq-section">
+            <h2 class="faq-header">Frequently Asked Questions</h2>
+            <div class="faq-item">
+                <h3 class="faq-question">How to Apply for Verification</h3>
+                <p class="faq-answer">If you believe you qualify for verification, you can apply through the form by clicking the "Apply for Verification" button above. The application process will require you to submit personal information such as your full name, email address, and a government-issued photo ID for verification purposes.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">What Happens After Verification?</h3>
+                <p class="faq-answer">After your account is verified, a special badge will be displayed on your profile, indicating that you are an authentic user. This badge signals to brands and other users that you have been vetted by Birthday.Gold and are eligible for premium offers and rewards.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">Maintaining Your Verified Status</h3>
+                <p class="faq-answer">To maintain your verified status, you should continue to follow our platform's terms of service and guidelines. Birthday.Gold reserves the right to remove verification from accounts that engage in suspicious activity or violate our policies.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">How long does the verification process take?</h3>
+                <p class="faq-answer">We typically process verification applications within a few business days. You will receive an email notification once your application has been reviewed.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">Can I lose my verification status?</h3>
+                <p class="faq-answer">Yes, accounts that engage in suspicious behavior or violate Birthday.Gold's guidelines may have their verification revoked.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">What information is required for verification?</h3>
+                <p class="faq-answer">We require basic identification such as your full name, email address, and a government-issued photo ID. This helps us confirm your identity and protect the integrity of our platform.</p>
+            </div>
+        </section>
+    </div>
 </div>
 
-    <h3>How to Apply for Verification</h3>
-    <p>If you believe you qualify for verification, you can apply through the form by clicking the "Apply for Verification" button above. The application process will require you to submit personal information such as your full name, email address, and a government-issued photo ID for verification purposes.</p>
-
-    <h3>What Happens After Verification?</h3>
-    <p>After your account is verified, a special badge will be displayed on your profile, indicating that you are an authentic user. This badge signals to brands and other users that you have been vetted by Birthday.Gold and are eligible for premium offers and rewards.</p>
-
-    <h3>Maintaining Your Verified Status</h3>
-    <p>To maintain your verified status, you should continue to follow our platform's terms of service and guidelines. Birthday.Gold reserves the right to remove verification from accounts that engage in suspicious activity or violate our policies.</p>
-
-    <h3>FAQs</h3>
-    <p><strong>How long does the verification process take?</strong> We typically process verification applications within a few business days. You will receive an email notification once your application has been reviewed.</p>
-    <p><strong>Can I lose my verification status?</strong> Yes, accounts that engage in suspicious behavior or violate Birthday.Gold’s guidelines may have their verification revoked.</p>
-    <p><strong>What information is required for verification?</strong> We require basic identification such as your full name, email address, and a government-issued photo ID. This helps us confirm your identity and protect the integrity of our platform.</p>
-
 <?PHP
-    echo '
+// Modal Form
+echo '
  <!-- Modal Form -->
 <div class="modal modal-lg fade" id="verificationModal" tabindex="-1" aria-labelledby="verificationModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -296,17 +573,7 @@ echo '<li class="hanging-indent">
 ';
 ?>
 
-</div>
-
-
-
-</div>
-</div>
-</div>
-</div>
-
 <?php
-
 $display_footertype='min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
