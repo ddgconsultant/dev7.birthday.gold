@@ -999,12 +999,12 @@ function redirectUser($session_tracking_event)
     session_tracking($session_tracking_event);
     $session->unset('current_user_data');
     if (!headers_sent()) {
-        $transferpagedata['message'] = '<div class="alert alert-warning">Oops.  You have to login first</div>';
+        $transferpagedata['message'] = '<div class="alert alert-warning">Oops. You have to login first</div>';
         $this->endpostpage($transferpagedata);
         header('Location: /login');
     } else {
         global $session;
-        $transferpagedata['message'] = '<div class="alert alert-warning">Oops.  You have to login first. [code:678]</div>';
+        $transferpagedata['message'] = '<div class="alert alert-warning">Please login first.</div>';
         $this->endpostpage($transferpagedata);
         echo "<script>window.location.href='/login';</script>";
     }
