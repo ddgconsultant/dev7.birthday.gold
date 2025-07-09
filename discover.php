@@ -24,21 +24,22 @@ $loop_companies = $app->getFeaturedCompanies($listlimit, '!!alphabetical!!');
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 echo '
-<div class="container main-content">
+<!-- Hero Section -->
+<div class="content-header-dark">
     <div class="container">
-        <div class="text-center mx-auto mb-5">
-            <h3 class="text-primary text-uppercase mb-2">Discover Over '.$website['numberofbiz'].'+ '.ucfirst($website['biznames']).'</h3>
-            <h1 class="display-4 mb-4">Take a Look at Some of Our Favorites!</h1>
-    ';
+        <h1>Discover <span class="highlight">'.$website['numberofbiz'].'+ '.ucfirst($website['biznames']).'</span></h1>
+        <p class="lead">Take a Look at Some of Our Favorites!</p>';
 
     // Conditionally display signup button only if user is not logged in
     if (!$account->isactive()) {
-        echo '<a href="/signup" class="btn btn-gold btn-lg">Sign Up to See Them All!</a>';
+        echo '<a href="/signup" class="btn btn-warning btn-lg mt-3">Sign Up to See Them All!</a>';
     }
 
 echo '
-        </div>
-';
+    </div>
+</div>
+
+<div class="container mt-5">';
 
 
 if ($enablesearch)
@@ -74,10 +75,6 @@ foreach ($loop_companies as $index => $item_company) {
 </div>';
 }
 ?>
-
-
-</div>
-</div>
 
 </div>
 </div>

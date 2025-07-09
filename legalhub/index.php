@@ -10,14 +10,15 @@ include($dir['core_components'] . '/bg_header.inc');
 if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
 ### ADMIN PAGE EDITOR: START-body-1 ###
 ?>
-<div class="container flex-grow-1 my-5">
-    <!-- Banner with tagline -->
-    <div class="container mt-4">
-        <div class="jumbotron text-center">
-            <h1>Your Trust, Our Priority</h1>
-            <p>Understanding our platform's commitment to transparency, privacy, and responsibility.</p>
-        </div>
+<!-- Hero Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <h1>Your Trust, Our Priority</h1>
+        <p class="lead">Understanding our platform's commitment to transparency, privacy, and responsibility.</p>
     </div>
+</div>
+
+<div class="container flex-grow-1 my-5">
 
     <div class="container mt-4">
         <div class="row">

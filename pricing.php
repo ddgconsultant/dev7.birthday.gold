@@ -153,28 +153,7 @@ body {
     text-decoration: underline;
 }
 
-/* Hard header */
-.pricing-header-hard {
-    background: #212529;
-    color: white;
-    padding: 3rem 0;
-    margin-bottom: 2rem;
-    text-align: center;
-}
-
-.pricing-header-hard h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: white !important;
-}
-
-.pricing-header-hard p {
-    font-size: 1.2rem;
-    color: white !important;
-    margin-bottom: 0;
-    opacity: 0.9;
-}
+/* Hard header now handled by content-header-dark in bg_theme.css */
 
 /* Section headers */
 .plan-section {
@@ -198,17 +177,6 @@ body {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .pricing-header-hard h1 {
-        font-size: 2rem;
-    }
-    
-    .pricing-header-hard p {
-        font-size: 1rem;
-    }
-    
-    .pricing-header-hard {
-        padding: 2rem 0;
-    }
     
     .section-header {
         font-size: 1.5rem;
@@ -229,11 +197,11 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<!-- Hard Header -->
-<div class="pricing-header-hard">
-    <div class="container pt-4">
+<!-- Hero Section -->
+<div class="content-header-dark">
+    <div class="container">
         <h1>Birthday.Gold Pricing</h1>
-        <p>Choose the perfect plan for your birthday rewards journey</p>
+        <p class="lead">Choose the perfect plan for your birthday rewards journey</p>
     </div>
 </div>
 

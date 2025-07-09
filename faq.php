@@ -18,7 +18,6 @@ $adminenabledpage=true;
 
 // Modern FAQ Page Styles
 $additionalstyles = '
-<link rel="stylesheet" href="/public/css/common-hero.css">
 <style>
 
 /* Search Box */
@@ -322,10 +321,10 @@ $additionalstyles = '
 
   echo '
   <!-- FAQ Hero Section -->
-  <div class="faq-hero">
-    <div class="container text-center">
+  <div class="content-header-dark">
+    <div class="container">
       <h1>Frequently Asked Questions</h1>
-      <p>Find answers to common questions about Birthday Gold</p>
+      <p class="lead">Find answers to common questions about Birthday Gold</p>
     </div>
   </div>
   

@@ -17,14 +17,37 @@ $workingHoursString = $businessHours['display']['workingHoursString'];
 $additionalstyles = '
 <style>
 
-/* Search Bar Focus */
-.form-control:focus {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+/* Search Box - matching FAQ page */
+.help-search {
+    max-width: 600px;
+    margin: -2rem auto 3rem;
+    position: relative;
+    z-index: 10;
 }
 
-.form-control::placeholder {
-    color: #adb5bd;
+.search-input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1.5rem;
+    font-size: 1.125rem;
+    border: 1px solid #dee2e6;
+    border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.search-icon {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
 }
 
 /* Help Cards Grid */
@@ -211,24 +234,31 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="main-content py-4 py-md-5 bg-light">
-    <div class="container" style="max-width: 1200px;">
-        <!-- Header -->
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold text-dark mb-2">How can we help you?</h1>
-            <p class="fs-4 text-muted m-0">Find answers to your questions or get in touch with our support team</p>
-        </div>
-        
-        <!-- Search Bar -->
-        <div class="mx-auto mb-5" style="max-width: 600px;">
+<!-- Hero Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <h1>How can we help you?</h1>
+        <p class="lead">Find answers to your questions or get in touch with our support team</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Search Bar -->
+    <div class="help-search">
+        <div class="position-relative">
             <input 
                 type="text" 
-                class="form-control form-control-lg rounded-pill px-4" 
+                class="search-input" 
                 placeholder="Search for help..."
                 id="helpSearch"
-                style="border-width: 2px;"
             >
+            <i class="bi bi-search search-icon"></i>
         </div>
+    </div>
+</div>
+
+<div class="main-content py-4 py-md-5 bg-light">
+    <div class="container" style="max-width: 1200px;">
         
         <!-- Self Help Section -->
         <div class="mb-4">

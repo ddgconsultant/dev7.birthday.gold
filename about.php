@@ -7,7 +7,6 @@ $pagedata['metadescriptions']='Get the best Birthday Freebies Online & Near Me! 
 
 // About Page Styles
 $additionalstyles = '
-<link rel="stylesheet" href="/public/css/common-hero.css">
 <style>
 
 /* Content Section - Compact */
@@ -141,8 +140,8 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <!-- Hero Section -->
-<div class="about-hero">
-    <div class="container text-center">
+<div class="content-header-dark">
+    <div class="container">
         <h1>About Birthday.Gold</h1>
         <p class="lead">Making birthdays more special since 2023</p>
     </div>

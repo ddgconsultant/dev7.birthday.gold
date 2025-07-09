@@ -89,10 +89,9 @@ displaypage:
 
 // Add page-specific styles
 $additionalstyles .= '
-<link rel="stylesheet" href="/public/css/common-hero.css">
 <style>
-    /* Additional margin for contact hero */
-    .contact-hero {
+    /* Additional margin for content header */
+    .content-header-dark {
         margin-bottom: 3rem;
     }
     
@@ -198,6 +197,73 @@ $additionalstyles .= '
         --bs-gutter-y: 0.75rem !important;
         --bs-gutter-x: 0.75rem !important;
     }
+    
+    /* Social Media Links */
+    .social-link {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 2px solid;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: white;
+    }
+    
+    /* Social Media Brand Colors */
+    .social-link[title="Twitter"] {
+        background: #000000;
+        border-color: #000000;
+    }
+    
+    .social-link[title="Facebook"] {
+        background: #1877f2;
+        border-color: #1877f2;
+    }
+    
+    .social-link[title="Instagram"] {
+        background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        border-color: #dc2743;
+    }
+    
+    .social-link[title="LinkedIn"] {
+        background: #0077b5;
+        border-color: #0077b5;
+    }
+    
+    .social-link[title="TikTok"] {
+        background: #000000;
+        border-color: #000000;
+    }
+    
+    .social-link[title="YouTube"] {
+        background: #ff0000;
+        border-color: #ff0000;
+    }
+    
+    .social-link[title="Pinterest"] {
+        background: #bd081c;
+        border-color: #bd081c;
+    }
+    
+    .social-link:hover {
+        transform: translateY(-2px) scale(1.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        opacity: 0.9;
+    }
+    
+    /* Social Media Card Spacing */
+    .social-media-card {
+        padding: 2rem 1rem;
+    }
+    
+    @media (min-width: 768px) {
+        .social-media-card {
+            padding: 3rem 2rem;
+        }
+    }
         </style>
 ';
 
@@ -207,10 +273,10 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <!-- Contact Hero Section -->
-<div class="contact-hero">
-    <div class="container text-center">
+<div class="content-header-dark">
+    <div class="container">
         <h1>Contact Us</h1>
-        <p>We're here to help with your birthday rewards</p>
+        <p class="lead">We're here to help with your birthday rewards</p>
     </div>
 </div>
 
@@ -294,12 +360,42 @@ echo '
 
 echo '       </div>
                     </div> <!-- End card-body -->
-</div>
-        </div>
-            </div> <!-- End contact-content -->
-        </div> <!-- End container -->
-    </div> <!-- End page-wrapper -->
-    <!-- Contact End -->
+                </div>
+                
+                <!-- Social Links Card -->
+                <div class="card mt-4">
+                    <div class="card-body text-center social-media-card p-5">
+                        <h3 class="h5 fw-semibold text-dark mb-4">Connect with us on social media</h3>
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <a href="https://twitter.com/birthday_gold" target="_blank" class="social-link" title="Twitter">
+                                <i class="bi bi-twitter-x"></i>
+                            </a>
+                            <a href="https://www.facebook.com/birthdaygold/" target="_blank" class="social-link" title="Facebook">
+                                <i class="bi bi-facebook"></i>
+                            </a>
+                            <a href="https://www.instagram.com/birthday_gold/" target="_blank" class="social-link" title="Instagram">
+                                <i class="bi bi-instagram"></i>
+                            </a>
+                            <a href="https://www.linkedin.com/company/birthdaygold" target="_blank" class="social-link" title="LinkedIn">
+                                <i class="bi bi-linkedin"></i>
+                            </a>
+                            <a href="https://www.tiktok.com/@birthday.gold" target="_blank" class="social-link" title="TikTok">
+                                <i class="bi bi-tiktok"></i>
+                            </a>
+                            <a href="https://www.youtube.com/@birthdaygold" target="_blank" class="social-link" title="YouTube">
+                                <i class="bi bi-youtube"></i>
+                            </a>
+                            <a href="https://www.pinterest.com/birthdaygold/" target="_blank" class="social-link" title="Pinterest">
+                                <i class="bi bi-pinterest"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- End contact-content -->
+    </div> <!-- End container -->
+</div> <!-- End page-wrapper -->
+<!-- Contact End -->
 
 
 ';

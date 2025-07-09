@@ -15,44 +15,9 @@ include($dir['core_components'] . '/bg_header.inc');
 
 
 $additionalstyles .= '
-<link rel="stylesheet" href="/public/css/common-hero.css">
 <style>
-/* Keep only highlight styling for accents */
-.highlight {
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 800;
-}
-
-.how-hero .stats {
-    display: flex;
-    justify-content: center;
-    gap: 3rem;
-    margin: 2rem 0;
-    position: relative;
-    z-index: 1;
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-number {
-    font-size: 2.5rem;
-    font-weight: 800;
-    display: block;
-    color: #FFD700;
-}
-
-.stat-label {
-    font-size: 1rem;
-    color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    font-weight: 500;
-}
+/* No need for highlight - already in bg_theme.css */
+/* No need for stats styles - already in bg_theme.css */
 
 /* Process Section */
 .process-section {
@@ -208,14 +173,6 @@ $additionalstyles .= '
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .how-hero .stats {
-        gap: 2rem;
-    }
-    
-    .stat-number {
-        font-size: 2rem;
-    }
-    
     .section-header h2 {
         font-size: 2rem;
     }
@@ -262,10 +219,10 @@ $columntag='col-xl-4';
 
 echo '
 <!-- Hero Section -->
-<div class="how-hero">
+<div class="content-header-dark">
     <div class="container">
         <h1 class="fade-in-up">Turn Your Birthday Into <span class="highlight">Pure Gold</span></h1>
-        <p class="lead fade-in-up">The easiest way to collect <span style="color: #FFD700; font-weight: 600;">birthday rewards</span> from your favorite brands</p>
+        <p class="lead fade-in-up">The easiest way to collect <span class="highlight">birthday rewards</span> from your favorite brands</p>
         
    <div class="stats fade-in-up">
     <div class="stat-item">

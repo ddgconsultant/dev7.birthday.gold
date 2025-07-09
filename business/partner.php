@@ -11,44 +11,9 @@ $header_flush = true;
 
 // Additional styles
 $additionalstyles = '
-<link rel="stylesheet" href="/public/css/common-hero.css">
 <style>
 /* Partner page specific styles */
-.partner-hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
-    color: white;
-    padding: 5rem 0;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.partner-hero::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-}
-
-.partner-hero h1 {
-    font-size: 3.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 1;
-}
-
-.partner-hero p {
-    font-size: 1.5rem;
-    margin-bottom: 2rem;
-    position: relative;
-    z-index: 1;
-    opacity: 0.9;
-}
+/* Hero styles now handled by content-header-dark in bg_theme.css */
 
 .btn-partner-cta {
     background: #198754;
@@ -246,14 +211,6 @@ $additionalstyles = '
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-    .partner-hero h1 {
-        font-size: 2.5rem;
-    }
-    
-    .partner-hero p {
-        font-size: 1.2rem;
-    }
-    
     .step-number {
         position: static;
         margin: 0 auto 1rem;
@@ -276,10 +233,10 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <!-- Hero Section -->
-<div class="partner-hero">
+<div class="content-header-dark">
     <div class="container">
-        <h1 class="text-white">Become a Birthday.Gold Partner</h1>
-        <p>Join thousands of businesses offering birthday rewards to build customer loyalty</p>
+        <h1>Become a Birthday.Gold Partner</h1>
+        <p class="lead">Join thousands of businesses offering birthday rewards to build customer loyalty</p>
         <a href="#apply-form" class="btn-partner-cta">Apply to Become a Partner</a>
     </div>
 </div>
