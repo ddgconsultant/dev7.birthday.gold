@@ -328,7 +328,6 @@ $canApplyForVerification = ($completedRequirements === $totalRequirements);
 
 
 
-
 ?>
 
 <div class="container my-5 pt-5">
@@ -345,8 +344,8 @@ $canApplyForVerification = ($completedRequirements === $totalRequirements);
         <!-- Progress Section -->
         <div class="progress-section">
             <div class="progress-header">
-                <h3 class="progress-title">Verification Progress</h3>
-                <span class="progress-percentage"><?php echo $progressPercentage; ?>%</span>
+                <h2 class="section-title mb-0">Pre-Verification Checklist</h2>
+                <span class="progress-percentage fs-8">Verification Readiness: <?php echo $progressPercentage; ?>%</span>
             </div>
             <div class="progress-bar">
                 <div class="progress-fill" style="width: <?php echo $progressPercentage; ?>%"></div>
