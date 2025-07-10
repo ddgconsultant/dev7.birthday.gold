@@ -28,6 +28,14 @@ $balance = $allocationManager->getUserBalance($user_id);
 // Get user's plan details
 $plandetails = $app->plandetail('details_id', $current_user_data['account_product_id']);
 
+// Get the most recent plan allocation to determine next cycle date
+$sql = "SELECT created_at, expires_at FROM bg_user_allocations 
+        WHERE user_id = :user_id 
+        AND allocation_type = 'plan' 
+        ORDER BY created_at DESC 
+        LIMIT 1";
+$lastPlanAllocation = $database->getrow($sql, ['user_id' => $user_id]);
+
 // Get account stats
 $accountstats = $account->account_getstats();
 
@@ -52,6 +60,19 @@ $additionalstyles = '<script src="/public/assets/js/config.js"></script>';
 $additionalstyles .= '<script src="/public/assets/vendors/simplebar/simplebar.min.js"></script>';
 $additionalstyles .= '<link href="/public/assets/vendors/swiper/swiper-bundle.min.css" rel="stylesheet">';
 
+// Add script to initialize Bootstrap tooltips
+$additionalscripts = '
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll(\'[data-bs-toggle="tooltip"]\'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+';
+
 $additionalstyles .= '
 <style>
 /* Dashboard Styles */
@@ -62,6 +83,17 @@ $additionalstyles .= '
     padding: 1.5rem;
     height: 100%;
     transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* Larger cards for main stats */
+.stats-card {
+    padding: 2rem;
+    min-height: 280px;
+}
+
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
 
 .dashboard-card:hover {
@@ -99,17 +131,29 @@ $additionalstyles .= '
 
 .action-card {
     text-align: center;
-    padding: 2rem;
+    padding: 1.25rem;
+    min-height: auto;
 }
 
 .action-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
     display: block;
 }
 
+.action-card h5 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.action-card p {
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
 .action-card .btn {
-    margin-top: 1rem;
+    margin-top: 0.5rem;
+    padding: 0.375rem 1rem;
 }
 
 .plan-badge {
@@ -158,6 +202,18 @@ $additionalstyles .= '
     color: #6c757d;
 }
 
+/* Picks Breakdown Styling */
+.picks-breakdown {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+.picks-breakdown .stat-number {
+    margin: 0;
+    line-height: 1;
+}
+
 /* Mobile optimization */
 @media (max-width: 768px) {
     .stat-number {
@@ -188,37 +244,66 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="row mb-4">
         <!-- Picks -->
         <div class="col-lg-4 col-md-6 mb-3">
-            <div class="dashboard-card">
+            <div class="dashboard-card stats-card">
+                <?php 
+                // Calculate days until next cycle
+                $today = new DateTime();
+                $daysUntilReset = 30; // Default
+                
+                if (!empty($lastPlanAllocation['expires_at'])) {
+                    // If we have expiry date, use that
+                    $expiryDate = new DateTime($lastPlanAllocation['expires_at']);
+                    $daysUntilReset = $today->diff($expiryDate)->days;
+                } elseif (!empty($lastPlanAllocation['created_at'])) {
+                    // Otherwise calculate based on creation date + 1 year
+                    $createdDate = new DateTime($lastPlanAllocation['created_at']);
+                    $nextCycle = clone $createdDate;
+                    $nextCycle->modify('+1 year');
+                    $daysUntilReset = $today->diff($nextCycle)->days;
+                }
+                
+                // Get actual allocation data from database
+                $planPicks = $balance['plan_allocations'] ?? 0;
+                $bonusPicks = $balance['bonus_allocations'] ?? 0;
+                $usedPicks = $balance['total_used'] ?? 0;
+                $remainingPicks = $balance['available_allocations'] ?? 0;
+                ?>
                 <h5 class="mb-3">✅ Picks</h5>
-                <div class="d-flex justify-content-between align-items-baseline">
-                    <div>
-                        <p class="stat-number"><?php echo $balance['available_allocations']; ?></p>
-                        <p class="stat-label">Remaining</p>
+                
+                <!-- Picks Breakdown -->
+                <div class="picks-breakdown">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted">
+                            Plan Picks
+                            <i class="bi bi-info-circle text-muted ms-1" 
+                               data-bs-toggle="tooltip" 
+                               data-bs-placement="top" 
+                               title="<?php echo $daysUntilReset; ?> days until new picks assigned"></i>
+                        </span>
+                        <span class="text-success fw-semibold">+<?php echo $planPicks; ?></span>
                     </div>
-                    <div class="text-end">
-                        <p class="text-muted mb-0"><?php echo $balance['total_used']; ?>/<?php echo $plandetails['max_business_select'] ?? 10; ?> used</p>
-                        <p class="text-muted mb-0"><small>this cycle</small></p>
+                    <?php if ($bonusPicks > 0): ?>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted">Bonus Picks</span>
+                        <span class="text-success fw-semibold">+<?php echo $bonusPicks; ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Used Picks</span>
+                        <span class="text-danger fw-semibold">-<?php echo $usedPicks; ?></span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Remaining Picks</span>
+                        <span class="stat-number text-primary" style="font-size: 1.5rem;"><?php echo $remainingPicks; ?></span>
                     </div>
                 </div>
-                <div class="allocation-meter">
-                    <?php 
-                    $percentage = ($plandetails['max_business_select'] > 0) 
-                        ? (($balance['total_used'] / $plandetails['max_business_select']) * 100) 
-                        : 0;
-                    ?>
-                    <div class="allocation-fill" style="width: <?php echo min($percentage, 100); ?>%"></div>
-                </div>
-                <?php if ($balance['expiring_soon_count'] > 0): ?>
-                <p class="text-warning mt-2 mb-0">
-                    <i class="bi bi-clock-history"></i> <?php echo $balance['expiring_soon_count']; ?> expiring soon
-                </p>
-                <?php endif; ?>
             </div>
         </div>
 
         <!-- Active Rewards -->
         <div class="col-lg-4 col-md-6 mb-3">
-            <div class="dashboard-card">
+            <div class="dashboard-card stats-card">
                 <h5 class="mb-3">Active Rewards</h5>
                 <p class="stat-number"><?php echo $total_rewards_count; ?></p>
                 <p class="stat-label">Ready to redeem</p>
@@ -232,7 +317,7 @@ include($dir['core_components'] . '/bg_header.inc');
 
         <!-- Total Enrollments -->
         <div class="col-lg-4 col-md-6 mb-3">
-            <div class="dashboard-card">
+            <div class="dashboard-card stats-card">
                 <h5 class="mb-3">Enrollments</h5>
                 <p class="stat-number"><?php echo $total_enrollments; ?></p>
                 <p class="stat-label">Programs joined with picks</p>

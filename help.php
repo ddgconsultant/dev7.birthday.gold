@@ -336,6 +336,16 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         
         <div class="help-grid">
+            <a href="/ask-goldie" class="help-card">
+                <div class="help-icon" style="padding: 0; background: transparent; border: none;">
+                    <img src="/public/images/logo/goldie_72.png" alt="Goldie" style="width: 48px; height: 48px;">
+                </div>
+                <div class="help-content">
+                    <h3 class="help-card-title">Ask Goldie</h3>
+                    <p class="text-muted small mb-0 lh-base">Get instant answers about Birthday Gold from our AI assistant</p>
+                </div>
+            </a>
+            
             <a href="/faq" class="help-card">
                 <div class="help-icon">
                     <i class="bi bi-question-circle"></i>
