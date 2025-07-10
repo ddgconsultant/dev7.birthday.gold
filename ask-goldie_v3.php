@@ -782,6 +782,83 @@ $additionalstyles = '
     margin-left: 0.5rem;
 }
 
+/* Mobile responsiveness */
+@media (max-width: 575px) {
+    /* Hide avatars on mobile */
+    .user-avatar,
+    .message-goldie img {
+        display: none;
+    }
+    
+    /* Make conversation bubbles wider on mobile */
+    .message-content {
+        max-width: 85%;
+    }
+    
+    /* Full width chat container on mobile */
+    .chat-container {
+        border-radius: 0;
+        margin: 0 -12px; /* Negative margin to counteract container padding */
+    }
+    
+    /* Adjust chat messages padding */
+    .chat-messages {
+        padding: 1rem;
+    }
+    
+    /* Hide quick questions text on mobile, keep button visible */
+    .quick-questions-toggle span {
+        display: none;
+    }
+    
+    .quick-questions-toggle {
+        padding: 0.5rem 1rem;
+    }
+    
+    .quick-questions-toggle i {
+        margin-right: 0;
+    }
+    
+    /* Adjust message styling for mobile */
+    .message-goldie {
+        gap: 0;
+    }
+    
+    /* Make user messages align better without avatar */
+    .message-user .message-content {
+        margin-right: 0;
+    }
+    
+    /* Reduce font size slightly on mobile */
+    .message-content {
+        font-size: 0.95rem;
+    }
+    
+    /* Adjust chat header on mobile */
+    .chat-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .chat-header h5 {
+        font-size: 1.1rem;
+    }
+    
+    .chat-header small {
+        font-size: 0.75rem;
+    }
+    
+    /* Adjust input area on mobile */
+    .chat-input-area {
+        padding: 0.75rem;
+    }
+    
+    /* Smaller send button on mobile */
+    .chat-submit {
+        width: 44px;
+        height: 44px;
+    }
+}
+
 /* Main container adjustments */
 .container.py-4 {
     padding-top: 2rem !important;
@@ -1182,6 +1259,7 @@ const sendingOverlay = document.getElementById("sendingOverlay");
 
 // Flag to track if we are processing
 let isProcessing = false;
+let processingTimeout = null;
 
 // Disable submit if within 10 second cooldown
 const lastSubmitTime = ' . $lastSubmitTime . ';
@@ -1254,6 +1332,61 @@ function showProcessingFeedback() {
     // Remove welcome message if exists
     const welcomeMsg = document.querySelector(".welcome-message");
     if (welcomeMsg) welcomeMsg.remove();
+    
+    // Set timeout for processing (30 seconds)
+    processingTimeout = setTimeout(function() {
+        hideProcessingFeedback();
+        showTimeoutError();
+    }, 30000);
+}
+
+// Function to hide processing feedback
+function hideProcessingFeedback() {
+    // Clear the timeout
+    if (processingTimeout) {
+        clearTimeout(processingTimeout);
+        processingTimeout = null;
+    }
+    
+    // Remove processing class
+    const inputArea = document.querySelector(".chat-input-area");
+    if (inputArea) {
+        inputArea.classList.remove("processing");
+    }
+    
+    // Hide overlay
+    if (sendingOverlay) {
+        sendingOverlay.style.display = "none";
+        sendingOverlay.classList.remove("show");
+    }
+    
+    // Reset button
+    submitBtn.classList.remove("loading");
+    submitBtn.innerHTML = \'<i class="bi bi-send-fill"></i>\';
+    submitBtn.disabled = false;
+    
+    // Reset processing flag
+    isProcessing = false;
+}
+
+// Function to show timeout error
+function showTimeoutError() {
+    // Add error message to chat
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "alert alert-danger alert-sm mb-2";
+    errorDiv.innerHTML = \'<i class="bi bi-exclamation-triangle-fill me-2"></i>Sorry, unable to process your request at this time. Please try again.\';
+    
+    const inputArea = document.querySelector(".chat-input-area");
+    inputArea.insertBefore(errorDiv, inputArea.firstChild);
+    
+    // Auto-hide error after 5 seconds
+    setTimeout(function() {
+        errorDiv.remove();
+    }, 5000);
+    
+    // Clear the input
+    chatInput.value = "";
+    autoResizeTextarea(chatInput);
 }
 
 // Show visual feedback when form is submitted
