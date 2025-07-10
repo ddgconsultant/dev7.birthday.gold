@@ -1,4 +1,5 @@
 <?php
+header('location: ask-goldie_v3.php'); exit;
 $addClasses[] = 'ai';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
