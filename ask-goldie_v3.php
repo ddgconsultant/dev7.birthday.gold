@@ -486,8 +486,24 @@ $additionalstyles = '
     50% { transform: translateY(-10px); }
 }
 
+@keyframes shadowPulse {
+    0%, 100% { 
+        transform: translateX(-50%) scaleX(1);
+        opacity: 0.3;
+    }
+    50% { 
+        transform: translateX(-50%) scaleX(0.8);
+        opacity: 0.5;
+    }
+}
+
 .floating-icon {
     animation: float 3s ease-in-out infinite;
+}
+
+.shadow-icon {
+    animation: shadowPulse 3s ease-in-out infinite;
+    opacity: 0.3;
 }
 
 /* Full Chat Interface Styles */
@@ -946,6 +962,8 @@ $additionalstyles = '
 .quick-questions-toggle i {
     transition: transform 0.3s ease;
     margin-right: 0.5rem;
+    font-size: 0.6rem;
+    vertical-align: middle;
 }
 
 .quick-questions-wrapper.collapsed .quick-questions-toggle i {
@@ -1031,8 +1049,9 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-auto d-flex align-items-center">
-                <div class="text-end me-3">
-                    <img src="/public/images/logo/goldie_200.png" alt="Goldie" class="floating-icon" style="height: 100px;">
+                <div class="text-end me-3 position-relative" style="width: 100px; height: 120px;">
+                    <img src="/public/images/logo/goldie-avatar_200.png" alt="Goldie" class="floating-icon" style="height: 100px; position: absolute; top: 0; left: 0; z-index: 2;">
+                    <img src="/public/images/logo/goldie-shadow_200.png" alt="" class="shadow-icon" style="height: 20px; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1;">
                 </div>
                 <div>
                     <h1 class="mb-2">Ask Goldie</h1>
@@ -1049,7 +1068,7 @@ include($dir['core_components'] . '/bg_header.inc');
         <!-- Chat Header -->
         <div class="chat-header">
             <div class="d-flex align-items-center gap-2">
-                <img src="/public/images/logo/goldie_72.png" alt="Goldie" style="height: 40px;">
+                <img src="/public/images/logo/goldie-avatar_72.png" alt="Goldie" style="height: 40px;">
                 <div>
                     <h5 class="mb-0">Chat with Goldie</h5>
                     <small class="text-muted">
@@ -1071,7 +1090,10 @@ include($dir['core_components'] . '/bg_header.inc');
             <?php if (empty($conversationHistory)): ?>
                 <!-- Welcome Message for New Conversations -->
                 <div class="welcome-message">
-                    <img src="/public/images/logo/goldie_200.png" alt="Goldie" style="height: 80px; opacity: 0.5;" class="mb-3">
+                    <div class="position-relative d-inline-block mb-3" style="height: 100px;">
+                        <img src="/public/images/logo/goldie-avatar_200.png" alt="Goldie" style="height: 80px; opacity: 0.5; position: relative; z-index: 2;" class="floating-icon">
+                        <img src="/public/images/logo/goldie-shadow_200.png" alt="" style="height: 16px; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1;" class="shadow-icon">
+                    </div>
                     <h6>Welcome! I'm Goldie, your Birthday Gold assistant.</h6>
                     <p class="mb-0">Ask me anything about Birthday Gold!</p>
                     <div class="quick-actions">
@@ -1111,7 +1133,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         <?php endif; ?>
                     </div>
                     <div class="message message-goldie<?php echo $isLatest ? ' latest-message' : ''; ?>">
-                        <img src="/public/images/logo/goldie_72.png" alt="Goldie">
+                        <img src="/public/images/logo/goldie-avatar_72.png" alt="Goldie">
                         <div class="message-content">
                             <?php echo nl2br(htmlspecialchars($item['answer'])); ?>
                             <div class="message-timestamp">
@@ -1124,7 +1146,7 @@ include($dir['core_components'] . '/bg_header.inc');
             
             <!-- Typing Indicator -->
             <div class="typing-indicator" id="typingIndicator">
-                <img src="/public/images/logo/goldie_72.png" alt="Goldie" style="width: 32px; height: 32px;">
+                <img src="/public/images/logo/goldie-avatar_72.png" alt="Goldie" style="width: 32px; height: 32px;">
                 <div class="typing-dots">
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
@@ -1179,7 +1201,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Collapsible Quick Questions -->
     <div class="quick-questions-wrapper collapsed" id="quickQuestionsWrapper">
         <button class="quick-questions-toggle" onclick="toggleQuickQuestions()">
-            <i class="bi bi-chevron-up me-2"></i>
+            <i class="bi bi-triangle-fill me-2"></i>
             <span>Quick Questions</span>
         </button>
     <div class="quick-questions-content">
