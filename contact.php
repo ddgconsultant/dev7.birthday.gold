@@ -23,9 +23,11 @@ if (($formdata = $app->formposted())) {
  $submitted_subject = htmlspecialchars($_REQUEST['subject'] ?? '', ENT_QUOTES, 'UTF-8');
  $submitted_message = htmlspecialchars($_REQUEST['message'] ?? '', ENT_QUOTES, 'UTF-8');
 
+  // Check if user confirmed the message after spam detection
+  $confirmedMessage = isset($_POST['confirmed_message']) && $_POST['confirmed_message'] == '1';
   
-  // Only validate captcha if not confirming a flagged message
-  if (!$skipCaptcha && !$app->validateCaptcha()) {
+  // Always validate captcha
+  if (!$app->validateCaptcha()) {
     $continue = false;
     $error = true;
     $errormessage = '<div class="alert alert-danger alert-dismissible fade show" role="alert">The Recaptcha Challenge is incorrect.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
@@ -40,8 +42,8 @@ if (($formdata = $app->formposted())) {
     goto displaypage;
 }
   // Get form data
-  $requiredfields = ['email', 'message'];
-  foreach ($requiredfields as $field) {
+  $allfields = ['name', 'email', 'subject', 'message'];
+  foreach ($allfields as $field) {
     if (isset($formdata[$field])) {
       $$field = trim($formdata[$field]);
     }
@@ -60,31 +62,6 @@ if (($formdata = $app->formposted())) {
     $continue = false;
     $error = true;
     goto displaypage;
-  }
-
-  // Check if user confirmed the message after spam detection
-  $confirmedMessage = isset($_POST['confirmed_message']) && $_POST['confirmed_message'] == '1';
-  
-  // Skip captcha validation if confirming a flagged message
-  $skipCaptcha = $confirmedMessage;
-  
-  // If confirming, retrieve the original data from session
-  if ($confirmedMessage && isset($_SESSION['flagged_contact_data'])) {
-    // Verify the data isn't too old (5 minutes max)
-    if (time() - $_SESSION['flagged_contact_data']['timestamp'] > 300) {
-      $errormessage = '<div class="alert alert-danger alert-dismissible fade show" role="alert">Your confirmation has expired. Please submit the form again.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
-      unset($_SESSION['flagged_contact_data']);
-      goto displaypage;
-    }
-    
-    // Use the original data from session
-    $name = $_SESSION['flagged_contact_data']['name'];
-    $email = $_SESSION['flagged_contact_data']['email'];
-    $subject = $_SESSION['flagged_contact_data']['subject'];
-    $message = $_SESSION['flagged_contact_data']['message'];
-    
-    // Clear the session data
-    unset($_SESSION['flagged_contact_data']);
   }
   
   // AI Spam Detection - Only check if not already confirmed
@@ -129,15 +106,6 @@ Respond with ONLY 'SPAM' if this appears to be spam/marketing/solicitation, or '
       
       // If flagged as spam, show confirmation dialog
       if (strpos($aiDecision, 'SPAM') !== false) {
-        // Store the original values in session to prevent tampering
-        $_SESSION['flagged_contact_data'] = [
-            'name' => $name,
-            'email' => $email,
-            'subject' => $subject,
-            'message' => $message,
-            'timestamp' => time()
-        ];
-        
         $errormessage = '<div class="alert alert-warning p-4 mb-4" role="alert">
           <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Message Flagged</h4>
           <p>Your message has been flagged as potentially inappropriate use of our contact system. This form is for customer service inquiries about Birthday Gold services only.</p>';
@@ -163,16 +131,17 @@ Respond with ONLY 'SPAM' if this appears to be spam/marketing/solicitation, or '
         
         $errormessage .= '
           <hr>
-          <div class="mb-3 p-3 bg-light border rounded">
-            <h6 class="text-muted mb-2">Message to be sent:</h6>
-            <p class="mb-1"><strong>From:</strong> ' . htmlspecialchars($name) . ' (' . htmlspecialchars($email) . ')</p>
-            <p class="mb-1"><strong>Subject:</strong> ' . htmlspecialchars($subject ?: '(No subject)') . '</p>
-            <p class="mb-0"><strong>Message:</strong> ' . nl2br(htmlspecialchars(substr($message, 0, 200))) . (strlen($message) > 200 ? '...' : '') . '</p>
-          </div>
-          <p class="mb-3">If you believe this is a legitimate customer service inquiry, please confirm to proceed:</p>
-          <form method="POST" action="/contact" class="d-inline">
+          <p class="mb-3">If you believe this is a legitimate customer service inquiry, please complete the verification below and confirm to proceed:</p>
+          <form method="POST" action="/contact">
             ' . $display->inputcsrf_token() . '
+            <input type="hidden" name="name" value="' . htmlspecialchars($name) . '">
+            <input type="hidden" name="email" value="' . htmlspecialchars($email) . '">
+            <input type="hidden" name="subject" value="' . htmlspecialchars($subject) . '">
+            <input type="hidden" name="message" value="' . htmlspecialchars($message) . '">
             <input type="hidden" name="confirmed_message" value="1">
+            <div class="mb-3">' . 
+            $app->generateCaptcha('medium', 10) . 
+            '</div>
             <button type="submit" class="btn btn-success me-2">Confirm & Send</button>
             <a href="/contact" class="btn btn-secondary">Cancel</a>
           </form>
