@@ -887,11 +887,11 @@ $additionalstyles = '
 
 /* Collapsible quick questions - attached tray style */
 .quick-questions-wrapper {
-    background: white;
-    border: 2px solid #dee2e6;
+    background: #e7f3ff;
+    border: 2px solid #b8daff;
     border-top: none;
     border-radius: 0 0 12px 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,123,255,0.15);
     margin-top: -2px; /* Overlap with chat container */
     margin-bottom: 1rem;
     transition: all 0.3s ease;
@@ -905,16 +905,21 @@ $additionalstyles = '
     left: 0;
     right: 0;
     height: 2px;
-    background: #dee2e6;
+    background: #b8daff;
 }
 
 .quick-questions-wrapper.collapsed {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0,123,255,0.1);
 }
 
 .quick-questions-wrapper.collapsed .quick-questions-content {
-    display: none;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
+
 
 .quick-questions-toggle {
     display: flex;
@@ -922,20 +927,20 @@ $additionalstyles = '
     justify-content: center;
     padding: 1.25rem 1rem 0.75rem;
     cursor: pointer;
-    background: #f8f9fa;
+    background: #d4e9ff;
     border: none;
     width: 100%;
     font-size: 0.9rem;
-    font-weight: 500;
-    color: #495057;
+    font-weight: 600;
+    color: #0056b3;
     border-radius: 0 0 12px 12px;
     position: relative;
     min-height: 48px;
 }
 
 .quick-questions-toggle:hover {
-    background: #e9ecef;
-    color: #212529;
+    background: #c4e1ff;
+    color: #004494;
 }
 
 .quick-questions-toggle i {
@@ -956,7 +961,7 @@ $additionalstyles = '
     transform: translateX(-50%);
     width: 36px;
     height: 2px;
-    background: #dee2e6;
+    background: #a8d0ff;
     border-radius: 1px;
 }
 
@@ -970,8 +975,12 @@ $additionalstyles = '
 
 .quick-questions-content {
     padding: 1rem 1.5rem;
-    background: #fafbfc;
-    border-top: 1px solid #e9ecef;
+    background: #f0f7ff;
+    border-top: 1px solid #d4e9ff;
+    max-height: 500px; /* Adjust based on content */
+    overflow: hidden;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
 }
 
 .quick-question-pills {
@@ -1280,7 +1289,43 @@ function quickQuestion(question) {
 // Toggle quick questions panel
 function toggleQuickQuestions() {
     const wrapper = document.getElementById("quickQuestionsWrapper");
+    const isCollapsing = !wrapper.classList.contains("collapsed");
+    
     wrapper.classList.toggle("collapsed");
+    
+    // Smooth scroll when opening
+    if (!isCollapsing) {
+        // Wait for animation to start
+        setTimeout(function() {
+            // Scroll to show the bottom of the tray
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Check if bottom of tray is below viewport
+            if (wrapperRect.bottom > windowHeight) {
+                const scrollTo = scrollTop + (wrapperRect.bottom - windowHeight) + 20; // 20px padding
+                window.scrollTo({
+                    top: scrollTo,
+                    behavior: 'smooth'
+                });
+            }
+        }, 50);
+    } else {
+        // When closing, check if we need to scroll up
+        const chatContainer = document.querySelector(".chat-container");
+        if (chatContainer) {
+            const chatRect = chatContainer.getBoundingClientRect();
+            // If chat container is above viewport, scroll to it
+            if (chatRect.top < 0) {
+                chatContainer.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            }
+        }
+    }
 }
 
 // Auto-resize textarea
