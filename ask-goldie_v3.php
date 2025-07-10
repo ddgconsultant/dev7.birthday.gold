@@ -495,10 +495,12 @@ $additionalstyles = '
     display: flex;
     flex-direction: column;
     background: white;
-    border-radius: 12px;
+    border-radius: 12px 12px 0 0;
     box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     overflow: hidden;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
+    border: 2px solid #dee2e6;
+    border-bottom: none;
     /* No fixed height - will expand with flex */
 }
 
@@ -530,6 +532,7 @@ $additionalstyles = '
     background: white;
     border-top: 2px solid #dee2e6;
     padding: 1rem;
+    border-radius: 0;
 }
 
 .message {
@@ -812,6 +815,20 @@ $additionalstyles = '
     .chat-container {
         border-radius: 0;
         margin: 0 -12px; /* Negative margin to counteract container padding */
+        border-left: none;
+        border-right: none;
+    }
+    
+    /* Adjust quick questions wrapper for mobile */
+    .quick-questions-wrapper {
+        border-radius: 0;
+        margin: -2px -12px 1rem -12px;
+        border-left: none;
+        border-right: none;
+    }
+    
+    .quick-questions-toggle {
+        border-radius: 0;
     }
     
     /* Adjust chat messages padding */
@@ -819,17 +836,10 @@ $additionalstyles = '
         padding: 1rem;
     }
     
-    /* Hide quick questions text on mobile, keep button visible */
-    .quick-questions-toggle span {
-        display: none;
-    }
-    
+    /* Keep quick questions text visible on mobile */
     .quick-questions-toggle {
         padding: 0.5rem 1rem;
-    }
-    
-    .quick-questions-toggle i {
-        margin-right: 0;
+        font-size: 0.85rem;
     }
     
     /* Adjust message styling for mobile */
@@ -875,19 +885,31 @@ $additionalstyles = '
     min-height: 300px;
 }
 
-/* Collapsible quick questions */
+/* Collapsible quick questions - attached tray style */
 .quick-questions-wrapper {
     background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-top: 0.5rem;
+    border: 2px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-top: -2px; /* Overlap with chat container */
     margin-bottom: 1rem;
     transition: all 0.3s ease;
+    position: relative;
+}
+
+.quick-questions-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #dee2e6;
 }
 
 .quick-questions-wrapper.collapsed {
-    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .quick-questions-wrapper.collapsed .quick-questions-content {
@@ -898,35 +920,48 @@ $additionalstyles = '
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem;
+    padding: 0.5rem 1rem;
     cursor: pointer;
     background: #f8f9fa;
     border: none;
     width: 100%;
     font-size: 0.9rem;
-    color: #6c757d;
-    border-radius: 12px 12px 0 0;
+    font-weight: 500;
+    color: #495057;
+    border-radius: 0 0 12px 12px;
+    position: relative;
 }
 
 .quick-questions-toggle:hover {
     background: #e9ecef;
+    color: #212529;
 }
 
 .quick-questions-toggle i {
     transition: transform 0.3s ease;
+    margin-right: 0.5rem;
 }
 
 .quick-questions-wrapper.collapsed .quick-questions-toggle i {
     transform: rotate(180deg);
 }
 
-.quick-questions-wrapper.collapsed .quick-questions-toggle {
-    border-radius: 12px;
+.quick-questions-toggle::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 5px;
+    background: #ced4da;
+    border-radius: 3px;
 }
 
 .quick-questions-content {
-    padding: 1rem;
-    border-top: 1px solid #dee2e6;
+    padding: 1rem 1.5rem;
+    background: #fafbfc;
+    border-top: 1px solid #e9ecef;
 }
 
 .quick-question-pills {
@@ -937,11 +972,11 @@ $additionalstyles = '
 }
 
 .quick-pill {
-    background: #e7f3ff;
-    border: 1px solid #b8daff;
-    color: #0056b3;
-    padding: 0.75rem 1.25rem;
-    border-radius: 25px;
+    background: white;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    padding: 0.625rem 1rem;
+    border-radius: 20px;
     font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -954,9 +989,15 @@ $additionalstyles = '
 }
 
 .quick-pill:hover {
-    background: #cce5ff;
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
     transform: translateY(-2px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,123,255,0.25);
+}
+
+.quick-pill i {
+    opacity: 0.7;
 }
 </style>
 ';
