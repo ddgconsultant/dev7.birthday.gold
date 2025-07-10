@@ -173,7 +173,7 @@ if (($formdata = $app->formposted())) {
                     // Prepare AI prompt with context and guardrails
                     $ai->setEngine('anthropic_goldie', 'text');
                     
-                    // Get user's first name if logged in
+                    // Get user first name if logged in
                     $firstName = '';
                     if (!empty($current_user_data['user_id'])) {
                         $firstName = $current_user_data['first_name'] ?? '';
@@ -183,7 +183,7 @@ if (($formdata = $app->formposted())) {
                     $isFirstMessage = empty($conversationHistory);
                     
                     $systemPrompt = "You are Goldie, the friendly AI assistant for Birthday Gold. You help users understand how Birthday Gold works, answer questions about enrollment, rewards, features, and general service inquiries.
-" . (!empty($firstName) ? "\nThe user's name is $firstName. Address them by name occasionally to make the conversation more personal.\n" : '') . "
+" . (!empty($firstName) ? "\nThe user name is $firstName. Address them by name occasionally to make the conversation more personal.\n" : '') . "
 IMPORTANT RULES:
 1. Only answer questions about Birthday Gold services, features, enrollment, rewards, pricing, and general help
 2. Do NOT provide any technical details about infrastructure, databases, APIs, or implementation
@@ -339,7 +339,7 @@ if (!empty($conversationHistory)) {
         $quickQuestions[] = "Can I save my rewards to use after my birthday month?";
         $quickQuestions[] = "How far in advance do birthday rewards typically arrive?";
     } elseif (strpos($lastAnswer, 'cost') !== false || strpos($lastAnswer, 'price') !== false || strpos($lastAnswer, 'plan') !== false) {
-        $quickQuestions[] = "What's included in the different Birthday Gold subscription plans?";
+        $quickQuestions[] = "What is included in the different Birthday Gold subscription plans?";
         $quickQuestions[] = "Can I upgrade or downgrade my plan at any time?";
         $quickQuestions[] = "Are there any discounts for annual subscriptions?";
         $quickQuestions[] = "Is there a free trial period before I'm charged?";
@@ -356,8 +356,8 @@ if (!empty($conversationHistory)) {
     } else {
         // Contextual follow-ups based on conversation length
         if (count($conversationHistory) > 2) {
-            $quickQuestions[] = "Can you show me a summary of everything we've discussed?";
-            $quickQuestions[] = "I'd like to know more about the specific features you mentioned";
+            $quickQuestions[] = "Can you show me a summary of everything we have discussed?";
+            $quickQuestions[] = "I would like to know more about the specific features you mentioned";
             $quickQuestions[] = "What should I do next to get the most from Birthday Gold?";
             $quickQuestions[] = "Are there any tips for maximizing my birthday rewards?";
         } else {
@@ -382,13 +382,18 @@ if (!empty($conversationHistory)) {
     ];
 }
 
-// Limit to 8 questions
+// Limit questions based on screen size
+// We will handle the mobile limitation in JavaScript/CSS
 $quickQuestions = array_slice($quickQuestions, 0, 8);
 
 // Page styling
 $additionalstyles = '
 <style>
 /* Ask Goldie Styles */
+html {
+    scroll-behavior: smooth;
+}
+
 .ask-goldie-container {
     max-width: 800px;
     margin: 0 auto;
@@ -499,11 +504,13 @@ $additionalstyles = '
 
 .floating-icon {
     animation: float 3s ease-in-out infinite;
+     width: 100px !important;
 }
 
 .shadow-icon {
     animation: shadowPulse 3s ease-in-out infinite;
     opacity: 0.3;
+    width: 100px !important;
 }
 
 /* Full Chat Interface Styles */
@@ -936,6 +943,22 @@ $additionalstyles = '
     padding-bottom: 0;
 }
 
+/* Animation classes for smooth opening */
+.quick-questions-wrapper.expanding {
+    animation: trayExpand 0.4s ease-out forwards;
+}
+
+@keyframes trayExpand {
+    from {
+        transform: translateY(-10px);
+        opacity: 0.8;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 
 .quick-questions-toggle {
     display: flex;
@@ -998,7 +1021,9 @@ $additionalstyles = '
     max-height: 500px; /* Adjust based on content */
     overflow: hidden;
     opacity: 1;
-    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.3s ease, 
+                padding 0.3s ease;
 }
 
 .quick-question-pills {
@@ -1036,6 +1061,56 @@ $additionalstyles = '
 .quick-pill i {
     opacity: 0.7;
 }
+
+/* Help links styling */
+.help-links {
+    font-size: 0.875rem; /* 14px */
+}
+
+.help-links a {
+    font-size: 0.875rem; /* 14px */
+}
+
+/* Hide questions after the 4th one on mobile screens */
+@media (max-width: 575px) {
+    .quick-pill:nth-child(n+5) {
+        display: none;
+    }
+    
+    /* Hide initial sample questions in welcome message on mobile */
+    .welcome-message .quick-actions {
+        display: none;
+    }
+    
+    /* Further reduce help links font size on mobile */
+    .help-links {
+        font-size: 0.75rem; /* 12px */
+    }
+    
+    .help-links a {
+        font-size: 0.75rem; /* 12px */
+    }
+    
+    /* Fix avatar and shadow alignment on mobile */
+    .floating-icon {
+        position: relative !important;
+        left: auto !important;
+        right: 0 !important;
+        width: 80px !important; /* 20% smaller than 200px */
+    }
+    
+    .shadow-icon {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+       
+        width: 80px !important; /* 20% smaller than 200px */
+    }
+    
+    /* Adjust container height for smaller avatar */
+    .content-header-dark .position-relative {
+        height: 96px !important; /* 20% smaller than 120px */
+    }
+}
 </style>
 ';
 
@@ -1050,12 +1125,12 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="row justify-content-center">
             <div class="col-auto d-flex align-items-center">
                 <div class="text-end me-3 position-relative" style="width: 100px; height: 120px;">
-                    <img src="/public/images/logo/goldie-avatar_200.png" alt="Goldie" class="floating-icon" style="height: 100px; position: absolute; top: 0; left: 0; z-index: 2;">
-                    <img src="/public/images/logo/goldie-shadow_200.png" alt="" class="shadow-icon" style="height: 20px; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1;">
+                    <img src="/public/images/logo/goldie-avatar_200.png" alt="Goldie" class="floating-icon" style="position: absolute; top: 0; left: 0; z-index: 2;">
+                    <img src="/public/images/logo/goldie-shadow_200.png" alt="" class="shadow-icon" style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1;">
                 </div>
                 <div>
                     <h1 class="mb-2">Ask Goldie</h1>
-                    <p class="lead mb-0">Get instant answers about Birthday Gold from our AI assistant</p>
+                    <p class="lead mb-0">Get answers about Birthday.Gold from our AI assistant</p>
                 </div>
             </div>
         </div>
@@ -1075,7 +1150,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         <?php if ($rateLimitData['count'] > 0): ?>
                             <?php echo 10 - $rateLimitData['count']; ?> questions left this hour
                         <?php else: ?>
-                            AI Assistant for Birthday Gold
+                            AI Assistant for Birthday.Gold
                         <?php endif; ?>
                     </small>
                 </div>
@@ -1090,9 +1165,9 @@ include($dir['core_components'] . '/bg_header.inc');
             <?php if (empty($conversationHistory)): ?>
                 <!-- Welcome Message for New Conversations -->
                 <div class="welcome-message">
-                    <img src="/public/images/logo/goldie_200.png" alt="Goldie" style="height: 80px; opacity: 0.5;" class="mb-3">
-                    <h6>Welcome! I'm Goldie, your Birthday Gold assistant.</h6>
-                    <p class="mb-0">Ask me anything about Birthday Gold!</p>
+                    <img src="/public/images/logo/goldie_72.png" alt="Goldie" style="height: 72px; opacity: 0.5;" class="mb-3">
+                    <h6>Welcome! I'm Goldie, your Birthday.Gold assistant.</h6>
+                    <p class="mb-0 caption">Ask me anything about Birthday.Gold!</p>
                     <div class="quick-actions">
                         <?php 
                         // Show first 4 questions as quick actions in welcome message
@@ -1244,7 +1319,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
     
     <!-- Help Links -->
-    <div class="text-center mt-3">
+    <div class="text-center mt-3 help-links">
         <a href="/help" class="text-muted me-3">
             <i class="bi bi-arrow-left"></i> Help Center
         </a>
@@ -1296,7 +1371,7 @@ function quickQuestion(question) {
     
     // Submit the form by clicking the submit button
     if (submitBtn && !submitBtn.disabled) {
-        // Focus the input first to ensure it\'s ready
+        // Focus the input first to ensure it is ready
         input.focus();
         // Click the submit button to trigger natural form submission
         setTimeout(function() {
@@ -1305,46 +1380,119 @@ function quickQuestion(question) {
     }
 }
 
-// Toggle quick questions panel
+// Toggle quick questions panel with smooth animations
 function toggleQuickQuestions() {
     const wrapper = document.getElementById("quickQuestionsWrapper");
+    const content = wrapper.querySelector(".quick-questions-content");
     const isCollapsing = !wrapper.classList.contains("collapsed");
     
-    wrapper.classList.toggle("collapsed");
-    
-    // Smooth scroll when opening
     if (!isCollapsing) {
-        // Wait for animation to start
-        setTimeout(function() {
-            // Scroll to show the bottom of the tray
+        // Opening the tray
+        wrapper.classList.remove("collapsed");
+        wrapper.classList.add("expanding");
+        
+        // Calculate the full height of the content
+        const contentHeight = content.scrollHeight;
+        const wrapperHeight = wrapper.offsetHeight + contentHeight;
+        
+        // Use requestAnimationFrame for smooth animation coordination
+        requestAnimationFrame(() => {
+            // Get current viewport and wrapper positions
             const wrapperRect = wrapper.getBoundingClientRect();
             const windowHeight = window.innerHeight;
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
             
-            // Check if bottom of tray is below viewport
-            if (wrapperRect.bottom > windowHeight) {
-                const scrollTo = scrollTop + (wrapperRect.bottom - windowHeight) + 20; // 20px padding
-                window.scrollTo({
-                    top: scrollTo,
-                    behavior: "smooth"
-                });
+            // Calculate where the bottom of the expanded tray will be
+            const futureBottom = currentScroll + wrapperRect.top + wrapperHeight;
+            const visibleBottom = currentScroll + windowHeight;
+            
+            // If the expanded tray will go below viewport, start scrolling
+            if (futureBottom > visibleBottom - 50) {
+                const targetScroll = futureBottom - windowHeight + 80;
+                
+                // Smooth scroll synchronized with CSS animation
+                const startScroll = currentScroll;
+                const distance = targetScroll - startScroll;
+                const duration = 400; // Match CSS animation duration
+                const startTime = performance.now();
+                
+                function animateScroll(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // Cubic bezier easing for smooth animation
+                    const easing = cubicBezier(0.4, 0, 0.2, 1, progress);
+                    const scrollPosition = startScroll + (distance * easing);
+                    
+                    window.scrollTo(0, scrollPosition);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animateScroll);
+                    }
+                }
+                
+                requestAnimationFrame(animateScroll);
             }
-        }, 50);
+        });
+        
+        // Remove animation class after completion
+        setTimeout(() => {
+            wrapper.classList.remove("expanding");
+        }, 400);
+        
     } else {
-        // When closing, check if we need to scroll up
-        const chatContainer = document.querySelector(".chat-container");
-        if (chatContainer) {
-            const chatRect = chatContainer.getBoundingClientRect();
-            // If chat container is above viewport, scroll to it
-            if (chatRect.top < 0) {
-                chatContainer.scrollIntoView({ 
-                    behavior: "smooth", 
-                    block: "start",
-                    inline: "nearest"
-                });
+        // Closing the tray
+        wrapper.classList.add("collapsed");
+        
+        // Ensure input stays visible when closing
+        requestAnimationFrame(() => {
+            const inputArea = document.querySelector(".chat-input-area");
+            if (inputArea) {
+                const inputRect = inputArea.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                
+                if (inputRect.bottom > windowHeight || inputRect.top < 100) {
+                    inputArea.scrollIntoView({ 
+                        behavior: "smooth", 
+                        block: "center",
+                        inline: "nearest"
+                    });
+                }
             }
-        }
+        });
     }
+}
+
+// Cubic bezier function for smooth easing
+function cubicBezier(x1, y1, x2, y2, t) {
+    const cx = 3 * x1;
+    const bx = 3 * (x2 - x1) - cx;
+    const ax = 1 - cx - bx;
+    const cy = 3 * y1;
+    const by = 3 * (y2 - y1) - cy;
+    const ay = 1 - cy - by;
+    
+    function sampleCurveX(t) {
+        return ((ax * t + bx) * t + cx) * t;
+    }
+    
+    function sampleCurveY(t) {
+        return ((ay * t + by) * t + cy) * t;
+    }
+    
+    function solveCurveX(x) {
+        let t = x;
+        for (let i = 0; i < 4; i++) {
+            const currentX = sampleCurveX(t);
+            if (Math.abs(currentX - x) < 0.001) return t;
+            const currentSlope = (3 * ax * t + 2 * bx) * t + cx;
+            if (Math.abs(currentSlope) < 0.001) break;
+            t -= (currentX - x) / currentSlope;
+        }
+        return t;
+    }
+    
+    return sampleCurveY(solveCurveX(t));
 }
 
 // Auto-resize textarea
@@ -1394,6 +1542,17 @@ if (timeSinceLastSubmit < 10) {
     }, remaining * 1000);
 }
 
+// Function to update placeholder based on screen size
+function updatePlaceholder() {
+    if (chatInput) {
+        if (window.innerWidth <= 575) {
+            chatInput.placeholder = "Type your question...";
+        } else {
+            chatInput.placeholder = "Type your question... (Shift+Enter to send)";
+        }
+    }
+}
+
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function() {
     // Focus input only on desktop
@@ -1418,6 +1577,14 @@ document.addEventListener("DOMContentLoaded", function() {
     if (window.innerWidth <= 575 && quickQuestionsWrapper) {
         quickQuestionsWrapper.classList.add("collapsed");
     }
+    
+    // Set initial placeholder
+    updatePlaceholder();
+});
+
+// Update placeholder on window resize
+window.addEventListener("resize", function() {
+    updatePlaceholder();
 });
 
 // Handle Enter key - Shift+Enter to submit, Enter for new line
