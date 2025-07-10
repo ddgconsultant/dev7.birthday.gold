@@ -291,6 +291,19 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
 // Load conversation history from session AFTER form processing
 if (isset($_SESSION['ask_goldie_conversations'][$conversationId])) {
     $conversationHistory = $_SESSION['ask_goldie_conversations'][$conversationId];
+    
+    // Check if 30 minutes have elapsed since last response
+    if (!empty($conversationHistory)) {
+        $lastExchange = end($conversationHistory);
+        $lastTimestamp = $lastExchange['timestamp'] ?? 0;
+        $timeSinceLastExchange = time() - $lastTimestamp;
+        
+        // If more than 30 minutes (1800 seconds), clear the conversation
+        if ($timeSinceLastExchange > 1800) {
+            $conversationHistory = [];
+            unset($_SESSION['ask_goldie_conversations'][$conversationId]);
+        }
+    }
 } else {
     $conversationHistory = [];
 }
@@ -834,17 +847,9 @@ $additionalstyles = '
         font-size: 0.95rem;
     }
     
-    /* Adjust chat header on mobile */
+    /* Hide chat header content on mobile */
     .chat-header {
-        padding: 0.75rem 1rem;
-    }
-    
-    .chat-header h5 {
-        font-size: 1.1rem;
-    }
-    
-    .chat-header small {
-        font-size: 0.75rem;
+        display: none;
     }
     
     /* Adjust input area on mobile */
@@ -1112,7 +1117,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
     
     <!-- Collapsible Quick Questions -->
-    <div class="quick-questions-wrapper" id="quickQuestionsWrapper">
+    <div class="quick-questions-wrapper collapsed" id="quickQuestionsWrapper">
         <button class="quick-questions-toggle" onclick="toggleQuickQuestions()">
             <i class="bi bi-chevron-up me-2"></i>
             <span>Quick Questions</span>
@@ -1276,8 +1281,10 @@ if (timeSinceLastSubmit < 10) {
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", function() {
-    // Focus input
-    chatInput.focus();
+    // Focus input only on desktop
+    if (window.innerWidth > 575) {
+        chatInput.focus();
+    }
     scrollToBottom();
     
     // Add auto-resize to textarea
@@ -1290,6 +1297,12 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // Clear any lingering typing indicators
     typingIndicator.classList.remove("show");
+    
+    // Ensure quick questions start collapsed on mobile
+    const quickQuestionsWrapper = document.getElementById("quickQuestionsWrapper");
+    if (window.innerWidth <= 575 && quickQuestionsWrapper) {
+        quickQuestionsWrapper.classList.add("collapsed");
+    }
 });
 
 // Handle Enter key - Shift+Enter to submit, Enter for new line
@@ -1299,10 +1312,8 @@ chatInput.addEventListener("keydown", function(e) {
             // Shift+Enter submits
             e.preventDefault();
             if (!submitBtn.disabled && this.value.trim()) {
-                // Mark as processing and submit
-                isProcessing = true;
-                showProcessingFeedback();
-                chatForm.submit();
+                // Trigger submit button click instead of form.submit()
+                submitBtn.click();
             }
         }
         // Regular Enter allows new line (default behavior)
