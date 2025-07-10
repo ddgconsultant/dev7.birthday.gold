@@ -108,41 +108,14 @@ $showAnswer = false;
 $errorMessage = '';
 $conversationHistory = []; // Initialize here, will load after processing
 
-// Debug: Always log POST data in dev mode
-if ($mode === 'dev') {
+// Debug logging only in dev mode with debug parameter
+if ($mode === 'dev' && isset($_GET['debug'])) {
     error_log('Ask Goldie v3 - REQUEST_METHOD: ' . ($_SERVER['REQUEST_METHOD'] ?? 'NOT SET'));
     error_log('Ask Goldie v3 - POST data: ' . json_encode($_POST));
-    error_log('Ask Goldie v3 - GET data: ' . json_encode($_GET));
     error_log('Ask Goldie v3 - Session CSRF token: ' . ($_SESSION['csrf_token'] ?? 'NOT SET'));
-    error_log('Ask Goldie v3 - POST _token: ' . ($_POST['_token'] ?? 'NOT SET'));
-    
-    // Test if we received a test submission
-    if (isset($_GET['test_submit'])) {
-        $question = "Test question from GET parameter";
-        $answer = "This is a test response to verify form processing is working.";
-        $showAnswer = true;
-        
-        // Add to conversation history
-        $conversationHistory[] = [
-            'question' => $question,
-            'answer' => $answer,
-            'timestamp' => time()
-        ];
-        
-        // Save to session
-        if (!isset($_SESSION['ask_goldie_conversations'])) {
-            $_SESSION['ask_goldie_conversations'] = [];
-        }
-        $_SESSION['ask_goldie_conversations'][$conversationId] = $conversationHistory;
-    }
 }
 
 if (($formdata = $app->formposted())) {
-    // Debug: Log that form was posted
-    if ($mode === 'dev') {
-        error_log('Ask Goldie - FORM POSTED SUCCESSFULLY!');
-        error_log('Form data: ' . json_encode($formdata));
-    }
     
     // Check 10-second rate limit
     $timeSinceLastRequest = time() - ($rateLimitData['last_request'] ?? 0);
@@ -305,13 +278,6 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
                     
                     $showAnswer = true;
                     
-                    // Debug: Log conversation state after processing
-                    if ($mode === 'dev') {
-                        error_log('Ask Goldie Debug - After processing:');
-                        error_log('Conversation ID: ' . $conversationId);
-                        error_log('Conversation history count: ' . count($conversationHistory));
-                        error_log('Session conversations: ' . json_encode(array_keys($_SESSION['ask_goldie_conversations'] ?? [])));
-                    }
                     
                 } catch (Exception $e) {
                     error_log('Ask Goldie error: ' . $e->getMessage());
@@ -936,54 +902,6 @@ include($dir['core_components'] . '/bg_header.inc');
 </div>
 
 <div class="container py-4" style="flex: 1; display: flex; flex-direction: column;">
-    <?php if ($mode === 'dev'): ?>
-    <!-- Debug Information -->
-    <div class="alert alert-info small mb-3">
-        <h6 class="mb-2">Debug Information:</h6>
-        <div class="row">
-            <div class="col-md-6">
-                <strong>REQUEST METHOD:</strong> <?php echo $_SERVER['REQUEST_METHOD'] ?? 'NOT SET'; ?><br>
-                <strong>Conversation ID:</strong> <?php echo htmlspecialchars($conversationId); ?><br>
-                <strong>Rate Limit Count:</strong> <?php echo $rateLimitData['count']; ?> / 10<br>
-                <strong>Questions Remaining:</strong> <?php echo 10 - $rateLimitData['count']; ?><br>
-                <strong>Reset Time:</strong> <?php echo date('H:i:s', $rateLimitData['reset_time']); ?> (<?php echo round(($rateLimitData['reset_time'] - time()) / 60); ?> min left)<br>
-                <strong class="text-danger">Form Posted:</strong> <?php echo $formdata ? 'YES' : 'NO'; ?><br>
-                <strong class="text-danger">Show Answer:</strong> <?php echo $showAnswer ? 'YES' : 'NO'; ?><br>
-            </div>
-            <div class="col-md-6">
-                <strong>Last Request:</strong> <?php echo $rateLimitData['last_request'] ? date('H:i:s', $rateLimitData['last_request']) : 'None'; ?><br>
-                <strong>Flood Requests (30s):</strong> <?php echo count($rateLimitData['requests_30s']); ?><br>
-                <strong>Conversation History:</strong> <?php echo count($conversationHistory); ?> exchanges<br>
-                <strong>Require Captcha:</strong> <?php echo $requireCaptcha ? 'Yes' : 'No'; ?><br>
-                <strong>CSRF Token Match:</strong> <?php echo (isset($_POST['_token']) && $_POST['_token'] === $_SESSION['csrf_token']) ? 'YES' : 'NO'; ?><br>
-            </div>
-        </div>
-        <div class="mt-2 bg-warning p-2">
-            <strong>POST Data:</strong> <?php echo htmlspecialchars(json_encode($_POST)); ?><br>
-            <strong>Session CSRF:</strong> <?php echo htmlspecialchars($_SESSION['csrf_token'] ?? 'NOT SET'); ?><br>
-            <strong>POST Token:</strong> <?php echo htmlspecialchars($_POST['_token'] ?? 'NOT SET'); ?><br>
-            <strong>Form Data Result:</strong> <?php echo $formdata ? htmlspecialchars(json_encode($formdata)) : 'FALSE'; ?>
-        </div>
-        <div class="mt-2">
-            <strong>All Conversations in Session:</strong><br>
-            <?php 
-            if (isset($_SESSION['ask_goldie_conversations'])) {
-                foreach ($_SESSION['ask_goldie_conversations'] as $cid => $history) {
-                    echo htmlspecialchars($cid) . ' (' . count($history) . ' exchanges)';
-                    if ($cid === $conversationId) echo ' <span class="badge bg-primary">CURRENT</span>';
-                    echo '<br>';
-                }
-            } else {
-                echo 'No conversations in session';
-            }
-            ?>
-        </div>
-        <div class="mt-2">
-            <strong>GET Parameters:</strong> <?php echo htmlspecialchars(json_encode($_GET)); ?><br>
-            <strong>User ID:</strong> <?php echo !empty($current_user_data['user_id']) ? $current_user_data['user_id'] : 'Anonymous'; ?>
-        </div>
-    </div>
-    <?php endif; ?>
     
     <div class="chat-container" style="flex: 1;">
         <!-- Chat Header -->
@@ -1172,11 +1090,6 @@ include($dir['core_components'] . '/bg_header.inc');
         <a href="/contact" class="text-muted">
             <i class="bi bi-envelope"></i> Contact Support
         </a>
-        <?php if ($mode === 'dev'): ?>
-        <button type="button" class="btn btn-warning btn-sm ms-3" onclick="testFormSubmit()">
-            Test Submit
-        </button>
-        <?php endif; ?>
     </div>
 </div>
 </div><!-- End of flex wrapper -->
@@ -1198,30 +1111,12 @@ function scrollToBottom() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// Test form submission
-function testFormSubmit() {
-    console.log("Test form submit");
-    const form = document.getElementById("chatForm");
-    const input = document.getElementById("chatInput");
-    
-    // Set a test question
-    input.value = "This is a test question to check form submission";
-    
-    // Reset processing flag
-    isProcessing = false;
-    
-    // Submit the form directly
-    console.log("Submitting form directly");
-    form.submit();
-}
 
 // Quick question buttons
 function quickQuestion(question) {
     const input = document.getElementById("chatInput");
     const form = document.getElementById("chatForm");
     const submitBtn = document.getElementById("submitBtn");
-    
-    console.log("Quick question clicked:", question);
     
     // Set the question value
     input.value = question;
@@ -1240,16 +1135,12 @@ function quickQuestion(question) {
     
     // Submit the form by clicking the submit button
     if (submitBtn && !submitBtn.disabled) {
-        console.log("Triggering submit button click");
-        // Focus the input first to ensure it's ready
+        // Focus the input first to ensure it\'s ready
         input.focus();
         // Click the submit button to trigger natural form submission
         setTimeout(function() {
-            console.log("Clicking submit button");
             submitBtn.click();
         }, 50);
-    } else {
-        console.log("Submit button is disabled");
     }
 }
 
@@ -1342,12 +1233,6 @@ chatInput.addEventListener("keydown", function(e) {
 
 // Function to show visual feedback
 function showProcessingFeedback() {
-    console.log("showProcessingFeedback called");
-    
-    // Get the question text before any changes
-    const questionText = chatInput.value.trim();
-    console.log("Question text:", questionText);
-    
     // Add processing class to input area
     const inputArea = document.querySelector(".chat-input-area");
     if (inputArea) {
@@ -1358,7 +1243,6 @@ function showProcessingFeedback() {
     if (sendingOverlay) {
         sendingOverlay.style.display = "flex";
         sendingOverlay.classList.add("show");
-        console.log("Overlay shown");
     }
     
     // Add loading class but keep button enabled for form submission
@@ -1370,51 +1254,27 @@ function showProcessingFeedback() {
     // Remove welcome message if exists
     const welcomeMsg = document.querySelector(".welcome-message");
     if (welcomeMsg) welcomeMsg.remove();
-    
-    console.log("Processing feedback complete - form should still be able to submit");
 }
 
 // Show visual feedback when form is submitted
 chatForm.addEventListener("submit", function(e) {
-    console.log("Form submit event triggered");
-    console.log("Form action:", chatForm.action);
-    console.log("Form method:", chatForm.method);
-    console.log("Question value:", chatInput.value);
-    
-    // Check if form has _token field
-    const tokenField = chatForm.querySelector(\'input[name="_token"]\');
-    console.log("Token field exists:", tokenField ? "YES" : "NO");
-    if (tokenField) {
-        console.log("Token value:", tokenField.value);
-    }
-    
     // Check if question is empty
     if (!chatInput.value.trim()) {
-        console.log("Question is empty, preventing submission");
         e.preventDefault();
         return false;
     }
     
     // Only show feedback if not already processing
     if (!isProcessing) {
-        console.log("First time processing, showing feedback");
         isProcessing = true;
         showProcessingFeedback();
-        
-        // Store form data for debugging
-        const formData = new FormData(chatForm);
-        console.log("Form data being submitted:");
-        for (let pair of formData.entries()) {
-            console.log(pair[0] + ": " + pair[1]);
-        }
     } else {
-        console.log("Already processing, preventing duplicate submission");
+        // Prevent duplicate submission
         e.preventDefault();
         return false;
     }
     
     // Let the form submit naturally
-    console.log("Allowing form to submit naturally");
     return true;
 });
 </script>
