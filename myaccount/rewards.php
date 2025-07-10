@@ -44,19 +44,17 @@ $enrollment_result = $database->getrow($sql, ['user_id' => $user_id]);
 $total_enrollments = $enrollment_result['count'] ?? 0;
 
 // Page setup
-$pagetitle = 'My Rewards Dashboard';
+$pagetitle = 'Rewards Dashboard';
 $bodycontentclass = '';
+
+// Add vendor CSS that was in header3.inc
+$additionalstyles = '<script src="/public/assets/js/config.js"></script>';
+$additionalstyles .= '<script src="/public/assets/vendors/simplebar/simplebar.min.js"></script>';
+$additionalstyles .= '<link href="/public/assets/vendors/swiper/swiper-bundle.min.css" rel="stylesheet">';
+
 $additionalstyles .= '
 <style>
 /* Dashboard Styles */
-.dashboard-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-    border-radius: 0 0 1rem 1rem;
-}
-
 .dashboard-card {
     background: white;
     border-radius: 1rem;
@@ -162,10 +160,6 @@ $additionalstyles .= '
 
 /* Mobile optimization */
 @media (max-width: 768px) {
-    .dashboard-header {
-        padding: 1.5rem 0;
-    }
-    
     .stat-number {
         font-size: 2rem;
     }
@@ -177,38 +171,33 @@ $additionalstyles .= '
 </style>
 ';
 
-include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/header3.inc');
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="dashboard-header">
+<div class="page-wrapper">
+<div class="content-header-dark">
     <div class="container">
-        <h1 class="mb-2">My Rewards Dashboard</h1>
-        <p class="lead mb-0">Welcome back, <?php echo htmlspecialchars($current_user_data['first_name'] ?? $current_user_data['username'] ?? 'Member'); ?>!</p>
-        <?php if ($current_user_data['account_plan'] !== 'free'): ?>
-        <div class="plan-badge">
-            <i class="bi bi-star-fill me-1"></i><?php echo ucfirst($current_user_data['account_plan']); ?> Plan
-        </div>
-        <?php endif; ?>
+        <h1>Rewards Dashboard</h1>
+        <p class="lead">Manage picks, track enrollments, and redeem birthday rewards</p>
     </div>
 </div>
 
-<div class="container main-content">
+<div class="container mt-4">
     <!-- Main Stats Row -->
     <div class="row mb-4">
-        <!-- Enrollment Allocations -->
+        <!-- Picks -->
         <div class="col-lg-4 col-md-6 mb-3">
             <div class="dashboard-card">
-                <h5 class="mb-3">Enrollment Allocations</h5>
+                <h5 class="mb-3">✅ Picks</h5>
                 <div class="d-flex justify-content-between align-items-baseline">
                     <div>
                         <p class="stat-number"><?php echo $balance['available_allocations']; ?></p>
-                        <p class="stat-label">Available</p>
+                        <p class="stat-label">Remaining</p>
                     </div>
                     <div class="text-end">
-                        <p class="text-muted mb-0">of <?php echo $plandetails['max_business_select'] ?? 10; ?> total</p>
-                        <p class="text-muted mb-0"><small>Used: <?php echo $balance['total_used']; ?></small></p>
+                        <p class="text-muted mb-0"><?php echo $balance['total_used']; ?>/<?php echo $plandetails['max_business_select'] ?? 10; ?> used</p>
+                        <p class="text-muted mb-0"><small>this cycle</small></p>
                     </div>
                 </div>
                 <div class="allocation-meter">
@@ -244,9 +233,9 @@ include($dir['core_components'] . '/bg_header.inc');
         <!-- Total Enrollments -->
         <div class="col-lg-4 col-md-6 mb-3">
             <div class="dashboard-card">
-                <h5 class="mb-3">Total Enrollments</h5>
+                <h5 class="mb-3">Enrollments</h5>
                 <p class="stat-number"><?php echo $total_enrollments; ?></p>
-                <p class="stat-label">Birthday programs joined</p>
+                <p class="stat-label">Programs joined with picks</p>
                 <a href="/myaccount/enrollment-history" class="btn btn-sm btn-outline-secondary mt-3">
                     <i class="bi bi-clock-history me-1"></i>View History
                 </a>
@@ -259,8 +248,8 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="col-md-4 mb-3">
             <div class="dashboard-card action-card">
                 <i class="bi bi-plus-circle text-primary action-icon"></i>
-                <h5>Add More Rewards</h5>
-                <p class="text-muted">Browse and enroll in more birthday reward programs</p>
+                <h5>Use Picks</h5>
+                <p class="text-muted">Browse programs and use picks to get enrollments</p>
                 <a href="/myaccount/enrollment-picker" class="btn btn-primary">
                     Browse Programs
                 </a>
@@ -271,7 +260,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <div class="dashboard-card action-card">
                 <i class="bi bi-gift text-success action-icon"></i>
                 <h5>Redeem Rewards</h5>
-                <p class="text-muted">View and redeem your active birthday rewards</p>
+                <p class="text-muted">View and redeem active birthday rewards</p>
                 <a href="/myaccount/redeem" class="btn btn-success">
                     Redeem Now
                 </a>
@@ -282,9 +271,9 @@ include($dir['core_components'] . '/bg_header.inc');
             <div class="dashboard-card action-card">
                 <i class="bi bi-star text-warning action-icon"></i>
                 <h5>Earn More</h5>
-                <p class="text-muted">Discover ways to earn more enrollment allocations</p>
+                <p class="text-muted">Discover ways to earn more picks</p>
                 <a href="/myaccount/earn-enrollments" class="btn btn-warning">
-                    Earn Allocations
+                    Earn Picks
                 </a>
             </div>
         </div>
@@ -292,9 +281,11 @@ include($dir['core_components'] . '/bg_header.inc');
 
     <?php if (!empty($active_rewards)): ?>
     <!-- Recent Rewards Preview -->
-    <div class="rewards-preview">
-        <h4 class="mb-3">Recent Rewards</h4>
-        <div class="dashboard-card">
+    <div class="row">
+        <div class="col-12">
+            <div class="rewards-preview">
+                <h4 class="mb-3">Recent Rewards</h4>
+                <div class="dashboard-card">
             <?php 
             $preview_count = 0;
             foreach ($active_rewards as $reward): 
@@ -334,12 +325,17 @@ include($dir['core_components'] . '/bg_header.inc');
                 </a>
             </div>
             <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
     <?php endif; ?>
 </div>
 
+</div><!-- end page-wrapper -->
+
+
 <?php
+$display_footertype='min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
-?>

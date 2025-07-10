@@ -243,11 +243,11 @@ $promo_code = $signup_data['promo_code'] ?? '';
 // Debug promo code
 error_log('[CHECKOUT_API] Promo code from session: ' . $promo_code);
 
-if (!empty($user_data['account_product_id'])) {
+if ($user_data && !empty($user_data['account_product_id'])) {
     // First check if product exists and allows promos
     $product = $productManager->getProduct($user_data['account_product_id']);
     
-    if ($promo_code && (!isset($product['allow_promo']) || $product['allow_promo'] != 'yes')) {
+    if ($promo_code && $product && (!isset($product['allow_promo']) || $product['allow_promo'] != 'yes')) {
         // Try to apply promo anyway for now
         error_log('[CHECKOUT_API] Product does not have allow_promo=yes, but trying promo anyway');
     }

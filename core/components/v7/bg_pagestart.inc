@@ -160,7 +160,7 @@ switch($v){
     case 3: $vers='5.0.0'; $styvers=''; break;
     case 4: $vers='5.0.0'; $styvers='v3'; break;
     case 5: $vers='5.3.3'; $styvers='v3'; break;
-    case 6: $vers='5.3.0'; $styvers='v3'; break;
+    case 6: $vers='5.3.0'; $styvers='v7'; break;
 }
 
 

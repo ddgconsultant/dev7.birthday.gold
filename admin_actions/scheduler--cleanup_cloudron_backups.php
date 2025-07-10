@@ -28,9 +28,10 @@ $bucketName = "birthdaygold202306-technical";
 $bucketId = "0ea9d48bdfd51b1397050c1c";
 $pathPrefix = "june27.bday.gold_/";
 $testMode = false; // Set to false to actually delete files
-$maxBackupsToProcess = 1000; // Limit for safety
-$maxBackupsToDelete = 100; // Maximum number of backups to delete in one run
-$thirtyDaysAgotag='60';
+$maxBackupsToProcess = 500; // Limit for safety
+$maxBackupsToDelete = 50; // Maximum number of backups to delete in one run
+$termDaysAgotag='90';
+$termYearsAgotag='2';
 // Log file setup
 $logDir = $dir['configs'] . "/DB_BACKUPS";
 if (!is_dir($logDir)) {
@@ -65,12 +66,12 @@ $failedDeletions = [];
 
 // Get current date info
 $currentDate = new DateTime();
-$thirtyDaysAgo = (clone $currentDate)->sub(new DateInterval('P'.$thirtyDaysAgotag.'D'));
-$oneYearAgo = (clone $currentDate)->sub(new DateInterval('P1Y'));
+$termDaysAgo = (clone $currentDate)->sub(new DateInterval('P'.$termDaysAgotag.'D'));
+$termYearAgo = (clone $currentDate)->sub(new DateInterval('P'.$termYearsAgotag.'Y'));
 
 logMessage("Current date: " . $currentDate->format('Y-m-d'), $logHandle);
-logMessage($thirtyDaysAgotag." days ago: " . $thirtyDaysAgo->format('Y-m-d'), $logHandle);
-logMessage("One year ago: " . $oneYearAgo->format('Y-m-d'), $logHandle);
+logMessage($termDaysAgotag." day(s) ago: " . $termDaysAgo->format('Y-m-d'), $logHandle);
+logMessage($termYearsAgotag." year(s) ago: " . $termYearAgo->format('Y-m-d'), $logHandle);
 
 // Initialize B2 client
 logMessage("Using bucket ID: $bucketId", $logHandle);
@@ -269,14 +270,14 @@ foreach ($backupGroups as $backupFolder => $backupData) {
             $keepReason = "January 1st backup";
         }
         // Rule 2: Keep if 15th of month within last year
-        elseif ($backupDate->format('d') === '15' && $backupDate >= $oneYearAgo) {
+        elseif ($backupDate->format('d') === '15' && $backupDate >= $termYearAgo) {
             $shouldKeep = true;
-            $keepReason = "15th of month within last year";
+            $keepReason = "15th of month within ".$termYearsAgotag." year(s)";
         }
         // Rule 3: Keep if within last 30 days
-        elseif ($backupDate >= $thirtyDaysAgo) {
+        elseif ($backupDate >= $termDaysAgo) {
             $shouldKeep = true;
-            $keepReason = 'Within last '.$thirtyDaysAgotag.' days';
+            $keepReason = 'Within last '.$termDaysAgotag.' days';
         }
         
         if ($shouldKeep) {

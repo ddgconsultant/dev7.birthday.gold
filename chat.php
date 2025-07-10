@@ -1,5 +1,11 @@
 <?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+
+// Page metadata
+$pagedata['pagetitle'] = 'Chat with Birthday Gold Support';
+$pagedata['metakeywords'] = 'Birthday Gold Chat, Customer Support, Live Chat, Help';
+$pagedata['metadescriptions'] = 'Chat with Birthday Gold support team. Get instant help with your birthday rewards enrollment and account questions.';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
@@ -8,28 +14,12 @@ include($dir['core_components'] . '/bg_header.inc');
 /* Modern chat page styling */
 .chat-page {
     background: #f8f9fa;
-    min-height: calc(100vh - 200px);
+    
 }
 
-.chat-header {
-    background: linear-gradient(135deg, #003366 0%, #004080 100%);
-    color: white;
-    padding: 3rem 0;
+/* Additional margin for content header */
+.content-header-dark {
     margin-bottom: 2rem;
-    margin-top: -2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.chat-header h1 {
-    margin: 0;
-    font-weight: 600;
-    font-size: 2.5rem;
-}
-
-.chat-header p {
-    margin: 0.5rem 0 0;
-    opacity: 0.9;
-    font-size: 1.125rem;
 }
 
 /* Chat container styling */
@@ -44,8 +34,6 @@ include($dir['core_components'] . '/bg_header.inc');
 .chat-container {
     width: 100%;
     height: 70vh;
-    min-height: 600px;
-    max-height: 800px;
     position: relative;
 }
 
@@ -102,24 +90,14 @@ include($dir['core_components'] . '/bg_header.inc');
         height: 60vh;
         min-height: 400px;
     }
-    
-    .chat-header {
-        padding: 2rem 0;
-    }
-    
-    .chat-header h1 {
-        font-size: 2rem;
-    }
 }
 </style>
 
 <div class="chat-page">
-    <div class="chat-header">
+    <div class="content-header-dark">
         <div class="container">
-            <div class="text-center">
-                <h1 class="text-white"><i class="bi bi-headset me-3"></i>Live Support Chat</h1>
-                <p>Connect with our support team instantly</p>
-            </div>
+            <h1>Live Support Chat</h1>
+            <p class="lead">Connect with our support team instantly</p>
         </div>
     </div>
 

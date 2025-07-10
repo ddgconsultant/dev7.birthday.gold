@@ -66,7 +66,7 @@ include($dir['core_components'] . '/bg_user_profileheader.inc');
 
 ?>
 
-  <div class="container my-5 main-content" >
+  <div class="container my-5 pt-5">
 <?PHP
 echo '<div class="mb-3">
 <h2 class="text-primary">Your Fun Facts</h2>

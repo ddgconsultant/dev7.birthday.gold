@@ -1,4 +1,5 @@
 <?php
+$addClasses[] = 'ai';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 #-------------------------------------------------------------------------------
@@ -23,6 +24,70 @@ $additionalstyles = '
     margin: -2rem auto 3rem;
     position: relative;
     z-index: 10;
+}
+
+/* AI Search Suggestions */
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    z-index: 100;
+}
+
+.search-suggestions.show {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    text-decoration: none;
+    display: block;
+    color: inherit;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: #f8f9fa;
+    text-decoration: none;
+}
+
+.suggestion-title {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.suggestion-desc {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.search-loading {
+    text-align: center;
+    padding: 1rem;
+    color: #6c757d;
+}
+
+.no-results {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #6c757d;
 }
 
 .search-input {
@@ -235,7 +300,7 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <!-- Hero Section -->
-<div class="content-header-dark">
+<div class="content-header-dark no-rounded-corners">
     <div class="container">
         <h1>How can we help you?</h1>
         <p class="lead">Find answers to your questions or get in touch with our support team</p>
@@ -251,8 +316,12 @@ include($dir['core_components'] . '/bg_header.inc');
                 class="search-input" 
                 placeholder="Search for help..."
                 id="helpSearch"
+                autocomplete="off"
             >
             <i class="bi bi-search search-icon"></i>
+            <div class="search-suggestions" id="searchSuggestions">
+                <!-- AI suggestions will appear here -->
+            </div>
         </div>
     </div>
 </div>
@@ -416,12 +485,33 @@ $footerattribute['postfooter'] = '
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const searchInput = document.getElementById("helpSearch");
+    const suggestionsContainer = document.getElementById("searchSuggestions");
     const helpCards = document.querySelectorAll(".help-card");
+    let searchTimeout;
+    let lastQuery = "";
     
     if (searchInput) {
+        // AI-powered search with debouncing
         searchInput.addEventListener("input", function(e) {
-            const searchTerm = e.target.value.toLowerCase();
+            const query = e.target.value.trim();
             
+            // Clear timeout if user is still typing
+            clearTimeout(searchTimeout);
+            
+            // Hide suggestions if query is empty
+            if (query.length === 0) {
+                suggestionsContainer.classList.remove("show");
+                suggestionsContainer.innerHTML = "";
+                
+                // Show all cards when search is cleared
+                helpCards.forEach(card => {
+                    card.style.display = "";
+                });
+                return;
+            }
+            
+            // Also filter existing cards immediately for instant feedback
+            const searchTerm = query.toLowerCase();
             helpCards.forEach(card => {
                 const title = card.querySelector(".help-card-title").textContent.toLowerCase();
                 const text = card.querySelector(".text-muted").textContent.toLowerCase();
@@ -433,19 +523,71 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             });
             
-            // Show/hide section headers based on visible cards
-            const sections = document.querySelectorAll(".section-header");
-            sections.forEach(section => {
-                const nextGrid = section.nextElementSibling;
-                if (nextGrid && nextGrid.classList.contains("help-grid")) {
-                    const visibleCards = nextGrid.querySelectorAll(".help-card:not([style*=\"display: none\"])");
-                    if (visibleCards.length === 0) {
-                        section.style.display = "none";
+            // Only make AI request after user stops typing for 300ms
+            searchTimeout = setTimeout(function() {
+                if (query === lastQuery) return; // Avoid duplicate requests
+                lastQuery = query;
+                
+                // Show loading state
+                suggestionsContainer.innerHTML = \'<div class="search-loading"><i class="bi bi-search me-2"></i>Searching...</div>\';
+                suggestionsContainer.classList.add("show");
+                
+                // Make AJAX request to AI search
+                fetch("/myaccount/ajax/help-ai-search.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: "query=" + encodeURIComponent(query) + "&" + document.querySelector(\'input[name="csrf_token"]\')?.name + "=" + document.querySelector(\'input[name="csrf_token"]\')?.value
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.suggestions.length > 0) {
+                        let html = "";
+                        data.suggestions.forEach(suggestion => {
+                            html += `
+                                <a href="${suggestion.url}" class="suggestion-item">
+                                    <div class="suggestion-title">${suggestion.title}</div>
+                                    <p class="suggestion-desc">${suggestion.description}</p>
+                                </a>
+                            `;
+                        });
+                        suggestionsContainer.innerHTML = html;
                     } else {
-                        section.style.display = "";
+                        suggestionsContainer.innerHTML = \'<div class="no-results"><i class="bi bi-search-x me-2"></i>No results found. Try different keywords or <a href="/contact">contact support</a>.</div>\';
                     }
+                })
+                .catch(error => {
+                    console.error("Search error:", error);
+                    // Fall back to showing filtered results
+                    suggestionsContainer.classList.remove("show");
+                });
+            }, 300); // 300ms debounce
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener("click", function(e) {
+            if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                suggestionsContainer.classList.remove("show");
+            }
+        });
+        
+        // Show suggestions again when focusing on input with value
+        searchInput.addEventListener("focus", function() {
+            if (this.value.trim().length > 0 && suggestionsContainer.innerHTML) {
+                suggestionsContainer.classList.add("show");
+            }
+        });
+        
+        // Handle enter key
+        searchInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const firstSuggestion = suggestionsContainer.querySelector(".suggestion-item");
+                if (firstSuggestion) {
+                    window.location.href = firstSuggestion.href;
                 }
-            });
+            }
         });
         
         // Focus search input on page load

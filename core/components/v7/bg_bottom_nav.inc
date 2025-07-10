@@ -25,18 +25,18 @@ if ($isKioskMode) {
 $rewardsBadgeCount = 0;
 $browseBadgeCount = 0;
 
-if ($isLoggedIn) {
+if ($isLoggedIn && 1==2) {
     // Check for pending rewards or notifications
     try {
-        $sql = "SELECT COUNT(*) as count FROM bg_user_rewards 
-                WHERE user_id = :user_id AND status = 'pending' AND expires_at > NOW()";
+        $sql = "SELECT COUNT(*) as count FROM bg_user_enrollments
+                WHERE user_id = :user_id AND `status` = 'success'";
         $result = $database->query($sql, [':user_id' => $current_user_data['user_id']]);
         $rewardsBadgeCount = $result[0]['count'] ?? 0;
-        
+
         // Check for new businesses or offers
         $sql = "SELECT COUNT(*) as count FROM bg_companies 
-                WHERE company_status = 'active' 
-                AND created_datetime > DATE_SUB(NOW(), INTERVAL 7 DAY)";
+                WHERE `status` = 'active' 
+                AND create_dt > DATE_SUB(NOW(), INTERVAL 7 DAY)";
         $result = $database->query($sql);
         $browseBadgeCount = $result[0]['count'] ?? 0;
     } catch (Exception $e) {
@@ -80,30 +80,30 @@ if (!$isLoggedIn) {
     echo '
 <nav class="bottom-nav" id="loggedInNav">
     <div class="nav-items">
-        <a href="/" class="nav-item">
+        <a href="/myaccount" class="nav-item">
             <i class="nav-icon bi bi-house"></i>
             <span class="nav-label">Home</span>
         </a>
-        <a href="/discover" class="nav-item">
+        <a href="/myaccount/enrollment-picker" class="nav-item">
             <i class="nav-icon bi bi-gift"></i>
-            <span class="nav-label">Browse</span>';
-    
+            <span class="nav-label">Pick</span>';
+
     if ($browseBadgeCount > 0) {
         echo '
             <span class="nav-badge" id="browseBadge">' . ($browseBadgeCount > 9 ? '9+' : $browseBadgeCount) . '</span>';
     }
-    
+
     echo '
         </a>
         <a href="/myaccount/rewards" class="nav-item cta">
             <i class="nav-icon bi bi-graph-up"></i>
             <span class="nav-label">My Rewards</span>';
-    
+
     if ($rewardsBadgeCount > 0) {
         echo '
             <span class="nav-badge" id="rewardsBadge">' . ($rewardsBadgeCount > 9 ? '9+' : $rewardsBadgeCount) . '</span>';
     }
-    
+
     echo '
         </a>
         <a href="/help" class="nav-item">
@@ -127,9 +127,19 @@ echo '
             <button type="button" class="btn-close" onclick="toggleMoreMenu()" aria-label="Close"></button>
         </div>
         <div class="more-menu-content">
-            <a href="/myaccount/" class="more-menu-item">
+        
+            
+                        <a href="/myaccount/notifications" class="more-menu-item">
+                <i class="more-icon bi bi-bell"></i>
+                <span>Notifications</span>
+            </a>
+                        <a href="/myaccount/profile" class="more-menu-item">
                 <i class="more-icon bi bi-person"></i>
-                <span>Profile & Settings</span>
+                <span>Profile</span>
+            </a>
+                        <a href="/myaccount/settings" class="more-menu-item">
+                <i class="more-icon bi bi-person"></i>
+                <span>Settings</span>
             </a>';
 
 // Only show billing for paid accounts
@@ -142,17 +152,13 @@ if ($isLoggedIn && ($current_user_data['account_plan'] ?? '') !== 'free') {
 }
 
 echo '
-            <a href="/myaccount/referrals" class="more-menu-item">
+            <a href="/myaccount/invite" class="more-menu-item">
                 <i class="more-icon bi bi-people"></i>
                 <span>Refer Friends</span>
             </a>
-            <a href="/myaccount/history" class="more-menu-item">
+            <a href="/myaccount/redeem" class="more-menu-item">
                 <i class="more-icon bi bi-bar-chart"></i>
                 <span>Rewards History</span>
-            </a>
-            <a href="/myaccount/preferences" class="more-menu-item">
-                <i class="more-icon bi bi-bell"></i>
-                <span>Notification Settings</span>
             </a>
             <a href="/contact" class="more-menu-item">
                 <i class="more-icon bi bi-headset"></i>
@@ -175,4 +181,3 @@ echo '
         </div>
     </div>
 </div>';
-?>

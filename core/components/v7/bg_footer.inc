@@ -100,10 +100,11 @@ $additionalstyles .= "
 }
 
 .social-link {
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 46px !important; 
-    height: 36px;
+    width: 40px !important; 
+    height: 40px !important;
     background: rgba(255, 255, 255, 0.1);
     color: white;
     border-radius: 50%;
@@ -112,8 +113,16 @@ $additionalstyles .= "
 }
 
 .social-link:hover {
-    background: var(--bs-secondary);
+    background: var(--primary-gold);
     color: var(--primary-dark);
+}
+
+/* Social media icons in footer */
+.social-links .icon-item {
+    color: var(--primary-gold) !important;
+    border: none !important;
+    background: none !important;
+    box-shadow: none !important;
 }
 
 .footer-links {
@@ -453,14 +462,7 @@ if (!isset($newheader)) {
 
 // Include bottom navigation component if needed
 if ($showBottomNav) {
-    // Use v7 components path
-    $bottomNavPath = $_SERVER['DOCUMENT_ROOT'] . '/core/components/v7/bg_bottom_nav.inc';
-    if (file_exists($bottomNavPath)) {
-        include($bottomNavPath);
-    } else {
-        // Fallback to regular path
-        include($dir['core_components'] . '/bg_bottom_nav.inc');
-    }
+    include($dir['core_components'] . '/bg_bottom_nav.inc');
 }
 
 // Start footer output
@@ -919,10 +921,10 @@ if (!empty($footerattribute['bottomfooter'])) {
 // Include analytics script based on mode
 switch ($mode) {
     case 'dev':
-        echo '<script data-host="http://a.bd.gold" data-dnt="false" data-mode="dev" src="https://a.bd.gold/js/script.js" id="ZwSg9rf6GA" async defer></script>';
+        echo '<script data-host="https://a.bd.gold" data-dnt="false" data-mode="dev" src="https://a.bd.gold/js/script.js" id="ZwSg9rf6GA" async defer></script>';
         break;
     default:
-        echo '<script data-host="http://a.bd.gold" data-dnt="false" src="https://a.bd.gold/js/script.js" id="ZwSg9rf6GA" async defer></script>';
+        echo '<script data-host="https://a.bd.gold" data-dnt="false" src="https://a.bd.gold/js/script.js" id="ZwSg9rf6GA" async defer></script>';
         break;
 }
 

@@ -28,15 +28,16 @@ echo '
 <div class="col-md-9 col-lg-9">
     <div class="d-flex justify-content-between align-items-center">
         <h1 class="mb-0">Your Rewards 
-            <span class="badge rounded-pill bg-success fs-3 align-middle" style="vertical-align: baseline; margin-bottom: 3px;">' . count($current_rewards) . '</span>
+            <span class="badge rounded-pill bg-success fs-5 align-middle" style="vertical-align: baseline; margin-bottom: 3px;">' . count($current_rewards) . '</span>
         </h1>
         <a href="/myaccount/redeem" class="btn btn-primary">View Latest Rewards</a>
     </div>
 
     <!-- Currently Available Rewards -->
-    <div class="mt-5">
+    <div class="mt-3 card card-body p-3">
+    <div class="">
         <div class="d-flex justify-content-between align-items-center">
-            <h2>Currently Available Rewards</h2>
+            <h2>Rewards Currently Available</h2>
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="toggleExpired" ' . ($showExpired ? 'checked' : '') . '>
                 <label class="form-check-label" for="toggleExpired">Show Expired</label>
@@ -77,11 +78,13 @@ foreach ($current_rewards as $company) {
     }
     echo '</div></div>';
 }
-
+echo '</div></div>
+ <div class="mt-5 card card-body p-3">
+ ';
 // Coming Soon section
 if (!empty($future_rewards)) {
     echo '
-    <div class="mt-5">
+    <div class="">
         <h2>Coming Soon</h2>
         <div class="row fw-bold py-2 bg-light border-bottom mt-3">
             <div class="col-4">Reward</div>

@@ -30,10 +30,41 @@ $pagetitle = 'Earn More Enrollments';
 $additionalstyles .= '
 <style>
 .earn-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
     color: white;
     padding: 2rem 0;
     margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animated background effect */
+.earn-header::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 0.5; }
+}
+
+.earn-header h1 {
+    position: relative;
+    z-index: 1;
+    color: #fff;
+}
+
+.earn-header p {
+    position: relative;
+    z-index: 1;
+    color: #fff;
 }
 
 .balance-card {
@@ -99,8 +130,7 @@ include($dir['core_components'] . '/bg_header.inc');
 
 <div class="earn-header">
     <div class="container">
-        <h1 class="mb-3">Earn More Enrollments</h1>
-        <p class="lead mb-0">Discover ways to get more enrollment allocations for your favorite birthday rewards</p>
+        <h1 class="mb-0">Earn More Enrollments</h1>
     </div>
 </div>
 
@@ -109,17 +139,17 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="balance-card">
         <p class="balance-label">Your Current Balance</p>
         <h2 class="balance-number"><?php echo $balance['available_allocations']; ?></h2>
-        <p class="balance-label">enrollment allocations</p>
+        <p class="balance-label">available enrollments</p>
     </div>
 
     <!-- Ways to Earn -->
     <div class="row">
         <div class="col-lg-8">
-            <h2 class="mb-4">Ways to Earn Allocations</h2>
+            <h2 class="mb-4">Ways to Earn Enrollments</h2>
             
             <!-- Bonus Allocations -->
             <div class="mb-5">
-                <h3 class="h5 mb-3">🎁 Bonus Allocations</h3>
+                <h3 class="h5 mb-3">🎁 Bonus Enrollments</h3>
                 
                 <div class="earn-method-card">
                     <div class="row align-items-center">
@@ -133,7 +163,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         </div>
                         <div class="col-auto text-end">
                             <div class="allocation-amount">+5</div>
-                            <p class="text-muted mb-0">allocations</p>
+                            <p class="text-muted mb-0">enrollments</p>
                         </div>
                     </div>
                 </div>
@@ -150,7 +180,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         </div>
                         <div class="col-auto text-end">
                             <div class="allocation-amount">+3</div>
-                            <p class="text-muted mb-0">allocations</p>
+                            <p class="text-muted mb-0">enrollments</p>
                         </div>
                     </div>
                 </div>
@@ -167,7 +197,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         </div>
                         <div class="col-auto text-end">
                             <div class="allocation-amount">+2</div>
-                            <p class="text-muted mb-0">allocations</p>
+                            <p class="text-muted mb-0">enrollments</p>
                         </div>
                     </div>
                 </div>
@@ -176,7 +206,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <!-- Purchase Options -->
             <div class="mb-5">
                 <h3 class="h5 mb-3">💳 Upgrade Your Plan</h3>
-                <p class="text-muted mb-3">Get more allocations with our premium plans</p>
+                <p class="text-muted mb-3">Get more enrollments with our premium plans</p>
                 
                 <div class="earn-method-card">
                     <h4 class="h5 mb-1">Premium Plan</h4>
@@ -196,7 +226,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         </div>
                         <div class="col">
                             <h4 class="h5 mb-1">Subscribe to Newsletter</h4>
-                            <p class="text-muted mb-0">Get 5 bonus allocations when you subscribe to our weekly newsletter</p>
+                            <p class="text-muted mb-0">Get 5 bonus enrollments when you subscribe to our weekly newsletter</p>
                         </div>
                         <div class="col-auto">
                             <a href="/myaccount/preferences" class="btn btn-outline-primary">Subscribe</a>
@@ -211,7 +241,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         </div>
                         <div class="col">
                             <h4 class="h5 mb-1">Download Mobile App</h4>
-                            <p class="text-muted mb-0">Get 10 bonus allocations when you download our mobile app</p>
+                            <p class="text-muted mb-0">Get 10 bonus enrollments when you download our mobile app</p>
                         </div>
                         <div class="col-auto">
                             <button class="btn btn-outline-primary" disabled>Coming Soon</button>
@@ -223,20 +253,24 @@ include($dir['core_components'] . '/bg_header.inc');
 
         <!-- Side Stats -->
         <div class="col-lg-4">
-            <h3 class="h5 mb-3">Your Allocation Stats</h3>
+            <h3 class="h5 mb-3">Your Enrollment Stats</h3>
             <div class="card">
                 <div class="card-body">
                     <ul class="list-unstyled mb-0">
                         <li class="mb-2">
-                            <strong>Current Balance:</strong> 
+                            <strong>Available Enrollments:</strong> 
                             <span class="text-primary"><?php echo $balance['available_allocations']; ?></span>
                         </li>
                         <li class="mb-2">
-                            <strong>Plan Allocations:</strong> 
+                            <strong>Plan Enrollments:</strong> 
                             <span><?php echo $balance['plan_allocations'] ?? 10; ?></span>
                         </li>
                         <li class="mb-2">
-                            <strong>Used This Year:</strong> 
+                            <strong>Bonus Enrollments:</strong> 
+                            <span><?php echo ($balance['available_allocations'] - ($balance['plan_allocations'] ?? 10)) > 0 ? ($balance['available_allocations'] - ($balance['plan_allocations'] ?? 10)) : 0; ?></span>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Used Enrollments:</strong> 
                             <span><?php echo $balance['total_used'] ?? 0; ?></span>
                         </li>
                     </ul>
@@ -244,7 +278,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
             
             <div class="mt-3 text-center">
-                <a href="/myaccount/allocation-history" class="btn btn-sm btn-outline-secondary">View Full History</a>
+                <a href="/myaccount/enrollment-history" class="btn btn-sm btn-outline-secondary">View Full History</a>
             </div>
         </div>
     </div>

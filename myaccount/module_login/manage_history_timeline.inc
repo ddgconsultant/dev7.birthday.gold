@@ -100,11 +100,11 @@ $additionalstyles .= '
 .timeline-entry::before {
     content: "";
     position: absolute;
-    left: -58px;
+    left: -45px;
     top: 50%;
     transform: translateY(-50%);
-    width: 58px;
-    height: 2px;
+    width: 45px;
+    height: 1px;
     background: #dee2e6;
 }
 
@@ -304,17 +304,32 @@ echo '<div class="history-container">
     </div>';
 
 // Fetch the login history
+/*
 $sql = "SELECT * FROM bg_logintracking 
         WHERE user_id = :user_id 
         AND `status` = 'A' 
         AND `site` = :site 
         ORDER BY create_dt DESC 
-        LIMIT 0, 200";
+        LIMIT 0, 300";
 $stmt = $database->prepare($sql);
 $stmt->execute([
     ':user_id' => $workinguserdata['user_id'],
     ':site' => $site
 ]);
+*/
+
+// Fetch the login history
+$sql = "SELECT * FROM bg_logintracking 
+        WHERE user_id = :user_id 
+        AND `status` = 'A' 
+        ORDER BY create_dt DESC 
+        LIMIT 0, 300";
+$stmt = $database->prepare($sql);
+$stmt->execute([
+    ':user_id' => $workinguserdata['user_id'],
+]);
+
+
 
 $logins = $stmt->fetchAll(PDO::FETCH_ASSOC);
 if (empty($logins)) {
@@ -382,7 +397,7 @@ foreach ($loginsByPeriod as $yearMonth => $days) {
     $periodLabel = $periodDate->format('F Y');
     
     echo '<div class="timeline-period">';
-    echo '<div class="timeline-period-marker">' . $periodDate->format('M Y') . '</div>';
+    echo '<div class="timeline-period-marker">' . $periodDate->format('F, Y') . '</div>';
     
     foreach ($days as $day => $dayLogins) {
         $dayDate = new DateTime($day);
@@ -497,26 +512,28 @@ foreach ($loginsByPeriod as $yearMonth => $days) {
                       </div>';
             } else {
                 // Compact layout - 1 line
-                echo '<div class="' . $entryClasses . ' compact">
-                        ' . $sessionBadge . '
-                        <div class="entry-content">
-                            <div class="entry-time">' . $loginTime->format('g:i A') . '</div>
-                            <div class="entry-details compact">
-                                <div class="entry-detail">
-                                    <i class="bi bi-geo-alt"></i>
-                                    <span>' . htmlspecialchars($location) . '</span>
-                                </div>
-                                <div class="entry-detail">
-                                    <i class="bi bi-wifi"></i>
-                                    <span>' . htmlspecialchars($ipAddress) . '</span>
-                                </div>
-                                <div class="entry-detail">
-                                    <i class="bi bi-' . ($details['deviceType'] === 'Mobile' ? 'phone' : 'laptop') . '"></i>
-                                    <span>' . htmlspecialchars($details['browser']) . ' • ' . htmlspecialchars($details['os']) . '</span>
-                                </div>
-                            </div>
-                        </div>
-                      </div>';
+                echo '<div class="' . $entryClasses . ' compact d-flex align-items-start gap-2 mb-2">
+                ' . $sessionBadge . '
+                <div class="entry-content d-flex align-items-center flex-wrap w-100" style="gap: 1rem;">
+                    <div class="entry-time text-nowrap" style="min-width: 65px;">' . $loginTime->format('g:i A') . '</div>
+        
+                    <div class="entry-detail d-flex align-items-center" style="min-width: 100px;">
+                        <i class="bi bi-geo-alt me-1"></i>
+                        <span class="text-truncate">' . htmlspecialchars($location) . '</span>
+                    </div>
+        
+                    <div class="entry-detail d-flex align-items-center" style="min-width: 110px;">
+                        <i class="bi bi-wifi me-1"></i>
+                        <span class="text-truncate">' . htmlspecialchars($ipAddress) . '</span>
+                    </div>
+        
+                    <div class="entry-detail d-flex align-items-center flex-grow-1" style="min-width: 200px;">
+                        <i class="bi bi-' . ($details['deviceType'] === 'Mobile' ? 'phone' : 'laptop') . ' me-1"></i>
+                        <span class="text-truncate">' . htmlspecialchars($details['browser']) . ' • ' . htmlspecialchars($details['os']) . '</span>
+                    </div>
+                </div>
+              </div>';
+        
             }
         }
         

@@ -539,40 +539,110 @@ margin-bottom: 15px;
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .content-header-dark h1 {
-    font-size: 2rem;
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
   }
   
   .content-header-dark h2 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
   }
   
   .content-header-dark h3 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
   }
   
   .content-header-dark p,
   .content-header-dark .lead {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
   }
   
   .content-header-dark {
-    padding: 3rem 0;
+    padding: 1.5rem 0;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
   }
   
   .content-header-dark.compact {
-    padding: 2rem 0;
+    padding: 1rem 0;
   }
   
   .content-header-dark.large {
-    padding: 4rem 0;
+    padding: 2rem 0;
   }
   
   .content-header-dark .stats {
-    gap: 2rem;
+    gap: 1.5rem;
+    margin: 1rem 0;
   }
   
   .content-header-dark .stat-number {
-    font-size: 2rem;
+    font-size: 1.75rem;
+  }
+  
+  /* Remove rounded corners when search bar follows */
+  .content-header-dark.no-rounded-corners {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 576px) {
+  .content-header-dark h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .content-header-dark h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .content-header-dark h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .content-header-dark p,
+  .content-header-dark .lead {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .content-header-dark {
+    padding: 1rem 0;
+    border-bottom-left-radius: 25px;
+    border-bottom-right-radius: 25px;
+  }
+  
+  .content-header-dark.compact {
+    padding: 0.75rem 0;
+  }
+  
+  .content-header-dark.large {
+    padding: 1.5rem 0;
+  }
+  
+  .content-header-dark .stats {
+    gap: 1rem;
+    margin: 0.75rem 0;
+  }
+  
+  .content-header-dark .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .content-header-dark .stat-label {
+    font-size: 0.875rem;
+  }
+  
+  /* Remove rounded corners when search bar follows */
+  .content-header-dark.no-rounded-corners {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
   }
 }
 
