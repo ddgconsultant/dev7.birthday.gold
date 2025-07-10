@@ -1329,7 +1329,7 @@ function toggleQuickQuestions() {
                 const scrollTo = scrollTop + (wrapperRect.bottom - windowHeight) + 20; // 20px padding
                 window.scrollTo({
                     top: scrollTo,
-                    behavior: 'smooth'
+                    behavior: "smooth"
                 });
             }
         }, 50);
@@ -1341,9 +1341,9 @@ function toggleQuickQuestions() {
             // If chat container is above viewport, scroll to it
             if (chatRect.top < 0) {
                 chatContainer.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start',
-                    inline: 'nearest'
+                    behavior: "smooth", 
+                    block: "start",
+                    inline: "nearest"
                 });
             }
         }
