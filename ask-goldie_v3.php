@@ -1068,7 +1068,7 @@ include($dir['core_components'] . '/bg_header.inc');
         <!-- Chat Header -->
         <div class="chat-header">
             <div class="d-flex align-items-center gap-2">
-                <img src="/public/images/logo/goldie-avatar_72.png" alt="Goldie" style="height: 40px;">
+                <img src="/public/images/logo/goldie_72.png" alt="Goldie" style="height: 40px;">
                 <div>
                     <h5 class="mb-0">Chat with Goldie</h5>
                     <small class="text-muted">
@@ -1090,10 +1090,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <?php if (empty($conversationHistory)): ?>
                 <!-- Welcome Message for New Conversations -->
                 <div class="welcome-message">
-                    <div class="position-relative d-inline-block mb-3" style="height: 100px;">
-                        <img src="/public/images/logo/goldie-avatar_200.png" alt="Goldie" style="height: 80px; opacity: 0.5; position: relative; z-index: 2;" class="floating-icon">
-                        <img src="/public/images/logo/goldie-shadow_200.png" alt="" style="height: 16px; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1;" class="shadow-icon">
-                    </div>
+                    <img src="/public/images/logo/goldie_200.png" alt="Goldie" style="height: 80px; opacity: 0.5;" class="mb-3">
                     <h6>Welcome! I'm Goldie, your Birthday Gold assistant.</h6>
                     <p class="mb-0">Ask me anything about Birthday Gold!</p>
                     <div class="quick-actions">
@@ -1133,7 +1130,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         <?php endif; ?>
                     </div>
                     <div class="message message-goldie<?php echo $isLatest ? ' latest-message' : ''; ?>">
-                        <img src="/public/images/logo/goldie-avatar_72.png" alt="Goldie">
+                        <img src="/public/images/logo/goldie_72.png" alt="Goldie">
                         <div class="message-content">
                             <?php echo nl2br(htmlspecialchars($item['answer'])); ?>
                             <div class="message-timestamp">
@@ -1146,7 +1143,7 @@ include($dir['core_components'] . '/bg_header.inc');
             
             <!-- Typing Indicator -->
             <div class="typing-indicator" id="typingIndicator">
-                <img src="/public/images/logo/goldie-avatar_72.png" alt="Goldie" style="width: 32px; height: 32px;">
+                <img src="/public/images/logo/goldie_72.png" alt="Goldie" style="width: 32px; height: 32px;">
                 <div class="typing-dots">
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
