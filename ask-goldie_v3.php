@@ -2,6 +2,15 @@
 $addClasses[] = 'ai';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+// Debug session state at start
+if ($mode === 'dev' && isset($_GET['debug_session'])) {
+    echo '<pre>Session state at start:';
+    echo "\nRate limit: " . json_encode($_SESSION['ask_goldie_rate_limit'] ?? 'not set');
+    echo "\nConversations: " . json_encode(array_keys($_SESSION['ask_goldie_conversations'] ?? []));
+    echo "\nConversation ID in session: " . ($_SESSION['ask_goldie_conversation_id'] ?? 'not set');
+    echo '</pre>';
+}
+
 // Session-based rate limiting with flood detection
 if (!isset($_SESSION['ask_goldie_rate_limit'])) {
     $_SESSION['ask_goldie_rate_limit'] = [
@@ -36,32 +45,51 @@ if (count($rateLimitData['requests_30s']) >= 2) {
     $requireCaptcha = true;
 }
 
-// Initialize conversation ID (persists across sessions for logged-in users)
-if (!empty($current_user_data['user_id'])) {
-    $conversationId = 'user_' . $current_user_data['user_id'] . '_' . date('Ymd');
-} else {
-    if (!isset($_SESSION['ask_goldie_conversation_id'])) {
+// Initialize conversation ID (stored in session for all users)
+if (!isset($_SESSION['ask_goldie_conversation_id'])) {
+    if (!empty($current_user_data['user_id'])) {
+        // For logged-in users, include user ID and unique ID
+        $_SESSION['ask_goldie_conversation_id'] = 'user_' . $current_user_data['user_id'] . '_' . uniqid();
+    } else {
+        // For anonymous users
         $_SESSION['ask_goldie_conversation_id'] = 'anon_' . uniqid() . '_' . date('Ymd');
     }
-    $conversationId = $_SESSION['ask_goldie_conversation_id'];
 }
+$conversationId = $_SESSION['ask_goldie_conversation_id'];
 
 // Option to start new conversation
 if (isset($_GET['new']) && $_GET['new'] == 1) {
-    if (!empty($current_user_data['user_id'])) {
-        $conversationId = 'user_' . $current_user_data['user_id'] . '_' . uniqid();
-    } else {
-        $_SESSION['ask_goldie_conversation_id'] = 'anon_' . uniqid() . '_' . date('Ymd');
-        $conversationId = $_SESSION['ask_goldie_conversation_id'];
+    // Clear ALL conversation history to start fresh
+    if (isset($_SESSION['ask_goldie_conversations'])) {
+        $_SESSION['ask_goldie_conversations'] = [];
     }
+    
+    // Generate new conversation ID and store in session
+    if (!empty($current_user_data['user_id'])) {
+        $newConversationId = 'user_' . $current_user_data['user_id'] . '_' . uniqid();
+        $_SESSION['ask_goldie_conversation_id'] = $newConversationId;
+    } else {
+        $newConversationId = 'anon_' . uniqid() . '_' . date('Ymd');
+        $_SESSION['ask_goldie_conversation_id'] = $newConversationId;
+    }
+    
+    // Reset rate limit counters for new conversation
+    $_SESSION['ask_goldie_rate_limit'] = [
+        'count' => 0,
+        'reset_time' => time() + 3600, // 1 hour from now
+        'last_request' => 0,
+        'requests_30s' => []
+    ];
+    
+    // Track new conversation start
+    session_tracking('ask-goldie-new-conversation', [
+        'conversation_id' => $newConversationId,
+        'user_id' => !empty($current_user_data['user_id']) ? $current_user_data['user_id'] : null,
+        'timestamp' => date('Y-m-d H:i:s')
+    ]);
+    
     header('Location: /ask-goldie_v3');
     exit;
-}
-
-// Load conversation history from session
-$conversationHistory = [];
-if (isset($_SESSION['ask_goldie_conversations'][$conversationId])) {
-    $conversationHistory = $_SESSION['ask_goldie_conversations'][$conversationId];
 }
 
 // Allow 10 questions per hour per session
@@ -78,8 +106,44 @@ $question = '';
 $answer = '';
 $showAnswer = false;
 $errorMessage = '';
+$conversationHistory = []; // Initialize here, will load after processing
+
+// Debug: Always log POST data in dev mode
+if ($mode === 'dev') {
+    error_log('Ask Goldie v3 - REQUEST_METHOD: ' . ($_SERVER['REQUEST_METHOD'] ?? 'NOT SET'));
+    error_log('Ask Goldie v3 - POST data: ' . json_encode($_POST));
+    error_log('Ask Goldie v3 - GET data: ' . json_encode($_GET));
+    error_log('Ask Goldie v3 - Session CSRF token: ' . ($_SESSION['csrf_token'] ?? 'NOT SET'));
+    error_log('Ask Goldie v3 - POST _token: ' . ($_POST['_token'] ?? 'NOT SET'));
+    
+    // Test if we received a test submission
+    if (isset($_GET['test_submit'])) {
+        $question = "Test question from GET parameter";
+        $answer = "This is a test response to verify form processing is working.";
+        $showAnswer = true;
+        
+        // Add to conversation history
+        $conversationHistory[] = [
+            'question' => $question,
+            'answer' => $answer,
+            'timestamp' => time()
+        ];
+        
+        // Save to session
+        if (!isset($_SESSION['ask_goldie_conversations'])) {
+            $_SESSION['ask_goldie_conversations'] = [];
+        }
+        $_SESSION['ask_goldie_conversations'][$conversationId] = $conversationHistory;
+    }
+}
 
 if (($formdata = $app->formposted())) {
+    // Debug: Log that form was posted
+    if ($mode === 'dev') {
+        error_log('Ask Goldie - FORM POSTED SUCCESSFULLY!');
+        error_log('Form data: ' . json_encode($formdata));
+    }
+    
     // Check 10-second rate limit
     $timeSinceLastRequest = time() - ($rateLimitData['last_request'] ?? 0);
     if ($timeSinceLastRequest < 10) {
@@ -202,6 +266,13 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
                     ];
                     session_tracking('ask-goldie-response', $qaTracking);
                     
+                    // Load current conversation history to ensure we have the latest
+                    if (isset($_SESSION['ask_goldie_conversations'][$conversationId])) {
+                        $conversationHistory = $_SESSION['ask_goldie_conversations'][$conversationId];
+                    } else {
+                        $conversationHistory = [];
+                    }
+                    
                     // Add to conversation history
                     $conversationHistory[] = [
                         'question' => $question,
@@ -220,6 +291,9 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
                     }
                     $_SESSION['ask_goldie_conversations'][$conversationId] = $conversationHistory;
                     
+                    // Update the local conversation history variable to reflect the change
+                    $conversationHistory = $_SESSION['ask_goldie_conversations'][$conversationId];
+                    
                     // Also track in database for analytics
                     $conversationData = [
                         'conversation_id' => $conversationId,
@@ -231,6 +305,14 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
                     
                     $showAnswer = true;
                     
+                    // Debug: Log conversation state after processing
+                    if ($mode === 'dev') {
+                        error_log('Ask Goldie Debug - After processing:');
+                        error_log('Conversation ID: ' . $conversationId);
+                        error_log('Conversation history count: ' . count($conversationHistory));
+                        error_log('Session conversations: ' . json_encode(array_keys($_SESSION['ask_goldie_conversations'] ?? [])));
+                    }
+                    
                 } catch (Exception $e) {
                     error_log('Ask Goldie error: ' . $e->getMessage());
                     $errorMessage = 'Sorry, I could not process your question at this time. Please try again or contact support.';
@@ -238,6 +320,23 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
             }
         }
     }
+}
+
+// Load conversation history from session AFTER form processing
+if (isset($_SESSION['ask_goldie_conversations'][$conversationId])) {
+    $conversationHistory = $_SESSION['ask_goldie_conversations'][$conversationId];
+} else {
+    $conversationHistory = [];
+}
+
+// Debug logging
+if ($mode === 'dev') {
+    error_log('Ask Goldie Page Load Debug:');
+    error_log('Conversation ID: ' . $conversationId);
+    error_log('Conversation exists in session: ' . (isset($_SESSION['ask_goldie_conversations'][$conversationId]) ? 'Yes' : 'No'));
+    error_log('Conversation history count: ' . count($conversationHistory));
+    error_log('Form posted: ' . ($formdata ? 'Yes' : 'No'));
+    error_log('Show answer: ' . ($showAnswer ? 'Yes' : 'No'));
 }
 
 // Generate dynamic quick questions based on conversation context
@@ -692,10 +791,14 @@ $additionalstyles = '
     background: white;
     border: 1px solid #dee2e6;
     border-radius: 20px;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1.25rem;
     font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: normal;
+    text-align: left;
+    max-width: 300px;
+    line-height: 1.4;
 }
 
 .quick-action:hover {
@@ -833,6 +936,55 @@ include($dir['core_components'] . '/bg_header.inc');
 </div>
 
 <div class="container py-4" style="flex: 1; display: flex; flex-direction: column;">
+    <?php if ($mode === 'dev'): ?>
+    <!-- Debug Information -->
+    <div class="alert alert-info small mb-3">
+        <h6 class="mb-2">Debug Information:</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <strong>REQUEST METHOD:</strong> <?php echo $_SERVER['REQUEST_METHOD'] ?? 'NOT SET'; ?><br>
+                <strong>Conversation ID:</strong> <?php echo htmlspecialchars($conversationId); ?><br>
+                <strong>Rate Limit Count:</strong> <?php echo $rateLimitData['count']; ?> / 10<br>
+                <strong>Questions Remaining:</strong> <?php echo 10 - $rateLimitData['count']; ?><br>
+                <strong>Reset Time:</strong> <?php echo date('H:i:s', $rateLimitData['reset_time']); ?> (<?php echo round(($rateLimitData['reset_time'] - time()) / 60); ?> min left)<br>
+                <strong class="text-danger">Form Posted:</strong> <?php echo $formdata ? 'YES' : 'NO'; ?><br>
+                <strong class="text-danger">Show Answer:</strong> <?php echo $showAnswer ? 'YES' : 'NO'; ?><br>
+            </div>
+            <div class="col-md-6">
+                <strong>Last Request:</strong> <?php echo $rateLimitData['last_request'] ? date('H:i:s', $rateLimitData['last_request']) : 'None'; ?><br>
+                <strong>Flood Requests (30s):</strong> <?php echo count($rateLimitData['requests_30s']); ?><br>
+                <strong>Conversation History:</strong> <?php echo count($conversationHistory); ?> exchanges<br>
+                <strong>Require Captcha:</strong> <?php echo $requireCaptcha ? 'Yes' : 'No'; ?><br>
+                <strong>CSRF Token Match:</strong> <?php echo (isset($_POST['_token']) && $_POST['_token'] === $_SESSION['csrf_token']) ? 'YES' : 'NO'; ?><br>
+            </div>
+        </div>
+        <div class="mt-2 bg-warning p-2">
+            <strong>POST Data:</strong> <?php echo htmlspecialchars(json_encode($_POST)); ?><br>
+            <strong>Session CSRF:</strong> <?php echo htmlspecialchars($_SESSION['csrf_token'] ?? 'NOT SET'); ?><br>
+            <strong>POST Token:</strong> <?php echo htmlspecialchars($_POST['_token'] ?? 'NOT SET'); ?><br>
+            <strong>Form Data Result:</strong> <?php echo $formdata ? htmlspecialchars(json_encode($formdata)) : 'FALSE'; ?>
+        </div>
+        <div class="mt-2">
+            <strong>All Conversations in Session:</strong><br>
+            <?php 
+            if (isset($_SESSION['ask_goldie_conversations'])) {
+                foreach ($_SESSION['ask_goldie_conversations'] as $cid => $history) {
+                    echo htmlspecialchars($cid) . ' (' . count($history) . ' exchanges)';
+                    if ($cid === $conversationId) echo ' <span class="badge bg-primary">CURRENT</span>';
+                    echo '<br>';
+                }
+            } else {
+                echo 'No conversations in session';
+            }
+            ?>
+        </div>
+        <div class="mt-2">
+            <strong>GET Parameters:</strong> <?php echo htmlspecialchars(json_encode($_GET)); ?><br>
+            <strong>User ID:</strong> <?php echo !empty($current_user_data['user_id']) ? $current_user_data['user_id'] : 'Anonymous'; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+    
     <div class="chat-container" style="flex: 1;">
         <!-- Chat Header -->
         <div class="chat-header">
@@ -869,15 +1021,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         foreach ($welcomeQuestions as $question): 
                         ?>
                         <button class="quick-action" onclick="quickQuestion(<?php echo htmlspecialchars(json_encode($question), ENT_QUOTES); ?>)">
-                            <?php 
-                            // Shorten for button display
-                            $shortText = $question;
-                            if (strpos($question, 'Birthday Gold work') !== false) $shortText = 'How it works';
-                            elseif (strpos($question, 'birthday rewards') !== false) $shortText = 'Birthday rewards';
-                            elseif (strpos($question, 'cost') !== false || strpos($question, 'price') !== false) $shortText = 'Pricing';
-                            elseif (strpos($question, 'started') !== false) $shortText = 'Get started';
-                            echo htmlspecialchars($shortText);
-                            ?>
+                            <?php echo htmlspecialchars($question); ?>
                         </button>
                         <?php endforeach; ?>
                     </div>
@@ -958,14 +1102,14 @@ include($dir['core_components'] . '/bg_header.inc');
                     autocomplete="off"
                     id="chatInput"
                     rows="1"
-                ></textarea>
+                ><?php echo isset($_POST['question']) ? htmlspecialchars($_POST['question']) : ''; ?></textarea>
                 <?php if ($requireCaptcha): ?>
                     <!-- Hidden captcha that shows when needed -->
                     <div id="captchaModal" style="display: none;">
                         <?php echo $app->generateCaptcha(); ?>
                     </div>
                 <?php endif; ?>
-                <button type="submit" class="chat-submit btn btn-primary" id="submitBtn">
+                <button type="submit" class="chat-submit btn btn-primary" id="submitBtn" name="submit" value="1">
                     <i class="bi bi-send-fill"></i>
                 </button>
             </form>
@@ -1028,6 +1172,11 @@ include($dir['core_components'] . '/bg_header.inc');
         <a href="/contact" class="text-muted">
             <i class="bi bi-envelope"></i> Contact Support
         </a>
+        <?php if ($mode === 'dev'): ?>
+        <button type="button" class="btn btn-warning btn-sm ms-3" onclick="testFormSubmit()">
+            Test Submit
+        </button>
+        <?php endif; ?>
     </div>
 </div>
 </div><!-- End of flex wrapper -->
@@ -1049,11 +1198,30 @@ function scrollToBottom() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
+// Test form submission
+function testFormSubmit() {
+    console.log("Test form submit");
+    const form = document.getElementById("chatForm");
+    const input = document.getElementById("chatInput");
+    
+    // Set a test question
+    input.value = "This is a test question to check form submission";
+    
+    // Reset processing flag
+    isProcessing = false;
+    
+    // Submit the form directly
+    console.log("Submitting form directly");
+    form.submit();
+}
+
 // Quick question buttons
 function quickQuestion(question) {
     const input = document.getElementById("chatInput");
     const form = document.getElementById("chatForm");
     const submitBtn = document.getElementById("submitBtn");
+    
+    console.log("Quick question clicked:", question);
     
     // Set the question value
     input.value = question;
@@ -1067,16 +1235,21 @@ function quickQuestion(question) {
         wrapper.classList.add("collapsed");
     }
     
-    // Submit the form if button is enabled
+    // Reset processing flag
+    isProcessing = false;
+    
+    // Submit the form by clicking the submit button
     if (submitBtn && !submitBtn.disabled) {
-        // Trigger the submit event instead of direct submit
-        const submitEvent = new Event(\'submit\', { cancelable: true });
-        form.dispatchEvent(submitEvent);
-        
-        // If event was not prevented, submit the form
-        if (!submitEvent.defaultPrevented) {
-            form.submit();
-        }
+        console.log("Triggering submit button click");
+        // Focus the input first to ensure it's ready
+        input.focus();
+        // Click the submit button to trigger natural form submission
+        setTimeout(function() {
+            console.log("Clicking submit button");
+            submitBtn.click();
+        }, 50);
+    } else {
+        console.log("Submit button is disabled");
     }
 }
 
@@ -1116,6 +1289,9 @@ const chatInput = document.getElementById("chatInput");
 const chatMessages = document.getElementById("chatMessages");
 const sendingOverlay = document.getElementById("sendingOverlay");
 
+// Flag to track if we are processing
+let isProcessing = false;
+
 // Disable submit if within 10 second cooldown
 const lastSubmitTime = ' . $lastSubmitTime . ';
 const currentTime = ' . $currentTime . ';
@@ -1154,22 +1330,23 @@ chatInput.addEventListener("keydown", function(e) {
             // Shift+Enter submits
             e.preventDefault();
             if (!submitBtn.disabled && this.value.trim()) {
-                // Trigger submit event instead of direct submit
-                const submitEvent = new Event(\'submit\', { cancelable: true });
-                chatForm.dispatchEvent(submitEvent);
+                // Mark as processing and submit
+                isProcessing = true;
+                showProcessingFeedback();
+                chatForm.submit();
             }
         }
         // Regular Enter allows new line (default behavior)
     }
 });
 
-// Show typing when form is submitted
-chatForm.addEventListener("submit", function(e) {
-    // Do not submit immediately - let visual feedback show first
-    e.preventDefault();
+// Function to show visual feedback
+function showProcessingFeedback() {
+    console.log("showProcessingFeedback called");
     
-    // Get the question text before disabling
+    // Get the question text before any changes
     const questionText = chatInput.value.trim();
+    console.log("Question text:", questionText);
     
     // Add processing class to input area
     const inputArea = document.querySelector(".chat-input-area");
@@ -1177,15 +1354,14 @@ chatForm.addEventListener("submit", function(e) {
         inputArea.classList.add("processing");
     }
     
-    // Show sending overlay with force
+    // Show sending overlay
     if (sendingOverlay) {
         sendingOverlay.style.display = "flex";
         sendingOverlay.classList.add("show");
+        console.log("Overlay shown");
     }
     
-    // Disable input and button
-    chatInput.disabled = true;
-    submitBtn.disabled = true;
+    // Add loading class but keep button enabled for form submission
     submitBtn.classList.add("loading");
     
     // Change button to loading state
@@ -1195,26 +1371,51 @@ chatForm.addEventListener("submit", function(e) {
     const welcomeMsg = document.querySelector(".welcome-message");
     if (welcomeMsg) welcomeMsg.remove();
     
-    // Add user message immediately to chat
-    const userMessage = document.createElement("div");
-    userMessage.className = "message message-user";
-    const userAvatar = ' . (!empty($current_user_data['user_id']) ? '"' . $jsUserAvatar . '"' : '""') . ';
+    console.log("Processing feedback complete - form should still be able to submit");
+}
+
+// Show visual feedback when form is submitted
+chatForm.addEventListener("submit", function(e) {
+    console.log("Form submit event triggered");
+    console.log("Form action:", chatForm.action);
+    console.log("Form method:", chatForm.method);
+    console.log("Question value:", chatInput.value);
     
-    let userMessageHTML = \'<div class="message-content">\';
-    userMessageHTML += questionText.replace(/\\n/g, "<br>");
-    userMessageHTML += \'<div class="message-timestamp">\' + new Date().toLocaleTimeString("en-US", {hour: "numeric", minute: "numeric", hour12: true}) + \'</div>\';
-    userMessageHTML += \'</div>\';
-    if (userAvatar) {
-        userMessageHTML += \'<img src="\' + userAvatar + \'" alt="You" class="user-avatar">\';
+    // Check if form has _token field
+    const tokenField = chatForm.querySelector(\'input[name="_token"]\');
+    console.log("Token field exists:", tokenField ? "YES" : "NO");
+    if (tokenField) {
+        console.log("Token value:", tokenField.value);
     }
     
-    userMessage.innerHTML = userMessageHTML;
-    chatMessages.appendChild(userMessage);
+    // Check if question is empty
+    if (!chatInput.value.trim()) {
+        console.log("Question is empty, preventing submission");
+        e.preventDefault();
+        return false;
+    }
     
-    // Submit the form after a small delay to ensure visual feedback is shown
-    setTimeout(() => {
-        chatForm.submit();
-    }, 100);
+    // Only show feedback if not already processing
+    if (!isProcessing) {
+        console.log("First time processing, showing feedback");
+        isProcessing = true;
+        showProcessingFeedback();
+        
+        // Store form data for debugging
+        const formData = new FormData(chatForm);
+        console.log("Form data being submitted:");
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ": " + pair[1]);
+        }
+    } else {
+        console.log("Already processing, preventing duplicate submission");
+        e.preventDefault();
+        return false;
+    }
+    
+    // Let the form submit naturally
+    console.log("Allowing form to submit naturally");
+    return true;
 });
 </script>
 ';
