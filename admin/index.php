@@ -391,6 +391,16 @@ $businessHours = $app->bg_businesshours();
                     <p class="admin-card-text">Review customer feedback and surveys</p>
                 </div>
             </a>
+            
+            <a href="/admin/ai-dashboard.php" class="admin-card">
+                <div class="admin-icon icon-user">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">AI Dashboard</h3>
+                    <p class="admin-card-text">Ask Goldie analytics and conversation insights</p>
+                </div>
+            </a>
         </div>
         
         <!-- Plans & Products Section -->

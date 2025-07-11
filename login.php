@@ -259,6 +259,8 @@ if (!$response) {
   }
 }
 
+// Flush header to remove default spacing
+$header_flush = true;
 
 #include($_SERVER['DOCUMENT_ROOT'] . '/core/' . $website['ui_version'] . '/header3.inc');
 include($dir['core_components'] . '/bg_pagestart.inc');
@@ -280,6 +282,20 @@ $additionalstyles = '
     width: 100%;
     max-width: 480px;
     margin: 2rem auto;
+}
+
+/* Mobile: Position below fixed header */
+@media (max-width: 767px) {
+    .login-container {
+        margin-top: 76px; /* 60px header + 16px (1rem) spacing */
+        margin-bottom: 2rem;
+    }
+    
+    /* Remove any default padding from main content wrapper */
+    .main-content {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
 }
 
 .login-card {

@@ -10,6 +10,7 @@ $isLoggedIn = $current_user_data['user_id'] ?? false;
 
 // Get current page for active states
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
+$currentPath = $_SERVER['REQUEST_URI'];
 
 // Handle signup mode for kiosk/iframe contexts
 $signupMode = $session->get('signupmode', '');
@@ -53,23 +54,23 @@ if (!$isLoggedIn) {
     echo '
 <nav class="bottom-nav" id="loggedOutNav">
     <div class="nav-items">
-        <a href="/" class="nav-item">
+        <a href="/" class="nav-item' . ($currentPage === 'index' ? ' active' : '') . '">
             <i class="nav-icon bi bi-house"></i>
             <span class="nav-label">Home</span>
         </a>
-        <a href="/discover" class="nav-item">
+        <a href="/discover" class="nav-item' . ($currentPage === 'discover' ? ' active' : '') . '">
             <i class="nav-icon bi bi-gift"></i>
             <span class="nav-label">Browse</span>
         </a>
-        <a href="/signup" class="nav-item cta">
+        <a href="/signup" class="nav-item cta' . ($currentPage === 'signup' ? ' active' : '') . '">
             <i class="nav-icon bi bi-star"></i>
             <span class="nav-label">Sign Up</span>
         </a>
-        <a href="/help" class="nav-item">
+        <a href="/help" class="nav-item' . ($currentPage === 'help' ? ' active' : '') . '">
             <i class="nav-icon bi bi-question-circle"></i>
             <span class="nav-label">Help</span>
         </a>
-        <a href="/login" class="nav-item">
+        <a href="/login" class="nav-item' . ($currentPage === 'login' ? ' active' : '') . '">
             <i class="nav-icon bi bi-person"></i>
             <span class="nav-label">Account</span>
         </a>
@@ -80,11 +81,11 @@ if (!$isLoggedIn) {
     echo '
 <nav class="bottom-nav" id="loggedInNav">
     <div class="nav-items">
-        <a href="/myaccount" class="nav-item">
+        <a href="/myaccount" class="nav-item' . (($currentPage === 'index' && strpos($currentPath, '/myaccount') !== false) || $currentPath === '/myaccount' ? ' active' : '') . '">
             <i class="nav-icon bi bi-house"></i>
             <span class="nav-label">Home</span>
         </a>
-        <a href="/myaccount/enrollment-picker" class="nav-item">
+        <a href="/myaccount/enrollment-picker" class="nav-item' . (strpos($currentPath, 'enrollment-picker') !== false ? ' active' : '') . '">
             <i class="nav-icon bi bi-gift"></i>
             <span class="nav-label">Pick</span>';
 
@@ -95,7 +96,7 @@ if (!$isLoggedIn) {
 
     echo '
         </a>
-        <a href="/myaccount/rewards" class="nav-item cta">
+        <a href="/myaccount/rewards" class="nav-item cta' . (strpos($currentPath, '/rewards') !== false ? ' active' : '') . '">
             <i class="nav-icon bi bi-graph-up"></i>
             <span class="nav-label">My Rewards</span>';
 
@@ -106,7 +107,7 @@ if (!$isLoggedIn) {
 
     echo '
         </a>
-        <a href="/help" class="nav-item">
+        <a href="/help" class="nav-item' . ($currentPage === 'help' ? ' active' : '') . '">
             <i class="nav-icon bi bi-question-circle"></i>
             <span class="nav-label">Help</span>
         </a>

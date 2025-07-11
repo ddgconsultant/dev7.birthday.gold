@@ -62,6 +62,13 @@ if (!isset($_SESSION['ask_goldie_conversation_id'])) {
 }
 $conversationId = $_SESSION['ask_goldie_conversation_id'];
 
+// Handle staff mode toggle
+if (isset($_GET['toggle_staff_mode']) && $account->isstaff()) {
+    $_SESSION['staff_mode_enabled'] = !($_SESSION['staff_mode_enabled'] ?? true);
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+
 // Option to start new conversation
 if (isset($_GET['new']) && $_GET['new'] == 1) {
     // Clear ALL conversation history to start fresh
@@ -93,7 +100,7 @@ if (isset($_GET['new']) && $_GET['new'] == 1) {
         'timestamp' => date('Y-m-d H:i:s')
     ]);
     
-    header('Location: /ask-goldie_v3');
+    header('Location: ' . $_SERVER['PHP_SELF']);
     exit;
 }
 
@@ -147,25 +154,34 @@ if (($formdata = $app->formposted())) {
         } elseif (strlen($question) < 10) {
             $errorMessage = 'Please ask a more detailed question.';
         } else {
-            // Guardrail 2: Check for prohibited content
-            $prohibitedPatterns = [
-                '/\b(password|secret|key|token|api|database|sql|injection|exploit|hack)\b/i',
-                '/\b(infrastructure|server|config|configuration|env|environment)\b/i',
-                '/\b(admin|administrator|root|sudo)\b/i',
-                '/\b(credit card|ssn|social security)\b/i'
-            ];
+            // Check if user is staff and if staff mode is enabled
+            $isStaff = $account->isstaff() && ($_SESSION['staff_mode_enabled'] ?? true);
             
-            $blocked = false;
-            foreach ($prohibitedPatterns as $pattern) {
-                if (preg_match($pattern, $question)) {
-                    $blocked = true;
-                    break;
+            // Guardrail 2: Check for prohibited content (bypass for staff)
+            if (!$isStaff) {
+                $prohibitedPatterns = [
+                    '/\b(password|secret|key|token|api|database|sql|injection|exploit|hack)\b/i',
+                    '/\b(infrastructure|server|config|configuration|env|environment)\b/i',
+                    '/\b(admin|administrator|root|sudo)\b/i',
+                    '/\b(credit card|ssn|social security)\b/i'
+                ];
+                
+                $blocked = false;
+                foreach ($prohibitedPatterns as $pattern) {
+                    if (preg_match($pattern, $question)) {
+                        $blocked = true;
+                        break;
+                    }
                 }
+                
+                if ($blocked) {
+                    $errorMessage = 'Your question contains restricted topics. Please ask about Birthday Gold features, enrollment, rewards, or general service questions.';
+                }
+            } else {
+                $blocked = false; // Staff can ask any question
             }
             
-            if ($blocked) {
-                $errorMessage = 'Your question contains restricted topics. Please ask about Birthday Gold features, enrollment, rewards, or general service questions.';
-            } else {
+            if (!$blocked) {
                 try {
                     // Update rate limit and tracking
                     $_SESSION['ask_goldie_rate_limit']['count']++;
@@ -195,7 +211,24 @@ if (($formdata = $app->formposted())) {
                     // Check if this is first message in conversation
                     $isFirstMessage = empty($conversationHistory);
                     
-                    $systemPrompt = "You are Goldie, the friendly AI assistant for Birthday Gold. You help users understand how Birthday Gold works, answer questions about enrollment, rewards, features, and general service inquiries.
+                    // Different prompt for staff vs regular users
+                    if ($isStaff) {
+                        $systemPrompt = "You are Goldie, the AI assistant for Birthday Gold. You are speaking to a STAFF MEMBER who has elevated access.
+" . (!empty($firstName) ? "\nThe staff member's name is $firstName.\n" : '') . "
+STAFF MODE RULES:
+1. You CAN discuss technical details, infrastructure, databases, APIs, and implementation details
+2. You CAN discuss security measures, authentication methods, and system architecture
+3. Provide detailed technical answers when asked
+4. Keep responses informative but still concise (under 300 words for technical topics)
+5. Be professional and helpful
+6. You can reference internal documentation, code structure, and system design
+7. " . ($isFirstMessage ? "This is the first message. Greet the staff member professionally." : "This is a continuing conversation. Answer directly.") . "
+8. At the end of your response, add a line break and then provide exactly 4 follow-up questions in this exact JSON format:
+QUESTIONS_JSON: [\"Question 1?\", \"Question 2?\", \"Question 3?\", \"Question 4?\"]
+
+Birthday Gold is a SaaS platform that automates enrollment in birthday reward programs. The codebase uses PHP with a custom MVC framework, MySQL database, and various integrations including Stripe, PHPMailer, and Telegram.";
+                    } else {
+                        $systemPrompt = "You are Goldie, the friendly AI assistant for Birthday Gold. You help users understand how Birthday Gold works, answer questions about enrollment, rewards, features, and general service inquiries.
 " . (!empty($firstName) ? "\nThe user name is $firstName. Address them by name occasionally to make the conversation more personal.\n" : '') . "
 IMPORTANT RULES:
 1. Only answer questions about Birthday Gold services, features, enrollment, rewards, pricing, and general help
@@ -211,6 +244,7 @@ IMPORTANT RULES:
 QUESTIONS_JSON: [\"Question 1?\", \"Question 2?\", \"Question 3?\", \"Question 4?\"]
 
 Birthday Gold is a service that automatically enrolls users in birthday reward programs from various businesses.";
+                    }
 
                     $userPrompt = "User Question: " . $question;
                     
@@ -226,15 +260,17 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
                     $normalizedResponse = $ai->getNormalizedResponse($response);
                     $answer = $normalizedResponse['content'];
                     
-                    // Additional post-processing to ensure no sensitive info
-                    $sensitivePatterns = [
-                        '/\b\d{4,}\b/', // Remove long numbers
-                        '/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/', // Remove emails
-                        '/\bhttps?:\/\/(?!birthday\.gold|www\.birthday\.gold)[^\s]+/i' // Remove non-birthday.gold URLs
-                    ];
-                    
-                    foreach ($sensitivePatterns as $pattern) {
-                        $answer = preg_replace($pattern, '[removed]', $answer);
+                    // Additional post-processing to ensure no sensitive info (skip for staff)
+                    if (!$isStaff) {
+                        $sensitivePatterns = [
+                            '/\b\d{4,}\b/', // Remove long numbers
+                            '/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/', // Remove emails
+                            '/\bhttps?:\/\/(?!birthday\.gold|www\.birthday\.gold)[^\s]+/i' // Remove non-birthday.gold URLs
+                        ];
+                        
+                        foreach ($sensitivePatterns as $pattern) {
+                            $answer = preg_replace($pattern, '[removed]', $answer);
+                        }
                     }
                     
                     // Extract follow-up questions from the response
@@ -281,7 +317,8 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
                         'question' => $question,
                         'answer' => $answer,
                         'timestamp' => time(),
-                        'followUpQuestions' => $followUpQuestions
+                        'followUpQuestions' => $followUpQuestions,
+                        'isStaffMode' => $isStaff // Track if this was a staff mode interaction
                     ];
                     
                     // Keep only last 20 exchanges
@@ -647,6 +684,56 @@ html {
     border: 1px solid #dee2e6;
     padding: 0.75rem 1rem;
     border-radius: 4px 18px 18px 18px;
+}
+
+/* Staff mode message styling */
+.message.staff-mode .message-content {
+    position: relative;
+}
+
+.message-user.staff-mode .message-content {
+    background: #d32f2f;
+    border: 2px solid #b71c1c;
+}
+
+.message-goldie.staff-mode .message-content {
+    background: #ffebee;
+    border: 2px solid #ef5350;
+    color: #333;
+}
+
+/* Add a small "Staff" indicator */
+.message.staff-mode .message-content::before {
+    content: "Staff";
+    position: absolute;
+    top: -8px;
+    right: 10px;
+    background: #ff5252;
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Ensure proper spacing for staff mode messages */
+.message.staff-mode {
+    margin-top: 0.5rem;
+}
+
+/* Add subtle box shadow to staff mode messages */
+.message.staff-mode .message-content {
+    box-shadow: 0 2px 8px rgba(211, 47, 47, 0.15);
+}
+
+/* Adjust timestamp color for better contrast in staff mode */
+.message-goldie.staff-mode .message-timestamp {
+    color: #666;
+}
+
+.message-user.staff-mode .message-timestamp {
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .message-goldie img {
@@ -1162,6 +1249,56 @@ html {
         height: 96px !important; /* 20% smaller than 120px */
     }
 }
+
+/* Staff mode toggle button */
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+    transition: all 0.3s ease;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+    color: #212529;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline-warning {
+    color: #ffc107;
+    border-color: #ffc107;
+    background-color: transparent;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+/* Make the toggle icon rotate when switching */
+.btn-warning i.bi-toggles,
+.btn-outline-warning i.bi-toggles {
+    transition: transform 0.3s ease;
+}
+
+.btn-warning i.bi-toggles {
+    transform: rotate(180deg);
+}
+
+/* Mobile responsiveness for staff toggle */
+@media (max-width: 575px) {
+    .btn-warning,
+    .btn-outline-warning {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
 </style>
 ';
 
@@ -1180,8 +1317,12 @@ include($dir['core_components'] . '/bg_header.inc');
                     <img src="/public/images/logo/goldie-shadow_200.png" alt="" class="shadow-icon" style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1;">
                 </div>
                 <div>
-                    <h1 class="mb-2">Ask Goldie</h1>
-                    <p class="lead mb-0">Get answers about Birthday.Gold from our AI assistant</p>
+                    <h1 class="mb-2">Ask Goldie<?php if ($account->isstaff()): ?>
+                        <a href="<?php echo $_SERVER['PHP_SELF']; ?>?toggle_staff_mode=1" class="btn btn-sm <?php echo ($_SESSION['staff_mode_enabled'] ?? true) ? 'btn-warning' : 'btn-outline-warning'; ?> ms-2" style="text-decoration: none;">
+                            <i class="bi bi-toggles"></i> Staff Mode <?php echo ($_SESSION['staff_mode_enabled'] ?? true) ? 'ON' : 'OFF'; ?>
+                        </a>
+                    <?php endif; ?></h1>
+                    <p class="lead mb-0">Get answers about Birthday.Gold from our AI assistant<?php if ($account->isstaff() && ($_SESSION['staff_mode_enabled'] ?? true)): ?> - Technical questions enabled<?php endif; ?></p>
                 </div>
             </div>
         </div>
@@ -1206,7 +1347,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     </small>
                 </div>
             </div>
-            <a href="/ask-goldie_v3?new=1" class="btn btn-sm btn-outline-secondary">
+            <a href="<?php echo $_SERVER['PHP_SELF']; ?>?new=1" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-clockwise"></i> New Chat
             </a>
         </div>
@@ -1244,7 +1385,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 foreach ($conversationHistory as $index => $item): 
                     $isLatest = ($index === $totalMessages - 1);
                 ?>
-                    <div class="message message-user<?php echo $isLatest ? ' latest-message' : ''; ?>">
+                    <div class="message message-user<?php echo $isLatest ? ' latest-message' : ''; ?><?php echo (!empty($item['isStaffMode']) ? ' staff-mode' : ''); ?>">
                         <div class="message-content">
                             <?php echo htmlspecialchars($item['question']); ?>
                             <div class="message-timestamp">
@@ -1255,7 +1396,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         <img src="<?php echo $userAvatar; ?>" alt="You" class="user-avatar">
                         <?php endif; ?>
                     </div>
-                    <div class="message message-goldie<?php echo $isLatest ? ' latest-message' : ''; ?>">
+                    <div class="message message-goldie<?php echo $isLatest ? ' latest-message' : ''; ?><?php echo (!empty($item['isStaffMode']) ? ' staff-mode' : ''); ?>">
                         <img src="/public/images/logo/goldie_72.png" alt="Goldie">
                         <div class="message-content">
                             <?php echo nl2br(htmlspecialchars($item['answer'])); ?>
@@ -1296,7 +1437,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
             <?php endif; ?>
             
-            <form method="POST" action="/ask-goldie" class="chat-form" id="chatForm">
+            <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" class="chat-form" id="chatForm">
                 <?php echo $display->inputcsrf_token(); ?>
                 <textarea 
                     name="question" 
