@@ -2,6 +2,17 @@
 $addClasses[] = 'ai';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+// Retrieve any messages
+$transferpagedata = $system->startpostpage();
+
+// Check if user is locked out from Ask Goldie
+$isGoldieLocked = false;
+$lockoutMinutesRemaining = 0;
+if (isset($_SESSION['ask_goldie_lockout_until']) && $_SESSION['ask_goldie_lockout_until'] > time()) {
+    $isGoldieLocked = true;
+    $lockoutMinutesRemaining = ceil(($_SESSION['ask_goldie_lockout_until'] - time()) / 60);
+}
+
 #-------------------------------------------------------------------------------
 # PAGE SETUP
 #-------------------------------------------------------------------------------
@@ -324,6 +335,22 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
         </div>
     </div>
+    
+    <?php if (!empty($transferpagedata['message'])): ?>
+        <div class="alert-dismissible-wrapper" style="max-width: 600px; margin: 1rem auto 0;">
+            <div class="position-relative">
+                <?php 
+                // Add dismiss button if not already present
+                $messageContent = $transferpagedata['message'];
+                if (strpos($messageContent, 'alert-dismissible') === false && strpos($messageContent, 'alert') !== false) {
+                    $messageContent = str_replace('class="alert', 'class="alert alert-dismissible fade show', $messageContent);
+                    $messageContent = str_replace('</div>', '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>', $messageContent);
+                }
+                echo $messageContent;
+                ?>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>
 
 <div class="main-content py-4 py-md-5 bg-light">
@@ -336,6 +363,17 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         
         <div class="help-grid">
+            <?php if ($isGoldieLocked): ?>
+            <div class="help-card disabled" style="cursor: not-allowed; opacity: 0.6;">
+                <div class="help-icon" style="padding: 0; background: transparent; border: none;">
+                    <img src="/public/images/logo/goldie_72.png" alt="Goldie" style="width: 48px; height: 48px; filter: grayscale(50%);">
+                </div>
+                <div class="help-content">
+                    <h3 class="help-card-title">Ask Goldie</h3>
+                    <p class="text-muted small mb-0 lh-base">Available again in <?php echo $lockoutMinutesRemaining; ?> minutes</p>
+                </div>
+            </div>
+            <?php else: ?>
             <a href="/ask-goldie" class="help-card">
                 <div class="help-icon" style="padding: 0; background: transparent; border: none;">
                     <img src="/public/images/logo/goldie_72.png" alt="Goldie" style="width: 48px; height: 48px;">
@@ -345,6 +383,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <p class="text-muted small mb-0 lh-base">Get instant answers about Birthday Gold from our AI assistant</p>
                 </div>
             </a>
+            <?php endif; ?>
             
             <a href="/faq" class="help-card">
                 <div class="help-icon">
@@ -494,6 +533,19 @@ include($dir['core_components'] . '/bg_header.inc');
 $footerattribute['postfooter'] = '
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+    // Auto-dismiss alerts after 14 seconds
+    const alerts = document.querySelectorAll(".alert-dismissible");
+    alerts.forEach(function(alert) {
+        setTimeout(function() {
+            // Check if alert still exists (not manually dismissed)
+            if (alert && alert.parentNode) {
+                // Trigger Bootstrap dismiss
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 14000); // 14 seconds
+    });
+    
     const searchInput = document.getElementById("helpSearch");
     const suggestionsContainer = document.getElementById("searchSuggestions");
     const helpCards = document.querySelectorAll(".help-card");

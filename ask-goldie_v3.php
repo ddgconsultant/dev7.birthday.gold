@@ -29,6 +29,11 @@ if (time() > $_SESSION['ask_goldie_rate_limit']['reset_time']) {
         'last_request' => $_SESSION['ask_goldie_rate_limit']['last_request'] ?? 0,
         'requests_30s' => $_SESSION['ask_goldie_rate_limit']['requests_30s'] ?? []
     ];
+    
+    // Clear lockout since rate limit has reset
+    if (isset($_SESSION['ask_goldie_lockout_until'])) {
+        unset($_SESSION['ask_goldie_lockout_until']);
+    }
 }
 
 // Clean up old flood detection entries (older than 30 seconds)
@@ -40,8 +45,8 @@ $_SESSION['ask_goldie_rate_limit']['requests_30s'] = array_filter(
 $rateLimitData = $_SESSION['ask_goldie_rate_limit'];
 $requireCaptcha = false; // Default: no captcha
 
-// Check for flooding (more than 1 request in 30 seconds)
-if (count($rateLimitData['requests_30s']) >= 2) {
+// Check for flooding (more than 3 requests in 30 seconds)
+if (count($rateLimitData['requests_30s']) >= 4) {
     $requireCaptcha = true;
 }
 
@@ -94,9 +99,17 @@ if (isset($_GET['new']) && $_GET['new'] == 1) {
 
 // Allow 10 questions per hour per session
 if ($rateLimitData['count'] >= 10) {
-    $system->addMessage('error', 'You have reached the hourly limit of 10 questions. Please try again later.');
-    header('Location: /help');
-    exit;
+    // Set lockout time in session (time when they can ask again)
+    $_SESSION['ask_goldie_lockout_until'] = $_SESSION['ask_goldie_rate_limit']['reset_time'];
+    
+    // Calculate time remaining
+    $timeRemaining = $_SESSION['ask_goldie_rate_limit']['reset_time'] - time();
+    $minutesRemaining = ceil($timeRemaining / 60);
+    
+    $transferpagedata = array();
+    $transferpagedata['message'] = '<div class="alert alert-warning"><i class="bi bi-hourglass-split"></i> You have reached the hourly limit of 10 questions. Please try again in ' . $minutesRemaining . ' minutes.</div>';
+    $transferpagedata['url'] = '/help';
+    $system->endpostpage($transferpagedata);
 }
 
 #-------------------------------------------------------------------------------
@@ -117,10 +130,10 @@ if ($mode === 'dev' && isset($_GET['debug'])) {
 
 if (($formdata = $app->formposted())) {
     
-    // Check 10-second rate limit
+    // Check 5-second rate limit
     $timeSinceLastRequest = time() - ($rateLimitData['last_request'] ?? 0);
-    if ($timeSinceLastRequest < 10) {
-        $errorMessage = 'Please wait ' . (10 - $timeSinceLastRequest) . ' seconds before asking another question.';
+    if ($timeSinceLastRequest < 5) {
+        $errorMessage = 'Please wait ' . (5 - $timeSinceLastRequest) . ' seconds before asking another question.';
     } 
     // Validate captcha only if required (flooding detected)
     elseif ($requireCaptcha && !$app->validateCaptcha()) {
@@ -194,6 +207,8 @@ IMPORTANT RULES:
 7. Reference relevant pages when appropriate: /how-it-works, /pricing, /faq, /contact
 8. " . ($isFirstMessage ? "This is the first message in the conversation. Greet the user warmly." : "This is a continuing conversation. Do NOT introduce yourself again. Just answer the question directly.") . "
 9. Vary your responses - do not use the same greeting patterns repeatedly
+10. At the end of your response, add a line break and then provide exactly 4 follow-up questions in this exact JSON format:
+QUESTIONS_JSON: [\"Question 1?\", \"Question 2?\", \"Question 3?\", \"Question 4?\"]
 
 Birthday Gold is a service that automatically enrolls users in birthday reward programs from various businesses.";
 
@@ -220,6 +235,21 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
                     
                     foreach ($sensitivePatterns as $pattern) {
                         $answer = preg_replace($pattern, '[removed]', $answer);
+                    }
+                    
+                    // Extract follow-up questions from the response
+                    $followUpQuestions = [];
+                    if (preg_match('/QUESTIONS_JSON:\s*\[(.*?)\]/s', $answer, $matches)) {
+                        // Parse the JSON array
+                        $questionsJson = '[' . $matches[1] . ']';
+                        $parsedQuestions = json_decode($questionsJson, true);
+                        if (is_array($parsedQuestions) && count($parsedQuestions) > 0) {
+                            $followUpQuestions = array_slice($parsedQuestions, 0, 4); // Ensure max 4 questions
+                        }
+                        
+                        // Remove the JSON from the answer
+                        $answer = preg_replace('/\s*QUESTIONS_JSON:\s*\[.*?\]/s', '', $answer);
+                        $answer = trim($answer);
                     }
                     
                     // Track the complete Q&A session with full question and response
@@ -250,7 +280,8 @@ Birthday Gold is a service that automatically enrolls users in birthday reward p
                     $conversationHistory[] = [
                         'question' => $question,
                         'answer' => $answer,
-                        'timestamp' => time()
+                        'timestamp' => time(),
+                        'followUpQuestions' => $followUpQuestions
                     ];
                     
                     // Keep only last 20 exchanges
@@ -327,6 +358,12 @@ if (!empty($conversationHistory)) {
     $lastAnswer = strtolower($lastExchange['answer'] ?? '');
     $lastQuestion = strtolower($lastExchange['question'] ?? '');
     
+    // First, check if we have follow-up questions from the AI
+    if (!empty($lastExchange['followUpQuestions']) && is_array($lastExchange['followUpQuestions'])) {
+        $quickQuestions = $lastExchange['followUpQuestions'];
+    } else {
+        // Fallback to context-based generation if no AI questions
+    
     // Context-based question generation
     if (strpos($lastAnswer, 'enroll') !== false || strpos($lastQuestion, 'enroll') !== false) {
         $quickQuestions[] = "How do I manage my current enrollments and see which businesses I'm enrolled in?";
@@ -368,6 +405,7 @@ if (!empty($conversationHistory)) {
             $quickQuestions[] = "What if I have questions about a specific enrollment?";
         }
     }
+    } // Close the else from AI questions check
 } else {
     // Default questions for new conversations
     $quickQuestions = [
@@ -380,6 +418,19 @@ if (!empty($conversationHistory)) {
         "Can I add my family members to my Birthday Gold account?",
         "How do I track and redeem my birthday rewards?"
     ];
+}
+
+// Ensure we have at least 4 questions, add defaults if needed
+if (count($quickQuestions) < 4) {
+    $defaultQuestions = [
+        "What else can Birthday Gold help me with?",
+        "Tell me more about the benefits of Birthday Gold",
+        "How can I get the most value from my membership?",
+        "What should I know about Birthday Gold?"
+    ];
+    
+    $needed = 4 - count($quickQuestions);
+    $quickQuestions = array_merge($quickQuestions, array_slice($defaultQuestions, 0, $needed));
 }
 
 // Limit questions based on screen size
@@ -1256,7 +1307,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     autocomplete="off"
                     id="chatInput"
                     rows="1"
-                ><?php echo isset($_POST['question']) ? htmlspecialchars($_POST['question']) : ''; ?></textarea>
+                ><?php echo (isset($_POST['question']) && !$showAnswer) ? htmlspecialchars($_POST['question']) : ''; ?></textarea>
                 <?php if ($requireCaptcha): ?>
                     <!-- Hidden captcha that shows when needed -->
                     <div id="captchaModal" style="display: none;">
@@ -1529,13 +1580,13 @@ const sendingOverlay = document.getElementById("sendingOverlay");
 let isProcessing = false;
 let processingTimeout = null;
 
-// Disable submit if within 10 second cooldown
+// Disable submit if within 5 second cooldown
 const lastSubmitTime = ' . $lastSubmitTime . ';
 const currentTime = ' . $currentTime . ';
 const timeSinceLastSubmit = currentTime - lastSubmitTime;
 
-if (timeSinceLastSubmit < 10) {
-    const remaining = 10 - timeSinceLastSubmit;
+if (timeSinceLastSubmit < 5) {
+    const remaining = 5 - timeSinceLastSubmit;
     submitBtn.disabled = true;
     setTimeout(() => {
         submitBtn.disabled = false;
@@ -1551,6 +1602,32 @@ function updatePlaceholder() {
             chatInput.placeholder = "Type your question... (Shift+Enter to send)";
         }
     }
+}
+
+// Array of processing words to randomly choose from
+const processingWords = [
+    "Thinking...",
+    "Pondering...",
+    "Contemplating...",
+    "Analyzing...",
+    "Considering...",
+    "Reflecting...",
+    "Processing...",
+    "Musing..."
+];
+
+// Track last used processing word
+let lastProcessingWord = "";
+
+// Function to get random processing word (ensures different from last)
+function getRandomProcessingWord() {
+    let newWord;
+    do {
+        newWord = processingWords[Math.floor(Math.random() * processingWords.length)];
+    } while (newWord === lastProcessingWord && processingWords.length > 1);
+    
+    lastProcessingWord = newWord;
+    return newWord;
 }
 
 // Initialize on page load
@@ -1610,8 +1687,12 @@ function showProcessingFeedback() {
         inputArea.classList.add("processing");
     }
     
-    // Show sending overlay
+    // Show sending overlay with random processing word
     if (sendingOverlay) {
+        const processingText = sendingOverlay.querySelector(".sending-message span:last-child");
+        if (processingText) {
+            processingText.textContent = getRandomProcessingWord();
+        }
         sendingOverlay.style.display = "flex";
         sendingOverlay.classList.add("show");
     }
