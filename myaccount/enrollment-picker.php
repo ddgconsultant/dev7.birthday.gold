@@ -177,7 +177,9 @@ include($dir['core_components'] . '/bg_header.inc');
 </div>
 
 <div class="main-content py-3">
-    <div class="container" style="max-width: 1400px;">
+    <!-- Use container-fluid on mobile, container on desktop -->
+    <div class="container-fluid px-0 px-md-3">
+        <div class="enrollment-container mx-auto" style="max-width: 1400px;">
 
 <!-- Sticky Header -->
 <div class="enrollment-header sticky-top">
@@ -598,7 +600,8 @@ body {
 }
 </style>
 
-    </div> <!-- close container -->
+        </div> <!-- close enrollment-container -->
+    </div> <!-- close container-fluid -->
 </div> <!-- close main-content -->
 
 <script>
@@ -615,42 +618,61 @@ window.userData = {
 // Smart header scroll behavior
 document.addEventListener('DOMContentLoaded', function() {
     let lastScrollTop = 0;
-    let isScrolling = false;
     const header = document.querySelector('.enrollment-header');
     const searchBar = document.querySelector('.search-bar');
-    const categoryFilter = document.querySelector('.category-filter');
-    const balanceBar = document.querySelector('.balance-bar');
+    let ticking = false;
+    let headerOriginalOffset = 0;
     
-    // Get the heights for proper spacing
-    const balanceBarHeight = balanceBar ? balanceBar.offsetHeight : 0;
+    // Get the original offset position of the header
+    function getHeaderOffset() {
+        const rect = header.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        return rect.top + scrollTop;
+    }
     
-    window.addEventListener('scroll', function() {
-        if (!isScrolling) {
-            window.requestAnimationFrame(function() {
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                
-                if (scrollTop > lastScrollTop && scrollTop > 100) {
-                    // Scrolling down - hide search and category filter
-                    if (searchBar) searchBar.style.display = 'none';
-                    if (categoryFilter) categoryFilter.style.display = 'none';
-                    // Adjust header to show only balance bar
-                    if (header) {
-                        header.style.top = '0';
-                    }
-                } else if (scrollTop < lastScrollTop) {
-                    // Scrolling up - show everything
-                    if (searchBar) searchBar.style.display = 'block';
-                    if (categoryFilter) categoryFilter.style.display = 'block';
-                    if (header) {
-                        header.style.top = '0';
-                    }
-                }
-                
-                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-                isScrolling = false;
-            });
-            isScrolling = true;
+    // Initialize header offset after a small delay to ensure layout is complete
+    setTimeout(() => {
+        headerOriginalOffset = getHeaderOffset();
+    }, 100);
+    
+    function updateHeader() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
+        
+        // Skip very small scroll differences (less than 5px) to avoid jitter
+        if (Math.abs(scrollTop - lastScrollTop) < 5) {
+            ticking = false;
+            return;
         }
+        
+        // If we haven't scrolled past the original header position, keep it relative
+        if (scrollTop < headerOriginalOffset) {
+            header.classList.remove('is-fixed');
+            header.classList.remove('hidden');
+        } else {
+            // We've scrolled past the header's original position
+            header.classList.add('is-fixed');
+            
+            if (scrollTop > lastScrollTop) {
+                // Scrolling down - hide header only if we're past its original position
+                header.classList.add('hidden');
+            } else {
+                // Scrolling up - show header
+                header.classList.remove('hidden');
+            }
+        }
+        
+        lastScrollTop = scrollTop;
+        ticking = false;
+    }
+    
+    // Listen to both scroll and touchmove for better mobile support
+    ['scroll', 'touchmove'].forEach(eventType => {
+        window.addEventListener(eventType, function() {
+            if (!ticking) {
+                window.requestAnimationFrame(updateHeader);
+                ticking = true;
+            }
+        }, { passive: true });
     });
     
     // Add fade effect to category scroll edges
