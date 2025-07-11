@@ -370,7 +370,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 <div class="help-content">
                     <h3 class="help-card-title">Ask Goldie</h3>
-                    <p class="text-muted small mb-0 lh-base">Available again in <?php echo $lockoutMinutesRemaining; ?> minutes</p>
+                    <p class="text-muted small mb-0 lh-base">Available again in <?php echo $qik->plural2($lockoutMinutesRemaining, 'minute'); ?></p>
                 </div>
             </div>
             <?php else: ?>

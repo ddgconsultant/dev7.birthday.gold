@@ -107,7 +107,7 @@ if ($rateLimitData['count'] >= 10) {
     $minutesRemaining = ceil($timeRemaining / 60);
     
     $transferpagedata = array();
-    $transferpagedata['message'] = '<div class="alert alert-warning"><i class="bi bi-hourglass-split"></i> You have reached the hourly limit of 10 questions. Please try again in ' . $minutesRemaining . ' minutes.</div>';
+    $transferpagedata['message'] = '<div class="alert alert-warning"><i class="bi bi-hourglass-split"></i> You have reached the hourly limit of 10 questions. Please try again in ' . $qik->plural2($minutesRemaining, 'minute') . '.</div>';
     $transferpagedata['url'] = '/help';
     $system->endpostpage($transferpagedata);
 }
