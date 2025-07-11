@@ -155,6 +155,10 @@ if (empty($companies)) {
     echo "<!-- DEBUG: Simple query returned " . count($simple_results) . " companies -->";
 }
 
+// Set up token labels for flexibility
+$label_token = 'Pick';
+$label_tokened = 'Picked';
+
 // Page setup - MUST be before includes
 $pagetitle = 'Pick Your Birthday Rewards';
 $bodycontentclass = '';
@@ -162,14 +166,18 @@ $additionalstyles .= '<link rel="stylesheet" href="/public/css/enrollment-picker
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
-
-echo '<div class="col-md-9 col-lg-9">
-    <div class="mb-4">
-        <h1 style="font-size: 2.5rem; font-weight: 400;">Pick Your Birthday Rewards</h1>
-    </div>';
 ?>
+
+<!-- Hero Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <h1>Pick Your Birthday Rewards</h1>
+        <p class="lead">Choose from hundreds of birthday reward programs</p>
+    </div>
+</div>
+
+<div class="main-content py-3">
+    <div class="container" style="max-width: 1400px;">
 
 <!-- Sticky Header -->
 <div class="enrollment-header sticky-top">
@@ -177,13 +185,13 @@ echo '<div class="col-md-9 col-lg-9">
     <div class="balance-bar">
         <div class="balance-info">
             <span class="balance-number"><?php echo $balance['available_allocations']; ?></span>
-            <span class="balance-label">enrollments available</span>
+            <span class="balance-label"><?php echo $qik->plural( $label_token, $balance['available_allocations']); ?> available</span>
         </div>
         
         <div class="selected-info" id="selectedInfo" style="display: none;" onclick="toggleBasketDetails()">
             <i class="bi bi-basket-fill"></i>
             <span class="selected-number" id="selectedCount">0</span>
-            <span class="selected-label">selected</span>
+            <span class="selected-label"><?php echo $label_tokened; ?></span>
         </div>
         
         <?php if ($balance['expiring_soon_count'] > 0): ?>
@@ -262,7 +270,7 @@ echo ' <div class="container '.$containermargin.'"></div>';
                 <?php echo $allocation_warning['message']; ?>
             </div>
             <?php if ($balance['available_allocations'] == 0): ?>
-            <a href="/myaccount/earn-enrollments" class="btn btn-sm btn-light">Earn More</a>
+            <a href="/myaccount/earn-enrollments" class="btn btn-sm btn-light">Earn More <?php echo $qik->plural2(2, $label_token); ?></a>
             <?php endif; ?>
         </div>
     </div>
@@ -339,16 +347,16 @@ endif; ?>
             <div class="company-action">
                 <?php if ($company['is_enrolled']): ?>
                 <button class="action-btn enrolled" disabled>
-                    <i class="bi bi-check-circle-fill"></i> Enrolled
+                    <i class="bi bi-check-circle-fill"></i> <?php echo $label_tokened; ?>
                 </button>
                 <?php elseif ($balance['available_allocations'] > 0): ?>
                 <button class="action-btn enroll" 
                         onclick="addToBasket(<?php echo $company['company_id']; ?>, '<?php echo htmlspecialchars(addslashes($company['company_name'])); ?>', '<?php echo isset($company['company_logo']) ? $display->companyimage($company['company_id'] . '/' . $company['company_logo']) : ''; ?>')">
-                    <i class="bi bi-plus-circle"></i> Select
+                    <i class="bi bi-plus-circle"></i> <?php echo $label_token; ?>
                 </button>
                 <?php else: ?>
                 <button class="action-btn disabled" disabled>
-                    <i class="bi bi-lock"></i> No Enrollments
+                    <i class="bi bi-lock"></i> No <?php echo $qik->plural2(0, $label_token); ?>
                 </button>
                 <?php endif; ?>
             </div>
@@ -367,14 +375,15 @@ endif; ?>
 </div>
 
 <!-- Success Modal -->
-<div class="modal fade" id="successModal" tabindex="-1">
+<div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-body text-center">
+            <div class="modal-body text-center py-4">
                 <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
-                <h4 class="mt-3">Enrollment Successful!</h4>
-                <p id="successMessage"></p>
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
+                <h4 class="mt-3"><?php echo $qik->plural2(2, $label_token); ?> Submitted!</h4>
+                <p id="successMessage" class="mb-3"></p>
+                <p class="text-muted small mb-4">You will receive a notification when the enrollment has been completed.</p>
+                <button type="button" class="btn btn-primary px-5" onclick="redirectToMyAccount()">OK</button>
             </div>
         </div>
     </div>
@@ -392,7 +401,7 @@ endif; ?>
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-basket"></i> Selected Companies (<span id="modalBasketCount">0</span>)
+                    <i class="bi bi-basket"></i> <?php echo $label_tokened; ?> Companies (<span id="modalBasketCount">0</span>)
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -403,13 +412,14 @@ endif; ?>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="clearBasket()">Clear All</button>
-                <button type="button" class="btn btn-primary" onclick="confirmEnrollments()">
-                    <i class="bi bi-check-circle"></i> Confirm Enrollments
+                <button type="button" class="btn btn-primary" onclick="confirmEnrollments()" id="confirmButton">
+                    <i class="bi bi-check-circle"></i> Confirm <span id="confirmButtonCount">0</span> <?php echo $qik->plural2(0, $label_token); ?>
                 </button>
             </div>
         </div>
     </div>
 </div>
+
 
 <style>
 /* Floating counter button */
@@ -588,16 +598,18 @@ body {
 }
 </style>
 
-</div> <!-- close col-md-9 -->
-</div> <!-- close row -->
-</div> <!-- close container -->
+    </div> <!-- close container -->
 </div> <!-- close main-content -->
 
 <script>
 // Initialize user data
 window.userData = {
     userId: <?php echo $user_id; ?>,
-    availableAllocations: <?php echo $balance['available_allocations']; ?>
+    availableAllocations: <?php echo $balance['available_allocations']; ?>,
+    labels: {
+        token: '<?php echo $label_token; ?>',
+        tokened: '<?php echo $label_tokened; ?>'
+    }
 };
 
 // Smart header scroll behavior

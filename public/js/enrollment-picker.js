@@ -156,8 +156,31 @@ function showSuccess(message) {
 
 // Show error message
 function showError(message) {
-    // You can implement a toast notification here
-    alert(message); // Simple fallback
+    // Create a Bootstrap alert at the top of the page
+    const alertHtml = `
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insert after the enrollment header
+    const header = document.querySelector('.enrollment-header');
+    if (header) {
+        const alertDiv = document.createElement('div');
+        alertDiv.innerHTML = alertHtml;
+        header.parentNode.insertBefore(alertDiv.firstElementChild, header.nextSibling);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alert = header.nextElementSibling;
+            if (alert && alert.classList.contains('alert')) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
 }
 
 // Show warning message

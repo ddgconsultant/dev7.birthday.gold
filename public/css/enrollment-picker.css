@@ -44,6 +44,7 @@ body {
     padding: 0.75rem 1rem;
     background: var(--primary-color);
     color: white;
+    min-height: 60px; /* Fixed height to prevent jumping */
 }
 
 /* Selected info in balance bar */
@@ -52,7 +53,7 @@ body {
     align-items: center;
     gap: 0.5rem;
     background: rgba(255, 255, 255, 0.2);
-    padding: 0.5rem 1rem;
+    padding: 0.2rem 1rem;
     border-radius: 2rem;
     font-weight: 500;
     cursor: pointer;
@@ -266,6 +267,9 @@ body {
     padding: 1rem;
     min-height: 50vh;
     margin-top: 1rem;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .companies-grid {
@@ -481,14 +485,14 @@ body {
     }
 }
 
-/* Medium devices (md) - ≥768px - Still 2 columns */
+/* Medium devices (md) - ≥768px - 3 columns */
 @media (min-width: 768px) {
     .companies-container {
         padding: 1.5rem;
     }
     
     .companies-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 1.5rem;
     }
     
@@ -497,26 +501,26 @@ body {
     }
 }
 
-/* Large devices (lg) - ≥992px - 3 columns */
+/* Large devices (lg) - ≥992px - 5 columns (moved from xl) */
 @media (min-width: 992px) {
     .companies-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 1.5rem;
     }
 }
 
-/* Extra large devices (xl) - ≥1200px - 4 columns */
+/* Extra large devices (xl) - ≥1200px - 5 columns */
 @media (min-width: 1200px) {
     .companies-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 1.5rem;
     }
 }
 
-/* Extra extra large devices (xxl) - ≥1400px - Still 4 columns */
+/* Extra extra large devices (xxl) - ≥1400px - 5 columns */
 @media (min-width: 1400px) {
     .companies-grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 1.5rem;
     }
 }
