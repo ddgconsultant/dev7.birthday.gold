@@ -123,6 +123,19 @@ if ($app->formposted()) {
             margin: 0 auto;
         }
         
+        /* Mobile: Position below fixed header */
+        @media (max-width: 767px) {
+            .success-container {
+                margin-top: 50px; /* Match login page mobile spacing */
+                margin-bottom: 2rem;
+            }
+            
+            .main-content {
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }
+        }
+        
         .success-card {
             background: white;
             border-radius: 12px;
@@ -275,19 +288,31 @@ $additionalstyles = '
     box-sizing: border-box !important;
 }
 
-/* Main content wrapper for vertical centering */
+/* Main content wrapper - removed vertical centering to match login */
 .main-content {
-    min-height: calc(100vh - 200px);
-    display: flex;
-    align-items: center;
-    padding: 2rem 0;
+    /* Removed all the extra spacing and centering */
 }
 
 /* Card Container */
 .forgot-container {
     width: 100%;
     max-width: 480px;
-    margin: 0 auto 4rem;
+    margin: 1rem auto 2rem; /* Match login page exactly */
+}
+
+/* Mobile: Position below fixed header */
+@media (max-width: 767px) {
+    .forgot-container {
+        margin-top: 50px; /* Match login page mobile spacing */
+        margin-bottom: 2rem;
+    }
+    
+    /* Remove any default padding from main content wrapper */
+    .main-content {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+        min-height: auto;
+    }
 }
 
 .forgot-card {
@@ -569,13 +594,11 @@ $additionalstyles = '
 
 /* Tablet & Desktop Styles */
 @media (min-width: 768px) {
-    .main-content {
-        padding: 3rem 0;
-    }
+    /* Removed main-content padding to match login */
     
     .forgot-container {
         max-width: 480px;
-        margin: 0 auto 5rem;
+        margin: 1.5rem auto 3rem; /* Match login page tablet/desktop spacing */
     }
     
     .forgot-header {
@@ -593,9 +616,7 @@ $additionalstyles = '
 
 /* Large Desktop - Enhanced Layout */
 @media (min-width: 992px) {
-    .main-content {
-        padding: 4rem 0;
-    }
+    /* Removed main-content padding to match login */
     
     .forgot-wrapper {
         width: 100%;
@@ -692,7 +713,7 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="container main-content">
+<div class="main-content">
     <!-- Desktop wrapper for side-by-side layout -->
     <div class="forgot-wrapper">
         <!-- Welcome content - Desktop only -->

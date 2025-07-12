@@ -277,17 +277,60 @@ $additionalstyles = '
     box-sizing: border-box !important;
 }
 
+/* Floating Label Styles from createaccount */
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label {
+    transform: scale(0.85) translateY(-0.7rem) translateX(0.15rem);
+}
+
+/* Fix input group with floating labels */
+.input-group > .form-floating {
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+}
+
+.input-group > .form-floating > .form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group > .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+/* Remove Chrome autofill blue background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: inherit !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* For floating label inputs specifically */
+.form-floating input:-webkit-autofill,
+.form-floating input:-webkit-autofill:hover,
+.form-floating input:-webkit-autofill:focus,
+.form-floating input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: inherit !important;
+}
+
 /* Card Container */
 .login-container {
     width: 100%;
     max-width: 480px;
-    margin: 2rem auto;
+    margin: 1rem auto 2rem; /* Reduced top margin from 2rem to 1rem */
 }
 
 /* Mobile: Position below fixed header */
 @media (max-width: 767px) {
     .login-container {
-        margin-top: 76px; /* 60px header + 16px (1rem) spacing */
+        margin-top: 50px; /* Reduced to minimum spacing below header */
         margin-bottom: 2rem;
     }
     
@@ -295,6 +338,64 @@ $additionalstyles = '
     .main-content {
         padding-top: 0 !important;
         margin-top: 0 !important;
+    }
+    
+    /* Mobile - underline style for floating labels */
+    .form-floating .form-control,
+    .form-control {
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        border-radius: 0;
+        background-color: transparent;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
+    .form-floating .form-control:focus,
+    .form-control:focus {
+        border-bottom-color: #0d6efd;
+        box-shadow: none;
+        background-color: transparent;
+    }
+    
+    /* Invalid state */
+    .form-floating .form-control.is-invalid,
+    .form-control.is-invalid {
+        border-bottom-color: #dc3545;
+    }
+    
+    /* Password toggle button matches input bottom border on mobile */
+    .password-toggle {
+        border: none !important;
+        border-bottom: 2px solid #dee2e6 !important;
+        border-radius: 0 !important;
+        padding: 0.375rem 0.75rem !important;
+        background-color: transparent !important;
+    }
+    
+    /* Input groups need special handling */
+    .input-group .form-control {
+        border-bottom: 2px solid #dee2e6;
+        border-right: none !important;
+    }
+    
+    /* Match border color when focused */
+    .input-group:focus-within .password-toggle {
+        border-bottom-color: #0d6efd !important;
+    }
+    
+    /* Floating labels adjustment for mobile */
+    .form-floating > label {
+        padding-left: 0;
+    }
+    
+    /* Remove autofill background on mobile with transparent background */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+        -webkit-text-fill-color: inherit !important;
     }
 }
 
@@ -399,7 +500,30 @@ $additionalstyles = '
     margin-bottom: 0.5rem;
 }
 
-/* Input Fields */
+/* Input Fields - Updated for floating labels */
+.form-floating .form-control {
+    height: calc(3.5rem + 2px);
+    line-height: 1.25;
+    padding: 1rem 0.75rem;
+}
+
+.form-floating > label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 1rem 0.75rem;
+    overflow: hidden;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+    border: 1px solid transparent;
+    transform-origin: 0 0;
+    transition: opacity .1s ease-in-out,transform .1s ease-in-out;
+}
+
 .form-control {
     width: 100%;
     padding: 0.75rem 1rem;
@@ -418,34 +542,35 @@ $additionalstyles = '
 }
 
 .form-control::placeholder {
+    color: transparent;
+}
+
+.form-control:focus::placeholder {
     color: #adb5bd;
 }
 
-/* Password Input Group */
-.password-input-wrapper {
-    position: relative;
-}
-
+/* Password Toggle Button - Clean style without blue background */
 .password-toggle {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: #6c757d;
-    cursor: pointer;
-    padding: 0.25rem;
-    font-size: 1.125rem;
-    transition: color 0.2s ease;
+    background: white !important;
+    color: #6c757d !important;
+    border-color: #dee2e6 !important;
+    transition: all 0.2s ease;
 }
 
 .password-toggle:hover {
-    color: #495057;
+    background: #f8f9fa !important;
+    color: #495057 !important;
+    border-color: #dee2e6 !important;
 }
 
-.password-input {
-    padding-right: 3rem;
+.password-toggle:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+/* Match border color when input is focused */
+.input-group:focus-within .password-toggle {
+    border-color: #86b7fe !important;
 }
 
 /* Remember Me & Forgot Password Row */
@@ -607,7 +732,7 @@ $additionalstyles = '
 @media (min-width: 768px) {
     .login-container {
         max-width: 480px;
-        margin: 3rem auto;
+        margin: 1.5rem auto 3rem; /* Reduced top margin from 3rem to 1.5rem */
     }
     
     .login-header {
@@ -620,6 +745,33 @@ $additionalstyles = '
     
     .login-body {
         padding: 0 2rem 3rem;
+    }
+    
+    /* Desktop - keep full borders for floating labels */
+    .form-floating .form-control,
+    .form-control {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        background-color: #fff;
+        padding: 1rem 0.75rem;
+    }
+    
+    .form-floating .form-control:focus,
+    .form-control:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    /* Fix border on password toggle for desktop */
+    .input-group .password-toggle {
+        border: 2px solid #dee2e6 !important;
+        border-left: none !important;
+    }
+    
+    /* Keep border when input is focused */
+    .input-group:focus-within .password-toggle {
+        border-color: #86b7fe !important;
+        border-left: none !important;
     }
 }
 
@@ -822,49 +974,55 @@ $additionalstyles = '
                         
                         <!-- Email Input -->
                         <div class="form-group" id="email-group" style="<?php echo $preferred_method === 'email' ? '' : 'display: none;'; ?>">
-                            <label class="form-label" for="email">Email or Username</label>
-                            <input 
-                                type="text" 
-                                name="email" 
-                                id="email" 
-                                class="form-control" 
-                                placeholder="name@example.com" 
-                                autocomplete="username"
-                                value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
-                                <?php echo $preferred_method === 'email' ? 'required' : ''; ?>
-                                <?php echo $preferred_method === 'email' ? 'autofocus' : ''; ?>
-                            >
+                            <div class="form-floating">
+                                <input 
+                                    type="text" 
+                                    name="email" 
+                                    id="email" 
+                                    class="form-control" 
+                                    placeholder="Email or Username" 
+                                    autocomplete="username"
+                                    value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                                    <?php echo $preferred_method === 'email' ? 'required' : ''; ?>
+                                    <?php echo $preferred_method === 'email' ? 'autofocus' : ''; ?>
+                                >
+                                <label for="email">Email or Username</label>
+                            </div>
                         </div>
                         
                         <!-- Phone Input -->
                         <div class="form-group" id="phone-group" style="<?php echo $preferred_method === 'phone' ? '' : 'display: none;'; ?>">
-                            <label class="form-label" for="phone">Phone Number</label>
-                            <input 
-                                type="tel" 
-                                name="phone" 
-                                id="phone" 
-                                class="form-control" 
-                                placeholder="(555) 123-4567" 
-                                autocomplete="tel"
-                                value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
-                                <?php echo $preferred_method === 'phone' ? 'required' : ''; ?>
-                                <?php echo $preferred_method === 'phone' ? 'autofocus' : ''; ?>
-                            >
+                            <div class="form-floating">
+                                <input 
+                                    type="tel" 
+                                    name="phone" 
+                                    id="phone" 
+                                    class="form-control" 
+                                    placeholder="Phone Number" 
+                                    autocomplete="tel"
+                                    value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
+                                    <?php echo $preferred_method === 'phone' ? 'required' : ''; ?>
+                                    <?php echo $preferred_method === 'phone' ? 'autofocus' : ''; ?>
+                                >
+                                <label for="phone">Phone Number</label>
+                            </div>
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label" for="password">Password</label>
-                            <div class="password-input-wrapper">
-                                <input 
-                                    type="password" 
-                                    name="password" 
-                                    id="password" 
-                                    class="form-control password-input" 
-                                    placeholder="Enter your password" 
-                                    autocomplete="current-password"
-                                    required
-                                >
-                                <button type="button" class="password-toggle" id="togglePassword">
+                            <div class="input-group">
+                                <div class="form-floating flex-grow-1">
+                                    <input 
+                                        type="password" 
+                                        name="password" 
+                                        id="password" 
+                                        class="form-control" 
+                                        placeholder="Password" 
+                                        autocomplete="current-password"
+                                        required
+                                    >
+                                    <label for="password">Password</label>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary password-toggle" id="togglePassword">
                                     <i class="bi bi-eye-fill"></i>
                                 </button>
                             </div>
