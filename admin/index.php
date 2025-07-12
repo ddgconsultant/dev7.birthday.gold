@@ -293,7 +293,7 @@ $businessHours = $app->bg_businesshours();
 <!-- Hero Section -->
 <div class="content-header-admin no-rounded-corners">
     <div class="container">
-        <h1>Admin Dashboard</h1>
+        <h1 class="mt-3">Admin Dashboard</h1>
         <p class="lead mb-4">Manage the Birthday Gold platform with powerful administrative tools</p>
     </div>
 </div>
