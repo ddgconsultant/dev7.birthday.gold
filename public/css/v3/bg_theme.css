@@ -387,6 +387,7 @@ margin-bottom: 15px;
   text-align: center;
   position: relative;
   overflow: hidden;
+  margin-top: 0 !important;
 }
 
 /* Ensure full width on mobile */

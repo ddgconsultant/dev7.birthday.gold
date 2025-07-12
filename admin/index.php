@@ -12,6 +12,33 @@ $additionalstyles .= '
 <style>
 /* Modern Admin Dashboard Styles */
 
+/* Remove all padding/margins that might cause white space */
+body {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.navbar {
+    margin-bottom: 0 !important;
+}
+
+/* Ensure content header is flush with navbar */
+.content-header-admin {
+    margin-top: 0 !important;
+}
+
+/* Remove the row div spacing after navbar */
+.navbar + .row {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+}
+
+/* Force admin header to be flush */
+.navbar + .row + .content-header-admin {
+    margin-top: 0 !important;
+}
+
 /* Search Box - matching help page */
 .admin-search {
     max-width: 600px;
@@ -194,8 +221,16 @@ $additionalstyles .= '
     padding-top: 0 !important;
 }
 
-/* Mobile search adjustments */
+/* Mobile adjustments */
 @media (max-width: 767px) {
+    /* Remove Bootstrap default container padding on mobile */
+    body > .container,
+    body > .container-fluid {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    /* Admin search positioning */
     .admin-search {
         margin: -2.5rem auto 2rem; /* Move search higher on mobile */
         padding: 0 15px;
@@ -242,7 +277,7 @@ $additionalstyles .= '
 </style>
 ';
 
-$bodycontentclass = '';
+$bodycontentclass = ''; // This removes the my-4 margin from the row after nav
 $header_flush = true; // Ensure header content is flush with admin header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
