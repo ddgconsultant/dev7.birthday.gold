@@ -281,7 +281,7 @@ $bodycontentclass = ''; // This removes the my-4 margin from the row after nav
 $header_flush = true; // Ensure header content is flush with admin header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_admin_leftpanel.inc');
+// Removed bg_admin_leftpanel.inc as it wraps content in main-content div
 
 // Get enrollment count for badge
 $enrollmentCount = $app->admin_getenrollments();
