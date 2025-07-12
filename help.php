@@ -314,7 +314,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="content-header-dark no-rounded-corners">
     <div class="container">
         <h1>How can we help you?</h1>
-        <p class="lead">Find answers to your questions or get in touch with our support team</p>
+        <p class="lead mb-4">Find answers to your questions or get in touch with our support team</p>
     </div>
 </div>
 

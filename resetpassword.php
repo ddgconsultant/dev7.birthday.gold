@@ -110,7 +110,37 @@ if ($formdata = $app->formposted()) {
 $transferpage = $system->startpostpage();
 $additionalstyles.='
 <style>
-/* Email Input Field */
+/* Floating Label Styles */
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label {
+    transform: scale(0.85) translateY(-0.7rem) translateX(0.15rem);
+}
+
+.form-floating .form-control {
+    height: calc(3.5rem + 2px);
+    line-height: 1.25;
+    padding: 1rem 0.75rem;
+}
+
+.form-floating > label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 1rem 0.75rem;
+    overflow: hidden;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+    border: 1px solid transparent;
+    transform-origin: 0 0;
+    transition: opacity .1s ease-in-out,transform .1s ease-in-out;
+}
+
+/* Form Control Styles */
 .form-control {
     width: 100%;
     padding: 0.75rem 1rem;
@@ -129,8 +159,60 @@ $additionalstyles.='
 }
 
 .form-control::placeholder {
-    color: #adb5bd;
+    color: transparent;
+}
 
+.form-control:focus::placeholder {
+    color: #adb5bd;
+}
+
+/* Remove Chrome autofill blue background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: inherit !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Card styling to match login page */
+.reset-container {
+    width: 100%;
+    max-width: 480px;
+    margin: 1rem auto 2rem;
+}
+
+.reset-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    padding: 2rem;
+}
+
+/* Mobile spacing */
+@media (max-width: 767px) {
+    .reset-container {
+        margin-top: 50px;
+        margin-bottom: 2rem;
+    }
+    
+    .main-content {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+}
+
+/* Tablet/Desktop */
+@media (min-width: 768px) {
+    .reset-container {
+        margin: 1.5rem auto 3rem;
+    }
+    
+    .reset-card {
+        padding: 3rem;
+    }
 }
     
     </style>
@@ -139,6 +221,17 @@ $additionalstyles.='
 # ASK USER FOR NEW PASSWORDS
 #-------------------------------------------------------------------------------
 $passwordresetdata = $session->get('passwordreset', '');
+$current_user_data = $session->get('current_user_data', '');
+
+// Check if user has access to this page
+if (empty($passwordresetdata) && empty($current_user_data['user_id']) && empty($_GET['t'])) {
+    $errormessage = '<div class="alert alert-danger">You need to access this page from a secured link that was sent to you, or login first to change your password.</div>';
+    $transferpage['url'] = '/login';
+    $transferpage['message'] = $errormessage;
+    $system->endpostpage($transferpage);
+    exit;
+}
+
 $userfullname = '';
 if (!empty($passwordresetdata)) {
     $tempuserdata = $account->getuserdata($passwordresetdata[0]['user_id'], 'user_id');
@@ -149,8 +242,9 @@ $bodycontentclass = '';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
-echo '<div class="container my-5  mx-auto main-content">
-<div class="card px-3 px-md-5 col-10  mx-auto  pb-5">';
+echo '<div class="main-content">
+<div class="reset-container">
+<div class="reset-card">';
 
 
 $formhead='
@@ -179,9 +273,9 @@ $display->formaterrormessage($transferpage['message']).'
 ';
 
 $addfield= '      <!-- Form Group (current password)-->
-<div class="mb-3">
-<label class="small mb-1" for="inputcurrentPassword">Current Password</label>
-<input class="form-control" name="inputcurrentPassword" id="inputcurrentPassword" type="password" placeholder="Enter current password">
+<div class="mb-4 form-floating">
+<input class="form-control" name="inputcurrentPassword" id="inputcurrentPassword" type="password" placeholder="Current Password">
+<label for="inputcurrentPassword">Current Password</label>
 </div>';
 }
 
@@ -191,14 +285,14 @@ echo $formhead;
 echo $addfield;
 echo '
 <!-- Form Group (new password)-->
-<div class="mb-3">
-<label class="small mb-1" for="inputnewPassword">New Password</label>
-<input class="form-control"  name="inputnewPassword" id="newPassword" type="password" placeholder="Enter new password">
+<div class="mb-4 form-floating">
+<input class="form-control"  name="inputnewPassword" id="newPassword" type="password" placeholder="New Password">
+<label for="newPassword">New Password</label>
 </div>
 <!-- Form Group (confirm password)-->
-<div class="mb-3">
-<label class="small mb-1" for="inputconfirmPassword">Confirm Password</label>
-<input class="form-control"  name="inputconfirmPassword"  id="inputconfirmPassword" type="password" placeholder="Confirm password">
+<div class="mb-4 form-floating">
+<input class="form-control"  name="inputconfirmPassword"  id="inputconfirmPassword" type="password" placeholder="Confirm Password">
+<label for="inputconfirmPassword">Confirm Password</label>
 </div>
 <div class="text-end">
 <button class="btn btn-lg btn-primary px-5 mt-3" type="submit">Save</button>
@@ -208,7 +302,7 @@ echo '
 ';
 
 
-echo '</div></div></div></div></div>';
+echo '</div></div></div>';  // Close reset-card, reset-container, main-content
 
 echo '  <script src="/public/js/passwordhelper.js" language="javascript"></script>';
 

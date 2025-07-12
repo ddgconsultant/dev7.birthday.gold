@@ -73,6 +73,29 @@ $site = 'dev7';
 $mode = 'dev';
 $errormode = 'showerrors';
 $codemode = 'web';
+
+#-------------------------------------------------------------------------------
+# CSS Cache Busting Function
+#-------------------------------------------------------------------------------
+function getCssCacheBuster() {
+    global $mode;
+    
+    if ($mode == 'dev') {
+        // Development: Random token for every request
+        return '?v=' . uniqid();
+    } else {
+        // Production: Day-Hour token (changes every hour)
+        return '?v=' . date('YmdH');
+    }
+}
+
+// Helper function to add cache buster to CSS URL
+function cssUrl($path) {
+    return $path . getCssCacheBuster();
+}
+
+// Make it available globally
+$cssCacheBuster = getCssCacheBuster();
 $devversion = 'dev7';
 $cookiebannerversion = 2;
 $cookieinfolink = 'https://consumer.ftc.gov/articles/how-websites-and-apps-collect-and-use-your-information';

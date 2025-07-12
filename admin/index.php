@@ -12,45 +12,40 @@ $additionalstyles .= '
 <style>
 /* Modern Admin Dashboard Styles */
 
-/* Header Section */
-.admin-header {
-    text-align: center;
-    margin-bottom: 3rem;
-}
-
-.admin-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #212529;
-    margin-bottom: 0.5rem;
-}
-
-.admin-header p {
-    font-size: 1.25rem;
-    color: #6c757d;
-    margin: 0;
-}
-
-/* Search Bar */
-.search-box {
+/* Search Box - matching help page */
+.admin-search {
     max-width: 600px;
-    margin: 2rem auto;
+    margin: -2rem auto 3rem;
+    position: relative;
+    z-index: 1000; /* Much higher z-index */
 }
 
 .search-input {
     width: 100%;
-    padding: 1rem 1.5rem;
+    padding: 1rem 3rem 1rem 1.5rem;
     font-size: 1.125rem;
-    border: 2px solid #dee2e6;
+    border: 1px solid #dee2e6;
     border-radius: 50px;
-    transition: all 0.2s ease;
-    background: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1001; /* Ensure input is above other elements */
 }
 
 .search-input:focus {
     outline: none;
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    border-color: #667eea;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.search-icon {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+    z-index: 1002; /* Ensure icon is visible */
 }
 
 /* Section Headers */
@@ -185,24 +180,41 @@ $additionalstyles .= '
     color: #6c757d;
 }
 
+/* Main content styling to match help page */
+.main-content {
+    background-color: #f8f9fa;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    min-height: calc(100vh - 200px);
+}
+
+/* Remove main-content background and padding since header handles it */
+.main-content {
+    background-color: transparent !important;
+    padding-top: 0 !important;
+}
+
+/* Mobile search adjustments */
+@media (max-width: 767px) {
+    .admin-search {
+        margin: -2.5rem auto 2rem; /* Move search higher on mobile */
+        padding: 0 15px;
+        position: relative;
+        z-index: 1100; /* Much higher to ensure it is above the header */
+    }
+    
+    /* Ensure search has white background on mobile */
+    .admin-search .search-input {
+        background: white;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+}
+
 /* Responsive */
 @media (max-width: 767px) {
-    .admin-header h1 {
-        font-size: 2rem;
-    }
-    
-    .admin-header p {
-        font-size: 1rem;
-    }
-    
     .admin-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
-    }
-    
-    .search-input {
-        font-size: 1rem;
-        padding: 0.875rem 1.25rem;
     }
 }
 
@@ -231,6 +243,7 @@ $additionalstyles .= '
 ';
 
 $bodycontentclass = '';
+$header_flush = true; // Ensure header content is flush with admin header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 include($dir['core_components'] . '/bg_admin_leftpanel.inc');
@@ -242,24 +255,32 @@ $enrollmentCount = $app->admin_getenrollments();
 $businessHours = $app->bg_businesshours();
 ?>
 
-<div class="container-fluid main-content">
-    <div class="row">
-        <div class="col-12">
-        <!-- Header -->
-        <div class="admin-header">
-            <h1>Admin Dashboard</h1>
-            <p>Manage the Birthday Gold platform with powerful administrative tools</p>
-        </div>
-        
-        <!-- Search Bar -->
-        <div class="search-box">
+<!-- Hero Section -->
+<div class="content-header-admin no-rounded-corners">
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        <p class="lead mb-4">Manage the Birthday Gold platform with powerful administrative tools</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Search Bar -->
+    <div class="admin-search">
+        <div class="position-relative">
             <input 
                 type="text" 
                 class="search-input" 
                 placeholder="Search admin functions..."
                 id="adminSearch"
+                autocomplete="off"
             >
+            <i class="bi bi-search search-icon"></i>
         </div>
+    </div>
+</div>
+
+<div class="main-content py-4 py-md-5 bg-light">
+    <div class="container" style="max-width: 1400px;">
         
         <!-- Quick Stats -->
         <?php if ($account->isadmin()): ?>
@@ -808,7 +829,6 @@ $businessHours = $app->bg_businesshours();
             </a>
         </div>
         <?php endif; ?>
-        </div>
     </div>
 </div>
 

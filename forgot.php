@@ -126,7 +126,7 @@ if ($app->formposted()) {
         /* Mobile: Position below fixed header */
         @media (max-width: 767px) {
             .success-container {
-                margin-top: 50px; /* Match login page mobile spacing */
+                margin-top: 30px; /* Reduced mobile spacing */
                 margin-bottom: 2rem;
             }
             
@@ -303,7 +303,7 @@ $additionalstyles = '
 /* Mobile: Position below fixed header */
 @media (max-width: 767px) {
     .forgot-container {
-        margin-top: 50px; /* Match login page mobile spacing */
+        margin-top: 30px; /* Reduced mobile spacing */
         margin-bottom: 2rem;
     }
     
@@ -312,6 +312,38 @@ $additionalstyles = '
         padding-top: 0 !important;
         margin-top: 0 !important;
         min-height: auto;
+    }
+    
+    /* Mobile - underline style for floating labels */
+    .form-floating .form-control,
+    .form-control {
+        border: none;
+        border-bottom: 2px solid #dee2e6;
+        border-radius: 0;
+        background-color: transparent;
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
+    .form-floating .form-control:focus,
+    .form-control:focus {
+        border-bottom-color: #0d6efd;
+        box-shadow: none;
+        background-color: transparent;
+    }
+    
+    /* Floating labels adjustment for mobile */
+    .form-floating > label {
+        padding-left: 0;
+    }
+    
+    /* Remove autofill background on mobile with transparent background */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+        -webkit-text-fill-color: inherit !important;
     }
 }
 
@@ -408,13 +440,38 @@ $additionalstyles = '
     margin-bottom: 1.5rem;
 }
 
-.form-label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.5rem;
+/* Floating Label Styles */
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label {
+    transform: scale(0.85) translateY(-0.7rem) translateX(0.15rem);
 }
+
+.form-floating .form-control {
+    height: calc(3.5rem + 2px);
+    line-height: 1.25;
+    padding: 1rem 0.75rem;
+}
+
+.form-floating > label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 1rem 0.75rem;
+    overflow: hidden;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+    border: 1px solid transparent;
+    transform-origin: 0 0;
+    transition: opacity .1s ease-in-out,transform .1s ease-in-out;
+    color: #6c757d;
+}
+
+/* Remove old form-label styles that conflict with floating labels */
 
 /* Email Input Field */
 .form-control {
@@ -435,7 +492,30 @@ $additionalstyles = '
 }
 
 .form-control::placeholder {
+    color: transparent;
+}
+
+.form-control:focus::placeholder {
     color: #adb5bd;
+}
+
+/* Remove Chrome autofill blue background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: inherit !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* For floating label inputs specifically */
+.form-floating input:-webkit-autofill,
+.form-floating input:-webkit-autofill:hover,
+.form-floating input:-webkit-autofill:focus,
+.form-floating input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: inherit !important;
 }
 
 /* Submit Button */
@@ -474,8 +554,8 @@ $additionalstyles = '
 .help-text {
     font-size: 0.8125rem;
     color: #6c757d;
-    text-align: center;
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
+    padding-left: 0.75rem;
 }
 
 /* Divider - Subtle */
@@ -611,6 +691,21 @@ $additionalstyles = '
     
     .forgot-body {
         padding: 0 2rem 3rem;
+    }
+    
+    /* Desktop - keep full borders for floating labels */
+    .form-floating .form-control,
+    .form-control {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        background-color: #fff;
+        padding: 1rem 0.75rem;
+    }
+    
+    .form-floating .form-control:focus,
+    .form-control:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
     }
 }
 
@@ -804,18 +899,20 @@ include($dir['core_components'] . '/bg_header.inc');
                         
                         <!-- Email Input -->
                         <div class="form-group" id="email-group" style="<?php echo $preferred_method === 'email' ? '' : 'display: none;'; ?>">
-                            <label class="form-label" for="email">Email Address</label>
-                            <input 
-                                type="email" 
-                                name="email" 
-                                id="email" 
-                                class="form-control" 
-                                placeholder="name@example.com" 
-                                autocomplete="email"
-                                value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
-                                <?php echo $preferred_method === 'email' ? 'required' : ''; ?>
-                                <?php echo $preferred_method === 'email' ? 'autofocus' : ''; ?>
-                            >
+                            <div class="form-floating">
+                                <input 
+                                    type="email" 
+                                    name="email" 
+                                    id="email" 
+                                    class="form-control" 
+                                    placeholder="Email Address" 
+                                    autocomplete="email"
+                                    value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                                    <?php echo $preferred_method === 'email' ? 'required' : ''; ?>
+                                    <?php echo $preferred_method === 'email' ? 'autofocus' : ''; ?>
+                                >
+                                <label for="email">Email Address</label>
+                            </div>
                             <div class="help-text">
                                 We'll send a password reset link to this email
                             </div>
@@ -823,17 +920,19 @@ include($dir['core_components'] . '/bg_header.inc');
                         
                         <!-- Phone Input -->
                         <div class="form-group" id="phone-group" style="<?php echo $preferred_method === 'phone' ? '' : 'display: none;'; ?>">
-                            <label class="form-label" for="phone">Phone Number</label>
-                            <input 
-                                type="tel" 
-                                name="phone" 
-                                id="phone" 
-                                class="form-control" 
-                                placeholder="(555) 123-4567" 
-                                autocomplete="tel"
-                                value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
-                                <?php echo $preferred_method === 'phone' ? 'required' : 'disabled'; ?>
-                            >
+                            <div class="form-floating">
+                                <input 
+                                    type="tel" 
+                                    name="phone" 
+                                    id="phone" 
+                                    class="form-control" 
+                                    placeholder="Phone Number" 
+                                    autocomplete="tel"
+                                    value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
+                                    <?php echo $preferred_method === 'phone' ? 'required' : 'disabled'; ?>
+                                >
+                                <label for="phone">Phone Number</label>
+                            </div>
                             <div class="help-text">
                                 We'll send a password reset link via SMS
                             </div>

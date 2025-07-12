@@ -6,7 +6,7 @@ REDEEM PAGE STYLES V2 - Clean & Modern
 .redeem-container { width: 100%; max-width: 480px; margin: 1rem auto 2rem; }
 /* Mobile: Position below fixed header */
 @media (max-width: 767px) {
-.redeem-container { margin-top: 50px; margin-bottom: 2rem; }
+.redeem-container { margin-top: 30px; margin-bottom: 2rem; }
 .main-content { padding-top: 0 !important; margin-top: 0 !important; }
 }
 .redeem-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); overflow: hidden; }

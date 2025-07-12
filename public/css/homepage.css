@@ -164,6 +164,11 @@ body { padding-bottom: 0; }
 .float-element { transform: translateY(100vh);         /* Start offscreen */ }
 /* Make header black transparent on homepage only */
 .home-header { background-color: rgba(0, 0, 0, 0.8) !important; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.3); box-shadow: none !important; }
+/* Mobile: Add margin to CTA buttons when they wrap */
+@media (max-width: 767px) {
+.cta-section .btn-hero { margin-bottom: 1rem; }
+.cta-section .btn-hero:last-child { margin-bottom: 0; }
+}
 /* Ensure header text is visible with white shadow */
 header a,
 header .nav-link,

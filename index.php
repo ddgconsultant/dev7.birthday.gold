@@ -29,8 +29,8 @@ $headerattribute['additional_head'] = '
 # START PAGE OUTPUT
 #-------------------------------------------------------------------------------
 
-$additionalstyles .= '<link href="/public/css/v3/theme.css" rel="stylesheet" id="style-default">
-<link rel="stylesheet" href="/public/css/homepage.css">';
+$additionalstyles .= '<link href="' . cssUrl('/public/css/v3/theme.css') . '" rel="stylesheet" id="style-default">
+<link rel="stylesheet" href="' . cssUrl('/public/css/homepage.css') . '">';
 $bodycontentclass='class="d-flex"';
 $header_flush = true; // Homepage should have content flush with header
 
@@ -277,7 +277,7 @@ echo '
             Join thousands who never miss a birthday freebie again
         </p>
    
-            <a href="/signup" class="btn-hero btn-hero-primary">
+            <a href="/signup" class="btn-hero btn-hero-primary mb-4">
                 <span>Sign me up!</span>
                 <i class="bi bi-check2-circle"></i>
             </a>

@@ -59,8 +59,20 @@ $header_flush = true;
 
 // Additional styles
 $additionalstyles .= '
-<link href="/public/css/signup_styles.css" rel="stylesheet">
+<link href="' . cssUrl('/public/css/signup_styles.css') . '" rel="stylesheet">
 <style>
+/* Extended header for pricing page */
+.content-header-dark.pricing-header {
+    padding: 6rem 0 4rem 0 !important;
+}
+
+/* Mobile adjustment */
+@media (max-width: 768px) {
+    .content-header-dark.pricing-header {
+        padding: 3rem 0 2rem 0 !important;
+    }
+}
+
 /* Override body background to match signup */
 body {
     background-color: #f8f9fa !important;
@@ -198,7 +210,7 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <!-- Hero Section -->
-<div class="content-header-dark">
+<div class="content-header-dark pricing-header">
     <div class="container">
         <h1>Birthday.Gold Pricing</h1>
         <p class="lead">Choose the perfect plan for your birthday rewards journey</p>

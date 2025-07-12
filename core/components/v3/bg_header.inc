@@ -6,8 +6,8 @@
 if (!isset($bodyclass)) $bodyclass='';
 $additionalstyles .= "
 ".'
-<link rel="stylesheet" href="/public/css/' . $website['ui_version'] . '/bg_header.css?'.date('H').'"> 
-<link rel="stylesheet" href="/public/css/' . $website['ui_version'] . '/bg_megamenu.css?'.date('H').'">
+<link rel="stylesheet" href="/public/css/' . $website['ui_version'] . '/bg_header.css' . $cssCacheBuster . '"> 
+<link rel="stylesheet" href="/public/css/' . $website['ui_version'] . '/bg_megamenu.css' . $cssCacheBuster . '">
 <link href="/public/assets/vendors/simplebar/simplebar.min.css" rel="stylesheet">
 ';
 
@@ -20,7 +20,7 @@ echo '
     }
 }
 </style>
-<link rel="stylesheet" href="/public/css/avatar-fix.css?v=<?php echo time(); ?>">
+<link rel="stylesheet" href="/public/css/avatar-fix.css<?php echo $cssCacheBuster; ?>">
 </head>
 
 <body '.$bodyclass.'>
