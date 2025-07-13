@@ -1,6 +1,25 @@
 <?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+// Add custom styles for large screen spacing
+$additionalstyles = '
+<style>
+/* Add more vertical spacing between cards on large screens */
+@media (min-width: 992px) {
+    .legal-card-spacing {
+        margin-bottom: 3rem !important; /* Increased from default 1.5rem (mb-4) */
+    }
+}
+
+/* Even more spacing on extra large screens */
+@media (min-width: 1200px) {
+    .legal-card-spacing {
+        margin-bottom: 4rem !important;
+    }
+}
+</style>
+';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
@@ -24,7 +43,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
         <div class="row">
 
             <!-- Terms and Conditions Card -->
-            <div class="col-md-6 col-sm-12 mb-4">
+            <div class="col-md-6 col-sm-12 mb-4 legal-card-spacing">
                 <div class="card cursor-pointer" onclick="window.location.href='/legalhub/terms';">
                     <div class="card-header h5">
                         Terms and Conditions
@@ -47,7 +66,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
             </div>
 
             <!-- Privacy Policy Card -->
-            <div class="col-md-6 col-sm-12 mb-4">
+            <div class="col-md-6 col-sm-12 mb-4 legal-card-spacing">
                 <div class="card cursor-pointer" onclick="window.location.href='/legalhub/privacy';">
                     <div class="card-header h5">
                         Privacy Policy
@@ -73,7 +92,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
             </div>
 
             <!-- Our Responsibilities Card -->
-            <div class="col-md-6 col-sm-12 mb-4">
+            <div class="col-md-6 col-sm-12 mb-4 legal-card-spacing">
                 <div class="card cursor-pointer" onclick="window.location.href='/legalhub/responsibilities';">
                     <div class="card-header h5">
                         Our Responsibilities
@@ -86,7 +105,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
             </div>
 
             <!-- Your Data Rights Card -->
-            <div class="col-md-6 col-sm-12 mb-4">
+            <div class="col-md-6 col-sm-12 mb-4 legal-card-spacing">
                 <div class="card cursor-pointer" onclick="window.location.href='/legalhub/datarights';">
                     <div class="card-header h5">
                         Your Data Rights
@@ -102,7 +121,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
         <div class="row justify-content-center">
 
             <!-- Partner Terms Card -->
-            <div class="col-md-6 col-sm-12 mb-4">
+            <div class="col-md-6 col-sm-12 mb-4 legal-card-spacing">
                 <div class="card cursor-pointer" onclick="window.location.href='/legalhub/partnerterms';">
                     <div class="card-header h5">
                         Partner Terms and Conditions
@@ -125,7 +144,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
             </div>
 
             <!-- CopyRight Card -->
-            <div class="col-md-6 col-sm-12 mb-4">
+            <div class="col-md-6 col-sm-12 mb-4 legal-card-spacing">
                 <div class="card cursor-pointer" onclick="window.location.href='/legalhub/digitalrights';">
                     <div class="card-header h5">
                         Copyrights, Licenses, DMCA

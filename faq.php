@@ -7,7 +7,10 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 #-------------------------------------------------------------------------------
 # PREP VARIABLES
 #-------------------------------------------------------------------------------
-$adminenabledpage=true;
+// Only show admin header styling if an admin is logged in
+if ($account->isadmin()) {
+    $adminenabledpage = true;
+}
 
   // Define the categories in the order they should appear
   $categories = [

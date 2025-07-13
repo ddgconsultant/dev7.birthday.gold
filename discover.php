@@ -32,7 +32,7 @@ echo '
 
     // Conditionally display signup button only if user is not logged in
     if (!$account->isactive()) {
-        echo '<a href="/signup" class="btn btn-warning btn-lg mt-3">Sign Up to See Them All!</a>';
+        echo '<a href="/signup" class="btn btn-warning btn-lg mt-3" style="position: relative; z-index: 10;">Sign Up to See Them All!</a>';
     }
 
 echo '

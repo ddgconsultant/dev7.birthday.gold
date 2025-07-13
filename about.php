@@ -79,6 +79,27 @@ $additionalstyles = '
     line-height: 1.4;
 }
 
+/* CTA Button - Matching how-it-works page */
+.btn-get-started {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #1a1a2e;
+    border: none;
+    padding: 1rem 3rem;
+    border-radius: 50rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-get-started:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+    color: #1a1a2e;
+}
+
 /* Mission Box - Improved readability */
 .mission-box {
     background: linear-gradient(135deg, var(--bs-primary) 0%, #0b5ed7 100%);
@@ -212,6 +233,9 @@ include($dir['core_components'] . '/bg_header.inc');
                     </div>
                 </div>
                 
+                <!-- Divider -->
+                <hr style="margin: 3rem 0; border: 0; height: 1px; background: linear-gradient(to right, transparent, #dee2e6, transparent);">
+                
                 <!-- Mission Box -->
                 <div class="mission-box text-white my-lg-5">
                     <h4 class="h4 fw-bold text-white mb-3">Our Mission</h4>
@@ -219,7 +243,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 
                 <div class="mt-4">
-                    <a href="/signup" class="btn btn-primary btn-lg px-4 me-3">Start Free</a>
+                    <a href="/signup" class="btn-get-started me-3">Get Started Free</a>
                     <a href="/how" class="btn btn-outline-primary btn-lg px-4">Learn More</a>
                 </div>
             </div>
