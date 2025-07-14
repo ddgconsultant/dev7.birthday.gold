@@ -1090,7 +1090,7 @@ echo '
 <!-- State dropdown with floating-style label -->
 <div class="col-md-4 mb-3">
 <div class="floating-label-group">
-<select name="inputprofile_State" class="form-control floating-select has-value" aria-label="State">
+<select name="inputprofile_State" id="inputprofile_State" class="form-control floating-select has-value" aria-label="State">
 <option value="" disabled' . (empty($profilemailingstate) ? ' selected' : '') . '>Select...</option>
 ' . $display->list_state($profilemailingstate) . '
 </select>
@@ -1286,6 +1286,21 @@ echo '
 
 
 $footerattribute['postfooter'] = '
+<!-- Google Maps API for Address Autocomplete -->
+<script>
+// Load Google Maps API with Places library
+(function() {
+    var script = document.createElement("script");
+    script.src = "https://maps.googleapis.com/maps/api/js?key=' . ($sitesettings['GOOGLEAPI']['mainkey'] ?? '') . '&libraries=places&callback=initAddressAutocomplete";
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+})();
+</script>
+
+<!-- Address Autocomplete Script -->
+<script src="/public/js/address-autocomplete.js?' . date('YmdHis') . '"></script>
+
 <!-- Expert Floating Panel JavaScript Solution -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
