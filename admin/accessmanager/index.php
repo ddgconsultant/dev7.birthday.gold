@@ -201,10 +201,8 @@ body {
 /* Category Pills */
 .category-filter {
     background: #f8f9fa;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
+    padding: 0.75rem;
     border-radius: 0.5rem;
-    position: relative;
     overflow: hidden;
 }
 
@@ -212,7 +210,6 @@ body {
     display: flex;
     gap: 0.5rem;
     overflow-x: auto;
-    padding-bottom: 0.5rem;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
 }
@@ -361,9 +358,6 @@ body {
 }
 
 .badge-count {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
     background: #0066cc;
     color: white;
     font-size: 0.875rem;
@@ -372,6 +366,7 @@ body {
     border-radius: 1rem;
     min-width: 3rem;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .empty-state {
@@ -498,10 +493,19 @@ body {
         padding: 0.875rem 2.5rem 0.875rem 1.25rem;
     }
     
+    /* Stack filter and button on mobile */
+    .container > .d-flex {
+        flex-direction: column !important;
+        gap: 1rem;
+    }
+    
     .category-filter {
-        margin-left: -15px;
-        margin-right: -15px;
-        border-radius: 0;
+        width: 100%;
+        margin-right: 0 !important;
+    }
+    
+    .category-filter .d-flex {
+        justify-content: space-between;
     }
 }
 </style>
@@ -571,7 +575,35 @@ echo '
 </div>
 
 <div class="container mt-4">
-    <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <!-- Category Pills -->
+        <div class="category-filter flex-grow-1 me-3">
+            <div class="d-flex align-items-center">
+                <div class="category-scroll">
+                    <a href="#" class="category-pill active" data-value="all">
+                        <i class="bi bi-grid"></i> All
+                    </a>
+                    <a href="#" class="category-pill" data-value="Social Media">
+                        <i class="bi bi-chat-dots"></i> Social Media
+                    </a>
+                    <a href="#" class="category-pill" data-value="Mail Server">
+                        <i class="bi bi-envelope"></i> Mail Server
+                    </a>
+                    <a href="#" class="category-pill" data-value="vendor">
+                        <i class="bi bi-shop"></i> Vendor
+                    </a>
+                    <a href="#" class="category-pill" data-value="licenses">
+                        <i class="bi bi-file-earmark-text"></i> Licenses
+                    </a>
+                    <a href="#" class="category-pill" data-value="Personal">
+                        <i class="bi bi-person"></i> Personal
+                    </a>
+                </div>
+                <span class="badge-count ms-3">'.$listcount.'</span>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
         <div class="d-flex gap-2">
 ';
 
@@ -617,32 +649,6 @@ echo '
         <!-- Left Column (1/3) -->
         <div class="col-lg-4">
             <div class="card h-100">
-            <div class="card-header p-0">
-                <!-- Category Pills -->
-                <div class="category-filter">
-                    <span class="badge-count">'.$listcount.'</span>
-                    <div class="category-scroll">
-                        <a href="#" class="category-pill active" data-value="all">
-                            <i class="bi bi-grid"></i> All
-                        </a>
-                        <a href="#" class="category-pill" data-value="Social Media">
-                            <i class="bi bi-chat-dots"></i> Social Media
-                        </a>
-                        <a href="#" class="category-pill" data-value="Mail Server">
-                            <i class="bi bi-envelope"></i> Mail Server
-                        </a>
-                        <a href="#" class="category-pill" data-value="vendor">
-                            <i class="bi bi-shop"></i> Vendor
-                        </a>
-                        <a href="#" class="category-pill" data-value="licenses">
-                            <i class="bi bi-file-earmark-text"></i> Licenses
-                        </a>
-                        <a href="#" class="category-pill" data-value="Personal">
-                            <i class="bi bi-person"></i> Personal
-                        </a>
-                    </div>
-                </div>
-            </div>
             <div class="card-body p-0">
                 <div class="am-list-container">
                     <div class="list-group list-group-flush">
