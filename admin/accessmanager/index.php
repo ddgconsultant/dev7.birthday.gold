@@ -308,7 +308,7 @@ body {
 /* Dark header for right panel */
 #datapanel .card-header {
     background: #495057;
-    color: white;
+    color: white !important;
     border-bottom: none;
 }
 
@@ -316,6 +316,7 @@ body {
     margin: 0;
     font-size: 1.125rem;
     font-weight: 600;
+    color: white !important;
 }
 
 .am-list-container {
@@ -708,8 +709,8 @@ echo '
     </div>
 
     <!-- Right Column (2/3) -->
-    <div class="col-lg-8" id="datapanel">
-        <div class="card h-100">
+    <div class="col-lg-8">
+        <div class="card h-100" id="datapanel">
             <div class="card-header">
                 <h5 class="mb-0">Select an item to view details</h5>
             </div>

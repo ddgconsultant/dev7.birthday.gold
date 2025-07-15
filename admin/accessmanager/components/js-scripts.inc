@@ -32,11 +32,18 @@ document.addEventListener('DOMContentLoaded', function() {
 // Function to populate the right column with content dynamically
 // Takes an 'itemId' as a parameter to fetch specific data
 function populateRightColumn(itemId) {
-    const contentArea = document.getElementById('datapanel'); // The area where fetched content will be displayed
+    const card = document.getElementById('datapanel'); // The card element
+    const cardHeader = card.querySelector('.card-header h5'); // The header title
+    const cardBody = card.querySelector('.card-body'); // The card body
     
     // Get the name of the clicked item from the active list item
     const activeItem = document.querySelector('.list-group-item.active');
     const itemName = activeItem ? activeItem.querySelector('.item-name').textContent : 'Item Details';
+    
+    // Update the header with the item name
+    if (cardHeader) {
+        cardHeader.textContent = itemName;
+    }
 
     // Create a FormData object to send data via AJAX
     const formData = new FormData();
@@ -54,19 +61,9 @@ function populateRightColumn(itemId) {
     // When the request state changes, check for successful completion (readyState == 4, status == 200)
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {
-            // Create card structure with header showing item name
-            const cardHTML = `
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">${itemName}</h5>
-                    </div>
-                    <div class="card-body">
-                        <h6 class="text-muted mb-3">Details</h6>
-                        ${xhr.responseText}
-                    </div>
-                </div>
-            `;
-            contentArea.innerHTML = cardHTML;
+            // Update just the card body content
+            cardBody.innerHTML = '<h6 class="text-muted mb-3">Details</h6>' + xhr.responseText;
+            cardBody.classList.remove('d-flex', 'align-items-center', 'justify-content-center');
             initializeTooltips();
         }
     };
@@ -242,22 +239,17 @@ $(document).ready(function(){
     // Show loading spinner when fetching data
     var originalPopulateRightColumn = window.populateRightColumn;
     window.populateRightColumn = function(itemId) {
-        const contentArea = document.getElementById('datapanel');
-        const activeItem = document.querySelector('.list-group-item.active');
-        const itemName = activeItem ? activeItem.querySelector('.item-name').textContent : 'Loading...';
+        const card = document.getElementById('datapanel');
+        const cardBody = card.querySelector('.card-body');
         
-        contentArea.innerHTML = `
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">${itemName}</h5>
-                </div>
-                <div class="card-body d-flex align-items-center justify-content-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
+        // Show loading spinner in the card body
+        cardBody.classList.add('d-flex', 'align-items-center', 'justify-content-center');
+        cardBody.innerHTML = `
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
         `;
+        
         originalPopulateRightColumn(itemId);
     };
 });
