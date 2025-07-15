@@ -726,8 +726,7 @@ echo '
             </div>
 ';
 } else {
-echo '            <div class="card-body">
-                <h6 class="text-muted mb-3">Details</h6>'.
+echo '            <div class="card-body">'.
 $outputcontent.'
             </div>';
 }

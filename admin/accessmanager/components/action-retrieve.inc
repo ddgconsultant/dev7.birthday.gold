@@ -77,54 +77,23 @@
  
  $datastore_datatype=$row['data_type'];
  
- 
- $outputcontent.= '<!-- DATA PANEL AJAX HTML -->
- <div class="card">
- <div class="card-header d-flex justify-content-between align-items-center">
- <h4>' . $row['name'] . ' 
- <small class="fs-8 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $row['type'] . '">Details</small>
- </h4>
- <div>
- ';
- $outputcontent.= '
- <!-- LINK Button -->
- <a type="button" class="btn btn-sm btn-secondary" href="https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id='.$qik->encodeId($row['id']).'&apikey=PUTAPIKEYHERE" 
- data-bs-toggle="tooltip" data-bs-placement="top" title="Get Access Link">
-     <i class="bi bi-link-45deg"></i>
- </a>
- 
- ';
 
+// Modified output - no card wrapper, no duplicate title
+$outputcontent.= '<!-- DATA PANEL AJAX HTML -->
+<!-- Action Buttons -->
+<div class="d-flex justify-content-end gap-2 mb-3">
+    <!-- LINK Button -->
+    <a type="button" class="btn btn-sm btn-secondary" href="https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id='.$qik->encodeId($row['id']).'&apikey=PUTAPIKEYHERE" 
+    data-bs-toggle="tooltip" data-bs-placement="top" title="Get Access Link">
+        <i class="bi bi-link-45deg"></i>
+    </a>
+    
+    <!-- Edit Button -->
+    <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
+</div>
 
- $outputcontent.= '
- <!-- Edit Button -->
- <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
- ';
- /*
-  $outputcontent.= '
- <!-- Dropdown Menu -->
- <div class="btn-group">
- <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
- Actions
- </button>
- <ul class="dropdown-menu dropdown-menu-end">
- <li><a class="dropdown-item" href="#">Options</a></li>
- <li><a class="dropdown-item" href="#">Export</a></li>
- <li><a class="dropdown-item" href="#">Admin Actions</a></li>
- </ul>
- </div>
- ';
-*/
-
-  $outputcontent.= '
- </div>
- </div>
- 
- 
- <div class="card-body" id="rightColumnContent">
- <!-- Content Section -->
- <h5 class="card-title">'.$row['name'].'</h5>
- ';
+<!-- Content Section -->
+';
  
  if (!empty($row['host'])) {
  $outputcontent.= '
@@ -248,25 +217,25 @@
  </h2>
  <div id="collapseUsersGroups" class="accordion-collapse collapse" aria-labelledby="headingUsersGroups" data-bs-parent="#accordionUsersGroups">
  <div class="accordion-body border-0">
- <p class="text-muted">' . htmlspecialchars($row['listofusers_groups']) . '</p>
- </div>
- </div>
- </div>
- </div>
- ';
- 
- 
- 
- $outputcontent .= '
- <style>
- textarea::-webkit-scrollbar-track { background: #f1f1f1; }
- textarea::-webkit-scrollbar-thumb { background: #888; }
- textarea::-webkit-scrollbar-thumb:hover { background: #555; }
- textarea::-webkit-scrollbar { width: 8px; }
- </style>
  <div class="mb-3">
- <label class="form-label">Notes</label>
- <textarea class="form-control text-muted scrollbar-overlay" id="autoresizingTextarea" style="height:'. $textareaHeight.'px;">'.htmlspecialchars($row['notes']).'</textarea>
+ <label class="form-label">Groups with Access</label>
+ <p class="text-muted">'.$row['listofusers_groups'].'</p>
+ </div>
+ <div class="mb-3">
+ <label class="form-label">Add Users/Groups</label>
+ <select class="form-select" multiple>
+ <option>Select users or groups</option>
+ </select>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ 
+ 
+ <div class="mb-3">
+ <label for="notes" class="form-label">Notes</label>
+ <textarea class="form-control" id="notes" rows="6" style="height: '.$textareaHeight.'px;" readonly>'.htmlspecialchars($row['notes']).'</textarea>
  </div>
  
  
@@ -279,7 +248,8 @@
  
  </div>
  ';
- 
+
+// Modal for editing 
  $outputcontent.= '
  <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
  <div class="modal-dialog modal-lg">
@@ -289,5 +259,4 @@
  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
  </div>
  ';
- 
-  
+ include($_SERVER['DOCUMENT_ROOT'] . $dir['ampath'].'/components/edit-form.inc');

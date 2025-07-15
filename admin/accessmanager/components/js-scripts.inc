@@ -62,7 +62,7 @@ function populateRightColumn(itemId) {
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {
             // Update just the card body content
-            cardBody.innerHTML = '<h6 class="text-muted mb-3">Details</h6>' + xhr.responseText;
+            cardBody.innerHTML = xhr.responseText;
             cardBody.classList.remove('d-flex', 'align-items-center', 'justify-content-center');
             initializeTooltips();
         }
