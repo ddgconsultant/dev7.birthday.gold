@@ -148,70 +148,89 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
 
 
 <script>
-// Function to filter list items based on the search input value
+// Active state management for list items
 $(document).ready(function(){
-    $('#searchBar').on('keyup', function() {
-        var value = $(this).val().toLowerCase(); // Get the value of the search input and convert it to lowercase
-
-        // Iterate over each list item and check if it matches the search value
-        $('.list-group-item').each(function() {
-            var itemText = $(this).data('full-context').toLowerCase(); // Get the item's text content in lowercase
-
-            // Show or hide the item based on whether it contains the search value
-            if (itemText.includes(value)) {
-                $(this).css('display', ''); // Show the item
-            } else {
-                $(this).attr('style', 'display: none !important;'); // Hide the item
-            }
-        });
+    // Add active state to clicked items
+    $(document).on('click', '.list-group-item', function() {
+        $('.list-group-item').removeClass('active');
+        $(this).addClass('active');
     });
 });
 
-// Category filter functionality
+// Category filter functionality with pills
 $(document).ready(function(){
-    // When a category filter dropdown is clicked
-    $('.category-filter-dropdown').click(function(e) {
-        e.preventDefault();  // Prevent default anchor behavior (so it doesn't navigate)
+    // When a category pill is clicked
+    $('.category-pill').click(function(e) {
+        e.preventDefault();  // Prevent default anchor behavior
+
+        // Update active state
+        $('.category-pill').removeClass('active');
+        $(this).addClass('active');
 
         var selectedCategoryValue = $(this).data('value');  // Get the selected category value
+        var visibleCount = 0;
 
         // Iterate over each list item and show or hide based on the selected category
         $('.list-group-item').each(function() {
             var itemCategoryValue = $(this).data('category'); // Get the category value of the item
+            var searchValue = $('#searchBar').val().toLowerCase();
+            var itemText = $(this).data('full-context').toLowerCase();
 
-            if (selectedCategoryValue === 'all') {
-                $(this).show();  // Show all items if 'All' is selected
+            // Check both category and search criteria
+            var matchesCategory = (selectedCategoryValue === 'all' || itemCategoryValue === selectedCategoryValue);
+            var matchesSearch = (searchValue === '' || itemText.includes(searchValue));
+
+            if (matchesCategory && matchesSearch) {
+                $(this).css('display', ''); // Show matching items
+                visibleCount++;
             } else {
-                // Show items that match the selected category, hide others
-                if (itemCategoryValue === selectedCategoryValue) {
-                    $(this).css('display', ''); // Show matching items
-                } else {
-                    $(this).attr('style', 'display: none !important;'); // Hide non-matching items
-                }
+                $(this).attr('style', 'display: none !important;'); // Hide non-matching items
             }
         });
+
+        // Update count badge
+        $('.badge-count').text(visibleCount);
     });
 
-    // Existing searchBar functionality is already applied here
+    // Update search to work with categories
+    $('#searchBar').on('keyup input', function() {
+        var value = $(this).val().toLowerCase();
+        var activeCategoryValue = $('.category-pill.active').data('value') || 'all';
+        var visibleCount = 0;
+
+        $('.list-group-item').each(function() {
+            var itemText = $(this).data('full-context').toLowerCase();
+            var itemCategoryValue = $(this).data('category');
+
+            // Check both search and category criteria
+            var matchesSearch = (value === '' || itemText.includes(value));
+            var matchesCategory = (activeCategoryValue === 'all' || itemCategoryValue === activeCategoryValue);
+
+            if (matchesSearch && matchesCategory) {
+                $(this).css('display', '');
+                visibleCount++;
+            } else {
+                $(this).attr('style', 'display: none !important;');
+            }
+        });
+
+        // Update count badge
+        $('.badge-count').text(visibleCount);
+    });
+
+    // Initialize count on page load
+    $('.badge-count').text($('.list-group-item:visible').length);
 });
 
-// Show or hide the clear icon based on input in the search bar
+// Loading spinner for data panel
 $(document).ready(function(){
-    // When there's input in the search bar
-    $('#searchBar').on('input', function() {
-        if ($(this).val().length > 0) {
-            $('.clear-icon').show(); // Show the clear icon if the input has content
-        } else {
-            $('.clear-icon').hide(); // Hide the clear icon if the input is empty
-        }
-    });
-
-    // When the clear icon is clicked, clear the search bar and update the list
-    $('.clear-icon').click(function() {
-        $('#searchBar').val('').focus();  // Clear the input and focus on the search bar
-        $(this).hide();  // Hide the clear icon
-        $('#searchBar').trigger('keyup');  // Trigger the 'keyup' event to refresh the list
-    });
+    // Show loading spinner when fetching data
+    var originalPopulateRightColumn = window.populateRightColumn;
+    window.populateRightColumn = function(itemId) {
+        const contentArea = document.getElementById('datapanel');
+        contentArea.innerHTML = '<div class="card h-100"><div class="card-body d-flex align-items-center justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div></div>';
+        originalPopulateRightColumn(itemId);
+    };
 });
 
 

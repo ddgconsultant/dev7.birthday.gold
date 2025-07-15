@@ -137,6 +137,373 @@ border-bottom-left-radius: 0;
 border-bottom-right-radius: 4px;
 border-bottom-left-radius: 4px;
 }
+
+/* Access Manager Modern Design */
+/* Remove extra spacing that causes white space after navbar */
+body {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.navbar {
+    margin-bottom: 0 !important;
+}
+
+/* Ensure proper container spacing */
+.container {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Stats box styling to match admin header */
+.am-stats {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+}
+
+/* Search Box - matching admin page */
+.am-search {
+    max-width: 600px;
+    margin: -2rem auto 2rem;
+    position: relative;
+    z-index: 1000;
+}
+
+.am-search .search-input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1.5rem;
+    font-size: 1.125rem;
+    border: 1px solid #dee2e6;
+    border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.am-search .search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.am-search .search-icon {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+}
+
+/* Category Pills */
+.category-filter {
+    background: #f8f9fa;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.category-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.category-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.category-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.category-scroll::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 3px;
+}
+
+.category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 2rem;
+    color: #495057;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.category-pill:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+    text-decoration: none;
+}
+
+.category-pill.active {
+    background: #0066cc;
+    border-color: #0066cc;
+    color: white;
+}
+
+.category-pill.active:hover {
+    background: #0052a3;
+    border-color: #0052a3;
+    color: white;
+}
+
+.category-pill i {
+    font-size: 1rem;
+}
+
+/* Reduce list item spacing */
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid #f8f9fa;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: #fff;
+}
+
+.am-stats .stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #FFD700;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.am-stats .stat-label {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.9);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+.card {
+    border: 1px solid #e9ecef;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.02);
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    background: #fff;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem 1.25rem;
+}
+
+.am-list-container {
+    max-height: calc(100vh - 380px);
+    overflow-y: auto;
+    background: #fff;
+}
+
+.am-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.am-list-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.am-list-container::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 3px;
+}
+
+.am-list-container::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
+}
+
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid #f8f9fa;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: #fff;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(4px);
+}
+
+.list-group-item.active {
+    background-color: #e7f3ff;
+    color: #0066cc;
+    border-left: 3px solid #0066cc;
+    padding-left: calc(1.25rem - 3px);
+}
+
+.strength-bar {
+    width: 4px;
+    height: 32px;
+    display: inline-block;
+    margin-right: 1rem;
+    border-radius: 2px;
+}
+
+.badge-count {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #0066cc;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.375rem 0.75rem;
+    border-radius: 1rem;
+    min-width: 3rem;
+    text-align: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    color: #e9ecef;
+}
+
+.empty-state h5 {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Removed old search wrapper styles since search is now in header */
+
+/* Modern button styles */
+.btn-primary {
+    background: #0066cc;
+    border-color: #0066cc;
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    border-radius: 0.375rem;
+}
+
+.btn-primary:hover {
+    background: #0052a3;
+    border-color: #0052a3;
+}
+
+.btn-outline-secondary {
+    border-color: #dee2e6;
+    color: #495057;
+    font-weight: 500;
+}
+
+.btn-outline-secondary:hover {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+    color: #212529;
+}
+
+.dropdown-menu {
+    border: 1px solid #e9ecef;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+}
+
+.dropdown-item {
+    border-radius: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+    background: #f8f9fa;
+}
+
+/* Item type icon styling */
+.item-icon {
+    width: 40px;
+    height: 40px;
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.item-icon i {
+    font-size: 1.25rem;
+    color: #6c757d;
+}
+
+.item-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.item-name {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.125rem;
+}
+
+.item-host {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.item-type-icon {
+    color: #adb5bd;
+    font-size: 1rem;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.25rem;
+    animation: spin 1s linear infinite;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+    .am-search {
+        margin: -2.5rem auto 1.5rem;
+        padding: 0 15px;
+    }
+    
+    .am-search .search-input {
+        font-size: 1rem;
+        padding: 0.875rem 2.5rem 0.875rem 1.25rem;
+    }
+    
+    .category-filter {
+        margin-left: -15px;
+        margin-right: -15px;
+        border-radius: 0;
+    }
+}
 </style>
 
 
@@ -171,9 +538,41 @@ $listcount=count($rows);
 
 /// DISPLAY HEADER
 echo ' 
-<div class="container main-content">
-<div class="d-flex justify-content-between align-items-center">
-<h2 class="mb-3">Access Manager v2</h2>
+<!-- Admin Header Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-3"><i class="bi bi-shield-lock-fill me-3"></i>Access Manager</h1>
+                <p class="lead mb-0">Secure credential and sensitive data management system</p>
+            </div>
+            <div class="am-stats text-center">
+                <span class="stat-number">'.$listcount.'</span>
+                <span class="stat-label">Total Items</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Search Bar in Header -->
+    <div class="am-search">
+        <div class="position-relative">
+            <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search items..."
+                id="searchBar"
+                autocomplete="off"
+            >
+            <i class="bi bi-search search-icon"></i>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-end mb-3">
+        <div class="d-flex gap-2">
 ';
 
 
@@ -185,72 +584,67 @@ if (($account->isadmin()  && $account->isdeveloper(0))) {
 
 
 echo '
-<form action="' . $_SERVER['PHP_SELF'] . '" id="createnewform" name="createnewform"  method="post">
-'.$display->inputcsrf_token().'
-<input type="hidden" name="act" value="createnew">
-<input type="hidden" name="type" id="typeInput"> 
-<div class="dropdown">
-<button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonCreate" data-bs-toggle="dropdown" aria-expanded="false">
-Create New
-</button>
-<ul class="dropdown-menu" aria-labelledby="dropdownMenuButtonCreate">
-<li><button class="dropdown-item type-filter-dropdown" type="button" data-type="username_password">New User/Password</button></li>
-<li><button class="dropdown-item type-filter-dropdown" type="button" data-type="sshkey">New SSH Key</button></li>
-<li><button class="dropdown-item type-filter-dropdown" type="button" data-type="file">New File</button></li>
-<li><button class="dropdown-item type-filter-dropdown" type="button" data-type="keyvalue">Key/Value</button></li>
-<li><button class="dropdown-item type-filter-dropdown" type="button" data-type="special">New Special</button></li>
-
-</ul>
-</div>
-</form>
-';
+            <form action="' . $_SERVER['PHP_SELF'] . '" id="createnewform" name="createnewform"  method="post">
+            '.$display->inputcsrf_token().'
+            <input type="hidden" name="act" value="createnew">
+            <input type="hidden" name="type" id="typeInput"> 
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonCreate" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-plus-circle me-1"></i> Create New
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonCreate">
+                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="username_password"><i class="bi bi-person-lock me-2"></i>User/Password</button></li>
+                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="sshkey"><i class="bi bi-key me-2"></i>SSH Key</button></li>
+                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="file"><i class="bi bi-file-earmark me-2"></i>File</button></li>
+                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="keyvalue"><i class="bi bi-code-square me-2"></i>Key/Value</button></li>
+                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="special"><i class="bi bi-star me-2"></i>Special</button></li>
+                </ul>
+            </div>
+            </form>
+            ';
 
 echo '
+        </div>
+    </div>
 </div>
 ';
 
 
 // DISPLAY THE DATA
 echo '
-
-<div class="container mx-0 px-0">
-<div class="row">
-<!-- Left Column (1/3) -->
-<div class="col-md-4">
-<div class="card">
-<div class="card-header d-flex justify-content-between align-items-center">
-<div class="dropdown">
-<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-Categories
-</button>
-<ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-    <li><button class="dropdown-item category-filter-dropdown" type="button" data-value="all">All</button></li>
-    <li><button class="dropdown-item category-filter-dropdown" type="button" data-value="Social Media">Social Media</button></li>
-    <li><button class="dropdown-item category-filter-dropdown" type="button" data-value="Mail Server">Mail Server</button></li>
-    <li><button class="dropdown-item category-filter-dropdown" type="button" data-value="vendor">Vendor</button></li>
-    <li><button class="dropdown-item category-filter-dropdown" type="button" data-value="licenses">Licenses</button></li>
-    <li><button class="dropdown-item category-filter-dropdown" type="button" data-value="Personal">Personal</button></li>
-</ul>
-
-</div>
-<span class="badge bg-secondary badge-pill px-2">'.$listcount.'</span>
-</div>
-
-<div class="input-group mb-4">
-    <span class="input-group-text">
-        <i class="bi bi-search"></i> <!-- Bootstrap search icon -->
-    </span>
-    <input type="text" id="searchBar" class="form-control" placeholder="Search...">
-    <span class="input-group-text clear-icon" style="cursor: pointer; display: none;">
-        <i class="bi bi-x-circle-fill"></i> <!-- Clear icon -->
-    </span>
-    <span class="input-group-text">
-        <i class="bi bi-sort-alpha-down"></i> <!-- Bootstrap sort icon -->
-    </span>
-</div>
-
-
-<div class="list-group list-group-flush">
+<div class="row g-4">
+    <!-- Left Column (1/3) -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header p-0">
+                <!-- Category Pills -->
+                <div class="category-filter">
+                    <span class="badge-count">'.$listcount.'</span>
+                    <div class="category-scroll">
+                        <a href="#" class="category-pill active" data-value="all">
+                            <i class="bi bi-grid"></i> All
+                        </a>
+                        <a href="#" class="category-pill" data-value="Social Media">
+                            <i class="bi bi-chat-dots"></i> Social Media
+                        </a>
+                        <a href="#" class="category-pill" data-value="Mail Server">
+                            <i class="bi bi-envelope"></i> Mail Server
+                        </a>
+                        <a href="#" class="category-pill" data-value="vendor">
+                            <i class="bi bi-shop"></i> Vendor
+                        </a>
+                        <a href="#" class="category-pill" data-value="licenses">
+                            <i class="bi bi-file-earmark-text"></i> Licenses
+                        </a>
+                        <a href="#" class="category-pill" data-value="Personal">
+                            <i class="bi bi-person"></i> Personal
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="am-list-container">
+                    <div class="list-group list-group-flush">
 ';
 
 
@@ -262,65 +656,61 @@ foreach ($rows as $row) {
 
 /// GENERATE THE DATA ACCESS LINK
 echo  ' 
-<a href="javascript:void(0);" class="list-group-item list-group-item-action d-flex align-items-center" 
-data-category="'.htmlspecialchars($row['category']).'" 
-data-full-context="'. trim(htmlspecialchars($row['category'].' '.$row['host'].' '.$row['name'].' '.$row['description']).'"  
-onclick="populateRightColumn('.addslashes($row['id'])) . ')">
-';
-echo '
-<div class="ps-0 mx-0 pe-2">
-<span class="bg-'.$strengthresult['color'].' mx-0 px-0">&nbsp;</span> <!-- Password Strength Indicator -->
-</div>
-<div class="pe-2">
-<i class="'.$row['type_icon'].'"></i> 
-</div>
-' . ($row['name']) . '
-<div class="ms-auto ps-2 text-end"> <!-- Modified this line for flush right -->
-<i class="'.$row['datatype_icon'].'"></i> 
-</div>
+<a href="javascript:void(0);" class="list-group-item list-group-item-action" 
+    data-category="'.htmlspecialchars($row['category']).'" 
+    data-full-context="'. trim(htmlspecialchars($row['category'].' '.$row['host'].' '.$row['name'].' '.$row['description']).'"  
+    onclick="populateRightColumn('.addslashes($row['id'])) . ')">
+    <div class="d-flex align-items-center">
+        <span class="strength-bar bg-'.$strengthresult['color'].'"></span>
+        <div class="item-icon">
+            <i class="'.$row['type_icon'].'"></i> 
+        </div>
+        <div class="item-details">
+            <div class="item-name">' . htmlspecialchars($row['name']) . '</div>
+            ' . ($row['host'] ? '<div class="item-host">' . htmlspecialchars($row['host']) . '</div>' : '') . '
+        </div>
+        <div class="item-type-icon">
+            <i class="'.$row['datatype_icon'].'"></i> 
+        </div>
+    </div>
 </a>';
 }
 
 
 echo '
-</div>
-</div>
-</div>
-';
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-
-
-
-/// DISPLAY THE DATA ELEMENT FORM
-echo '
-
-<!-- Right Column (2/3) -->
-<div class="col-md-8" id="datapanel">
-<div class="card">
+    <!-- Right Column (2/3) -->
+    <div class="col-lg-8" id="datapanel">
+        <div class="card h-100">
 ';
 if ($outputcontent=='')  {
 echo '
-<div class="card-header d-flex justify-content-between align-items-center">
-
-<h4>Select an Item</h4>
-
-</div>
-
-<div class="card-body" id="rightColumnContent">
-<!-- Placeholder Content Section -->
-<h5 class="card-title"> Please select an item to view its details.</h5>   
-
-</div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <div class="empty-state">
+                    <i class="bi bi-shield-lock"></i>
+                    <h5 class="mt-3">No Item Selected</h5>
+                    <p class="text-muted">Choose an item from the list to view and manage its details</p>
+                </div>
+            </div>
 ';
 } else {
-echo '<div class="p-3">'.
+echo '            <div class="p-3">'.
 $outputcontent.'
-</div>';
+            </div>';
 }
 
 
 
-echo str_repeat('</div>', 8) . ' 
+echo '
+        </div>
+    </div>
+</div>
+</div>
 ';
 
 
