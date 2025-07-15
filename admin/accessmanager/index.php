@@ -305,6 +305,19 @@ body {
     padding: 1rem 1.25rem;
 }
 
+/* Dark header for right panel */
+#datapanel .card-header {
+    background: #495057;
+    color: white;
+    border-bottom: none;
+}
+
+#datapanel .card-header h5 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
 .am-list-container {
     max-height: calc(100vh - 380px);
     overflow-y: auto;
@@ -649,6 +662,9 @@ echo '
         <!-- Left Column (1/3) -->
         <div class="col-lg-4">
             <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-key-fill me-2"></i>Credentials</h5>
+            </div>
             <div class="card-body p-0">
                 <div class="am-list-container">
                     <div class="list-group list-group-flush">
@@ -694,6 +710,9 @@ echo '
     <!-- Right Column (2/3) -->
     <div class="col-lg-8" id="datapanel">
         <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Select an item to view details</h5>
+            </div>
 ';
 if ($outputcontent=='')  {
 echo '
@@ -701,12 +720,13 @@ echo '
                 <div class="empty-state">
                     <i class="bi bi-shield-lock"></i>
                     <h5 class="mt-3">No Item Selected</h5>
-                    <p class="text-muted">Choose an item from the list to view and manage its details</p>
+                    <p class="text-muted">Choose a credential from the list to view and manage its details</p>
                 </div>
             </div>
 ';
 } else {
-echo '            <div class="p-3">'.
+echo '            <div class="card-body">
+                <h6 class="text-muted mb-3">Details</h6>'.
 $outputcontent.'
             </div>';
 }

@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', function() {
 // Takes an 'itemId' as a parameter to fetch specific data
 function populateRightColumn(itemId) {
     const contentArea = document.getElementById('datapanel'); // The area where fetched content will be displayed
+    
+    // Get the name of the clicked item from the active list item
+    const activeItem = document.querySelector('.list-group-item.active');
+    const itemName = activeItem ? activeItem.querySelector('.item-name').textContent : 'Item Details';
 
     // Create a FormData object to send data via AJAX
     const formData = new FormData();
@@ -50,8 +54,19 @@ function populateRightColumn(itemId) {
     // When the request state changes, check for successful completion (readyState == 4, status == 200)
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {
-            // Populate the 'datapanel' area with the returned HTML content
-            contentArea.innerHTML = xhr.responseText;
+            // Create card structure with header showing item name
+            const cardHTML = `
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">${itemName}</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="text-muted mb-3">Details</h6>
+                        ${xhr.responseText}
+                    </div>
+                </div>
+            `;
+            contentArea.innerHTML = cardHTML;
             initializeTooltips();
         }
     };
@@ -228,7 +243,21 @@ $(document).ready(function(){
     var originalPopulateRightColumn = window.populateRightColumn;
     window.populateRightColumn = function(itemId) {
         const contentArea = document.getElementById('datapanel');
-        contentArea.innerHTML = '<div class="card h-100"><div class="card-body d-flex align-items-center justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div></div>';
+        const activeItem = document.querySelector('.list-group-item.active');
+        const itemName = activeItem ? activeItem.querySelector('.item-name').textContent : 'Loading...';
+        
+        contentArea.innerHTML = `
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">${itemName}</h5>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        `;
         originalPopulateRightColumn(itemId);
     };
 });
