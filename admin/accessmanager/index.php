@@ -612,10 +612,11 @@ echo '
 
 // DISPLAY THE DATA
 echo '
-<div class="row g-4">
-    <!-- Left Column (1/3) -->
-    <div class="col-lg-4">
-        <div class="card h-100">
+<div class="container">
+    <div class="row g-4">
+        <!-- Left Column (1/3) -->
+        <div class="col-lg-4">
+            <div class="card h-100">
             <div class="card-header p-0">
                 <!-- Category Pills -->
                 <div class="category-filter">
@@ -707,6 +708,7 @@ $outputcontent.'
 
 
 echo '
+            </div>
         </div>
     </div>
 </div>
