@@ -986,21 +986,6 @@ echo '
 ';
 
 $footerattribute['postfooter'] = '
-<!-- Google Maps API for Address Autocomplete -->
-<script>
-// Load Google Maps API with Places library
-(function() {
-    var script = document.createElement("script");
-    script.src = "https://maps.googleapis.com/maps/api/js?key=' . ($sitesettings['GOOGLEAPI']['mainkey'] ?? '') . '&libraries=places&callback=initAddressAutocomplete";
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-})();
-</script>
-
-<!-- Address Autocomplete Script -->
-<script src="/public/js/address-autocomplete.js?' . date('YmdHis') . '"></script>
-
 <script>
 $(document).ready(function() {
 $("#uploadBtn").click(function() {
