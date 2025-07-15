@@ -305,18 +305,29 @@ body {
     padding: 1rem 1.25rem;
 }
 
-/* Dark header for right panel */
-#datapanel .card-header {
+/* Dark headers for both panels */
+.card-header-dark {
     background: #495057;
     color: white !important;
     border-bottom: none;
 }
 
-#datapanel .card-header h5 {
+.card-header-dark h5,
+.card-header-dark h2 {
     margin: 0;
-    font-size: 1.125rem;
-    font-weight: 600;
     color: white !important;
+}
+
+#datapanel .card-header h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+/* Remove full height from cards */
+.am-card-container {
+    height: auto;
+    min-height: 400px;
+    max-height: calc(100vh - 300px);
 }
 
 .am-list-container {
@@ -371,16 +382,10 @@ body {
     border-radius: 2px;
 }
 
-.badge-count {
-    background: #0066cc;
-    color: white;
-    font-size: 0.875rem;
-    font-weight: 600;
-    padding: 0.375rem 0.75rem;
-    border-radius: 1rem;
-    min-width: 3rem;
-    text-align: center;
-    flex-shrink: 0;
+/* Style for count in pill */
+.pill-count {
+    font-weight: normal;
+    opacity: 0.8;
 }
 
 .empty-state {
@@ -559,15 +564,9 @@ echo '
 <!-- Admin Header Section -->
 <div class="content-header-admin">
     <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="mb-3"><i class="bi bi-shield-lock-fill me-3"></i>Access Manager</h1>
-                <p class="lead mb-0">Secure credential and sensitive data management system</p>
-            </div>
-            <div class="am-stats text-center">
-                <span class="stat-number">'.$listcount.'</span>
-                <span class="stat-label">Total Items</span>
-            </div>
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-shield-lock-fill me-3"></i>Access Manager</h1>
+            <p class="lead mb-0">Secure credential and sensitive data management system</p>
         </div>
     </div>
 </div>
@@ -595,7 +594,7 @@ echo '
             <div class="d-flex align-items-center">
                 <div class="category-scroll">
                     <a href="#" class="category-pill active" data-value="all">
-                        <i class="bi bi-grid"></i> All
+                        <i class="bi bi-grid"></i> All <span class="pill-count">('.$listcount.')</span>
                     </a>
                     <a href="#" class="category-pill" data-value="Social Media">
                         <i class="bi bi-chat-dots"></i> Social Media
@@ -613,7 +612,6 @@ echo '
                         <i class="bi bi-person"></i> Personal
                     </a>
                 </div>
-                <span class="badge-count ms-3">'.$listcount.'</span>
             </div>
         </div>
         
@@ -662,8 +660,8 @@ echo '
     <div class="row g-4">
         <!-- Left Column (1/3) -->
         <div class="col-lg-4">
-            <div class="card h-100">
-            <div class="card-header">
+            <div class="card am-card-container">
+            <div class="card-header card-header-dark">
                 <h5 class="mb-0"><i class="bi bi-key-fill me-2"></i>Credentials</h5>
             </div>
             <div class="card-body p-0">
@@ -710,9 +708,9 @@ echo '
 
     <!-- Right Column (2/3) -->
     <div class="col-lg-8">
-        <div class="card h-100" id="datapanel">
-            <div class="card-header">
-                <h5 class="mb-0">Select an item to view details</h5>
+        <div class="card am-card-container" id="datapanel">
+            <div class="card-header card-header-dark">
+                <h2 class="mb-0">Select an item to view details</h2>
             </div>
 ';
 if ($outputcontent=='')  {

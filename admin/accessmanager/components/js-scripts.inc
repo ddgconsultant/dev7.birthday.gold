@@ -223,8 +223,8 @@ $(document).ready(function(){
             }
         });
 
-        // Update count badge
-        $('.badge-count').text(visibleCount);
+        // Update count in All pill
+        $('.category-pill[data-value="all"] .pill-count').text('(' + visibleCount + ')');
     });
 
     // Update search to work with categories
@@ -249,12 +249,12 @@ $(document).ready(function(){
             }
         });
 
-        // Update count badge
-        $('.badge-count').text(visibleCount);
+        // Update count in All pill
+        $('.category-pill[data-value="all"] .pill-count').text('(' + visibleCount + ')');
     });
 
     // Initialize count on page load
-    $('.badge-count').text($('.list-group-item:visible').length);
+    $('.category-pill[data-value="all"] .pill-count').text('(' + $('.list-group-item:visible').length + ')');
 });
 
 // Loading spinner for data panel
