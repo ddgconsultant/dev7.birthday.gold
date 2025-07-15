@@ -79,19 +79,17 @@
  
 
 // Modified output - no card wrapper, no duplicate title
-$outputcontent.= '<!-- DATA PANEL AJAX HTML -->
-<!-- Action Buttons -->
-<div class="d-flex justify-content-end gap-2 mb-3">
-    <!-- LINK Button -->
+// Store the buttons in a data attribute for JavaScript to extract
+$actionButtons = '
     <a type="button" class="btn btn-sm btn-secondary" href="https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id='.$qik->encodeId($row['id']).'&apikey=PUTAPIKEYHERE" 
     data-bs-toggle="tooltip" data-bs-placement="top" title="Get Access Link">
         <i class="bi bi-link-45deg"></i>
     </a>
-    
-    <!-- Edit Button -->
     <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
-</div>
+';
 
+$outputcontent.= '<!-- DATA PANEL AJAX HTML -->
+<div data-action-buttons="'.htmlspecialchars($actionButtons).'" style="display:none;"></div>
 <!-- Content Section -->
 ';
  
@@ -259,4 +257,3 @@ $outputcontent.= '<!-- DATA PANEL AJAX HTML -->
  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
  </div>
  ';
- include($_SERVER['DOCUMENT_ROOT'] . $dir['ampath'].'/components/edit-form.inc');

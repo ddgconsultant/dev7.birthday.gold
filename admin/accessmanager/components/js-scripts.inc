@@ -33,16 +33,23 @@ document.addEventListener('DOMContentLoaded', function() {
 // Takes an 'itemId' as a parameter to fetch specific data
 function populateRightColumn(itemId) {
     const card = document.getElementById('datapanel'); // The card element
-    const cardHeader = card.querySelector('.card-header h5'); // The header title
+    const cardHeader = card.querySelector('.card-header'); // The header element
     const cardBody = card.querySelector('.card-body'); // The card body
     
     // Get the name of the clicked item from the active list item
     const activeItem = document.querySelector('.list-group-item.active');
     const itemName = activeItem ? activeItem.querySelector('.item-name').textContent : 'Item Details';
     
-    // Update the header with the item name
+    // Update the header with the item name and action buttons
     if (cardHeader) {
-        cardHeader.textContent = itemName;
+        cardHeader.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">${itemName}</h5>
+                <div class="action-buttons" id="headerActionButtons">
+                    <!-- Buttons will be populated from AJAX response -->
+                </div>
+            </div>
+        `;
     }
 
     // Create a FormData object to send data via AJAX
@@ -61,9 +68,25 @@ function populateRightColumn(itemId) {
     // When the request state changes, check for successful completion (readyState == 4, status == 200)
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {
-            // Update just the card body content
+            // Update the card body content
             cardBody.innerHTML = xhr.responseText;
             cardBody.classList.remove('d-flex', 'align-items-center', 'justify-content-center');
+            
+            // Extract action buttons from the response and place them in header
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = xhr.responseText;
+            const buttonData = tempDiv.querySelector('[data-action-buttons]');
+            if (buttonData) {
+                const buttons = buttonData.getAttribute('data-action-buttons');
+                const headerButtons = document.getElementById('headerActionButtons');
+                if (headerButtons && buttons) {
+                    // Decode HTML entities
+                    const textarea = document.createElement('textarea');
+                    textarea.innerHTML = buttons;
+                    headerButtons.innerHTML = textarea.value;
+                }
+            }
+            
             initializeTooltips();
         }
     };
