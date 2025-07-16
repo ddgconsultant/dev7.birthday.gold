@@ -501,9 +501,22 @@ body {
 }
 
 /* Mobile adjustments */
-@media (max-width: 767px) {
+@media (max-width: 991px) {
+    /* Adjust header for mobile */
+    .content-header-admin {
+        padding: 2rem 1rem !important;
+    }
+    
+    .content-header-admin h1 {
+        font-size: 1.75rem;
+    }
+    
+    .content-header-admin .lead {
+        font-size: 1rem;
+    }
+    
     .am-search {
-        margin: -2.5rem auto 1.5rem;
+        margin: -2rem auto 1.5rem;
         padding: 0 15px;
     }
     
@@ -512,19 +525,41 @@ body {
         padding: 0.875rem 2.5rem 0.875rem 1.25rem;
     }
     
-    /* Stack filter and button on mobile */
-    .container > .d-flex {
-        flex-direction: column !important;
-        gap: 1rem;
-    }
-    
+    /* Hide desktop filter pills on mobile */
     .category-filter {
-        width: 100%;
-        margin-right: 0 !important;
+        display: none !important;
     }
     
-    .category-filter .d-flex {
-        justify-content: space-between;
+    /* Show mobile filter dropdown */
+    .mobile-filter-row {
+        display: flex !important;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Hide right panel on mobile - will show in modal */
+    #datapanel,
+    .col-lg-8 {
+        display: none;
+    }
+    
+    /* Make left panel full width */
+    .col-lg-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    /* Adjust card heights for mobile */
+    .am-card-container {
+        max-height: calc(100vh - 250px);
+        min-height: 300px;
+    }
+}
+
+/* Desktop only styles */
+@media (min-width: 992px) {
+    .mobile-filter-row {
+        display: none !important;
     }
 }
 </style>
@@ -588,6 +623,50 @@ echo '
 </div>
 
 <div class="container mt-4">
+    <!-- Mobile Filter Row -->
+    <div class="mobile-filter-row" style="display: none;">
+        <div class="dropdown flex-grow-1">
+            <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="mobileFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-funnel me-1"></i> All Categories <span class="pill-count">('.$listcount.')</span>
+            </button>
+            <ul class="dropdown-menu w-100" aria-labelledby="mobileFilterDropdown">
+                <li><button class="dropdown-item mobile-category-filter" type="button" data-value="all"><i class="bi bi-grid me-2"></i>All</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item mobile-category-filter" type="button" data-value="Social Media"><i class="bi bi-chat-dots me-2"></i>Social Media</button></li>
+                <li><button class="dropdown-item mobile-category-filter" type="button" data-value="Mail Server"><i class="bi bi-envelope me-2"></i>Mail Server</button></li>
+                <li><button class="dropdown-item mobile-category-filter" type="button" data-value="vendor"><i class="bi bi-shop me-2"></i>Vendor</button></li>
+                <li><button class="dropdown-item mobile-category-filter" type="button" data-value="licenses"><i class="bi bi-file-earmark-text me-2"></i>Licenses</button></li>
+                <li><button class="dropdown-item mobile-category-filter" type="button" data-value="Personal"><i class="bi bi-person me-2"></i>Personal</button></li>
+            </ul>
+        </div>
+';
+
+////////// RE-ENCRYPT DATA BUTTON
+if (($account->isadmin()  && $account->isdeveloper(0))) {
+    include($_SERVER['DOCUMENT_ROOT'] . $dir['ampath'].'/components/re-encyrpt_data.inc');
+}
+
+echo '
+        <form action="' . $_SERVER['PHP_SELF'] . '" id="createnewform" name="createnewform"  method="post">
+        '.$display->inputcsrf_token().'
+        <input type="hidden" name="act" value="createnew">
+        <input type="hidden" name="type" id="typeInput"> 
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonCreate" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-plus-circle me-1"></i> <span class="d-none d-sm-inline">Create New</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonCreate">
+                <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="username_password"><i class="bi bi-person-lock me-2"></i>User/Password</button></li>
+                <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="sshkey"><i class="bi bi-key me-2"></i>SSH Key</button></li>
+                <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="file"><i class="bi bi-file-earmark me-2"></i>File</button></li>
+                <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="keyvalue"><i class="bi bi-code-square me-2"></i>Key/Value</button></li>
+                <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="special"><i class="bi bi-star me-2"></i>Special</button></li>
+            </ul>
+        </div>
+        </form>
+    </div>
+    
+    <!-- Desktop Filter Row -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <!-- Category Pills -->
         <div class="category-filter flex-grow-1 me-3">
@@ -739,6 +818,26 @@ echo '
 </div>
 ';
 
+// Modal for mobile credential details
+echo '
+<div class="modal fade" id="credentialModal" tabindex="-1" aria-labelledby="credentialModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header card-header-dark">
+                <h2 class="modal-title" id="credentialModalLabel">Credential Details</h2>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalCredentialContent">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+';
 
 include($_SERVER['DOCUMENT_ROOT'] . $dir['ampath'].'/components/js-scripts.inc');
 

@@ -29,71 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 
-// Function to populate the right column with content dynamically
-// Takes an 'itemId' as a parameter to fetch specific data
-function populateRightColumn(itemId) {
-    const card = document.getElementById('datapanel'); // The card element
-    const cardHeader = card.querySelector('.card-header'); // The header element
-    const cardBody = card.querySelector('.card-body'); // The card body
-    
-    // Get the name of the clicked item from the active list item
-    const activeItem = document.querySelector('.list-group-item.active');
-    const itemName = activeItem ? activeItem.querySelector('.item-name').textContent : 'Item Details';
-    
-    // Update the header with the item name and action buttons
-    if (cardHeader) {
-        cardHeader.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">${itemName}</h5>
-                <div class="action-buttons" id="headerActionButtons">
-                    <!-- Buttons will be populated from AJAX response -->
-                </div>
-            </div>
-        `;
-    }
-
-    // Create a FormData object to send data via AJAX
-    const formData = new FormData();
-    formData.append('id', itemId); // Append the ID of the selected item
-
-    // Retrieve CSRF token to ensure security (this should be set server-side)
-    const csrfToken = '<?php echo addslashes($csrf_token); ?>'; 
-    formData.append('_token', csrfToken); // Append CSRF token
-    formData.append('act', 'getdata'); // Action to be performed on the server (retrieve data)
-
-    // Create an AJAX request (XMLHttpRequest) to fetch data from the server
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', <?php echo $amscriptendpoint; ?>, true); // Open a POST request to 'accessmanager.php'
-
-    // When the request state changes, check for successful completion (readyState == 4, status == 200)
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState == 4 && xhr.status == 200) {
-            // Update the card body content
-            cardBody.innerHTML = xhr.responseText;
-            cardBody.classList.remove('d-flex', 'align-items-center', 'justify-content-center');
-            
-            // Extract action buttons from the response and place them in header
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = xhr.responseText;
-            const buttonData = tempDiv.querySelector('[data-action-buttons]');
-            if (buttonData) {
-                const buttons = buttonData.getAttribute('data-action-buttons');
-                const headerButtons = document.getElementById('headerActionButtons');
-                if (headerButtons && buttons) {
-                    // Decode HTML entities
-                    const textarea = document.createElement('textarea');
-                    textarea.innerHTML = buttons;
-                    headerButtons.innerHTML = textarea.value;
-                }
-            }
-            
-            initializeTooltips();
-        }
-    };
-
-    // Send the FormData object containing the item ID and CSRF token
-    xhr.send(formData);
-}
+<?php include($_SERVER['DOCUMENT_ROOT'] . $dir['ampath'].'/components/js-scripts-mobile.inc'); ?>
 
 
 
@@ -189,6 +125,38 @@ $(document).ready(function(){
     $(document).on('click', '.list-group-item', function() {
         $('.list-group-item').removeClass('active');
         $(this).addClass('active');
+    });
+    
+    // Mobile category filter dropdown
+    $('.mobile-category-filter').click(function(e) {
+        e.preventDefault();
+        
+        var selectedValue = $(this).data('value');
+        var selectedText = $(this).html();
+        
+        // Update dropdown button text
+        $('#mobileFilterDropdown').html('<i class="bi bi-funnel me-1"></i> ' + selectedText.replace(/<i[^>]*><\/i>/g, '').trim() + ' <span class="pill-count">(' + $('.list-group-item:visible').length + ')</span>');
+        
+        // Apply the same filtering logic as desktop
+        var visibleCount = 0;
+        $('.list-group-item').each(function() {
+            var itemCategoryValue = $(this).data('category');
+            var searchValue = $('#searchBar').val().toLowerCase();
+            var itemText = $(this).data('full-context').toLowerCase();
+            
+            var matchesCategory = (selectedValue === 'all' || itemCategoryValue === selectedValue);
+            var matchesSearch = (searchValue === '' || itemText.includes(searchValue));
+            
+            if (matchesCategory && matchesSearch) {
+                $(this).css('display', '');
+                visibleCount++;
+            } else {
+                $(this).attr('style', 'display: none !important;');
+            }
+        });
+        
+        // Update count
+        $('#mobileFilterDropdown .pill-count').text('(' + visibleCount + ')');
     });
 });
 
