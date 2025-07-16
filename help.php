@@ -25,6 +25,9 @@ $disabledClass = $businessHours['display']['disabledClass'];
 $afterhourtag = $businessHours['display']['afterhourtag'];
 $workingHoursString = $businessHours['display']['workingHoursString'];
 
+// Feature flags
+$showCommunityHelp = false; // Temporarily disabled
+
 // Modern Minimalist CSS
 $additionalstyles = '
 <style>
@@ -132,6 +135,14 @@ $additionalstyles = '
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.5rem;
     margin-bottom: 3rem;
+    align-items: stretch;
+}
+
+/* 2 column layout on larger screens for all sections */
+@media (min-width: 768px) {
+    .help-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
 }
 
 /* Help Card */
@@ -139,18 +150,65 @@ $additionalstyles = '
     background: white;
     border-radius: 12px;
     padding: 1.5rem;
-    border: 1px solid #e9ecef;
+    border: 2px solid #e9ecef;
     transition: all 0.2s ease;
     cursor: pointer;
     text-decoration: none;
     display: flex;
     align-items: flex-start;
     gap: 1rem;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Corner Banner for Featured Cards */
+.corner-banner {
+    position: absolute;
+    top: 12px;
+    right: -35px;
+    background: #28a745;
+    color: white;
+    padding: 5px 35px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    transform: rotate(45deg);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+/* Section-specific border colors */
+.self-help-section .help-card {
+    border-color: #f4e4bc; /* Subtle gold */
+}
+
+.self-help-section .help-card:hover {
+    border-color: #e6d0a3; /* Darker gold on hover */
+    box-shadow: 0 4px 12px rgba(244, 228, 188, 0.3);
+}
+
+.customer-service-section .help-card {
+    border-color: rgba(102, 126, 234, 0.3); /* Subtle primary color */
+    border-width: 2px;
+}
+
+.customer-service-section .help-card:hover {
+    border-color: rgba(102, 126, 234, 0.5); /* Slightly darker on hover */
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.community-help-section .help-card {
+    border-color: #d4edda; /* Subtle green */
+}
+
+.community-help-section .help-card:hover {
+    border-color: #b1dfbb;
+    box-shadow: 0 4px 12px rgba(212, 237, 218, 0.3);
 }
 
 .help-card:hover {
-    border-color: var(--bs-primary);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
     text-decoration: none;
 }
@@ -168,15 +226,37 @@ $additionalstyles = '
     font-size: 1.25rem;
 }
 
+/* Section-specific icon colors */
+.self-help-section .help-icon {
+    background: #fef9ed; /* Light gold background */
+    color: #d4a574; /* Gold color */
+}
+
+.customer-service-section .help-icon {
+    background: #e7f3ff; /* Light primary background */
+    color: var(--bs-primary);
+}
+
+.community-help-section .help-icon {
+    background: #e6f4ea; /* Light green background */
+    color: #5cb85c; /* Green color */
+}
+
 .help-content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .help-card-title {
     font-size: 1.125rem;
     font-weight: 600;
     color: #212529;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.help-content p:last-child {
+    margin-bottom: 0;
 }
 
 
@@ -357,12 +437,13 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="container" style="max-width: 1200px;">
         
         <!-- Self Help Section -->
-        <div class="mb-4">
-            <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Self Help Resources</h2>
-            <p class="text-muted">Quick answers to common questions</p>
-        </div>
-        
-        <div class="help-grid">
+        <div class="self-help-section">
+            <div class="mb-4">
+                <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Self Help Resources</h2>
+                <p class="text-muted">Quick answers to common questions</p>
+            </div>
+            
+            <div class="help-grid">
             <?php if ($isGoldieLocked): ?>
             <div class="help-card disabled" style="cursor: not-allowed; opacity: 0.6;">
                 <div class="help-icon" style="padding: 0; background: transparent; border: none;">
@@ -375,6 +456,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
             <?php else: ?>
             <a href="/ask-goldie" class="help-card">
+                <span class="corner-banner">Fastest</span>
                 <div class="help-icon" style="padding: 0; background: transparent; border: none;">
                     <img src="/public/images/logo/goldie_72.png" alt="Goldie" style="width: 48px; height: 48px;">
                 </div>
@@ -414,11 +496,14 @@ include($dir['core_components'] . '/bg_header.inc');
                     <p class="text-muted small mb-0 lh-base">Find the plan that works best for you</p>
                 </div>
             </a>
+            </div>
         </div>
         
+        <?php if ($showCommunityHelp): ?>
         <!-- Community Help Section -->
-        <div class="mb-4 mt-5">
-            <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Community Help</h2>
+        <div class="community-help-section">
+            <div class="mb-4 mt-5">
+                <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Community Help</h2>
             <p class="text-muted">Connect with other Birthday Gold users</p>
         </div>
         
@@ -432,11 +517,14 @@ include($dir['core_components'] . '/bg_header.inc');
                     <p class="text-muted small mb-0 lh-base">Engage with other users on our forum</p>
                 </div>
             </a>
+            </div>
         </div>
+        <?php endif; ?>
         
         <!-- Customer Service Section -->
-        <div class="mb-4 mt-5">
-            <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Customer Service</h2>
+        <div class="customer-service-section">
+            <div class="mb-4 mt-5">
+                <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Customer Service</h2>
             <p class="text-muted">Get direct help from our support team</p>
         </div>
         
@@ -481,13 +569,33 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
             
             <div class="<?php echo $disabledClass; ?>">
-                <a href="tel:877-234-6532" class="help-card">
+                <a href="tel:<?php echo str_replace('-', '', $bg_phonenumbers['tollfree_numbers']); ?>" class="help-card">
                     <div class="help-icon">
                         <i class="bi bi-telephone"></i>
                     </div>
                     <div class="help-content">
-                        <h3 class="help-card-title">Call / Text Us</h3>
-                        <p class="text-muted small mb-0 lh-base">Speak with us during office hours<br><?php echo $workingHoursString; ?></p>
+                        <h3 class="help-card-title">Call Us</h3>
+                        <p class="text-muted small mb-0 lh-base">
+                            <?php echo $bg_phonenumbers['tollfree']; ?> <small>(<?php echo $bg_phonenumbers['tollfree_numbers']; ?>)</small>
+                            <br>Speak with us during office hours
+                            <br><?php echo $workingHoursString; ?>
+                        </p>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="<?php echo $disabledClass; ?>">
+                <a href="sms:<?php echo str_replace('-', '', $bg_phonenumbers['text_numbers']); ?>" class="help-card">
+                    <div class="help-icon">
+                        <i class="bi bi-chat-text"></i>
+                    </div>
+                    <div class="help-content">
+                        <h3 class="help-card-title">Text Us</h3>
+                        <p class="text-muted small mb-0 lh-base">
+                            <?php echo $bg_phonenumbers['text']; ?> <small>(<?php echo $bg_phonenumbers['text_numbers']; ?>)</small>
+                            <br>Send us a text message
+                            <br><?php echo $workingHoursString; ?>
+                        </p>
                     </div>
                 </a>
             </div>
@@ -497,6 +605,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
             <?php endif; ?>
         </div>
+        </div><!-- End customer-service-section -->
         
         <!-- Social Links -->
         <div class="bg-white rounded p-4 text-center mt-5 border">
