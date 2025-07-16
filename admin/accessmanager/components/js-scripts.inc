@@ -51,6 +51,9 @@ function populateRightColumn(itemId) {
         const modalTitle = document.getElementById('credentialModalLabel');
         const modalBody = document.getElementById('modalCredentialContent');
         
+        // Debug - log what we're loading
+        console.log('Loading credential:', itemId, 'Name:', itemName);
+        
         // Update modal title
         modalTitle.textContent = itemName;
         
@@ -102,6 +105,13 @@ function populateRightColumn(itemId) {
                     textarea.innerHTML = buttons;
                     buttonContainer.innerHTML = textarea.value;
                     modalHeader.insertBefore(buttonContainer, modalHeader.querySelector('.btn-close'));
+                }
+                
+                // Update modal title with the actual item name from the active element
+                const newActiveItem = document.querySelector('.list-group-item.active');
+                if (newActiveItem) {
+                    const actualItemName = newActiveItem.querySelector('.item-name').textContent;
+                    modalTitle.textContent = actualItemName;
                 }
                 
                 initializeTooltips();
@@ -266,6 +276,25 @@ $(document).ready(function(){
     $(document).on('click', '.list-group-item', function() {
         $('.list-group-item').removeClass('active');
         $(this).addClass('active');
+    });
+    
+    // Clean up modal when hidden
+    $('#credentialModal').on('hidden.bs.modal', function () {
+        // Remove any action buttons
+        const existingButtons = this.querySelector('.action-buttons');
+        if (existingButtons) {
+            existingButtons.remove();
+        }
+        // Reset title
+        document.getElementById('credentialModalLabel').textContent = 'Credential Details';
+        // Clear body
+        document.getElementById('modalCredentialContent').innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
     });
     
     // Mobile category filter dropdown
