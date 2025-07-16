@@ -8,18 +8,24 @@
 // This script waits for the DOM to load, then attaches click event listeners 
 // to elements with the class 'type-filter-dropdown'.
 document.addEventListener('DOMContentLoaded', function() {
+    // Mobile create new buttons
     document.querySelectorAll('.type-filter-dropdown').forEach(item => {
         item.addEventListener('click', function(e) {
-            e.preventDefault(); // Prevent the default anchor tag click behavior (so it doesn't navigate)
-            
-            // Retrieve the 'data-type' attribute from the clicked element
+            e.preventDefault();
             var type = this.getAttribute('data-type');
-            
-            // Set the value of the hidden input field (typeInput) to the selected type
             document.getElementById('typeInput').value = type;
-            
-            // Submit the form with the ID 'createnewform', which presumably handles filtering
             document.getElementById('createnewform').submit();
+            initializeTooltips();
+        });
+    });
+    
+    // Desktop create new buttons
+    document.querySelectorAll('.type-filter-dropdown-desktop').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            var type = this.getAttribute('data-type');
+            document.getElementById('typeInput2').value = type;
+            document.getElementById('createnewform2').submit();
             initializeTooltips();
         });
     });
@@ -29,7 +35,142 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 
-<?php include($_SERVER['DOCUMENT_ROOT'] . $dir['ampath'].'/components/js-scripts-mobile.inc'); ?>
+// Function to populate the right column with content dynamically
+// Takes an 'itemId' as a parameter to fetch specific data
+function populateRightColumn(itemId) {
+    // Check if we're on mobile (< 992px)
+    const isMobile = window.innerWidth < 992;
+    
+    // Get the name of the clicked item from the active list item
+    const activeItem = document.querySelector('.list-group-item.active');
+    const itemName = activeItem ? activeItem.querySelector('.item-name').textContent : 'Item Details';
+    
+    if (isMobile) {
+        // Show modal on mobile
+        const modal = new bootstrap.Modal(document.getElementById('credentialModal'));
+        const modalTitle = document.getElementById('credentialModalLabel');
+        const modalBody = document.getElementById('modalCredentialContent');
+        
+        // Update modal title
+        modalTitle.textContent = itemName;
+        
+        // Show loading spinner
+        modalBody.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+        
+        // Show modal
+        modal.show();
+        
+        // Continue with AJAX call
+        const formData = new FormData();
+        formData.append('id', itemId);
+        const csrfToken = '<?php echo addslashes($csrf_token); ?>'; 
+        formData.append('_token', csrfToken);
+        formData.append('act', 'getdata');
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', <?php echo $amscriptendpoint; ?>, true);
+        
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                // Update modal body content
+                modalBody.innerHTML = xhr.responseText;
+                
+                // Extract and show action buttons in modal header
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = xhr.responseText;
+                const buttonData = tempDiv.querySelector('[data-action-buttons]');
+                if (buttonData) {
+                    const buttons = buttonData.getAttribute('data-action-buttons');
+                    const modalHeader = document.querySelector('#credentialModal .modal-header');
+                    
+                    // Remove existing buttons if any
+                    const existingButtons = modalHeader.querySelector('.action-buttons');
+                    if (existingButtons) {
+                        existingButtons.remove();
+                    }
+                    
+                    // Add new buttons
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.className = 'action-buttons ms-auto me-2';
+                    const textarea = document.createElement('textarea');
+                    textarea.innerHTML = buttons;
+                    buttonContainer.innerHTML = textarea.value;
+                    modalHeader.insertBefore(buttonContainer, modalHeader.querySelector('.btn-close'));
+                }
+                
+                initializeTooltips();
+            }
+        };
+        
+        xhr.send(formData);
+        
+    } else {
+        // Desktop behavior
+        const card = document.getElementById('datapanel');
+        const cardHeader = card.querySelector('.card-header');
+        const cardBody = card.querySelector('.card-body');
+        
+        // Update the header with the item name and action buttons
+        if (cardHeader) {
+            cardHeader.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">${itemName}</h2>
+                    <div class="action-buttons" id="headerActionButtons">
+                        <!-- Buttons will be populated from AJAX response -->
+                    </div>
+                </div>
+            `;
+        }
+
+        // Create a FormData object to send data via AJAX
+        const formData = new FormData();
+        formData.append('id', itemId);
+
+        // Retrieve CSRF token to ensure security
+        const csrfToken = '<?php echo addslashes($csrf_token); ?>'; 
+        formData.append('_token', csrfToken);
+        formData.append('act', 'getdata');
+
+        // Create an AJAX request
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', <?php echo $amscriptendpoint; ?>, true);
+
+        // When the request completes
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                // Update the card body content
+                cardBody.innerHTML = xhr.responseText;
+                cardBody.classList.remove('d-flex', 'align-items-center', 'justify-content-center');
+                
+                // Extract action buttons from the response and place them in header
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = xhr.responseText;
+                const buttonData = tempDiv.querySelector('[data-action-buttons]');
+                if (buttonData) {
+                    const buttons = buttonData.getAttribute('data-action-buttons');
+                    const headerButtons = document.getElementById('headerActionButtons');
+                    if (headerButtons && buttons) {
+                        // Decode HTML entities
+                        const textarea = document.createElement('textarea');
+                        textarea.innerHTML = buttons;
+                        headerButtons.innerHTML = textarea.value;
+                    }
+                }
+                
+                initializeTooltips();
+            }
+        };
+
+        // Send the request
+        xhr.send(formData);
+    }
+}
 
 
 

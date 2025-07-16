@@ -388,6 +388,11 @@ body {
     opacity: 0.8;
 }
 
+/* More spacing for header on all screens */
+.content-header-admin {
+    padding: 4rem 2rem !important;
+}
+
 .empty-state {
     text-align: center;
     padding: 5rem 2rem;
@@ -504,7 +509,7 @@ body {
 @media (max-width: 991px) {
     /* Adjust header for mobile */
     .content-header-admin {
-        padding: 2rem 1rem !important;
+        padding: 3rem 1rem !important;
     }
     
     .content-header-admin h1 {
@@ -706,21 +711,22 @@ if (($account->isadmin()  && $account->isdeveloper(0))) {
 
 
 
+// Desktop Create New button
 echo '
-            <form action="' . $_SERVER['PHP_SELF'] . '" id="createnewform" name="createnewform"  method="post">
+            <form action="' . $_SERVER['PHP_SELF'] . '" id="createnewform2" name="createnewform2"  method="post" class="d-none d-lg-block">
             '.$display->inputcsrf_token().'
             <input type="hidden" name="act" value="createnew">
-            <input type="hidden" name="type" id="typeInput"> 
+            <input type="hidden" name="type" id="typeInput2"> 
             <div class="dropdown">
-                <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonCreate" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButtonCreate2" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-plus-circle me-1"></i> Create New
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonCreate">
-                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="username_password"><i class="bi bi-person-lock me-2"></i>User/Password</button></li>
-                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="sshkey"><i class="bi bi-key me-2"></i>SSH Key</button></li>
-                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="file"><i class="bi bi-file-earmark me-2"></i>File</button></li>
-                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="keyvalue"><i class="bi bi-code-square me-2"></i>Key/Value</button></li>
-                    <li><button class="dropdown-item type-filter-dropdown" type="button" data-type="special"><i class="bi bi-star me-2"></i>Special</button></li>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonCreate2">
+                    <li><button class="dropdown-item type-filter-dropdown-desktop" type="button" data-type="username_password"><i class="bi bi-person-lock me-2"></i>User/Password</button></li>
+                    <li><button class="dropdown-item type-filter-dropdown-desktop" type="button" data-type="sshkey"><i class="bi bi-key me-2"></i>SSH Key</button></li>
+                    <li><button class="dropdown-item type-filter-dropdown-desktop" type="button" data-type="file"><i class="bi bi-file-earmark me-2"></i>File</button></li>
+                    <li><button class="dropdown-item type-filter-dropdown-desktop" type="button" data-type="keyvalue"><i class="bi bi-code-square me-2"></i>Key/Value</button></li>
+                    <li><button class="dropdown-item type-filter-dropdown-desktop" type="button" data-type="special"><i class="bi bi-star me-2"></i>Special</button></li>
                 </ul>
             </div>
             </form>
