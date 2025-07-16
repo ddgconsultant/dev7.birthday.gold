@@ -37,6 +37,13 @@
  $stmt->execute();
  
  $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+ 
+ // Check if record exists
+ if (empty($result)) {
+     $outputcontent = '<div class="alert alert-danger">No record found for this item.</div>';
+     return;
+ }
+ 
  $row=$result[0];
  #  breakpoint($row); 
  
@@ -80,12 +87,15 @@
 
 // Modified output - no card wrapper, no duplicate title
 // Store the buttons in a data attribute for JavaScript to extract
+// Check if we're in a modal context (mobile)
+$isModal = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
+
 $actionButtons = '
     <a type="button" class="btn btn-sm btn-secondary" href="https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id='.$qik->encodeId($row['id']).'&apikey=PUTAPIKEYHERE" 
     data-bs-toggle="tooltip" data-bs-placement="top" title="Get Access Link">
         <i class="bi bi-link-45deg"></i>
     </a>
-    <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#editModal">Edit</button>
+    <button type="button" class="btn btn-sm btn-secondary" onclick="alert(\'Edit functionality coming soon\')">Edit</button>
 ';
 
 $outputcontent.= '<!-- DATA PANEL AJAX HTML -->

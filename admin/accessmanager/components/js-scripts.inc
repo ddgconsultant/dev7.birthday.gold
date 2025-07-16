@@ -100,11 +100,15 @@ function populateRightColumn(itemId) {
                     
                     // Add new buttons
                     const buttonContainer = document.createElement('div');
-                    buttonContainer.className = 'action-buttons ms-auto me-2';
+                    buttonContainer.className = 'action-buttons ms-auto me-3';
                     const textarea = document.createElement('textarea');
                     textarea.innerHTML = buttons;
                     buttonContainer.innerHTML = textarea.value;
                     modalHeader.insertBefore(buttonContainer, modalHeader.querySelector('.btn-close'));
+                    
+                    // Re-initialize tooltips for the new buttons
+                    const newTooltips = buttonContainer.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    newTooltips.forEach(el => new bootstrap.Tooltip(el));
                 }
                 
                 // Update modal title with the actual item name from the active element

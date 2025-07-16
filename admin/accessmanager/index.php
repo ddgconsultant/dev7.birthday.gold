@@ -393,6 +393,22 @@ body {
     padding: 4rem 2rem !important;
 }
 
+/* Modal action buttons styling */
+#credentialModal .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+#credentialModal .modal-header {
+    display: flex;
+    align-items: center;
+}
+
+#credentialModal .modal-title {
+    flex: 1;
+}
+
 .empty-state {
     text-align: center;
     padding: 5rem 2rem;
