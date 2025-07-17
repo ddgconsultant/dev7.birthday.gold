@@ -191,46 +191,58 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Main page display
 $bodycontentclass='';
 $header_flush = true; // Flush header to top
+
+// Add the v7 theme CSS for content-header-admin styles
+$additionalstyles = [
+    '/public/css/v7/bg_theme.css'
+];
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 // Removed admin left panel for full width
 ?>
 
+<!-- Admin Header Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-tags me-3"></i>Promo Code Manager</h1>
+            <p class="lead mb-0">Create and manage promotional codes for your products</p>
+        </div>
+    </div>
+</div>
+
 <?php
 ?>
 
 <style>
+/* Hide skip to main content link */
+a[href="#main-content"],
+.sr-only,
+.sr-only-focusable {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+/* Remove all extra spacing after content header */
+.content-header-admin {
+    margin-bottom: 0 !important;
+}
+
 /* Modern Promo Editor Styles */
 .main-content {
     min-height: calc(100vh - 200px);
-    padding-top: 2rem;
+    padding-top: 0 !important;
     padding-bottom: 2rem;
     background: #f8f9fa;
+    margin-top: 0 !important;
 }
 
-.promo-editor-container {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 0 1rem;
-}
-
-/* Header Section */
-.page-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #212529;
-    margin-bottom: 0.25rem;
-}
-
-.page-header p {
-    font-size: 1.25rem;
-    color: #6c757d;
-    margin: 0;
+/* Ensure container has minimal top padding */
+.main-content .container {
+    padding-top: 1rem !important;
 }
 
 /* Main Card Styling */
@@ -242,16 +254,7 @@ include($dir['core_components'] . '/bg_header.inc');
     overflow: hidden;
 }
 
-.card-header.bg-primary {
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
-    border: none;
-    padding: 1.25rem 1.5rem;
-}
-
-.card-header h4 {
-    font-size: 1.25rem;
-    font-weight: 600;
-}
+/* Card header styling - use Bootstrap defaults */
 
 .btn-light {
     background: rgba(255, 255, 255, 0.9);
@@ -425,13 +428,7 @@ include($dir['core_components'] . '/bg_header.inc');
 </style>
 
 <div class="main-content">
-    <div class="promo-editor-container">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1>Promo Code Manager</h1>
-            <p>Create and manage promotional codes for your products</p>
-        </div>
-        
+    <div class="container">
         <!-- Main Content Card -->
         <div class="card main-card">
             <div class="card-header bg-primary text-white">

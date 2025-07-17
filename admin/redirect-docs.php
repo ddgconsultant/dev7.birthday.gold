@@ -1,2 +1,2 @@
 <?PHP
-header('location: https://my.birthdaygold.cloud');
+header('location: https://docs.birthdaygold.cloud');

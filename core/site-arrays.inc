@@ -26,7 +26,15 @@ $bg_users_accountstatus = [
     'duplicate' => 'Duplicate',
     ];
 
-    
+ ///////////////////////////////////////////////////////////////
+$bg_phonenumbers = [
+    'tollfree'         => '1-877-BDGOLD-2',
+    'tollfree_numbers'  => '1-877-234-6532',
+    'text'             => '223-200-GOLD',
+    'text_numbers'      => '223-200-4653'
+];
+
+
 
 $bg_users_accounttypes = [
     'user' => 'User',

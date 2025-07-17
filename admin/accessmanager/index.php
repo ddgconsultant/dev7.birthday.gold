@@ -323,35 +323,21 @@ body {
     font-weight: 600;
 }
 
-/* Remove full height from cards */
+/* Remove full height from cards - allow natural expansion */
 .am-card-container {
     height: auto;
     min-height: 400px;
-    max-height: calc(100vh - 300px);
+    /* Removed max-height to prevent internal scrollbars */
 }
 
 .am-list-container {
-    max-height: calc(100vh - 380px);
-    overflow-y: auto;
+    /* Remove fixed height to allow content to expand the page */
+    height: auto;
+    min-height: 400px;
     background: #fff;
 }
 
-.am-list-container::-webkit-scrollbar {
-    width: 6px;
-}
-
-.am-list-container::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.am-list-container::-webkit-scrollbar-thumb {
-    background: #dee2e6;
-    border-radius: 3px;
-}
-
-.am-list-container::-webkit-scrollbar-thumb:hover {
-    background: #adb5bd;
-}
+/* Removed scrollbar styling since we no longer have internal scrolling */
 
 .list-group-item {
     border: none;
@@ -572,7 +558,7 @@ body {
     
     /* Adjust card heights for mobile */
     .am-card-container {
-        max-height: calc(100vh - 250px);
+        /* Remove max-height for mobile as well */
         min-height: 300px;
     }
 }
@@ -782,7 +768,7 @@ echo  '
 <a href="javascript:void(0);" class="list-group-item list-group-item-action" 
     data-category="'.htmlspecialchars($row['category']).'" 
     data-full-context="'. trim(htmlspecialchars($row['category'].' '.$row['host'].' '.$row['name'].' '.$row['description']).'"  
-    onclick="populateRightColumn('.addslashes($row['id'])) . ')">
+    onclick="selectItem(this, '.addslashes($row['id'])) . ')">
     <div class="d-flex align-items-center">
         <span class="strength-bar bg-'.$strengthresult['color'].'"></span>
         <div class="item-icon">

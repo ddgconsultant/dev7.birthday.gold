@@ -129,7 +129,16 @@ include($dir['core_components'] . '/bg_header.inc');
 
 $additionalstyles .= '
 <style>
-.cms-container { max-width: 1200px; margin: 0 auto; }
+/* Remove extra spacing that causes white space after navbar */
+body {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.navbar {
+    margin-bottom: 0 !important;
+}
+
 .form-section { background: #f8f9fa; padding: 2rem; border-radius: 8px; margin-bottom: 2rem; }
 .content-preview { border: 1px solid #ddd; padding: 1rem; background: white; border-radius: 4px; }
 .post-table { font-size: 0.9rem; }
@@ -137,17 +146,67 @@ $additionalstyles .= '
 .status-draft { color: #ffc107; }
 .status-archived { color: #6c757d; }
 .featured-star { color: #ffc107; }
+
+/* Card styling for blog editor */
+.blog-card {
+    border-radius: 1rem !important;
+    overflow: hidden;
+}
+.blog-card .card-header,
+.guidelines-card .card-header {
+    border-radius: 0;
+}
+.guidelines-card {
+    border-radius: 1rem !important;
+    overflow: hidden;
+}
+
+/* Form styling for better visual separation */
+.blog-card .form-label {
+    color: #495057;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.blog-card .form-control,
+.blog-card .form-select {
+    border-color: #dee2e6;
+    font-size: 1rem;
+    color: #212529;
+}
+
+.blog-card .form-control:focus,
+.blog-card .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.blog-card .form-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-style: italic;
+}
 </style>
 ';
 
-echo '<div class="container main-content cms-container">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Blog Content Management</h2>
-    <div>
-      <a href="/blog" class="btn btn-sm btn-outline-secondary me-2">View Blog</a>
-      <a href="/admin" class="btn btn-sm btn-outline-secondary">Admin Home</a>
+?>
+
+<!-- Admin Header Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-newspaper me-3"></i>Blog Content Management</h1>
+            <p class="lead mb-0">Create and manage blog posts for the Birthday Gold platform</p>
+        </div>
     </div>
-  </div>';
+</div>
+
+<div class="container mt-4">
+
+<?php
 
 // Display messages
 if (!empty($success_message)) {
@@ -163,13 +222,28 @@ if (!empty($error_message)) {
           </div>';
 }
 
-echo '<div class="row">
-    <div class="col-lg-9">
-      <div class="form-section">
+// Determine which view to show
+$show_form = (isset($_GET['action']) && ($_GET['action'] == 'add' || $_GET['action'] == 'edit'));
+
+if ($show_form) {
+    // Show the add/edit form
+    echo '<div class="d-flex justify-content-between align-items-center mb-4">
         <h3>' . ($edit_post ? 'Edit Blog Post' : 'Add New Blog Post') . '</h3>
-        <form method="POST" id="blogForm">
-          <input type="hidden" name="action" value="' . ($edit_post ? 'update_post' : 'add_post') . '">
-          ' . ($edit_post ? '<input type="hidden" name="post_id" value="' . $edit_post['id'] . '">' : '') . '
+        <div>
+          <a href="/admin/blog_editor" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Back to Posts</a>
+        </div>
+      </div>';
+    
+    echo '<div class="row">
+    <div class="col-lg-9">
+      <div class="card blog-card">
+        <div class="card-header bg-dark text-white">
+          <h5 class="mb-0 text-white"><i class="bi bi-pencil-square me-2"></i>' . ($edit_post ? 'Edit Blog Post' : 'Add New Blog Post') . '</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST" id="blogForm">
+            <input type="hidden" name="action" value="' . ($edit_post ? 'update_post' : 'add_post') . '">
+            ' . ($edit_post ? '<input type="hidden" name="post_id" value="' . $edit_post['id'] . '">' : '') . '
           
           <div class="row">
             <div class="col-md-9">
@@ -256,40 +330,46 @@ echo '<div class="row">
             ' . ($edit_post ? '<a href="/blog/admin" class="btn btn-secondary">Cancel Edit</a>' : '') . '
             <button type="button" class="btn btn-outline-info" onclick="previewContent()">Preview Content</button>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
     
     <div class="col-lg-3">
-      <div class="form-section">
-        <h4>Content Guidelines</h4>
-        <ul class="list-unstyled small">
-          <li><strong>✅ Structure:</strong> Use &lt;h3&gt; for sections</li>
-          <li><strong>✅ Paragraphs:</strong> Wrap text in &lt;p&gt; tags</li>
-          <li><strong>✅ Lists:</strong> Use &lt;ul&gt;&lt;li&gt; for bullet points</li>
-          <li><strong>✅ Emphasis:</strong> &lt;strong&gt; for bold text</li>
-          <li><strong>✅ Links:</strong> &lt;a href="/blog/other-post"&gt;Link Text&lt;/a&gt;</li>
-        </ul>
-        
-        <h5 class="mt-4">Available CSS Classes:</h5>
-        <ul class="list-unstyled small">
-          <li><code>.alert .alert-success</code> - Green highlight box</li>
-          <li><code>.alert .alert-info</code> - Blue info box</li>
-          <li><code>.text-primary</code> - Primary color text</li>
-          <li><code>.fw-bold</code> - Bold text</li>
-          <li><code>.lead</code> - Larger intro paragraph</li>
-        </ul>
-        
-        <h5 class="mt-4">Field Mapping:</h5>
-        <ul class="list-unstyled small">
-          <li><strong>name:</strong> URL slug</li>
-          <li><strong>display_name:</strong> Post title</li>
-          <li><strong>grouping:</strong> Blog category</li>
-          <li><strong>description:</strong> Meta description</li>
-          <li><strong>content:</strong> HTML content</li>
-          <li><strong>tags:</strong> SEO keywords</li>
-          <li><strong>rank:</strong> 10=featured, 50=normal</li>
-        </ul>
+      <div class="card guidelines-card">
+        <div class="card-header bg-dark text-white">
+          <h5 class="mb-0 text-white"><i class="bi bi-info-circle me-2"></i>Content Guidelines</h5>
+        </div>
+        <div class="card-body">
+          <h6 class="text-muted mb-3">HTML Structure</h6>
+          <ul class="list-unstyled small">
+            <li><strong>✅ Structure:</strong> Use &lt;h3&gt; for sections</li>
+            <li><strong>✅ Paragraphs:</strong> Wrap text in &lt;p&gt; tags</li>
+            <li><strong>✅ Lists:</strong> Use &lt;ul&gt;&lt;li&gt; for bullet points</li>
+            <li><strong>✅ Emphasis:</strong> &lt;strong&gt; for bold text</li>
+            <li><strong>✅ Links:</strong> &lt;a href="/blog/other-post"&gt;Link Text&lt;/a&gt;</li>
+          </ul>
+          
+          <h6 class="text-muted mt-4 mb-3">Available CSS Classes</h6>
+          <ul class="list-unstyled small">
+            <li><code>.alert .alert-success</code> - Green highlight box</li>
+            <li><code>.alert .alert-info</code> - Blue info box</li>
+            <li><code>.text-primary</code> - Primary color text</li>
+            <li><code>.fw-bold</code> - Bold text</li>
+            <li><code>.lead</code> - Larger intro paragraph</li>
+          </ul>
+          
+          <h6 class="text-muted mt-4 mb-3">Field Mapping</h6>
+          <ul class="list-unstyled small">
+            <li><strong>name:</strong> URL slug</li>
+            <li><strong>display_name:</strong> Post title</li>
+            <li><strong>grouping:</strong> Blog category</li>
+            <li><strong>description:</strong> Meta description</li>
+            <li><strong>content:</strong> HTML content</li>
+            <li><strong>tags:</strong> SEO keywords</li>
+            <li><strong>rank:</strong> 10=featured, 50=normal</li>
+          </ul>
+        </div>
       </div>
       
       <div id="contentPreview" class="form-section" style="display:none;">
@@ -298,10 +378,19 @@ echo '<div class="row">
       </div>
     </div>
   </div>';
+  
+} else {
+    // Show the existing posts list
+    echo '<div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Existing Blog Posts</h3>
+        <div>
+          <a href="/admin/blog_editor?action=add" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i> Add New Post</a>
+          <a href="/blog" class="btn btn-outline-secondary ms-2"><i class="bi bi-eye me-1"></i> View Blog</a>
+          <a href="/admin" class="btn btn-outline-secondary ms-2"><i class="bi bi-arrow-left me-1"></i> Admin Home</a>
+        </div>
+      </div>';
 
-// Existing Posts Table
 echo '<div class="form-section">
-    <h3>Existing Blog Posts</h3>
     <div class="table-responsive">
       <table class="table table-striped post-table">
         <thead>
@@ -343,8 +432,10 @@ foreach ($existing_posts as $post) {
 echo '    </tbody>
       </table>
     </div>
-  </div>
-</div>
+  </div>';
+}
+
+echo '</div>
 
 <script>
 function previewContent() {

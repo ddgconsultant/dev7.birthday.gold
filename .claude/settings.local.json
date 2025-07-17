@@ -9,7 +9,15 @@
       "Bash(git commit:*)",
       "Bash(find:*)",
       "Bash(git push:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(curl:*)",
+      "Bash(rm:*)",
+      "Bash(git config:*)",
+      "Bash(npx eslint:*)",
+      "Bash(mkdir:*)",
+      "Bash(git checkout:*)",
+      "Bash(mv:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

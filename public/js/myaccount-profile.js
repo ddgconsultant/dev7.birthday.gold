@@ -7,7 +7,7 @@ const instructions = {
     "inputprofile_first_name": "<h4>Enter your first name.</h4>Some buinesses require your name to match the name on your id.",
     "inputprofile_middle_name": "<h4>Enter your middle name</h4>If you have one you might as well provide it for the businesses that request it.",
     "inputprofile_last_name": "<h4>Enter your last name.</h4>",
-    "inputprofile_mailing_address": "<h4>Enter your mailing address.</h4>This will be used for delivery of physical items if any businesses do that.  Some business also use your address to help provide localized service.",
+    "inputprofile_mailing_address": "<h4>Enter your mailing address.</h4>Start typing your address and select from the suggestions to automatically fill in your city, state, and zip code. This will be used for delivery of physical items if any businesses do that. Some business also use your address to help provide localized service.",
     "inputprofile_City": "<h4>Enter the name of your city.</h4>",
     "inputprofile_State": "<h4>Select your state.</h4>",
     "inputprofile_zip_code": "<h4>Enter your Zip code.</h4>",
@@ -96,10 +96,12 @@ window.onload = function() {
 
 let passwordInput = document.getElementById("input_password");
 let togglePasswordButton = document.getElementById("togglePassword");
-let togglePasswordIcon = togglePasswordButton.querySelector(".toggle-password");
+let togglePasswordIcon = togglePasswordButton ? togglePasswordButton.querySelector(".toggle-password") : null;
 
 // Function to toggle password visibility
 function togglePasswordVisibility() {
+    if (!passwordInput || !togglePasswordIcon) return;
+    
     if (passwordInput.type === "password") {
         passwordInput.type = "text";
         togglePasswordIcon.classList.remove("bi-eye-fill");
@@ -112,10 +114,12 @@ function togglePasswordVisibility() {
 }
 
 // Add event listener to the toggle password button
-togglePasswordButton.addEventListener("click", function(e) {
-    e.preventDefault();
-    togglePasswordVisibility();
-});
+if (togglePasswordButton) {
+    togglePasswordButton.addEventListener("click", function(e) {
+        e.preventDefault();
+        togglePasswordVisibility();
+    });
+}
 
 // Function to generate a random password
 function generatePassword(length) {

@@ -45,6 +45,11 @@ function populateRightColumn(itemId) {
     const activeItem = document.querySelector('.list-group-item.active');
     const itemName = activeItem ? activeItem.querySelector('.item-name').textContent : 'Item Details';
     
+    // Debug logging
+    console.log('populateRightColumn called with itemId:', itemId);
+    console.log('Active item:', activeItem);
+    console.log('Item name:', itemName);
+    
     if (isMobile) {
         // Show modal on mobile
         const modal = new bootstrap.Modal(document.getElementById('credentialModal'));
@@ -177,6 +182,16 @@ function populateRightColumn(itemId) {
                     }
                 }
                 
+                // Update header title with the actual item name from the active element
+                const newActiveItem = document.querySelector('.list-group-item.active');
+                if (newActiveItem && cardHeader) {
+                    const actualItemName = newActiveItem.querySelector('.item-name').textContent;
+                    const headerTitle = cardHeader.querySelector('h2');
+                    if (headerTitle) {
+                        headerTitle.textContent = actualItemName;
+                    }
+                }
+                
                 initializeTooltips();
             }
         };
@@ -274,13 +289,18 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
 
 
 <script>
+// Function to handle item selection
+function selectItem(element, itemId) {
+    // Set active state
+    $('.list-group-item').removeClass('active');
+    $(element).addClass('active');
+    
+    // Then populate the right column
+    populateRightColumn(itemId);
+}
+
 // Active state management for list items
 $(document).ready(function(){
-    // Add active state to clicked items
-    $(document).on('click', '.list-group-item', function() {
-        $('.list-group-item').removeClass('active');
-        $(this).addClass('active');
-    });
     
     // Clean up modal when hidden
     $('#credentialModal').on('hidden.bs.modal', function () {
@@ -425,5 +445,199 @@ function initializeTooltips() {
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+}
+
+// Function to open edit modal for a credential
+function openEditModal(itemId) {
+    // Create modal HTML dynamically
+    const modalHtml = `
+        <div class="modal fade" id="editCredentialModal" tabindex="-1" aria-labelledby="editCredentialModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editCredentialModalLabel">Edit Credential</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveCredentialChanges(${itemId})">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove any existing edit modal
+    const existingModal = document.getElementById('editCredentialModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show the modal
+    const editModal = new bootstrap.Modal(document.getElementById('editCredentialModal'));
+    editModal.show();
+    
+    // Load the edit form
+    loadEditForm(itemId);
+}
+
+// Function to load edit form data
+function loadEditForm(itemId) {
+    const formData = new FormData();
+    formData.append('id', itemId);
+    formData.append('act', 'geteditdata');
+    const csrfToken = '<?php echo addslashes($csrf_token); ?>'; 
+    formData.append('_token', csrfToken);
+    
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', <?php echo $amscriptendpoint; ?>, true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            const modalBody = document.querySelector('#editCredentialModal .modal-body');
+            if (modalBody) {
+                // For now, create a simple edit form
+                // In production, this would come from the server response
+                modalBody.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Edit functionality is currently being implemented. This feature will allow you to:
+                        <ul class="mt-2 mb-0">
+                            <li>Update usernames and passwords</li>
+                            <li>Modify URLs and descriptions</li>
+                            <li>Change categories and notes</li>
+                            <li>Update security settings</li>
+                        </ul>
+                    </div>
+                    <p class="text-muted">For security reasons, credential editing requires additional verification and will be available in the next update.</p>
+                `;
+            }
+        }
+    };
+    
+    xhr.send(formData);
+}
+
+// Function to save credential changes
+function saveCredentialChanges(itemId) {
+    // For now, show a message
+    alert('Changes will be saved once the edit functionality is fully implemented.');
+    
+    // Close the modal
+    const editModal = bootstrap.Modal.getInstance(document.getElementById('editCredentialModal'));
+    if (editModal) {
+        editModal.hide();
+    }
+}
+
+// Function to show access link
+function showAccessLink(encodedId, protocol, host) {
+    // Create modal HTML for access link
+    const modalHtml = `
+        <div class="modal fade" id="accessLinkModal" tabindex="-1" aria-labelledby="accessLinkModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="accessLinkModalLabel">Get Access Link</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>API Access Link</strong>
+                        </div>
+                        <p>To generate an access link for this credential, you need a valid API key.</p>
+                        <div class="mb-3">
+                            <label for="apiKeyInput" class="form-label">Enter API Key:</label>
+                            <input type="text" class="form-control" id="apiKeyInput" placeholder="Your API key">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Access Link Preview:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="accessLinkPreview" readonly value="${protocol}://${host}/admin/accessmanager/accessmanager_get?id=${encodedId}&apikey=">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyAccessLink()">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">The link will be complete once you enter your API key above.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="generateAccessLink()">Generate Link</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove any existing modal
+    const existingModal = document.getElementById('accessLinkModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show the modal
+    const accessModal = new bootstrap.Modal(document.getElementById('accessLinkModal'));
+    accessModal.show();
+    
+    // Update preview when API key is entered
+    document.getElementById('apiKeyInput').addEventListener('input', function() {
+        const apiKey = this.value;
+        const baseUrl = `${protocol}://${host}/admin/accessmanager/accessmanager_get?id=${encodedId}&apikey=`;
+        document.getElementById('accessLinkPreview').value = baseUrl + apiKey;
+    });
+}
+
+// Function to copy access link
+function copyAccessLink() {
+    const linkInput = document.getElementById('accessLinkPreview');
+    linkInput.select();
+    document.execCommand('copy');
+    
+    // Show success message
+    const btn = event.target.closest('button');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => {
+        btn.innerHTML = originalHtml;
+    }, 2000);
+}
+
+// Function to generate and test access link
+function generateAccessLink() {
+    const apiKey = document.getElementById('apiKeyInput').value;
+    if (!apiKey) {
+        alert('Please enter an API key');
+        return;
+    }
+    
+    const linkInput = document.getElementById('accessLinkPreview');
+    const fullLink = linkInput.value;
+    
+    // Copy to clipboard
+    linkInput.select();
+    document.execCommand('copy');
+    
+    // Close modal
+    const accessModal = bootstrap.Modal.getInstance(document.getElementById('accessLinkModal'));
+    if (accessModal) {
+        accessModal.hide();
+    }
+    
+    alert('Access link has been copied to your clipboard!');
 }
 </script>

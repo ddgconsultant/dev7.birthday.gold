@@ -356,7 +356,7 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
-            <a href="/admin/redirect-leantime" target="_blank" class="admin-card">
+            <a href="/admin/redirect-projectmanagement" target="_blank" class="admin-card">
                 <div class="admin-icon icon-productivity">
                     <img src="/public/images/system_icons/io.leantime.cloudronapp.png" alt="" width="40">
                 </div>
@@ -381,7 +381,7 @@ $businessHours = $app->bg_businesshours();
                     <i class="bi bi-book"></i>
                 </div>
                 <div class="admin-content">
-                    <h3 class="admin-card-title">Documize</h3>
+                    <h3 class="admin-card-title">Document Wiki</h3>
                     <p class="admin-card-text">Documentation and knowledge base</p>
                 </div>
             </a>
