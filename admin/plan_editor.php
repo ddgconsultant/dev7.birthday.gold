@@ -192,10 +192,41 @@ foreach ($allProducts as $product) {
 // Page configuration
 $page_title = "Plan Editor - Admin";
 $page_description = "Manage signup plans and pricing";
+$header_flush = true; // Flush header to top
 
 // Additional styles
-$additionalstyles = '
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
+$additionalstyles .= '
 <style>
+/* Hide skip to main content link */
+a[href="#main-content"],
+.sr-only,
+.sr-only-focusable {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+/* Remove all extra spacing after content header */
+.content-header-admin {
+    margin-bottom: 0 !important;
+}
+
+/* Modern Plan Editor Styles */
+.main-content {
+    min-height: calc(100vh - 200px);
+    padding-top: 0 !important;
+    padding-bottom: 2rem;
+    background: #f8f9fa;
+    margin-top: 0 !important;
+}
+
+/* Ensure container has minimal top padding */
+.main-content .container {
+    padding-top: 1rem !important;
+}
 .plan-card {
     border: 1px solid #dee2e6;
     border-radius: 8px;
@@ -342,17 +373,23 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<?php
-include($dir['core_components'] . '/bg_admin_leftpanel.inc');
-?>
+<!-- Admin Header Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-list-ul me-3"></i>Plan Editor</h1>
+            <p class="lead mb-0">Manage signup plans and pricing for Birthday Gold</p>
+        </div>
+    </div>
+</div>
 
-<div class="container-fluid main-content">
+<div class="main-content">
+<div class="container">
     <!-- Notification Container -->
     <div id="notificationContainer" class="position-fixed top-0 start-50 translate-middle-x" style="z-index: 1050; margin-top: 20px;"></div>
     
     <div class="row">
         <div class="col-12">
-            <h1 class="mb-4">Plan Editor</h1>
             
             <!-- Feature Display Mode Legend -->
             <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
@@ -543,6 +580,7 @@ include($dir['core_components'] . '/bg_admin_leftpanel.inc');
             <?php endforeach; ?>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Edit Product Modal -->
@@ -1142,10 +1180,6 @@ function toggleGroupingStatus(productId, newStatus) {
     });
 }
 </script>
-
-        </div>
-    </div>
-</div>
 
 <?php
 $display_footertype='min';
