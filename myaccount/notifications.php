@@ -22,12 +22,12 @@ $additionalstyles = '
     
     .nav-tab-clean {
         position: relative;
-        margin-right: 2rem;
+        margin-right: 3rem; /* Increased from 2rem */
     }
     
     .nav-tab-clean a {
         display: block;
-        padding: 1rem 0;
+        padding: 1rem 1.5rem; /* Added horizontal padding */
         text-decoration: none;
         color: #666;
         font-weight: 500;
@@ -44,7 +44,7 @@ $additionalstyles = '
     }
     
     .nav-tab-clean.active a {
-        color: #000;
+        color: #0d6efd; /* Bootstrap primary blue */
     }
     
     .nav-tab-clean.active::after {
@@ -54,7 +54,7 @@ $additionalstyles = '
         left: 0;
         right: 0;
         height: 2px;
-        background-color: #000;
+        background-color: #0d6efd; /* Bootstrap primary blue */
     }
     
     .tab-badge {
@@ -127,9 +127,19 @@ $additionalstyles = '
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+?>
 
-include($dir['core_components'] . '/bg_user_profileheader.inc');
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-bell me-3"></i>Notifications</h1>
+            <p class="lead mb-0">Stay updated with your account activity and important updates</p>
+        </div>
+    </div>
+</div>
 
+<?php
 /*
   <div class="p-5 text-center text-muted">
                 <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
@@ -152,17 +162,18 @@ foreach ($filters as $filter) {
 }
 ?>
 
-<div class="container my-lg-5 pt-4">
-    <div class="container mt-4">
-        <div class="mb-4">
-            <h2>Notifications</h2>
-        </div>
+<div class="container my-5 pt-5">
+    <div class="container">
 
         <!-- Clean tab navigation with settings gear -->
         <div class="d-flex justify-content-between align-items-center tabs-container">
             <ul class="nav-tabs-clean mb-0">
                 <?php
-                $tab_labels = array('unread' => 'Unread', 'read' => 'Read', 'all' => 'All');
+                $tab_labels = array(
+                    'unread' => '<i class="bi bi-envelope-exclamation me-2"></i>Unread', 
+                    'read' => '<i class="bi bi-envelope-open me-2"></i>Read', 
+                    'all' => '<i class="bi bi-envelope me-2"></i>All'
+                );
                 $is_first = true;
                 foreach ($tab_labels as $key => $label) {
                     $active_class = $is_first ? ' active' : '';
@@ -214,45 +225,62 @@ foreach ($filters as $filter) {
 </div>
 
 <script>
+    // Function to activate a tab by its target
+    function activateTab(targetHash) {
+        // Remove active class from all tabs
+        document.querySelectorAll('.nav-tab-clean').forEach(function(t) {
+            t.classList.remove('active');
+        });
+
+        // Find and activate the tab with matching href
+        var targetTab = document.querySelector('.nav-tab-clean a[href="' + targetHash + '"]');
+        if (targetTab) {
+            targetTab.parentElement.classList.add('active');
+            
+            // Show corresponding content
+            document.querySelectorAll('.tab-pane').forEach(function(pane) {
+                pane.classList.remove('show', 'active');
+            });
+            var targetPane = document.querySelector(targetHash);
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+            }
+        }
+    }
+
+    // Check URL hash on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.hash) {
+            activateTab(window.location.hash);
+        }
+    });
+
     // Handle tab switching
     document.querySelectorAll('.nav-tab-clean a').forEach(function(tab) {
         tab.addEventListener('click', function(e) {
             e.preventDefault();
-
-            // Remove active class from all tabs
-            document.querySelectorAll('.nav-tab-clean').forEach(function(t) {
-                t.classList.remove('active');
-            });
-
-            // Add active class to clicked tab
-            this.parentElement.classList.add('active');
-
-            // Show corresponding content
             var target = this.getAttribute('href');
-            document.querySelectorAll('.tab-pane').forEach(function(pane) {
-                pane.classList.remove('show', 'active');
-            });
-            document.querySelector(target).classList.add('show', 'active');
+            activateTab(target);
+            
+            // Update URL hash without scrolling
+            history.pushState(null, null, target);
         });
     });
 
     // Handle settings button click
     document.getElementById('settingsButton').addEventListener('click', function(e) {
         e.preventDefault();
+        activateTab('#settings');
+        
+        // Update URL hash without scrolling
+        history.pushState(null, null, '#settings');
+    });
 
-        // Remove active class from all tabs
-        document.querySelectorAll('.nav-tab-clean').forEach(function(t) {
-            t.classList.remove('active');
-        });
-
-        // Add active class to settings tab
-        this.parentElement.classList.add('active');
-
-        // Show settings content
-        document.querySelectorAll('.tab-pane').forEach(function(pane) {
-            pane.classList.remove('show', 'active');
-        });
-        document.querySelector('#settings').classList.add('show', 'active');
+    // Handle browser back/forward buttons
+    window.addEventListener('hashchange', function() {
+        if (window.location.hash) {
+            activateTab(window.location.hash);
+        }
     });
 </script>
 

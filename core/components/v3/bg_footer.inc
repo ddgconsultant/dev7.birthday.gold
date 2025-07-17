@@ -14,6 +14,11 @@ $additionalstyles .= "
     color: #6c757d !important; /* Lighter color */
 }
 
+/* Gradient background for footer */
+footer.bg-dark {
+    background: linear-gradient(135deg, #343a40 0%, #495057 50%, #343a40 100%) !important;
+}
+
 .footer-links a {
     color: white !important;
      font-size: 0.95rem !important; /* Smaller font size */
