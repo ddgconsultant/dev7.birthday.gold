@@ -2,12 +2,27 @@
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $bodycontentclass='';
+
+// Add v7 theme CSS
+$additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
+?>
 
-$additionalstyles.='
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-people me-3"></i>Parental Mode</h1>
+            <p class="lead mb-0">Manage child accounts and monitor their birthday rewards activity</p>
+        </div>
+    </div>
+</div>
+
+<?php
+
+$additionalstyles .= '
 <style>
 .account-row {
     border-top: 1px solid #e0e0e0;
@@ -15,6 +30,81 @@ $additionalstyles.='
 .account-row:hover {
     background-color: #f0f0f0;
     transition: background-color 0.3s ease;
+}
+
+/* Security-style card header */
+.parental-card-header {
+    padding: 1.5rem;
+    background: #e9ecef;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 1rem;
+}
+
+.parental-card-title {
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+.parental-card-title h5 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: #212529;
+}
+
+.parental-card-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+    color: #6f42c1;
+}
+
+/* Pill-shaped button */
+.btn-add-child {
+    background: #198754;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-add-child:hover {
+    background: #157347;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(25, 135, 84, 0.3);
+}
+
+.btn-add-child:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Square badge style */
+.badge-square {
+    border-radius: 4px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+}
+
+/* Pill-shaped switch account button */
+.btn-switch-account {
+    border-radius: 25px !important;
+    padding: 0.25rem 1.25rem !important;
+    font-weight: 500;
 }
 </style>';
 
@@ -26,21 +116,34 @@ $childaccount_records = $query->fetchAll(PDO::FETCH_ASSOC);
 $minorcount = count($childaccount_records);
 
 echo '
-<div class="main-content mt-0 pt-0">
+<div class="container my-5 pt-5">
     <div class="card mb-3 mb-lg-0">
-        <div class="card-header d-flex flex-between-center justify-content-between bg-warning-subtle">
-            <div class="d-flex align-items-center">
-                <h5 class="mb-0 me-2">Child Accounts</h5> 
-                <span class="badge rounded-pill bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $minorcount . ' Child Accounts">' . $minorcount . '</span>
+        <div class="parental-card-header">
+            <div class="parental-card-title">
+                <i class="bi bi-people-fill parental-card-icon"></i>
+                <div>
+                    <h5 class="mb-0">Child Accounts</h5>
+                    <span class="badge badge-square bg-secondary mt-1" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $minorcount . ' Child Accounts">' . $minorcount . ' Active</span>
+                </div>
             </div>
+            ' . ($minorcount < 6 ? '
+            <a class="btn-add-child" href="#addchild-form" data-bs-toggle="collapse" aria-expanded="false" aria-controls="addchild-form">
+                <i class="bi bi-plus-circle"></i>
+                Add Child
+            </a>' : '
+            <button class="btn-add-child" disabled>
+                <i class="bi bi-x-circle"></i>
+                Maximum Reached
+            </button>') . '
         </div>
         ';
 
         if ($minorcount >= 6){
 
-echo '  <div class="alert alert-warning mb-4">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>You have reached the maximum number of allowed child accounts (6).
-        </div>';
+echo '  <div class="card-body">
+            <div class="alert alert-warning mb-4">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>You have reached the maximum number of allowed child accounts (6).
+            </div>';
 
 
         } else {
@@ -57,12 +160,6 @@ echo '
                 </ul>
             </div>
 
-<div class="d-flex justify-content-end">
-    <a class="mb-4 d-flex align-items-center btn btn-lg btn-success" href="#addchild-form" data-bs-toggle="collapse" aria-expanded="false" aria-controls="addchild-form">
-        <span class="circle-dashed"><span class="bi bi-plus"></span></span>
-        <span class="ms-3">Add Child</span>
-    </a>
-</div>
 
             <div class="collapse" id="addchild-form">
                 <form class="row" id="addnewminor" action="/myaccount/myaccount_actions/child-add" method="POST">' . $display->inputcsrf_token() . '
@@ -125,7 +222,7 @@ echo '
 foreach ($childaccount_records as $row) {
     $young_person = $app->calculateage($row['birthdate']);
     $cid = $row['user_id'];
-    $signinbutton = '<a class="btn btn-sm button btn-primary accountswitch px-3 me-2" href="/myaccount/myaccount_actions/switch2minor?id=' . $cid . '&pid=' . $current_user_data['user_id'] . '&_token=' . $display->inputcsrf_token('tokenonly') . '">Switch Account</a>';
+    $signinbutton = '<a class="btn btn-sm btn-primary btn-switch-account accountswitch me-2" href="/myaccount/myaccount_actions/switch2minor?id=' . $cid . '&pid=' . $current_user_data['user_id'] . '&_token=' . $display->inputcsrf_token('tokenonly') . '">Switch Account</a>';
     $settingsbutton = '<button class="btn p-0 m-0 pb-1" type="button" data-bs-toggle="collapse" data-bs-target="#minorcontroller' . $row['user_id'] . '" aria-expanded="false" aria-controls="minorcontroller' . $row['user_id'] . '"><i class="bi bi-gear"></i></button>';
     $avatar = !empty($row['avatar']) ? $row['avatar'] : '/public/images/defaultavatar.png';
 
@@ -325,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php
-echo '</div></div></div>';
+echo '</div>';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

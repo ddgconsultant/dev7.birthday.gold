@@ -5,8 +5,25 @@ $addcredjs = false;
 
 
 $bodycontentclass='';
+
+// Add v7 theme CSS
+$additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+?>
+
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-stars me-3"></i>Fun Facts</h1>
+            <p class="lead mb-0">Discover interesting facts about your birthday and zodiac sign</p>
+        </div>
+    </div>
+</div>
+
+<?php
 
 
 $current_user_data = $account->getuserdata($current_user_data['user_id'], 'user_id');
@@ -62,16 +79,13 @@ $lastlogindetails = $account->getLastLogin($current_user_data['user_id']);
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 
-include($dir['core_components'] . '/bg_user_profileheader.inc');
+// Profile header removed for cleaner layout
 
 ?>
 
   <div class="container my-5 pt-5">
 <?PHP
-echo '<div class="mb-3">
-<h2 class="text-primary">Your Fun Facts</h2>
-</div>
-';
+// Heading moved to content-header-dark
 ?>
 
     <div class="row g-0 mt-4 mb-5 mx-0 px-0 ">

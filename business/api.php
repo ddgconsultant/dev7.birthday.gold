@@ -357,11 +357,6 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="container">
         <h1 class="text-white pt-4">Birthday.Gold Partner API</h1>
         <p>Integrate birthday rewards directly into your business systems</p>
-        <div class="mt-3">
-            <a href="/business/partner" class="btn btn-outline-light">
-                <i class="bi bi-arrow-left me-2"></i>Back to Partner Program
-            </a>
-        </div>
     </div>
 </div>
 
@@ -781,6 +776,15 @@ grant_type=authorization_code
         <a href="/business/partner" class="btn-api-access">Become a Partner</a>
     </div>
 </section>
+
+<!-- Back to Partner Program -->
+<div class="container my-5">
+    <div class="text-center">
+        <a href="/business/partner" class="btn btn-outline-secondary btn-lg">
+            <i class="bi bi-arrow-left me-2"></i>Back to Partner Program
+        </a>
+    </div>
+</div>
 
 <?php
 include($dir['core_components'] . '/bg_footer.inc');
