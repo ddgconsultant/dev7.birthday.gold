@@ -21,7 +21,7 @@ $result = $stmt->fetch();
 $has_security_questions = ($result['question_count'] == 3);
 
 // Additional styles
-$additionalstyles = '
+$additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
 <style>
 /* Security Settings Styles */
 .security-hero {
@@ -68,7 +68,7 @@ $additionalstyles = '
 /* Security Cards */
 .security-card {
     background: white;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #cbd5e1; /* Darker border for better definition */
     border-radius: 12px;
     padding: 0;
     margin-bottom: 1.5rem;
@@ -83,11 +83,14 @@ $additionalstyles = '
 
 .security-card-header {
     padding: 1.5rem;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e0e0e0;
+    background: #e9ecef; /* Darker gray for better contrast */
+    /* Alternative: Use Bootstrap classes like bg-light (#f8f9fa) or bg-secondary-subtle */
+    border-bottom: 1px solid #dee2e6;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: nowrap; /* Prevent wrapping */
+    gap: 1rem; /* Add space between elements */
 }
 
 .security-card-icon {
@@ -100,6 +103,8 @@ $additionalstyles = '
     display: flex;
     align-items: center;
     margin: 0;
+    flex-shrink: 1; /* Allow title to shrink if needed */
+    min-width: 0; /* Allow text truncation */
 }
 
 .security-card-title h3 {
@@ -107,12 +112,14 @@ $additionalstyles = '
     font-weight: 600;
     margin: 0;
     color: #212529;
+    white-space: nowrap; /* Prevent title wrapping */
 }
 
 .security-status {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    flex-shrink: 0; /* Prevent badge from shrinking */
 }
 
 .status-badge {
@@ -120,6 +127,7 @@ $additionalstyles = '
     border-radius: 20px;
     font-size: 0.875rem;
     font-weight: 600;
+    white-space: nowrap; /* Prevent badge text wrapping */
 }
 
 .status-active {
@@ -284,7 +292,7 @@ $additionalstyles = '
 
 .stat-card {
     background: white;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #cbd5e1; /* Matching darker border */
     border-radius: 8px;
     padding: 1.25rem;
     text-align: center;
@@ -320,9 +328,19 @@ $additionalstyles = '
     }
     
     .security-card-header {
-        flex-direction: column;
-        align-items: start;
-        gap: 1rem;
+        /* Keep flex-direction: row on mobile to prevent wrapping */
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .security-card-title h3 {
+        font-size: 1.1rem; /* Slightly smaller on mobile */
+    }
+    
+    .status-badge {
+        font-size: 0.75rem; /* Smaller badge text on mobile */
+        padding: 0.2rem 0.5rem;
     }
     
     .security-actions {
@@ -350,17 +368,19 @@ $additionalstyles = '
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-
-
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-#include($dir['core_components'] . '/bg_user_leftpanel.inc');
 ?>
-<div class="container my-4 pt-5">
-    <!-- Security Hero Section -->
-    <div class="security-hero mb-4">
-        <h1 class="text-white">Security Settings</h1>
-        <p>Protect your account with our comprehensive security features</p>
+
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-shield-lock me-3"></i>Security Settings</h1>
+            <p class="lead mb-0">Protect your account with our comprehensive security features</p>
+        </div>
     </div>
+</div>
+
+<div class="container my-4 pt-5">
 
     <!-- Security Stats -->
     <div class="security-stats">
@@ -390,7 +410,10 @@ include($dir['core_components'] . '/bg_user_profileheader.inc');
                 <h3>Password Settings</h3>
             </div>
             <div class="security-status">
-                <span class="status-badge status-active">Strong Password</span>
+                <span class="status-badge status-active">
+                    <span class="d-none d-sm-inline">Strong Password</span>
+                    <span class="d-inline d-sm-none">Strong</span>
+                </span>
             </div>
         </div>
         <div class="security-card-body">
@@ -410,9 +433,6 @@ include($dir['core_components'] . '/bg_user_profileheader.inc');
                 <a href="/myaccount/changepassword" class="btn btn-security-primary">
                     <i class="bi bi-shield-lock-fill me-2"></i>Change Password
                 </a>
-                <a href="#" class="btn btn-security-secondary">
-                    <i class="bi bi-clock-history me-2"></i>View Password History
-                </a>
             </div>
         </div>
     </div>
@@ -425,7 +445,10 @@ include($dir['core_components'] . '/bg_user_profileheader.inc');
                 <h3>Two-Factor Authentication (2FA)</h3>
             </div>
             <div class="security-status">
-                <span class="status-badge status-inactive">Not Enabled</span>
+                <span class="status-badge status-inactive">
+                    <span class="d-none d-sm-inline">Not Enabled</span>
+                    <span class="d-inline d-sm-none">Off</span>
+                </span>
             </div>
         </div>
         <div class="security-card-body">
@@ -455,7 +478,10 @@ include($dir['core_components'] . '/bg_user_profileheader.inc');
                 <h3>Account Activity</h3>
             </div>
             <div class="security-status">
-                <span class="status-badge status-active">No Suspicious Activity</span>
+                <span class="status-badge status-active">
+                    <span class="d-none d-sm-inline">No Suspicious Activity</span>
+                    <span class="d-inline d-sm-none">Secure</span>
+                </span>
             </div>
         </div>
         <div class="security-card-body">
@@ -547,9 +573,15 @@ include($dir['core_components'] . '/bg_user_profileheader.inc');
             </div>
             <div class="security-status">
                 <?php if ($has_security_questions): ?>
-                    <span class="status-badge status-active">Configured</span>
+                    <span class="status-badge status-active">
+                        <span class="d-none d-sm-inline">Configured</span>
+                        <span class="d-inline d-sm-none">Set</span>
+                    </span>
                 <?php else: ?>
-                    <span class="status-badge status-warning">Not Set</span>
+                    <span class="status-badge status-warning">
+                        <span class="d-none d-sm-inline">Not Set</span>
+                        <span class="d-inline d-sm-none">None</span>
+                    </span>
                 <?php endif; ?>
             </div>
         </div>

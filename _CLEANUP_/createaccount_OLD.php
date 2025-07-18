@@ -1,11 +1,9 @@
 <?php 
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
 include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.createaccount.php');
-include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
 
-// Initialize ProductManager with promo support
-$productManager = new ProductManagerPromo($database, $qik);
+// $product is now automatically available from site-controller.php
+// No need to include or instantiate ProductManager classes
 $createaccount = new createaccount($database, $session);
 
 #-------------------------------------------------------------------------------
@@ -78,13 +76,13 @@ if (isset($_REQUEST['ajax_action'])) {
                 error_log('[CREATEACCOUNT] Validating promo: ' . $promoCode . ' for product: ' . $productId);
                 
                 if ($productId && $promoCode) {
-                    $validation = $productManager->validatePromoCode($promoCode, $productId);
+                    $validation = $product->validatePromoCode($promoCode, $productId);
                     
                     error_log('[CREATEACCOUNT] Validation result: ' . json_encode($validation));
                     
                     if ($validation['valid']) {
                         // Calculate new price
-                        $pricing = $productManager->calculatePrice($productId, $promoCode);
+                        $pricing = $product->calculatePrice($productId, $promoCode);
                         $validation['new_price'] = $pricing['formatted_final'] ?? '';
                         $validation['discount_amount'] = $pricing['formatted_discount'] ?? '';
                         

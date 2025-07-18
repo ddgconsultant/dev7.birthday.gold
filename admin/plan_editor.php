@@ -336,8 +336,40 @@ a[href="#main-content"],
     margin-top: 1rem;
 }
 
-.version-tabs {
+/* Tab navigation with active bottom border - matching loginhistory.php */
+.nav-tabs-modern {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
     margin-bottom: 2rem;
+    gap: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.nav-tab-item {
+    flex: 0 0 auto;
+    padding: 1rem 2rem;
+    text-decoration: none;
+    color: #6c757d;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s ease;
+    background: none;
+    border-radius: 0;
+    position: relative;
+}
+
+.nav-tab-item:hover {
+    color: #495057;
+    text-decoration: none;
+    background: #f8f9fa;
+}
+
+.nav-tab-item.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd !important;
+    background: none;
 }
 
 .account-type-section {
@@ -368,7 +400,9 @@ a[href="#main-content"],
 </style>
 ';
 
-$bodycontentclass='';
+
+$bodycontentclass = ''; // This removes the my-4 margin from the row after nav
+$header_flush = true; // Ensure header content is flush with admin header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
@@ -404,21 +438,18 @@ include($dir['core_components'] . '/bg_header.inc');
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             
-            <!-- Version Tabs -->
-            <ul class="nav nav-tabs version-tabs">
-                <li class="nav-item">
-                    <a class="nav-link <?php echo $current_version == 'v7' ? 'active' : ''; ?>" 
-                       href="?version=v7">Version 7</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php echo $current_version == 'v3' ? 'active' : ''; ?>" 
-                       href="?version=v3">Version 3</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php echo $current_version == 'v2' ? 'active' : ''; ?>" 
-                       href="?version=v2">Version 2</a>
-                </li>
-            </ul>
+            <!-- Version Tabs - Modern Style -->
+            <nav class="nav-tabs-modern">
+                <a href="?version=v7" class="nav-tab-item <?php echo $current_version == 'v7' ? 'active' : ''; ?>">
+                    <i class="bi bi-box-seam me-2"></i>Version 7
+                </a>
+                <a href="?version=v3" class="nav-tab-item <?php echo $current_version == 'v3' ? 'active' : ''; ?>">
+                    <i class="bi bi-box me-2"></i>Version 3
+                </a>
+                <a href="?version=v2" class="nav-tab-item <?php echo $current_version == 'v2' ? 'active' : ''; ?>">
+                    <i class="bi bi-archive me-2"></i>Version 2
+                </a>
+            </nav>
             
             <!-- Create New Product Button -->
             <div class="mb-4">

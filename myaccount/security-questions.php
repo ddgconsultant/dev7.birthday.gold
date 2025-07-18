@@ -7,55 +7,13 @@ $pagedata['metakeywords'] = 'Birthday Gold Security Questions, Account Recovery,
 $pagedata['metadescriptions'] = 'Set up security questions to help recover your Birthday Gold account and enhance security.';
 
 // Additional styles
-$additionalstyles = '
+$additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
 <style>
 /* Security Questions Styles - Following security-settings pattern */
-.security-hero {
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
-    color: white;
-    padding: 2rem;
-    border-radius: 12px;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 2rem;
-}
-
-.security-hero::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.05); opacity: 0.8; }
-}
-
-.security-hero h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    position: relative;
-    z-index: 1;
-}
-
-.security-hero p {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    position: relative;
-    z-index: 1;
-    margin-bottom: 0;
-}
-
 /* Security Cards */
 .security-card {
     background: white;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #cbd5e1;
     border-radius: 12px;
     padding: 0;
     margin-bottom: 1.5rem;
@@ -70,11 +28,13 @@ $additionalstyles = '
 
 .security-card-header {
     padding: 1.5rem;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e0e0e0;
+    background: #e9ecef;
+    border-bottom: 1px solid #dee2e6;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 1rem;
 }
 
 .security-card-icon {
@@ -132,7 +92,7 @@ $additionalstyles = '
 /* Question Cards */
 .question-card {
     background: white;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #cbd5e1;
     border-radius: 12px;
     padding: 0;
     margin-bottom: 1.5rem;
@@ -146,8 +106,8 @@ $additionalstyles = '
 
 .question-header {
     padding: 1rem 1.5rem;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e0e0e0;
+    background: #e9ecef;
+    border-bottom: 1px solid #dee2e6;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -504,16 +464,13 @@ if ($app->formposted()) {
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 $bodycontentclass = '';
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-#include($dir['core_components'] . '/bg_user_leftpanel.inc');
-
-
 
 $transferpagedata['message'] = $errormessage;
 $transferpagedata = $system->startpostpage($transferpagedata);
 $success_message=$transferpagedata['message'];
+
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 
 // Add JavaScript for dynamic UI
 echo '
@@ -545,22 +502,21 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 </script>';
+?>
 
-echo '
-<div class="container my-4 pt-5">
-    
-    <!-- Back Link -->
-    <a href="/myaccount/security-settings" class="back-link">
-        <i class="bi bi-arrow-left"></i> Back to Security Settings
-    </a>
-    
-    <!-- Security Hero Section -->
-    <div class="security-hero">
-        <h1 class="text-white">Security Questions</h1>
-        <p>Set up recovery questions to help protect your account</p>
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-question-circle me-3"></i>Security Questions</h1>
+            <p class="lead mb-0">Set up recovery questions to help protect your account</p>
+        </div>
     </div>
+</div>
 
-';
+<?php
+echo '
+<div class="container my-5 pt-5">';
 
 if ($has_security_questions && !isset($_POST['show_form'])) {
     // Show status card
@@ -582,7 +538,7 @@ if ($has_security_questions && !isset($_POST['show_form'])) {
             </p>
             
             <div class="status-card">
-                <h4><i class="bi bi-shield-check me-2"></i>Questions Configured</h4>
+                <h4 class="text-white"><i class="bi bi-shield-check me-2"></i>Questions Configured</h4>
                 <p>Last updated ' . $qik->timeago($latest_modify_dt)['message'] . '</p>
             </div>
             
@@ -687,8 +643,16 @@ if ($has_security_questions && !isset($_POST['show_form'])) {
     </form>';
 }
 
-echo '</div>';
-echo '</div></div>';
+echo '
+<!-- Back to Security Settings link -->
+<div class="text-center my-5">
+    <a href="/myaccount/security-settings" class="text-muted">
+        <i class="bi bi-arrow-left me-2"></i>Back to Security Settings
+    </a>
+</div>';
+
+echo '</div>'; // Close container
+
 $display_footertype = '';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

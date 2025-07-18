@@ -106,11 +106,9 @@ if ($app->formposted('GET')) {
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 $bodycontentclass = '';
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
-$additionalstyles .= '
+
+// Additional styles
+$additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
 <style>
 /* Modern minimal design for login history */
 .login-container {
@@ -288,19 +286,96 @@ $additionalstyles .= '
     border: none;
 }
 
+/* Pill-shaped buttons */
+.btn {
+    border-radius: 25px !important;
+    padding: 0.375rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-sm {
+    border-radius: 20px !important;
+    padding: 0.25rem 1rem;
+}
+
+/* Specific button styles */
+.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background-color: #ffb300;
+    border-color: #ffb300;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    transform: translateY(-1px);
+}
+
+.btn-outline-danger {
+    border-width: 2px;
+}
+
+.btn-outline-danger:hover {
+    transform: translateY(-1px);
+}
+
+/* Badge pill style */
+.badge.rounded-pill {
+    padding: 0.35em 0.85em;
+}
+
+/* Square session badges for timeline */
+.session-badge {
+    border-radius: 4px !important;
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.session-badge.current {
+    background: #0d6efd !important;
+    color: white !important;
+}
+
+.session-badge.previous {
+    background: #198754 !important;
+    color: white !important;
+}
+
 </style>
 ';
 
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
+?>
 
-echo '<div class="col-12 col-lg-9">
-<div class="login-container">
-';
-
-// Header
-echo '<div class="mb-4">
-<h2 class="fw-bold mb-1">Login Activity</h2>
-<p class="text-muted mb-0">Monitor access to your account and manage trusted devices</p>
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-clock-history me-3"></i>Login Activity</h1>
+            <p class="lead mb-0">Monitor access to your account and manage trusted devices</p>
+        </div>
+    </div>
 </div>
+
+<?php
+echo '<div class="container my-5 pt-5">
+<div class="login-container">
 ';
 
 // Tab navigation
@@ -378,12 +453,7 @@ switch ($displaysection) {
 
 
 echo '</div>'; // Close login-container
-echo '</div>'; // Close col-12 col-lg-9
-
-echo '  </div>
-</div>
-</div>
-';
+echo '</div>'; // Close container
 
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

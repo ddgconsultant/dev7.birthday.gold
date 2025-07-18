@@ -75,13 +75,13 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
                             FROM bg_products p
                             LEFT JOIN bg_product_features pf ON p.id = pf.product_id 
                                 AND pf.name = 'allowed_promos'
-                            WHERE p.version = 'v3' 
+                            WHERE p.version = :version 
                             AND (
                                 (p.allow_promo = 'yes' AND (pf.value IS NULL OR pf.value = 'all'))
-                                OR pf.value LIKE ?
+                                OR pf.value LIKE :promo_pattern
                             )";
                     $stmt = $database->prepare($sql);
-                    $stmt->execute(['%' . $promo['code'] . '%']);
+                    $stmt->execute(['version' => $website['plan_version'], 'promo_pattern' => '%' . $promo['code'] . '%']);
                     $promo['allowed_products'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 }
                 
@@ -200,7 +200,7 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
               #      $promoManager = new ProductManagerPromo($database, $qik);
              #       $result = $promoManager->validatePromoCode($code, $product_id);
            #     } else {
-                    $result = $productManager->validatePromoCode($code, $product_id);
+                    $result = $product->validatePromoCode($code, $product_id);
            #     }
                 
                 ob_clean();
@@ -265,7 +265,7 @@ $sql = "SELECT p.id, p.account_name, p.account_type, p.price, p.allow_promo,
         WHERE p.version = 'v3' 
         ORDER BY p.account_type, p.price";
 $stmt = $database->prepare($sql);
-$stmt->execute();
+$stmt->execute(['version' => $website['plan_version']]);
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Page configuration
@@ -431,6 +431,8 @@ a[href="#main-content"],
 ';
 
 
+
+$bodycontentclass='';
 #-------------------------------------------------------------------------------
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------

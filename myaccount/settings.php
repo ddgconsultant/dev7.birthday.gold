@@ -95,17 +95,167 @@ $additionalstyles.= '
 .accountswitch {
 width: 140px;
 }
+
+/* Security Cards from security-settings */
+.security-card {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.security-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.security-card-header {
+    padding: 1.5rem;
+    background: #e9ecef;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 1rem;
+}
+
+.security-card-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+    color: #495057;
+}
+
+.security-card-title {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.security-card-title h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: #212529;
+    white-space: nowrap;
+}
+
+.security-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.security-card-body {
+    padding: 1.5rem;
+}
+
+/* Pill-shaped buttons */
+.btn {
+    border-radius: 25px !important;
+    padding: 0.5rem 1.5rem !important;
+    font-weight: 500;
+}
+
+.btn-sm {
+    border-radius: 20px !important;
+    padding: 0.25rem 1rem !important;
+}
+
+.btn-lg {
+    border-radius: 30px !important;
+    padding: 0.75rem 2rem !important;
+}
+
+/* Input group buttons need special handling */
+.input-group .btn {
+    border-radius: 0 25px 25px 0 !important;
+}
+
+/* Account switch buttons */
+.accountswitch {
+    border-radius: 25px !important;
+}
+
+/* Remove background from wrapper cards */
+.card.bg-transparent {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Make certain cards transparent */
+.wrapper-card {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Remove background from main container */
+.main-content {
+    background-color: transparent !important;
+}
+
+/* Remove any default Bootstrap container backgrounds */
+.container {
+    background-color: transparent !important;
+}
+
+/* Ensure body has no conflicting background */
+body {
+    background-color: #f8f9fa !important; /* Light gray background */
+}
+
+/* Remove background from any outer wrapper divs */
+#bodyContentWrapper {
+    background-color: transparent !important;
+}
 </style>
 ';
 #include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/header2.inc');
 $bodycontentclass='';
+
+// Add v7 theme CSS
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+?>
 
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-gear me-3"></i>Account Settings</h1>
+            <p class="lead mb-0">Manage your account preferences and privacy settings</p>
+        </div>
+    </div>
+</div>
 
-
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-
+<?php
 echo '    
 
 <div class="container mt-5 pt-5 main-content">
@@ -136,11 +286,17 @@ if ($current_user_data['account_type'] == 'parental') {
 
     echo '
 <!-- Parental  card-->
-<div class="card card-header-actions mb-4">
-        <div class="card-header">
-            Minor Accounts <span class="badge rounded-pill bg-secondary"  data-bs-toggle="tooltip" data-bs-placement="top" title="' . $minorcount . ' Child Accounts">' . $minorcount . '</span>
+<div class="security-card">
+        <div class="security-card-header">
+            <div class="security-card-title">
+                <i class="bi bi-people-fill security-card-icon"></i>
+                <h3>Minor Accounts</h3>
+            </div>
+            <div class="security-status">
+                <span class="badge rounded-pill bg-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $minorcount . ' Child Accounts">' . $minorcount . ' Active</span>
+            </div>
         </div>
-        <div class="card-body px-0">
+        <div class="security-card-body px-0">
         ';
 
 
@@ -333,19 +489,18 @@ $nextDate = $app->calculateNextOccurrence($current_user_data['birthdate'], $days
 # $output['result']
 $outdays = $app->getTimeTilBirthday($nextDate['date']);
 
-echo '<div class="mb-3">
-<h2 class="text-primary">Your Account Settings</h2>
-</div>
-';
 
 echo '
 
 <!-- Plan Feature card-->
-<div class="card card-header-actions mb-4">
-    <div class="card-header">
-        Plan Features
+<div class="security-card">
+    <div class="security-card-header">
+        <div class="security-card-title">
+            <i class="bi bi-award-fill security-card-icon"></i>
+            <h3>Plan Features</h3>
+        </div>
     </div>
-    <div class="card-body px-0">
+    <div class="security-card-body px-0">
         <!-- Payment method 1-->
         <div class="d-flex align-items-center justify-content-between px-4">
             <div class="d-flex align-items-center">
@@ -464,15 +619,18 @@ if (!empty($current_user_data['avatar'])) $avatar = '/' . $current_user_data['av
 #------------------------------------------------------------------------------- 
 echo '
 <!-- Account details card-->
-<div class="card mb-4">
-<div class="card-header d-flex justify-content-between">
-<span>birthday.gold Account Details</span>
-<!-- Button trigger modal
-<button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#instructionsModal">
-Instructions
-</button>  -->
+<div class="security-card">
+<div class="security-card-header">
+    <div class="security-card-title">
+        <i class="bi bi-person-badge-fill security-card-icon"></i>
+        <h3>Account Details</h3>
+    </div>
 </div>
-<div class="card-body">
+<div class="security-card-body">
+<div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Note:</strong> The Account Details are used to manage your account which the details are allowed to be different from your Enrollment Profile details.
+</div>
 <form id="profileupdateForm" method="post">
 ' . $display->inputcsrf_token() . '
 <input name="profileupdate" type="hidden" value="1">
@@ -538,7 +696,6 @@ echo '
 <!-- Contact Details -------------------------------------------------------------------------------------------- -->
 <div class="row gx-3 mb-3">
 <div><h4 class="fw-bold">User Account Details:</h4></div>
-<small class="mb-2">Used to log into birthday.gold</small>
 <!-- Form Group (username)-->
 <div class="col-md-6">
 <label class="small mb-1" for="inputUsername">Username  <span id="availability"></span></label>
@@ -636,7 +793,7 @@ echo '
 Instructions
 </button>  -->
 </div>
-<div class="card-body">
+<div class="security-card-body">
 <form id="profileupdateForm" method="post">
 ' . $display->inputcsrf_token() . '
 <input name="profileupdate" type="hidden" value="1">
@@ -698,7 +855,7 @@ echo '    <div class="row">
 
 <!-- Billing card 1-->
 <div class="card h-100 border-start-lg border-start-primary">
-<div class="card-body">
+<div class="security-card-body">
     <div class="small text-muted">Your Plan</div>
     <div><span class="h3 me-4">' . $plandatafeatures['displayname'] . '</span> <span class"fs-10">' . $plandatafeatures['plan_description'] . ' (' . $current_user_data['account_product_id'] . ')</span> </div>';
 if ($plandatafeatures['upgradeable'] == 'Y') {
@@ -721,7 +878,7 @@ if ($current_user_data['account_plan'] == 'gold') {
 <div class="col-12 mb-4">
 <!-- Billing card 2-->
 <div class="card h-100 border-start-lg border-start-secondary">
-<div class="card-body">
+<div class="security-card-body">
 ';
 
 
@@ -780,9 +937,17 @@ if ($current_user_data['account_plan'] == 'gold') {
         
 
             <!-- Two factor authentication card-->
-            <div class="card mb-4">
-                <div class="card-header">Two-Factor Authentication</div>
-                <div class="card-body">
+            <div class="security-card">
+                <div class="security-card-header">
+                    <div class="security-card-title">
+                        <i class="bi bi-shield-lock-fill security-card-icon"></i>
+                        <h3>Two-Factor Authentication</h3>
+                    </div>
+                    <div class="security-status">
+                        <span class="status-badge status-inactive">Not Enabled</span>
+                    </div>
+                </div>
+                <div class="security-card-body">
                     <p>Add more security to your account by enabling two-factor authentication. We will send you a text message to verify your login attempts on unrecognized devices and browsers.</p>
                     <form>
                     
@@ -806,9 +971,14 @@ if ($current_user_data['account_plan'] == 'gold') {
 echo '
     <div class="col-12 mb-4">
     <!-- Change password card-->
-    <div class="card mb-4">
-            <div class="card-header">Change Account Password</div>
-            <div class="card-body">
+    <div class="security-card">
+            <div class="security-card-header">
+                <div class="security-card-title">
+                    <i class="bi bi-key-fill security-card-icon"></i>
+                    <h3>Change Account Password</h3>
+                </div>
+            </div>
+            <div class="security-card-body">
                 <form action="/myaccount/changepassword" method="post">                           
 ' . $display->inputcsrf_token() . '
 <input name="returnto" type="hidden" value="/myaccount/account">
@@ -840,29 +1010,33 @@ echo '
 ### ----------------------------------------------------------------------------------------------------------------
 echo '<!-- Settings card-->
 <div class="col-12 mb-4">
-    <div class="card mb-4">
-        <div class="card-header"><i class="bi bi-gear" title="Account Settings"></i> More Account Settings</div>
-        <div class="card-body">
+    <div class="security-card">
+        <div class="security-card-header">
+            <div class="security-card-title">
+                <i class="bi bi-gear security-card-icon"></i>
+                <h3>More Account Settings</h3>
+            </div>
+        </div>
+        <div class="security-card-body">
             <ul class="list-unstyled">
-             <!-- Commented out actions for future use -->
-                <!-- <li><a class="d-flex justify-content-between align-items-center" href="/myaccount/settings?action=action1">Action <i class="bi bi-chevron-right"></i></a></li>  -->
-                <!-- <li><a class="d-flex justify-content-between align-items-center" href="/myaccount/settings?action=action2">Another action <i class="bi bi-chevron-right"></i></a></li>  -->
-                <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/notifications">Notifications <i class="bi bi-chevron-right"></i></a></li>
-<li class="mb-3">
-    <a class="d-flex justify-content-between align-items-center" href="/myaccount/profile-images">
-        <span>
-            Profile Images 
-            <i class="bi bi-info-circle ms-1 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Change your profile avatar and cover image"></i>
-        </span>
-        <i class="bi bi-chevron-right"></i>
-    </a>
-</li>
-            <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/security-settings">Security Settings <i class="bi bi-chevron-right"></i></a></li>
-
-                <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/manage-mail">BGInbox Settings <i class="bi bi-chevron-right"></i></a></li>';
+                <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/account"><div><i class="bi bi-pencil-square me-2"></i>Account Settings</div> <i class="bi bi-chevron-right"></i></a></li>
+                <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/notifications#settings"><div><i class="bi bi-bell me-2"></i>Manage Notifications</div> <i class="bi bi-chevron-right"></i></a></li>
+                <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/security-settings"><div><i class="bi bi-shield-lock me-2"></i>Security Settings</div> <i class="bi bi-chevron-right"></i></a></li>
+                <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/parental-mode"><div><i class="bi bi-person me-2"></i>Parental Mode</div> <i class="bi bi-chevron-right"></i></a></li>
+                <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/invite"><div><i class="bi bi-hand-thumbs-up me-2"></i>Invite Friends</div> <i class="bi bi-chevron-right"></i></a></li>
+                <li class="mb-3">
+                    <a class="d-flex justify-content-between align-items-center" href="/myaccount/profile-images">
+                        <div>
+                            <i class="bi bi-images me-2"></i>Profile Images 
+                            <i class="bi bi-info-circle ms-1 text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Change your profile avatar and cover image"></i>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/manage-mail"><div><i class="bi bi-envelope me-2"></i>BGInbox Settings</div> <i class="bi bi-chevron-right"></i></a></li>';
              
 if (!$account->isverified() && $account->isadmin()) {
-    echo '<li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/manage-verification">Become Verified <i class="bi bi-chevron-right"></i></a></li>';
+    echo '<li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/manage-verification"><div><i class="bi bi-patch-check me-2"></i>Become Verified</div> <i class="bi bi-chevron-right"></i></a></li>';
 }
 
             echo '
@@ -878,9 +1052,14 @@ if (!$account->isverified() && $account->isadmin()) {
 if ($account->iscconsultant()) {
     echo '<!-- Consultant account card-->
             <div class="col-12 mb-4">
-            <div class="card mb-4">
-                <div class="card-header"><i class="bi bi-badge-sd-fill text-success h5" title="Sales Representatives"></i> Sales Representatives</div>
-                <div class="card-body">
+            <div class="security-card">
+                <div class="security-card-header">
+                    <div class="security-card-title">
+                        <i class="bi bi-badge-sd-fill text-success security-card-icon"></i>
+                        <h3>Sales Representatives</h3>
+                    </div>
+                </div>
+                <div class="security-card-body">
                     <p>You are a listed as one of our Sales Representatives.</p>
                     <a class="btn btn-success btn-sm me-5" href="/myaccount/cckiosk">Kiosk SignUp</a>
                     ';
@@ -901,9 +1080,14 @@ if ($account->iscconsultant()) {
 ### ----------------------------------------------------------------------------------------------------------------
 echo '<!-- Delete account card-->
 <div class="col-12 mb-4">
-<div class="card mb-4">
-    <div class="card-header">Data Rights</div>
-    <div class="card-body">
+<div class="security-card">
+    <div class="security-card-header">
+        <div class="security-card-title">
+            <i class="bi bi-database-lock security-card-icon"></i>
+            <h3>Data Rights</h3>
+        </div>
+    </div>
+    <div class="security-card-body">
         <p>You have a right of access to any personal information we hold about you. 
         You can ask us for a copy of your personal information; confirmation whether your personal information is being used by us; 
         details about how and why it is being used; and details of what safeguards are in place.</p>
@@ -919,9 +1103,14 @@ echo '<!-- Delete account card-->
 #------------------------------------------------------------------------------- 
 echo '<!-- Delete account card-->
 <div class="col-12 mb-4">
-<div class="card mb-4">
-    <div class="card-header">Delete Account</div>
-    <div class="card-body">
+<div class="security-card">
+    <div class="security-card-header">
+        <div class="security-card-title">
+            <i class="bi bi-trash3-fill text-danger security-card-icon"></i>
+            <h3>Delete Account</h3>
+        </div>
+    </div>
+    <div class="security-card-body">
         <p>Deleting your birthday.gold account is a permanent action and cannot be undone. 
         If you are sure you want to delete your account, click the link below.</p>
         <button class="btn btn-danger-subtle text-danger" type="button" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
@@ -1036,6 +1225,11 @@ document.addEventListener("DOMContentLoaded", (event) => {
 ';
 }
 
+echo '
+            </div> <!-- end right column -->
+        </div> <!-- end row -->
+    </div> <!-- end container -->
+';
 
 $footerattribute['postfooter'] .= '
 

@@ -345,7 +345,12 @@ $canApplyForVerification = ($completedRequirements === $totalRequirements);
         <div class="progress-section">
             <div class="progress-header">
                 <h2 class="section-title mb-0">Pre-Verification Checklist</h2>
-                <span class="progress-percentage fs-8">Verification Readiness: <?php echo $progressPercentage; ?>%</span>
+                <span class="progress-percentage fs-8">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#statusModal" class="text-decoration-none text-warning d-inline-flex align-items-center">
+                        Verification Readiness: <?php echo $progressPercentage; ?>%
+                        <i class="bi bi-info-circle ms-2" style="font-size: 1rem;"></i>
+                    </a>
+                </span>
             </div>
             <div class="progress-bar">
                 <div class="progress-fill" style="width: <?php echo $progressPercentage; ?>%"></div>
@@ -569,6 +574,266 @@ echo '
         </div>
     </div>
 </div>
+';
+
+// Get verification status - this would normally come from database
+// For now, simulating different statuses based on progress
+$verificationStatus = 'not_applied'; // Possible values: not_applied, under_review, approved, denied, pending_resubmission
+$reviewStartDate = null;
+$reviewNotes = '';
+
+// Simulate status based on current state
+if ($canApplyForVerification && isset($_SESSION['verification_submitted'])) {
+    $verificationStatus = 'under_review';
+    $reviewStartDate = date('F j, Y', strtotime('-2 days'));
+} elseif ($account->isverified()) {
+    $verificationStatus = 'approved';
+}
+
+// Dynamic Status Modal
+echo '
+<!-- Dynamic Status Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="statusModalLabel">
+                    <i class="bi bi-patch-check me-2"></i>Verification Status
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">';
+
+// Different content based on verification status
+switch ($verificationStatus) {
+    case 'under_review':
+        echo '
+                <div class="text-center mb-4">
+                    <div class="spinner-border text-warning mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h4 class="text-warning">Application Under Review</h4>
+                    <p class="text-muted">Submitted on ' . $reviewStartDate . '</p>
+                </div>
+                
+                <div class="alert alert-info" role="alert">
+                    <h6 class="alert-heading"><i class="bi bi-clock-history me-2"></i>Your verification is being processed</h6>
+                    <p class="mb-2">Our team is currently reviewing your verification application. This process typically takes 3-5 business days.</p>
+                    <hr>
+                    <p class="mb-0 small">You will receive an email notification once the review is complete. In the meantime, continue using Birthday Gold and earning rewards!</p>
+                </div>
+                
+                <div class="progress mb-3" style="height: 30px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 65%">
+                        <span class="fw-bold">Review in Progress</span>
+                    </div>
+                </div>
+                
+                <h6 class="mb-3">What happens next?</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Application received and queued for review</li>
+                    <li class="mb-2"><i class="bi bi-arrow-right-circle text-warning me-2"></i>Identity verification in progress</li>
+                    <li class="mb-2"><i class="bi bi-circle text-muted me-2"></i>Final approval pending</li>
+                    <li class="mb-2"><i class="bi bi-circle text-muted me-2"></i>Email notification upon completion</li>
+                </ul>';
+        break;
+        
+    case 'approved':
+        echo '
+                <div class="text-center mb-4">
+                    <i class="bi bi-patch-check-fill text-success" style="font-size: 5rem;"></i>
+                    <h4 class="text-success mt-3">Congratulations! You are Verified</h4>
+                    <p class="text-muted">Approved on ' . date('F j, Y', strtotime('-1 week')) . '</p>
+                </div>
+                
+                <div class="alert alert-success" role="alert">
+                    <h6 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>Your account has been verified!</h6>
+                    <p class="mb-2">You now have access to exclusive verified member benefits, including premium birthday rewards and priority support.</p>
+                    <hr>
+                    <p class="mb-0 small">Your verified badge is now visible on your profile. Thank you for being a trusted member of Birthday Gold!</p>
+                </div>
+                
+                <h6 class="mb-3">Your Verified Benefits:</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-gift-fill text-warning me-3 fs-4"></i>
+                            <div>
+                                <h6 class="mb-1">Premium Rewards</h6>
+                                <p class="text-muted small mb-0">Access to exclusive birthday offers</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-lightning-fill text-info me-3 fs-4"></i>
+                            <div>
+                                <h6 class="mb-1">Priority Support</h6>
+                                <p class="text-muted small mb-0">Get help faster with dedicated support</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-patch-check-fill text-success me-3 fs-4"></i>
+                            <div>
+                                <h6 class="mb-1">Verified Badge</h6>
+                                <p class="text-muted small mb-0">Show your trusted status to brands</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-coin text-primary me-3 fs-4"></i>
+                            <div>
+                                <h6 class="mb-1">100 Bonus Credits</h6>
+                                <p class="text-muted small mb-0">Already added to your account</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>';
+        break;
+        
+    case 'denied':
+        echo '
+                <div class="text-center mb-4">
+                    <i class="bi bi-x-circle-fill text-danger" style="font-size: 5rem;"></i>
+                    <h4 class="text-danger mt-3">Verification Not Approved</h4>
+                    <p class="text-muted">Reviewed on ' . date('F j, Y', strtotime('-3 days')) . '</p>
+                </div>
+                
+                <div class="alert alert-danger" role="alert">
+                    <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>We could not verify your account</h6>
+                    <p class="mb-2">Unfortunately, we were unable to approve your verification request at this time.</p>
+                    <hr>
+                    <p class="mb-0 small">Please review the requirements below and resubmit your application with the requested information.</p>
+                </div>
+                
+                <h6 class="mb-3">Reason for denial:</h6>
+                <div class="bg-light p-3 rounded mb-3">
+                    <p class="mb-0"><i class="bi bi-info-circle me-2"></i>The identification document provided was unclear or did not match the profile information. Please ensure your ID is clearly visible and matches your account details.</p>
+                </div>
+                
+                <h6 class="mb-3">Next steps:</h6>
+                <ol>
+                    <li class="mb-2">Update your profile information to match your government ID</li>
+                    <li class="mb-2">Take a clear photo of your ID (ensure all text is readable)</li>
+                    <li class="mb-2">Resubmit your verification application</li>
+                </ol>
+                
+                <div class="text-center mt-4">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#verificationModal">
+                        <i class="bi bi-arrow-repeat me-2"></i>Reapply for Verification
+                    </button>
+                </div>';
+        break;
+        
+    default: // not_applied
+        echo '
+                <div class="text-center mb-4">
+                    <i class="bi bi-person-badge" style="font-size: 5rem; color: #6c757d;"></i>
+                    <h4 class="mt-3">Verification Status: Not Applied</h4>
+                    <p class="text-muted">You have not yet submitted a verification application</p>
+                </div>
+                
+                <div class="alert alert-secondary" role="alert">
+                    <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Ready to get verified?</h6>
+                    <p class="mb-2">Complete the requirements below to unlock the ability to apply for account verification.</p>
+                    <hr>
+                    <p class="mb-0 small">Verified members enjoy exclusive benefits including premium rewards, priority support, and increased trust from partner brands.</p>
+                </div>
+                
+                <h6 class="mb-3">Current Progress: ' . $progressPercentage . '% Complete</h6>
+                <div class="progress mb-4" style="height: 25px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: ' . $progressPercentage . '%">
+                        ' . $completedRequirements . ' of 4 requirements
+                    </div>
+                </div>
+                
+                <h6 class="mb-3">Requirements checklist:</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-' . ($profileComplete ? 'check-circle-fill text-success' : 'circle text-muted') . ' me-2"></i>
+                        Complete your profile information
+                        ' . (!$profileComplete ? '<a href="/myaccount/profile" class="ms-2 small">Complete now</a>' : '') . '
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-' . ($hasAvatar ? 'check-circle-fill text-success' : 'circle text-muted') . ' me-2"></i>
+                        Upload a profile picture
+                        ' . (!$hasAvatar ? '<a href="/myaccount/profile-pic" class="ms-2 small">Upload now</a>' : '') . '
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-' . ($hasVerification ? 'check-circle-fill text-success' : 'circle text-muted') . ' me-2"></i>
+                        Verify your identity with ID
+                        ' . (!$hasVerification ? '<a href="/myaccount/profile-verificationid" class="ms-2 small">Verify now</a>' : '') . '
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-' . ($hasEnoughPosts ? 'check-circle-fill text-success' : 'circle text-muted') . ' me-2"></i>
+                        Be active in the community (5+ posts)
+                        ' . (!$hasEnoughPosts ? '<a href="/social" class="ms-2 small">Create posts</a>' : '') . '
+                    </li>
+                </ul>';
+                
+        if ($canApplyForVerification) {
+            echo '
+                <div class="text-center mt-4">
+                    <button type="button" class="btn btn-success btn-lg" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#verificationModal">
+                        <i class="bi bi-patch-check me-2"></i>Apply for Verification Now
+                    </button>
+                </div>';
+        }
+        break;
+}
+
+echo '
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Additional styles for the status modal */
+.timeline-icon {
+    transition: all 0.3s ease;
+}
+
+.timeline-container {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline-container::before {
+    content: "";
+    position: absolute;
+    left: 20px;
+    top: 50px;
+    bottom: 20px;
+    width: 2px;
+    background: #e9ecef;
+}
+
+/* Make the percentage clickable and prominent */
+.progress-percentage a {
+    transition: all 0.2s ease;
+}
+
+.progress-percentage a:hover {
+    text-decoration: none !important;
+    transform: scale(1.05);
+    filter: brightness(1.2);
+}
+
+.progress-percentage a i {
+    transition: transform 0.2s ease;
+}
+
+.progress-percentage a:hover i {
+    transform: scale(1.2);
+}
+</style>
 ';
 ?>
 

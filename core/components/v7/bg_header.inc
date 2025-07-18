@@ -218,8 +218,7 @@ if ($isHomePage) {
         }
         
         echo '
-                        <li><a class="dropdown-item text-black" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>
-                        <li><a class="dropdown-item text-black" href="/myaccount/preferences"><i class="bi bi-bell me-3"></i>Preferences</a></li>';
+                        <li><a class="dropdown-item text-black" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>';
         
         if (($current_user_data['account_plan'] ?? '') !== 'free') {
             echo '
@@ -339,8 +338,7 @@ if ($isHomePage) {
         
         // Regular menu items
         echo '
-                        <li><a class="dropdown-item text-black" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>
-                        <li><a class="dropdown-item text-black" href="/myaccount/preferences"><i class="bi bi-bell me-3"></i>Preferences</a></li>';
+                        <li><a class="dropdown-item text-black" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>';
         
         // Only show billing for paid accounts
         if (($current_user_data['account_plan'] ?? '') !== 'free') {

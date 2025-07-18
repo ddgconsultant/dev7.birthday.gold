@@ -351,7 +351,7 @@ $STRIPECONFIG = $sitesettings['paymentgateway-stripe-live'];
 # SET UP ALL THE CLASSES
 #-------------------------------------------------------------------------------
 // Base array of classes
-$classes = ['Timer', 'System', 'Qik', 'Session', 'Database', 'App', 'Account', 'Admin', 'Display'];
+$classes = ['Timer', 'System', 'Qik', 'Session', 'Database', 'App', 'Account', 'Admin', 'Display', 'Product'];
 
 // Check if any classes set externally
 if (isset($addClasses)) {
@@ -454,6 +454,10 @@ foreach ($classes as $class) {
         $telegramsmsservice = new TelegramSMSService($telegramToken, $telegramAPI, $database);
         break;
       // -----------------------------------------
+      case 'productmanager_promo':
+      $productManager = new ProductManagerPromo($database, $qik);
+      break;
+       // -----------------------------------------
       case 'sms':
         $smsConfig = [
           'server' => $sitesettings['sms']['server'] ?? 'https://sms.bd.gold',
@@ -484,7 +488,11 @@ foreach ($classes as $class) {
   }
 }
 
-
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+# ## INSTANTIATE CORE PRODUCT CLASS
+############################
+// Always instantiate the Product class for site-wide use with current plan version
+$product = new Product($database, $qik, $website['plan_version']);
 
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 # ## SITE WIDE VARIABLES 

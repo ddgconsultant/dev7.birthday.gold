@@ -41,10 +41,12 @@ $bodycontentclass = 'profile-image-page';
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
 
 // Include required styles
 #include($dir['core_components'] . '/profile_images_styles.inc');
+
+// Add v7 theme CSS for content-header-dark
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
 
 $additionalstyles .= '
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons+Outlined">
@@ -61,6 +63,72 @@ flex-wrap: wrap;
 .uploaded-image {
 flex: 0 0 25%;
 max-width: 25%;
+}
+
+/* Tab navigation with active bottom border - matching loginhistory.php */
+.nav-tabs-modern {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 2rem;
+    gap: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.nav-tab-item {
+    flex: 0 0 auto;
+    padding: 1rem 2rem;
+    text-decoration: none;
+    color: #6c757d;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s ease;
+    background: none;
+    border-radius: 0;
+    position: relative;
+    border: none;
+    cursor: pointer;
+}
+
+.nav-tab-item:hover {
+    color: #495057;
+    text-decoration: none;
+    background: #f8f9fa;
+}
+
+.nav-tab-item.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd !important;
+    background: none;
+}
+
+/* Remove Bootstrap default tab styles */
+.nav-tabs {
+    border-bottom: none;
+}
+
+.nav-link {
+    border: none;
+}
+
+/* Remove extra spacing after content header */
+.content-header-dark {
+    margin-bottom: 0 !important;
+}
+
+/* Main content adjustments */
+.main-content {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .nav-tab-item {
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+    }
 }
 
 </style>
@@ -83,17 +151,30 @@ form {margin: 15px;}
 ';
 
 
+// Content Header Dark
+echo '
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-images me-3"></i>Your Images</h1>
+            <p class="lead mb-0">Manage your profile pictures, cover banners, and verification documents</p>
+        </div>
+    </div>
+</div>
+';
+
 // Main content
-echo '<div class="container main-content mt-lg-5 pt-lg-5">
+echo '<div class="container my-5 pt-5">
     <div class="row">
         <div class="col-md-12">
             ' . $display->formaterrormessage($transferpagedata['message']) . '
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Your Images</h5>
+                    <h5 class="mb-0">Upload & Manage Images</h5>
                 </div>
                 <div class="card-body">
-                    <ul class="nav nav-tabs" id="imageTabs" role="tablist">';
+                    <nav class="nav-tabs-modern" id="imageTabs" role="tablist">';
 
 // First, determine which tab should be active
 $activeTab = null;
@@ -115,22 +196,32 @@ if (!$activeTab) {
 }
 
 
-// Build tabs
+// Build tabs with modern style
 foreach ($componentConfig as $type => $config) {
     
     if ($config['display_panel']) {
         $isActive = ($type === $activeTab) ? 'active' : '';
-        echo '<li class="nav-item">
-                <a class="nav-link ' . $isActive  . '" 
+        
+        // Add appropriate icon based on type
+        $icon = '';
+        if ($type === 'avatar') {
+            $icon = '<i class="bi bi-person-circle me-2"></i>';
+        } elseif ($type === 'coverbanners') {
+            $icon = '<i class="bi bi-image-fill me-2"></i>';
+        } elseif ($type === 'verificationid') {
+            $icon = '<i class="bi bi-card-text me-2"></i>';
+        }
+        
+        echo '<button class="nav-tab-item ' . $isActive  . '" 
                    id="' . $type . '-tab" 
                    data-bs-toggle="tab" 
-                   href="#' . $type . '" 
-                   role="tab">' . $config['title'] . '</a>
-              </li>';
+                   data-bs-target="#' . $type . '" 
+                   type="button"
+                   role="tab">' . $icon . $config['title'] . '</button>';
     }
 }
 
-echo '</ul><div class="tab-content mt-3" id="imageTabsContent">';
+echo '</nav><div class="tab-content mt-3" id="imageTabsContent">';
 
 // Process each component
 foreach ($modalData as $type => $data) {

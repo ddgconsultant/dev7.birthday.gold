@@ -1,4 +1,6 @@
 <?php
+$addClasses[] = 'fileuploader';
+$addClasses[] = 'createaccount';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 if (!$app->formposted()) {
@@ -7,7 +9,7 @@ if (!$app->formposted()) {
 }
 
 try {
-    $stmt = $database->prepare("SELECT COUNT(*) FROM bg_users WHERE feature_parent_id = :parent_id");
+    $stmt = $database->prepare("SELECT COUNT(*) FROM bg_users WHERE feature_parent_id = :parent_id AND `status` = 'active' AND `account_type` = 'minor'");
     $stmt->execute([':parent_id' => $current_user_data['user_id']]);
     if ($stmt->fetchColumn() >= 6) {
         throw new Exception('Maximum number of child accounts (6) reached');
@@ -17,17 +19,40 @@ try {
     $birthday_date = new DateTime($birthday);
     
     // Get avatar and banner
-    $avatar_file = $display->generateAvatarUrl($fileuploader);
-    if (is_array($avatar_file)) $avatar_file = '/public/avatars/problemavatar.png';
+    $avatar_input = [
+        'first_name' => trim($_POST['first'] ?? ''),
+        'gender' => trim($_POST['gender'] ?? '')
+    ];
+    
+    session_tracking('Child add - avatar input', json_encode($avatar_input));
+    session_tracking('Child add - fileuploader exists', isset($fileuploader) ? 'yes' : 'no');
+    
+    try {
+        $avatar_file = $display->generateAvatarUrl($fileuploader, $avatar_input);
+        session_tracking('Child add - avatar generated', $avatar_file);
+    } catch (Exception $e) {
+        session_tracking('Child add - avatar error', $e->getMessage());
+        $avatar_file = null;
+    }
+    
+    if (is_array($avatar_file) || empty($avatar_file)) {
+        session_tracking('Child add - using default avatar', 'avatar was array or empty');
+        $avatar_file = '/public/avatars/problemavatar.png';
+    }
+    
+    // Generate username from email
+    $email = trim($_POST['email'] ?? '');
+    $username = strtolower(str_replace('@mybdaygold.com', '', $email));
     
     $input = [
         'first_name' => trim($_POST['first'] ?? ''),
         'last_name' => trim($_POST['last'] ?? ''),
+        'username' => $username,
         'gender' => trim($_POST['gender'] ?? ''),
         'birthday' => $birthday,
         'birthday_month' => $birthday_date->format('m'),
-        'email' => trim($_POST['email'] ?? ''),
-        'type' => 'test',
+        'email' => $email,
+        'type' => 'real',
         'account_plan' => $current_user_data['account_plan'],
         'account_type' => 'minor',
         'account_product_id' => $current_user_data['account_product_id'],
@@ -43,7 +68,26 @@ try {
         'avatar_file' => $avatar_file
     ];
 
+    session_tracking('Child add - input array', json_encode($input));
+    
     $child_id = $createaccount->create_user($input);
+    session_tracking('Child add - user created', 'child_id: ' . $child_id);
+    
+    // Update the feature_parent_id, ensure status is active, and set avatar
+    $update_stmt = $database->prepare("UPDATE bg_users SET feature_parent_id = :parent_id, status = 'active', avatar = :avatar WHERE user_id = :child_id");
+    $update_stmt->execute([
+        ':parent_id' => $current_user_data['user_id'],
+        ':child_id' => $child_id,
+        ':avatar' => $avatar_file
+    ]);
+    session_tracking('Child add - updated user with avatar', $avatar_file);
+    
+    // Check if avatar was stored in attributes
+    $check_avatar = $database->prepare("SELECT * FROM bg_user_attributes WHERE user_id = :child_id AND name = 'avatar'");
+    $check_avatar->execute([':child_id' => $child_id]);
+    $avatar_result = $check_avatar->fetch();
+    session_tracking('Child add - avatar in attributes', $avatar_result ? json_encode($avatar_result) : 'not found');
+    
     $session->set('ALERT_MESSAGE', 'Child account created successfully');
 
 } catch (Exception $e) {
