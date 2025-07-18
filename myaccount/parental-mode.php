@@ -1,4 +1,5 @@
 <?php
+$addClasses[] = 'fileuploader';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $bodycontentclass='';
@@ -103,8 +104,43 @@ $additionalstyles .= '
 /* Pill-shaped switch account button */
 .btn-switch-account {
     border-radius: 25px !important;
-    padding: 0.25rem 1.25rem !important;
+    padding: 0.375rem 1.5rem !important;
     font-weight: 500;
+    font-size: 1rem;
+}
+
+/* Pill-shaped management buttons */
+.collapse .btn-sm {
+    border-radius: 20px !important;
+    padding: 0.25rem 1rem !important;
+    font-weight: 500;
+}
+
+/* Collapse card styling */
+.collapse .card {
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Form card frame */
+#addchild-form .card {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+/* Responsive form width */
+@media (min-width: 992px) {
+    #addchild-form .card {
+        width: 50%;
+    }
+}
+
+@media (max-width: 991px) {
+    #addchild-form .card {
+        width: 100%;
+        max-width: 100% !important;
+    }
 }
 </style>';
 
@@ -131,7 +167,7 @@ echo '
                 <i class="bi bi-plus-circle"></i>
                 Add Child
             </a>' : '
-            <button class="btn-add-child" disabled>
+            <button class="btn-add-child" disabled data-bs-toggle="tooltip" data-bs-placement="left" title="Max 6 minor accounts reached">
                 <i class="bi bi-x-circle"></i>
                 Maximum Reached
             </button>') . '
@@ -162,59 +198,111 @@ echo '
 
 
             <div class="collapse" id="addchild-form">
-                <form class="row" id="addnewminor" action="/myaccount/myaccount_actions/child-add" method="POST">' . $display->inputcsrf_token() . '
-                    <div class="col-3 mb-3 text-lg-end">
-                        <label class="form-label" for="first">First Name</label>
-                    </div>
-                    <div class="col-9 col-sm-7 mb-3">
-                        <input class="form-control form-control-sm" name="first" id="first" type="text" required />
-                    </div>
+                <div class="card mt-3 mx-auto" style="max-width: 800px;">
+                    <div class="card-body">
+                        <form class="" id="addnewminor" action="/myaccount/myaccount_actions/child-add" method="POST">' . $display->inputcsrf_token() . '
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input class="form-control" name="first" id="first" type="text" placeholder="First Name" required />
+                                        <label for="first">First Name <span class="text-danger">*</span></label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input class="form-control" name="last" id="last" type="text" placeholder="Last Name" value="' . htmlspecialchars($current_user_data['last_name']) . '" required />
+                                        <label for="last">Last Name <span class="text-danger">*</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
+                                    <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                                    <div class="d-flex gap-2" style="max-width: 400px;">
+                                        <div class="flex-fill">
+                                            <select class="form-control" id="birth_month" name="birth_month">
+                                                <option value="">Month</option>';
+                                            
+                                                $months = [
+                                                    "01" => "01 - January", "02" => "02 - February", "03" => "03 - March",
+                                                    "04" => "04 - April", "05" => "05 - May", "06" => "06 - June",
+                                                    "07" => "07 - July", "08" => "08 - August", "09" => "09 - September",
+                                                    "10" => "10 - October", "11" => "11 - November", "12" => "12 - December"
+                                                ];
+                                                foreach ($months as $value => $label) {
+                                                    echo "<option value=\"$value\">$label</option>";
+                                                }
+                                             
+                                                echo '
+                                            </select>
+                                        </div>
+                                        <div style="width: 95px;">
+                                            <select class="form-control" id="birth_day" name="birth_day">
+                                                <option value="">Day</option>
+                                          ';
+                                          
+                                                for ($i = 1; $i <= 31; $i++) {
+                                                    $day = str_pad($i, 2, "0", STR_PAD_LEFT);
+                                                    echo "<option value=\"$day\">$i</option>";
+                                                }
+                                                echo '
+                                            </select>
+                                        </div>
+                                        <div style="width: 120px;">
+                                            <select class="form-control" id="birth_year" name="birth_year">
+                                                <option value="">Year</option>
+                                       ';
+                                                $current_year = date("Y");
+                                                $min_age_year = $current_year - 16;
+                                                $start_year = $current_year - 20; // Only show last 20 years for child accounts
+                                                for ($i = $current_year; $i >= $start_year; $i--) {
+                                                    $class = ($i < $min_age_year) ? "class=\"text-danger\"" : "";
+                                                    echo "<option value=\"$i\" $class>$i</option>";
+                                                }
+                                      echo '
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">Child must be 16 or younger</small>
+                                    <input type="hidden" id="dob" name="dob" value="" />
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <select class="form-select" name="gender" id="gender" required>
+                                            <option value="">Select gender...</option>
+                                            <option value="M">Male</option>
+                                            <option value="F">Female</option>
+                                            <option value="O">Other</option>
+                                        </select>
+                                        <label for="gender">Gender <span class="text-danger">*</span></label>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div class="col-3 mb-3 text-lg-end">
-                        <label class="form-label" for="last">Last Name</label>
-                    </div>
-                    <div class="col-9 col-sm-7 mb-3">
-                        <input class="form-control form-control-sm" name="last" id="last" type="text" value="' . htmlspecialchars($current_user_data['last_name']) . '" required />
-                    </div>
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="form-check mb-2">
+                                        <input type="checkbox" class="form-check-input" id="useCustomEmail" name="useCustomEmail">
+                                        <label class="form-check-label" for="useCustomEmail">
+                                            Use custom email address
+                                            <i class="bi bi-info-circle ms-1" data-bs-toggle="modal" data-bs-target="#emailInfoModal" style="cursor: pointer;"></i>
+                                        </label>
+                                    </div>
+                                    <div id="emailField"></div>
+                                </div>
+                            </div>
 
-                    <div class="col-3 mb-3 text-lg-end">
-                        <label class="form-label" for="gender">Gender</label>
+                            <div class="row">
+                                <div class="col-12">
+                                    <hr class="my-3">
+                                    <button class="btn btn-primary" type="submit">Save Child Account</button>
+                                    <button class="btn btn-secondary ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#addchild-form">Cancel</button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                    <div class="col-9 col-sm-7 mb-3">
-                        <select class="form-select form-select-sm" name="gender" id="gender" required>
-                            <option value="">Select gender...</option>
-                            <option value="M">Male</option>
-                            <option value="F">Female</option>
-                            <option value="O">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="col-3 text-lg-end">
-                        <label class="form-label" for="dob">Birthdate</label>
-                    </div>
-                    <div class="col-9 col-sm-7 mb-3">
-                        <input class="form-control form-control-sm" name="dob" id="dob" type="date" required />
-                    </div>
-
-                    <div class="col-3 mb-3 text-lg-end">
-                        <label class="form-label">Email Address</label>
-                    </div>
-                    <div class="col-9 col-sm-7 mb-3">
-                        <div class="form-check mb-2">
-                            <input type="checkbox" class="form-check-input" id="useCustomEmail" name="useCustomEmail">
-                            <label class="form-check-label" for="useCustomEmail">
-                                Use custom email address
-                                <i class="bi bi-info-circle ms-1" data-bs-toggle="modal" data-bs-target="#emailInfoModal" style="cursor: pointer;"></i>
-                            </label>
-                        </div>
-                        <div id="emailField"></div>
-                    </div>
-
-                    <div class="col-9 col-sm-7 offset-3">
-                        <button class="btn btn-primary" type="submit">Save</button>
-                    </div>
-                </form>
-                <div class="border-dashed-bottom my-3"></div>
+                </div>
             </div>';
         }
 
@@ -222,8 +310,8 @@ echo '
 foreach ($childaccount_records as $row) {
     $young_person = $app->calculateage($row['birthdate']);
     $cid = $row['user_id'];
-    $signinbutton = '<a class="btn btn-sm btn-primary btn-switch-account accountswitch me-2" href="/myaccount/myaccount_actions/switch2minor?id=' . $cid . '&pid=' . $current_user_data['user_id'] . '&_token=' . $display->inputcsrf_token('tokenonly') . '">Switch Account</a>';
-    $settingsbutton = '<button class="btn p-0 m-0 pb-1" type="button" data-bs-toggle="collapse" data-bs-target="#minorcontroller' . $row['user_id'] . '" aria-expanded="false" aria-controls="minorcontroller' . $row['user_id'] . '"><i class="bi bi-gear"></i></button>';
+    $signinbutton = '<a class="btn btn-primary btn-switch-account accountswitch me-2" href="/myaccount/myaccount_actions/switch2minor?id=' . $cid . '&pid=' . $current_user_data['user_id'] . '&_token=' . $display->inputcsrf_token('tokenonly') . '">Switch Account</a>';
+    $settingsbutton = '<button class="btn btn-light p-2" type="button" data-bs-toggle="collapse" data-bs-target="#minorcontroller' . $row['user_id'] . '" aria-expanded="false" aria-controls="minorcontroller' . $row['user_id'] . '"><i class="bi bi-gear fs-4"></i></button>';
     $avatar = !empty($row['avatar']) ? $row['avatar'] : '/public/images/defaultavatar.png';
 
     echo '
@@ -239,6 +327,33 @@ foreach ($childaccount_records as $row) {
         <div class="d-flex align-items-center">
             ' . $signinbutton . '
             <div class="ms-2">' . $settingsbutton . '</div>
+        </div>
+    </div>
+    <div class="collapse" id="minorcontroller' . $row['user_id'] . '">
+        <div class="card card-body ms-5 mt-2 mb-3">
+            <h6 class="mb-3">Manage Child Account</h6>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/myaccount/myaccount_actions/child-edit?id=' . $cid . '&_token=' . $display->inputcsrf_token('tokenonly') . '" 
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1 d-none d-md-inline"></i><span class="d-md-none">Edit</span><span class="d-none d-md-inline">Edit Profile</span>
+                </a>
+                <a href="/myaccount/myaccount_actions/child-password-reset?id=' . $cid . '&_token=' . $display->inputcsrf_token('tokenonly') . '" 
+                   class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-key me-1 d-none d-md-inline"></i><span class="d-md-none">Reset Password</span><span class="d-none d-md-inline">Reset Password</span>
+                </a>
+                <button type="button" 
+                        class="btn btn-sm btn-outline-danger" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#deactivateModal"
+                        data-child-id="' . $cid . '"
+                        data-child-name="' . htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) . '">
+                    <i class="bi bi-x-circle me-1 d-none d-md-inline"></i><span class="d-md-none">Delete</span><span class="d-none d-md-inline">Deactivate Account</span>
+                </button>
+            </div>
+            <div class="mt-3 text-muted small">
+                <i class="bi bi-info-circle me-1"></i>
+                Account created: ' . (new DateTime($row['create_dt']))->format('M d, Y') . '
+            </div>
         </div>
     </div>';
 }
@@ -269,10 +384,44 @@ echo '
     </div>
 </div>';
 
+echo '
+<!-- Deactivate Child Account Modal -->
+<div class="modal fade" id="deactivateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Deactivate Child Account</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to deactivate the account for <strong id="childName"></strong>?</p>
+                <p>This action will:</p>
+                <ul>
+                    <li>Make the account inactive</li>
+                    <li>Prevent the child from logging in</li>
+                    <li>Preserve all account data for potential reactivation</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="#" id="confirmDeactivate" class="btn btn-danger">
+                    <i class="bi bi-x-circle me-1"></i>Deactivate Account
+                </a>
+            </div>
+        </div>
+    </div>
+</div>';
+
 ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
     const form = document.getElementById('addnewminor');
     const emailCheckbox = document.getElementById('useCustomEmail');
     const emailField = document.getElementById('emailField');
@@ -300,6 +449,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(email => {
                 generatedEmail = email;
                 updateEmailField();
+                // Automatically check availability of generated email
+                if (email && !emailCheckbox.checked) {
+                    checkEmailAvailability(email);
+                }
             });
         }
     }
@@ -337,35 +490,45 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateEmailField() {
         if (emailCheckbox.checked) {
             emailField.innerHTML = `
-                <div class='input-group'>
-                    <input type='email' class='form-control form-control-sm' name='email' required>
-                    <span id='availabilityIndicator' class='ms-2 align-self-center'></span>
-                </div>`;
+                <div class='form-floating'>
+                    <input type='email' class='form-control' name='email' id='email' placeholder='Email Address' required>
+                    <label for='email'>Email Address <span class='text-danger'>*</span></label>
+                </div>
+                <span id='availabilityIndicator' class='ms-2'></span>`;
         } else {
-            emailField.innerHTML = generatedEmail ? 
-                `<div class='input-group'>
-                    <span class='input-group-text btn btn-light' onclick='enableEmailEdit(this)'>
+            emailField.innerHTML = `
+                <div class='position-relative'>
+                    <div class='form-floating'>
+                        <input type='email' class='form-control bg-light pe-5' name='email' id='email' 
+                            value='${generatedEmail || ''}' placeholder='Email Address' readonly>
+                        <label for='email'>Email Address (Auto-generated)</label>
+                    </div>
+                    <button type='button' class='btn btn-sm btn-light position-absolute' 
+                        style='top: 50%; right: 10px; transform: translateY(-50%); padding: 0.25rem 0.5rem;'
+                        onclick='enableEmailEdit(this)'>
                         <i class='bi bi-pencil'></i>
-                    </span>
-                    <input type='email' class='form-control form-control-sm bg-light' name='email' 
-                        value='${generatedEmail}' readonly>
-                    <button type='button' class='btn btn-primary btn-sm d-none' id='checkAvailability' 
-                        onclick='checkEmailAvailability(this.previousElementSibling.value)'>
+                    </button>
+                </div>
+                <div class='d-flex justify-content-between align-items-center mt-1'>
+                    <span id='availabilityIndicator'></span>
+                    <button type='button' class='btn btn-sm btn-primary d-none' id='checkAvailability' 
+                        onclick='checkEmailAvailability(document.getElementById("email").value)'>
                         Check Availability
                     </button>
-                    <span id='availabilityIndicator' class='ms-2 align-self-center'></span>
-                </div>` : '';
+                </div>`;
         }
     }
 
     function enableEmailEdit(pencilBtn) {
-        const inputGroup = pencilBtn.closest('.input-group');
-        const emailInput = inputGroup.querySelector('input');
-        const checkBtn = inputGroup.querySelector('#checkAvailability');
+        const parentDiv = pencilBtn.closest('.position-relative').parentElement;
+        const emailInput = parentDiv.querySelector('input[name="email"]');
+        const checkBtn = parentDiv.querySelector('#checkAvailability');
         
         emailInput.readOnly = false;
         emailInput.classList.remove('bg-light');
         checkBtn.classList.remove('d-none');
+        pencilBtn.classList.add('d-none');
+        emailInput.focus();
     }
 
     function validateAge(birthdate) {
@@ -385,10 +548,25 @@ document.addEventListener('DOMContentLoaded', function() {
     window.checkEmailAvailability = checkEmailAvailability;
 
     document.getElementById('first').addEventListener('input', generateEmail);
+    document.getElementById('last').addEventListener('change', generateEmail);
     
-    ['last', 'dob'].forEach(id => {
-        document.getElementById(id).addEventListener('change', generateEmail);
-    });
+    // Birthday dropdown sync
+    const birthMonth = document.getElementById('birth_month');
+    const birthDay = document.getElementById('birth_day');
+    const birthYear = document.getElementById('birth_year');
+    const dobHidden = document.getElementById('dob');
+    
+    function updateDobField() {
+        if (birthMonth && birthDay && birthYear && 
+            birthMonth.value && birthDay.value && birthYear.value) {
+            dobHidden.value = birthYear.value + '-' + birthMonth.value + '-' + birthDay.value;
+            generateEmail(); // Generate email when birthday is complete
+        }
+    }
+    
+    if (birthMonth) birthMonth.addEventListener('change', updateDobField);
+    if (birthDay) birthDay.addEventListener('change', updateDobField);
+    if (birthYear) birthYear.addEventListener('change', updateDobField);
 
     emailCheckbox.addEventListener('change', function() {
         if (!hasShownModal && this.checked) {
@@ -413,10 +591,34 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('You can only add up to 6 children for free');
             return;
         }
+        
+        // Ensure email has a value
+        const emailInput = document.querySelector('input[name="email"]');
+        if (!emailInput || !emailInput.value) {
+            e.preventDefault();
+            alert('Please wait for the email to be generated or check the "Use custom email address" option');
+            return;
+        }
     });
 
+    // Initialize email field on page load
+    updateEmailField();
+    
     if (document.getElementById('first').value) {
         generateEmail();
+    }
+    
+    // Handle deactivate modal
+    const deactivateModal = document.getElementById('deactivateModal');
+    if (deactivateModal) {
+        deactivateModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const childId = button.getAttribute('data-child-id');
+            const childName = button.getAttribute('data-child-name');
+            
+            document.getElementById('childName').textContent = childName;
+            document.getElementById('confirmDeactivate').href = '/myaccount/myaccount_actions/child-delete?id=' + childId + '&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>';
+        });
     }
 });
 </script>
