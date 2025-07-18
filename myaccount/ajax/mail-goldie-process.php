@@ -1,28 +1,28 @@
 <?php
 // mail-goldie-process.php - AJAX endpoint for Goldie Managed Inbox
 
-// Set a flag to prevent site-controller from setting headers
-define('SSE_MODE', true);
+// Prevent any output before headers
+ob_start();
+
+// Set up for Server-Sent Events FIRST (before any includes)
+header('Content-Type: text/event-stream');
+header('Cache-Control: no-cache');
+header('Connection: keep-alive');
+header('X-Accel-Buffering: no'); // Disable Nginx buffering
+
+// Clean any buffered output
+ob_end_clean();
 
 // Now set up classes and logging
 $addClasses[] = 'mail';
 $addClasses[] = 'ai';
 
-// Include site controller without output
+// Include site controller
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-
-// Now set up SSE after site controller is loaded
-if (ob_get_level()) ob_end_clean();
 
 // Set execution limits
 set_time_limit(300); // 5 minutes
 ini_set('memory_limit', '256M');
-
-// Set up for Server-Sent Events
-header('Content-Type: text/event-stream');
-header('Cache-Control: no-cache');
-header('Connection: keep-alive');
-header('X-Accel-Buffering: no'); // Disable Nginx buffering
 
 // Force immediate output
 ob_implicit_flush(true);
@@ -50,19 +50,19 @@ register_shutdown_function(function() {
 // Custom error handler for debugging
 if ($debug_mode) {
     set_error_handler(function($errno, $errstr, $errfile, $errline) {
-        // Ignore header warnings
-        if (strpos($errstr, 'Cannot modify header information') !== false) {
-            return true;
-        }
         error_log("[Goldie Mail Process] Error: $errstr in $errfile:$errline");
-        echo "data: " . json_encode([
-            'type' => 'error',
-            'message' => "PHP Error: $errstr",
-            'file' => basename($errfile),
-            'line' => $errline
-        ]) . "\n\n";
-        @ob_flush();
-        flush();
+        // Only send errors to client if they're not about headers
+        if (strpos($errstr, 'Cannot modify header information') === false && 
+            strpos($errstr, 'headers already sent') === false) {
+            echo "data: " . json_encode([
+                'type' => 'error',
+                'message' => "PHP Error: $errstr",
+                'file' => basename($errfile),
+                'line' => $errline
+            ]) . "\n\n";
+            @ob_flush();
+            flush();
+        }
         return true;
     });
 }
@@ -306,8 +306,32 @@ foreach ($messages_by_day as $date => $day_messages) {
     ]);
     
     // Set up AI if available
-    if (isset($ai)) {
-        $ai->setEngine('anthropic_goldie', 'text');
+    if (isset($ai) && is_object($ai)) {
+        try {
+            $ai->setEngine('anthropic_goldie', 'text');
+        } catch (Exception $e) {
+            error_log("AI Engine Setup Error: " . $e->getMessage());
+            
+            // Send basic summary without AI
+            $company_list = array_values($companies);
+            sendEvent([
+                'type' => 'summary',
+                'summary' => [
+                    'date' => $date,
+                    'displayDate' => date('F j, Y', strtotime($date)),
+                    'messageCount' => count($day_messages),
+                    'companyCount' => count($company_list),
+                    'companies' => $company_list,
+                    'summary' => "You have " . count($day_messages) . " birthday rewards. AI summary unavailable.",
+                    'offers' => [],
+                    'cached' => false
+                ]
+            ]);
+            
+            $summaries_sent++;
+            usleep(100000);
+            continue;
+        }
         
         // Collect company info and message details
         $companies = [];
@@ -378,8 +402,13 @@ foreach ($messages_by_day as $date => $day_messages) {
             }
             
             // If parsing failed, use the whole response as summary
-            if (empty($summary_text)) {
+            if (empty($summary_text) && !empty($ai_response)) {
                 $summary_text = $ai_response;
+            }
+            
+            // If still no summary, create a basic one
+            if (empty($summary_text)) {
+                $summary_text = "You have " . count($day_messages) . " birthday rewards from " . count($companies) . " companies. Check your inbox for details.";
             }
             
             // Store the summary in database
@@ -446,6 +475,34 @@ foreach ($messages_by_day as $date => $day_messages) {
         
         // Small delay to avoid rate limiting
         usleep(500000); // 0.5 seconds
+    } else {
+        // No AI available, send basic summary
+        $companies = [];
+        foreach ($day_messages as $message) {
+            if (!empty($message['company_id'])) {
+                $company = $app->getcompany($message['company_id']);
+                if ($company) {
+                    $companies[$message['company_id']] = $company['company_display_name'] ?? 'Unknown';
+                }
+            }
+        }
+        
+        sendEvent([
+            'type' => 'summary',
+            'summary' => [
+                'date' => $date,
+                'displayDate' => date('F j, Y', strtotime($date)),
+                'messageCount' => count($day_messages),
+                'companyCount' => count($companies),
+                'companies' => array_values($companies),
+                'summary' => "You have " . count($day_messages) . " birthday rewards from " . count($companies) . " companies.",
+                'offers' => [],
+                'cached' => false
+            ]
+        ]);
+        
+        $summaries_sent++;
+        usleep(100000);
     }
 }
 

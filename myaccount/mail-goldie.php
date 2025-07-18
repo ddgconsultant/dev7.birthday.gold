@@ -262,21 +262,24 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Hero Section with Goldie Avatar -->
 <div class="content-header-dark">
     <div class="container">
-        <div class="row justify-content-center position-relative">
-            <div class="col-auto d-flex align-items-center">
-                <div class="text-end me-3 position-relative" style="width: 100px; height: 120px;">
-                    <img src="/public/images/logo/goldie-avatar_200.png" alt="Goldie" class="floating-icon" style="position: absolute; top: 0; left: 0; z-index: 2; width: 100px;">
-                    <img src="/public/images/logo/goldie-shadow_200.png" alt="" class="shadow-icon" style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1; width: 100px;">
-                </div>
-                <div>
-                    <h1 class="mb-2">Goldie Managed Inbox</h1>
-                    <p class="lead mb-0">AI-powered insights into your birthday rewards</p>
+        <div class="row align-items-center">
+            <div class="col-12 col-md-auto text-center text-md-start">
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start">
+                    <div class="text-end me-3 position-relative" style="width: 100px; height: 120px;">
+                        <img src="/public/images/logo/goldie-avatar_200.png" alt="Goldie" class="floating-icon" style="position: absolute; top: 0; left: 0; z-index: 2; width: 100px;">
+                        <img src="/public/images/logo/goldie-shadow_200.png" alt="" class="shadow-icon" style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 1; width: 100px;">
+                    </div>
+                    <div>
+                        <h1 class="mb-2">Goldie Managed Inbox</h1>
+                        <p class="lead mb-0">AI-powered insights into your birthday rewards</p>
+                    </div>
                 </div>
             </div>
-            <!-- Regular Inbox button positioned outside the centering flow -->
-            <a href="/myaccount/mail-box" class="btn btn-outline-light" style="position: absolute; top: 50%; right: 2rem; transform: translateY(-50%); border-radius: 25px;">
-                <i class="bi bi-envelope me-2"></i>Regular Inbox
-            </a>
+            <div class="col-12 col-md-auto ms-md-auto text-center text-md-end mt-3 mt-md-0">
+                <a href="/myaccount/mail-box<?php echo $uid != $current_user_data['user_id'] ? '?uid=' . $qik->encodeId($uid) : ''; ?>" class="btn btn-outline-light" style="border-radius: 25px;">
+                    <i class="bi bi-envelope me-2"></i>Regular Inbox
+                </a>
+            </div>
         </div>
     </div>
 </div>
