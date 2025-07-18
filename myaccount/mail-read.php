@@ -16,19 +16,15 @@ try {
     $system->endpostpage($transferpage);
 }
 
-// Decode the mail server
-try {
-    $mailserver = $mailserver_encoded ? $qik->decodeId($mailserver_encoded) : null;
-} catch (Exception $e) {
+// Get the mail server (no decoding needed - it's a string)
+$mailserver = $mailserver_encoded ? $mailserver_encoded : null;
+
+// Validate server parameter if provided
+if ($mailserver && !preg_match('/^[a-zA-Z0-9\.\-]+$/', $mailserver)) {
     $errormessage = '<div class="alert alert-danger">Invalid server parameter. Please return to your inbox and try again.</div>';
     $transferpage['url'] = '/myaccount/mail-box';
     $transferpage['message'] = $errormessage;
     $system->endpostpage($transferpage);
-}
-
-// Convert 'default' back to null/empty for the API
-if ($mailserver === 'default') {
-    $mailserver = null;
 }
 
 if (!$message_id) {
@@ -251,6 +247,9 @@ include($dir['core_components'] . '/bg_header.inc');
 
 
 <script>
+// Store CSRF token for AJAX requests
+const csrfToken = '<?php echo $display->input_csrftoken('tokenonly'); ?>';
+
 // Function to resize iframe to content height
 function resizeIframe(iframe) {
     try {
@@ -280,13 +279,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const server = this.dataset.server;
         
         try {
-            const response = await fetch('/api/messages/bulk-action', {
+            const response = await fetch('/api/messages/bulk-action.php', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    _token: csrfToken,
                     action: 'mark-unread',
                     messageIds: [messageId],
                     server: server
@@ -304,47 +303,130 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred while marking the message as unread');
+            showErrorModal('An error occurred while marking the message as unread: ' + error.message);
         }
     });
     
     // Delete message handler
-    document.getElementById('delete-message').addEventListener('click', async function() {
-        if (!confirm('Are you sure you want to delete this message?')) {
-            return;
-        }
-
+    document.getElementById('delete-message').addEventListener('click', function() {
         const messageId = this.dataset.messageId;
         const server = this.dataset.server;
-
-        try {
-            const response = await fetch('/api/messages/delete', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    messageId: messageId,
-                    server: server
-                })
-            });
-
-            if (!response.ok) throw new Error('Network response was not ok');
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                window.location.href = '/myaccount/mail-box';
-            } else {
-                throw new Error(result.message || 'Unknown error occurred');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the message');
+        
+        // Create and show confirmation modal
+        const modalHtml = `
+            <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Confirm Delete</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to delete this message?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('deleteConfirmModal');
+        if (existingModal) {
+            existingModal.remove();
         }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+        
+        // Handle confirm button
+        document.getElementById('confirmDelete').addEventListener('click', async function() {
+            modal.hide();
+            
+            try {
+                const response = await fetch('/api/messages/delete.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        _token: csrfToken,
+                        messageId: messageId,
+                        server: server
+                    })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.href = '/myaccount/mail-box';
+                } else {
+                    throw new Error(result.message || 'Unknown error occurred');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showErrorModal('An error occurred while deleting the message: ' + error.message);
+            }
+        });
+        
+        // Clean up modal after it's hidden
+        document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
     });
 });
+
+// Function to show error modal
+function showErrorModal(message) {
+    const modalHtml = `
+        <div class="modal fade" id="errorModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Error</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger mb-0">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            ${message}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('errorModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('errorModal'));
+    modal.show();
+    
+    // Clean up after modal is hidden
+    document.getElementById('errorModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
 </script>
 
 <?php

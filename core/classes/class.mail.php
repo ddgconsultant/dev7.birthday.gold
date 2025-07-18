@@ -571,7 +571,7 @@ Regards,<br>birthday.gold
             // Add LIMIT 2000 to each query to prevent overload
             $sql = "SELECT @@hostname AS host, message_id, company_id, subject, create_dt, processstatus 
                     FROM messages 
-                    WHERE user_id = :user_id $criteria 
+                    WHERE user_id = :user_id and processstatus !='delete' $criteria 
                     ORDER BY `$sort` $order 
                     LIMIT 2000";
 
@@ -713,6 +713,150 @@ Regards,<br>birthday.gold
 
     return null;
 }
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  # Mark message as read
+  public function markMessageRead($message_id, $user_id, $mailserver = null) {
+    global $sitesettings;
+    $config = $sitesettings['database_admin'];
+    
+    // Map server names to full configurations
+    $servers = [
+        'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver'],
+        'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver'],
+        'xfer' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer']
+    ];
+    
+    // Default to all servers if none specified
+    $serverList = $mailserver && isset($servers[$mailserver]) ? [$mailserver => $servers[$mailserver]] : $servers;
+    
+    foreach ($serverList as $serverName => $serverConfig) {
+        $serverConfig = array_merge($serverConfig, [
+            'DB_USERNAME' => 'birthday_gold_admin',
+            'DB_PASSWORD' => $config['password'],
+            'DB_CHARSET' => 'utf8mb4'
+        ]);
+        
+        try {
+            $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // First verify the message belongs to the user
+            $stmt = $pdo->prepare('SELECT user_id FROM messages WHERE message_id = :message_id');
+            $stmt->execute(['message_id' => $message_id]);
+            $message = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($message && $message['user_id'] == $user_id) {
+                // Update the status
+                $stmt = $pdo->prepare('UPDATE messages SET processstatus = "read" WHERE message_id = :message_id');
+                $stmt->execute(['message_id' => $message_id]);
+                return true;
+            }
+        } catch (PDOException $e) {
+            error_log("Database error in markMessageRead: " . $e->getMessage());
+            continue;
+        }
+    }
+    
+    return false;
+  }
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  # Mark message as unread
+  public function markMessageUnread($message_id, $user_id, $mailserver = null) {
+    global $sitesettings;
+    $config = $sitesettings['database_admin'];
+    
+    // Map server names to full configurations
+    $servers = [
+        'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver'],
+        'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver'],
+        'xfer' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer']
+    ];
+    
+    // Default to all servers if none specified
+    $serverList = $mailserver && isset($servers[$mailserver]) ? [$mailserver => $servers[$mailserver]] : $servers;
+    
+    foreach ($serverList as $serverName => $serverConfig) {
+        $serverConfig = array_merge($serverConfig, [
+            'DB_USERNAME' => 'birthday_gold_admin',
+            'DB_PASSWORD' => $config['password'],
+            'DB_CHARSET' => 'utf8mb4'
+        ]);
+        
+        try {
+            $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // First verify the message belongs to the user
+            $stmt = $pdo->prepare('SELECT user_id FROM messages WHERE message_id = :message_id');
+            $stmt->execute(['message_id' => $message_id]);
+            $message = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($message && $message['user_id'] == $user_id) {
+                // Update the status
+                $stmt = $pdo->prepare('UPDATE messages SET processstatus = "unread" WHERE message_id = :message_id');
+                $stmt->execute(['message_id' => $message_id]);
+                return true;
+            }
+        } catch (PDOException $e) {
+            error_log("Database error in markMessageUnread: " . $e->getMessage());
+            continue;
+        }
+    }
+    
+    return false;
+  }
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  # Delete message
+  public function deleteMessage($message_id, $user_id, $mailserver = null) {
+    global $sitesettings;
+    $config = $sitesettings['database_admin'];
+    
+    // Map server names to full configurations
+    $servers = [
+        'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver'],
+        'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver'],
+        'xfer' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer']
+    ];
+    
+    // Default to all servers if none specified
+    $serverList = $mailserver && isset($servers[$mailserver]) ? [$mailserver => $servers[$mailserver]] : $servers;
+    
+    foreach ($serverList as $serverName => $serverConfig) {
+        $serverConfig = array_merge($serverConfig, [
+            'DB_USERNAME' => 'birthday_gold_admin',
+            'DB_PASSWORD' => $config['password'],
+            'DB_CHARSET' => 'utf8mb4'
+        ]);
+        
+        try {
+            $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // First verify the message belongs to the user
+            $stmt = $pdo->prepare('SELECT user_id FROM messages WHERE message_id = :message_id');
+            $stmt->execute(['message_id' => $message_id]);
+            $message = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($message && $message['user_id'] == $user_id) {
+                // Instead of hard delete, mark as deleted
+                $stmt = $pdo->prepare('UPDATE messages SET processstatus = "delete" WHERE message_id = :message_id');
+                $stmt->execute(['message_id' => $message_id]);
+                return true;
+            }
+        } catch (PDOException $e) {
+            error_log("Database error in deleteMessage: " . $e->getMessage());
+            continue;
+        }
+    }
+    
+    return false;
+  }
 
 }
 

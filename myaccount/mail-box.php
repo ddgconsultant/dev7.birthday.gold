@@ -5,9 +5,9 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Mail Inbox";
 
-// Security Note: Message IDs and mail server names are encoded using $qik->encodeId() 
-// when displayed in URLs and data attributes, then decoded when processing requests.
-// This prevents tampering with these sensitive values in client-side code.
+// Security Note: Message IDs are encoded using $qik->encodeId() when displayed in URLs 
+// and data attributes, then decoded when processing requests. Server names are validated
+// with regex to ensure they only contain safe characters.
 
 // Retrieve any messages from previous page (e.g., mail-read.php errors)
 $transferpagedata = $system->startpostpage();
@@ -53,7 +53,8 @@ $filter_params = [
     'order' => $order,
     'search' => $search,
     'page' => $page,
-    'per_page' => $per_page
+    'per_page' => $per_page,
+    'exclude_deleted' => true
 ];
 
 // Add company filter if specified
@@ -63,7 +64,8 @@ if ($company_filter) {
 
 // First get ALL messages to build company list (without pagination)
 $all_messages_results = $mail->getmessagelist($uid, 'user', [
-    'per_page' => 1000 // Get a large number to see all companies
+    'per_page' => 1000, // Get a large number to see all companies
+    'exclude_deleted' => true
 ]);
 
 // Get unique companies for filter dropdown from ALL messages
@@ -799,7 +801,18 @@ if (empty($messages)) {
    foreach ($messages as $message) {
        $date = new DateTime($message['create_dt']);
        $today = new DateTime();
-       $dateformat = $date->format('Y-m-d') === $today->format('Y-m-d') ? 'h:i a' : 'M j';
+       $current_year = $today->format('Y');
+       $message_year = $date->format('Y');
+       
+       // Show time for today, "M j" for this year, "M j, y" for previous years
+       if ($date->format('Y-m-d') === $today->format('Y-m-d')) {
+           $dateformat = 'h:i a';
+       } elseif ($message_year === $current_year) {
+           $dateformat = 'M j';
+       } else {
+           $dateformat = 'M j, y';  // Shows like "Dec 25, 24"
+       }
+       
        $formatted_date = $display->formatdate($message['create_dt'], $dateformat);
 
        $is_unread = $message['processstatus'] !== 'read';
@@ -808,7 +821,7 @@ if (empty($messages)) {
        echo '
        <tr class="message-row ' . ($is_unread ? 'unread' : '') . '" 
            data-message-id="' . $qik->encodeId($message['message_id']) . '"
-         data-server="' . htmlspecialchars($qik->encodeId($message['host'] ?? 'default')) . '"
+         data-server="' . htmlspecialchars($message['host'] ?? '') . '"
          >
            <td class="ps-3">
                <div class="form-check">
@@ -878,13 +891,13 @@ if (empty($messages)) {
 <?php
 if ($total_pages > 1) {
    echo '
-   <div class="pagination-info">
+   <div class="pagination-info m-3">
        <div class="pagination-text">
            Showing ' . (($page - 1) * $per_page + 1) . ' to ' . 
            min($page * $per_page, $total_messages) . ' of ' . 
            $total_messages . ' messages
        </div>
-       <nav>
+       <nav class="my-2">
            <ul class="pagination mb-0">';
            
            $show_pages = 5;
@@ -980,6 +993,9 @@ if ($total_pages > 1) {
 </div>
 
 <script>
+// Store CSRF token for AJAX requests
+const csrfToken = '<?php echo $display->input_csrftoken('tokenonly'); ?>';
+
 // Toggle filter bar on mobile
 function toggleFilterBar() {
     const filterBar = document.getElementById('filterBar');
@@ -1106,7 +1122,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                    .map(cb => cb.value);
             
             if (selectedIds.length === 0) {
-                alert('Please select at least one message');
+                showErrorModal('Please select at least one message');
                 return;
             }
 
@@ -1117,13 +1133,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const response = await fetch('/api/messages/bulk-action', {
+                const response = await fetch('/api/messages/bulk-action.php', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
+                        _token: csrfToken,
                         action: actionType,
                         messageIds: selectedIds
                     })
@@ -1140,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('An error occurred while processing your request');
+                showErrorModal('An error occurred while processing your request: ' + error.message);
             }
         });
     });
@@ -1190,6 +1206,49 @@ function updateSelectAllState() {
     
     updateButton(bulkActionsBtn);
     updateButton(bulkActionsBtnMobile);
+}
+
+// Function to show error modal
+function showErrorModal(message) {
+    const modalHtml = `
+        <div class="modal fade" id="errorModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Error</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger mb-0">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            ${message}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('errorModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('errorModal'));
+    modal.show();
+    
+    // Clean up after modal is hidden
+    document.getElementById('errorModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
 }
 </script>
 
