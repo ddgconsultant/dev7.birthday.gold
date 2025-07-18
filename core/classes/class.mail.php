@@ -811,6 +811,59 @@ Regards,<br>birthday.gold
   }
   
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  # Get messages for AI summary within date range
+  public function getMessagesForAI($user_id, $start_date, $end_date) {
+    global $sitesettings;
+    $config = $sitesettings['database_admin'];
+    $servers = [
+        ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
+        ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
+        ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4']
+    ];
+    
+    $allMessages = [];
+    
+    foreach ($servers as $serverConfig) {
+        try {
+            $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // Get messages with body for AI processing
+            $sql = "SELECT message_id, company_id, subject, body, create_dt, processstatus 
+                    FROM messages 
+                    WHERE user_id = :user_id 
+                    AND processstatus != 'delete' 
+                    AND create_dt >= :start_date 
+                    AND create_dt <= :end_date
+                    ORDER BY create_dt DESC
+                    LIMIT 500";
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                'user_id' => $user_id,
+                'start_date' => $start_date . ' 00:00:00',
+                'end_date' => $end_date . ' 23:59:59'
+            ]);
+            
+            $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $allMessages = array_merge($allMessages, $messages);
+            
+        } catch (PDOException $e) {
+            error_log("Database error in getMessagesForAI: " . $e->getMessage());
+            continue;
+        }
+    }
+    
+    // Sort all messages by date desc
+    usort($allMessages, function($a, $b) {
+        return strcmp($b['create_dt'], $a['create_dt']);
+    });
+    
+    return ['messages' => $allMessages];
+  }
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   # Delete message
   public function deleteMessage($message_id, $user_id, $mailserver = null) {
     global $sitesettings;
