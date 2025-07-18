@@ -2,8 +2,8 @@
 // Minimal test version of mail-goldie-process.php
 // This will help isolate the SSE issue
 
-// Prevent any output buffering
-if (ob_get_level()) ob_end_clean();
+// Set a flag to prevent site-controller from setting headers
+define('SSE_MODE', true);
 
 // Set error reporting
 error_reporting(E_ALL);
@@ -12,6 +12,19 @@ ini_set('display_errors', 1);
 // Increase execution limits
 set_time_limit(300); // 5 minutes
 ini_set('memory_limit', '256M');
+
+// Try to load site controller first
+try {
+    $addClasses = ['mail', 'ai'];
+    include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+} catch (Exception $e) {
+    header('Content-Type: text/event-stream');
+    echo "data: " . json_encode(['type' => 'error', 'message' => 'Failed to load site controller: ' . $e->getMessage()]) . "\n\n";
+    exit;
+}
+
+// Now set up SSE after site controller is loaded
+if (ob_get_level()) ob_end_clean();
 
 // Set up for Server-Sent Events
 header('Content-Type: text/event-stream');
@@ -40,23 +53,11 @@ sendEvent([
 // Wait a moment
 usleep(100000); // 0.1 second
 
-// Try to load site controller
-try {
-    $addClasses = ['mail', 'ai'];
-    include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-    
-    sendEvent([
-        'type' => 'progress',
-        'message' => 'Site controller loaded',
-        'percent' => 10
-    ]);
-} catch (Exception $e) {
-    sendEvent([
-        'type' => 'error',
-        'message' => 'Failed to load site controller: ' . $e->getMessage()
-    ]);
-    exit;
-}
+sendEvent([
+    'type' => 'progress',
+    'message' => 'Site controller loaded',
+    'percent' => 10
+]);
 
 // Check user
 $uid = $current_user_data['user_id'] ?? 0;

@@ -1,14 +1,24 @@
 <?php
 // mail-goldie-process.php - AJAX endpoint for Goldie Managed Inbox
 
-// Prevent any output buffering that might interfere with SSE
+// Set a flag to prevent site-controller from setting headers
+define('SSE_MODE', true);
+
+// Now set up classes and logging
+$addClasses[] = 'mail';
+$addClasses[] = 'ai';
+
+// Include site controller without output
+include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+
+// Now set up SSE after site controller is loaded
 if (ob_get_level()) ob_end_clean();
 
-// Set execution limits BEFORE loading anything
+// Set execution limits
 set_time_limit(300); // 5 minutes
 ini_set('memory_limit', '256M');
 
-// Set up for Server-Sent Events FIRST
+// Set up for Server-Sent Events
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
 header('Connection: keep-alive');
@@ -18,13 +28,9 @@ header('X-Accel-Buffering: no'); // Disable Nginx buffering
 ob_implicit_flush(true);
 flush();
 
-// Now set up classes and logging
-$addClasses[] = 'mail';
-$addClasses[] = 'ai';
-
 // Start error logging
 $start_time = microtime(true);
-$debug_mode = ($_REQUEST['debug'] ?? '') === '1'; // Allow debug via query param
+$debug_mode = ($mode ?? 'prod') === 'dev'; // Use site mode
 
 // Register shutdown function to catch fatal errors
 register_shutdown_function(function() {
@@ -43,9 +49,11 @@ register_shutdown_function(function() {
 
 // Custom error handler for debugging
 if ($debug_mode) {
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
     set_error_handler(function($errno, $errstr, $errfile, $errline) {
+        // Ignore header warnings
+        if (strpos($errstr, 'Cannot modify header information') !== false) {
+            return true;
+        }
         error_log("[Goldie Mail Process] Error: $errstr in $errfile:$errline");
         echo "data: " . json_encode([
             'type' => 'error',
@@ -57,13 +65,6 @@ if ($debug_mode) {
         flush();
         return true;
     });
-}
-
-try {
-    include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-} catch (Exception $e) {
-    echo "data: " . json_encode(['type' => 'error', 'message' => 'Failed to load site controller: ' . $e->getMessage()]) . "\n\n";
-    exit;
 }
 
 // Log execution checkpoint
