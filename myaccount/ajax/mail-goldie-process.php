@@ -293,7 +293,7 @@ foreach ($messages_by_day as $date => $day_messages) {
         ]);
         
         $summaries_sent++;
-        sleep(0.1); // Small delay for visual effect
+        usleep(100000); // 0.1 second delay for visual effect
         continue;
     }
     
