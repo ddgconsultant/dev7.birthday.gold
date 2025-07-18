@@ -30,7 +30,7 @@ if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
 }
 
 // Check if admin/dev for non-own accounts
-$is_admin_dev = $account->checkrole('admin') || $mode === 'dev';
+$is_admin_dev = $account->isadmin() || $mode === 'dev';
 $target_uid = $uid;
 
 // If viewing another user's mail (admin only)

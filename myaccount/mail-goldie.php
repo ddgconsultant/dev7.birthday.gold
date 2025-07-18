@@ -283,7 +283,7 @@ include($dir['core_components'] . '/bg_header.inc');
 
 <div class="container my-5">
     <!-- Admin/Dev Notice -->
-    <?php if ($account->checkrole('admin') || $mode === 'dev'): ?>
+    <?php if ($account->isadmin() || $mode === 'dev'): ?>
     <div class="alert alert-info mb-3">
         <i class="bi bi-tools me-2"></i>
         <strong>Admin/Dev Mode:</strong> You can see "Regenerate" buttons for each summary to force AI regeneration.
@@ -619,7 +619,7 @@ function addSummaryCard(summary) {
     }
     
     // Check if user is admin/dev
-    const isAdminDev = <?php echo ($account->checkrole('admin') || $mode === 'dev') ? 'true' : 'false'; ?>;
+    const isAdminDev = <?php echo ($account->isadmin() || $mode === 'dev') ? 'true' : 'false'; ?>;
     
     // Add regenerate button for admin/dev
     let regenerateBtn = '';
