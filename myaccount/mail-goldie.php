@@ -282,6 +282,17 @@ include($dir['core_components'] . '/bg_header.inc');
 </div>
 
 <div class="container my-5">
+    <!-- Admin/Dev Notice -->
+    <?php if ($account->checkrole('admin') || $mode === 'dev'): ?>
+    <div class="alert alert-info mb-3">
+        <i class="bi bi-tools me-2"></i>
+        <strong>Admin/Dev Mode:</strong> You can see "Regenerate" buttons for each summary to force AI regeneration.
+        <?php if ($uid != $current_user_data['user_id']): ?>
+        <br><small>Currently viewing mail for user ID: <?php echo $uid; ?></small>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+    
     <!-- Date range selector -->
     <div class="row mb-4">
         <div class="col-md-6">
@@ -607,8 +618,22 @@ function addSummaryCard(summary) {
         companiesHtml += '</div>';
     }
     
+    // Check if user is admin/dev
+    const isAdminDev = <?php echo ($account->checkrole('admin') || $mode === 'dev') ? 'true' : 'false'; ?>;
+    
+    // Add regenerate button for admin/dev
+    let regenerateBtn = '';
+    if (isAdminDev) {
+        regenerateBtn = `
+            <button onclick="regenerateSummary('${summary.date}')" class="btn btn-sm btn-outline-warning btn-icon ms-2" title="Regenerate this summary">
+                <i class="bi bi-arrow-clockwise"></i>
+                Regenerate
+            </button>
+        `;
+    }
+    
     const cardHtml = `
-        <div class="summary-card" style="animation-delay: ${container.children.length * 0.1}s">
+        <div class="summary-card" style="animation-delay: ${container.children.length * 0.1}s" data-date="${summary.date}">
             <div class="summary-header">
                 <div>
                     <div class="summary-date">${summary.displayDate}</div>
@@ -625,13 +650,14 @@ function addSummaryCard(summary) {
                         <i class="bi bi-envelope-open"></i>
                         View Messages
                     </a>
+                    ${regenerateBtn}
                 </div>
             </div>
             
             ${companiesHtml}
             
             <div class="summary-content">
-                ${summary.summary}
+                ${summary.summary || '<em class="text-muted">No summary available. Click regenerate to create one.</em>'}
             </div>
             
             ${offersHtml}
@@ -644,6 +670,101 @@ function addSummaryCard(summary) {
 function forceRefresh() {
     if (confirm('This will regenerate all summaries using AI. This may take a moment. Continue?')) {
         loadSummaries(true);
+    }
+}
+
+// Store the target UID for admin viewing
+const targetUid = <?php echo ($uid != $current_user_data['user_id']) ? $uid : 'null'; ?>;
+
+async function regenerateSummary(date) {
+    if (!confirm(`Regenerate summary for ${date}? This will use AI to create a fresh summary.`)) {
+        return;
+    }
+    
+    debugLog('Regenerating summary for date', { date });
+    
+    // Find and update the card
+    const card = document.querySelector(`[data-date="${date}"]`);
+    if (card) {
+        const contentDiv = card.querySelector('.summary-content');
+        contentDiv.innerHTML = '<div class="text-center"><span class="loading-spinner"></span> Regenerating summary...</div>';
+    }
+    
+    try {
+        const requestData = { 
+            date: date,
+            <?php echo $display->input_csrftoken('jsvar'); ?>
+        };
+        
+        // Add target UID if admin viewing another user
+        if (targetUid) {
+            requestData.target_uid = targetUid;
+        }
+        
+        const response = await fetch('/myaccount/ajax/mail-goldie-regenerate.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Network response was not ok: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update the card with new summary
+            if (card) {
+                const contentDiv = card.querySelector('.summary-content');
+                contentDiv.innerHTML = result.summary || '<em class="text-muted">No summary generated</em>';
+                
+                // Update offers if provided
+                if (result.offers && result.offers.length > 0) {
+                    let offersHtml = '<ul class="offer-list">';
+                    result.offers.forEach(offer => {
+                        offersHtml += `
+                            <li class="offer-item">
+                                <div class="offer-company">${offer.company}</div>
+                                <div class="offer-detail">${offer.offer}</div>
+                                ${offer.action ? '<div class="offer-action">' + offer.action + '</div>' : ''}
+                            </li>
+                        `;
+                    });
+                    offersHtml += '</ul>';
+                    
+                    // Remove old offers if any
+                    const oldOffers = card.querySelector('.offer-list');
+                    if (oldOffers) {
+                        oldOffers.remove();
+                    }
+                    
+                    // Add new offers
+                    contentDiv.insertAdjacentHTML('afterend', offersHtml);
+                }
+                
+                // Update status badge
+                const statusBadge = card.querySelector('.status-badge');
+                if (statusBadge) {
+                    statusBadge.className = 'status-badge status-fresh';
+                    statusBadge.textContent = 'Fresh';
+                }
+            }
+        } else {
+            alert('Failed to regenerate summary: ' + (result.error || 'Unknown error'));
+        }
+        
+    } catch (error) {
+        debugLog('Error regenerating summary', { error: error.message });
+        alert('Error regenerating summary: ' + error.message);
+        
+        // Restore original content if possible
+        if (card) {
+            const contentDiv = card.querySelector('.summary-content');
+            contentDiv.innerHTML = '<em class="text-muted">Failed to regenerate. Please try again.</em>';
+        }
     }
 }
 </script>
