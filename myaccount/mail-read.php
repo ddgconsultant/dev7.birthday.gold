@@ -20,6 +20,31 @@ if (!$message) {
 // Get company info if available
 $company = !empty($message['company_id']) ? $app->getcompany($message['company_id']) : null;
 
+// Build "Back to Inbox" URL with stored filter state
+$back_to_inbox_url = '/myaccount/mail-box';
+if (!empty($_SESSION['mail_box_state'])) {
+    $params = [];
+    if (!empty($_SESSION['mail_box_state']['sort']) && $_SESSION['mail_box_state']['sort'] !== 'date') {
+        $params[] = 'sort=' . urlencode($_SESSION['mail_box_state']['sort']);
+    }
+    if (!empty($_SESSION['mail_box_state']['order']) && $_SESSION['mail_box_state']['order'] !== 'desc') {
+        $params[] = 'order=' . urlencode($_SESSION['mail_box_state']['order']);
+    }
+    if (!empty($_SESSION['mail_box_state']['search'])) {
+        $params[] = 'search=' . urlencode($_SESSION['mail_box_state']['search']);
+    }
+    if (!empty($_SESSION['mail_box_state']['company'])) {
+        $params[] = 'company=' . urlencode($_SESSION['mail_box_state']['company']);
+    }
+    if (!empty($_SESSION['mail_box_state']['page']) && $_SESSION['mail_box_state']['page'] > 1) {
+        $params[] = 'page=' . $_SESSION['mail_box_state']['page'];
+    }
+    
+    if (!empty($params)) {
+        $back_to_inbox_url .= '?' . implode('&', $params);
+    }
+}
+
 $pagetitle = "Message - " . ($message['subject'] ?? 'Birthday Gold Mail');
 
 // Add v7 theme CSS and custom styles
@@ -139,7 +164,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="container">
         <!-- Message Actions Bar -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <a href="/myaccount/mail-box" class="btn btn-outline-secondary" style="border-radius: 25px;">
+            <a href="<?php echo htmlspecialchars($back_to_inbox_url); ?>" class="btn btn-outline-secondary" style="border-radius: 25px;">
                 <i class="bi bi-arrow-left me-2"></i>Back to Inbox
             </a>
             <div class="message-actions">
