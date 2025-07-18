@@ -306,8 +306,32 @@ foreach ($messages_by_day as $date => $day_messages) {
     ]);
     
     // Set up AI if available
-    if (isset($ai)) {
-        $ai->setEngine('anthropic_goldie', 'text');
+    if (isset($ai) && is_object($ai)) {
+        try {
+            $ai->setEngine('anthropic_goldie', 'text');
+        } catch (Exception $e) {
+            error_log("AI Engine Setup Error: " . $e->getMessage());
+            
+            // Send basic summary without AI
+            $company_list = array_values($companies);
+            sendEvent([
+                'type' => 'summary',
+                'summary' => [
+                    'date' => $date,
+                    'displayDate' => date('F j, Y', strtotime($date)),
+                    'messageCount' => count($day_messages),
+                    'companyCount' => count($company_list),
+                    'companies' => $company_list,
+                    'summary' => "You have " . count($day_messages) . " birthday rewards. AI summary unavailable.",
+                    'offers' => [],
+                    'cached' => false
+                ]
+            ]);
+            
+            $summaries_sent++;
+            usleep(100000);
+            continue;
+        }
         
         // Collect company info and message details
         $companies = [];
@@ -378,8 +402,13 @@ foreach ($messages_by_day as $date => $day_messages) {
             }
             
             // If parsing failed, use the whole response as summary
-            if (empty($summary_text)) {
+            if (empty($summary_text) && !empty($ai_response)) {
                 $summary_text = $ai_response;
+            }
+            
+            // If still no summary, create a basic one
+            if (empty($summary_text)) {
+                $summary_text = "You have " . count($day_messages) . " birthday rewards from " . count($companies) . " companies. Check your inbox for details.";
             }
             
             // Store the summary in database
@@ -446,6 +475,34 @@ foreach ($messages_by_day as $date => $day_messages) {
         
         // Small delay to avoid rate limiting
         usleep(500000); // 0.5 seconds
+    } else {
+        // No AI available, send basic summary
+        $companies = [];
+        foreach ($day_messages as $message) {
+            if (!empty($message['company_id'])) {
+                $company = $app->getcompany($message['company_id']);
+                if ($company) {
+                    $companies[$message['company_id']] = $company['company_display_name'] ?? 'Unknown';
+                }
+            }
+        }
+        
+        sendEvent([
+            'type' => 'summary',
+            'summary' => [
+                'date' => $date,
+                'displayDate' => date('F j, Y', strtotime($date)),
+                'messageCount' => count($day_messages),
+                'companyCount' => count($companies),
+                'companies' => array_values($companies),
+                'summary' => "You have " . count($day_messages) . " birthday rewards from " . count($companies) . " companies.",
+                'offers' => [],
+                'cached' => false
+            ]
+        ]);
+        
+        $summaries_sent++;
+        usleep(100000);
     }
 }
 
