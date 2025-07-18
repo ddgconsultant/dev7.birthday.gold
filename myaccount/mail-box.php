@@ -3,6 +3,8 @@
 $addClasses[] = 'mail';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+$pagetitle = "Mail Inbox";
+
 
 
 #-------------------------------------------------------------------------------
@@ -44,12 +46,13 @@ $total_messages = $messages_results['counts']['total'];
 $total_pages = ceil($total_messages / $per_page);
 
 
-$additionalstyles.='
+// Add v7 theme CSS and custom styles
+$additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
 <style>
 .message-row { transition: background-color 0.15s ease-in-out; cursor: pointer; }
 .message-row:hover { background-color: rgba(0, 0, 0, .03); }
 .message-row.selected { background-color: rgba(13, 110, 253, .1); }
-.message-row.unread { background-color: rgba(248, 249, 250, .7); }
+.message-row.unread { background-color: rgba(248, 249, 250, .7); font-weight: 600; }
 .company-logo { width: 32px; height: 32px; object-fit: cover; border-radius: 4px; }
 .sort-icon { opacity: 0.3; }
 .sort-active .sort-icon { opacity: 1; }
@@ -57,105 +60,226 @@ $additionalstyles.='
 .sender-col { max-width: 120px; }
 .date-col { max-width: 70px; }
 }
-</style>
-    ';
+
+/* Clean modern tab navigation - like Material Design */
+.nav-tabs-clean {
+    display: flex;
+    border-bottom: none;
+    padding: 0;
+    list-style: none;
+}
+
+/* Container for tabs and gear button */
+.tabs-container {
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 2rem;
+}
+
+.nav-tab-clean {
+    position: relative;
+    margin-right: 3rem;
+}
+
+.nav-tab-clean a {
+    display: block;
+    padding: 1rem 1.5rem;
+    text-decoration: none;
+    color: #666;
+    font-weight: 500;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: color 0.2s ease;
+    border: none;
+    background: none;
+}
+
+.nav-tab-clean a:hover {
+    color: #333;
+}
+
+.nav-tab-clean.active a {
+    color: #0d6efd;
+}
+
+.nav-tab-clean.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #0d6efd;
+}
+
+.tab-badge {
+    display: inline-block;
+    min-width: 20px;
+    padding: 2px 6px;
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    background-color: #dc3545;
+    border-radius: 10px;
+}
+
+/* Search bar styles */
+.search-container {
+    max-width: 600px;
+    margin: 0 auto 2rem;
+}
+
+/* Filter bar styles */
+.filter-bar {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+</style>';
     
     
 $bodycontentclass = '';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
 
 
-echo '    
-<div class="container main-content mt-0 pt-0">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-  <h2 class="mb-0">Mail Inbox</h2>
-  <a href="/myaccount/"  class="btn btn-sm btn-outline-secondary">Back To MyAccount</a>
+?>
+
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-envelope me-3"></i>Mail Inbox</h1>
+            <p class="lead mb-3">View and manage your birthday reward messages</p>
+            
+            <!-- Search bar in header -->
+            <div class="search-container">
+                <form method="GET" id="search-form">
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-lg" placeholder="Search messages..." 
+                               name="search" value="<?php echo htmlspecialchars($search); ?>" id="mailSearch">
+                        <button class="btn btn-primary btn-lg" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
-';
-echo '
-<!-- Toolbar -->
-<div class="card mb-3">
-   <div class="card-body">
-       <div class="row align-items-center">
-           <div class="col-md-6 mb-2 mb-md-0">
-               <div class="btn-group me-2">
-                   <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                       Bulk Actions
-                   </button>
-                   <ul class="dropdown-menu">
-                       <li><a class="dropdown-item bulk-action" href="#" data-action="mark-read">
-                           <i class="bi bi-envelope-open me-2"></i>Mark as Read
-                       </a></li>
-                       <li><a class="dropdown-item bulk-action" href="#" data-action="mark-unread">
-                           <i class="bi bi-envelope me-2"></i>Mark as Unread
-                       </a></li>
-                       <li><hr class="dropdown-divider"></li>
-                       <li><a class="dropdown-item bulk-action text-danger" href="#" data-action="delete">
-                           <i class="bi bi-trash me-2"></i>Delete
-                       </a></li>
-                   </ul>
-               </div>
-               <button type="button" class="btn btn-outline-secondary" id="refresh-btn">
-                   <i class="bi bi-arrow-clockwise"></i>
-               </button>
-           </div>
-           <div class="col-md-6">
-               <form class="d-flex" method="GET" id="search-form">
-                   <input type="search" name="search" class="form-control me-2" placeholder="Search messages..." 
-                          value="' . htmlspecialchars($search) . '">
-                   <button class="btn btn-primary" type="submit">
-                       <i class="bi bi-search"></i>
-                   </button>
-               </form>
-           </div>
-       </div>
-   </div>
-</div>';
 
+<div class="container my-5">
+    <div class="container">
+        <!-- Clean tab navigation with settings gear -->
+        <div class="d-flex justify-content-between align-items-center tabs-container">
+            <ul class="nav-tabs-clean mb-0">
+                <li class="nav-tab-clean active">
+                    <a href="#all" data-bs-toggle="tab">
+                        <i class="bi bi-envelope me-2"></i>All Mail
+                        <?php if ($total_messages > 0): ?>
+                        <span class="tab-badge bg-secondary"><?php echo $total_messages; ?></span>
+                        <?php endif; ?>
+                    </a>
+                </li>
+                <li class="nav-tab-clean">
+                    <a href="#unread" data-bs-toggle="tab">
+                        <i class="bi bi-envelope-exclamation me-2"></i>Unread
+                        <span class="tab-badge" id="unreadCount">0</span>
+                    </a>
+                </li>
+                <li class="nav-tab-clean">
+                    <a href="#read" data-bs-toggle="tab">
+                        <i class="bi bi-envelope-open me-2"></i>Read
+                    </a>
+                </li>
+                <li class="nav-tab-clean">
+                    <a href="#starred" data-bs-toggle="tab">
+                        <i class="bi bi-star me-2"></i>Starred
+                    </a>
+                </li>
+            </ul>
+            <ul class="nav-tabs-clean mb-0">
+                <li class="nav-tab-clean">
+                    <a href="/myaccount/manage-mail#settings" id="settingsButton">
+                        <i class="bi bi-gear-fill"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-2">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-check2-square me-1"></i> Actions
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item bulk-action" href="#" data-action="mark-read">
+                                <i class="bi bi-envelope-open me-2"></i>Mark as Read
+                            </a></li>
+                            <li><a class="dropdown-item bulk-action" href="#" data-action="mark-unread">
+                                <i class="bi bi-envelope me-2"></i>Mark as Unread
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item bulk-action text-danger" href="#" data-action="delete">
+                                <i class="bi bi-trash me-2"></i>Delete
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Sort by</label>
+                    <select class="form-select" id="sortBy" onchange="updateSort(this.value)">
+                        <option value="date-desc" <?php echo $sort === 'date' && $order === 'desc' ? 'selected' : ''; ?>>Date (Newest First)</option>
+                        <option value="date-asc" <?php echo $sort === 'date' && $order === 'asc' ? 'selected' : ''; ?>>Date (Oldest First)</option>
+                        <option value="sender-asc" <?php echo $sort === 'sender' && $order === 'asc' ? 'selected' : ''; ?>>Sender (A-Z)</option>
+                        <option value="sender-desc" <?php echo $sort === 'sender' && $order === 'desc' ? 'selected' : ''; ?>>Sender (Z-A)</option>
+                        <option value="subject-asc" <?php echo $sort === 'subject' && $order === 'asc' ? 'selected' : ''; ?>>Subject (A-Z)</option>
+                        <option value="subject-desc" <?php echo $sort === 'subject' && $order === 'desc' ? 'selected' : ''; ?>>Subject (Z-A)</option>
+                    </select>
+                </div>
+                <div class="col-md-2 ms-auto text-end">
+                    <button type="button" class="btn btn-outline-secondary" id="refresh-btn">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
 
+        <!-- Tab content -->
+        <div class="tab-content">
+            <!-- All Mail -->
+            <div class="tab-pane fade show active" id="all">
+                <div class="mail-content">
+                    <!-- Messages List -->
+                    <div class="card">
+                       <div class="card-body p-0">
+                           <!-- Table Header -->
+                           <div class="table-responsive">
+                               <table class="table table-hover mb-0">
+                                   <thead class="table-light">
+                                       <tr>
+                                           <th class="ps-3" style="width: 40px;">
+                                               <div class="form-check">
+                                                   <input class="form-check-input" type="checkbox" id="select-all">
+                                               </div>
+                                           </th>
+                                           <th style="width: 200px;">Sender</th>
+                                           <th>Subject</th>
+                                           <th class="text-end" style="width: 120px;">Date</th>
+                                       </tr>
+                                   </thead>
+                                   <tbody>
 
-echo '
-<!-- Messages List -->
-<div class="card">
-   <div class="card-body p-0">
-       <!-- Table Header -->
-       <div class="table-responsive">
-           <table class="table table-hover mb-0">
-               <thead class="table-light">
-                   <tr>
-                       <th class="ps-3" style="width: 40px;">
-                           <div class="form-check">
-                               <input class="form-check-input" type="checkbox" id="select-all">
-                           </div>
-                       </th>
-                       <th style="width: 200px;">
-                           <a href="?sort=sender&order=' . ($sort === 'sender' && $order === 'asc' ? 'desc' : 'asc') . '" 
-                              class="text-decoration-none text-dark ' . ($sort === 'sender' ? 'sort-active' : '') . '">
-                               Sender
-                               <i class="bi bi-arrow-' . ($order === 'asc' ? 'up' : 'down') . ' sort-icon"></i>
-                           </a>
-                       </th>
-                       <th>
-                           <a href="?sort=subject&order=' . ($sort === 'subject' && $order === 'asc' ? 'desc' : 'asc') . '" 
-                              class="text-decoration-none text-dark ' . ($sort === 'subject' ? 'sort-active' : '') . '">
-                               Subject
-                               <i class="bi bi-arrow-' . ($order === 'asc' ? 'up' : 'down') . ' sort-icon"></i>
-                           </a>
-                       </th>
-                       <th class="text-end" style="width: 120px;">
-                           <a href="?sort=date&order=' . ($sort === 'date' && $order === 'asc' ? 'desc' : 'asc') . '" 
-                              class="text-decoration-none text-dark ' . ($sort === 'date' ? 'sort-active' : '') . '">
-                               Date
-                               <i class="bi bi-arrow-' . ($order === 'asc' ? 'up' : 'down') . ' sort-icon"></i>
-                           </a>
-                       </th>
-                   </tr>
-               </thead>
-               <tbody>';
+<?php
 
 if (empty($messages)) {
    echo '<tr><td colspan="4" class="text-center">No messages found.</td></tr>';
@@ -210,12 +334,12 @@ if (empty($messages)) {
    }
 }
 
-echo '
-               </tbody>
-           </table>
-       </div>';
+?>
+                                   </tbody>
+                               </table>
+                           </div>
 
-
+<?php
 if ($total_pages > 1) {
    echo '
    <div class="d-flex justify-content-between align-items-center p-3 border-top">
@@ -276,28 +400,107 @@ if ($total_pages > 1) {
        </nav>
    </div>';
 }
-
-echo '
-       </div>
-   </div>
-</div>
-</div>
-   </div>
-</div>';
-
 ?>
-
+                       </div>
+                   </div>
+                </div>
+            </div>
+            
+            <!-- Unread Mail -->
+            <div class="tab-pane fade" id="unread">
+                <div class="mail-content">
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-envelope-exclamation" style="font-size: 3rem;"></i>
+                        <p class="mt-3">No unread messages</p>
+                        <p class="small">Your unread mail will appear here</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Read Mail -->
+            <div class="tab-pane fade" id="read">
+                <div class="mail-content">
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-envelope-open" style="font-size: 3rem;"></i>
+                        <p class="mt-3">No read messages</p>
+                        <p class="small">Your read mail will appear here</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Starred Mail -->
+            <div class="tab-pane fade" id="starred">
+                <div class="mail-content">
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-star" style="font-size: 3rem;"></i>
+                        <p class="mt-3">No starred messages</p>
+                        <p class="small">Star important messages to see them here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
+// Function to update sort order
+function updateSort(value) {
+    const [sortBy, sortOrder] = value.split('-');
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set('sort', sortBy);
+    searchParams.set('order', sortOrder);
+    window.location.search = searchParams.toString();
+}
+
+// Function to activate a tab by its target
+function activateTab(targetHash) {
+    // Remove active class from all tabs
+    document.querySelectorAll('.nav-tab-clean').forEach(function(t) {
+        t.classList.remove('active');
+    });
+
+    // Find and activate the tab with matching href
+    var targetTab = document.querySelector('.nav-tab-clean a[href="' + targetHash + '"]');
+    if (targetTab) {
+        targetTab.parentElement.classList.add('active');
+        
+        // Show corresponding content
+        document.querySelectorAll('.tab-pane').forEach(function(pane) {
+            pane.classList.remove('show', 'active');
+        });
+        var targetPane = document.querySelector(targetHash);
+        if (targetPane) {
+            targetPane.classList.add('show', 'active');
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Count unread messages
+    const unreadCount = document.querySelectorAll('.message-row.unread').length;
+    const unreadBadge = document.getElementById('unreadCount');
+    if (unreadBadge && unreadCount > 0) {
+        unreadBadge.textContent = unreadCount;
+        unreadBadge.style.display = 'inline-block';
+    }
+    
+    // Handle tab clicks
+    document.querySelectorAll('.nav-tab-clean a').forEach(function(tab) {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            var targetHash = this.getAttribute('href');
+            activateTab(targetHash);
+        });
+    });
+    
     // Message row click handler
     document.querySelectorAll('.message-row').forEach(row => {
-    row.addEventListener('click', function() {
-        const messageId = this.dataset.messageId;
-        const server = this.dataset.server;
-        window.location.href = `/myaccount/mail-read?id=${messageId}&server=${server}`;
+        row.addEventListener('click', function() {
+            const messageId = this.dataset.messageId;
+            const server = this.dataset.server;
+            window.location.href = `/myaccount/mail-read?id=${messageId}&server=${server}`;
+        });
     });
-});
 
     // Select all functionality
     const selectAllCheckbox = document.getElementById('select-all');

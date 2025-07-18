@@ -20,103 +20,240 @@ if (!$message) {
 // Get company info if available
 $company = !empty($message['company_id']) ? $app->getcompany($message['company_id']) : null;
 
-$additionalstyles .= '
-    <style>
-        .message-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-        }
-        .message-body {
-            white-space: pre-wrap;
-            font-family: inherit;
-        }
-        .company-logo {
-            width: 48px;
-            height: 48px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-       .message-frame {
-            width: 100%;
-            border: none;
-            height: calc(100vh - 600px); /* Adjust this value based on your header heights */
-            display: block;
-        }
-        .card-body {
-            height: calc(100vh - 600px); /* Make card body fill available space */
-            display: flex;
-            flex-direction: column;
-        }
-    </style>';
+$pagetitle = "Message - " . ($message['subject'] ?? 'Birthday Gold Mail');
+
+// Add v7 theme CSS and custom styles
+$additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
+<style>
+    .message-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .message-body {
+        white-space: pre-wrap;
+        font-family: inherit;
+    }
+    .company-logo {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .message-frame {
+        width: 100%;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        min-height: 500px;
+        display: block;
+    }
+    
+    /* Allow iframe to expand to content height */
+    .security-card-body {
+        padding: 1.5rem;
+        overflow: visible;
+    }
+    
+    /* Remove any height restrictions */
+    .message-frame {
+        height: auto;
+        min-height: 500px;
+    }
+    
+    /* Security Card Styles */
+    .security-card {
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 0;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .security-card-header {
+        padding: 1.5rem;
+        background: #e9ecef;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        gap: 1rem;
+    }
+    
+    .security-card-icon {
+        font-size: 2rem;
+        margin-right: 1rem;
+        color: #495057;
+    }
+    
+    .security-card-title {
+        display: flex;
+        align-items: center;
+        margin: 0;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+    
+    .security-card-title h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        color: #212529;
+        white-space: nowrap;
+    }
+    
+    .security-card-body {
+        padding: 1.5rem;
+    }
+    
+    .message-meta {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+    
+    .message-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+</style>';
 
 $bodycontentclass = '';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
 ?>
 
-<div class="container main-content mt-0 pt-0">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Message</h2>
-        <div>
-            <a href="/myaccount/mail-box" class="btn btn-outline-secondary me-2">
-                <i class="bi bi-arrow-left"></i> Back to Inbox
-            </a>
-            <button class="btn btn-outline-danger" id="delete-message" 
-            data-message-id="<?php echo $message_id; ?>"
-            data-server="<?php echo $mailserver; ?>">
-                <i class="bi bi-trash"></i> Delete
-            </button>
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-envelope-open me-3"></i>Message</h1>
+            <p class="lead mb-0">View your birthday reward message</p>
         </div>
     </div>
+</div>
 
-    <div class="card">
-        <div class="card-body">
-            <!-- Message Header -->
-            <div class="message-header p-3 mb-4">
-                <div class="d-flex align-items-center mb-3">
+<div class="container my-5">
+    <div class="container">
+        <!-- Message Actions Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <a href="/myaccount/mail-box" class="btn btn-outline-secondary" style="border-radius: 25px;">
+                <i class="bi bi-arrow-left me-2"></i>Back to Inbox
+            </a>
+            <div class="message-actions">
+                <button class="btn btn-primary" style="border-radius: 25px;" id="mark-unread-btn"
+                        data-message-id="<?php echo $message_id; ?>"
+                        data-server="<?php echo htmlspecialchars($mailserver); ?>">
+                    <i class="bi bi-envelope me-2"></i>Mark as Unread
+                </button>
+                <button class="btn btn-danger" style="border-radius: 25px;" id="delete-message" 
+                        data-message-id="<?php echo $message_id; ?>"
+                        data-server="<?php echo htmlspecialchars($mailserver); ?>">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
+            </div>
+        </div>
+        
+        <!-- Message Card -->
+        <div class="security-card">
+            <div class="security-card-header">
+                <div class="security-card-title">
                     <?php if (!empty($company['company_logo'])): ?>
                         <img src="<?php echo $display->companyimage($company['company_id'] . '/' . $company['company_logo']); ?>" 
                              class="company-logo me-3" alt="Company Logo">
                     <?php else: ?>
                         <div class="company-logo bg-secondary d-flex align-items-center justify-content-center me-3">
-                            <i class="bi bi-building text-white"></i>
+                            <i class="bi bi-cake text-white fs-2"></i>
                         </div>
                     <?php endif; ?>
                     <div>
-                        <h5 class="mb-1"><?php echo ($company['company_display_name'] ?? 'Unknown Sender'); ?></h5>
-                        <div class="text-muted">
+                        <h3><?php echo htmlspecialchars($company['company_display_name'] ?? 'Birthday Reward Provider'); ?></h3>
+                        <div class="message-meta mt-1">
                             <?php echo $display->formatdate($message['create_dt'], 'F j, Y g:i A'); ?>
                         </div>
                     </div>
                 </div>
-                <h4 class="mb-0"><?php echo $message['subject']; ?></h4>
             </div>
-<?
-/*
-            <!-- Message Body -->
-            <div class="message-body">
-            <?php echo $message['body']; ?>
+            <div class="security-card-body">
+                <h4 class="mb-3 fw-bold"><?php echo htmlspecialchars($message['subject']); ?></h4>
+                <?php
+                /*
+                <!-- Message Body -->
+                <div class="message-body">
+                <?php echo $message['body']; ?>
+                </div>
+                */
+                echo '
+                <!-- Message Body in iframe -->
+                <iframe class="message-frame" id="message-iframe" srcdoc="' . htmlspecialchars($message['body']) . '" onload="resizeIframe(this)"></iframe>
+                ';
+                ?>
             </div>
-*/
-echo '
-<!-- Message Body in iframe -->
-<iframe class="message-frame" srcdoc="' . htmlspecialchars($message['body']) . '"></iframe>
-';
-?>
         </div>
     </div>
 </div>
 
 
-</div>
-    </div>
-</div>
-
-
 <script>
+// Function to resize iframe to content height
+function resizeIframe(iframe) {
+    try {
+        // Wait for content to load
+        setTimeout(function() {
+            if (iframe.contentDocument && iframe.contentDocument.body) {
+                // Add some padding to account for margins
+                const contentHeight = iframe.contentDocument.body.scrollHeight + 20;
+                iframe.style.height = contentHeight + 'px';
+            }
+        }, 100);
+    } catch (e) {
+        console.log('Unable to resize iframe:', e);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Also try to resize iframe after DOM is ready
+    const iframe = document.getElementById('message-iframe');
+    if (iframe) {
+        resizeIframe(iframe);
+    }
+    
+    // Mark as unread handler
+    document.getElementById('mark-unread-btn').addEventListener('click', async function() {
+        const messageId = this.dataset.messageId;
+        const server = this.dataset.server;
+        
+        try {
+            const response = await fetch('/api/messages/bulk-action', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    action: 'mark-unread',
+                    messageIds: [messageId],
+                    server: server
+                })
+            });
+            
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                window.location.href = '/myaccount/mail-box';
+            } else {
+                throw new Error(result.message || 'Unknown error occurred');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while marking the message as unread');
+        }
+    });
+    
     // Delete message handler
     document.getElementById('delete-message').addEventListener('click', async function() {
         if (!confirm('Are you sure you want to delete this message?')) {
