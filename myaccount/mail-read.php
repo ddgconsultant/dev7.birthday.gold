@@ -3,18 +3,47 @@
 $addClasses[] = 'mail';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-$message_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$mailserver = isset($_GET['server']) ? $_GET['server'] : null;
+$message_id_encoded = isset($_GET['id']) ? $_GET['id'] : '';
+$mailserver_encoded = isset($_GET['server']) ? $_GET['server'] : '';
+
+// Decode the message ID
+try {
+    $message_id = $message_id_encoded ? $qik->decodeId($message_id_encoded) : 0;
+} catch (Exception $e) {
+    $errormessage = '<div class="alert alert-danger">Invalid message link. Please return to your inbox and try again.</div>';
+    $transferpage['url'] = '/myaccount/mail-box';
+    $transferpage['message'] = $errormessage;
+    $system->endpostpage($transferpage);
+}
+
+// Decode the mail server
+try {
+    $mailserver = $mailserver_encoded ? $qik->decodeId($mailserver_encoded) : null;
+} catch (Exception $e) {
+    $errormessage = '<div class="alert alert-danger">Invalid server parameter. Please return to your inbox and try again.</div>';
+    $transferpage['url'] = '/myaccount/mail-box';
+    $transferpage['message'] = $errormessage;
+    $system->endpostpage($transferpage);
+}
+
+// Convert 'default' back to null/empty for the API
+if ($mailserver === 'default') {
+    $mailserver = null;
+}
 
 if (!$message_id) {
-    header('Location: /myaccount/mail-box');
-    exit;
+    $errormessage = '<div class="alert alert-danger">Invalid message ID. Please try again.</div>';
+    $transferpage['url'] = '/myaccount/mail-box';
+    $transferpage['message'] = $errormessage;
+    $system->endpostpage($transferpage);
 }
 
 $message = $mail->getmessage($message_id, $mailserver);
 if (!$message) {
-    header('Location: /myaccount/mail-box');
-    exit;
+    $errormessage = '<div class="alert alert-warning">Unable to load message. The message may have been deleted or you may not have permission to view it.</div>';
+    $transferpage['url'] = '/myaccount/mail-box';
+    $transferpage['message'] = $errormessage;
+    $system->endpostpage($transferpage);
 }
 
 // Get company info if available
@@ -169,13 +198,13 @@ include($dir['core_components'] . '/bg_header.inc');
             </a>
             <div class="message-actions">
                 <button class="btn btn-primary" style="border-radius: 25px;" id="mark-unread-btn"
-                        data-message-id="<?php echo $message_id; ?>"
-                        data-server="<?php echo htmlspecialchars($mailserver); ?>">
+                        data-message-id="<?php echo htmlspecialchars($message_id_encoded); ?>"
+                        data-server="<?php echo htmlspecialchars($mailserver_encoded); ?>">
                     <i class="bi bi-envelope me-2"></i>Mark as Unread
                 </button>
                 <button class="btn btn-danger" style="border-radius: 25px;" id="delete-message" 
-                        data-message-id="<?php echo $message_id; ?>"
-                        data-server="<?php echo htmlspecialchars($mailserver); ?>">
+                        data-message-id="<?php echo htmlspecialchars($message_id_encoded); ?>"
+                        data-server="<?php echo htmlspecialchars($mailserver_encoded); ?>">
                     <i class="bi bi-trash me-2"></i>Delete
                 </button>
             </div>

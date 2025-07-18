@@ -5,7 +5,12 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Mail Inbox";
 
+// Security Note: Message IDs and mail server names are encoded using $qik->encodeId() 
+// when displayed in URLs and data attributes, then decoded when processing requests.
+// This prevents tampering with these sensitive values in client-side code.
 
+// Retrieve any messages from previous page (e.g., mail-read.php errors)
+$transferpagedata = $system->startpostpage();
 
 #-------------------------------------------------------------------------------
 # PREP VARIABLES
@@ -137,16 +142,223 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
         flex-wrap: nowrap;
     }
     
-    /* Mobile filter bar adjustments */
-    .filter-actions-row {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
+    /* Full width container on mobile */
+    .container {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        max-width: 100% !important;
     }
     
-    .filter-actions-row > * {
-        flex: 1;
+    /* Keep search container padded */
+    .search-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
+    
+    /* Tabs container adjustments */
+    .tabs-container {
+        margin-bottom: 0;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        border-bottom: none;
+    }
+    
+    /* Reduce tab padding and font on mobile */
+    .nav-tab-clean a {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8125rem;
+        letter-spacing: 0;
+    }
+    
+    /* Override desktop margin on mobile */
+    .nav-tab-clean {
+        margin-right: 0.5rem !important;
+    }
+    
+    /* Even less margin for settings tab */
+    .nav-tab-clean.settings-tab {
+        margin-left: 0.5rem;
+    }
+    
+    /* Hide tab icons on mobile to save space */
+    .nav-tab-clean a i:not(.bi-gear-fill) {
+        display: none;
+    }
+    
+    /* Collapsible filter bar on mobile */
+    .filter-bar {
+        position: relative;
+        transition: max-height 0.3s ease;
+        overflow: hidden;
+        margin: 0;
+        max-height: 500px; /* Enough for expanded content */
+        border-radius: 0;
+    }
+    
+    .filter-bar.collapsed {
+        max-height: 40px;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .filter-bar-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 40px;
+        background: #f8f9fa;
+        border: none;
+        border-top: 1px solid #dee2e6;
+        border-bottom: 1px solid #dee2e6;
+        cursor: pointer;
+        position: relative;
+        gap: 0.5rem;
+    }
+    
+    .filter-bar-toggle .filter-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-bar-toggle .handle {
+        width: 30px;
+        height: 3px;
+        background: #6c757d;
+        border-radius: 2px;
+        transition: transform 0.3s ease;
+    }
+    
+    .filter-bar.collapsed .filter-bar-toggle .handle {
+        transform: scaleY(1);
+    }
+    
+    .filter-bar:not(.collapsed) .filter-bar-toggle .handle {
+        transform: scaleY(1.5);
+    }
+    
+    .filter-content {
+        padding: 1rem;
+        background: #f8f9fa;
+    }
+    
+    /* Table and message list adjustments */
+    .card {
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+        margin-top: 0;
+    }
+    
+    .table {
+        margin-bottom: 0;
+    }
+    
+    /* Mobile message row styling */
+    .message-row {
+        background: white;
+        border: none;
+        border-bottom: 1px solid #e9ecef;
+        border-radius: 0;
+        margin-bottom: 0;
+    }
+    
+    .message-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .message-row td {
+        border: none;
+        position: relative;
+        padding: 0.75rem 1rem;
+    }
+    
+    /* Position checkbox on mobile */
+    .message-row td:first-child {
+        width: 40px;
+        vertical-align: top;
+        padding: 0.75rem 0.5rem 0.75rem 1rem !important;
+    }
+    
+    /* Mobile content cell - ensure it shows */
+    .message-row td.d-md-none {
+        padding: 0.75rem 1rem 0.75rem 0.5rem !important;
+        display: table-cell !important;
+    }
+    
+    /* Mobile compact layout */
+    .mobile-message-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+    
+    .mobile-company-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        min-width: 0; /* Allow truncation */
+        flex: 1; /* Take available space but allow date to show */
+    }
+    
+    .mobile-company-info span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .mobile-date {
+        font-size: 0.75rem;
+        color: #6c757d;
+        flex-shrink: 0;
+        margin-left: 0.5rem;
+    }
+    
+    .mobile-subject {
+        font-size: 0.9375rem;
+        line-height: 1.4;
+        font-weight: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Make unread subjects slightly bolder */
+    .unread .mobile-subject {
+        font-weight: 500;
+    }
+    
+    /* Mobile pagination layout */
+    .pagination-info {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .pagination-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin: 0;
+    }
+    
+    .pagination {
+        margin: 0;
+    }
+    
+    /* Smaller pagination buttons on mobile */
+    .pagination .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
 }
 
 /* Clean modern tab navigation - like Material Design */
@@ -160,8 +372,9 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
 /* Container for tabs and gear button */
 .tabs-container {
     border-bottom: 1px solid #e0e0e0;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
@@ -172,9 +385,21 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
     display: none;
 }
 
+/* Ensure tabs don\'t wrap on any screen size */
+.tabs-container .nav-tabs-clean {
+    flex-wrap: nowrap;
+    min-width: max-content;
+}
+
 .nav-tab-clean {
     position: relative;
-    margin-right: 3rem;
+    margin-right: 2rem;
+}
+
+@media (max-width: 768px) {
+    .nav-tab-clean {
+        margin-right: 1rem;
+    }
 }
 
 /* Remove margin for the settings gear */
@@ -231,6 +456,15 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
     border-radius: 10px;
 }
 
+@media (max-width: 768px) {
+    .tab-badge {
+        font-size: 10px;
+        padding: 1px 4px;
+        margin-left: 4px;
+        min-width: 16px;
+    }
+}
+
 /* Search bar styles - matching help page */
 .search-container {
     max-width: 600px;
@@ -274,6 +508,21 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
     padding: 1.5rem;
     border-radius: 12px;
     margin-bottom: 2rem;
+    margin-top: 0;
+}
+
+/* Hide filter toggle on desktop */
+.filter-bar-toggle {
+    display: none;
+}
+
+/* Remove collapsed state on desktop */
+@media (min-width: 769px) {
+    .filter-bar.collapsed {
+        max-height: none !important;
+        height: auto !important;
+        padding: 1.5rem !important;
+    }
 }
 
 /* Modern dropdown styles */
@@ -362,7 +611,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="container">
         <div class="text-center">
             <h1 class="mb-3"><i class="bi bi-envelope me-3"></i>Mail Inbox</h1>
-            <p class="lead mb-4">View and manage your birthday reward messages for <?php echo htmlspecialchars($current_user_data['feature_email_address']); ?></p>
+            <p class="lead mb-4">View and manage your birthday reward messages for <?php echo htmlspecialchars($current_user_data['feature_email'] ?? ''); ?></p>
         </div>
     </div>
 </div>
@@ -383,6 +632,12 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
         </form>
     </div>
+    
+    <?php if (!empty($transferpagedata['message'])): ?>
+        <div class="alert-container" style="max-width: 800px; margin: 2rem auto;">
+            <?php echo $transferpagedata['message']; ?>
+        </div>
+    <?php endif; ?>
 </div>
 
 <div class="container" style="margin-top: -1rem;">
@@ -424,33 +679,17 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         
         <!-- Filter Bar -->
-        <div class="filter-bar">
-            <!-- Mobile: Actions and Refresh on same row -->
-            <div class="d-block d-md-none filter-actions-row">
-                <div class="btn-group">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" id="bulkActionsBtnMobile" disabled>
-                        <i class="bi bi-check2-square me-1"></i> Actions
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item bulk-action" href="#" data-action="mark-read">
-                            <i class="bi bi-envelope-open me-2"></i>Mark as Read
-                        </a></li>
-                        <li><a class="dropdown-item bulk-action" href="#" data-action="mark-unread">
-                            <i class="bi bi-envelope me-2"></i>Mark as Unread
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item bulk-action text-danger" href="#" data-action="delete">
-                            <i class="bi bi-trash me-2"></i>Delete
-                        </a></li>
-                    </ul>
-                </div>
-                <button type="button" class="btn btn-outline-secondary" id="refresh-btn-mobile" style="border-radius: 25px;">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-                </button>
-            </div>
+        <div class="filter-bar collapsed" id="filterBar">
+            <!-- Mobile toggle button - must be at top -->
+            <button class="filter-bar-toggle d-md-none" onclick="toggleFilterBar()" type="button">
+                <span class="filter-label">Filter</span>
+                <div class="handle"></div>
+            </button>
             
-            <!-- Desktop and Mobile filters -->
-            <div class="row g-3 align-items-end">
+            <!-- Filter content wrapper -->
+            <div class="filter-content">
+                <!-- Desktop and Mobile filters -->
+                <div class="row g-3 align-items-end">
                 <div class="col-md-2 d-none d-md-block">
                     <div class="btn-group">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" id="bulkActionsBtn" disabled>
@@ -498,8 +737,33 @@ include($dir['core_components'] . '/bg_header.inc');
                         <i class="bi bi-arrow-clockwise me-1"></i>Refresh
                     </button>
                 </div>
-            </div>
-        </div>
+                </div>
+                
+                <!-- Mobile: Actions and Refresh below filters -->
+                <div class="d-flex d-md-none mt-3">
+                <div class="btn-group me-4">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" id="bulkActionsBtnMobile" disabled>
+                        <i class="bi bi-check2-square me-1"></i> Actions
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item bulk-action" href="#" data-action="mark-read">
+                            <i class="bi bi-envelope-open me-2"></i>Mark as Read
+                        </a></li>
+                        <li><a class="dropdown-item bulk-action" href="#" data-action="mark-unread">
+                            <i class="bi bi-envelope me-2"></i>Mark as Unread
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item bulk-action text-danger" href="#" data-action="delete">
+                            <i class="bi bi-trash me-2"></i>Delete
+                        </a></li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-outline-secondary" id="refresh-btn-mobile" style="border-radius: 25px;">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+                </div>
+            </div><!-- End filter-content -->
+        </div><!-- End filter-bar -->
 
         <!-- Tab content -->
         <div class="tab-content">
@@ -519,9 +783,10 @@ include($dir['core_components'] . '/bg_header.inc');
                                                    <input class="form-check-input" type="checkbox" id="select-all">
                                                </div>
                                            </th>
-                                           <th style="width: 200px;">Sender</th>
-                                           <th>Subject</th>
-                                           <th class="text-end" style="width: 120px;">Date</th>
+                                           <th colspan="3" class="d-md-none">Messages</th>
+                                           <th style="width: 200px;" class="d-none d-md-table-cell">Sender</th>
+                                           <th class="d-none d-md-table-cell">Subject</th>
+                                           <th class="text-end d-none d-md-table-cell" style="width: 120px;">Date</th>
                                        </tr>
                                    </thead>
                                    <tbody>
@@ -542,17 +807,17 @@ if (empty($messages)) {
 
        echo '
        <tr class="message-row ' . ($is_unread ? 'unread' : '') . '" 
-           data-message-id="' . $message['message_id'] . '"
-         data-server="' . htmlspecialchars($message['host'] ?? '') . '"
+           data-message-id="' . $qik->encodeId($message['message_id']) . '"
+         data-server="' . htmlspecialchars($qik->encodeId($message['host'] ?? 'default')) . '"
          >
            <td class="ps-3">
                <div class="form-check">
                    <input class="form-check-input message-checkbox" type="checkbox" 
-                          value="' . $message['message_id'] . '" 
+                          value="' . $qik->encodeId($message['message_id']) . '" 
 >
                </div>
            </td>
-           <td class="sender-col">
+           <td class="sender-col d-none d-md-table-cell">
                <div class="d-flex align-items-center">';
        
        if (!empty($company['company_logo'])) {
@@ -565,17 +830,41 @@ if (empty($messages)) {
        }
        
        echo '<span class="text-truncate ' . ($is_unread ? 'fw-bold' : '') . '">
-               ' . htmlspecialchars($company['company_display_name'] ?? 'Reward Provider') . '
+               ' . htmlspecialchars($company["company_display_name"] ?? "Reward Provider") . '
              </span>
                </div>
            </td>
-           <td>
+           <td class="d-none d-md-table-cell">
                <span class="' . ($is_unread ? 'fw-bold' : '') . '">
                    ' . htmlspecialchars($message['subject']) . '
                </span>
            </td>
-           <td class="text-end date-col ' . ($is_unread ? 'fw-bold' : '') . '">
+           <td class="text-end date-col d-none d-md-table-cell ' . ($is_unread ? 'fw-bold' : '') . '">
                ' . $formatted_date . '
+           </td>
+           <!-- Mobile layout -->
+           <td class="d-md-none" colspan="3">
+               <div class="mobile-message-header">
+                   <div class="mobile-company-info">';
+       
+       if (!empty($company['company_logo'])) {
+           echo '<img src="' . $display->companyimage($company['company_id'] . '/' . $company['company_logo']) . '" 
+                     class="company-logo" alt="Company Logo">';
+       } else {
+           echo '<div class="company-logo bg-secondary d-flex align-items-center justify-content-center">
+                   <i class="bi bi-cake text-white"></i>
+                 </div>';
+       }
+       
+       echo '<span class="' . ($is_unread ? '' : '') . '">
+                       ' . htmlspecialchars($company["company_display_name"] ?? "Reward Provider") . '
+                   </span>
+                   </div>
+                   <span class="mobile-date ' . ($is_unread ? 'fw-bold' : '') . '">' . $formatted_date . '</span>
+               </div>
+               <div class="mobile-subject ' . ($is_unread ? 'unread' : '') . '">
+                   ' . htmlspecialchars($message['subject']) . '
+               </div>
            </td>
        </tr>';
    }
@@ -589,8 +878,8 @@ if (empty($messages)) {
 <?php
 if ($total_pages > 1) {
    echo '
-   <div class="d-flex justify-content-between align-items-center p-3 border-top">
-       <div class="text-muted">
+   <div class="pagination-info">
+       <div class="pagination-text">
            Showing ' . (($page - 1) * $per_page + 1) . ' to ' . 
            min($page * $per_page, $total_messages) . ' of ' . 
            $total_messages . ' messages
@@ -691,6 +980,12 @@ if ($total_pages > 1) {
 </div>
 
 <script>
+// Toggle filter bar on mobile
+function toggleFilterBar() {
+    const filterBar = document.getElementById('filterBar');
+    filterBar.classList.toggle('collapsed');
+}
+
 // Function to update sort order
 function updateSort(value) {
     const [sortBy, sortOrder] = value.split('-');
@@ -737,6 +1032,14 @@ function activateTab(targetHash) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure filter bar starts collapsed on mobile
+    if (window.innerWidth < 768) {
+        const filterBar = document.getElementById('filterBar');
+        if (filterBar && !filterBar.classList.contains('collapsed')) {
+            filterBar.classList.add('collapsed');
+        }
+    }
+    
     // Count unread messages
     const unreadCount = document.querySelectorAll('.message-row.unread').length;
     const unreadBadge = document.getElementById('unreadCount');
@@ -762,6 +1065,9 @@ document.addEventListener('DOMContentLoaded', function() {
         contentCells.forEach(cell => {
             cell.style.cursor = 'pointer';
             cell.addEventListener('click', function(e) {
+                // Don't navigate if clicking on a checkbox
+                if (e.target.type === 'checkbox') return;
+                
                 const messageId = row.dataset.messageId;
                 const server = row.dataset.server;
                 window.location.href = `/myaccount/mail-read?id=${messageId}&server=${server}`;
