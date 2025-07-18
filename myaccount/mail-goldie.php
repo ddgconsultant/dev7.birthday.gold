@@ -273,10 +273,6 @@ include($dir['core_components'] . '/bg_header.inc');
                     <p class="lead mb-0">AI-powered insights into your birthday rewards</p>
                 </div>
             </div>
-            <!-- Regular Inbox button positioned outside the centering flow -->
-            <a href="/myaccount/mail-box" class="btn btn-outline-light" style="position: absolute; top: 50%; right: 2rem; transform: translateY(-50%); border-radius: 25px;">
-                <i class="bi bi-envelope me-2"></i>Regular Inbox
-            </a>
         </div>
     </div>
 </div>
