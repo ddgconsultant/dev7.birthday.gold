@@ -173,6 +173,7 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
 $bodycontentclass = '';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+
 ?>
 
 <!-- Content Header Dark Section -->
@@ -193,6 +194,26 @@ include($dir['core_components'] . '/bg_header.inc');
                 <i class="bi bi-arrow-left me-2"></i>Back to Inbox
             </a>
             <div class="message-actions">
+        
+            <?php
+if (!empty($message['message_id']) && !empty($message['user_id']) && !empty($message['mailserver'])) {
+  $test_url = '/test_ai_summary_page.php?message_id=' . urlencode($message['message_id']) .
+              '&user_id=' . urlencode($message['user_id']) .
+              '&_token='.$display->input_csrftoken('tokenonly').
+              '&mail_server=' . urlencode($message['mailserver']);
+
+  echo '
+    <a href="' . $test_url . '" target="_blank">
+      <button class="btn btn-warning" style="border-radius: 25px;" id="test-summary-btn"
+        data-message-id="' . htmlspecialchars($message['message_id']) . '"
+        data-server="' . htmlspecialchars($message['mailserver']) . '">
+        <i class="bi bi-magic me-2"></i>Test AI Summary
+      </button>
+    </a>
+  ';
+}
+?>
+
                 <button class="btn btn-primary" style="border-radius: 25px;" id="mark-unread-btn"
                         data-message-id="<?php echo htmlspecialchars($message_id_encoded); ?>"
                         data-server="<?php echo htmlspecialchars($mailserver_encoded); ?>">

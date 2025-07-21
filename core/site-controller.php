@@ -476,7 +476,15 @@ foreach ($classes as $class) {
         $ai = new AI($system, $sitesettings_ai);
         #  $$className = AI::getInstance($sitesettings_ai['ai']);
         break;
+      // -----------------------------------------
+      case 'image':
+        $$className = new $className($system, $database);
+        break;
 
+              // -----------------------------------------
+      case 'product':
+        $$className = new $className($database, $qik, $website['plan_version']);
+        break;
       // -----------------------------------------
       default:
         $$className = new $className($classConfig);
@@ -488,11 +496,6 @@ foreach ($classes as $class) {
   }
 }
 
-# ##--------------------------------------------------------------------------------------------------------------------------------------------------
-# ## INSTANTIATE CORE PRODUCT CLASS
-############################
-// Always instantiate the Product class for site-wide use with current plan version
-$product = new Product($database, $qik, $website['plan_version']);
 
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 # ## SITE WIDE VARIABLES 

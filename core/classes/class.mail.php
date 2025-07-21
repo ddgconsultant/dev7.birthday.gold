@@ -13,13 +13,12 @@ class Mail
 {
 
   protected $mail;
+  protected $incomingmailserversdb;
 
   public function __construct($mailConfig)
   {
 
     // Create a new PHPMailer instance
-
-
     $this->mail = new PHPMailer();
 
     // Set mail server configuration
@@ -32,8 +31,20 @@ class Mail
     if (!empty($mailConfig['MAIL_ENCRYPTION'])) {
       $this->mail->SMTPSecure = $mailConfig['MAIL_ENCRYPTION'];
     }
-
     $this->mail->Port = $mailConfig['MAIL_PORT'];
+
+    
+
+    // Ddfine list of incoming mail servers
+    global $sitesettings;
+    $config = $sitesettings['database_admin'];
+    $this->incomingmailserversdb = [
+        'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
+        'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
+     #   ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4']
+    ];
+
+
   }
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
@@ -452,20 +463,15 @@ Regards,<br>birthday.gold
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function mailcount($user_id, $type = 'unread', $limit = 0)
 {
-    global $sitesettings;
-    $config = $sitesettings['database_admin'];
-    $servers = [
-        ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
-        ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
-        ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4']
-    ];
+
+    $servers = $this->incomingmailserversdb;
 
     $totalCount = 0;
     $message = [];
     $criteria = ($type === 'user') ? ' AND company_id != 0 AND company_id IS NOT NULL ' : '';
 
     // Loop through each server
-    foreach ($servers as $serverConfig) {
+    foreach ($servers as $mailsvrlabel => $serverConfig) {
         try {
             // Create PDO connection
             $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
@@ -473,7 +479,7 @@ Regards,<br>birthday.gold
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // Prepare SQL query
-            $sql = "SELECT COUNT(*) as cnt FROM messages WHERE user_id = :user_id" . $criteria;
+            $sql = "SELECT COUNT(*) as cnt FROM messages WHERE user_id = :user_id and processstatus not in ('delete' ,'expired') " . $criteria;
             if ($limit > 0) {
                 $sql .= " LIMIT :limit";
             }
@@ -529,7 +535,130 @@ Regards,<br>birthday.gold
 
 
 
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 
+  public function getMessagesToExtract($limit = 100)
+  {
+      $servers = $this->incomingmailserversdb;
+      $results = [];
+      $debug = [];
+  
+      foreach ($servers as $mailsvrlabel => $serverConfig) {
+          try {
+              $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+              $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+              $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  
+              $processToken = 'extracting_' . mt_rand(10000, 99999);
+  
+              // Update rows to lock them
+              $updateSQL = '
+                  UPDATE messages
+                  SET processstatus = :token, modify_dt = NOW()
+                  WHERE processstatus = "new" AND extract IS NULL
+                  ORDER BY create_dt DESC
+                  LIMIT :limit
+              ';
+              $updateStmt = $pdo->prepare($updateSQL);
+              $updateStmt->bindValue(':token', $processToken);
+              $updateStmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+              $updateStmt->execute();
+              $updatedRows = $updateStmt->rowCount();
+  
+              // Select the rows just updated
+              $selectSQL = '
+                  SELECT message_id, body, mailserver
+                  FROM messages
+                  WHERE processstatus = :token
+              ';
+              $selectStmt = $pdo->prepare($selectSQL);
+              $selectStmt->bindValue(':token', $processToken);
+              $selectStmt->execute();
+              $fetchedRows = $selectStmt->fetchAll(PDO::FETCH_ASSOC);
+              $fetchCount = count($fetchedRows);
+  
+              // Merge into main results
+              $results = array_merge($results, $fetchedRows);
+  
+              // Collect debug info per server
+              $debug[] = [
+                  'host' => $serverConfig['DB_HOST'],
+                  'db'   => $serverConfig['DB_DATABASE'],
+                  'token' => $processToken,
+                  'updated' => $updatedRows,
+                  'selected' => $fetchCount,
+                  'update_query' => trim($updateSQL),
+                  'select_query' => trim($selectSQL)
+              ];
+  
+          } catch (PDOException $e) {
+              error_log("getMessagesToExtract DB error [{$serverConfig['DB_HOST']}]: " . $e->getMessage());
+              $debug[] = [
+                  'host' => $serverConfig['DB_HOST'],
+                  'db'   => $serverConfig['DB_DATABASE'],
+                  'error' => $e->getMessage()
+              ];
+          }
+      }
+  
+      return [
+          'messages' => $results,
+          'debug' => $debug
+      ];
+  }
+  
+  
+
+
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function updateExtractField($message_id, $mailserver, $text) {
+
+  $servers = $this->incomingmailserversdb;
+
+  if (!isset($servers[$mailserver])) return false;
+$serverConfig = $servers[$mailserver];
+  try {
+    $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+    $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $pdo->prepare('UPDATE messages SET `extract` = :extract, processstatus="extracted", modify_dt=now() WHERE message_id = :message_id');
+    $stmt->execute([
+      ':extract' => $text,
+      ':message_id' => $message_id
+    ]);
+
+    return true;
+  } catch (PDOException $e) {
+    error_log("updateExtractField DB error [{$mailserver}]: " . $e->getMessage());
+    return false;
+  }
+}
+
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
+  public function expireMessage($message_id, $mailserver) {
+    $servers = $this->incomingmailserversdb;
+
+    if (!isset($servers[$mailserver])) return false;
+  $serverConfig = $servers[$mailserver];
+    try {
+      $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+      $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+      $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  
+      $stmt = $pdo->prepare('UPDATE messages SET expire_dt = DATE_SUB(NOW(), INTERVAL 1 DAY) WHERE message_id = :id');
+      $stmt->execute([':id' => $message_id]);
+  
+      return true;
+    } catch (PDOException $e) {
+      error_log("expireMessage DB error [{$mailserver}]: " . $e->getMessage());
+      return false;
+    }
+  }
+  
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function getMessageList($user_id, $type = 'user', $params = []) {
@@ -547,7 +676,7 @@ Regards,<br>birthday.gold
     if (!in_array($order, ['ASC', 'DESC'])) {
         $order = 'DESC';
     }
-
+/*
     global $sitesettings;
     $config = $sitesettings['database_admin'];
     $servers = [
@@ -555,23 +684,27 @@ Regards,<br>birthday.gold
         ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
         ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4']
     ];
+*/
 
+$servers = $this->incomingmailserversdb;
     $allMessages = [];
     $hostCounts = [];
     $criteria = !empty($search) ? ' AND (subject LIKE :search OR message_body LIKE :search) ' : '';
 
-    foreach ($servers as $config) {
+    foreach ($servers as $mailsvrlabel => $serverConfig) {
         try {
-            $dsn = "mysql:host={$config['DB_HOST']};dbname={$config['DB_DATABASE']};charset={$config['DB_CHARSET']}";
-            $pdo = new PDO($dsn, $config['DB_USERNAME'], $config['DB_PASSWORD']);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+          $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+          $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+          $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+       
             
-            error_log("Connected to {$config['DB_HOST']} - {$config['DB_DATABASE']}");
+            error_log("Connected to {$serverConfig['DB_HOST']} - {$serverConfig['DB_DATABASE']}");
 
             // Add LIMIT 2000 to each query to prevent overload
             $sql = "SELECT @@hostname AS host, message_id, company_id, subject, create_dt, processstatus 
                     FROM messages 
-                    WHERE user_id = :user_id and processstatus !='delete' $criteria 
+                    WHERE user_id = :user_id and processstatus not in ('delete', 'expired')  $criteria 
                     ORDER BY `$sort` $order 
                     LIMIT 2000";
 
@@ -583,20 +716,20 @@ Regards,<br>birthday.gold
                 $queryParams['search'] = '%' . $search . '%';
             }
             
-            error_log("Query: $sql");
-            error_log("Params: " . json_encode($queryParams));
+           # error_log("Query: $sql");
+        #    error_log("Params: " . json_encode($queryParams));
             
             $stmt->execute($queryParams);
             $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            error_log("Found " . count($messages) . " messages in {$config['DB_HOST']}");
+           # error_log("Found " . count($messages) . " messages in {$serverConfig['DB_HOST']}");
 
-            $hostKey = $config['DB_HOST'] . '|' . $config['DB_DATABASE'];
+            $hostKey = $serverConfig['DB_HOST'] . '|' . $serverConfig['DB_DATABASE'];
             $hostCounts[$hostKey] = count($messages);
             $allMessages = array_merge($allMessages, $messages);
             
         } catch (PDOException $e) {
-            error_log("Database error on {$config['DB_HOST']}: " . $e->getMessage());
+            error_log("Database error on {$serverConfig['DB_HOST']}: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
         }
     }
@@ -622,7 +755,7 @@ Regards,<br>birthday.gold
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function getmessage_old($id)
   {
-  
+  /*
     global $sitesettings;
     $config = $sitesettings['database_admin'];
     $servers = [
@@ -630,18 +763,20 @@ Regards,<br>birthday.gold
         ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
         ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4']
     ];
+*/
 
+$servers = $this->incomingmailserversdb;
     $allMessages = [];
     $hostCounts = [];
     $criteria = !empty($search) ? ' AND (subject LIKE :search OR message_body LIKE :search) ' : '';
 
-    foreach ($servers as $config) {
+    foreach ($servers as $mailsvrlabel => $serverConfig) {
         try {
-            $dsn = "mysql:host={$config['DB_HOST']};dbname={$config['DB_DATABASE']};charset={$config['DB_CHARSET']}";
-            $pdo = new PDO($dsn, $config['DB_USERNAME'], $config['DB_PASSWORD']);
+            $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
-            error_log("Connected to {$config['DB_HOST']} - {$config['DB_DATABASE']}");
+            error_log("Connected to {$serverConfig['DB_HOST']} - {$serverConfig['DB_DATABASE']}");
 
 
       $stmt = $pdo->prepare('SELECT * FROM messages WHERE message_id = :message_id');
@@ -671,25 +806,10 @@ Regards,<br>birthday.gold
   
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function getmessage($message_id, $mailserver = null) {
-    global $sitesettings;
-    $config = $sitesettings['database_admin'];
+    $servers = $this->incomingmailserversdb;
 
-    // Map server names to full configurations
-    $servers = [
-        'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver'],
-        'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver'],
-        'xfer' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer']
-    ];
-
-    // If mailserver is specified, only query that server
-    if ($mailserver && isset($servers[$mailserver])) {
-        $serverConfig = $servers[$mailserver];
-        $serverConfig = array_merge($serverConfig, [
-            'DB_USERNAME' => 'birthday_gold_admin',
-            'DB_PASSWORD' => $config['password'],
-            'DB_CHARSET' => 'utf8mb4'
-        ]);
-        
+    if (!isset($servers[$mailserver])) return false;
+  $serverConfig = $servers[$mailserver];
         try {
             $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
             $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
@@ -709,121 +829,100 @@ Regards,<br>birthday.gold
             error_log("Database error: " . $e->getMessage());
             return null;
         }
-    }
+  
 
     return null;
 }
 
-  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
-  # Mark message as read
-  public function markMessageRead($message_id, $user_id, $mailserver = null) {
-    global $sitesettings;
-    $config = $sitesettings['database_admin'];
-    
-    // Map server names to full configurations
-    $servers = [
-        'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver'],
-        'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver'],
-        'xfer' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer']
-    ];
-    
-    // Default to all servers if none specified
-    $serverList = $mailserver && isset($servers[$mailserver]) ? [$mailserver => $servers[$mailserver]] : $servers;
-    
-    foreach ($serverList as $serverName => $serverConfig) {
-        $serverConfig = array_merge($serverConfig, [
-            'DB_USERNAME' => 'birthday_gold_admin',
-            'DB_PASSWORD' => $config['password'],
-            'DB_CHARSET' => 'utf8mb4'
-        ]);
-        
-        try {
-            $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
-            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            
-            // First verify the message belongs to the user
-            $stmt = $pdo->prepare('SELECT user_id FROM messages WHERE message_id = :message_id');
-            $stmt->execute(['message_id' => $message_id]);
-            $message = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($message && $message['user_id'] == $user_id) {
-                // Update the status
-                $stmt = $pdo->prepare('UPDATE messages SET processstatus = "read" WHERE message_id = :message_id');
-                $stmt->execute(['message_id' => $message_id]);
-                return true;
-            }
-        } catch (PDOException $e) {
-            error_log("Database error in markMessageRead: " . $e->getMessage());
-            continue;
-        }
-    }
-    
-    return false;
+
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+# Mark message as read
+public function markMessageRead($message_id, $user_id, $mailserver = null) {
+  $servers = $this->incomingmailserversdb;
+
+  // If a mailserver is provided and exists, limit to just that one
+  $serverList = ($mailserver && isset($servers[$mailserver]))  ? [$mailserver => $servers[$mailserver]]  : $servers;
+
+      foreach ($serverList as $mailsvrlabel => $serverConfig) {
+      try {
+          $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+          $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+          $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+          // Step 1: Check if the message belongs to the user
+          $stmt = $pdo->prepare('SELECT user_id FROM messages WHERE message_id = :message_id');
+          $stmt->execute([':message_id' => $message_id]);
+          $message = $stmt->fetch(PDO::FETCH_ASSOC);
+
+          if ($message && $message['user_id'] == $user_id) {
+              // Step 2: Update processstatus to 'read'
+              $stmt = $pdo->prepare('UPDATE messages SET processstatus = "read", modify_dt = NOW() WHERE message_id = :message_id');
+              $stmt->execute([':message_id' => $message_id]);
+              return true;
+          }
+
+      } catch (PDOException $e) {
+          error_log("markMessageRead DB error [{$mailsvrlabel}]: " . $e->getMessage());
+          continue;
+      }
   }
+
+  return false;
+}
+
+
   
-  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
-  # Mark message as unread
-  public function markMessageUnread($message_id, $user_id, $mailserver = null) {
-    global $sitesettings;
-    $config = $sitesettings['database_admin'];
-    
-    // Map server names to full configurations
-    $servers = [
-        'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver'],
-        'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver'],
-        'xfer' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer']
-    ];
-    
-    // Default to all servers if none specified
-    $serverList = $mailserver && isset($servers[$mailserver]) ? [$mailserver => $servers[$mailserver]] : $servers;
-    
-    foreach ($serverList as $serverName => $serverConfig) {
-        $serverConfig = array_merge($serverConfig, [
-            'DB_USERNAME' => 'birthday_gold_admin',
-            'DB_PASSWORD' => $config['password'],
-            'DB_CHARSET' => 'utf8mb4'
-        ]);
-        
-        try {
-            $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
-            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            
-            // First verify the message belongs to the user
-            $stmt = $pdo->prepare('SELECT user_id FROM messages WHERE message_id = :message_id');
-            $stmt->execute(['message_id' => $message_id]);
-            $message = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($message && $message['user_id'] == $user_id) {
-                // Update the status
-                $stmt = $pdo->prepare('UPDATE messages SET processstatus = "unread" WHERE message_id = :message_id');
-                $stmt->execute(['message_id' => $message_id]);
-                return true;
-            }
-        } catch (PDOException $e) {
-            error_log("Database error in markMessageUnread: " . $e->getMessage());
-            continue;
-        }
-    }
-    
-    return false;
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+# Mark message as read
+public function markMessageUnread($message_id, $user_id, $mailserver = null) {
+  $servers = $this->incomingmailserversdb;
+
+  // If a mailserver is provided and exists, limit to just that one
+  $serverList = ($mailserver && isset($servers[$mailserver]))  ? [$mailserver => $servers[$mailserver]]  : $servers;
+
+      foreach ($serverList as $mailsvrlabel => $serverConfig) {
+      try {
+          $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+          $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+          $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+          // Step 1: Check if the message belongs to the user
+          $stmt = $pdo->prepare('SELECT user_id FROM messages WHERE message_id = :message_id');
+          $stmt->execute([':message_id' => $message_id]);
+          $message = $stmt->fetch(PDO::FETCH_ASSOC);
+
+          if ($message && $message['user_id'] == $user_id) {
+              // Step 2: Update processstatus to 'read'
+              $stmt = $pdo->prepare('UPDATE messages SET processstatus = "unread", modify_dt = NOW() WHERE message_id = :message_id');
+              $stmt->execute([':message_id' => $message_id]);
+              return true;
+          }
+
+      } catch (PDOException $e) {
+          error_log("markMessageUnread DB error [{$mailsvrlabel}]: " . $e->getMessage());
+          continue;
+      }
   }
+
+  return false;
+}
+
   
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   # Get messages for AI summary within date range
   public function getMessagesForAI($user_id, $start_date, $end_date) {
-    global $sitesettings;
+   /* global $sitesettings;
     $config = $sitesettings['database_admin'];
     $servers = [
         ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
         ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
         ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4']
     ];
-    
+    */
     $allMessages = [];
     
-    foreach ($servers as $serverConfig) {
+    $servers = $this->incomingmailserversdb;
+    foreach ($servers as $label => $serverConfig) {
         try {
             $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
             $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
@@ -833,7 +932,7 @@ Regards,<br>birthday.gold
             $sql = "SELECT message_id, company_id, subject, body, create_dt, processstatus 
                     FROM messages 
                     WHERE user_id = :user_id 
-                    AND processstatus != 'delete' 
+                    AND processstatus not in ( 'delete' , 'expired' )
                     AND create_dt >= :start_date 
                     AND create_dt <= :end_date
                     ORDER BY create_dt DESC
@@ -866,26 +965,19 @@ Regards,<br>birthday.gold
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   # Delete message
   public function deleteMessage($message_id, $user_id, $mailserver = null) {
-    global $sitesettings;
-    $config = $sitesettings['database_admin'];
-    
-    // Map server names to full configurations
-    $servers = [
-        'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver'],
-        'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver'],
-        'xfer' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer']
-    ];
-    
-    // Default to all servers if none specified
-    $serverList = $mailserver && isset($servers[$mailserver]) ? [$mailserver => $servers[$mailserver]] : $servers;
-    
-    foreach ($serverList as $serverName => $serverConfig) {
-        $serverConfig = array_merge($serverConfig, [
+    $servers = $this->incomingmailserversdb;
+
+    // If a mailserver is provided and exists, limit to just that one
+    $serverList = ($mailserver && isset($servers[$mailserver]))  ? [$mailserver => $servers[$mailserver]]  : $servers;
+  
+        foreach ($serverList as $mailsvrlabel => $serverConfig) {
+   
+    /*    $serverConfig = array_merge($serverConfig, [
             'DB_USERNAME' => 'birthday_gold_admin',
             'DB_PASSWORD' => $config['password'],
             'DB_CHARSET' => 'utf8mb4'
         ]);
-        
+        */
         try {
             $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
             $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
@@ -909,6 +1001,252 @@ Regards,<br>birthday.gold
     }
     
     return false;
+  }
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  # Get all users who have messages for a specific date
+  public function getUsersWithMessagesForDate($date) {
+  /*
+    global $sitesettings, $database;
+    $config = $sitesettings['database_admin'];
+    $servers = [
+        ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
+        ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
+        ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4']
+    ];
+    */
+    $allUsers = [];
+    $userMessageCounts = [];
+    $servers = $this->incomingmailserversdb;
+
+    foreach ($servers as $mailserver => $serverConfig) {
+        try {
+            $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // Get distinct users with message counts for this date
+            $sql = "SELECT user_id, COUNT(*) as message_count 
+                    FROM messages 
+                    WHERE DATE(create_dt) = :date
+                    AND processstatus != 'delete'
+                    GROUP BY user_id";
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(['date' => $date]);
+            
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $user_id = $row['user_id'];
+                if (!isset($userMessageCounts[$user_id])) {
+                    $userMessageCounts[$user_id] = 0;
+                }
+                $userMessageCounts[$user_id] += $row['message_count'];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Database error in getUsersWithMessagesForDate: " . $e->getMessage());
+            continue;
+        }
+    }
+    
+    // Now get user details from bg_mail_users table on mail servers
+    if (!empty($userMessageCounts)) {
+        $userIds = array_keys($userMessageCounts);
+        $userEmails = [];
+        
+        // Query each mail server for user emails
+        foreach ($servers as $serverConfig) {
+            try {
+                $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
+                $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
+                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                
+                $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+                
+                $sql = "SELECT user_id, feature_email 
+                        FROM bg_mail_users 
+                        WHERE user_id IN ($placeholders) 
+                        AND status = 'active'";
+                
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($userIds);
+                
+                while ($user = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $user_id = $user['user_id'];
+                    if (!isset($userEmails[$user_id])) {
+                        $userEmails[$user_id] = $user['feature_email'];
+                    }
+                }
+                
+            } catch (PDOException $e) {
+                error_log("Database error getting user emails: " . $e->getMessage());
+                continue;
+            }
+        }
+        
+        // Build final user list with emails
+        foreach ($userMessageCounts as $user_id => $message_count) {
+            if (isset($userEmails[$user_id])) {
+                $allUsers[] = [
+                    'user_id' => $user_id,
+                    'email' => $userEmails[$user_id],
+                    'message_count' => $message_count
+                ];
+            }
+        }
+    }
+    
+    return $allUsers;
+  }
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function summarizeDailyMessages($user_id, $date) {
+    global $database, $ai, $app;
+    
+    // Validate date format
+    $date = date('Y-m-d', strtotime($date));
+    
+    // Get messages for that specific date
+    $messages_results = $this->getMessagesForAI($user_id, $date, $date);
+    $messages = $messages_results['messages'] ?? [];
+    
+    if (empty($messages)) {
+      return [
+        'success' => false,
+        'error' => 'No messages found for this date'
+      ];
+    }
+    
+    // Set up AI if available
+    if (!isset($ai) || !is_object($ai)) {
+      return [
+        'success' => false,
+        'error' => 'AI service not available'
+      ];
+    }
+    
+    try {
+      $ai->setEngine('anthropic_goldie', 'text');
+      
+      // Collect company info and message details
+      $companies = [];
+      $message_texts = [];
+      $message_ids = [];
+      
+      foreach ($messages as $message) {
+        $message_ids[] = $message['message_id'];
+        
+        if (!empty($message['company_id'])) {
+          $company = $app->getcompany($message['company_id']);
+          if ($company) {
+            $companies[$message['company_id']] = $company['company_display_name'] ?? 'Unknown';
+          }
+        }
+        
+        // Extract content from messages
+        $body_text = strip_tags($message['body'] ?? '');
+        $body_preview = substr($body_text, 0, 500);
+        
+        $message_texts[] = "Company: " . ($companies[$message['company_id']] ?? 'Unknown') . 
+                          "\nSubject: " . $message['subject'] . 
+                          "\nContent: " . $body_preview;
+      }
+      
+      $prompt = "Analyze these birthday reward emails from " . date('F j, Y', strtotime($date)) . 
+                " and provide:\n" .
+                "1. A brief, friendly summary of all offers (2-3 sentences)\n" .
+                "2. Extract specific offers with details on what the deal is and how to redeem it\n\n" .
+                "Messages:\n" . implode("\n---\n", $message_texts) . "\n\n" .
+                "Format the response as:\n" .
+                "SUMMARY: [your 2-3 sentence summary]\n" .
+                "OFFERS:\n" .
+                "- [Company Name]: [Specific offer and redemption details]\n" .
+                "- [Company Name]: [Specific offer and redemption details]";
+      
+      $response = $ai->process([
+        ['role' => 'system', 'content' => 'You are Goldie, a helpful assistant that analyzes birthday reward emails. Focus on extracting specific offers, discounts, and redemption instructions. Be concise but include important details like discount amounts, free items, and how to claim rewards.'],
+        ['role' => 'user', 'content' => $prompt]
+      ], [
+        'temperature' => 0.7,
+        'max_tokens' => 500
+      ]);
+      
+      $normalizedResponse = $ai->getNormalizedResponse($response);
+      $ai_response = $normalizedResponse['content'];
+      
+      // Parse the AI response
+      $summary_text = '';
+      $offers = [];
+      
+      if (preg_match('/SUMMARY:\s*(.+?)(?=OFFERS:|$)/si', $ai_response, $matches)) {
+        $summary_text = trim($matches[1]);
+      }
+      
+      if (preg_match('/OFFERS:\s*(.+)/si', $ai_response, $matches)) {
+        $offers_section = $matches[1];
+        if (preg_match_all('/[-•]\s*([^:]+):\s*([^\n]+)/i', $offers_section, $offer_matches, PREG_SET_ORDER)) {
+          foreach ($offer_matches as $offer_match) {
+            $offers[] = [
+              'company' => trim($offer_match[1]),
+              'offer' => trim($offer_match[2]),
+              'action' => 'Click to view in inbox'
+            ];
+          }
+        }
+      }
+      
+      // If parsing failed, use the whole response as summary
+      if (empty($summary_text) && !empty($ai_response)) {
+        $summary_text = $ai_response;
+      }
+      
+      // If still no summary, create a basic one
+      if (empty($summary_text)) {
+        $summary_text = "You have " . count($messages) . " birthday rewards from " . count($companies) . " companies. Check your inbox for details.";
+      }
+      
+      // Update the summary in database
+      $sql = "INSERT INTO bg_user_message_summaries 
+              (user_id, summary_date, summary_type, message_count, message_ids, 
+               companies_included, ai_summary, offer_details, processing_status, processed_by)
+              VALUES (:user_id, :summary_date, 'daily', :message_count, :message_ids,
+                      :companies, :ai_summary, :offers, 'completed', 'admin_regenerate')
+              ON DUPLICATE KEY UPDATE
+              ai_summary = VALUES(ai_summary),
+              offer_details = VALUES(offer_details),
+              message_count = VALUES(message_count),
+              processing_status = 'completed',
+              processed_by = 'admin_regenerate',
+              updated_at = NOW()";
+      
+      $params = [
+        'user_id' => $user_id,
+        'summary_date' => $date,
+        'message_count' => count($messages),
+        'message_ids' => json_encode($message_ids),
+        'companies' => json_encode(array_keys($companies)),
+        'ai_summary' => $summary_text,
+        'offers' => json_encode($offers)
+      ];
+      
+      $database->query($sql, $params);
+      
+      return [
+        'success' => true,
+        'summary' => $summary_text,
+        'offers' => $offers,
+        'messageCount' => count($messages),
+        'companies' => array_values($companies)
+      ];
+      
+    } catch (Exception $e) {
+      error_log("Mail summarize error: " . $e->getMessage());
+      
+      return [
+        'success' => false,
+        'error' => 'Failed to generate summary: ' . $e->getMessage()
+      ];
+    }
   }
 
 }

@@ -1,4 +1,10 @@
 <?php
+# if we have to add any classes for any class instaitation, uncomment and add them to this array
+# they are loaded/configured in the site-controller.php file
+# $addClasses[]='';
+
+
+
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 // always use single PHP BLOCK, ECHO block statements. 
 // Do not use Short Echo Tags, Short Tags, Multiple PHP Tags or Nowdoc/Heredoc syntax

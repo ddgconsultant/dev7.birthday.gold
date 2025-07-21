@@ -208,21 +208,23 @@ CREATE TABLE IF NOT EXISTS bg_mail_users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS messages (
-  message_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  user_id BIGINT UNSIGNED DEFAULT NULL,
-  recipient VARCHAR(320) DEFAULT NULL,
-  sender VARCHAR(320) DEFAULT NULL,
-  company_id BIGINT UNSIGNED DEFAULT NULL,
-  subject VARCHAR(1000) DEFAULT NULL,
-  body LONGTEXT,
-  size BIGINT UNSIGNED DEFAULT '0',
-  mailserver varchar(32) DEFAULT  '$mailserver'
-  processstatus VARCHAR(32) DEFAULT 'new',
-  create_dt DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (message_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-
+  `message_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned DEFAULT NULL,
+  `recipient` varchar(320) DEFAULT NULL,
+  `sender` varchar(320) DEFAULT NULL,
+  `company_id` bigint unsigned DEFAULT NULL,
+  `message_type` varchar(32) DEFAULT NULL,
+  `subject` varchar(1000) DEFAULT NULL,
+  `body` longtext,
+  `size` bigint unsigned DEFAULT '0',
+  `extract` varchar(2000) DEFAULT NULL,
+  `summary` varchar(2000) DEFAULT NULL,
+  `mailserver` varchar(32) NOT NULL DEFAULT '$mailserver',
+  `processstatus` varchar(32) DEFAULT 'new',
+  `create_dt` datetime DEFAULT CURRENT_TIMESTAMP,
+  `modify_dt` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`message_id`,`user_id`) USING BTREE
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE DATABASE email_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE email_db;

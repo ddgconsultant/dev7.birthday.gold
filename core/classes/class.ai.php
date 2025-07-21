@@ -6,6 +6,7 @@ class AI {
     private array $engineConfigs;
     private string $currentEngine;
     private string $currentType;
+    private bool $debug = false;  // Debug flag
 
 
     
@@ -19,14 +20,50 @@ class AI {
         $this->initializeEngineConfigs();
         
         // Default to goldie engines
-        $this->currentEngine = 'openai_goldie';
+      #  $this->currentEngine = 'openai_goldie';
+        $this->currentEngine = 'anthropic_goldie';
         $this->currentType = 'text';
     }
 
     
     
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    // Set debug mode
+    public function setDebug(bool $debug = true): void {
+        $this->debug = $debug;
+        if ($this->debug) {
+            error_log("AI Debug Mode: ENABLED");
+        }
+    }
+    
+    // Toggle debug mode
+    public function toggleDebug(): void {
+        $this->debug = !$this->debug;
+        error_log("AI Debug Mode: " . ($this->debug ? "ENABLED" : "DISABLED"));
+    }
+    
+    // Get debug status
+    public function isDebug(): bool {
+        return $this->debug;
+    }
+    
+    
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    private function debugLog(string $message, $data = null): void {
+        if (!$this->debug) return;
+        
+        $timestamp = date('Y-m-d H:i:s');
+        error_log("[$timestamp] AI DEBUG: $message");
+        if ($data !== null) {
+            error_log("[$timestamp] AI DEBUG DATA: " . print_r($data, true));
+        }
+    }
+    
+    
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   private function initializeEngineConfigs() {
+    $this->debugLog("Initializing engine configurations");
+    
     // Find all configured engines by checking for api_key entries
     foreach ($this->sitesettings_ai['ai'] as $engine => $config) {
         if (isset($config['api_key'])) {
@@ -43,6 +80,12 @@ class AI {
                 'headers' => $this->getHeadersConfig($engine),
                 'format_data' => $this->getFormatDataConfig($engine)
             ];
+            
+            $this->debugLog("Configured engine: $engine", [
+                'type' => $engineType,
+                'model' => $config['model'] ?? 'default',
+                'url' => $config['api_url']
+            ]);
         }
     }
 }
@@ -187,12 +230,41 @@ private function sanitizeOptions(array $options): array {
 
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
-private function debugConfig(string $engine) {
-    error_log("Engine Config for $engine: " . print_r($this->sitesettings_ai['ai'][$engine] ?? [], true));
+private function debugConfig(string $engine='') {
+    if (empty($engine)) $engine = $this->currentEngine;
+    
+    $config = $this->sitesettings_ai['ai'][$engine] ?? [];
+    
+    if ($this->debug) {
+        echo "\n<pre style='background:#f4f4f4; padding:10px; border:1px solid #ddd;'>\n";
+        echo "=== AI ENGINE CONFIGURATION ===\n";
+        echo "Current Engine: $engine\n";
+        echo "Current Type: {$this->currentType}\n";
+        echo "Debug Mode: ENABLED\n\n";
+        
+        echo "Raw Config:\n";
+        print_r($config);
+        
+        if (isset($this->engineConfigs[$engine])) {
+            echo "\nProcessed Config:\n";
+            $processedConfig = $this->engineConfigs[$engine];
+            // Hide API key for security
+            $processedConfig['api_key'] = substr($processedConfig['api_key'], 0, 10) . '...';
+            print_r($processedConfig);
+        }
+        
+        echo "\nAll Available Engines:\n";
+        print_r(array_keys($this->engineConfigs));
+        echo "</pre>\n";
+    }
+    
+    return $config;
 }
     
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function setEngine(string $engine, ?string $type = null): void {
+    $this->debugLog("Setting engine to: $engine, type: " . ($type ?? 'default'));
+    
     if (!isset($this->engineConfigs[$engine])) {
         throw new Exception("Unknown AI engine: $engine");
     }
@@ -201,8 +273,7 @@ private function debugConfig(string $engine) {
     $typeString = $this->sitesettings_ai['ai'][$engine]['types'] ?? 'text';
     $supportedTypes = array_map('trim', explode(',', $typeString));
     
-    // Debug line to see what we're working with
-    // error_log("Engine: $engine, Type: $type, Supported Types: " . print_r($supportedTypes, true));
+    $this->debugLog("Supported types for $engine", $supportedTypes);
     
     if ($type && !in_array($type, $supportedTypes)) {
         throw new Exception("Engine $engine is not configured for $type processing");
@@ -210,6 +281,11 @@ private function debugConfig(string $engine) {
 
     $this->currentEngine = $engine;
     $this->currentType = $type ?? 'text';
+    
+    $this->debugLog("Engine set successfully", [
+        'engine' => $this->currentEngine,
+        'type' => $this->currentType
+    ]);
 }
 
     
@@ -219,6 +295,12 @@ private function debugConfig(string $engine) {
         try {
             $config = $this->engineConfigs[$this->currentEngine];
             
+            $this->debugLog("Processing request", [
+                'engine' => $this->currentEngine,
+                'type' => $this->currentType,
+                'options' => $options
+            ]);
+            
             // Transform string input into proper message format
             if (is_string($messages)) {
                 $messages = [
@@ -226,9 +308,13 @@ private function debugConfig(string $engine) {
                     ['role' => 'user', 'content' => $messages]
                 ];
             }
+            
+            $this->debugLog("Messages prepared", $messages);
     
             // Format data according to engine specifications
             $data = $config['format_data']($messages, $options, $config);
+            
+            $this->debugLog("Formatted data for API", $data);
     
             // Get base headers for the current engine
             $headers = $config['headers']($config);
@@ -237,6 +323,9 @@ private function debugConfig(string $engine) {
             if ($this->currentType === 'computer-use') {
                 $headers[] = 'anthropic-beta: computer-use-2024-10-22';
             }
+            
+            $this->debugLog("Request headers", $headers);
+            $this->debugLog("Request URL", $config['url']);
     
             // Make API request
             $response = $this->system->curlRequest(
@@ -244,6 +333,8 @@ private function debugConfig(string $engine) {
                 $headers,
                 $data
             );
+            
+            $this->debugLog("API Response received", $response);
     
             if (!$response || isset($response['error'])) {
                 throw new Exception($response['error'] ?? 'Unknown error occurred');
@@ -252,6 +343,8 @@ private function debugConfig(string $engine) {
             return $response;
     
         } catch (Exception $e) {
+            $this->debugLog("Error in process()", $e->getMessage());
+            
             return [
                 'error' => $e->getMessage(),
                 'decoded' => [
@@ -261,6 +354,144 @@ private function debugConfig(string $engine) {
                 ]
             ];
         }
+    }
+    
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
+    public function summarizeText(string $text, array $options = []) {
+        $this->setEngine('anthropic_goldie', 'text');
+        
+        // Default options
+        $defaultOptions = [
+            'max_tokens' => 512,
+            'temperature' => 0.5
+        ];
+        $options = array_merge($defaultOptions, $options);
+        
+        if ($this->debug) {
+            echo "\n<div style='background:#f0f8ff; padding:15px; border:2px solid #4CAF50; margin:10px 0;'>\n";
+            echo "<h3 style='margin-top:0; color:#4CAF50;'>📝 Text Summarization Debug</h3>\n";
+            
+            // Show input text info
+            $textLength = strlen($text);
+            $wordCount = str_word_count($text);
+            echo "<h4>Input Text Analysis:</h4>\n";
+            echo "<ul>\n";
+            echo "<li><strong>Character count:</strong> " . number_format($textLength) . "</li>\n";
+            echo "<li><strong>Word count:</strong> " . number_format($wordCount) . "</li>\n";
+            echo "<li><strong>First 200 chars:</strong> <code>" . htmlspecialchars(substr($text, 0, 200)) . "...</code></li>\n";
+            echo "</ul>\n";
+            
+            // Show options
+            echo "<h4>Summarization Options:</h4>\n";
+            echo "<pre style='background:#e8e8e8; padding:10px;'>" . print_r($options, true) . "</pre>\n";
+        }
+        
+        $prompt = "Please summarize the following text clearly and concisely:\n\n" . $text;
+        
+        $messages = [
+            ['role' => 'user', 'content' => $prompt]
+        ];
+        
+        $this->debugLog("Summarization request", [
+            'text_length' => strlen($text),
+            'word_count' => str_word_count($text),
+            'options' => $options
+        ]);
+        
+        if ($this->debug) {
+            echo "<h4>Prompt Structure:</h4>\n";
+            echo "<pre style='background:#e8e8e8; padding:10px; max-height:200px; overflow-y:auto;'>";
+            echo htmlspecialchars(print_r($messages, true));
+            echo "</pre>\n";
+            
+            echo "<h4>Processing...</h4>\n";
+            flush(); // Send output to browser immediately
+        }
+        
+        // Process the request
+        $startTime = microtime(true);
+        $response = $this->process($messages, $options);
+        $endTime = microtime(true);
+        $processingTime = round(($endTime - $startTime) * 1000, 2);
+        
+        $this->debugLog("Summarization complete", [
+            'processing_time_ms' => $processingTime,
+            'has_error' => isset($response['error'])
+        ]);
+        
+        if ($this->debug) {
+            echo "<h4>Results:</h4>\n";
+            
+            if (isset($response['error'])) {
+                echo "<p style='color:red;'><strong>❌ Error:</strong> " . htmlspecialchars($response['error']) . "</p>\n";
+            } else {
+                $normalized = $this->normalizeResponse($response);
+                $summaryLength = strlen($normalized['content']);
+                $summaryWords = str_word_count($normalized['content']);
+                $compressionRatio = round((1 - ($summaryLength / $textLength)) * 100, 1);
+                
+                echo "<div style='background:#e8ffe8; padding:10px; border-left:4px solid #4CAF50;'>\n";
+                echo "<p style='color:green;'><strong>✅ Summary Generated Successfully!</strong></p>\n";
+                echo "<p><strong>Summary:</strong></p>\n";
+                echo "<blockquote style='background:white; padding:10px; border-left:3px solid #ccc;'>" . 
+                     nl2br(htmlspecialchars($normalized['content'])) . "</blockquote>\n";
+                echo "</div>\n";
+                
+                echo "<h4>Summary Statistics:</h4>\n";
+                echo "<ul>\n";
+                echo "<li><strong>Summary length:</strong> " . number_format($summaryLength) . " characters (" . 
+                     number_format($summaryWords) . " words)</li>\n";
+                echo "<li><strong>Compression ratio:</strong> {$compressionRatio}% reduction</li>\n";
+                echo "<li><strong>Processing time:</strong> {$processingTime}ms</li>\n";
+                echo "<li><strong>Tokens used:</strong> ";
+                echo "Prompt: {$normalized['usage']['prompt_tokens']}, ";
+                echo "Completion: {$normalized['usage']['completion_tokens']}, ";
+                echo "Total: {$normalized['usage']['total_tokens']}</li>\n";
+                echo "</ul>\n";
+                
+                // Cost estimation (example rates)
+                $costEstimate = $this->estimateCost($normalized['usage']);
+                if ($costEstimate) {
+                    echo "<p><strong>Estimated cost:</strong> $" . number_format($costEstimate, 4) . "</p>\n";
+                }
+            }
+            
+            echo "</div>\n";
+        }
+       # breakpoint($response);
+        // Return the summary content
+        $normalized = $this->normalizeResponse($response);
+       # $summaryLength = strlen($normalized['content']);
+        return $normalized['content'];
+    }
+    
+    
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    // Helper method to estimate API costs (example rates, adjust as needed)
+    private function estimateCost(array $usage): float {
+        // Example rates for Anthropic Claude (adjust to actual rates)
+        $rates = [
+            'anthropic_goldie' => [
+                'prompt' => 0.008 / 1000,      // $0.008 per 1K tokens
+                'completion' => 0.024 / 1000    // $0.024 per 1K tokens
+            ],
+            'openai_goldie' => [
+                'prompt' => 0.005 / 1000,       // $0.005 per 1K tokens
+                'completion' => 0.015 / 1000    // $0.015 per 1K tokens
+            ]
+        ];
+        
+        if (!isset($rates[$this->currentEngine])) {
+            return 0;
+        }
+        
+        $engineRates = $rates[$this->currentEngine];
+        $promptCost = $usage['prompt_tokens'] * $engineRates['prompt'];
+        $completionCost = $usage['completion_tokens'] * $engineRates['completion'];
+        
+        return $promptCost + $completionCost;
     }
     
 
@@ -359,7 +590,56 @@ public function displayMetrics(array $response): string {
     }
 
 
+    
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 
+  public function test() {
+    if ($this->debug) {
+        echo "\n<div style='background:#e8f4f8; padding:15px; border:2px solid #2196F3; margin:10px 0;'>\n";
+        echo "<h3 style='margin-top:0; color:#2196F3;'>🤖 AI Test Mode</h3>\n";
+        
+        // Show current configuration
+        $this->debugConfig();
+        
+        echo "<h4>Running Test...</h4>\n";
+    }
+    
+    $messages = [
+        ['role' => 'user', 'content' => 'Hello AI, are you working? Please respond with a brief test message.']
+    ];
+    
+    $testOptions = [
+        'max_tokens' => 50,
+        'temperature' => 0.5
+    ];
+    
+    if ($this->debug) {
+        echo "<p><strong>Test Message:</strong> " . htmlspecialchars($messages[0]['content']) . "</p>\n";
+        echo "<p><strong>Test Options:</strong> max_tokens={$testOptions['max_tokens']}, temperature={$testOptions['temperature']}</p>\n";
+    }
+    
+    $response = $this->process($messages, $testOptions);
+    
+    if ($this->debug) {
+        echo "<h4>Test Results:</h4>\n";
+        
+        if (isset($response['error'])) {
+            echo "<p style='color:red;'><strong>❌ Error:</strong> " . htmlspecialchars($response['error']) . "</p>\n";
+        } else {
+            $normalized = $this->normalizeResponse($response);
+            echo "<p style='color:green;'><strong>✅ Success!</strong></p>\n";
+            echo "<p><strong>Response:</strong> " . htmlspecialchars($normalized['content']) . "</p>\n";
+            echo "<p><strong>Usage:</strong> ";
+            echo "Prompt: {$normalized['usage']['prompt_tokens']} tokens, ";
+            echo "Completion: {$normalized['usage']['completion_tokens']} tokens, ";
+            echo "Total: {$normalized['usage']['total_tokens']} tokens</p>\n";
+        }
+        
+        echo "</div>\n";
+    }
+    
+    return $response;
+}
 
 
     

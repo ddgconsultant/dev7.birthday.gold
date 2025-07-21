@@ -278,6 +278,14 @@ include($dir['core_components'] . '/bg_header.inc');
 </div>
 
 <div class="container my-5">
+    <!-- Admin/Dev Notice -->
+    <?php if ($account->isadmin() || $mode === 'dev'): ?>
+    <div class="alert alert-info mb-3">
+        <i class="bi bi-tools me-2"></i>
+        <strong>Admin/Dev Mode</strong>
+    </div>
+    <?php endif; ?>
+    
     <!-- Date range selector -->
     <div class="row mb-4">
         <div class="col-md-6">
