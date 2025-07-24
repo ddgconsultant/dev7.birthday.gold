@@ -68,8 +68,45 @@ $companyRewards = array_filter($rewards, fn($r) => empty($r['location_id']));
 $locationRewards = array_filter($rewards, fn($r) => !empty($r['location_id']));
 
 // Add required styles
-$additionalstyles .= '
+$additionalstyles = '
 <style>
+/* Modern Tab Navigation */
+.nav-tabs-modern {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0;
+    list-style: none;
+    margin-bottom: 0;
+}
+
+.nav-tabs-modern .nav-link {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+    background: transparent;
+    color: #6c757d;
+    font-weight: 500;
+    transition: all 0.2s;
+    position: relative;
+    margin-bottom: -2px;
+}
+
+.nav-tabs-modern .nav-link:hover {
+    background: #f8f9fa;
+    color: #495057;
+}
+
+.nav-tabs-modern .nav-link.active {
+    background: white;
+    color: #0d6efd;
+    border-bottom: 2px solid #0d6efd;
+}
+
+.nav-tabs-modern .nav-link i {
+    font-size: 1.1rem;
+}
+
 .reward-card {
     transition: all 0.2s ease-in-out;
 }
@@ -154,9 +191,9 @@ $additionalstyles .= '
         </button>
     </div>
 
-    <!-- Navigation Tabs -->
+    <!-- Modern Navigation Tabs -->
     <div class="card">
-        <div class="card-header bg-white">
+        <div class="card-header bg-white border-0 pt-3">
             <ul class="nav nav-tabs card-header-tabs" role="tablist">
                 <li class="nav-item">
                     <a class="nav-link active" data-bs-toggle="tab" href="#companyRewards">
@@ -265,9 +302,9 @@ $additionalstyles .= '
                         <div class="text-center py-5">
                             <i class="bi bi-geo-alt text-muted" style="font-size: 2rem;"></i>
                             <p class="text-muted mt-2">No locations defined yet</p>
-                            <a href="/admin/locations" class="btn btn-primary mt-3">
+                            <button type="button" class="btn btn-primary mt-3" onclick="switchToLocationsTab()">
                                 Manage Locations
-                            </a>
+                            </button>
                         </div>
                     <?php else: ?>
                         <?php foreach ($locations as $location): ?>
@@ -322,8 +359,121 @@ $additionalstyles .= '
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form id="rewardForm" method="post" action="/admin_actions/save_reward.php">
-                <!-- Modal content here - form fields for editing rewards -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rewardModalTitle">Add New Reward</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="company_id" value="<?php echo $company_id; ?>">
+                    <input type="hidden" name="reward_id" id="reward_id">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Reward Name</label>
+                            <input type="text" class="form-control" name="reward_name" id="reward_name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Reward Type</label>
+                            <select class="form-select" name="reward_type" id="reward_type" required>
+                                <option value="physical">Physical</option>
+                                <option value="cash">Cash</option>
+                                <option value="points">Points</option>
+                                <option value="APP">App Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Short Description</label>
+                        <textarea class="form-control" name="reward_description_short" id="reward_description_short" rows="2" maxlength="200"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Full Description</label>
+                        <textarea class="form-control" name="reward_description_long" id="reward_description_long" rows="4"></textarea>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Reward Value ($)</label>
+                            <input type="number" class="form-control" name="reward_value" id="reward_value" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Cash Value ($)</label>
+                            <input type="number" class="form-control" name="cash_value" id="cash_value" step="0.01" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Location</label>
+                            <select class="form-select" name="location_id" id="location_id">
+                                <option value="">Company-wide</option>
+                                <?php foreach ($locations as $location): ?>
+                                    <option value="<?php echo $location['location_id']; ?>">
+                                        <?php echo htmlspecialchars($location['location_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Min Age</label>
+                            <input type="number" class="form-control" name="minage" id="minage" min="0" max="120">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Max Age</label>
+                            <input type="number" class="form-control" name="maxage" id="maxage" min="0" max="120">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Days Before Birthday</label>
+                            <input type="number" class="form-control" name="mindaysstart" id="mindaysstart" min="0" max="365">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Reward</button>
+                </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+function createReward() {
+    // Clear the form
+    document.getElementById('rewardForm').reset();
+    document.getElementById('reward_id').value = '';
+    document.getElementById('rewardModalTitle').textContent = 'Add New Reward';
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('rewardEditorModal'));
+    modal.show();
+}
+
+function editReward(rewardId) {
+    // This would typically fetch the reward data via AJAX
+    // For now, we'll just open the modal with the ID set
+    document.getElementById('reward_id').value = rewardId;
+    document.getElementById('rewardModalTitle').textContent = 'Edit Reward';
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('rewardEditorModal'));
+    modal.show();
+}
+
+function deleteReward(rewardId) {
+    if (confirm('Are you sure you want to delete this reward?')) {
+        // Submit deletion request
+        window.location.href = '/admin_actions/delete_reward.php?reward_id=' + rewardId + '&company_id=<?php echo $company_id; ?>';
+    }
+}
+
+function switchToLocationsTab() {
+    // Find the parent company editor page locations tab
+    const locationsTab = window.parent.document.querySelector('#locations-tab');
+    if (locationsTab) {
+        locationsTab.click();
+    }
+}
+</script>

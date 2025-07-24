@@ -38,37 +38,19 @@ $stmt = $database->prepare($sql);
 $stmt->execute(['company_id' => $company_id]);
 $mappings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Add required styles
-$additionalstyles .= '
-<style>
-.no-gutters {
-    margin-top: 0;
-    margin-bottom: 2px;
-}
-
-.no-gutters > .col,
-.no-gutters > [class*="col-"] {
-    padding-top: 0;
-    padding-bottom: 0;
-}
-
-.small-row .form-control, 
-.small-row .col-form-label {
-    padding: .1rem .2rem;
-    font-size: .75rem;
-    line-height: .9;
-}
-.light-grey-bg {
-    background-color: #f2f2f2;
-}
-
-.small-font {
-    font-size: 9px;
-}
-</style>';
+// Add field mapping specific styles
 ?>
 
-<div class="container">
+<style>
+.field-mapping-row {
+    margin-bottom: 0.5rem;
+}
+.field-mapping-row .form-control {
+    font-size: 0.875rem;
+}
+</style>
+
+<div class="field-mappings-section">
     <form method="POST" action="/admin_actions/save_field_mappings.php">
         <input type="hidden" name="addtestcase" value="0">
         <input type="hidden" name="version" value="<?php echo $versionnumber; ?>">
@@ -85,7 +67,7 @@ $additionalstyles .= '
                     $showvalue .= '||' . $mapping['fieldformattype'] . '||' . $mapping['fieldformat']; 
                 }
             ?>
-                <div class="form-group row no-gutters small-row">
+                <div class="row field-mapping-row g-2">
                     <div class="col-5">
                         <input type="text" 
                                class="form-control" 
@@ -105,8 +87,12 @@ $additionalstyles .= '
         </div>
 
         <div class="mt-3">
-            <input type="button" class="btn btn-primary btn-sm" onclick="addMapping()" value="Add Mapping">
-            <input type="submit" class="btn btn-success btn-sm float-end" value="Save">
+            <button type="button" class="btn btn-primary btn-sm" onclick="addMapping()">
+                <i class="bi bi-plus-circle me-2"></i>Add Mapping
+            </button>
+            <button type="submit" class="btn btn-success btn-sm float-end">
+                <i class="bi bi-save me-2"></i>Save Mappings
+            </button>
         </div>
     </form>
 </div>
@@ -115,7 +101,7 @@ $additionalstyles .= '
 function addMapping() {
     var mappingsDiv = document.getElementById('mappings');
     var newRow = document.createElement('div');
-    newRow.className = 'form-group row no-gutters small-row';
+    newRow.className = 'row field-mapping-row g-2';
     newRow.innerHTML = `
         <div class="col-5">
             <input type="text" class="form-control" name="mappings[new][userFieldName]" placeholder="User Field Name">

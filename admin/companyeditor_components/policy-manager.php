@@ -23,7 +23,7 @@ $stmt->execute(['company_id' => $company_id]);
 $policies = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Add required styles
-$additionalstyles .= '
+$additionalstyles = '
 <style>
 .policy-card {
     transition: all 0.2s ease-in-out;
@@ -191,6 +191,49 @@ $additionalstyles .= '
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Policy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Policy Modal -->
+<div class="modal fade" id="addPolicyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addPolicyForm" action="/admin_actions/add_policy.php" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Policy</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="company_id" value="<?php echo $company_id; ?>">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Policy Type</label>
+                        <select class="form-select" name="policy_type" required>
+                            <option value="">Select policy type...</option>
+                            <option value="terms">Terms of Service</option>
+                            <option value="privacy">Privacy Policy</option>
+                            <option value="rewards">Rewards Terms</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Policy Name</label>
+                        <input type="text" class="form-control" name="policy_name" placeholder="e.g., Terms and Conditions" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Policy URL</label>
+                        <input type="url" class="form-control" name="policy_url" placeholder="https://example.com/terms" required>
+                        <div class="form-text">Enter the URL where this policy can be found</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Policy</button>
                 </div>
             </form>
         </div>

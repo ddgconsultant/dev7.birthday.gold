@@ -1,6 +1,17 @@
 <?PHP
 
-include($BASEDIR.'/core/'.$website['ui_version'].'/header2.inc');
+// Check if header2.inc exists, otherwise use header.inc
+$header2_path = $BASEDIR.'/core/'.$website['ui_version'].'/header2.inc';
+$header_path = $BASEDIR.'/core/'.$website['ui_version'].'/header.inc';
+
+if (file_exists($header2_path)) {
+    include($header2_path);
+} elseif (file_exists($header_path)) {
+    include($header_path);
+} else {
+    // Fallback to v3 header
+    include($BASEDIR.'/core/v3/header.inc');
+}
 return;
 
 

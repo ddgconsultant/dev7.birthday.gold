@@ -1,15 +1,28 @@
 <?php
 //company-editor-main.php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
 
 $company_id = $cid = $_GET['cid'] ?? null;
+
+if (!$company_id) {
+    header('Location: /admin/brands.php');
+    exit;
+}
 
 // Fetch the company details
 $company = $app->getcompanydetails($company_id);
 
-// Assign safe values if $company is null or fields are missing
+if (!$company) {
+    header('Location: /admin/brands.php');
+    exit;
+}
+
+// Check if company has APP only rewards
+$app_only_check = $database->prepare("SELECT COUNT(*) FROM bg_company_rewards WHERE company_id = ? AND reward_type = 'APP' AND status = 'active'");
+$app_only_check->execute([$company_id]);
+$has_app_only_rewards = $app_only_check->fetchColumn() > 0;
+
+// Assign safe values if fields are missing
 $company_name = $company['company_name'] ?? 'Unknown Company';
 $company_display_name = $company['company_display_name'] ?? $company_name;
 $category = $company['category'] ?? '';
@@ -20,171 +33,187 @@ $signup_url = $company['signup_url'] ?? '';
 $google_targetUrl = 'https://play.google.com/store/search?q=' . urlencode($company_name) . '&c=apps&hl=en_US&gl=US';
 $apple_targetUrl = 'https://www.apple.com/us/search/' . urlencode($company_name) . '?src=serp';
 
+// Page setup
+$pagetitle = "Company Editor - " . $company_name;
+$bodycontentclass = '';
+$header_flush = true;
+
 // Additional styles
-$additionalstyles .= '
+$additionalstyles = '
 <style>
-.list-group-item {
+.nav-pills .nav-link {
+    color: #6c757d;
+    background: #f8f9fa;
+    margin-bottom: 0.5rem;
+    border-radius: 0.25rem;
+    padding: 0.75rem 1rem;
     display: flex;
-    justify-content: start;
     align-items: center;
-    white-space: nowrap;
+    gap: 0.5rem;
+    transition: all 0.2s;
 }
 
-.list-group-item .bi {
-    margin-right: 10px;
+.nav-pills .nav-link:hover {
+    background: #e9ecef;
+    color: #495057;
 }
 
-.list-group-item button {
-    flex-shrink: 0;
+.nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: white;
 }
 
-.list-group-item .d-flex {
-    justify-content: start;
-    align-items: center;
+.nav-pills .nav-link .bi {
+    font-size: 1.1rem;
 }
 
-.tab-pane {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 0 !important;
-    margin-top: 0 !important;
+.tab-content {
+    background: white;
+    border-radius: 0.5rem;
+    min-height: 500px;
+}
+
+.content-section {
+    padding: 2rem;
 }
 </style>';
 
-// Render page content
-    echo '    
-    <div class="container main-content mt-0 pt-0">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="mb-0">Company Editor</h2>
-      <a href="/admin/brands" class="btn btn-sm btn-outline-secondary">Back To List of Businesses</a>
-    </div>
-    ';
-    echo '    
-   <div class="row">';
-
-// TABS - LEFT SIDE
-echo '
-    <div class="col-xl-3 col-lg-3 col-md-4 col-sm-12">
-        <div class="list-group" id="companyTab" role="tablist">
-            <a class="list-group-item list-group-item-action active d-flex text-start" id="general-tab" data-bs-toggle="list" href="#general" role="tab" aria-controls="general">
-                <i class="bi bi-house-door me-3"></i> General
-            </a>
-
-            <a class="list-group-item list-group-item-action d-flex text-start" id="locations-tab" data-bs-toggle="list" href="#locations" role="tab" aria-controls="locations">
-                <i class="bi bi-geo-alt me-3"></i> Locations
-            </a>
-
-            <a class="list-group-item list-group-item-action d-flex text-start" id="formfieldedit-tab" data-bs-toggle="list" href="#formfieldedit" role="tab" aria-controls="formfieldedit">
-                <i class="bi bi-file-earmark-text me-3"></i> Form Field Edit
-            </a>
-            
-            <a class="list-group-item list-group-item-action d-flex text-start" id="rewardeditor-tab" data-bs-toggle="list" href="#rewardeditor" role="tab" aria-controls="rewardeditor">
-                <i class="bi bi-pencil-square me-3"></i> Reward Editor
-            </a>
-
-
-            <a class="list-group-item list-group-item-action d-flex text-start" id="policies-tab" data-bs-toggle="list" href="#policies" role="tab" aria-controls="policies">
-                <i class="bi bi-shield-check me-3"></i> Policies
-            </a>
-
-            <a class="list-group-item list-group-item-action d-flex text-start" id="analytics-tab" data-bs-toggle="list" href="#analytics" role="tab" aria-controls="analytics">
-                <i class="bi bi-graph-up me-3"></i> Analytics
-            </a>
-
-            <a class="list-group-item list-group-item-action d-flex text-start" id="googleplaystore-tab" data-bs-toggle="list" href="#googleplaystore" role="tab" aria-controls="googleplaystore">
-                <i class="bi bi-google me-3"></i> Google Play Store
-                <button class="btn btn-link p-0 ms-auto" onclick="openGooglePlayStore(\'' . $google_targetUrl . '\')">
-                    <i class="bi bi-box-arrow-up-right"></i>
-                </button>
-            </a>
-
-            <a class="list-group-item list-group-item-action d-flex text-start" id="appleappstore-tab" data-bs-toggle="list" href="#appleappstore" role="tab" aria-controls="appleappstore">
-                <i class="bi bi-apple me-3"></i> Apple App Store
-                <button class="btn btn-link p-0 ms-auto" onclick="openAppleAppStore(\'' . $apple_targetUrl . '\')">
-                    <i class="bi bi-box-arrow-up-right"></i>
-                </button>
-            </a>
-        </div>
-    </div>';
-
-// TAB CONTENT - RIGHT SIDE
-echo '
-    <div class="col-xl-9 col-lg-9 col-md-8 col-sm-12">
-        <div class="tab-content" id="companyTabContent">
-            <!-- General -->
-            <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">';
-                include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/general-details.php');
-echo '
-           
-
-            <!-- Locations -->
-            <div class="tab-pane fade" id="locations" role="tabpanel" aria-labelledby="locations-tab">';
-                include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/location-manager.php');
-echo '
-            </div>
-
-            <!-- Form Field Edit -->
-            <div class="tab-pane fade" id="formfieldedit" role="tabpanel" aria-labelledby="formfieldedit-tab">';
-                include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/field-mappings.php');
-echo '
-            </div>
-
-                        <!-- Reward Edit -->
-            <div class="tab-pane fade" id="rewardeditor" role="tabpanel" aria-labelledby="rewardeditor-tab">';
-                include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/reward-editor.php');
-echo '
-            </div>
-
-            <!-- Policies -->
-            <div class="tab-pane fade" id="policies" role="tabpanel" aria-labelledby="policies-tab">';
-                include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/policy-manager.php');
-echo '
-            </div>
-
-            <!-- Analytics -->
-            <div class="tab-pane fade" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">';
-                include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/analytics-dashboard.php');
-echo '
-            </div>
-
-            <!-- Google Play Store -->
-            <div class="tab-pane fade" id="googleplaystore" role="tabpanel" aria-labelledby="googleplaystore-tab">
-                <div class="embed-responsive" style="height: 80vh;">
-                    <iframe class="embed-responsive-item w-100 h-100" src="' . $google_targetUrl . '" style="border:none;"></iframe>
-                </div>
-            </div>
-
-            <!-- Apple App Store -->
-            <div class="tab-pane fade" id="appleappstore" role="tabpanel" aria-labelledby="appleappstore-tab">
-                <div class="embed-responsive" style="height: 80vh;">
-                    <iframe class="embed-responsive-item w-100 h-100" src="' . $apple_targetUrl . '" style="border:none;"></iframe>
-                </div>
-            </div>
-        </div>
-    </div>
-    </div>
-</div>';
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 ?>
 
+<!-- Hero Section -->
+<div class="content-header-admin no-rounded-corners">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-1">Company Editor</h1>
+                <p class="lead mb-0"><?php echo htmlspecialchars($company_name); ?></p>
+            </div>
+            <a href="/admin/brands.php" class="btn btn-outline-light">
+                <i class="bi bi-arrow-left me-2"></i>Back To List of Businesses
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="main-content py-4">
+    <div class="container">
+        <div class="row">
+            <!-- Left Navigation -->
+            <div class="col-md-3 mb-4">
+                <div class="nav flex-column nav-pills" id="company-tabs" role="tablist">
+                    <button class="nav-link active" id="general-tab" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab">
+                        <i class="bi bi-house-door"></i> General
+                    </button>
+                    
+                    <button class="nav-link" id="locations-tab" data-bs-toggle="pill" data-bs-target="#locations" type="button" role="tab">
+                        <i class="bi bi-geo-alt"></i> Locations
+                    </button>
+                    
+                    <?php if (!$has_app_only_rewards): ?>
+                    <button class="nav-link" id="formfieldedit-tab" data-bs-toggle="pill" data-bs-target="#formfieldedit" type="button" role="tab">
+                        <i class="bi bi-file-earmark-text"></i> Form Field Edit
+                    </button>
+                    <?php else: ?>
+                    <button class="nav-link disabled" type="button" role="tab" data-bs-toggle="tooltip" data-bs-placement="right" title="Not available for APP only rewards">
+                        <i class="bi bi-phone"></i> APP Only
+                    </button>
+                    <?php endif; ?>
+                    
+                    <button class="nav-link" id="rewardeditor-tab" data-bs-toggle="pill" data-bs-target="#rewardeditor" type="button" role="tab">
+                        <i class="bi bi-gift"></i> Reward Editor
+                    </button>
+                    
+                    <button class="nav-link" id="policies-tab" data-bs-toggle="pill" data-bs-target="#policies" type="button" role="tab">
+                        <i class="bi bi-shield-check"></i> Policies
+                    </button>
+                    
+                    <button class="nav-link" id="analytics-tab" data-bs-toggle="pill" data-bs-target="#analytics" type="button" role="tab">
+                        <i class="bi bi-graph-up"></i> Analytics
+                    </button>
+                    
+                    <a class="nav-link" href="<?php echo $google_targetUrl; ?>" target="_blank">
+                        <i class="bi bi-google"></i> Google Play Store
+                        <i class="bi bi-box-arrow-up-right ms-auto"></i>
+                    </a>
+                    
+                    <a class="nav-link" href="<?php echo $apple_targetUrl; ?>" target="_blank">
+                        <i class="bi bi-apple"></i> Apple App Store
+                        <i class="bi bi-box-arrow-up-right ms-auto"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Right Content -->
+            <div class="col-md-9">
+                <div class="tab-content" id="company-tab-content">
+                    <!-- General Tab -->
+                    <div class="tab-pane fade show active" id="general" role="tabpanel">
+                        <div class="content-section">
+                            <?php 
+                            $componentmode = 'include';
+                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/general-details.php'); 
+                            ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Locations Tab -->
+                    <div class="tab-pane fade" id="locations" role="tabpanel">
+                        <div class="content-section">
+                            <?php 
+                            $componentmode = 'include';
+                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/location-manager.php'); 
+                            ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Field Edit Tab -->
+                    <div class="tab-pane fade" id="formfieldedit" role="tabpanel">
+                        <div class="content-section">
+                            <?php 
+                            $componentmode = 'include';
+                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/field-mappings.php'); 
+                            ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Reward Editor Tab -->
+                    <div class="tab-pane fade" id="rewardeditor" role="tabpanel">
+                        <div class="content-section">
+                            <?php 
+                            $componentmode = 'include';
+                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/reward-editor.php'); 
+                            ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Policies Tab -->
+                    <div class="tab-pane fade" id="policies" role="tabpanel">
+                        <div class="content-section">
+                            <?php 
+                            $componentmode = 'include';
+                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/policy-manager.php'); 
+                            ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Analytics Tab -->
+                    <div class="tab-pane fade" id="analytics" role="tabpanel">
+                        <div class="content-section">
+                            <?php 
+                            $componentmode = 'include';
+                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/analytics-dashboard.php'); 
+                            ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-// Window opener functions
-function openGooglePlayStore(url) {
-    const top = window.screenY + 100;
-    window.open(url, '_googleplaystore', `width=1000,height=700,left=500,top=${top}`);
-}
-
-function openAppleAppStore(url) {
-    const top = window.screenY + 100;
-    window.open(url, '_appleappstore', `width=1000,height=700,left=1000,top=${top}`);
-}
-
-function openCompanyWebsite() {
-    const url = '<?php echo $company['signup_url']; ?>';
-    const top = window.screenY + 100;
-    window.open(url, '_companywebsite', `width=1200,height=1200,left=1500,top=${top}`);
-}
-
 // Bootstrap initializations
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize all tooltips

@@ -49,7 +49,7 @@ $stmt->execute(['company_id' => $company_id]);
 $reward_distribution = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Add required styles
-$additionalstyles .= '
+$additionalstyles = '
 <style>
 .metric-card {
     transition: all 0.2s ease-in-out;
@@ -101,7 +101,7 @@ $additionalstyles .= '
             <div class="card metric-card bg-warning bg-opacity-10">
                 <div class="card-body">
                     <h6 class="text-warning mb-2">Reward Value</h6>
-                    <h3 class="mb-0">$<?php echo number_format($metrics['total_reward_value'], 2); ?></h3>
+                    <h3 class="mb-0">$<?php echo number_format($metrics['total_reward_value'] ?? 0, 2); ?></h3>
                     <p class="text-muted small mb-0">Total value distributed</p>
                 </div>
             </div>

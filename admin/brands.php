@@ -236,7 +236,7 @@ foreach ($companies as $company) {
 
     echo '
 <td>
-<button class="btn btn-sm '. $btn_color.'" onclick="window.open(\'/admin/company-editor-main?cid=' . $company['company_id'] . "', 'bewindow')" . '">View Brand</button>
+<a href="/admin/company-editor-main?cid=' . $company['company_id'] . '" class="btn btn-sm '. $btn_color.'">View Brand</a>
 </td>
 </tr>
 ';
