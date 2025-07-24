@@ -197,6 +197,118 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['buildout']) && isset
 
 ###==============================================================================================================
 ###==============================================================================================================
+// Check if we're viewing version history
+if (isset($_GET['view']) && $_GET['view'] == 'history' && isset($_GET['section']) && $_GET['section'] == 'formfieldedit') {
+    // Get company name if not already fetched
+    if (!isset($company_name)) {
+        $company = $app->getcompanydetails($company_id);
+        $company_name = $company['company_name'] ?? 'Unknown Company';
+    }
+    
+    // Fetch version history
+    $sql = "SELECT DISTINCT version, version_status, version_dt, 
+            (SELECT COUNT(*) FROM bg_form_field_mappings m2 
+             WHERE m2.company_id = m1.company_id AND m2.version = m1.version) as field_count
+            FROM bg_form_field_mappings m1
+            WHERE company_id = ?
+            GROUP BY version, version_status, version_dt
+            ORDER BY version DESC";
+    
+    $stmt = $database->prepare($sql);
+    $stmt->execute([$company_id]);
+    $versions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Display version history
+    ?>
+    <div class="container">
+        <div class="main-header mb-4">
+            <h1>Version History</h1>
+            <p class="text-muted">Form field mapping versions for <?php echo htmlspecialchars($company_name ?? 'Company'); ?></p>
+        </div>
+        
+        <div class="mb-3">
+            <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to Field Mappings
+            </a>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Status</th>
+                            <th>Date Created</th>
+                            <th>Field Count</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($versions as $version): ?>
+                        <tr>
+                            <td>
+                                <strong>Version <?php echo $version['version']; ?></strong>
+                                <?php if ($version['version_status'] == 'active'): ?>
+                                    <span class="badge bg-success ms-2">Current</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <span class="badge bg-<?php echo $version['version_status'] == 'active' ? 'success' : 'secondary'; ?>">
+                                    <?php echo ucfirst($version['version_status']); ?>
+                                </span>
+                            </td>
+                            <td><?php echo date('M d, Y g:i A', strtotime($version['version_dt'])); ?></td>
+                            <td><?php echo $version['field_count']; ?> fields</td>
+                            <td>
+                                <?php if ($version['version_status'] != 'active'): ?>
+                                <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit&activate_version=<?php echo $version['version']; ?>" 
+                                   class="btn btn-sm btn-primary"
+                                   onclick="return confirm('Activate Version <?php echo $version['version']; ?>?');">
+                                    Activate
+                                </a>
+                                <?php endif; ?>
+                                <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit&preview_version=<?php echo $version['version']; ?>" 
+                                   class="btn btn-sm btn-outline-secondary">
+                                    Preview
+                                </a>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php
+    exit; // Stop execution here for version history view
+}
+
+// Handle version activation
+if (isset($_GET['activate_version']) && isset($_GET['section']) && $_GET['section'] == 'formfieldedit') {
+    $activate_version = intval($_GET['activate_version']);
+    
+    // Deactivate all versions
+    $sql = "UPDATE bg_form_field_mappings 
+            SET version_status = 'inactive' 
+            WHERE company_id = ?";
+    $stmt = $database->prepare($sql);
+    $stmt->execute([$company_id]);
+    
+    // Activate selected version
+    $sql = "UPDATE bg_form_field_mappings 
+            SET version_status = 'active' 
+            WHERE company_id = ? AND version = ?";
+    $stmt = $database->prepare($sql);
+    $stmt->execute([$company_id, $activate_version]);
+    
+    // Redirect back to form field edit
+    header("Location: /admin/company-editor-main.php?cid={$company_id}&section=formfieldedit");
+    exit;
+}
+
+###==============================================================================================================
+###==============================================================================================================
 // Fetch existing mappings
 $sql = "SELECT max(version) version FROM bg_form_field_mappings 
         WHERE company_id = ? and version_status='active' 

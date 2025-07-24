@@ -195,7 +195,8 @@ include($dir['core_components'] . '/bg_header.inc');
                         <div class="content-section">
                             <?php 
                             $componentmode = 'include';
-                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/field-mappings.php'); 
+                             include($_SERVER['DOCUMENT_ROOT'] .'/admin/companyeditor_components/business-fieldmappings.php');
+                         #   include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/field-mappings.php'); 
                             ?>
                         </div>
                     </div>
@@ -249,6 +250,25 @@ document.addEventListener('DOMContentLoaded', function() {
     var popoverList = popoverTriggerList.map(function(popoverTriggerEl) {
         return new bootstrap.Popover(popoverTriggerEl);
     });
+    
+    // Handle section parameter to activate correct tab
+    const urlParams = new URLSearchParams(window.location.search);
+    const section = urlParams.get('section');
+    
+    if (section) {
+        // Remove active class from all tabs and panes
+        document.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('show', 'active'));
+        
+        // Activate the requested section
+        const targetTab = document.getElementById(section + '-tab');
+        const targetPane = document.getElementById(section);
+        
+        if (targetTab && targetPane) {
+            targetTab.classList.add('active');
+            targetPane.classList.add('show', 'active');
+        }
+    }
 });
 </script>
 
