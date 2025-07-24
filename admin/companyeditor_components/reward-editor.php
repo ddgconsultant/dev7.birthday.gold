@@ -68,7 +68,7 @@ $companyRewards = array_filter($rewards, fn($r) => empty($r['location_id']));
 $locationRewards = array_filter($rewards, fn($r) => !empty($r['location_id']));
 
 // Add required styles
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 /* Modern Tab Navigation */
 .nav-tabs-modern {

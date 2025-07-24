@@ -23,7 +23,7 @@ $stmt->execute(['company_id' => $company_id]);
 $policies = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Add required styles
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 .policy-card {
     transition: all 0.2s ease-in-out;

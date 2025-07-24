@@ -35,11 +35,11 @@ $apple_targetUrl = 'https://www.apple.com/us/search/' . urlencode($company_name)
 
 // Page setup
 $pagetitle = "Company Editor - " . $company_name;
-$bodycontentclass = '';
-$header_flush = true;
+#$bodycontentclass = '';
+#$header_flush = true;
 
 // Additional styles
-$additionalstyles = '
+$additionalstyles .= '
 <style>
 .nav-pills .nav-link {
     color: #6c757d;
