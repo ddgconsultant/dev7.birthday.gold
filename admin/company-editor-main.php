@@ -22,6 +22,9 @@ $app_only_check = $database->prepare("SELECT COUNT(*) FROM bg_company_rewards WH
 $app_only_check->execute([$company_id]);
 $has_app_only_rewards = $app_only_check->fetchColumn() > 0;
 
+// Check if company is APP ONLY (signup_url = 'APP ONLY')
+$isAppOnly = ($company['signup_url'] ?? '') === $website['apponlytag'];
+
 // Assign safe values if fields are missing
 $company_name = $company['company_name'] ?? 'Unknown Company';
 $company_display_name = $company['company_display_name'] ?? $company_name;
@@ -69,6 +72,20 @@ $additionalstyles .= '
     font-size: 1.1rem;
 }
 
+/* APP ONLY indicator styling */
+.nav-pills .nav-link .bi-phone-x {
+    font-size: 0.9rem;
+}
+
+.nav-pills .nav-link.text-danger {
+    color: #dc3545 !important;
+}
+
+.nav-pills .nav-link.text-danger:hover {
+    background: #f8d7da;
+    color: #dc3545 !important;
+}
+
 .tab-content {
     background: white;
     border-radius: 0.5rem;
@@ -114,8 +131,11 @@ include($dir['core_components'] . '/bg_header.inc');
                     </button>
                     
                     <?php if (!$has_app_only_rewards): ?>
-                    <button class="nav-link" id="formfieldedit-tab" data-bs-toggle="pill" data-bs-target="#formfieldedit" type="button" role="tab">
-                        <i class="bi bi-file-earmark-text me-2"></i>Form Field Edit
+                    <button class="nav-link <?php echo $isAppOnly ? 'text-danger' : ''; ?>" id="formfieldedit-tab" data-bs-toggle="pill" data-bs-target="#formfieldedit" type="button" role="tab">
+                        <i class="bi bi-file-earmark-text me-2"></i>Form Field Mappings
+                        <?php if ($isAppOnly): ?>
+                            <i class="bi bi-phone-x text-danger ms-auto" title="APP ONLY - No form mapping needed"></i>
+                        <?php endif; ?>
                     </button>
                     <?php else: ?>
                     <button class="nav-link disabled" type="button" role="tab" data-bs-toggle="tooltip" data-bs-placement="right" title="Not available for APP only rewards">
@@ -170,7 +190,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         </div>
                     </div>
                     
-                    <!-- Form Field Edit Tab -->
+                    <!-- Form Field Mappings Tab -->
                     <div class="tab-pane fade" id="formfieldedit" role="tabpanel">
                         <div class="content-section">
                             <?php 

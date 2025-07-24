@@ -44,7 +44,9 @@ $sql = "SELECT
         AND status = 'active'
         ORDER BY city, address";
 // First get locations
-$sql = "SELECT location_id, address, city, state, zip_code 
+$sql = "SELECT location_id, 
+        CONCAT(address, ', ', city, ', ', state, ' ', zip_code) as location_name,
+        address, city, state, zip_code 
         FROM bg_company_locations 
         WHERE company_id = :company_id 
         AND status = 'active'
@@ -297,13 +299,28 @@ echo $additionalstyles;
 
                 <!-- Location Rewards Tab -->
                 <div class="tab-pane fade" id="locationRewards">
-                    <?php if (empty($locations)): ?>
+                    <?php if (empty($locations) && empty($locationRewards)): ?>
                         <div class="text-center py-5">
                             <i class="bi bi-geo-alt text-muted" style="font-size: 2rem;"></i>
                             <p class="text-muted mt-2">No locations defined yet</p>
                             <button type="button" class="btn btn-primary mt-3" onclick="switchToLocationsTab()">
                                 Manage Locations
                             </button>
+                        </div>
+                    <?php elseif (empty($locations) && !empty($locationRewards)): ?>
+                        <div class="text-center py-5">
+                            <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2">Location rewards exist but location data is missing</p>
+                            <p class="text-muted">Please update location information</p>
+                            <button type="button" class="btn btn-primary mt-3" onclick="switchToLocationsTab()">
+                                Manage Locations
+                            </button>
+                        </div>
+                    <?php elseif (!empty($locations) && empty($locationRewards)): ?>
+                        <div class="text-center py-5">
+                            <i class="bi bi-gift text-muted" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2">No location-specific rewards defined</p>
+                            <p class="text-muted">Location rewards can be added to individual locations</p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($locations as $location): ?>

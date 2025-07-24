@@ -1,5 +1,5 @@
 <?php
-// abo-status.php - Admin page to monitor ABO (Automation Business Onboarding) progress
+// abo-status.php - Admin page to monitor ABO (Automated Business Onboarding) progress
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Admin access is handled by site-controller.php
@@ -404,7 +404,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="content-header-admin no-rounded-corners">
     <div class="container">
         <h1 class="mt-3">ABO Status Monitor</h1>
-        <p class="lead mb-4">Automation Business Onboarding Progress Tracker</p>
+        <p class="lead mb-4">Automated Business Onboarding Progress Tracker</p>
     </div>
 </div>
 

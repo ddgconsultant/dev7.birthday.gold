@@ -1,5 +1,10 @@
 <?php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+
+// Page setup
+$pagetitle = "Brand Management";
+$header_flush = true;
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
@@ -54,9 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_REQUEST['cid']) && $_REQUES
 
 
 
-$additionalstyles .= ' 
-
-
+$additionalstyles .= '
 <style>
 .no-wrap {
 white-space: nowrap;
@@ -111,6 +114,145 @@ font-size: 12px; /* Adjust the button font size as needed */
 .img-fluid{
 width:40px;
 }
+
+/* Lazy loading styles */
+.lazy {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.lazy.loaded {
+    opacity: 1;
+}
+
+/* Fix container alignment */
+.main-content {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0 !important;
+}
+
+/* Content header styling to match accessmanager */
+.content-header-admin {
+    padding: 4rem 2rem !important;
+}
+
+/* Search Box - matching accessmanager */
+.am-search {
+    max-width: 600px;
+    margin: -2rem auto 2rem;
+    position: relative;
+    z-index: 1000;
+}
+
+.am-search .search-input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1.5rem;
+    font-size: 1.125rem;
+    border: 1px solid #dee2e6;
+    border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.am-search .search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.am-search .search-icon {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+}
+
+/* Category Pills */
+.category-filter {
+    background: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.category-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.category-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.category-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.category-scroll::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 3px;
+}
+
+.category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 2rem;
+    color: #495057;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.category-pill:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+    text-decoration: none;
+}
+
+.category-pill.active {
+    background: #0066cc;
+    border-color: #0066cc;
+    color: white;
+}
+
+.category-pill.active:hover {
+    background: #0052a3;
+    border-color: #0052a3;
+    color: white;
+}
+
+.category-pill i {
+    font-size: 1rem;
+}
+
+.pill-count {
+    opacity: 0.7;
+    font-weight: normal;
+}
+
+/* Remove extra spacing from table */
+.table-responsive {
+    margin-top: 0 !important;
+}
+
+#logoGallery {
+    margin-top: 0 !important;
+}
 </style>
 ';
 
@@ -138,26 +280,86 @@ $stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
 echo '
-<div class="container main-content">';
+<!-- Hero Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-building me-3"></i>Brand Management</h1>
+            <p class="lead mb-0">'.ucfirst($website['biznames']).' database with ' . $companycount. ' total brands</p>
+        </div>
+    </div>
+</div>
 
+<div class="container">
+    <!-- Search Bar in Header -->
+    <div class="am-search">
+        <div class="position-relative">
+            <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search brands..."
+                id="searchBar"
+                autocomplete="off"
+            >
+            <i class="bi bi-search search-icon"></i>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-4">';
+
+// Add filter pills
 echo '
-<h1>'.ucfirst($website['biznames']).': ' . $companycount. '</h1>
+    <!-- Desktop Filter Row -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <!-- Category Pills -->
+        <div class="category-filter flex-grow-1 me-3">
+            <div class="d-flex align-items-center">
+                <div class="category-scroll pb-2">
+                    <a href="?filter=all" class="category-pill ' . (!isset($_REQUEST['filter']) || $_REQUEST['filter'] == 'all' ? 'active' : '') . '" data-value="all">
+                        <i class="bi bi-grid"></i> All <span class="pill-count">(' . $companycount . ')</span>
+                    </a>';
 
-<div class="container mt-5">
-';
-
-if ($companycount>5) {
-echo '
-<input type="text" id="searchBar" class="form-control mb-4" placeholder="Search '.$website['biznames'].'...">
-';
+foreach ($stats as $stat) {
+    $isActive = (isset($_REQUEST['filter']) && $_REQUEST['filter'] == $stat['status']);
+    
+    // Icon mapping for different statuses
+    $iconMap = [
+        'finalized' => 'bi-check-circle-fill',
+        'active' => 'bi-circle-fill',
+        'inactive' => 'bi-x-circle',
+        'duplicate' => 'bi-files',
+        'pending' => 'bi-clock',
+        'new' => 'bi-star',
+        'notworking' => 'bi-exclamation-triangle',
+        'toocomplex' => 'bi-puzzle',
+        'otprequired' => 'bi-shield-lock',
+        'ng_toocomplex' => 'bi-puzzle-fill',
+        'finalized_otp_bgm' => 'bi-shield-check'
+    ];
+    
+    $icon = $iconMap[$stat['status']] ?? 'bi-circle';
+    
+    echo '
+                    <a href="?filter=' . $stat['status'] . '" class="category-pill ' . ($isActive ? 'active' : '') . '" data-value="' . $stat['status'] . '">
+                        <i class="bi ' . $icon . '"></i> ' . ucfirst(str_replace('_', ' ', $stat['status'])) . ' <span class="pill-count">(' . $stat['cnt'] . ')</span>
+                    </a>';
 }
 
 echo '
-<div class="row" id="logoGallery">
-';
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="">
+    <div class="container">';
 
 echo '
-<div class="table-responsive">
+        <div class="row" id="logoGallery">
+            <div class="col-12">
+                <div class="table-responsive">
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -210,7 +412,7 @@ foreach ($companies as $company) {
 ';
 
     echo '<td>' . $tag_strike_start . $company['company_id'] . $tag_strike_end . '</td>';
-    echo '  <td><img class="img-fluid" src="' . $display->companyimage($company['company_id'] . '/' . $company['company_logo']) . '" alt=""></td>';
+    echo '  <td><img class="img-fluid lazy" data-src="' . $display->companyimage($company['company_id'] . '/' . $company['company_logo']) . '" alt="' . htmlspecialchars($company['company_name']) . ' logo"></td>';
 
 
 
@@ -243,21 +445,73 @@ foreach ($companies as $company) {
 }
 
 echo  '
-</tbody>
-</table>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-</div>
-</div>
-</div>
-';
+    </div>
+</div>';
 ?>
 <script>
+    // Lazy loading for images
+    document.addEventListener("DOMContentLoaded", function() {
+        let lazyImages = [].slice.call(document.querySelectorAll("img.lazy"));
+        
+        if ("IntersectionObserver" in window) {
+            let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        let lazyImage = entry.target;
+                        lazyImage.src = lazyImage.dataset.src;
+                        lazyImage.classList.remove("lazy");
+                        lazyImage.classList.add("loaded");
+                        lazyImageObserver.unobserve(lazyImage);
+                    }
+                });
+            });
+            
+            lazyImages.forEach(function(lazyImage) {
+                lazyImageObserver.observe(lazyImage);
+            });
+        } else {
+            // Fallback for browsers that don't support IntersectionObserver
+            lazyImages.forEach(function(lazyImage) {
+                lazyImage.src = lazyImage.dataset.src;
+                lazyImage.classList.remove("lazy");
+                lazyImage.classList.add("loaded");
+            });
+        }
+    });
+    
     $(document).ready(function() {
+        // Enhanced search functionality
         $('#searchBar').on('keyup', function() {
             var value = $(this).val().toLowerCase();
-            $('table tbody tr').filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+            var visibleCount = 0;
+            
+            $('table tbody tr').each(function() {
+                var text = $(this).text().toLowerCase();
+                var matches = text.indexOf(value) > -1;
+                $(this).toggle(matches);
+                if (matches) visibleCount++;
             });
+            
+            // Update search placeholder with count
+            if (value) {
+                $('#searchBar').attr('placeholder', 'Found ' + visibleCount + ' brands...');
+            } else {
+                $('#searchBar').attr('placeholder', 'Search brands...');
+            }
+        });
+        
+        // Category pill click handlers
+        $('.category-pill').on('click', function(e) {
+            if (!$(this).hasClass('active')) {
+                // Let the href navigate naturally
+                return true;
+            }
+            e.preventDefault();
         });
     });
 

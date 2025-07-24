@@ -197,7 +197,7 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
     <!-- ABO Progress Section -->
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">Automation Business Onboarding (ABO) Progress</h5>
+            <h5 class="mb-0">Automated Business Onboarding (ABO) Progress</h5>
         </div>
         <div class="card-body">
             <?php
