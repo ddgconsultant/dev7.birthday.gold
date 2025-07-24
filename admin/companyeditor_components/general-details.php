@@ -73,7 +73,7 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                          class="img-fluid rounded mb-3" 
                          style="max-width: 120px; max-height: 120px;" 
                          alt="<?php echo htmlspecialchars($company_name); ?> Logo"
-                         onerror="this.src='/public/images/placeholder-logo.svg'">
+                         onerror="this.onerror=null; this.src='/public/images/placeholder-logo.svg'">
                     <div>
                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#uploadLogoModal">
                             <i class="bi bi-upload"></i> Update

@@ -206,12 +206,13 @@ if (isset($_GET['view']) && $_GET['view'] == 'history' && isset($_GET['section']
     }
     
     // Fetch version history
-    $sql = "SELECT DISTINCT version, version_status, version_dt, 
-            (SELECT COUNT(*) FROM bg_form_field_mappings m2 
-             WHERE m2.company_id = m1.company_id AND m2.version = m1.version) as field_count
-            FROM bg_form_field_mappings m1
+    $sql = "SELECT version, 
+            MAX(version_status) as version_status, 
+            MAX(version_dt) as version_dt,
+            COUNT(*) as field_count
+            FROM bg_form_field_mappings
             WHERE company_id = ?
-            GROUP BY version, version_status, version_dt
+            GROUP BY version
             ORDER BY version DESC";
     
     $stmt = $database->prepare($sql);
