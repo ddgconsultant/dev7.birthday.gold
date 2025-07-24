@@ -209,6 +209,7 @@ try {
                 'abo_grabage' => 'Collect Age Requirements',
                 'abo_grabhours' => 'Collect Business Hours',
                 'abo_aienhance' => 'AI Enhancement',
+                'abo_mapformfields' => 'Map Form Fields',
                 'abo_aivalidate' => 'AI Validation',
                 'abo_finalize' => 'Finalize Onboarding'
             ];

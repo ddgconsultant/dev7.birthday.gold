@@ -49,7 +49,7 @@ $stmt->execute(['company_id' => $company_id]);
 $reward_distribution = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Add required styles
-$additionalstyles .= '
+?>
 <style>
 .metric-card {
     transition: all 0.2s ease-in-out;
@@ -65,10 +65,9 @@ $additionalstyles .= '
     height: 300px;
     width: 100%;
 }
-</style>';
-?>
+</style>
 
-<div class="container-fluid px-4 py-5">
+<div class="container-fluid px-4 py-3">
     <!-- Header Section -->
     <div class="mb-4">
         <h2 class="mb-1">Analytics Dashboard</h2>
@@ -78,11 +77,11 @@ $additionalstyles .= '
     <!-- Key Metrics -->
     <div class="row g-4 mb-5">
         <div class="col-md-3">
-            <div class="card metric-card bg-primary bg-opacity-10">
+            <div class="card metric-card bg-primary">
                 <div class="card-body">
-                    <h6 class="text-primary mb-2">Total Users</h6>
-                    <h3 class="mb-0"><?php echo number_format($metrics['total_users']); ?></h3>
-                    <p class="text-muted small mb-0">
+                    <h6 class="text-white mb-2">Total Users</h6>
+                    <h3 class="mb-0 text-white"><?php echo number_format($metrics['total_users']); ?></h3>
+                    <p class="text-white-50 small mb-0">
                         <?php echo number_format($metrics['active_users']); ?> active
                     </p>
                 </div>
@@ -92,7 +91,7 @@ $additionalstyles .= '
             <div class="card metric-card bg-success bg-opacity-10">
                 <div class="card-body">
                     <h6 class="text-success mb-2">Total Rewards</h6>
-                    <h3 class="mb-0"><?php echo number_format($metrics['total_rewards']); ?></h3>
+                    <h3 class="mb-0 text-dark"><?php echo number_format($metrics['total_rewards']); ?></h3>
                     <p class="text-muted small mb-0">Across all categories</p>
                 </div>
             </div>
@@ -101,7 +100,7 @@ $additionalstyles .= '
             <div class="card metric-card bg-warning bg-opacity-10">
                 <div class="card-body">
                     <h6 class="text-warning mb-2">Reward Value</h6>
-                    <h3 class="mb-0">$<?php echo number_format($metrics['total_reward_value'] ?? 0, 2); ?></h3>
+                    <h3 class="mb-0 text-dark">$<?php echo number_format($metrics['total_reward_value'] ?? 0, 2); ?></h3>
                     <p class="text-muted small mb-0">Total value distributed</p>
                 </div>
             </div>
@@ -110,7 +109,7 @@ $additionalstyles .= '
             <div class="card metric-card bg-info bg-opacity-10">
                 <div class="card-body">
                     <h6 class="text-info mb-2">Avg. Per User</h6>
-                    <h3 class="mb-0">
+                    <h3 class="mb-0 text-dark">
                         $<?php 
                             echo number_format(
                                 $metrics['total_users'] ? 

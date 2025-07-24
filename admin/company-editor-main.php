@@ -76,7 +76,7 @@ $additionalstyles .= '
 }
 
 .content-section {
-    padding: 2rem;
+    padding: 1.25rem;
 }
 </style>';
 
@@ -92,7 +92,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <h1 class="mb-1">Company Editor</h1>
                 <p class="lead mb-0"><?php echo htmlspecialchars($company_name); ?></p>
             </div>
-            <a href="/admin/brands.php" class="btn btn-outline-light">
+            <a href="/admin/brands" class="btn btn-outline-light">
                 <i class="bi bi-arrow-left me-2"></i>Back To List of Businesses
             </a>
         </div>
@@ -124,7 +124,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <?php endif; ?>
                     
                     <button class="nav-link" id="rewardeditor-tab" data-bs-toggle="pill" data-bs-target="#rewardeditor" type="button" role="tab">
-                        <i class="bi bi-gift me-2"></i>Reward Editor
+                        <i class="bi bi-gift me-2"></i>Reward Management
                     </button>
                     
                     <button class="nav-link" id="policies-tab" data-bs-toggle="pill" data-bs-target="#policies" type="button" role="tab">

@@ -51,6 +51,12 @@ $mappings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </style>
 
 <div class="field-mappings-section">
+    <!-- Header Section -->
+    <div class="mb-4">
+        <h2 class="mb-1">Form Field Mappings</h2>
+        <p class="text-muted mb-0">Map user fields to website form fields for automated enrollment</p>
+    </div>
+    
     <form method="POST" action="/admin_actions/save_field_mappings.php">
         <input type="hidden" name="addtestcase" value="0">
         <input type="hidden" name="version" value="<?php echo $versionnumber; ?>">

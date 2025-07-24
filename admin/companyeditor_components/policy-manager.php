@@ -23,7 +23,7 @@ $stmt->execute(['company_id' => $company_id]);
 $policies = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Add required styles
-$additionalstyles .= '
+?>
 <style>
 .policy-card {
     transition: all 0.2s ease-in-out;
@@ -58,10 +58,9 @@ $additionalstyles .= '
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-</style>';
-?>
+</style>
 
-<div class="container-fluid px-4 py-5">
+<div class="container-fluid px-4 py-3">
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>

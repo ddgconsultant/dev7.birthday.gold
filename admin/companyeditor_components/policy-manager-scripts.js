@@ -122,3 +122,24 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <button type="button" class="btn btn-outline-secondary restore-version"
                                             data-version-id="${version.version_id}">
                                         Restore
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    historyList.appendChild(item);
+                });
+                
+                if (history.length === 0) {
+                    historyList.innerHTML = '<p class="text-muted text-center py-3">No previous versions available</p>';
+                }
+                
+                historyModal.show();
+            } catch (error) {
+                console.error('Error loading history:', error);
+                historyList.innerHTML = '<p class="text-danger text-center py-3">Error loading history</p>';
+                historyModal.show();
+            }
+        });
+    });
+});

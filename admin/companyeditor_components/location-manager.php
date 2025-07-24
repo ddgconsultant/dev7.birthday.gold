@@ -34,7 +34,7 @@ if ($has_locations) {
 
 ?>
 
-<div class="container-fluid p-4">
+<div class="container-fluid px-4 py-3">
     <!-- Header with Add Location Button -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>

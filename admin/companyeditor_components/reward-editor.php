@@ -70,41 +70,40 @@ $locationRewards = array_filter($rewards, fn($r) => !empty($r['location_id']));
 // Add required styles
 $additionalstyles .= '
 <style>
-/* Modern Tab Navigation */
+/* Modern Tab Navigation - matching plan_editor.php */
 .nav-tabs-modern {
     display: flex;
-    gap: 0.5rem;
     border-bottom: 2px solid #e9ecef;
-    padding-bottom: 0;
-    list-style: none;
     margin-bottom: 0;
+    gap: 0;
+    overflow: hidden;
+    position: relative;
 }
 
-.nav-tabs-modern .nav-link {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 0.5rem 0.5rem 0 0;
-    background: transparent;
+.nav-tab-item {
+    flex: 0 0 auto;
+    padding: 1rem 2rem;
+    text-decoration: none;
     color: #6c757d;
     font-weight: 500;
-    transition: all 0.2s;
-    position: relative;
+    border-bottom: 3px solid transparent;
     margin-bottom: -2px;
+    transition: all 0.2s ease;
+    background: none;
+    border-radius: 0;
+    position: relative;
 }
 
-.nav-tabs-modern .nav-link:hover {
-    background: #f8f9fa;
+.nav-tab-item:hover {
     color: #495057;
+    text-decoration: none;
+    background: #f8f9fa;
 }
 
-.nav-tabs-modern .nav-link.active {
-    background: white;
+.nav-tab-item.active {
     color: #0d6efd;
-    border-bottom: 2px solid #0d6efd;
-}
-
-.nav-tabs-modern .nav-link i {
-    font-size: 1.1rem;
+    border-bottom-color: #0d6efd !important;
+    background: none;
 }
 
 .reward-card {
@@ -116,20 +115,21 @@ $additionalstyles .= '
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 
-.nav-tabs .nav-link {
+/* Override for standard nav-tabs to prevent conflicts */
+.nav-tabs:not(.nav-tabs-modern) .nav-link {
     position: relative;
     border: none;
     color: #6B7280;
     padding: 1rem 1.5rem;
 }
 
-.nav-tabs .nav-link.active {
+.nav-tabs:not(.nav-tabs-modern) .nav-link.active {
     color: #2563EB;
     background: none;
     border-bottom: 2px solid #2563EB;
 }
 
-.nav-tabs .nav-link:hover:not(.active) {
+.nav-tabs:not(.nav-tabs-modern) .nav-link:hover:not(.active) {
     border-bottom: 2px solid #E5E7EB;
 }
 
@@ -173,10 +173,13 @@ $additionalstyles .= '
     font-size: 0.75rem;
     color: #6B7280;
 }
-</style>';
-?>
+</style>
+';
 
-<div class="container-fluid px-4 py-5">
+// Output the styles
+echo $additionalstyles;
+?>
+<div class="container-fluid px-4 py-3">
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -193,22 +196,18 @@ $additionalstyles .= '
 
     <!-- Modern Navigation Tabs -->
     <div class="card">
-        <div class="card-header bg-white border-0 pt-3">
-            <ul class="nav nav-tabs card-header-tabs" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" data-bs-toggle="tab" href="#companyRewards">
-                        <i class="bi bi-building me-2"></i>Company Rewards
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#locationRewards">
-                        <i class="bi bi-geo-alt me-2"></i>Location Rewards
-                    </a>
-                </li>
-            </ul>
+        <div class="card-header bg-white border-0 pt-2 pb-0">
+            <nav class="nav-tabs-modern">
+                <a class="nav-tab-item active" data-bs-toggle="tab" href="#companyRewards">
+                    <i class="bi bi-building me-2"></i>Company Rewards
+                </a>
+                <a class="nav-tab-item" data-bs-toggle="tab" href="#locationRewards">
+                    <i class="bi bi-geo-alt me-2"></i>Location Rewards
+                </a>
+            </nav>
         </div>
 
-        <div class="card-body">
+        <div class="card-body pt-3">
             <div class="tab-content">
                 <!-- Company Rewards Tab -->
                 <div class="tab-pane fade show active" id="companyRewards">
