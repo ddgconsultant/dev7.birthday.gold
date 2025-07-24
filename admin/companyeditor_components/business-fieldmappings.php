@@ -221,20 +221,19 @@ if (isset($_GET['view']) && $_GET['view'] == 'history' && isset($_GET['section']
     
     // Display version history
     ?>
-    <div class="container">
-        <div class="main-header mb-4">
-            <h1>Version History</h1>
-            <p class="text-muted">Form field mapping versions for <?php echo htmlspecialchars($company_name ?? 'Company'); ?></p>
-        </div>
-        
-        <div class="mb-3">
-            <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit" class="btn btn-secondary">
-                <i class="bi bi-arrow-left me-2"></i>Back to Field Mappings
-            </a>
-        </div>
-        
-        <div class="card">
-            <div class="card-body">
+    <div class="main-header mb-4">
+        <h1>Version History</h1>
+        <p class="text-muted">Form field mapping versions for <?php echo htmlspecialchars($company_name ?? 'Company'); ?></p>
+    </div>
+    
+    <div class="mb-3">
+        <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Field Mappings
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
                 <table class="table table-hover">
                     <thead>
                         <tr>
@@ -280,7 +279,6 @@ if (isset($_GET['view']) && $_GET['view'] == 'history' && isset($_GET['section']
                 </table>
             </div>
         </div>
-    </div>
     <?php
     exit; // Stop execution here for version history view
 }
