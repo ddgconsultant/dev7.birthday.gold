@@ -49,7 +49,6 @@ $additionalstyles = '
     padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     transition: all 0.2s;
     text-align: left;
     justify-content: flex-start;
@@ -68,8 +67,6 @@ $additionalstyles = '
 
 .nav-pills .nav-link .bi {
     font-size: 1.1rem;
-    min-width: 1.5rem;
-    text-align: center;
 }
 
 .tab-content {
@@ -109,42 +106,42 @@ include($dir['core_components'] . '/bg_header.inc');
             <div class="col-md-3 mb-4">
                 <div class="nav flex-column nav-pills" id="company-tabs" role="tablist">
                     <button class="nav-link active" id="general-tab" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab">
-                        <i class="bi bi-house-door"></i> General
+                        <i class="bi bi-house-door me-2"></i>General
                     </button>
                     
                     <button class="nav-link" id="locations-tab" data-bs-toggle="pill" data-bs-target="#locations" type="button" role="tab">
-                        <i class="bi bi-geo-alt"></i> Locations
+                        <i class="bi bi-geo-alt me-2"></i>Locations
                     </button>
                     
                     <?php if (!$has_app_only_rewards): ?>
                     <button class="nav-link" id="formfieldedit-tab" data-bs-toggle="pill" data-bs-target="#formfieldedit" type="button" role="tab">
-                        <i class="bi bi-file-earmark-text"></i> Form Field Edit
+                        <i class="bi bi-file-earmark-text me-2"></i>Form Field Edit
                     </button>
                     <?php else: ?>
                     <button class="nav-link disabled" type="button" role="tab" data-bs-toggle="tooltip" data-bs-placement="right" title="Not available for APP only rewards">
-                        <i class="bi bi-phone"></i> APP Only
+                        <i class="bi bi-phone me-2"></i>APP Only
                     </button>
                     <?php endif; ?>
                     
                     <button class="nav-link" id="rewardeditor-tab" data-bs-toggle="pill" data-bs-target="#rewardeditor" type="button" role="tab">
-                        <i class="bi bi-gift"></i> Reward Editor
+                        <i class="bi bi-gift me-2"></i>Reward Editor
                     </button>
                     
                     <button class="nav-link" id="policies-tab" data-bs-toggle="pill" data-bs-target="#policies" type="button" role="tab">
-                        <i class="bi bi-shield-check"></i> Policies
+                        <i class="bi bi-shield-check me-2"></i>Policies
                     </button>
                     
                     <button class="nav-link" id="analytics-tab" data-bs-toggle="pill" data-bs-target="#analytics" type="button" role="tab">
-                        <i class="bi bi-graph-up"></i> Analytics
+                        <i class="bi bi-graph-up me-2"></i>Analytics
                     </button>
                     
                     <a class="nav-link" href="<?php echo $google_targetUrl; ?>" target="_blank">
-                        <i class="bi bi-google"></i> Google Play Store
+                        <i class="bi bi-google me-2"></i>Google Play Store
                         <i class="bi bi-box-arrow-up-right ms-auto"></i>
                     </a>
                     
                     <a class="nav-link" href="<?php echo $apple_targetUrl; ?>" target="_blank">
-                        <i class="bi bi-apple"></i> Apple App Store
+                        <i class="bi bi-apple me-2"></i>Apple App Store
                         <i class="bi bi-box-arrow-up-right ms-auto"></i>
                     </a>
                 </div>
