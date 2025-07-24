@@ -40,7 +40,7 @@ $userFieldNames = [
 
 ###==============================================================================================================
 ###==============================================================================================================
-if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['newversion'])) {
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['newversion']) && isset($_REQUEST['section']) && $_REQUEST['section'] == 'formfieldedit') {
     $versionnumber = $_REQUEST['newversion'];
     
     // Update existing mappings to inactive
@@ -77,14 +77,14 @@ if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset(
     }
     
     // Redirect back to form field edit page
-    header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
+    header("Location: /admin/company-editor-main.php?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
 }
 
 
 ###==============================================================================================================
 ###==============================================================================================================
-if ($componentmode == 'default' && $_SERVER['REQUEST_METHOD'] == 'POST' && isset($_REQUEST['addtestcase']) && $_REQUEST['addtestcase'] == '0') {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_REQUEST['addtestcase']) && $_REQUEST['addtestcase'] == '0' && isset($_REQUEST['section']) && $_REQUEST['section'] == 'formfieldedit') {
     // Fetch the post data
     $mappings = $_POST['mappings'];
  
@@ -142,13 +142,13 @@ if ($componentmode == 'default' && $_SERVER['REQUEST_METHOD'] == 'POST' && isset
     }
 
     // Redirect back to form field edit page
-    header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
+    header("Location: /admin/company-editor-main.php?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
 }
 
 ###==============================================================================================================
 ###==============================================================================================================
-if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['addtestcase'])) {
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['addtestcase']) && isset($_REQUEST['section']) && $_REQUEST['section'] == 'formfieldedit') {
     // Fetch data
     $companyID = $company_id;
     $userID = 20; // User ID is static in this case
@@ -168,13 +168,13 @@ if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset(
     }
     
     // Redirect back to form field edit page
-    header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
+    header("Location: /admin/company-editor-main.php?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
 }
 
 ###==============================================================================================================
 ###==============================================================================================================
-if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['buildout'])) {
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['buildout']) && isset($_REQUEST['section']) && $_REQUEST['section'] == 'formfieldedit') {
     $companyID = $company_id;
     
     // Prepare a single query for all default fields
@@ -191,7 +191,7 @@ if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset(
     }
     
     // Redirect back to form field edit page
-    header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
+    header("Location: /admin/company-editor-main.php?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
 }
 
@@ -312,13 +312,13 @@ $additionalstyles .= '
     </div>
     
     <div class="btn-group">
-        <button type="button" class="btn btn-outline" onclick="location.href='<?php echo $_SERVER['PHP_SELF']; ?>?cid=<?php echo $company_id; ?>&section=formfieldedit&view=history'">
+        <button type="button" class="btn btn-outline" onclick="location.href='/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit&view=history'">
             <i class="bi bi-clock-history me-2"></i> Version History
         </button>
-        <button type="button" class="btn btn-outline" onclick="location.href='<?php echo $_SERVER['PHP_SELF']; ?>?cid=<?php echo $company_id; ?>&newversion=<?php echo ($versionnumber + 1); ?>&section=formfieldedit'" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
+        <button type="button" class="btn btn-outline" onclick="location.href='/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&newversion=<?php echo ($versionnumber + 1); ?>&section=formfieldedit'" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
             <i class="bi bi-plus-circle me-2"></i> New Version
         </button>
-        <button type="button" class="btn btn-outline" onclick="location.href='<?php echo $_SERVER['PHP_SELF']; ?>?buildout=<?php echo $company_id; ?>&cid=<?php echo $company_id; ?>&section=formfieldedit'" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
+        <button type="button" class="btn btn-outline" onclick="location.href='/admin/company-editor-main.php?buildout=<?php echo $company_id; ?>&cid=<?php echo $company_id; ?>&section=formfieldedit'" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
             <i class="bi bi-grid-3x3-gap me-2"></i> BuildOut
         </button>
         <button type="button" class="btn btn-primary" id="addFieldBtn" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
@@ -347,7 +347,7 @@ $additionalstyles .= '
         </div>
     </div>
     
-    <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" <?php echo $isAppOnly ? 'onsubmit="return false;"' : ''; ?>>
+    <form method="POST" action="/admin/company-editor-main.php" <?php echo $isAppOnly ? 'onsubmit="return false;"' : ''; ?>>
         <input type="hidden" name="addtestcase" value="0">
         <input type="hidden" name="version" value="<?php echo $versionnumber; ?>">
         <input type="hidden" name="cid" value="<?php echo $company_id; ?>">
@@ -428,7 +428,7 @@ $additionalstyles .= '
             </table>
             <div class="table-actions">
                 <div>
-                    <a href="<?php echo $_SERVER['PHP_SELF']; ?>?cid=<?php echo $company_id; ?>&section=formfieldedit&addtestcase=1" class="btn btn-outline btn-sm">
+                    <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit&addtestcase=1" class="btn btn-outline btn-sm">
                         <i class="bi bi-play-fill me-1"></i> TEST
                     </a>
                 </div>
