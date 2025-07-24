@@ -51,6 +51,9 @@ $additionalstyles = '
     align-items: center;
     gap: 0.5rem;
     transition: all 0.2s;
+    text-align: left;
+    justify-content: flex-start;
+    width: 100%;
 }
 
 .nav-pills .nav-link:hover {
@@ -65,6 +68,8 @@ $additionalstyles = '
 
 .nav-pills .nav-link .bi {
     font-size: 1.1rem;
+    min-width: 1.5rem;
+    text-align: center;
 }
 
 .tab-content {
