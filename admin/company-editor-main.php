@@ -195,7 +195,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         <div class="content-section">
                             <?php 
                             $componentmode = 'include';
-                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/field-mappings.php'); 
+                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/businesseditor_components/business-fieldmappings.php'); 
                             ?>
                         </div>
                     </div>
