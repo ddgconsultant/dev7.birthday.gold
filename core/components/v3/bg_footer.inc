@@ -14,6 +14,21 @@ $additionalstyles .= "
     color: #6c757d !important; /* Lighter color */
 }
 
+/* Min footer specific styles */
+footer.bg-dark h5 {
+    white-space: normal !important;
+}
+
+/* Ensure min footer content doesn't wrap awkwardly on mobile */
+@media (max-width: 767px) {
+    footer.bg-dark h5.fs-3 {
+        font-size: 1.25rem !important;
+    }
+    footer.bg-dark h5 span[style*="font-size: 0.85rem"] {
+        font-size: 0.75rem !important;
+    }
+}
+
 /* Gradient background for footer */
 footer.bg-dark {
     background: linear-gradient(135deg, #343a40 0%, #495057 50%, #343a40 100%) !important;
@@ -148,21 +163,36 @@ case 'min':
        <footer class="bg-dark text-white">
     <div class="container-fluid">
         <div class="container">
-            <div class="row pt-2 pb-2">
-              <h5 class="text-white fs-3">
-    birthday.gold
-    <span style="font-size: 0.85rem; color: #aaa;">
-    <span class="px-5"></span>
-    <a href="/" class="text-secondary text-decoration-none">HOME</a>
-    <span class="px-5">|</span>
-    <a href="/help" class="text-secondary text-decoration-none">HELP</a>
-    <span class="px-5">|</span>
-    <a href="/business/partner" class="text-secondary text-decoration-none">PARTNERS</a>
-    <span class="px-5"></span>
-    <span >Copyright &copy;'.date('Y').'</span>
-    </span>
-</h5>
-
+            <div class="row pt-3 pb-3">
+              <div class="col-12">
+                <!-- Mobile Layout -->
+                <div class="d-block d-md-none text-center">
+                    <div class="mb-2">
+                        <a href="/" class="text-white text-decoration-none fs-4 fw-bold">birthday.gold</a>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #aaa;">
+                        <a href="/help" class="text-secondary text-decoration-none">HELP</a>
+                        <span class="mx-2">|</span>
+                        <span>&copy; '.date('Y').'</span>
+                    </div>
+                </div>
+                
+                <!-- Desktop Layout -->
+                <div class="d-none d-md-block">
+                    <h5 class="text-white fs-3 d-flex align-items-center mb-0">
+                        <span>birthday.gold</span>
+                        <span class="ms-5 d-flex align-items-center" style="font-size: 0.85rem; color: #aaa;">
+                            <a href="/" class="text-secondary text-decoration-none">HOME</a>
+                            <span class="px-3">|</span>
+                            <a href="/help" class="text-secondary text-decoration-none">HELP</a>
+                            <span class="px-3">|</span>
+                            <a href="/business/partner" class="text-secondary text-decoration-none">PARTNERS</a>
+                            <span class="px-5"></span>
+                            <span>Copyright &copy;'.date('Y').'</span>
+                        </span>
+                    </h5>
+                </div>
+              </div>
             </div>
         </div>
     </div>

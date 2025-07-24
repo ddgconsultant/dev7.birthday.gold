@@ -181,8 +181,8 @@ $final = trim($final);
       '/(?:[#\.\*\w\-\[\]\=\(\)\s,:@]+)\{[^{}]*\}(?=\s*[#\.\*\w\-\[\]\=\(\)\s,:@]*\{[^{}]*\})*/',
       '/@media[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/is'
   ], '', $final);
-  
-    require_once('/core/classes/class.stringsanitizer.php');    
+
+    require_once($dir['classes']. '/class.stringsanitizer.php');    
     // Convert to plain text
     $final = StringSanitizer::emailToPlainText($final);
 

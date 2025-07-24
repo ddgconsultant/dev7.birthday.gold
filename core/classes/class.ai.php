@@ -103,44 +103,53 @@ class AI {
 
     
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
-    private function getHeadersConfig(string $engine): callable {
-        $configs = [
-            'openai' => function($config) {
-                return [
-                    'Content-Type: application/json',
-                    'Authorization: Bearer ' . $config['api_key']
-                ];
-            },
-            'anthropic' => function($config) {
-                $headers = [
-                    'Content-Type: application/json',
-                    'x-api-key: ' . $config['api_key'],
-                    'anthropic-version: 2023-06-01'
-                ];
-                
-                // Add beta header if computer-use type
-                if ($this->currentType === 'computer-use') {
-                    $headers[] = 'anthropic-beta: computer-use-2024-10-22';
-                }
-                
-                return $headers;
-            },
-            'gemini' => function($config) {
-                return [
-                    'Content-Type: application/json',
-                    'Authorization: Bearer ' . $config['api_key']
-                ];
+  private function getHeadersConfig(string $engine): callable {
+    $configs = [
+        'openai' => function($config) {
+            return [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $config['api_key']
+            ];
+        },
+        'anthropic' => function($config) {
+            $headers = [
+                'Content-Type: application/json',
+                'x-api-key: ' . $config['api_key'],
+                'anthropic-version: 2023-06-01'
+            ];
+            if ($this->currentType === 'computer-use') {
+                $headers[] = 'anthropic-beta: computer-use-2024-10-22';
             }
-        ];
-
-        foreach ($configs as $provider => $config) {
-            if (strpos($engine, $provider) === 0) {
-                return $config;
-            }
+            return $headers;
+        },
+        'gemini' => function($config) {
+            return [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $config['api_key']
+            ];
+        },
+        'cerebras_text' => function($config) {
+            return [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $config['api_key']
+            ];
         }
+    ];
 
-        throw new Exception("Unknown provider for engine: $engine");
+    foreach ($configs as $provider => $config) {
+        if (strpos($engine, $provider) === 0) {
+            return $config;
+        }
     }
+
+    // ✅ Default fallback: generic OpenAI-style format
+    return function($config) {
+        return [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . ($config['api_key'] ?? '')
+        ];
+    };
+}
 
     
     

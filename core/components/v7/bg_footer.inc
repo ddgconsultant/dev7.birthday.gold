@@ -1,7 +1,7 @@
 <?php
 #-------------------------------------------------------------------------------
 # ENHANCED MOBILE-FIRST FOOTER COMPONENT
-# Compatible with existing Birthday.Gold v3 infrastructure
+# Compatible with existing birthday.gold v3 infrastructure
 # Combines functionality from original footer with mobile-first optimizations
 #-------------------------------------------------------------------------------
 
@@ -483,7 +483,7 @@ switch ($display_footertype ?? 'default') {
                     <div class="row pt-2 pb-2">
                         <div class="col-12 text-center">
                             <small class="text-secondary">
-                                © ' . date('Y') . ' Birthday.Gold | 
+                                © ' . date('Y') . ' birthday.gold | 
                                 <a href="/help" class="text-secondary">Help</a> | 
                                 <a href="/legalhub" class="text-secondary">Legal</a>
                             </small>
@@ -550,17 +550,34 @@ switch ($display_footertype ?? 'default') {
             <div class="container-fluid">
                 <div class="container">
                     <div class="row pt-2 pb-2">
-                        <h5 class="text-white fs-3">
-                            birthday.gold
-                            <span style="font-size: 0.85rem; color: #aaa;">
-                                <span class="px-5"></span>
-                                <a href="/" class="text-secondary text-decoration-none">HOME</a>
-                                <span class="px-5">|</span>
-                                <a href="/help" class="text-secondary text-decoration-none">HELP</a>
-                                <span class="px-5"></span>
-                                <span>Copyright &copy;' . date('Y') . '</span>
-                            </span>
-                        </h5>
+                        <div class="col-12 text-center text-md-start">
+                            <!-- Mobile Layout - Single Line -->
+                            <div class="d-block d-md-none">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="/" class="text-white text-decoration-none fs-5 fw-bold">birthday.gold</a>
+                                    <span style="color: #aaa; font-size: 0.85rem;">
+                                        <a href="/help" class="text-secondary text-decoration-none">HELP</a>
+                                        <span class="mx-2">|</span>
+                                        <span>&copy;' . date('Y') . '</span>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Desktop Layout -->
+                            <div class="d-none d-md-block">
+                                <h5 class="text-white fs-3 mb-0">
+                                    birthday.gold
+                                    <span style="font-size: 0.85rem; color: #aaa;">
+                                        <span class="px-5"></span>
+                                        <a href="/" class="text-secondary text-decoration-none">HOME</a>
+                                        <span class="px-5">|</span>
+                                        <a href="/help" class="text-secondary text-decoration-none">HELP</a>
+                                        <span class="px-5"></span>
+                                        <span>Copyright &copy;' . date('Y') . '</span>
+                                    </span>
+                                </h5>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -583,7 +600,7 @@ switch ($display_footertype ?? 'default') {
                         <!-- Company Info -->
                         <div class="col-12 col-md-6 col-lg-4">
                             <div class="footer-section">
-                                <h6 class="footer-title">Birthday.Gold</h6>';
+                                <h6 class="footer-title">birthday.gold</h6>';
 
         // Get footer monthly message
         $CONTENT_footermessage = $session->get('CONTENT_footermessage', '');
@@ -740,7 +757,7 @@ switch ($display_footertype ?? 'default') {
                     <div class="footer-bottom">
                         <div class="row align-items-center">
                             <div class="col-12 col-md-6">
-                                <p class="copyright mb-0">© ' . date('Y') . ' Birthday.Gold. All rights reserved.</p>
+                                <p class="copyright mb-0">© ' . date('Y') . ' birthday.gold. All rights reserved.</p>
                             </div>
                             <div class="col-12 col-md-6">
                                 <div class="footer-meta">

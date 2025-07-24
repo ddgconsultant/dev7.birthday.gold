@@ -446,6 +446,61 @@ $page_description = "Complete your Birthday Gold account setup";
 $additionalstyles .= '
 <link href="/claudecode/createaccount_styles.css" rel="stylesheet">
 <style>
+/* Responsive headline sizing - matching signup.php */
+.header h1 {
+    font-size: 1.75rem !important; /* Default for mobile - keep readable */
+    font-weight: 700 !important;
+    color: #212529 !important;
+    margin-bottom: 0.5rem !important;
+    line-height: 1.2 !important;
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+    .header h1 {
+        font-size: 2.25rem !important;
+    }
+}
+
+/* Desktop and up */
+@media (min-width: 992px) {
+    .header h1 {
+        font-size: 2.75rem !important;
+    }
+}
+
+/* Large desktop */
+@media (min-width: 1200px) {
+    .header h1 {
+        font-size: 3.25rem !important;
+    }
+}
+
+/* XL desktop */
+@media (min-width: 1400px) {
+    .header h1 {
+        font-size: 3.5rem !important;
+    }
+}
+
+/* Subtitle/byline styling */
+.header p {
+    font-size: 1rem !important; /* Mobile */
+    color: #6c757d !important;
+}
+
+@media (min-width: 768px) {
+    .header p {
+        font-size: 1.5rem !important;
+    }
+}
+
+@media (min-width: 992px) {
+    .header p {
+        font-size: 1.75rem !important;
+    }
+}
+
 /* Additional styles for modular sections */
 .form-section {
     margin-bottom: 2rem;
@@ -959,9 +1014,9 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
 <div class="container">
     <!-- Header -->
-    <div class="header mt-5 pt-5">
-        <h1>Create Your Account</h1>
-        <p>Step 2: Enter your account details</p>
+    <div class="header text-center mt-5 mb-4">
+        <h1>Now, Let's Create Your Account</h1>
+        <p class="mb-0">Step 2: Enter your account details</p>
     </div>
 
     <!-- Progress Bar -->
@@ -1012,7 +1067,7 @@ include($dir['core_components'] . '/bg_header.inc');
         <?php if (!empty($plandata['account_name']) && $account_cost > 0): ?>
         <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
             <div>
-                <strong><?php echo htmlspecialchars($plandata['account_name']); ?></strong>
+                Your Plan: <strong><?php echo htmlspecialchars($plandata['account_name']); ?></strong>
                 <span class="text-muted ms-2"><?php echo ucfirst($account_type); ?> Account</span>
             </div>
             <div class="text-end">
@@ -1020,7 +1075,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     $<?php echo number_format($account_cost / 100, 2); ?>
                 </span>
                 <?php 
-                $billing_cycle = $plandata['billing_cycle'] ?? 'yearly';
+                $billing_cycle = $plandata['billing_cycle'] ?? '';
                 switch($billing_cycle) {
                     case 'monthly': echo '<span class="text-muted">/month</span>'; break;
                     case 'yearly': echo '<span class="text-muted">/year</span>'; break;

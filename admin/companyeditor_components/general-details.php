@@ -125,6 +125,251 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
         </div>
     </div>
 
+    <!-- ABO Progress Section -->
+    <div class="content-header-admin mb-4">
+        <h3 class="mb-0">Automation Business Onboarding (ABO) Progress</h3>
+    </div>
+    
+    <?php
+    // Get ABO progress
+    $abo_sql = "SELECT ca.name as processor, ca.description as status, ca.modify_dt,
+                c.config_value as display_name, 
+                JSON_UNQUOTE(JSON_EXTRACT(c.config_data, '$.description')) as config_description
+                FROM bg_company_attributes ca
+                LEFT JOIN bg_config c ON c.config_key COLLATE utf8mb4_unicode_ci = ca.name COLLATE utf8mb4_unicode_ci 
+                    AND c.config_type = 'automation_processor'
+                WHERE ca.company_id = :company_id 
+                AND ca.type = 'onboarding_progress'
+                ORDER BY c.display_order";
+    $abo_stmt = $database->query($abo_sql, ['company_id' => $company_id]);
+    $abo_progress = $abo_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get collected data
+    $collected_sql = "SELECT c.* FROM bg_companies c WHERE company_id = :company_id";
+    $collected_stmt = $database->query($collected_sql, ['company_id' => $company_id]);
+    $collected_data = $collected_stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Status colors
+    $abo_status_colors = [
+        'pending' => 'secondary',
+        'in_progress' => 'info',
+        'completed' => 'success',
+        'attempted' => 'warning',
+        'error' => 'danger'
+    ];
+    ?>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row">
+                <!-- Progress Overview -->
+                <div class="col-md-12 mb-3">
+                    <?php
+                    $total_processors = count($abo_progress);
+                    $completed = 0;
+                    $attempted = 0;
+                    foreach ($abo_progress as $proc) {
+                        if ($proc['status'] === 'completed') $completed++;
+                        elseif ($proc['status'] === 'attempted') $attempted++;
+                    }
+                    $progress_percent = $total_processors > 0 ? round(($completed / $total_processors) * 100) : 0;
+                    ?>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><strong><?php echo $completed; ?></strong> of <?php echo $total_processors; ?> completed</span>
+                        <span><?php echo $progress_percent; ?>%</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div class="progress-bar bg-success" style="width: <?php echo $progress_percent; ?>%">
+                            <?php echo $progress_percent; ?>%
+                        </div>
+                        <?php if ($attempted > 0): 
+                            $attempted_percent = round(($attempted / $total_processors) * 100);
+                        ?>
+                        <div class="progress-bar bg-warning" style="width: <?php echo $attempted_percent; ?>%">
+                            <?php echo $attempted; ?> attempted
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                
+                <!-- Collected Data Display -->
+                <div class="col-md-12">
+                    <h5 class="mb-3">Collected Data</h5>
+                    <div class="row g-3">
+                        <!-- Apps -->
+                        <div class="col-md-6">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted mb-2"><i class="bi bi-phone me-2"></i>Mobile Apps</h6>
+                                <?php if (!empty($collected_data['appgoogle'])): ?>
+                                    <a href="<?php echo htmlspecialchars($collected_data['appgoogle']); ?>" target="_blank" class="d-block text-decoration-none mb-2">
+                                        <i class="bi bi-google me-2"></i>Google Play App
+                                        <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <p class="text-muted mb-2"><i class="bi bi-google me-2"></i>Google Play: <em>Pending</em></p>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($collected_data['appapple'])): ?>
+                                    <a href="<?php echo htmlspecialchars($collected_data['appapple']); ?>" target="_blank" class="d-block text-decoration-none">
+                                        <i class="bi bi-apple me-2"></i>Apple App Store
+                                        <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <p class="text-muted mb-0"><i class="bi bi-apple me-2"></i>Apple App: <em>Pending</em></p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Social Media -->
+                        <div class="col-md-6">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted mb-2"><i class="bi bi-share me-2"></i>Social Media</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <?php if (!empty($collected_data['facebook'])): ?>
+                                            <a href="<?php echo htmlspecialchars($collected_data['facebook']); ?>" target="_blank" class="d-block text-decoration-none mb-2">
+                                                <i class="bi bi-facebook me-1"></i>Facebook
+                                            </a>
+                                        <?php else: ?>
+                                            <p class="text-muted mb-2"><i class="bi bi-facebook me-1"></i><em>Pending</em></p>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($collected_data['instagram'])): ?>
+                                            <a href="<?php echo htmlspecialchars($collected_data['instagram']); ?>" target="_blank" class="d-block text-decoration-none">
+                                                <i class="bi bi-instagram me-1"></i>Instagram
+                                            </a>
+                                        <?php else: ?>
+                                            <p class="text-muted mb-0"><i class="bi bi-instagram me-1"></i><em>Pending</em></p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="col-6">
+                                        <?php if (!empty($collected_data['twitter'])): ?>
+                                            <a href="<?php echo htmlspecialchars($collected_data['twitter']); ?>" target="_blank" class="d-block text-decoration-none mb-2">
+                                                <i class="bi bi-twitter me-1"></i>Twitter
+                                            </a>
+                                        <?php else: ?>
+                                            <p class="text-muted mb-2"><i class="bi bi-twitter me-1"></i><em>Pending</em></p>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($collected_data['tiktok'])): ?>
+                                            <a href="<?php echo htmlspecialchars($collected_data['tiktok']); ?>" target="_blank" class="d-block text-decoration-none">
+                                                <i class="bi bi-tiktok me-1"></i>TikTok
+                                            </a>
+                                        <?php else: ?>
+                                            <p class="text-muted mb-0"><i class="bi bi-tiktok me-1"></i><em>Pending</em></p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Images -->
+                        <div class="col-md-6">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted mb-2"><i class="bi bi-image me-2"></i>Company Images</h6>
+                                <?php
+                                // Check for images
+                                $image_count_sql = "SELECT COUNT(*) as total FROM bg_company_attributes 
+                                                   WHERE company_id = :company_id AND type = 'image' 
+                                                   AND category = 'company_logos'";
+                                $count_stmt = $database->query($image_count_sql, ['company_id' => $company_id]);
+                                $image_count = $count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
+                                
+                                $image_sql = "SELECT name, description FROM bg_company_attributes 
+                                            WHERE company_id = :company_id AND type = 'image' 
+                                            AND category = 'company_logos'
+                                            ORDER BY create_dt DESC LIMIT 3";
+                                $image_stmt = $database->query($image_sql, ['company_id' => $company_id]);
+                                $images = $image_stmt->fetchAll(PDO::FETCH_ASSOC);
+                                
+                                if (!empty($images)): ?>
+                                    <p class="mb-1"><strong><?php echo $image_count; ?></strong> images collected</p>
+                                    <small class="text-muted">
+                                    <?php 
+                                    $image_types = array_column($images, 'name');
+                                    echo implode(', ', array_slice($image_types, 0, 3));
+                                    if (count($image_types) > 3) echo '...';
+                                    ?>
+                                    </small>
+                                <?php else: ?>
+                                    <p class="text-muted mb-0"><em>No images collected yet</em></p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Metadata -->
+                        <div class="col-md-6">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted mb-2"><i class="bi bi-file-text me-2"></i>Metadata</h6>
+                                <?php
+                                // Check for metadata
+                                $meta_count_sql = "SELECT COUNT(*) as total FROM bg_company_attributes 
+                                                  WHERE company_id = :company_id AND type = 'metadata'";
+                                $meta_count_stmt = $database->query($meta_count_sql, ['company_id' => $company_id]);
+                                $meta_count = $meta_count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
+                                
+                                $meta_sql = "SELECT name FROM bg_company_attributes 
+                                           WHERE company_id = :company_id AND type = 'metadata' 
+                                           LIMIT 5";
+                                $meta_stmt = $database->query($meta_sql, ['company_id' => $company_id]);
+                                $metadata = $meta_stmt->fetchAll(PDO::FETCH_COLUMN);
+                                
+                                if (!empty($metadata)): ?>
+                                    <p class="mb-1"><strong><?php echo $meta_count; ?></strong> fields extracted</p>
+                                    <small class="text-muted">
+                                    <?php 
+                                    echo implode(', ', array_slice($metadata, 0, 3));
+                                    if (count($metadata) > 3) echo '...';
+                                    ?>
+                                    </small>
+                                <?php else: ?>
+                                    <p class="text-muted mb-0"><em>No metadata collected yet</em></p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Processor Status Table -->
+                <div class="col-md-12 mt-4">
+                    <h5 class="mb-3">Processor Status</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Processor</th>
+                                    <th>Status</th>
+                                    <th>Last Updated</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($abo_progress as $proc): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($proc['display_name'] ?? $proc['processor']); ?></td>
+                                    <td>
+                                        <span class="badge bg-<?php echo $abo_status_colors[$proc['status']] ?? 'secondary'; ?>">
+                                            <?php echo ucfirst($proc['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php echo !empty($proc['modify_dt']) ? date('M d, Y g:i A', strtotime($proc['modify_dt'])) : 'Never'; ?>
+                                    </td>
+                                    <td>
+                                        <a href="/admin/abo-status.php?status=active" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Additional Information Cards Row -->
     <div class="row g-4 mb-4">
         <!-- Social Media Card -->

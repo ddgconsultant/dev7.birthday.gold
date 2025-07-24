@@ -553,6 +553,23 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
+            <a href="/admin/business-submissions" class="admin-card">
+                <div class="admin-icon icon-brand">
+                    <i class="bi bi-inbox"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Business Submissions
+                        <?php
+                        $submission_count = $database->query("SELECT COUNT(*) FROM bg_companies WHERE status IN ('submitted', 'pending_review')")->fetchColumn();
+                        if ($submission_count > 0):
+                        ?>
+                        <span class="enrollment-badge"><?php echo $submission_count; ?></span>
+                        <?php endif; ?>
+                    </h3>
+                    <p class="admin-card-text">Review user-submitted businesses</p>
+                </div>
+            </a>
+            
             <a href="<?php echo $dir['bge_webA']; ?>/companysetup.php?filter=finalized" class="admin-card">
                 <div class="admin-icon icon-brand">
                     <i class="bi bi-building"></i>

@@ -308,6 +308,7 @@ foreach ($messages_by_day as $date => $day_messages) {
     // Set up AI if available
     if (isset($ai)) {
         $ai->setEngine('anthropic_goldie', 'text');
+      #  $ai->setEngine('cerebras_text', 'text');
         
         // Collect company info and message details
         $companies = [];

@@ -636,7 +636,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                 
                 <div class="row justify-content-center mt-4">
                     <div class="col-12 col-md-6 col-lg-5">
-                        <button type="submit" class="btn-primary-custom w-100" id="continueBtn" disabled>
+                        <button type="submit" class="btn-primary-custom w-100" id="continueBtn" style="border-radius: 25px;" disabled>
                             Select a Plan to Continue
                         </button>
                     </div>
@@ -772,7 +772,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const continueBtn = document.getElementById('continueBtn');
             if (continueBtn) {
                 continueBtn.disabled = false;
-                continueBtn.textContent = 'Continue';
+                continueBtn.textContent = 'Continue to Account Details';
             }
         }
     }
