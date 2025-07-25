@@ -31,7 +31,7 @@ foreach ($processors as &$processor) {
 }
 
 // Get companies - include ALL companies from user recommendations
-$companies_sql = "SELECT DISTINCT c.company_id, c.company_name, c.status, c.create_dt
+$companies_sql = "SELECT c.company_id, c.company_name, c.status, c.create_dt
 FROM bg_companies c
 WHERE c.source = 'user_recommendation'";
 
@@ -46,13 +46,13 @@ if ($filter_status !== 'all') {
     $params['status'] = $filter_status;
 }
 
-$companies_sql .= " ORDER BY c.create_dt DESC LIMIT 100";
+$companies_sql .= " GROUP BY c.company_id, c.company_name, c.status, c.create_dt ORDER BY c.create_dt DESC LIMIT 100";
 
 $companies_stmt = $database->query($companies_sql, $params);
 $companies = $companies_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get progress for each company
-foreach ($companies as &$company) {
+foreach ($companies as $key => $company) {
     // Get progress with all details
     $progress_sql = "SELECT 
         name as processor_key,
@@ -84,7 +84,13 @@ foreach ($companies as &$company) {
         if ($status === 'completed') $completed_steps++;
     }
     $company['completion_percentage'] = $total_steps > 0 ? round(($completed_steps / $total_steps) * 100) : 0;
+    
+    // Update the array with the modified company data
+    $companies[$key] = $company;
 }
+
+// Reset array pointer after reference usage
+unset($company);
 
 // Get status counts
 $status_counts_sql = "SELECT status, COUNT(*) as count 

@@ -7,7 +7,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Validate request
 if (!$app->formposted() || !isset($_POST['action']) || !isset($_POST['company_id'])) {
-    $system->addmessage('error', 'Invalid request');
+    $_SESSION['message'] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Invalid request</div>';
     header('Location: /admin/business-submissions.php');
     exit;
 }
@@ -21,7 +21,7 @@ $check_stmt = $database->query($check_sql, ['id' => $company_id]);
 $company = $check_stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$company) {
-    $system->addmessage('error', 'Company not found');
+    $_SESSION['message'] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Company not found</div>';
     header('Location: /admin/business-submissions.php');
     exit;
 }
@@ -81,7 +81,7 @@ try {
             ]);
             
             $database->commit();
-            $system->addmessage('success', 'Business approved and automation steps initialized');
+            $messages[] = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Business approved and automation steps initialized</div>';
             break;
             
         case 'reject':
@@ -125,7 +125,7 @@ try {
             }
             
             $database->commit();
-            $system->addmessage('info', 'Business submission rejected');
+            $_SESSION['message'] = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> Business submission rejected</div>';
             break;
             
         case 'pending':
@@ -137,19 +137,19 @@ try {
             $database->query($update_sql, ['id' => $company_id]);
             
             $database->commit();
-            $system->addmessage('info', 'Business marked for review');
+            $_SESSION['message'] = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> Business marked for review</div>';
             break;
             
         default:
             $database->rollBack();
-            $system->addmessage('error', 'Invalid action');
+            $_SESSION['message'] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Invalid action</div>';
             break;
     }
     
 } catch (Exception $e) {
     $database->rollBack();
     error_log("Business action error: " . $e->getMessage());
-    $system->addmessage('error', 'An error occurred while processing your request');
+    $_SESSION['message'] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> An error occurred while processing your request</div>';
 }
 
 // Redirect back to business submissions page

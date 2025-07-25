@@ -213,7 +213,7 @@ echo '
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Submit Recommendation</button>
+                        <button type="submit" class="btn btn-primary btn-lg" style="border-radius: 50px;">Submit Recommendation</button>
                     </div>
                 </form>
             </div>

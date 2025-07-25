@@ -580,6 +580,23 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
+            <a href="/admin/abo-status" class="admin-card">
+                <div class="admin-icon icon-brand">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">ABO Status
+                        <?php
+                        $abo_count = $database->query("SELECT COUNT(DISTINCT company_id) FROM bg_company_attributes WHERE type = 'onboarding_progress' AND status = 'active'")->fetchColumn();
+                        if ($abo_count > 0):
+                        ?>
+                        <span class="enrollment-badge"><?php echo $abo_count; ?></span>
+                        <?php endif; ?>
+                    </h3>
+                    <p class="admin-card-text">Monitor Automated Business Onboarding</p>
+                </div>
+            </a>
+            
             <a href="/admin_actions/manual_rewards" class="admin-card">
                 <div class="admin-icon icon-brand">
                     <i class="bi bi-gift"></i>
