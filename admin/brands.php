@@ -442,7 +442,6 @@ foreach ($companies as $company) {
     echo '
 <td>
 <a href="/admin/company-editor-main?cid=' . $company['company_id'] . '" class="btn btn-sm '. $btn_color.'">View Brand</a>
-<a href="/admin/business-editor?cid=' . $encodedCid . '&section=formfieldedit" class="btn btn-sm btn-outline-primary ms-1">Form Fields</a>
 </td>
 </tr>
 ';

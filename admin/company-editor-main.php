@@ -134,7 +134,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <button class="nav-link <?php echo $isAppOnly ? 'text-danger' : ''; ?>" id="formfieldedit-tab" data-bs-toggle="pill" data-bs-target="#formfieldedit" type="button" role="tab">
                         <i class="bi bi-file-earmark-text me-2"></i>Form Field Mappings
                         <?php if ($isAppOnly): ?>
-                            <i class="bi bi-phone-x text-danger ms-auto" title="APP ONLY - No form mapping needed"></i>
+                            <i class="bi bi-phone text-danger ms-2" title="APP ONLY"></i>
                         <?php endif; ?>
                     </button>
                     <?php else: ?>
