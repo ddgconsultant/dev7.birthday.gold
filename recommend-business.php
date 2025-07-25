@@ -29,7 +29,14 @@ if ($app->formposted()) {
     } elseif (!filter_var($home_url, FILTER_VALIDATE_URL) || !filter_var($signup_url, FILTER_VALIDATE_URL)) {
         $messages[] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Please enter valid URLs</div>';
     } else {
-        // Extract domain from home URL
+        // Normalize URLs for comparison - remove protocol and trailing slash
+        $normalized_home_url = preg_replace('#^https?://#', '', $home_url);
+        $normalized_home_url = rtrim($normalized_home_url, '/');
+        
+        $normalized_signup_url = preg_replace('#^https?://#', '', $signup_url);
+        $normalized_signup_url = rtrim($normalized_signup_url, '/');
+        
+        // Extract domain from home URL for storing
         $parsed_url = parse_url($home_url);
         $domain = $parsed_url['host'] ?? '';
         $domain = preg_replace('/^www\./', '', $domain);
@@ -38,24 +45,24 @@ if ($app->formposted()) {
             // Begin transaction
             $database->beginTransaction();
             
-            // Check if company already exists
+            // Check if company already exists - check company name, home URL, or signup URL
             $check_sql = "SELECT company_id, company_name, status FROM bg_companies 
-                          WHERE (email_domain = :domain OR company_name = :name) 
+                          WHERE company_name = :name 
+                          OR TRIM(TRAILING '/' FROM REPLACE(REPLACE(company_url, 'https://', ''), 'http://', '')) = :normalized_home_url
+                          OR TRIM(TRAILING '/' FROM REPLACE(REPLACE(signup_url, 'https://', ''), 'http://', '')) = :normalized_signup_url
                           LIMIT 1";
             
             $check_stmt = $database->query($check_sql, [
-                'domain' => $domain,
-                'name' => $business_name
+                'name' => $business_name,
+                'normalized_home_url' => $normalized_home_url,
+                'normalized_signup_url' => $normalized_signup_url
             ]);
             
             if ($existing = $check_stmt->fetch(PDO::FETCH_ASSOC)) {
                 $database->rollBack();
                 
-                if ($existing['status'] === 'submitted') {
-                    $messages[] = '<div class="alert alert-warning"><i class="bi bi-info-circle"></i> This business has already been submitted and is pending review</div>';
-                } else {
-                    $messages[] = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> This business is already in our directory</div>';
-                }
+                // Show consistent message for all duplicates
+                $messages[] = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> We already know about this business.</div>';
             } else {
                 // Insert new company with 'submitted' status
                 $insert_sql = "INSERT INTO bg_companies 
