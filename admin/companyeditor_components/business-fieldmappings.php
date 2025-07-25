@@ -77,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['newversion']) && iss
     }
     
     // Redirect back to form field edit page
-    header("Location: /admin/company-editor-main.php?cid={$_REQUEST['cid']}&section=formfieldedit");
+    header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
 }
 
@@ -142,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_REQUEST['addtestcase']) && $
     }
 
     // Redirect back to form field edit page
-    header("Location: /admin/company-editor-main.php?cid={$_REQUEST['cid']}&section=formfieldedit");
+    header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
 }
 
@@ -168,7 +168,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['addtestcase']) && is
     }
     
     // Redirect back to form field edit page
-    header("Location: /admin/company-editor-main.php?cid={$_REQUEST['cid']}&section=formfieldedit");
+    header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
 }
 
@@ -191,7 +191,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['buildout']) && isset
     }
     
     // Redirect back to form field edit page
-    header("Location: /admin/company-editor-main.php?cid={$_REQUEST['cid']}&section=formfieldedit");
+    header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
 }
 
@@ -227,7 +227,7 @@ if (isset($_GET['view']) && $_GET['view'] == 'history' && isset($_GET['section']
     </div>
     
     <div class="mb-3">
-        <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit" class="btn btn-secondary">
+        <a href="<?php echo $_SERVER['PHP_SELF']; ?>?cid=<?php echo $company_id; ?>&section=formfieldedit" class="btn btn-secondary">
             <i class="bi bi-arrow-left me-2"></i>Back to Field Mappings
         </a>
     </div>
@@ -262,13 +262,13 @@ if (isset($_GET['view']) && $_GET['view'] == 'history' && isset($_GET['section']
                             <td><?php echo $version['field_count']; ?> fields</td>
                             <td>
                                 <?php if ($version['version_status'] != 'active'): ?>
-                                <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit&activate_version=<?php echo $version['version']; ?>" 
+                                <a href="<?php echo $_SERVER['PHP_SELF']; ?>?cid=<?php echo $company_id; ?>&section=formfieldedit&activate_version=<?php echo $version['version']; ?>" 
                                    class="btn btn-sm btn-primary"
                                    onclick="return confirm('Activate Version <?php echo $version['version']; ?>?');">
                                     Activate
                                 </a>
                                 <?php endif; ?>
-                                <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit&preview_version=<?php echo $version['version']; ?>" 
+                                <a href="<?php echo $_SERVER['PHP_SELF']; ?>?cid=<?php echo $company_id; ?>&section=formfieldedit&preview_version=<?php echo $version['version']; ?>" 
                                    class="btn btn-sm btn-outline-secondary">
                                     Preview
                                 </a>
@@ -280,7 +280,7 @@ if (isset($_GET['view']) && $_GET['view'] == 'history' && isset($_GET['section']
             </div>
         </div>
     <?php
-    exit; // Stop execution here for version history view
+    return; // Stop execution here for version history view
 }
 
 // Handle version activation
@@ -302,7 +302,7 @@ if (isset($_GET['activate_version']) && isset($_GET['section']) && $_GET['sectio
     $stmt->execute([$company_id, $activate_version]);
     
     // Redirect back to form field edit
-    header("Location: /admin/company-editor-main.php?cid={$company_id}&section=formfieldedit");
+    header("Location: {$_SERVER['PHP_SELF']}?cid={$company_id}&section=formfieldedit");
     exit;
 }
 
@@ -423,13 +423,13 @@ $additionalstyles .= '
     </div>
     
     <div class="btn-group">
-        <button type="button" class="btn btn-outline" onclick="location.href='/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit&view=history'">
+        <button type="button" class="btn btn-outline" onclick="location.href='<?php echo $_SERVER['PHP_SELF']; ?>?cid=<?php echo $company_id; ?>&section=formfieldedit&view=history'">
             <i class="bi bi-clock-history me-2"></i> Version History
         </button>
-        <button type="button" class="btn btn-outline" onclick="location.href='/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&newversion=<?php echo ($versionnumber + 1); ?>&section=formfieldedit'" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
+        <button type="button" class="btn btn-outline" onclick="location.href='<?php echo $_SERVER['PHP_SELF']; ?>?cid=<?php echo $company_id; ?>&newversion=<?php echo ($versionnumber + 1); ?>&section=formfieldedit'" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
             <i class="bi bi-plus-circle me-2"></i> New Version
         </button>
-        <button type="button" class="btn btn-outline" onclick="location.href='/admin/company-editor-main.php?buildout=<?php echo $company_id; ?>&cid=<?php echo $company_id; ?>&section=formfieldedit'" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
+        <button type="button" class="btn btn-outline" onclick="location.href='<?php echo $_SERVER['PHP_SELF']; ?>?buildout=<?php echo $company_id; ?>&cid=<?php echo $company_id; ?>&section=formfieldedit'" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
             <i class="bi bi-grid-3x3-gap me-2"></i> BuildOut
         </button>
         <button type="button" class="btn btn-primary" id="addFieldBtn" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
@@ -458,7 +458,7 @@ $additionalstyles .= '
         </div>
     </div>
     
-    <form method="POST" action="/admin/company-editor-main.php" <?php echo $isAppOnly ? 'onsubmit="return false;"' : ''; ?>>
+    <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" <?php echo $isAppOnly ? 'onsubmit="return false;"' : ''; ?>>
         <input type="hidden" name="addtestcase" value="0">
         <input type="hidden" name="version" value="<?php echo $versionnumber; ?>">
         <input type="hidden" name="cid" value="<?php echo $company_id; ?>">
@@ -539,7 +539,7 @@ $additionalstyles .= '
             </table>
             <div class="table-actions">
                 <div>
-                    <a href="/admin/company-editor-main.php?cid=<?php echo $company_id; ?>&section=formfieldedit&addtestcase=1" class="btn btn-outline btn-sm">
+                    <a href="<?php echo $_SERVER['PHP_SELF']; ?>?cid=<?php echo $company_id; ?>&section=formfieldedit&addtestcase=1" class="btn btn-outline btn-sm">
                         <i class="bi bi-play-fill me-1"></i> TEST
                     </a>
                 </div>

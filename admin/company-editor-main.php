@@ -249,6 +249,17 @@ document.addEventListener('DOMContentLoaded', function() {
     var popoverList = popoverTriggerList.map(function(popoverTriggerEl) {
         return new bootstrap.Popover(popoverTriggerEl);
     });
+    
+    // Handle section parameter in URL to activate correct tab
+    var urlParams = new URLSearchParams(window.location.search);
+    var section = urlParams.get('section');
+    if (section) {
+        var tabTrigger = document.querySelector('#' + section + '-tab');
+        if (tabTrigger) {
+            var tab = new bootstrap.Tab(tabTrigger);
+            tab.show();
+        }
+    }
 });
 </script>
 
