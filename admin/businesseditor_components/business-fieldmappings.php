@@ -40,7 +40,7 @@ $userFieldNames = [
 
 ###==============================================================================================================
 ###==============================================================================================================
-if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['newversion'])) {
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['newversion']) && isset($_REQUEST['section']) && $_REQUEST['section'] == 'formfieldedit') {
     $versionnumber = $_REQUEST['newversion'];
     
     // Update existing mappings to inactive
@@ -76,6 +76,10 @@ if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset(
         $stmt->execute([$company_id, $versionnumber, $fieldName, $fieldName]);
     }
     
+    // Set success message
+    $_SESSION['form_field_message'] = "Version {$versionnumber} created successfully with default fields.";
+    $_SESSION['form_field_message_type'] = 'success';
+    
     // Redirect back to form field edit page
     header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
@@ -84,7 +88,7 @@ if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset(
 
 ###==============================================================================================================
 ###==============================================================================================================
-if ($componentmode == 'default' && $_SERVER['REQUEST_METHOD'] == 'POST' && isset($_REQUEST['addtestcase']) && $_REQUEST['addtestcase'] == '0') {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_REQUEST['addtestcase']) && $_REQUEST['addtestcase'] == '0' && isset($_REQUEST['section']) && $_REQUEST['section'] == 'formfieldedit') {
     // Fetch the post data
     $mappings = $_POST['mappings'];
  
@@ -141,6 +145,10 @@ if ($componentmode == 'default' && $_SERVER['REQUEST_METHOD'] == 'POST' && isset
         }
     }
 
+    // Set success message
+    $_SESSION['form_field_message'] = 'Form field mappings saved successfully.';
+    $_SESSION['form_field_message_type'] = 'success';
+
     // Redirect back to form field edit page
     header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
     exit;
@@ -148,7 +156,7 @@ if ($componentmode == 'default' && $_SERVER['REQUEST_METHOD'] == 'POST' && isset
 
 ###==============================================================================================================
 ###==============================================================================================================
-if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['addtestcase'])) {
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['addtestcase']) && isset($_REQUEST['section']) && $_REQUEST['section'] == 'formfieldedit') {
     // Fetch data
     $companyID = $company_id;
     $userID = 20; // User ID is static in this case
@@ -165,6 +173,12 @@ if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset(
         $sql = "INSERT INTO bg_user_companies (user_id, company_id, create_dt, status) VALUES (?, ?, NOW(), 'testing')";
         $stmt = $database->prepare($sql);
         $stmt->execute([$userID, $companyID]);
+        
+        $_SESSION['form_field_message'] = 'Test user added successfully. You can now test the enrollment process.';
+        $_SESSION['form_field_message_type'] = 'success';
+    } else {
+        $_SESSION['form_field_message'] = 'Test user already exists for this company.';
+        $_SESSION['form_field_message_type'] = 'info';
     }
     
     // Redirect back to form field edit page
@@ -174,7 +188,7 @@ if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset(
 
 ###==============================================================================================================
 ###==============================================================================================================
-if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['buildout'])) {
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['buildout']) && isset($_REQUEST['section']) && $_REQUEST['section'] == 'formfieldedit') {
     $companyID = $company_id;
     
     // Prepare a single query for all default fields
@@ -189,6 +203,10 @@ if ($componentmode == 'default' && $_SERVER["REQUEST_METHOD"] == "GET" && isset(
     foreach ($userFieldNames as $fieldName) {
         $stmt->execute([$companyID, $fieldName, $fieldName]);
     }
+    
+    // Set success message
+    $_SESSION['form_field_message'] = 'All default form fields have been added successfully.';
+    $_SESSION['form_field_message_type'] = 'success';
     
     // Redirect back to form field edit page
     header("Location: {$_SERVER['PHP_SELF']}?cid={$_REQUEST['cid']}&section=formfieldedit");
@@ -301,6 +319,10 @@ if (isset($_GET['activate_version']) && isset($_GET['section']) && $_GET['sectio
     $stmt = $database->prepare($sql);
     $stmt->execute([$company_id, $activate_version]);
     
+    // Set success message
+    $_SESSION['form_field_message'] = "Version {$activate_version} has been activated successfully.";
+    $_SESSION['form_field_message_type'] = 'success';
+    
     // Redirect back to form field edit
     header("Location: {$_SERVER['PHP_SELF']}?cid={$company_id}&section=formfieldedit");
     exit;
@@ -406,6 +428,30 @@ $additionalstyles .= '
 ?>
 
 <div class="container field-mappings-section <?php echo $isAppOnly ? 'app-only' : ''; ?>">
+    <?php
+    // Display alert messages from session
+    if (isset($_SESSION['form_field_message'])) {
+        $message = $_SESSION['form_field_message'];
+        $alertType = $_SESSION['form_field_message_type'] ?? 'info';
+        unset($_SESSION['form_field_message']);
+        unset($_SESSION['form_field_message_type']);
+    ?>
+    <div class="alert alert-<?php echo $alertType; ?> alert-dismissible fade show" role="alert" id="formFieldAlert">
+        <?php echo htmlspecialchars($message); ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <script>
+        // Auto-fade the alert after 5 seconds
+        setTimeout(function() {
+            var alert = document.getElementById('formFieldAlert');
+            if (alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    </script>
+    <?php } ?>
+    
     <div class="main-header">
         <h1>
             Form Field Mappings
