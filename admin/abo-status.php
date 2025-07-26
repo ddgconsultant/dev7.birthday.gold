@@ -225,10 +225,12 @@ $additionalstyles = '
 
 .status-badge {
     display: inline-block;
-    padding: 4px 12px;
+    padding: 4px 8px;
     border-radius: 12px;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 500;
+    min-width: 90px;
+    text-align: center;
 }
 
 .status-badge.not_started {
@@ -339,6 +341,207 @@ $additionalstyles = '
 .progress {
     font-size: 0.75rem;
     font-weight: 600;
+}
+
+/* Mobile Card View Styles */
+.mobile-card-view {
+    display: block;
+}
+
+@media (min-width: 768px) {
+    .mobile-card-view {
+        display: none;
+    }
+}
+
+.desktop-table-view {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .desktop-table-view {
+        display: block;
+    }
+}
+
+.company-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.company-card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.company-card-header {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.company-card-body {
+    padding: 1rem;
+}
+
+.mobile-progress-section {
+    margin-bottom: 1rem;
+}
+
+.mobile-status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 400px) {
+    .mobile-status-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.mobile-status-item {
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    min-height: 55px;
+    overflow: hidden;
+}
+
+.mobile-status-item .processor-name {
+    font-weight: 600;
+    color: #495057;
+    display: block;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.7rem;
+    max-width: calc(100% - 2px);
+}
+
+.mobile-status-item .status-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+}
+
+.mobile-status-item .status-badge {
+    flex-shrink: 0;
+    min-width: 70px;
+    max-width: 70px;
+    text-align: center;
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 400px) {
+    .mobile-status-item .status-badge {
+        min-width: 85px;
+        max-width: 85px;
+        font-size: 0.7rem;
+        padding: 3px 6px;
+    }
+}
+
+.mobile-status-item .trigger-icon {
+    color: #0d6efd;
+    font-size: 1.1rem;
+    line-height: 1;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    margin-left: auto;
+}
+
+.mobile-status-item .trigger-icon:hover {
+    opacity: 1;
+}
+
+/* Mobile Action Buttons */
+.mobile-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.mobile-actions .btn {
+    flex: 1;
+}
+
+/* Responsive Table Adjustments */
+@media (max-width: 767px) {
+    .table th, .table td {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .table .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Touch-friendly buttons */
+.btn-trigger-mobile {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Tab Navigation Mobile Styling */
+@media (max-width: 576px) {
+    .nav-tabs-modern {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+    
+    .nav-tab-item {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Hide scrollbar but keep functionality */
+    .nav-tabs-modern::-webkit-scrollbar {
+        display: none;
+    }
+    .nav-tabs-modern {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}
+
+/* Remove container padding on mobile */
+@media (max-width: 767px) {
+    .main-content .container {
+        padding-left: 0;
+        padding-right: 0;
+    }
+    
+    .abo-container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .company-card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
 }
 </style>';
 
@@ -454,7 +657,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     </a>
                 </nav>
                 
-                <button onclick="refreshStatus()" class="btn btn-sm btn-outline-primary ms-3">
+                <button onclick="refreshStatus()" class="btn btn-sm btn-outline-primary ms-3 d-none d-md-block">
                     <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
             </div>
@@ -500,6 +703,129 @@ include($dir['core_components'] . '/bg_header.inc');
                     No companies found with the selected filter.
                 </div>
             <?php else: ?>
+                
+                <!-- Mobile Card View -->
+                <div class="mobile-card-view">
+                    <?php foreach ($companies as $company): ?>
+                    <div class="company-card">
+                        <div class="company-card-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1"><?php echo htmlspecialchars($company['company_name']); ?></h6>
+                                    <small class="text-muted">ID: <?php echo $company['company_id']; ?></small>
+                                </div>
+                                <span class="badge bg-<?php 
+                                    echo $company['status'] === 'active' ? 'success' : 
+                                        ($company['status'] === 'approved_pending_data' ? 'primary' : 
+                                        ($company['status'] === 'pending_final_review' ? 'info' : 
+                                        ($company['status'] === 'pending_review' ? 'warning' : 'secondary'))); 
+                                ?>">
+                                    <?php echo ucfirst(str_replace('_', ' ', $company['status'])); ?>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="company-card-body">
+                            <!-- Progress Section -->
+                            <div class="mobile-progress-section">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted">Progress</small>
+                                    <small class="text-muted"><?php echo $company['completion_percentage']; ?>%</small>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: <?php echo $company['completion_percentage']; ?>%" 
+                                         aria-valuenow="<?php echo $company['completion_percentage']; ?>" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Status Grid with Trigger Icons -->
+                            <div class="mobile-status-grid">
+                                <?php foreach ($processors as $processor): 
+                                    $processor_status = $company['progress'][$processor['processor_key']] ?? 'not_started';
+                                    $scheduler_file = $processor['data']['scheduler_file'] ?? '';
+                                    $can_trigger = in_array($company['status'], ['pending_review', 'approved_pending_data', 'active']) && 
+                                                  !in_array($processor_status, ['in_progress', 'completed']);
+                                ?>
+                                <div class="mobile-status-item">
+                                    <span class="processor-name"><?php echo htmlspecialchars($processor['processor_name']); ?></span>
+                                    <div class="status-line">
+                                        <span class="status-badge <?php echo $processor_status; ?>">
+                                            <?php echo ucfirst(str_replace('_', ' ', $processor_status)); ?>
+                                        </span>
+                                        <?php if ($can_trigger): ?>
+                                            <?php 
+                                            $encoded_id = $qik->encodeID($company['company_id']);
+                                            $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}";
+                                            ?>
+                                            <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
+                                               class="trigger-icon" 
+                                               target="_blank"
+                                               title="Trigger <?php echo htmlspecialchars($processor['processor_name']); ?>">
+                                                <i class="bi bi-play-circle-fill"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="mobile-actions">
+                                <button class="btn btn-sm btn-outline-secondary" 
+                                        type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#mobile-details-<?php echo $company['company_id']; ?>" 
+                                        aria-expanded="false">
+                                    <i class="bi bi-list-ul"></i> Details
+                                </button>
+                                <a href="/admin/company-editor-main?cid=<?php echo $company['company_id']; ?>" 
+                                   class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                            </div>
+                            
+                            <!-- Collapsible Details -->
+                            <div class="collapse mt-3" id="mobile-details-<?php echo $company['company_id']; ?>">
+                                <div class="border rounded p-2">
+                                    <small class="text-muted d-block mb-2">Submitted: <?php echo date('M j, Y', strtotime($company['create_dt'])); ?></small>
+                                    <?php 
+                                    foreach ($processors as $processor): 
+                                        $processor_status = $company['progress'][$processor['processor_key']] ?? 'not_started';
+                                        $scheduler_file = $processor['data']['scheduler_file'] ?? '';
+                                        $can_trigger = in_array($company['status'], ['pending_review', 'approved_pending_data', 'active']) && 
+                                                      !in_array($processor_status, ['in_progress', 'completed']);
+                                    ?>
+                                    <div class="mb-2 pb-2 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <small class="fw-bold d-block"><?php echo htmlspecialchars($processor['processor_name']); ?></small>
+                                                <small class="text-muted"><?php echo htmlspecialchars($processor['data']['description']); ?></small>
+                                            </div>
+                                            <?php if ($can_trigger): ?>
+                                                <?php 
+                                                $encoded_id = $qik->encodeID($company['company_id']);
+                                                $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}";
+                                                ?>
+                                                <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
+                                                   class="btn btn-sm btn-outline-primary ms-2" 
+                                                   target="_blank">
+                                                    <i class="bi bi-play-circle"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                
+                <!-- Desktop Table View -->
+                <div class="desktop-table-view">
                 <!-- Summary View Table -->
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -632,7 +958,15 @@ include($dir['core_components'] . '/bg_header.inc');
                         </tbody>
                     </table>
                 </div>
+                </div><!-- End desktop table view -->
             <?php endif; ?>
+            
+            <!-- Mobile Floating Refresh Button -->
+            <div class="position-fixed bottom-0 end-0 p-3 d-md-none" style="z-index: 100;">
+                <button onclick="refreshStatus()" class="btn btn-primary rounded-circle shadow" style="width: 56px; height: 56px;">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
