@@ -7,6 +7,17 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 if (!class_exists('AI')) {
     require_once($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.ai.php');
 }
+
+// Load AI configuration
+$config_ai_path = $dir['configs'] . '/config-ai.inc';
+if (file_exists($config_ai_path)) {
+    $config_ai = file_get_contents($config_ai_path);
+    $sitesettings_ai = parse_ini_string($config_ai, true);
+} else {
+    // Fallback to empty config
+    $sitesettings_ai = ['ai' => []];
+}
+
 $ai = new AI($system, $sitesettings_ai);
 
 // Get company ID - support both encoded and raw for debugging
