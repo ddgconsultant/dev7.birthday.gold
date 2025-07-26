@@ -108,11 +108,19 @@ $policies = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                        class="form-control form-control-sm" 
                                        value="<?php echo htmlspecialchars($policy['url'] ?? ''); ?>"
                                        readonly>
-                                <button class="btn btn-outline-secondary btn-sm open-policy-url" type="button" 
-                                        data-url="<?php echo htmlspecialchars($policy['url'] ?? ''); ?>"
-                                        title="Open policy URL">
-                                    <i class="bi bi-box-arrow-up-right"></i>
-                                </button>
+                                <?php if (!empty($policy['url'])): ?>
+                                    <a href="<?php echo htmlspecialchars($policy['url']); ?>" 
+                                       class="btn btn-outline-secondary btn-sm" 
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       title="Open policy URL">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" disabled title="No URL available">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </div>
 
