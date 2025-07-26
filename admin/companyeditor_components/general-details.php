@@ -351,6 +351,7 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             AND c.config_type = 'automation_processor'
                         WHERE ca.company_id = :company_id 
                         AND ca.type = 'onboarding_progress'
+                        AND ca.status = 'active'
                         ORDER BY c.display_order";
             $abo_stmt = $database->prepare($abo_sql);
             $abo_stmt->execute(['company_id' => $company_id]);
