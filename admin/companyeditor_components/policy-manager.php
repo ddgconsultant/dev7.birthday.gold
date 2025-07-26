@@ -103,21 +103,21 @@ $policies = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <!-- Policy URL -->
                         <div class="mb-3">
                             <label class="form-label small mb-1">Policy URL</label>
-                            <div class="input-group input-group-sm">
+                            <div class="input-group">
                                 <input type="text" 
-                                       class="form-control" 
+                                       class="form-control form-control-sm" 
                                        value="<?php echo htmlspecialchars($policy['url'] ?? ''); ?>"
                                        readonly>
                                 <?php if (!empty($policy['url'])): ?>
                                     <a href="<?php echo htmlspecialchars($policy['url']); ?>" 
-                                       class="btn btn-outline-secondary" 
+                                       class="btn btn-outline-secondary btn-sm" 
                                        target="_blank"
                                        rel="noopener noreferrer"
                                        title="Open policy URL">
                                         <i class="bi bi-box-arrow-up-right"></i>
                                     </a>
                                 <?php else: ?>
-                                    <button class="btn btn-outline-secondary" type="button" disabled title="No URL available">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" disabled title="No URL available">
                                         <i class="bi bi-box-arrow-up-right"></i>
                                     </button>
                                 <?php endif; ?>
@@ -127,12 +127,12 @@ $policies = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <!-- Content Hash -->
                         <div class="mb-3">
                             <label class="form-label small mb-1">Content Hash</label>
-                            <div class="input-group input-group-sm">
+                            <div class="input-group">
                                 <input type="text" 
-                                       class="form-control font-monospace" 
+                                       class="form-control form-control-sm font-monospace" 
                                        value="<?php echo htmlspecialchars($policy['content_hash']); ?>"
                                        readonly>
-                                <button class="btn btn-outline-secondary copy-hash" type="button">
+                                <button class="btn btn-outline-secondary btn-sm copy-hash" type="button">
                                     <i class="bi bi-clipboard"></i>
                                 </button>
                             </div>
