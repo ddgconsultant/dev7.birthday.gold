@@ -91,7 +91,7 @@ try {
         ORDER BY 
             c.create_dt ASC,  -- Process older companies first
             p.display_order ASC  -- Process tasks in order
-        LIMIT 1";
+        " . (!$specific_company_id ? "LIMIT 1" : "");
     
     $params = [];
     if ($specific_company_id) {
@@ -104,21 +104,37 @@ try {
     }
     
     $task_stmt = $database->query($task_sql, $params);
-    $task = $task_stmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$task) {
-        if ($specific_company_id) {
+    // For specific company, get all tasks; otherwise get one
+    if ($specific_company_id) {
+        $tasks = $task_stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($tasks)) {
             $result['message'] = "No pending tasks found for company ID: $specific_company_id";
             $result['company_id'] = $specific_company_id;
-        } else {
-            $result['message'] = 'No pending tasks found';
+            echo json_encode($result);
+            exit(0);
         }
-        echo json_encode($result);
-        exit(0);
+    } else {
+        $task = $task_stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$task) {
+            $result['message'] = 'No pending tasks found';
+            echo json_encode($result);
+            exit(0);
+        }
+        $tasks = [$task]; // Make it an array for uniform processing
     }
     
-    // Update tracking
-    $database->beginTransaction();
+    // Process all tasks
+    $processed_count = 0;
+    $success_count = 0;
+    $error_count = 0;
+    
+    foreach ($tasks as $task) {
+        try {
+            $processed_count++;
+            
+            // Update tracking
+            $database->beginTransaction();
     
     $tracking_data = [
         'company_id' => $task['company_id'],
@@ -156,11 +172,14 @@ try {
     
     $database->commit();
     
-    // Process the task
-    $result['task_processed'] = true;
-    $result['company_id'] = $task['company_id'];
-    $result['task_name'] = $task['task_name'];
-    $result['company_name'] = $task['company_name'];
+            // Process the task
+            if (!$specific_company_id) {
+                // For single task mode, set these in the result
+                $result['task_processed'] = true;
+                $result['company_id'] = $task['company_id'];
+                $result['task_name'] = $task['task_name'];
+                $result['company_name'] = $task['company_name'];
+            }
     
     // Get task configuration
     $task_config = json_decode($task['task_config'], true);
@@ -219,7 +238,10 @@ try {
         ]);
         
         $result['task_status'] = 'completed';
-        $result['message'] = "Successfully processed {$task['task_display_name']} for {$task['company_name']}";
+        $success_count++;
+        if (!$specific_company_id) {
+            $result['message'] = "Successfully processed {$task['task_display_name']} for {$task['company_name']}";
+        }
         
     } else {
         // Mark task as error
@@ -246,15 +268,34 @@ try {
             'error_desc' => substr($processor_output, 0, 500)
         ]);
         
-        $result['task_status'] = 'error';
-        $result['errors'][] = "Task failed - check logs for details";
-    }
+                $result['task_status'] = 'error';
+                $error_count++;
+            }
+            
+        } catch (Exception $taskException) {
+            // Rollback this task's transaction if needed
+            try {
+                $database->rollBack();
+            } catch (Exception $rollbackException) {
+                // Ignore
+            }
+            $error_count++;
+            $result['errors'][] = "Task {$task['task_name']} error: " . $taskException->getMessage();
+        }
+        
+        // For single task mode (cron), break after first task
+        if (!$specific_company_id) {
+            break;
+        }
+    } // End foreach tasks
     
-    // Add processor output to result for debugging (always show first 500 chars in errors)
-    if (isset($_GET['debug'])) {
-        $result['processor_output'] = $processor_output;
-    } elseif ($result['status'] === 'error' || $result['task_status'] === 'error') {
-        $result['processor_output_snippet'] = substr($processor_output, 0, 500);
+    // Update result summary
+    if ($specific_company_id) {
+        $result['task_processed'] = $processed_count > 0;
+        $result['processed_count'] = $processed_count;
+        $result['success_count'] = $success_count;
+        $result['error_count'] = $error_count;
+        $result['message'] = "Processed $processed_count tasks for company ID $specific_company_id: $success_count successful, $error_count failed";
     }
     
 } catch (Exception $e) {
