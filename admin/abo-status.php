@@ -831,11 +831,11 @@ include($dir['core_components'] . '/bg_header.inc');
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th class="col-5">Company</th>
+                                <th class="col-4">Company</th>
                                 <th class="col-2">Status</th>
                                 <th class="col-2">Progress</th>
                                 <th class="col-1">Submitted</th>
-                                <th class="col-2">Actions</th>
+                                <th class="col-3">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -874,10 +874,17 @@ include($dir['core_components'] . '/bg_header.inc');
                                                 data-bs-toggle="collapse" 
                                                 data-bs-target="#company-<?php echo $company['company_id']; ?>" 
                                                 aria-expanded="false">
-                                            <i class="bi bi-chevron-down"></i> Details
+                                            <i class="bi bi-chevron-down"></i> <span class="d-none d-xl-inline">Details</span>
                                         </button>
+                                        <a href="/admin_actions/scheduler--process-abo-tasks?company_id=<?php echo $company['company_id']; ?>" 
+                                           class="btn btn-sm btn-outline-success d-none d-lg-inline-block"
+                                           target="_blank"
+                                           title="Run scheduler for this company">
+                                            <i class="bi bi-clock-history"></i> <span class="d-none d-xl-inline">Scheduler</span>
+                                        </a>
                                         <a href="/admin/company-editor-main?cid=<?php echo $company['company_id']; ?>" 
-                                           class="btn btn-sm btn-outline-primary">
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Edit company">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                     </td>

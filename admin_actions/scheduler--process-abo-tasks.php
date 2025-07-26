@@ -22,6 +22,9 @@ $result = [
 ];
 
 try {
+    // Check if specific company requested
+    $specific_company_id = isset($_GET['company_id']) ? intval($_GET['company_id']) : null;
+    
     // Get tracking from bg_config to avoid stuck tasks
     $tracking_sql = "SELECT config_value, config_data 
                      FROM bg_config 
@@ -77,20 +80,23 @@ try {
         LEFT JOIN bg_company_attributes ca ON 
             c.company_id = ca.company_id 
             AND ca.type = 'onboarding_progress'
-            AND ca.name = p.config_key
+            AND ca.name COLLATE utf8mb4_unicode_ci = p.config_key
             AND ca.status = 'active'
         WHERE 
-            c.status IN ('pending_review', 'processing', 'active')
+            c.status IN ('pending_review', 'processing', 'active', 'approved_pending_data')
             AND c.source = 'user_recommendation'
-            AND (ca.description IS NULL OR ca.description = 'pending')
-            " . (isset($skip_company) ? "AND NOT (c.company_id = :skip_company AND p.config_key = :skip_task)" : "") . "
+            AND (ca.description IS NULL OR ca.description = 'pending' OR ca.description = 'error' OR ca.description = 'attempted')
+            " . ($specific_company_id ? "AND c.company_id = :specific_company_id" : "") . "
+            " . (isset($skip_company) && !$specific_company_id ? "AND NOT (c.company_id = :skip_company AND p.config_key = :skip_task)" : "") . "
         ORDER BY 
             c.create_dt ASC,  -- Process older companies first
             p.display_order ASC  -- Process tasks in order
         LIMIT 1";
     
     $params = [];
-    if (isset($skip_company)) {
+    if ($specific_company_id) {
+        $params['specific_company_id'] = $specific_company_id;
+    } elseif (isset($skip_company)) {
         $params = [
             'skip_company' => $skip_company,
             'skip_task' => $skip_task
@@ -101,7 +107,12 @@ try {
     $task = $task_stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$task) {
-        $result['message'] = 'No pending tasks found';
+        if ($specific_company_id) {
+            $result['message'] = "No pending tasks found for company ID: $specific_company_id";
+            $result['company_id'] = $specific_company_id;
+        } else {
+            $result['message'] = 'No pending tasks found';
+        }
         echo json_encode($result);
         exit(0);
     }
@@ -153,14 +164,14 @@ try {
     
     // Get task configuration
     $task_config = json_decode($task['task_config'], true);
-    $scheduler_file = $task_config['scheduler'] ?? null;
+    $scheduler_file = $task_config['scheduler_file'] ?? null;
     
     if (!$scheduler_file) {
         throw new Exception("No scheduler file configured for task: {$task['task_name']}");
     }
     
     // Execute the specific task processor
-    $processor_path = __DIR__ . '/' . $scheduler_file;
+    $processor_path = __DIR__ . '/abo/' . $scheduler_file;
     if (!file_exists($processor_path)) {
         throw new Exception("Processor file not found: $scheduler_file");
     }
@@ -170,13 +181,31 @@ try {
     $_GET['task_name'] = $task['task_name'];
     $_GET['auto_mode'] = true;
     
-    // Include and execute the processor
-    ob_start();
-    $processor_result = include($processor_path);
-    $processor_output = ob_get_clean();
+    // Use cURL to call the processor via HTTP to maintain proper environment
+    $processor_url = sprintf(
+        'https://dev7.birthday.gold/admin_actions/abo/%s?rawid=%d',
+        basename($processor_path),
+        $task['company_id']
+    );
+    
+    $ch = curl_init($processor_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    
+    $processor_output = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    // Check for success in JSON response
+    $processor_json = json_decode($processor_output, true);
+    $processor_result = ($http_code == 200 && 
+                        (strpos($processor_output, 'STATUS: SUCCESS') !== false || 
+                         (isset($processor_json['status']) && $processor_json['status'] === 'success')));
     
     // Check if task completed successfully
-    if ($processor_result === true || strpos($processor_output, 'STATUS: SUCCESS') !== false) {
+    if ($processor_result === true) {
         // Mark task as completed
         $complete_sql = "UPDATE bg_company_attributes 
                          SET description = 'completed', modify_dt = NOW()
@@ -221,9 +250,11 @@ try {
         $result['errors'][] = "Task failed - check logs for details";
     }
     
-    // Add processor output to result for debugging
+    // Add processor output to result for debugging (always show first 500 chars in errors)
     if (isset($_GET['debug'])) {
         $result['processor_output'] = $processor_output;
+    } elseif ($result['status'] === 'error' || $result['task_status'] === 'error') {
+        $result['processor_output_snippet'] = substr($processor_output, 0, 500);
     }
     
 } catch (Exception $e) {
