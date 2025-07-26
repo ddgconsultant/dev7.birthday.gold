@@ -64,6 +64,15 @@ class AI {
   private function initializeEngineConfigs() {
     $this->debugLog("Initializing engine configurations");
     
+    // Initialize as empty array
+    $this->engineConfigs = [];
+    
+    // Check if AI settings exist
+    if (!isset($this->sitesettings_ai['ai']) || !is_array($this->sitesettings_ai['ai'])) {
+        $this->debugLog("Warning: No AI configurations found in sitesettings_ai");
+        return;
+    }
+    
     // Find all configured engines by checking for api_key entries
     foreach ($this->sitesettings_ai['ai'] as $engine => $config) {
         if (isset($config['api_key'])) {
@@ -302,6 +311,11 @@ private function debugConfig(string $engine='') {
     // Rest of the class methods remain largely the same, but use the new config structure
     public function process($messages, array $options = []): array {
         try {
+            // Check if engine is configured
+            if (!isset($this->engineConfigs[$this->currentEngine])) {
+                throw new Exception("Engine '{$this->currentEngine}' is not configured or initialized");
+            }
+            
             $config = $this->engineConfigs[$this->currentEngine];
             
             $this->debugLog("Processing request", [
