@@ -33,6 +33,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const policyForm = document.getElementById('policyForm');
     const historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
     
+    // Handle open policy URL buttons
+    document.querySelectorAll('.open-policy-url').forEach(button => {
+        button.addEventListener('click', function() {
+            const url = this.dataset.url;
+            if (url && url.trim() !== '') {
+                window.open(url, '_blank');
+            } else {
+                alert('No URL available for this policy');
+            }
+        });
+    });
+    
     // Handle policy verification
     document.querySelectorAll('.verify-policy').forEach(button => {
         button.addEventListener('click', async function() {
