@@ -279,13 +279,42 @@ try {
             } catch (Exception $rollbackException) {
                 // Ignore
             }
-            $error_count++;
-            $result['errors'][] = "Task {$task['task_name']} error: " . $taskException->getMessage();
+            
+            // Check if it's a deadlock error
+            if (strpos($taskException->getMessage(), '1213 Deadlock') !== false) {
+                // Retry once after a short delay
+                sleep(2); // Wait 2 seconds
+                
+                try {
+                    // Retry the task by setting it back to pending
+                    $retry_sql = "UPDATE bg_company_attributes 
+                                  SET description = 'pending', modify_dt = NOW()
+                                  WHERE company_id = :company_id 
+                                  AND type = 'onboarding_progress'
+                                  AND name = :task_name";
+                    
+                    $database->query($retry_sql, [
+                        'company_id' => $task['company_id'],
+                        'task_name' => $task['task_name']
+                    ]);
+                    
+                    $result['errors'][] = "Task {$task['task_name']} encountered deadlock - set for retry";
+                } catch (Exception $retryException) {
+                    $error_count++;
+                    $result['errors'][] = "Task {$task['task_name']} error: " . $taskException->getMessage();
+                }
+            } else {
+                $error_count++;
+                $result['errors'][] = "Task {$task['task_name']} error: " . $taskException->getMessage();
+            }
         }
         
         // For single task mode (cron), break after first task
         if (!$specific_company_id) {
             break;
+        } else {
+            // Add small delay between tasks to reduce deadlock chances
+            usleep(500000); // 0.5 second delay
         }
     } // End foreach tasks
     
