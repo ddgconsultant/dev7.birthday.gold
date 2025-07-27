@@ -358,6 +358,7 @@ $stmt = $database->prepare($sql);
 $stmt->execute([$company_id]);
 $company = $stmt->fetch(PDO::FETCH_ASSOC);
 $company_name = $company['company_name'] ?? 'Unknown Company';
+$signup_url = $company['signup_url'] ?? '';
 
 // Check if company is APP ONLY
 $isAppOnly = ($company['signup_url'] ?? '') === $website['apponlytag'];
@@ -478,6 +479,11 @@ $additionalstyles .= '
         <button type="button" class="btn btn-outline" onclick="location.href='<?php echo $_SERVER['PHP_SELF']; ?>?buildout=<?php echo $company_id; ?>&cid=<?php echo $company_id; ?>&section=formfieldedit'" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
             <i class="bi bi-grid-3x3-gap me-2"></i> BuildOut
         </button>
+        <?php if (!empty($signup_url) && $signup_url !== $website['apponlytag']): ?>
+        <button type="button" class="btn btn-success" onclick="window.open('<?php echo htmlspecialchars($signup_url); ?>', '_blank')" title="Open the signup URL for this company">
+            <i class="bi bi-eye me-2"></i> Preview Signup
+        </button>
+        <?php endif; ?>
         <button type="button" class="btn btn-primary" id="addFieldBtn" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
             <i class="bi bi-plus-lg me-2"></i> Add Field
         </button>

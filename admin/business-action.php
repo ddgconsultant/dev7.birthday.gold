@@ -152,7 +152,13 @@ try {
     $_SESSION['message'] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> An error occurred while processing your request</div>';
 }
 
-// Redirect back to business submissions page
-$redirect_status = $_POST['redirect_status'] ?? 'all';
-header('Location: /admin/business-submissions.php?status=' . $redirect_status);
+// Redirect back to appropriate page
+if (isset($_POST['redirect_url']) && !empty($_POST['redirect_url'])) {
+    // Use provided redirect URL (for abo-status page)
+    header('Location: ' . $_POST['redirect_url']);
+} else {
+    // Default redirect to business submissions page
+    $redirect_status = $_POST['redirect_status'] ?? 'all';
+    header('Location: /admin/business-submissions.php?status=' . $redirect_status);
+}
 exit;

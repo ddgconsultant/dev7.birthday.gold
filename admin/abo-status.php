@@ -8,6 +8,30 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 $pagetitle = "ABO Status Monitor";
 $messages = array();
 
+// Handle reprocess action
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reprocess_form_mapping') {
+    $company_id = intval($_POST['company_id'] ?? 0);
+    if ($company_id > 0) {
+        try {
+            $database->beginTransaction();
+            
+            // Reset the form field mapping status to pending
+            $reset_sql = "UPDATE bg_company_attributes 
+                         SET description = 'pending', modify_dt = NOW() 
+                         WHERE company_id = :company_id 
+                         AND type = 'onboarding_progress' 
+                         AND name = 'abo_mapformfields'";
+            $database->query($reset_sql, ['company_id' => $company_id]);
+            
+            $database->commit();
+            $messages[] = ['type' => 'success', 'text' => 'Form field mapping has been reset and will be reprocessed.'];
+        } catch (Exception $e) {
+            $database->rollback();
+            $messages[] = ['type' => 'error', 'text' => 'Failed to reset form field mapping: ' . $e->getMessage()];
+        }
+    }
+}
+
 // Get filter parameters
 $filter_status = $_GET['status'] ?? 'all';
 $filter_company = $_GET['company_id'] ?? null;
@@ -74,6 +98,26 @@ foreach ($companies as $key => $company) {
         $company['progress'][$detail['processor_key']] = $detail['status'];
         $company['progress_details'][$detail['processor_key']] = $detail;
     }
+    
+    // Get form field mapping version if exists
+    $version_sql = "SELECT MAX(version) as current_version 
+                   FROM bg_form_field_mappings 
+                   WHERE company_id = :company_id 
+                   AND version_status = 'active'";
+    $version_stmt = $database->query($version_sql, ['company_id' => $company['company_id']]);
+    $version_data = $version_stmt->fetch(PDO::FETCH_ASSOC);
+    $company['form_mapping_version'] = $version_data['current_version'] ?? null;
+    
+    // Get mapping method from company attributes
+    $method_sql = "SELECT description 
+                  FROM bg_company_attributes 
+                  WHERE company_id = :company_id 
+                  AND type = 'form_mapping_method'
+                  AND status = 'active'
+                  ORDER BY create_dt DESC
+                  LIMIT 1";
+    $method_stmt = $database->query($method_sql, ['company_id' => $company['company_id']]);
+    $company['form_mapping_method'] = $method_stmt->fetchColumn() ?: null;
     
     // Calculate completion percentage
     $total_steps = count($processors);
@@ -620,6 +664,13 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="main-content py-4 py-md-5 bg-light">
     <div class="container">
         <div class="abo-container">
+            <!-- Display messages -->
+            <?php foreach ($messages as $message): ?>
+                <div class="alert alert-<?php echo $message['type'] === 'error' ? 'danger' : $message['type']; ?> alert-dismissible fade show" role="alert">
+                    <?php echo htmlspecialchars($message['text']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endforeach; ?>
             <!-- Modern Tab Navigation with Refresh -->
             <div class="d-flex align-items-center justify-content-between mb-2">
                 <nav class="nav-tabs-modern flex-grow-1">
@@ -657,9 +708,14 @@ include($dir['core_components'] . '/bg_header.inc');
                     </a>
                 </nav>
                 
-                <button onclick="refreshStatus()" class="btn btn-sm btn-outline-primary ms-3 d-none d-md-block">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                </button>
+                <div class="d-none d-md-flex gap-2 ms-3">
+                    <a href="/recommend-business" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-plus-circle"></i> Recommend Business
+                    </a>
+                    <button onclick="refreshStatus()" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
             </div>
 
             <!-- Legend (Collapsible) -->
@@ -869,24 +925,64 @@ include($dir['core_components'] . '/bg_header.inc');
                                         <?php echo date('M j, Y', strtotime($company['create_dt'])); ?>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-secondary" 
-                                                type="button" 
-                                                data-bs-toggle="collapse" 
-                                                data-bs-target="#company-<?php echo $company['company_id']; ?>" 
-                                                aria-expanded="false">
-                                            <i class="bi bi-chevron-down"></i> <span class="d-none d-xl-inline">Details</span>
-                                        </button>
-                                        <a href="/admin_actions/scheduler--process-abo-tasks?company_id=<?php echo $company['company_id']; ?>" 
-                                           class="btn btn-sm btn-outline-success d-none d-lg-inline-block"
-                                           target="_blank"
-                                           title="Run scheduler for this company">
-                                            <i class="bi bi-clock-history"></i> <span class="d-none d-xl-inline">Scheduler</span>
-                                        </a>
-                                        <a href="/admin/company-editor-main?cid=<?php echo $company['company_id']; ?>" 
-                                           class="btn btn-sm btn-outline-primary"
-                                           title="Edit company">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        <div class="d-flex gap-1 flex-wrap">
+                                            <button class="btn btn-sm btn-outline-secondary" 
+                                                    type="button" 
+                                                    data-bs-toggle="collapse" 
+                                                    data-bs-target="#company-<?php echo $company['company_id']; ?>" 
+                                                    aria-expanded="false">
+                                                <i class="bi bi-chevron-down"></i> <span class="d-none d-xl-inline">Details</span>
+                                            </button>
+                                            
+                                            <?php if ($company['status'] !== 'active' && $company['status'] !== 'rejected'): ?>
+                                                <!-- Approve button -->
+                                                <form method="post" action="/admin/business-action.php" class="d-inline">
+                                                    <?php echo $display->inputcsrf_token(); ?>
+                                                    <input type="hidden" name="company_id" value="<?php echo $company['company_id']; ?>">
+                                                    <input type="hidden" name="action" value="approve">
+                                                    <input type="hidden" name="redirect_url" value="<?php echo $_SERVER['REQUEST_URI']; ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Approve">
+                                                        <i class="bi bi-check-lg"></i>
+                                                    </button>
+                                                </form>
+                                                
+                                                <!-- Reject button -->
+                                                <form method="post" action="/admin/business-action.php" class="d-inline">
+                                                    <?php echo $display->inputcsrf_token(); ?>
+                                                    <input type="hidden" name="company_id" value="<?php echo $company['company_id']; ?>">
+                                                    <input type="hidden" name="action" value="reject">
+                                                    <input type="hidden" name="redirect_url" value="<?php echo $_SERVER['REQUEST_URI']; ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Reject">
+                                                        <i class="bi bi-x-lg"></i>
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($company['status'] === 'rejected'): ?>
+                                                <!-- Pending button for rejected companies -->
+                                                <form method="post" action="/admin/business-action.php" class="d-inline">
+                                                    <?php echo $display->inputcsrf_token(); ?>
+                                                    <input type="hidden" name="company_id" value="<?php echo $company['company_id']; ?>">
+                                                    <input type="hidden" name="action" value="pending">
+                                                    <input type="hidden" name="redirect_url" value="<?php echo $_SERVER['REQUEST_URI']; ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Set to Pending">
+                                                        <i class="bi bi-arrow-clockwise"></i>
+                                                    </button>
+                                                </form>
+                                            <?php endif; ?>
+                                            
+                                            <a href="/admin_actions/scheduler--process-abo-tasks?company_id=<?php echo $company['company_id']; ?>" 
+                                               class="btn btn-sm btn-outline-info d-none d-lg-inline-block"
+                                               target="_blank"
+                                               title="Run scheduler for this company">
+                                                <i class="bi bi-clock-history"></i> <span class="d-none d-xl-inline">Scheduler</span>
+                                            </a>
+                                            <a href="/admin/company-editor-main?cid=<?php echo $company['company_id']; ?>" 
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Edit company">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr class="collapse" id="company-<?php echo $company['company_id']; ?>">
@@ -924,7 +1020,31 @@ include($dir['core_components'] . '/bg_header.inc');
                                                         <td class="text-muted"><?php echo $step_num++; ?></td>
                                                         <td>
                                                             <div class="fw-bold"><?php echo htmlspecialchars($processor['processor_name']); ?></div>
-                                                            <div class="processor-description"><?php echo htmlspecialchars($processor['data']['description']); ?></div>
+                                                            <div class="processor-description">
+                                                                <?php echo htmlspecialchars($processor['data']['description']); ?>
+                                                                <?php if ($processor['processor_key'] === 'abo_mapformfields'): ?>
+                                                                    <?php if ($company['form_mapping_version']): ?>
+                                                                        <span class="badge bg-info ms-2">Version <?php echo $company['form_mapping_version']; ?></span>
+                                                                        <?php 
+                                                                        // Display method used
+                                                                        $method_badge_class = 'bg-secondary';
+                                                                        $method_display = 'Unknown';
+                                                                        if ($company['form_mapping_method']) {
+                                                                            if (strpos($company['form_mapping_method'], 'airtop_ai') !== false) {
+                                                                                $method_badge_class = 'bg-success';
+                                                                                $method_display = 'AIRTOP AI';
+                                                                            } elseif (strpos($company['form_mapping_method'], 'intelligent_pattern_matching') !== false) {
+                                                                                $method_badge_class = 'bg-warning';
+                                                                                $method_display = 'HTML Scrape';
+                                                                            } else {
+                                                                                $method_display = $company['form_mapping_method'];
+                                                                            }
+                                                                        }
+                                                                        ?>
+                                                                        <span class="badge <?php echo $method_badge_class; ?> ms-1"><?php echo $method_display; ?></span>
+                                                                    <?php endif; ?>
+                                                                <?php endif; ?>
+                                                            </div>
                                                         </td>
                                                         <td>
                                                             <span class="status-badge <?php echo $processor_status; ?>">
@@ -935,21 +1055,42 @@ include($dir['core_components'] . '/bg_header.inc');
                                                             <?php echo $last_updated ?: '-'; ?>
                                                         </td>
                                                         <td>
-                                                            <?php if (in_array($company['status'], ['pending_review', 'approved_pending_data', 'active'])): ?>
-                                                                <?php if (!in_array($processor_status, ['in_progress', 'completed'])): ?>
-                                                                    <?php 
-                                                                    $encoded_id = $qik->encodeID($company['company_id']);
-                                                                    $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}";
-                                                                    ?>
-                                                                    <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
-                                                                       class="btn btn-sm btn-outline-primary" 
-                                                                       target="_blank"
-                                                                       title="Manually trigger this processor">
-                                                                        <i class="bi bi-play-circle"></i> Trigger
-                                                                    </a>
-                                                                <?php else: ?>
-                                                                    <span class="text-muted small">Processing...</span>
-                                                                <?php endif; ?>
+                                                            <?php 
+                                                            // Check if this is the form field mapping processor
+                                                            $is_form_mapping = ($processor['processor_key'] === 'abo_mapformfields');
+                                                            $company_allows_actions = in_array($company['status'], ['pending_review', 'approved_pending_data', 'active', 'pending_final_review']);
+                                                            
+                                                            // Debug output for form mapping
+                                                            if ($is_form_mapping && $processor_status === 'pending'): ?>
+                                                                <!-- Debug: Company status = <?php echo $company['status']; ?>, allows actions = <?php echo $company_allows_actions ? 'yes' : 'no'; ?> -->
+                                                            <?php endif; ?>
+                                                            
+                                                            <?php
+                                                            // Determine what to show
+                                                            if ($is_form_mapping && in_array($processor_status, ['completed', 'error', 'attempted'])): ?>
+                                                                <!-- Reprocess button for completed form field mapping -->
+                                                                <form method="post" action="" class="d-inline">
+                                                                    <?php echo $display->input_csrftoken(); ?>
+                                                                    <input type="hidden" name="action" value="reprocess_form_mapping">
+                                                                    <input type="hidden" name="company_id" value="<?php echo $company['company_id']; ?>">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-warning" 
+                                                                            title="Reprocess form field mapping (will create new version)">
+                                                                        <i class="bi bi-arrow-clockwise"></i> Reprocess
+                                                                    </button>
+                                                                </form>
+                                                            <?php elseif ($company_allows_actions && !in_array($processor_status, ['in_progress', 'completed'])): ?>
+                                                                <?php 
+                                                                $encoded_id = $qik->encodeID($company['company_id']);
+                                                                $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}";
+                                                                ?>
+                                                                <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
+                                                                   class="btn btn-sm btn-outline-primary" 
+                                                                   target="_blank"
+                                                                   title="Manually trigger this processor">
+                                                                    <i class="bi bi-play-circle"></i> Trigger
+                                                                </a>
+                                                            <?php elseif ($processor_status === 'in_progress'): ?>
+                                                                <span class="text-muted small">Processing...</span>
                                                             <?php else: ?>
                                                                 <span class="text-muted small">-</span>
                                                             <?php endif; ?>
@@ -968,11 +1109,16 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div><!-- End desktop table view -->
             <?php endif; ?>
             
-            <!-- Mobile Floating Refresh Button -->
+            <!-- Mobile Floating Action Buttons -->
             <div class="position-fixed bottom-0 end-0 p-3 d-md-none" style="z-index: 100;">
-                <button onclick="refreshStatus()" class="btn btn-primary rounded-circle shadow" style="width: 56px; height: 56px;">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
+                <div class="d-flex flex-column gap-2">
+                    <a href="/recommend-business" class="btn btn-success rounded-circle shadow" style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-plus-lg"></i>
+                    </a>
+                    <button onclick="refreshStatus()" class="btn btn-primary rounded-circle shadow" style="width: 56px; height: 56px;">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

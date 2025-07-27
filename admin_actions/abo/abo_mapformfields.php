@@ -273,6 +273,63 @@ try {
             }
         }
         
+        // AUTO-ESCALATION TO AIRTOP: If we found 0-2 form fields, escalate to AIRTOP
+        if (count($form_fields) <= 2) {
+            // Log the escalation
+            error_log("ABO: Escalating to AIRTOP for company $company_id - only " . count($form_fields) . " form fields found");
+            
+            // Mark the current HTML scraping task as completed (since we're escalating)
+            $complete_sql = "UPDATE bg_company_attributes 
+                            SET description = 'completed', modify_dt = NOW() 
+                            WHERE company_id = :company_id 
+                            AND type = 'onboarding_progress' 
+                            AND name = 'abo_mapformfields'";
+            $database->query($complete_sql, ['company_id' => $company_id]);
+            
+            // Create a new pending task for AIRTOP processor
+            $airtop_task_sql = "INSERT INTO bg_company_attributes 
+                               (company_id, type, name, description, status, create_dt)
+                               VALUES 
+                               (:company_id, 'onboarding_progress', 'abo_mapformfields_airtop', 'pending', 'active', NOW())
+                               ON DUPLICATE KEY UPDATE
+                               description = 'pending',
+                               modify_dt = NOW()";
+            $database->query($airtop_task_sql, ['company_id' => $company_id]);
+            
+            // Store escalation reason
+            $escalation_data = [
+                'reason' => 'insufficient_form_fields',
+                'form_fields_found' => count($form_fields),
+                'escalated_at' => date('Y-m-d H:i:s'),
+                'original_method' => 'intelligent_pattern_matching',
+                'escalated_to' => 'airtop_ai',
+                'html_analyzed' => true,
+                'signup_url' => $signup_url
+            ];
+            
+            $escalation_sql = "INSERT INTO bg_company_attributes 
+                              (company_id, type, name, description, status, create_dt)
+                              VALUES 
+                              (:company_id, 'form_mapping_escalation', 'reason', :data, 'active', NOW())";
+            $database->query($escalation_sql, [
+                'company_id' => $company_id,
+                'data' => json_encode($escalation_data)
+            ]);
+            
+            $database->commit();
+            
+            $result['successful'] = 1;
+            $result['data_collected'] = "Escalated to AIRTOP due to insufficient form fields (" . count($form_fields) . " found)";
+            $result['escalated'] = true;
+            $result['escalation_reason'] = "Only " . count($form_fields) . " form fields found";
+            $result['message'] = "HTML scraping found insufficient fields. Task escalated to AIRTOP processor.";
+            $result['next_processor'] = "abo_mapformfields_airtop";
+            
+            header('Content-Type: application/json');
+            echo json_encode($result);
+            exit;
+        }
+        
         $mappings_created = 0;
         $mapping_sql = "INSERT INTO bg_form_field_mappings 
                        (company_id, version, version_dt, version_status, user_field_name, 
@@ -471,6 +528,16 @@ try {
             'company_id' => $company_id,
             'data' => json_encode($summary_data)
         ]);
+        
+        // Store mapping method
+        $method_sql = "INSERT INTO bg_company_attributes 
+                      (company_id, type, name, description, status, create_dt)
+                      VALUES 
+                      (:company_id, 'form_mapping_method', 'method', 'intelligent_pattern_matching', 'active', NOW())
+                      ON DUPLICATE KEY UPDATE 
+                      description = 'intelligent_pattern_matching',
+                      modify_dt = NOW()";
+        $database->query($method_sql, ['company_id' => $company_id]);
         
         // Update progress status
         $complete_sql = "UPDATE bg_company_attributes 
