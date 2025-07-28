@@ -540,16 +540,29 @@ $queryResponse = $system->curlRequest(
         
         // Store the mappings
         foreach ($mappings as $profile_field => $mapping) {
-            // Determine field format type based on the profile field
+            // Determine field format type based on the profile field - must match bgr_getprocessdetails.php
             $fieldformattype = null;
             $fieldformat = null;
             
             if ($profile_field === 'birthdate') {
                 $fieldformattype = 'date';
-                $fieldformat = 'MM/DD/YYYY';
+                $fieldformat = 'm/d/Y'; // MM/DD/YYYY format
             } elseif ($profile_field === 'profile_phone_number') {
                 $fieldformattype = 'phone';
-                $fieldformat = '(XXX) XXX-XXXX';
+                $fieldformat = '(###) ###-####'; // Phone format with placeholders
+            } elseif ($profile_field === 'profile_state') {
+                $fieldformattype = 'state';
+                $fieldformat = 'code'; // Convert full state name to 2-letter code
+            } elseif ($profile_field === 'profile_country') {
+                $fieldformattype = 'country';
+                $fieldformat = 'code'; // US
+            } elseif ($profile_field === 'profile_gender') {
+                $fieldformattype = 'gender';
+                $fieldformat = 'uppercode'; // M or F
+            } elseif (strpos($profile_field, 'profile_agree_') === 0) {
+                // Agreement fields - convert checkbox to Yes/No
+                $fieldformattype = 'tf->yn';
+                $fieldformat = 'uinitial'; // Y or N
             }
             
             // Calculate rank based on confidence (higher confidence = lower rank number = higher priority)

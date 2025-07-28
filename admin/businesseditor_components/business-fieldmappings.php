@@ -363,13 +363,23 @@ $signup_url = $company['signup_url'] ?? '';
 // Check if company is APP ONLY
 $isAppOnly = ($company['signup_url'] ?? '') === $website['apponlytag'];
 
-// Format type definitions
+// Format type definitions - must match bgr_getprocessdetails.php
 $formatTypes = [
-    '' => 'Select format...',
-    'date' => 'Date formatting',
-    'email' => 'Email formatting',
-    'phone' => 'Phone formatting',
-    'punchh' => 'Punchh formatting'
+    '' => 'None',
+    'date' => 'Date',
+    'date-calculate' => 'Date Calculate',
+    'date-numberformat' => 'Date Number',
+    'lowerdate' => 'Lowercase Date',
+    'state' => 'State',
+    'title' => 'Title',
+    'name' => 'Name',
+    'gender' => 'Gender',
+    'tf->yn' => 'True/False → Yes/No',
+    'tf->10' => 'True/False → 1/0',
+    'tf->fixed' => 'True/False → Fixed',
+    'tf->fixedpipe' => 'True/False → Fixed (pipe)',
+    'country' => 'Country',
+    'phone' => 'Phone'
 ];
 
 // Additional styles for modern UI
@@ -497,15 +507,45 @@ $additionalstyles .= '
     <?php endif; ?>
     
     <div class="card">
-        <div class="card-header">Quick Format Templates</div>
+        <div class="card-header">Format Examples & Help</div>
         <div class="card-body">
-            <div class="templates-container">
-                <button type="button" class="template-btn" data-template="birthdate||date||Y-m-d">Date of Birth</button>
-                <button type="button" class="template-btn" data-template="profile_email||lowercase">Email</button>
-                <button type="button" class="template-btn" data-template="profile_phone_number||(###) ###-####">Phone</button>
-                <button type="button" class="template-btn" data-template="profile_first_name||capitalize">Name</button>
-                <button type="button" class="template-btn" data-template="profile_username||lowercase">Username</button>
-                <button type="button" class="template-btn" data-template="profile_password||hash">Password</button>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Date Formats</h6>
+                    <code>Y-m-d</code> → 2025-07-27<br>
+                    <code>m/d/Y</code> → 07/27/2025<br>
+                    <code>F j, Y</code> → July 27, 2025<br>
+                    <code>n/j/Y</code> → 7/27/2025<br>
+                    
+                    <h6 class="mt-3">Phone Formats</h6>
+                    <code>(###) ###-####</code> → (555) 123-4567<br>
+                    <code>###-###-####</code> → 555-123-4567<br>
+                    <code>012</code> → First 3 digits only<br>
+                    <code>345</code> → Middle 3 digits only<br>
+                    <code>6789</code> → Last 4 digits only<br>
+                    
+                    <h6 class="mt-3">State Format</h6>
+                    <code>code</code> → Converts "California" to "CA"
+                </div>
+                <div class="col-md-6">
+                    <h6>Gender Formats</h6>
+                    <code>uppercode</code> → M or F<br>
+                    <code>lowercode</code> → m or f<br>
+                    <code>upper</code> → MALE or FEMALE<br>
+                    <code>ucwords</code> → Male or Female<br>
+                    <code>MF->12</code> → 1 (male) or 2 (female)<br>
+                    
+                    <h6 class="mt-3">True/False → Yes/No Formats</h6>
+                    <code>uinitial</code> → Y or N<br>
+                    <code>ucwords</code> → Yes or No<br>
+                    <code>upper</code> → YES or NO<br>
+                    <code>lower</code> → yes or no<br>
+                    
+                    <h6 class="mt-3">Country Formats</h6>
+                    <code>code</code> → US<br>
+                    <code>codelong</code> → USA<br>
+                    <code>fullname_lower</code> → united states
+                </div>
             </div>
         </div>
     </div>
@@ -651,11 +691,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <td>
                 <select class="form-select" 
                         name="mappings[${newId}][fieldFormatType]">
-                    <option value="">Select format...</option>
-                    <option value="date">Date formatting</option>
-                    <option value="email">Email formatting</option>
-                    <option value="phone">Phone formatting</option>
-                    <option value="punchh">Punchh formatting</option>
+                    <?php foreach ($formatTypes as $value => $label): ?>
+                    <option value="<?php echo $value; ?>"><?php echo htmlspecialchars($label); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </td>
             <td>
@@ -718,35 +756,53 @@ document.addEventListener('DOMContentLoaded', function() {
         initStatusToggle(button);
     });
     
-    // Template button functionality
-    document.querySelectorAll('.template-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const template = this.getAttribute('data-template');
-            navigator.clipboard.writeText(template)
+    // Make format code examples clickable to copy
+    document.querySelectorAll('code').forEach(code => {
+        code.style.cursor = 'pointer';
+        code.title = 'Click to copy';
+        code.addEventListener('click', function() {
+            const text = this.textContent;
+            navigator.clipboard.writeText(text)
                 .then(() => {
                     // Visual feedback
-                    const originalText = this.textContent;
-                    this.textContent = 'Copied!';
+                    const originalBg = this.style.backgroundColor;
                     this.style.backgroundColor = '#d1fae5';
+                    this.style.transition = 'background-color 0.2s';
                     
                     setTimeout(() => {
-                        this.textContent = originalText;
-                        this.style.backgroundColor = '';
-                    }, 1500);
+                        this.style.backgroundColor = originalBg;
+                    }, 500);
                 })
                 .catch(err => {
                     console.error('Could not copy text: ', err);
-                    alert('Copy to clipboard failed. Template: ' + template);
+                    alert('Copy to clipboard failed. Format: ' + text);
                 });
         });
     });
     
-    // Format type change handler
-    document.querySelectorAll('.form-select').forEach(select => {
-        select.addEventListener('change', function() {
-            const formatType = this.value;
-            const formatInput = this.closest('tr').querySelector('input[name$="[fieldFormat]"]');
-            const controlGroup = this.closest('tr').querySelector('.field-control-group');
+    // Format type change handler with dynamic help
+    const formatHelp = {
+        'date': 'Examples: Y-m-d, m/d/Y, F j Y, n/j/Y',
+        'date-calculate': 'Example: {m}+81098',
+        'date-numberformat': 'Formats date as number',
+        'lowerdate': 'Lowercase date output',
+        'phone': 'Examples: (###) ###-####, ###-###-####, 012, 345, 6789',
+        'state': 'Use: code (for 2-letter abbreviation)',
+        'title': 'Use: noperiod (removes periods)',
+        'name': 'Use: {first_name} {middle_name} {last_name}',
+        'gender': 'Options: uppercode, lowercode, upper, ucwords, MF->12',
+        'tf->yn': 'Options: uinitial, ucwords, upper, lower, NNo',
+        'tf->10': 'Converts true/false to 1/0',
+        'tf->fixed': 'Format: truevalue/falsevalue',
+        'tf->fixedpipe': 'Format: truevalue|falsevalue',
+        'country': 'Options: code, codelong, fullname_lower'
+    };
+    
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('select[name*="[fieldFormatType]"]')) {
+            const formatType = e.target.value;
+            const formatInput = e.target.closest('tr').querySelector('input[name$="[fieldFormat]"]');
+            const controlGroup = e.target.closest('tr').querySelector('.field-control-group');
             
             // Remove existing info icon if any
             const existingIcon = controlGroup.querySelector('.info-icon');
@@ -754,13 +810,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 existingIcon.remove();
             }
             
-            // Add info icon for format types
-            if (formatType) {
+            // Add info icon with tooltip for format types
+            if (formatType && formatHelp[formatType]) {
                 const infoIcon = document.createElement('i');
                 infoIcon.className = 'bi bi-info-circle info-icon';
+                infoIcon.title = formatHelp[formatType];
+                infoIcon.style.cursor = 'help';
                 controlGroup.appendChild(infoIcon);
+                
+                // Set placeholder based on format type
+                formatInput.placeholder = formatHelp[formatType];
+            } else {
+                formatInput.placeholder = 'Format...';
             }
-        });
+        }
     });
 });
 </script>
