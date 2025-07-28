@@ -115,6 +115,15 @@ $bg_account_security = [
     'lockout_minutes' => 15
 ];
 
+// Age requirement defaults for birthday programs
+$bg_age_requirements_defaults = [
+    'minimum_age' => 0,     // Default minimum age (will trigger AIRTOP escalation)
+    'maximum_age' => 150,   // Default maximum age
+    'legal_age' => 18,      // Standard legal age
+    'alcohol_age' => 21,    // Alcohol/cannabis minimum age
+    'rental_age' => 25      // Car rental minimum age
+];
+
 
 ///////////////////////////////////////////////////////////////
 $bg_sales_associatecommissions =$bg_users_attributes_associatecommissions =$bg_users_attributes_associatedcommissions = [

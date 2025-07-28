@@ -88,6 +88,75 @@ VALUES
      ), 
      206, 1),
     
+    ('automation_processor', 'abo_grabage', 'Extract Age Requirements', 
+     JSON_OBJECT(
+         'description', 'Extract age requirements for birthday programs',
+         'scheduler_file', 'abo_grabage.php',
+         'frequency', '*/15 * * * *',
+         'timeout', 300,
+         'category', 'data_collection'
+     ), 
+     207, 1),
+    
+    ('automation_processor', 'abo_grabterms', 'Extract Terms of Service', 
+     JSON_OBJECT(
+         'description', 'Extract terms of service and privacy policy URLs',
+         'scheduler_file', 'abo_grabterms.php',
+         'frequency', '*/15 * * * *',
+         'timeout', 300,
+         'category', 'data_collection'
+     ), 
+     208, 1),
+    
+    ('automation_processor', 'abo_grabprivacy', 'Extract Privacy Policy', 
+     JSON_OBJECT(
+         'description', 'Extract privacy policy details and compliance info',
+         'scheduler_file', 'abo_grabprivacy.php',
+         'frequency', '*/15 * * * *',
+         'timeout', 300,
+         'category', 'data_collection'
+     ), 
+     209, 1),
+    
+    ('automation_processor', 'abo_mapformfields', 'Map Form Fields', 
+     JSON_OBJECT(
+         'description', 'Map signup form fields to user profile fields',
+         'scheduler_file', 'abo_mapformfields.php',
+         'frequency', '*/15 * * * *',
+         'timeout', 300,
+         'category', 'data_collection'
+     ), 
+     210, 1),
+    
+    -- AIRTOP-powered escalation processors
+    ('automation_processor', 'abo_mapformfields_airtop', 'Map Form Fields (AIRTOP)', 
+     JSON_OBJECT(
+         'description', 'AI-powered form field mapping using AIRTOP browser automation',
+         'scheduler_file', 'abo_mapformfields_airtop.php',
+         'frequency', '*/30 * * * *',
+         'timeout', 600,
+         'category', 'ai_processing',
+         'is_escalation', true,
+         'escalation_from', 'abo_mapformfields',
+         'allows_reprocessing', true,
+         'reprocess_param', 'retrigger'
+     ), 
+     250, 1),
+    
+    ('automation_processor', 'abo_grabage_airtop', 'Extract Age Requirements (AIRTOP)', 
+     JSON_OBJECT(
+         'description', 'AI-powered age requirement extraction using AIRTOP browser automation',
+         'scheduler_file', 'abo_grabage_airtop.php',
+         'frequency', '*/30 * * * *',
+         'timeout', 600,
+         'category', 'ai_processing',
+         'is_escalation', true,
+         'escalation_from', 'abo_grabage',
+         'allows_reprocessing', true,
+         'reprocess_param', 'retrigger'
+     ), 
+     251, 1),
+    
     -- AI Enhancement Steps
     ('automation_processor', 'abo_aienhance', 'AI Enhancement', 
      JSON_OBJECT(

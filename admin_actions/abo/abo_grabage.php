@@ -1,8 +1,6 @@
 <?php
 // abo_grabage.php - Extract age requirements for birthday rewards
 // Part of the Automation Business Onboarding (ABO) system
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Get company ID - support both encoded and raw for debugging
@@ -89,10 +87,10 @@ try {
                         AND name = 'abo_grabage'";
         $database->query($progress_sql, ['company_id' => $company_id]);
         
-        // Initialize age requirements with defaults
+        // Initialize age requirements with defaults from site-arrays
         $age_requirements = [
-            'minimum_age' => 13,  // Default minimum
-            'maximum_age' => 250, // Default maximum
+            'minimum_age' => $bg_age_requirements_defaults['minimum_age'],   // Default minimum (will trigger escalation)
+            'maximum_age' => $bg_age_requirements_defaults['maximum_age'], // Default maximum
             'source' => 'default',
             'confidence' => 'low',
             'notes' => []
@@ -101,18 +99,18 @@ try {
         // Step 1: Check category-based rules first
         $category_rules = [
             // Adult categories (21+)
-            'cannabis' => ['min' => 21, 'max' => 250, 'reason' => 'Cannabis industry standard'],
-            'marijuana' => ['min' => 21, 'max' => 250, 'reason' => 'Cannabis industry standard'],
-            'dispensary' => ['min' => 21, 'max' => 250, 'reason' => 'Cannabis industry standard'],
-            'alcohol' => ['min' => 21, 'max' => 250, 'reason' => 'Alcohol age requirement'],
-            'bar' => ['min' => 21, 'max' => 250, 'reason' => 'Bar/nightclub age requirement'],
-            'nightclub' => ['min' => 21, 'max' => 250, 'reason' => 'Nightclub age requirement'],
-            'wine' => ['min' => 21, 'max' => 250, 'reason' => 'Alcohol age requirement'],
-            'brewery' => ['min' => 21, 'max' => 250, 'reason' => 'Alcohol age requirement'],
+            'cannabis' => ['min' => $bg_age_requirements_defaults['alcohol_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Cannabis industry standard'],
+            'marijuana' => ['min' => $bg_age_requirements_defaults['alcohol_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Cannabis industry standard'],
+            'dispensary' => ['min' => $bg_age_requirements_defaults['alcohol_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Cannabis industry standard'],
+            'alcohol' => ['min' => $bg_age_requirements_defaults['alcohol_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Alcohol age requirement'],
+            'bar' => ['min' => $bg_age_requirements_defaults['alcohol_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Bar/nightclub age requirement'],
+            'nightclub' => ['min' => $bg_age_requirements_defaults['alcohol_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Nightclub age requirement'],
+            'wine' => ['min' => $bg_age_requirements_defaults['alcohol_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Alcohol age requirement'],
+            'brewery' => ['min' => $bg_age_requirements_defaults['alcohol_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Alcohol age requirement'],
             
             // Vehicle rental (25+)
-            'car rental' => ['min' => 25, 'max' => 250, 'reason' => 'Car rental age requirement'],
-            'vehicle rental' => ['min' => 25, 'max' => 250, 'reason' => 'Vehicle rental age requirement'],
+            'car rental' => ['min' => $bg_age_requirements_defaults['rental_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Car rental age requirement'],
+            'vehicle rental' => ['min' => $bg_age_requirements_defaults['rental_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Vehicle rental age requirement'],
             
             // Kids/teens categories
             'kids' => ['min' => 4, 'max' => 16, 'reason' => 'Kids-focused business'],
@@ -121,14 +119,14 @@ try {
             'teen' => ['min' => 13, 'max' => 19, 'reason' => 'Teen-focused business'],
             
             // Health/Fitness (18+ common for supplements)
-            'supplement' => ['min' => 18, 'max' => 250, 'reason' => 'Supplement age recommendations'],
-            'nutrition' => ['min' => 18, 'max' => 250, 'reason' => 'Nutrition supplement policy'],
-            'fitness' => ['min' => 13, 'max' => 250, 'reason' => 'Fitness industry standard'],
+            'supplement' => ['min' => $bg_age_requirements_defaults['legal_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Supplement age recommendations'],
+            'nutrition' => ['min' => $bg_age_requirements_defaults['legal_age'], 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Nutrition supplement policy'],
+            'fitness' => ['min' => 13, 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Fitness industry standard'],
             
             // General categories (standard 13+)
-            'restaurant' => ['min' => 13, 'max' => 250, 'reason' => 'Standard restaurant policy'],
-            'retail' => ['min' => 13, 'max' => 250, 'reason' => 'Standard retail policy'],
-            'food' => ['min' => 13, 'max' => 250, 'reason' => 'Standard food service policy'],
+            'restaurant' => ['min' => 13, 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Standard restaurant policy'],
+            'retail' => ['min' => 13, 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Standard retail policy'],
+            'food' => ['min' => 13, 'max' => $bg_age_requirements_defaults['maximum_age'], 'reason' => 'Standard food service policy'],
         ];
         
         // Check if category matches any rules
@@ -232,7 +230,10 @@ try {
             if ($httpCode === 200 && !empty($html)) {
                 // Extract text content
                 $dom = new DOMDocument();
-                @$dom->loadHTML($html);
+                // Suppress HTML5 tag warnings
+                libxml_use_internal_errors(true);
+                $dom->loadHTML($html);
+                libxml_clear_errors();
                 
                 // Remove script and style elements
                 $xpath = new DOMXPath($dom);
@@ -324,6 +325,66 @@ try {
                 $age_requirements['source'] = 'website';
                 $age_requirements['confidence'] = 'high';
             }
+        }
+        
+        // AUTO-ESCALATION TO AIRTOP: If we have low confidence or are using defaults
+        if ($age_requirements['source'] === 'default' || 
+            ($age_requirements['confidence'] === 'low' && $age_requirements['source'] !== 'website')) {
+            
+            // Log the escalation
+            session_tracking('ABO AIRTOP grabage escalation', "Company $company_id - low confidence age requirements (source: {$age_requirements['source']}, confidence: {$age_requirements['confidence']})");
+            
+            // Mark the current task as completed (since we're escalating)
+            $complete_sql = "UPDATE bg_company_attributes 
+                            SET description = 'completed', modify_dt = NOW() 
+                            WHERE company_id = :company_id 
+                            AND type = 'onboarding_progress' 
+                            AND name = 'abo_grabage'";
+            $database->query($complete_sql, ['company_id' => $company_id]);
+            
+            // Create a new pending task for AIRTOP processor
+            $airtop_task_sql = "INSERT INTO bg_company_attributes 
+                               (company_id, type, name, description, status, create_dt)
+                               VALUES 
+                               (:company_id, 'onboarding_progress', 'abo_grabage_airtop', 'pending', 'active', NOW())
+                               ON DUPLICATE KEY UPDATE
+                               description = 'pending',
+                               modify_dt = NOW()";
+            $database->query($airtop_task_sql, ['company_id' => $company_id]);
+            
+            // Store escalation reason
+            $escalation_data = [
+                'reason' => 'low_confidence_age_requirements',
+                'original_source' => $age_requirements['source'],
+                'original_confidence' => $age_requirements['confidence'],
+                'original_ages' => "min={$age_requirements['minimum_age']}, max={$age_requirements['maximum_age']}",
+                'escalated_at' => date('Y-m-d H:i:s'),
+                'original_method' => 'pattern_matching',
+                'escalated_to' => 'airtop_ai',
+                'urls_checked' => count($urls_to_check)
+            ];
+            
+            $escalation_sql = "INSERT INTO bg_company_attributes 
+                              (company_id, type, name, description, status, create_dt)
+                              VALUES 
+                              (:company_id, 'age_extraction_escalation', 'reason', :data, 'active', NOW())";
+            $database->query($escalation_sql, [
+                'company_id' => $company_id,
+                'data' => json_encode($escalation_data)
+            ]);
+            
+            $database->commit();
+            
+            $result['successful'] = 1;
+            $result['data_collected'] = "Escalated to AIRTOP due to low confidence age requirements (source: {$age_requirements['source']})";
+            $result['escalated'] = true;
+            $result['escalation_reason'] = "Low confidence: {$age_requirements['confidence']}, source: {$age_requirements['source']}";
+            $result['message'] = "Age extraction found low confidence results. Task escalated to AIRTOP processor.";
+            $result['next_processor'] = "abo_grabage_airtop";
+            
+            header('Content-Type: application/json');
+            echo json_encode($result);
+            exit;
         }
         
         // Store the age requirements
