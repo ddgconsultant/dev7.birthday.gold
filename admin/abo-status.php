@@ -100,13 +100,24 @@ foreach ($companies as $key => $company) {
     }
     
     // Get form field mapping version if exists
-    $version_sql = "SELECT MAX(version) as current_version 
+    $version_sql = "SELECT MAX(version) as current_version,
+                   COUNT(*) as field_count
                    FROM bg_form_field_mappings 
                    WHERE company_id = :company_id 
-                   AND version_status = 'active'";
+                   AND version_status = 'active'
+                   GROUP BY company_id";
     $version_stmt = $database->query($version_sql, ['company_id' => $company['company_id']]);
     $version_data = $version_stmt->fetch(PDO::FETCH_ASSOC);
     $company['form_mapping_version'] = $version_data['current_version'] ?? null;
+    $company['form_mapping_field_count'] = $version_data['field_count'] ?? 0;
+    
+    // Check for data inconsistency - if marked as completed but no mappings exist
+    $company['form_mapping_data_missing'] = false;
+    if (isset($company['progress']['abo_mapformfields']) && 
+        $company['progress']['abo_mapformfields'] === 'completed' && 
+        $company['form_mapping_field_count'] === 0) {
+        $company['form_mapping_data_missing'] = true;
+    }
     
     // Get mapping method from company attributes
     $method_sql = "SELECT description 
@@ -811,11 +822,21 @@ include($dir['core_components'] . '/bg_header.inc');
                                         $can_retrigger = in_array($processor_status, $allowed_statuses);
                                     }
                                     
+                                    // Force retrigger if data is missing for form field mapping
+                                    if ($processor['processor_key'] === 'abo_mapformfields' && $company['form_mapping_data_missing']) {
+                                        $can_retrigger = true;
+                                    }
+                                    
                                     $company_allows_actions = in_array($company['status'], ['pending_review', 'approved_pending_data', 'active']);
                                     $can_trigger = $company_allows_actions && !in_array($processor_status, ['in_progress', 'completed']);
                                 ?>
                                 <div class="mobile-status-item">
-                                    <span class="processor-name"><?php echo htmlspecialchars($processor['processor_name']); ?></span>
+                                    <span class="processor-name">
+                                        <?php echo htmlspecialchars($processor['processor_name']); ?>
+                                        <?php if ($processor['processor_key'] === 'abo_mapformfields' && $company['form_mapping_data_missing']): ?>
+                                            <i class="bi bi-exclamation-triangle text-danger ms-1" title="Data missing!"></i>
+                                        <?php endif; ?>
+                                    </span>
                                     <div class="status-line">
                                         <span class="status-badge <?php echo $processor_status; ?>">
                                             <?php echo ucfirst(str_replace('_', ' ', $processor_status)); ?>
@@ -1044,8 +1065,16 @@ include($dir['core_components'] . '/bg_header.inc');
                                                             <div class="processor-description">
                                                                 <?php echo htmlspecialchars($processor['data']['description']); ?>
                                                                 <?php if ($processor['processor_key'] === 'abo_mapformfields'): ?>
-                                                                    <?php if ($company['form_mapping_version']): ?>
+                                                                    <?php if ($company['form_mapping_data_missing']): ?>
+                                                                        <span class="badge bg-danger ms-2">
+                                                                            <i class="bi bi-exclamation-triangle"></i> Data Missing!
+                                                                        </span>
+                                                                        <span class="text-danger small d-block">
+                                                                            Marked as completed but no mappings found - needs reprocessing
+                                                                        </span>
+                                                                    <?php elseif ($company['form_mapping_version']): ?>
                                                                         <span class="badge bg-info ms-2">Version <?php echo $company['form_mapping_version']; ?></span>
+                                                                        <span class="badge bg-secondary ms-1"><?php echo $company['form_mapping_field_count']; ?> fields</span>
                                                                         <?php 
                                                                         // Display method used
                                                                         $method_badge_class = 'bg-secondary';
@@ -1094,6 +1123,11 @@ include($dir['core_components'] . '/bg_header.inc');
                                                             if ($retrigger_config && ($retrigger_config['enabled'] ?? false)) {
                                                                 $allowed_statuses = $retrigger_config['allowed_statuses'] ?? [];
                                                                 $can_retrigger = in_array($processor_status, $allowed_statuses);
+                                                            }
+                                                            
+                                                            // Force retrigger if data is missing for form field mapping
+                                                            if ($processor['processor_key'] === 'abo_mapformfields' && $company['form_mapping_data_missing']) {
+                                                                $can_retrigger = true;
                                                             }
                                                             
                                                             // Determine what to show
