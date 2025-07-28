@@ -122,7 +122,7 @@ function terminateAirtopSession($system, $airtopApiUrl, $airtopApiKey, $sessionI
 }
 
 // Track start of AIRTOP processor
-$session->session_tracking('abo_airtop_start', [
+session_tracking('abo_airtop_start', [
     'processor' => 'abo_mapformfields_airtop',
     'company_id' => $specific_company_id ?? 'auto',
     'timestamp' => date('Y-m-d H:i:s')
@@ -131,13 +131,33 @@ $session->session_tracking('abo_airtop_start', [
 try {
     // Get companies to process
     if ($specific_company_id) {
-        $sql = "SELECT c.* FROM bg_companies c 
-                INNER JOIN bg_company_attributes ca ON c.company_id = ca.company_id
-                WHERE c.company_id = :company_id 
-                AND ca.type = 'onboarding_progress'
-                AND ca.name = 'abo_mapformfields_airtop'
-                AND ca.description IN ('pending', 'error', 'attempted')
-                LIMIT 1";
+        // Check if this is a retrigger request
+        $is_retrigger = isset($_GET['retrigger']) && $_GET['retrigger'] == '1';
+        
+        if ($is_retrigger) {
+            // Track retrigger request
+            session_tracking('abo_airtop_retrigger', [
+                'company_id' => $specific_company_id,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+            
+            // For retrigger, allow completed, error, and attempted statuses
+            $sql = "SELECT c.* FROM bg_companies c 
+                    INNER JOIN bg_company_attributes ca ON c.company_id = ca.company_id
+                    WHERE c.company_id = :company_id 
+                    AND ca.type = 'onboarding_progress'
+                    AND ca.name = 'abo_mapformfields_airtop'
+                    AND ca.description IN ('pending', 'error', 'attempted', 'completed')
+                    LIMIT 1";
+        } else {
+            $sql = "SELECT c.* FROM bg_companies c 
+                    INNER JOIN bg_company_attributes ca ON c.company_id = ca.company_id
+                    WHERE c.company_id = :company_id 
+                    AND ca.type = 'onboarding_progress'
+                    AND ca.name = 'abo_mapformfields_airtop'
+                    AND ca.description IN ('pending', 'error', 'attempted')
+                    LIMIT 1";
+        }
         $params = ['company_id' => $specific_company_id];
     } else {
         // Get next company with pending form field mapping
@@ -156,7 +176,7 @@ try {
     $company = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$company) {
-        $session->session_tracking('abo_airtop_no_companies', [
+        session_tracking('abo_airtop_no_companies', [
             'message' => 'No companies pending form field mapping',
             'sql' => $sql,
             'params' => $params
@@ -173,7 +193,7 @@ try {
     $signup_url = $company['signup_url'] ?? '';
     
     // Track company found
-    $session->session_tracking('abo_airtop_company_found', [
+    session_tracking('abo_airtop_company_found', [
         'company_id' => $company_id,
         'company_name' => $company_name,
         'signup_url' => $signup_url,
@@ -208,7 +228,7 @@ try {
                          ['company_id' => $company_id]);
         
         // Track AIRTOP session creation attempt
-        $session->session_tracking('abo_airtop_create_session', [
+        session_tracking('abo_airtop_create_session', [
             'company_id' => $company_id,
             'api_url' => $airtopApiUrl
         ]);
@@ -217,7 +237,7 @@ try {
         $sessionId = createAirtopSession($system, $airtopApiUrl, $airtopApiKey);
         
         if (!$sessionId) {
-            $session->session_tracking('abo_airtop_session_failed', [
+            session_tracking('abo_airtop_session_failed', [
                 'company_id' => $company_id,
                 'error' => 'Failed to create AIRTOP session'
             ]);
@@ -225,7 +245,7 @@ try {
         }
         
         // Track successful session creation
-        $session->session_tracking('abo_airtop_session_created', [
+        session_tracking('abo_airtop_session_created', [
             'company_id' => $company_id,
             'session_id' => $sessionId
         ]);
@@ -257,7 +277,7 @@ try {
         $windowId = $windowResponse['decoded']['data']['windowId'];
         
         // Track window creation
-        $session->session_tracking('abo_airtop_window_created', [
+        session_tracking('abo_airtop_window_created', [
             'company_id' => $company_id,
             'window_id' => $windowId,
             'signup_url' => $signup_url
@@ -267,40 +287,77 @@ try {
         sleep(5);
         
         // Track AI prompt preparation
-        $session->session_tracking('abo_airtop_ai_prompt_start', [
+        session_tracking('abo_airtop_ai_prompt_start', [
             'company_id' => $company_id,
             'analyzing_url' => $signup_url
         ]);
         
         // Create AI prompt for form field analysis
-        $prompt = "Analyze this signup/registration form and extract ALL form fields. For each field provide:
-1. Field name/id attribute
-2. Field type (text, email, password, select, checkbox, radio, etc)
-3. Field label or placeholder text
-4. Whether it's required
-5. Any validation rules visible
-
-Additionally, identify which fields map to these standard profile fields:
-- Email address
-- First name
-- Last name
-- Birth date/Birthday
-- Phone number
-- ZIP/Postal code
-- Password
-- Username
-- Gender
-- Title/Prefix
-- Street address
-- City
-- State/Province
-- Country
-- Terms acceptance checkbox
-- Email marketing opt-in
-- SMS/Text opt-in
-
-Format the response as a structured list with clear field mappings.";
+        $prompt = 'extract the elements of any form on the page that looks like  registration page and provide as JSON list.';
         
+$jsonSchema='{
+  "type": "object",
+  "properties": {
+    "form_elements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "element_type": {
+            "type": "string",
+            "description": "The type of form element, e.g., input, select, checkbox, etc."
+          },
+          "name": {
+            "type": "string",
+            "description": "The name attribute of the form element."
+          },
+          "label": {
+            "type": "string",
+            "description": "The label associated with the form element."
+          },
+          "placeholder": {
+            "type": "string",
+            "description": "The placeholder text for the form element, if applicable."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Indicates if the form element is required."
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The options available for select elements, if applicable."
+          }
+        },
+        "required": [
+          "element_type",
+          "name",
+          "label",
+          "placeholder",
+          "required",
+          "options"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "form_elements"
+  ],
+  "additionalProperties": false,
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}';
+        
+        // Track the prompt being sent
+        session_tracking('abo_airtop_prompt_detail', [
+            'company_id' => $company_id,
+            'prompt_length' => strlen($prompt),
+            'prompt_hash' => md5($prompt),
+            'target_url' => $signup_url
+        ]);
+        /*
         // Query the page
         $queryResponse = $system->curlRequest(
             $airtopApiUrl . 'sessions/' . $sessionId . '/windows/' . $windowId . '/page-query',
@@ -308,9 +365,42 @@ Format the response as a structured list with clear field mappings.";
             ['prompt' => $prompt],
             'POST'
         );
-        
+        */
+
+// Optional configuration settings
+$includeVisualAnalysis = 'enabled'; // can be 'enabled', 'disabled', or 'auto'
+$includeOutputSchema = true; // whether to include the schema in the request
+
+// Build the request body
+$requestBody = ['prompt' => $prompt];
+
+// Add configuration if needed
+if ($includeOutputSchema || $includeVisualAnalysis) {
+    $requestBody['configuration'] = [];
+    
+    if ($includeOutputSchema && !empty($jsonSchema)) {
+        $requestBody['configuration']['outputSchema'] = json_decode($jsonSchema, true);
+    }
+    
+    if (!empty($includeVisualAnalysis)) {
+        $requestBody['configuration']['experimental'] = [
+            'includeVisualAnalysis' => $includeVisualAnalysis
+        ];
+    }
+}
+
+// Make the request
+$queryResponse = $system->curlRequest(
+    $airtopApiUrl . 'sessions/' . $sessionId . '/windows/' . $windowId . '/page-query',
+    $headers,
+    $requestBody,
+    'POST'
+);
+
         // Track AI query response
-        $session->session_tracking('abo_airtop_ai_response', [
+        session_tracking('abo_airtop_ai_responseraw', $queryResponse);
+        // Track AI query response
+        session_tracking('abo_airtop_ai_response', [
             'company_id' => $company_id,
             'response_status' => $queryResponse['curl_info']['http_code'] ?? 'unknown',
             'response_size' => strlen($queryResponse['response'] ?? ''),
@@ -324,9 +414,9 @@ Format the response as a structured list with clear field mappings.";
         
         // Always terminate session to free resources
         terminateAirtopSession($system, $airtopApiUrl, $airtopApiKey, $sessionId);
-        
+        breakpoint($queryResponse);
         if (empty($aiAnalysis)) {
-            $session->session_tracking('abo_airtop_empty_analysis', [
+            session_tracking('abo_airtop_empty_analysis', [
                 'company_id' => $company_id,
                 'error' => 'No AI analysis received'
             ]);
@@ -334,7 +424,7 @@ Format the response as a structured list with clear field mappings.";
         }
         
         // Track AI analysis received
-        $session->session_tracking('abo_airtop_analysis_received', [
+        session_tracking('abo_airtop_analysis_received', [
             'company_id' => $company_id,
             'analysis_length' => strlen($aiAnalysis),
             'first_100_chars' => substr($aiAnalysis, 0, 100)
@@ -351,7 +441,7 @@ Format the response as a structured list with clear field mappings.";
         ]);
         
         // Track parsing start
-        $session->session_tracking('abo_airtop_parsing_start', [
+        session_tracking('abo_airtop_parsing_start', [
             'company_id' => $company_id,
             'parsing_method' => 'line_by_line_pattern_matching'
         ]);
@@ -438,7 +528,7 @@ Format the response as a structured list with clear field mappings.";
         $database->commit();
         
         // Track successful completion
-        $session->session_tracking('abo_airtop_completed', [
+        session_tracking('abo_airtop_completed', [
             'company_id' => $company_id,
             'company_name' => $company_name,
             'mappings_created' => count($mappings),
@@ -456,7 +546,7 @@ Format the response as a structured list with clear field mappings.";
         $database->rollback();
         
         // Track error
-        $session->session_tracking('abo_airtop_error', [
+        session_tracking('abo_airtop_error', [
             'company_id' => $company_id,
             'error_message' => $e->getMessage(),
             'error_file' => $e->getFile(),
@@ -478,7 +568,7 @@ Format the response as a structured list with clear field mappings.";
     
 } catch (Exception $e) {
     // Track fatal error
-    $session->session_tracking('abo_airtop_fatal_error', [
+    session_tracking('abo_airtop_fatal_error', [
         'error_message' => $e->getMessage(),
         'error_trace' => $e->getTraceAsString()
     ]);
@@ -488,7 +578,7 @@ Format the response as a structured list with clear field mappings.";
 }
 
 // Track final result
-$session->session_tracking('abo_airtop_complete', [
+session_tracking('abo_airtop_complete', [
     'status' => $result['status'],
     'processed' => $result['processed'],
     'successful' => $result['successful'],

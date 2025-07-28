@@ -49,13 +49,27 @@ $standard_fields = [
 try {
     // Get companies to process
     if ($specific_company_id) {
-        $sql = "SELECT c.* FROM bg_companies c 
-                INNER JOIN bg_company_attributes ca ON c.company_id = ca.company_id
-                WHERE c.company_id = :company_id 
-                AND ca.type = 'onboarding_progress'
-                AND ca.name = 'abo_mapformfields'
-                AND ca.description IN ('pending', 'error', 'attempted')
-                LIMIT 1";
+        // Check if this is a retrigger request
+        $is_retrigger = isset($_GET['retrigger']) && $_GET['retrigger'] == '1';
+        
+        if ($is_retrigger) {
+            // For retrigger, allow completed, error, and attempted statuses
+            $sql = "SELECT c.* FROM bg_companies c 
+                    INNER JOIN bg_company_attributes ca ON c.company_id = ca.company_id
+                    WHERE c.company_id = :company_id 
+                    AND ca.type = 'onboarding_progress'
+                    AND ca.name = 'abo_mapformfields'
+                    AND ca.description IN ('pending', 'error', 'attempted', 'completed')
+                    LIMIT 1";
+        } else {
+            $sql = "SELECT c.* FROM bg_companies c 
+                    INNER JOIN bg_company_attributes ca ON c.company_id = ca.company_id
+                    WHERE c.company_id = :company_id 
+                    AND ca.type = 'onboarding_progress'
+                    AND ca.name = 'abo_mapformfields'
+                    AND ca.description IN ('pending', 'error', 'attempted')
+                    LIMIT 1";
+        }
         $params = ['company_id' => $specific_company_id];
     } else {
         // Get next company with pending form field mapping

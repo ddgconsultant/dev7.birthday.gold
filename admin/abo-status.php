@@ -801,8 +801,18 @@ include($dir['core_components'] . '/bg_header.inc');
                                 <?php foreach ($processors as $processor): 
                                     $processor_status = $company['progress'][$processor['processor_key']] ?? 'not_started';
                                     $scheduler_file = $processor['data']['scheduler_file'] ?? '';
-                                    $can_trigger = in_array($company['status'], ['pending_review', 'approved_pending_data', 'active']) && 
-                                                  !in_array($processor_status, ['in_progress', 'completed']);
+                                    
+                                    // Check retrigger configuration
+                                    $retrigger_config = $processor['data']['retrigger'] ?? null;
+                                    $can_retrigger = false;
+                                    
+                                    if ($retrigger_config && ($retrigger_config['enabled'] ?? false)) {
+                                        $allowed_statuses = $retrigger_config['allowed_statuses'] ?? [];
+                                        $can_retrigger = in_array($processor_status, $allowed_statuses);
+                                    }
+                                    
+                                    $company_allows_actions = in_array($company['status'], ['pending_review', 'approved_pending_data', 'active']);
+                                    $can_trigger = $company_allows_actions && !in_array($processor_status, ['in_progress', 'completed']);
                                 ?>
                                 <div class="mobile-status-item">
                                     <span class="processor-name"><?php echo htmlspecialchars($processor['processor_name']); ?></span>
@@ -810,7 +820,18 @@ include($dir['core_components'] . '/bg_header.inc');
                                         <span class="status-badge <?php echo $processor_status; ?>">
                                             <?php echo ucfirst(str_replace('_', ' ', $processor_status)); ?>
                                         </span>
-                                        <?php if ($can_trigger): ?>
+                                        <?php if ($can_retrigger && $company_allows_actions): ?>
+                                            <?php 
+                                            $encoded_id = $qik->encodeID($company['company_id']);
+                                            $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}&retrigger=1";
+                                            ?>
+                                            <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
+                                               class="trigger-icon" 
+                                               target="_blank"
+                                               title="Retrigger <?php echo htmlspecialchars($processor['processor_name']); ?>">
+                                                <i class="bi bi-arrow-clockwise text-warning"></i>
+                                            </a>
+                                        <?php elseif ($can_trigger): ?>
                                             <?php 
                                             $encoded_id = $qik->encodeID($company['company_id']);
                                             $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}";
@@ -1066,18 +1087,28 @@ include($dir['core_components'] . '/bg_header.inc');
                                                             <?php endif; ?>
                                                             
                                                             <?php
+                                                            // Check retrigger configuration
+                                                            $retrigger_config = $processor['data']['retrigger'] ?? null;
+                                                            $can_retrigger = false;
+                                                            
+                                                            if ($retrigger_config && ($retrigger_config['enabled'] ?? false)) {
+                                                                $allowed_statuses = $retrigger_config['allowed_statuses'] ?? [];
+                                                                $can_retrigger = in_array($processor_status, $allowed_statuses);
+                                                            }
+                                                            
                                                             // Determine what to show
-                                                            if ($is_form_mapping && in_array($processor_status, ['completed', 'error', 'attempted'])): ?>
-                                                                <!-- Reprocess button for completed form field mapping -->
-                                                                <form method="post" action="" class="d-inline">
-                                                                    <?php echo $display->input_csrftoken(); ?>
-                                                                    <input type="hidden" name="action" value="reprocess_form_mapping">
-                                                                    <input type="hidden" name="company_id" value="<?php echo $company['company_id']; ?>">
-                                                                    <button type="submit" class="btn btn-sm btn-outline-warning" 
-                                                                            title="Reprocess form field mapping (will create new version)">
-                                                                        <i class="bi bi-arrow-clockwise"></i> Reprocess
-                                                                    </button>
-                                                                </form>
+                                                            if ($can_retrigger && $company_allows_actions): ?>
+                                                                <!-- Retrigger button based on config -->
+                                                                <?php 
+                                                                $encoded_id = $qik->encodeID($company['company_id']);
+                                                                $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}&retrigger=1";
+                                                                ?>
+                                                                <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
+                                                                   class="btn btn-sm btn-outline-warning" 
+                                                                   target="_blank"
+                                                                   title="Retrigger this processor">
+                                                                    <i class="bi bi-arrow-clockwise"></i> Retrigger
+                                                                </a>
                                                             <?php elseif ($company_allows_actions && !in_array($processor_status, ['in_progress', 'completed'])): ?>
                                                                 <?php 
                                                                 $encoded_id = $qik->encodeID($company['company_id']);
