@@ -434,6 +434,19 @@ $additionalstyles .= '
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Collapsible header styling */
+.card-header[data-bs-toggle="collapse"] {
+    transition: background-color 0.2s;
+}
+
+.card-header[data-bs-toggle="collapse"]:hover {
+    background-color: #e9ecef;
+}
+
+.card-header[data-bs-toggle="collapse"] i {
+    transition: transform 0.2s;
+}
 </style >
 ';
 ?>
@@ -507,44 +520,49 @@ $additionalstyles .= '
     <?php endif; ?>
     
     <div class="card">
-        <div class="card-header">Format Examples & Help</div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>Date Formats</h6>
-                    <code>Y-m-d</code> → 2025-07-27<br>
-                    <code>m/d/Y</code> → 07/27/2025<br>
-                    <code>F j, Y</code> → July 27, 2025<br>
-                    <code>n/j/Y</code> → 7/27/2025<br>
-                    
-                    <h6 class="mt-3">Phone Formats</h6>
-                    <code>(###) ###-####</code> → (555) 123-4567<br>
-                    <code>###-###-####</code> → 555-123-4567<br>
-                    <code>012</code> → First 3 digits only<br>
-                    <code>345</code> → Middle 3 digits only<br>
-                    <code>6789</code> → Last 4 digits only<br>
-                    
-                    <h6 class="mt-3">State Format</h6>
-                    <code>code</code> → Converts "California" to "CA"
-                </div>
-                <div class="col-md-6">
-                    <h6>Gender Formats</h6>
-                    <code>uppercode</code> → M or F<br>
-                    <code>lowercode</code> → m or f<br>
-                    <code>upper</code> → MALE or FEMALE<br>
-                    <code>ucwords</code> → Male or Female<br>
-                    <code>MF->12</code> → 1 (male) or 2 (female)<br>
-                    
-                    <h6 class="mt-3">True/False → Yes/No Formats</h6>
-                    <code>uinitial</code> → Y or N<br>
-                    <code>ucwords</code> → Yes or No<br>
-                    <code>upper</code> → YES or NO<br>
-                    <code>lower</code> → yes or no<br>
-                    
-                    <h6 class="mt-3">Country Formats</h6>
-                    <code>code</code> → US<br>
-                    <code>codelong</code> → USA<br>
-                    <code>fullname_lower</code> → united states
+        <div class="card-header d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#formatHelpCollapse" aria-expanded="false" aria-controls="formatHelpCollapse">
+            <span><i class="bi bi-question-circle me-2"></i>Format Examples & Help</span>
+            <i class="bi bi-chevron-down" id="formatHelpChevron"></i>
+        </div>
+        <div class="collapse" id="formatHelpCollapse">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Date Formats</h6>
+                        <code>Y-m-d</code> → 2025-07-27<br>
+                        <code>m/d/Y</code> → 07/27/2025<br>
+                        <code>F j, Y</code> → July 27, 2025<br>
+                        <code>n/j/Y</code> → 7/27/2025<br>
+                        
+                        <h6 class="mt-3">Phone Formats</h6>
+                        <code>(###) ###-####</code> → (555) 123-4567<br>
+                        <code>###-###-####</code> → 555-123-4567<br>
+                        <code>012</code> → First 3 digits only<br>
+                        <code>345</code> → Middle 3 digits only<br>
+                        <code>6789</code> → Last 4 digits only<br>
+                        
+                        <h6 class="mt-3">State Format</h6>
+                        <code>code</code> → Converts "California" to "CA"
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Gender Formats</h6>
+                        <code>uppercode</code> → M or F<br>
+                        <code>lowercode</code> → m or f<br>
+                        <code>upper</code> → MALE or FEMALE<br>
+                        <code>ucwords</code> → Male or Female<br>
+                        <code>MF->12</code> → 1 (male) or 2 (female)<br>
+                        
+                        <h6 class="mt-3">True/False → Yes/No Formats</h6>
+                        <code>uinitial</code> → Y or N<br>
+                        <code>ucwords</code> → Yes or No<br>
+                        <code>upper</code> → YES or NO<br>
+                        <code>lower</code> → yes or no<br>
+                        
+                        <h6 class="mt-3">Country Formats</h6>
+                        <code>code</code> → US<br>
+                        <code>codelong</code> → USA<br>
+                        <code>fullname_lower</code> → united states
+                    </div>
                 </div>
             </div>
         </div>
@@ -655,6 +673,21 @@ $additionalstyles .= '
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Handle format help collapse chevron
+    const formatHelpCollapse = document.getElementById('formatHelpCollapse');
+    const formatHelpChevron = document.getElementById('formatHelpChevron');
+    
+    if (formatHelpCollapse && formatHelpChevron) {
+        formatHelpCollapse.addEventListener('show.bs.collapse', function() {
+            formatHelpChevron.classList.remove('bi-chevron-down');
+            formatHelpChevron.classList.add('bi-chevron-up');
+        });
+        
+        formatHelpCollapse.addEventListener('hide.bs.collapse', function() {
+            formatHelpChevron.classList.remove('bi-chevron-up');
+            formatHelpChevron.classList.add('bi-chevron-down');
+        });
+    }
     // Add field functionality
     document.getElementById('addFieldBtn').addEventListener('click', function() {
         const tableBody = document.querySelector('#mappingsTable tbody');

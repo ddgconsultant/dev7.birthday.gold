@@ -540,29 +540,90 @@ $queryResponse = $system->curlRequest(
         
         // Store the mappings
         foreach ($mappings as $profile_field => $mapping) {
-            // Determine field format type based on the profile field - must match bgr_getprocessdetails.php
+            // Determine field format type based on the profile field and form element data
             $fieldformattype = null;
             $fieldformat = null;
             
+            // Get element details for format detection
+            $element_type = strtolower($mapping['field_type'] ?? '');
+            $element_label = strtolower($mapping['field_label'] ?? '');
+            
+            // Find the original element data for more details
+            $element_placeholder = '';
+            $element_options = [];
+            foreach ($form_elements as $elem) {
+                if ($elem['name'] === $mapping['field_name']) {
+                    $element_placeholder = strtolower($elem['placeholder'] ?? '');
+                    $element_options = $elem['options'] ?? [];
+                    break;
+                }
+            }
+            
             if ($profile_field === 'birthdate') {
                 $fieldformattype = 'date';
-                $fieldformat = 'm/d/Y'; // MM/DD/YYYY format
+                // Try to detect date format from placeholder or label
+                if (strpos($element_placeholder, 'mm/dd/yyyy') !== false || strpos($element_placeholder, 'mm-dd-yyyy') !== false) {
+                    $fieldformat = 'm/d/Y';
+                } elseif (strpos($element_placeholder, 'dd/mm/yyyy') !== false || strpos($element_placeholder, 'dd-mm-yyyy') !== false) {
+                    $fieldformat = 'd/m/Y';
+                } elseif (strpos($element_placeholder, 'yyyy-mm-dd') !== false || strpos($element_placeholder, 'yyyy/mm/dd') !== false) {
+                    $fieldformat = 'Y-m-d';
+                } elseif (strpos($element_placeholder, 'mm/dd/yy') !== false) {
+                    $fieldformat = 'm/d/y';
+                } else {
+                    $fieldformat = 'm/d/Y'; // Default US format
+                }
             } elseif ($profile_field === 'profile_phone_number') {
                 $fieldformattype = 'phone';
-                $fieldformat = '(###) ###-####'; // Phone format with placeholders
+                // Detect phone format from placeholder
+                if (preg_match('/\([^)]*###[^)]*\).*###.*####/', $element_placeholder)) {
+                    $fieldformat = '(###) ###-####';
+                } elseif (strpos($element_placeholder, '###-###-####') !== false) {
+                    $fieldformat = '###-###-####';
+                } elseif (strpos($element_placeholder, '###.###.####') !== false) {
+                    $fieldformat = '###.###.####';
+                } elseif (strpos($element_placeholder, '##########') !== false) {
+                    $fieldformat = '##########';
+                } else {
+                    $fieldformat = '(###) ###-####'; // Default format
+                }
             } elseif ($profile_field === 'profile_state') {
                 $fieldformattype = 'state';
                 $fieldformat = 'code'; // Convert full state name to 2-letter code
             } elseif ($profile_field === 'profile_country') {
                 $fieldformattype = 'country';
-                $fieldformat = 'code'; // US
+                $fieldformat = 'code'; // Default to US
             } elseif ($profile_field === 'profile_gender') {
                 $fieldformattype = 'gender';
-                $fieldformat = 'uppercode'; // M or F
+                // Try to detect required format from options if available
+                if (!empty($element_options) && is_array($element_options)) {
+                    $options_str = implode('|', array_map('strtolower', $element_options));
+                    if (strpos($options_str, 'male|female') !== false) {
+                        $fieldformat = 'ucwords'; // Male or Female
+                    } elseif (strpos($options_str, 'm|f') !== false) {
+                        $fieldformat = 'uppercode'; // M or F
+                    } elseif (strpos($options_str, '1|2') !== false) {
+                        $fieldformat = 'MF->12'; // 1 or 2
+                    } else {
+                        $fieldformat = 'uppercode'; // Default M or F
+                    }
+                } else {
+                    $fieldformat = 'uppercode';
+                }
             } elseif (strpos($profile_field, 'profile_agree_') === 0) {
-                // Agreement fields - convert checkbox to Yes/No
-                $fieldformattype = 'tf->yn';
-                $fieldformat = 'uinitial'; // Y or N
+                // Agreement fields - convert checkbox to what the form expects
+                if ($element_type === 'checkbox') {
+                    $fieldformattype = 'tf->yn';
+                    // Check label for hints about expected format
+                    if (strpos($element_label, 'yes') !== false || strpos($element_label, 'no') !== false) {
+                        $fieldformat = 'ucwords'; // Yes or No
+                    } else {
+                        $fieldformat = 'uinitial'; // Y or N
+                    }
+                }
+            } elseif ($profile_field === 'profile_title') {
+                $fieldformattype = 'title';
+                $fieldformat = 'noperiod'; // Remove periods from Mr. Mrs. etc
             }
             
             // Calculate rank based on confidence (higher confidence = lower rank number = higher priority)

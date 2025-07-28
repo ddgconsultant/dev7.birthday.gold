@@ -337,7 +337,7 @@ try {
     
     $result['status'] = 'error';
     $result['errors'][] = $e->getMessage();
-    error_log("ABO task processor error: " . $e->getMessage());
+    session_tracking("ABO task processor error" , $e->getMessage());
     
     // Try to mark task as error if we have task info
     if (isset($task['company_id']) && isset($task['task_name'])) {

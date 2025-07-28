@@ -492,16 +492,80 @@ try {
                 $rank = 100;
             }
             
-            // Determine field format type
+            // Determine field format type based on user field and detected form field
             $format_type = null;
             $format = null;
             
+            // Analyze the matched field for format hints
+            $field_type_hint = '';
+            $field_name_lower = '';
+            if ($matched && $best_match) {
+                $field_type_hint = strtolower($best_match['type'] ?? '');
+                $field_name_lower = strtolower($best_match['name'] ?? '');
+            }
+            
+            // Set format based on user field type
             if ($user_field === 'birthdate') {
                 $format_type = 'date';
-                $format = 'MM/DD/YYYY'; // Default format, can be customized
+                // Try to detect date format from field name or placeholder
+                if ($matched && $best_match) {
+                    $placeholder = strtolower($best_match['placeholder'] ?? '');
+                    if (strpos($placeholder, 'mm/dd/yyyy') !== false || strpos($placeholder, 'mm-dd-yyyy') !== false) {
+                        $format = 'm/d/Y';
+                    } elseif (strpos($placeholder, 'dd/mm/yyyy') !== false || strpos($placeholder, 'dd-mm-yyyy') !== false) {
+                        $format = 'd/m/Y';
+                    } elseif (strpos($placeholder, 'yyyy-mm-dd') !== false) {
+                        $format = 'Y-m-d';
+                    } else {
+                        $format = 'm/d/Y'; // Default US format
+                    }
+                } else {
+                    $format = 'm/d/Y';
+                }
             } elseif ($user_field === 'profile_phone_number') {
                 $format_type = 'phone';
-                $format = '(XXX) XXX-XXXX';
+                // Detect phone format from placeholder or field attributes
+                if ($matched && $best_match) {
+                    $placeholder = $best_match['placeholder'] ?? '';
+                    if (preg_match('/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/', $placeholder)) {
+                        $format = '(###) ###-####';
+                    } elseif (preg_match('/\d{3}-\d{3}-\d{4}/', $placeholder)) {
+                        $format = '###-###-####';
+                    } elseif (preg_match('/\d{3}\.\d{3}\.\d{4}/', $placeholder)) {
+                        $format = '###.###.####';
+                    } else {
+                        $format = '(###) ###-####'; // Default format
+                    }
+                } else {
+                    $format = '(###) ###-####';
+                }
+            } elseif ($user_field === 'profile_state') {
+                // Check if the field is a select/dropdown
+                if ($field_type_hint === 'select' || strpos($field_name_lower, 'state') !== false) {
+                    $format_type = 'state';
+                    $format = 'code'; // Convert full state names to 2-letter codes
+                }
+            } elseif ($user_field === 'profile_country') {
+                if ($field_type_hint === 'select' || strpos($field_name_lower, 'country') !== false) {
+                    $format_type = 'country';
+                    $format = 'code'; // Default to US
+                }
+            } elseif ($user_field === 'profile_gender') {
+                if ($field_type_hint === 'select' || $field_type_hint === 'radio') {
+                    $format_type = 'gender';
+                    $format = 'uppercode'; // M or F
+                }
+            } elseif (strpos($user_field, 'profile_agree_') === 0) {
+                // Agreement/checkbox fields
+                if ($field_type_hint === 'checkbox') {
+                    $format_type = 'tf->yn';
+                    $format = 'uinitial'; // Y or N
+                }
+            } elseif ($user_field === 'profile_title') {
+                if ($field_type_hint === 'select') {
+                    $format_type = 'title';
+                    $format = 'noperiod'; // Remove periods from Mr. Mrs. etc
+                }
             }
             
             // Insert mapping
