@@ -272,12 +272,12 @@ try {
                 ]);
             } catch (Exception $updateError) {
                 // If we cannot even update the error status, log it
-                error_log("Failed to update error status for company $company_id: " . $updateError->getMessage());
+                session_tracking('Failed to update error status', "Company $company_id: " . $updateError->getMessage());
             }
             
             $result['failed']++;
             $result['errors'][] = "Company $company_id: " . $e->getMessage();
-            error_log("ABO process submission error for company $company_id: " . $e->getMessage() . " at line " . $e->getLine());
+            session_tracking('ABO process submission error', "Company $company_id: " . $e->getMessage() . " at line " . $e->getLine());
         }
     }
     
@@ -289,7 +289,7 @@ try {
 } catch (Exception $e) {
     $result['status'] = 'error';
     $result['errors'][] = $e->getMessage();
-    error_log("ABO process submission fatal error: " . $e->getMessage());
+    session_tracking('ABO process submission fatal error', $e->getMessage());
 }
 
 // Output JSON response for monitoring

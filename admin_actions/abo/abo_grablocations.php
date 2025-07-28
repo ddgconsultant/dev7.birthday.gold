@@ -433,7 +433,7 @@ try {
         
         $result['failed'] = 1;
         $result['errors'][] = "Company $company_id: " . $e->getMessage();
-        error_log("ABO grab locations error for company $company_id: " . $e->getMessage());
+        session_tracking('ABO grab locations error', "Company $company_id: " . $e->getMessage());
     }
     
     $result['message'] = "Processed {$result['processed']} company: {$result['successful']} successful, {$result['failed']} failed";
@@ -441,7 +441,7 @@ try {
 } catch (Exception $e) {
     $result['status'] = 'error';
     $result['errors'][] = $e->getMessage();
-    error_log("ABO grab locations fatal error: " . $e->getMessage());
+    session_tracking('ABO grab locations fatal error', $e->getMessage());
 }
 
 // Output JSON response

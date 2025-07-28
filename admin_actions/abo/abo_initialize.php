@@ -233,7 +233,7 @@ try {
     $database->rollBack();
     $result['status'] = 'error';
     $result['errors'][] = $e->getMessage();
-    error_log("ABO initialization error: " . $e->getMessage());
+    session_tracking('ABO initialization error', $e->getMessage());
 }
 
 // Output JSON response

@@ -355,7 +355,7 @@ try {
     $database->rollBack();
     $result['status'] = 'error';
     $result['errors'][] = $e->getMessage();
-    error_log("ABO setup error: " . $e->getMessage());
+    session_tracking('ABO setup error', $e->getMessage());
 }
 
 // Output JSON response

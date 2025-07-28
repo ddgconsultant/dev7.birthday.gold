@@ -225,7 +225,7 @@ try {
         
         $result['failed'] = 1;
         $result['errors'][] = "Company $company_id: " . $e->getMessage();
-        error_log("ABO AI enhance error for company $company_id: " . $e->getMessage());
+        session_tracking('ABO AI enhance error', "Company $company_id: " . $e->getMessage());
     }
     
     $result['message'] = "Processed {$result['processed']} company: {$result['successful']} successful, {$result['failed']} failed";
@@ -233,7 +233,7 @@ try {
 } catch (Exception $e) {
     $result['status'] = 'error';
     $result['errors'][] = $e->getMessage();
-    error_log("ABO AI enhance fatal error: " . $e->getMessage());
+    session_tracking('ABO AI enhance fatal error', $e->getMessage());
 }
 
 // Output JSON response

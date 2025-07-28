@@ -295,12 +295,12 @@ try {
             ]);
         } catch (Exception $updateError) {
             // If we cannot even update the error status, log it
-            error_log("Failed to update error status for company $company_id: " . $updateError->getMessage());
+            session_tracking('Failed to update error status', "Company $company_id: " . $updateError->getMessage());
         }
         
         $result['failed'] = 1;
         $result['errors'][] = "Company $company_id: " . $e->getMessage();
-        error_log("ABO grab iOS app error for company $company_id: " . $e->getMessage() . " at line " . $e->getLine());
+        session_tracking('ABO grab iOS app error', "Company $company_id: " . $e->getMessage() . " at line " . $e->getLine());
     }
     
     $result['message'] = "Processed {$result['processed']} company: {$result['successful']} successful, {$result['failed']} failed";
@@ -308,7 +308,7 @@ try {
 } catch (Exception $e) {
     $result['status'] = 'error';
     $result['errors'][] = $e->getMessage();
-    error_log("ABO grab iOS app fatal error: " . $e->getMessage());
+    session_tracking('ABO grab iOS app fatal error', $e->getMessage());
 }
 
 // Output JSON response for monitoring

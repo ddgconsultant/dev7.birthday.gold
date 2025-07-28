@@ -290,7 +290,7 @@ try {
         // AUTO-ESCALATION TO AIRTOP: If we found 0-2 form fields, escalate to AIRTOP
         if (count($form_fields) <= 2) {
             // Log the escalation
-            error_log("ABO: Escalating to AIRTOP for company $company_id - only " . count($form_fields) . " form fields found");
+            session_tracking('ABO AIRTOP escalation', "Company $company_id - only " . count($form_fields) . " form fields found");
             
             // Mark the current HTML scraping task as completed (since we're escalating)
             $complete_sql = "UPDATE bg_company_attributes 
@@ -650,7 +650,7 @@ try {
         
         $result['failed'] = 1;
         $result['errors'][] = "Company $company_id: " . $e->getMessage();
-        error_log("ABO form field mapping error for company $company_id: " . $e->getMessage());
+        session_tracking('ABO form field mapping error', "Company $company_id: " . $e->getMessage());
     }
     
     $result['message'] = "Processed {$result['processed']} company: {$result['successful']} successful, {$result['failed']} failed";
@@ -658,7 +658,7 @@ try {
 } catch (Exception $e) {
     $result['status'] = 'error';
     $result['errors'][] = $e->getMessage();
-    error_log("ABO form field mapping fatal error: " . $e->getMessage());
+    session_tracking('ABO form field mapping fatal error', $e->getMessage());
 }
 
 // Output JSON response

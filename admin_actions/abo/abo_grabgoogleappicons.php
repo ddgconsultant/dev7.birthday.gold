@@ -247,7 +247,7 @@ try {
         } catch (Exception $e) {
             $result['failed']++;
             $result['errors'][] = "Company $company_id: " . $e->getMessage();
-            error_log("ABO grab Google app icons error for company $company_id: " . $e->getMessage());
+            session_tracking('ABO grab Google app icons error', "Company $company_id: " . $e->getMessage());
         }
     }
     
@@ -256,7 +256,7 @@ try {
 } catch (Exception $e) {
     $result['status'] = 'error';
     $result['errors'][] = $e->getMessage();
-    error_log("ABO grab Google app icons fatal error: " . $e->getMessage());
+    session_tracking('ABO grab Google app icons fatal error', $e->getMessage());
 }
 
 // Output JSON response
