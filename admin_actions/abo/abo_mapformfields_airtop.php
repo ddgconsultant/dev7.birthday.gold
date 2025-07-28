@@ -379,7 +379,8 @@ if ($includeOutputSchema || $includeVisualAnalysis) {
     $requestBody['configuration'] = [];
     
     if ($includeOutputSchema && !empty($jsonSchema)) {
-        $requestBody['configuration']['outputSchema'] = json_decode($jsonSchema, true);
+        // AIRTOP expects outputSchema as a string, not an object
+        $requestBody['configuration']['outputSchema'] = $jsonSchema;
     }
     
     if (!empty($includeVisualAnalysis)) {
@@ -414,7 +415,7 @@ $queryResponse = $system->curlRequest(
         
         // Always terminate session to free resources
         terminateAirtopSession($system, $airtopApiUrl, $airtopApiKey, $sessionId);
-        breakpoint($queryResponse);
+      #  breakpoint($queryResponse);
         if (empty($aiAnalysis)) {
             session_tracking('abo_airtop_empty_analysis', [
                 'company_id' => $company_id,
@@ -443,31 +444,81 @@ $queryResponse = $system->curlRequest(
         // Track parsing start
         session_tracking('abo_airtop_parsing_start', [
             'company_id' => $company_id,
-            'parsing_method' => 'line_by_line_pattern_matching'
+            'parsing_method' => 'json_structured_response'
         ]);
         
         // Parse AI response to create field mappings
         $mappings = [];
-        $lines = explode("\n", $aiAnalysis);
-        $current_field = null;
         
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (empty($line)) continue;
+        // Decode the JSON response
+        $formData = json_decode($aiAnalysis, true);
+        if (!$formData || !isset($formData['form_elements'])) {
+            throw new Exception("Invalid JSON response from AIRTOP");
+        }
+        
+        $form_elements = $formData['form_elements'];
+        
+        // Track form elements found
+        session_tracking('abo_airtop_form_elements', [
+            'company_id' => $company_id,
+            'elements_count' => count($form_elements),
+            'elements' => $form_elements
+        ]);
+        
+        // Process each form element
+        foreach ($form_elements as $element) {
+            $field_name = strtolower($element['name'] ?? '');
+            $field_type = strtolower($element['element_type'] ?? '');
+            $field_label = strtolower($element['label'] ?? '');
+            $is_required = $element['required'] ?? false;
             
-            // Look for field mappings in the AI response
+            // Try to match with standard fields
             foreach ($standard_fields as $profile_field => $field_info) {
+                $matched = false;
+                
                 foreach ($field_info['patterns'] as $pattern) {
-                    if (stripos($line, $pattern) !== false) {
-                        // Extract field name/id from the line
-                        if (preg_match('/(?:name|id)[\s=:"\']+([a-zA-Z0-9_\-]+)/i', $line, $matches)) {
+                    $pattern_lower = strtolower($pattern);
+                    
+                    // Check field name exact match
+                    if ($field_name === $pattern_lower) {
+                        $matched = true;
+                        $confidence = 1.0;
+                    }
+                    // Check field name contains pattern
+                    elseif (strpos($field_name, $pattern_lower) !== false) {
+                        $matched = true;
+                        $confidence = 0.9;
+                    }
+                    // Check label contains pattern
+                    elseif (stripos($field_label, $pattern) !== false) {
+                        $matched = true;
+                        $confidence = 0.8;
+                    }
+                    
+                    // Special case for text_offers matching SMS opt-in
+                    if (!$matched && $profile_field === 'profile_agree_text' && $field_name === 'text_offers') {
+                        $matched = true;
+                        $confidence = 0.95;
+                    }
+                    
+                    if ($matched) {
+                        // Validate type compatibility
+                        $type_match = true;
+                        if ($field_info['type'] === 'email' && $field_type !== 'input') {
+                            $confidence -= 0.1;
+                        } elseif ($field_info['type'] === 'checkbox' && $field_type !== 'checkbox') {
+                            $type_match = false;
+                        }
+                        
+                        if ($type_match && $confidence > 0.5) {
                             $mappings[$profile_field] = [
-                                'field_name' => $matches[1],
-                                'field_type' => $field_info['type'],
-                                'confidence' => 0.9,
-                                'method' => 'airtop_ai'
+                                'field_name' => $element['name'],
+                                'field_type' => $element['element_type'],
+                                'field_label' => $element['label'],
+                                'confidence' => $confidence,
+                                'method' => 'airtop_ai_structured'
                             ];
-                            break 2;
+                            break 2; // Found match, move to next element
                         }
                     }
                 }
@@ -489,23 +540,56 @@ $queryResponse = $system->curlRequest(
         
         // Store the mappings
         foreach ($mappings as $profile_field => $mapping) {
+            // Determine field format type based on the profile field
+            $fieldformattype = null;
+            $fieldformat = null;
+            
+            if ($profile_field === 'birthdate') {
+                $fieldformattype = 'date';
+                $fieldformat = 'MM/DD/YYYY';
+            } elseif ($profile_field === 'profile_phone_number') {
+                $fieldformattype = 'phone';
+                $fieldformat = '(XXX) XXX-XXXX';
+            }
+            
+            // Calculate rank based on confidence (higher confidence = lower rank number = higher priority)
+            $rank = (int)((1 - $mapping['confidence']) * 100);
+            
             $insert_sql = "INSERT INTO bg_form_field_mappings 
-                          (company_id, profile_field, form_field_name, form_field_type, 
-                           mapping_confidence, mapping_method, version, version_status, create_dt)
+                          (company_id, user_field_name, website_field_name, 
+                           fieldformattype, fieldformat, `rank`, version, version_status, create_dt)
                           VALUES 
-                          (:company_id, :profile_field, :form_field_name, :form_field_type,
-                           :confidence, :method, :version, 'active', NOW())";
+                          (:company_id, :user_field_name, :website_field_name,
+                           :fieldformattype, :fieldformat, :rank, :version, 'active', NOW())";
             
             $database->query($insert_sql, [
                 'company_id' => $company_id,
-                'profile_field' => $profile_field,
-                'form_field_name' => $mapping['field_name'],
-                'form_field_type' => $mapping['field_type'],
-                'confidence' => $mapping['confidence'],
-                'method' => $mapping['method'],
+                'user_field_name' => $profile_field,
+                'website_field_name' => $mapping['field_name'],
+                'fieldformattype' => $fieldformattype,
+                'fieldformat' => $fieldformat,
+                'rank' => $rank,
                 'version' => $new_version
             ]);
         }
+        
+        // Store mapping metadata in bg_company_attributes
+        $metadata = [
+            'method' => 'airtop_ai_structured',
+            'mappings_count' => count($mappings),
+            'confidence_scores' => array_map(function($m) { return $m['confidence']; }, $mappings),
+            'form_elements_analyzed' => count($form_elements),
+            'version' => $new_version
+        ];
+        
+        $database->query("INSERT INTO bg_company_attributes 
+                         (company_id, type, name, description, status, create_dt)
+                         VALUES 
+                         (:company_id, 'form_mapping_metadata', 'airtop_results', :metadata, 'active', NOW())
+                         ON DUPLICATE KEY UPDATE 
+                         description = VALUES(description),
+                         modify_dt = NOW()", 
+                         ['company_id' => $company_id, 'metadata' => json_encode($metadata)]);
         
         // Store mapping method
         $database->query("INSERT INTO bg_company_attributes 
