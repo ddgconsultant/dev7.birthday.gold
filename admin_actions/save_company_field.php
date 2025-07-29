@@ -4,13 +4,6 @@
 
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-// Check authentication
-if (!$account->isloggedin() || !$account->checkrole('admin')) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
-
 // Get POST data
 $company_id = $_POST['company_id'] ?? null;
 $field = $_POST['field'] ?? null;

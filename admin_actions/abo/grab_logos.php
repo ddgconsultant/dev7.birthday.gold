@@ -6,11 +6,6 @@
 
 require_once $_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php';
 
-// Check authentication
-if (!$account->isloggedin() || !$account->checkrole('admin')) {
-    die('Unauthorized');
-}
-
 $cid = $_REQUEST['cid'] ?? null;
 
 if (!$cid) {
