@@ -684,29 +684,52 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
         </div>
     </div>
 
+    <?php
+    // Get ABO progress first so we can check it in the header
+    $abo_sql = "SELECT ca.name as processor, ca.description as status, MAX(ca.modify_dt) as modify_dt,
+                c.config_value as display_name, 
+                JSON_UNQUOTE(JSON_EXTRACT(c.config_data, '$.description')) as config_description,
+                c.display_order
+                FROM bg_company_attributes ca
+                LEFT JOIN bg_config c ON c.config_key COLLATE utf8mb4_unicode_ci = ca.name COLLATE utf8mb4_unicode_ci 
+                    AND c.config_type = 'automation_processor'
+                WHERE ca.company_id = :company_id 
+                AND ca.type = 'onboarding_progress'
+                AND ca.status = 'active'
+                GROUP BY ca.name, ca.description, c.config_value, c.config_data, c.display_order
+                ORDER BY c.display_order";
+    $abo_stmt = $database->prepare($abo_sql);
+    $abo_stmt->execute(['company_id' => $company_id]);
+    $abo_progress = $abo_stmt->fetchAll(PDO::FETCH_ASSOC);
+    ?>
+    
     <!-- ABO Progress Section -->
     <div class="card">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Automated Business Onboarding (ABO) Progress</h5>
+            <?php if (!$abo_progress && $company_status !== 'active'): ?>
+            <button class="btn btn-sm btn-primary" onclick="initializeABO()" id="initABOBtn">
+                <i class="bi bi-rocket-takeoff me-1"></i>Initialize ABO Processing
+            </button>
+            <?php elseif ($abo_progress): 
+                // Check if there are any incomplete processes
+                $has_incomplete = false;
+                foreach ($abo_progress as $progress) {
+                    if (!in_array($progress['status'], ['completed', 'skipped'])) {
+                        $has_incomplete = true;
+                        break;
+                    }
+                }
+                if ($has_incomplete):
+            ?>
+            <button class="btn btn-sm btn-warning" onclick="rerunABO()" id="rerunABOBtn">
+                <i class="bi bi-arrow-clockwise me-1"></i>Re-run Incomplete
+            </button>
+            <?php endif; ?>
+            <?php endif; ?>
         </div>
         <div class="card-body">
             <?php
-            // Get ABO progress
-            $abo_sql = "SELECT ca.name as processor, ca.description as status, MAX(ca.modify_dt) as modify_dt,
-                        c.config_value as display_name, 
-                        JSON_UNQUOTE(JSON_EXTRACT(c.config_data, '$.description')) as config_description,
-                        c.display_order
-                        FROM bg_company_attributes ca
-                        LEFT JOIN bg_config c ON c.config_key COLLATE utf8mb4_unicode_ci = ca.name COLLATE utf8mb4_unicode_ci 
-                            AND c.config_type = 'automation_processor'
-                        WHERE ca.company_id = :company_id 
-                        AND ca.type = 'onboarding_progress'
-                        AND ca.status = 'active'
-                        GROUP BY ca.name, ca.description, c.config_value, c.config_data, c.display_order
-                        ORDER BY c.display_order";
-            $abo_stmt = $database->prepare($abo_sql);
-            $abo_stmt->execute(['company_id' => $company_id]);
-            $abo_progress = $abo_stmt->fetchAll(PDO::FETCH_ASSOC);
             
             if ($abo_progress): ?>
                 <div class="table-responsive">
@@ -1053,6 +1076,78 @@ $(document).ready(function() {
         });
     }
 });
+
+// Initialize ABO Processing
+function initializeABO() {
+    if (!confirm('This will initialize the Automated Business Onboarding (ABO) process for this company. Continue?')) {
+        return;
+    }
+    
+    var btn = $('#initABOBtn');
+    var originalHtml = btn.html();
+    btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i>Initializing...');
+    
+    $.ajax({
+        url: '/admin_actions/abo/initialize_company_progress.php',
+        method: 'GET',
+        data: {
+            company_id: <?php echo $company_id; ?>
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                alert('ABO Processing initialized successfully!\n\n' + 
+                      'Initialized: ' + response.processors_initialized + ' processors\n' +
+                      'Skipped: ' + response.processors_skipped + ' existing records\n\n' +
+                      'The page will now reload to show the progress.');
+                location.reload();
+            } else {
+                alert('Error initializing ABO: ' + (response.message || 'Unknown error'));
+                btn.prop('disabled', false).html(originalHtml);
+            }
+        },
+        error: function(xhr, status, error) {
+            alert('Error initializing ABO: ' + error);
+            btn.prop('disabled', false).html(originalHtml);
+        }
+    });
+}
+
+// Re-run incomplete ABO processes
+function rerunABO() {
+    if (!confirm('This will re-run all incomplete ABO processes for this company. Continue?')) {
+        return;
+    }
+    
+    alert('Re-running ABO processes...\n\nThe individual processes will now be triggered. You can monitor progress by refreshing this page.');
+    
+    // Find all incomplete processes and trigger them
+    var incompleteProcesses = [];
+    <?php if ($abo_progress): ?>
+    <?php foreach ($abo_progress as $progress): ?>
+        <?php if (!in_array($progress['status'], ['completed', 'skipped', 'in_progress'])): ?>
+        incompleteProcesses.push({
+            name: '<?php echo $progress['processor']; ?>',
+            displayName: '<?php echo htmlspecialchars($progress['display_name'] ?? $progress['processor']); ?>'
+        });
+        <?php endif; ?>
+    <?php endforeach; ?>
+    <?php endif; ?>
+    
+    // Open each incomplete process in a new tab
+    incompleteProcesses.forEach(function(process, index) {
+        setTimeout(function() {
+            window.open('/admin_actions/abo/' + process.name + '.php?rawid=<?php echo $company_id; ?>', '_blank');
+        }, index * 1000); // Stagger opening tabs by 1 second
+    });
+    
+    // Suggest refresh after some time
+    setTimeout(function() {
+        if (confirm('ABO processes have been triggered. Would you like to refresh the page to see updated progress?')) {
+            location.reload();
+        }
+    }, (incompleteProcesses.length + 2) * 1000);
+}
 </script>
 
 <!-- Logo Upload Modal -->
