@@ -64,7 +64,7 @@ $additionalstyles .= '
 }
 
 .nav-pills .nav-link.active {
-    background-color: #0d6efd;
+    background-color: var(--bs-primary);
     color: white;
 }
 
@@ -103,16 +103,9 @@ include($dir['core_components'] . '/bg_header.inc');
 
 <!-- Hero Section -->
 <div class="content-header-admin no-rounded-corners">
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="mb-1">Company Editor</h1>
-                <p class="lead mb-0"><?php echo htmlspecialchars($company_name); ?></p>
-            </div>
-            <a href="/admin/brands" class="btn btn-outline-light">
-                <i class="bi bi-arrow-left me-2"></i>Back To List of Businesses
-            </a>
-        </div>
+    <div class="container text-center">
+        <h1 class="mb-1">Company Editor</h1>
+        <p class="lead mb-0"><?php echo htmlspecialchars($company_name); ?></p>
     </div>
 </div>
 
@@ -121,13 +114,19 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="row">
             <!-- Left Navigation -->
             <div class="col-md-3 mb-4">
-                <div class="nav flex-column nav-pills" id="company-tabs" role="tablist">
+                <div class="card">
+                    <div class="card-body p-3">
+                        <div class="nav flex-column nav-pills" id="company-tabs" role="tablist">
                     <button class="nav-link active" id="general-tab" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab">
                         <i class="bi bi-house-door me-2"></i>General
                     </button>
                     
                     <button class="nav-link" id="locations-tab" data-bs-toggle="pill" data-bs-target="#locations" type="button" role="tab">
                         <i class="bi bi-geo-alt me-2"></i>Locations
+                    </button>
+                    
+                    <button class="nav-link" id="logos-tab" data-bs-toggle="pill" data-bs-target="#logos" type="button" role="tab">
+                        <i class="bi bi-image me-2"></i>Logo Management
                     </button>
                     
                     <?php if (!$has_app_only_rewards): ?>
@@ -165,10 +164,17 @@ include($dir['core_components'] . '/bg_header.inc');
                         <i class="bi bi-box-arrow-up-right ms-auto"></i>
                     </a>
                 </div>
+                    </div>
+                </div>
             </div>
             
             <!-- Right Content -->
             <div class="col-md-9">
+                <div class="mb-3 text-end">
+                    <a href="/admin/brands" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back To List of Businesses
+                    </a>
+                </div>
                 <div class="tab-content" id="company-tab-content">
                     <!-- General Tab -->
                     <div class="tab-pane fade show active" id="general" role="tabpanel">
@@ -186,6 +192,16 @@ include($dir['core_components'] . '/bg_header.inc');
                             <?php 
                             $componentmode = 'include';
                             include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/location-manager.php'); 
+                            ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Logo Management Tab -->
+                    <div class="tab-pane fade" id="logos" role="tabpanel">
+                        <div class="content-section">
+                            <?php 
+                            $componentmode = 'include';
+                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/logo-manager.php'); 
                             ?>
                         </div>
                     </div>

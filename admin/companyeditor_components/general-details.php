@@ -99,6 +99,11 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
     display: block;
 }
 
+/* Special handling for category edit mode since it's positioned */
+.editable-field[data-field="category"].editing .edit-mode {
+    display: block !important;
+}
+
 .edit-actions {
     margin-top: 5px;
 }
@@ -160,6 +165,16 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+/* Status badge padding */
+.editable-field[data-field="status"] .badge {
+    padding: 0.5em 0.75em;
+}
+
+/* Ensure card body doesn't hide dropdowns */
+.card-body {
+    overflow: visible !important;
+}
 </style>
 
 <div class="company-details-section">
@@ -185,20 +200,53 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                 <div class="col-md-10">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <h2 class="mb-1"><?php echo htmlspecialchars($company_name); ?></h2>
+                            <div class="editable-field d-inline-block" data-field="company_name">
+                                <h2 class="mb-1 view-mode clickable-field d-inline-block">
+                                    <span class="field-value"><?php echo htmlspecialchars($company_name); ?></span>
+                                </h2>
+                                <div class="edit-mode">
+                                    <input type="text" class="form-control form-control-lg field-input" value="<?php echo htmlspecialchars($company_name); ?>">
+                                    <div class="edit-actions">
+                                        <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                        <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                        <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                                    </div>
+                                </div>
+                            </div>
                             <?php if ($company_display_name !== $company_name): ?>
                             <p class="text-muted mb-1">Display Name: <?php echo htmlspecialchars($company_display_name); ?></p>
                             <?php endif; ?>
                             <p class="text-muted mb-0">
                                 <span class="me-3"><i class="bi bi-hash"></i> ID: <?php echo $company_id; ?></span>
                                 <span class="me-3"><i class="bi bi-calendar"></i> Joined: <?php echo $company_joined; ?></span>
-                                <span><i class="bi bi-folder"></i> <?php echo ucfirst($company['category'] ?? 'Uncategorized'); ?></span>
                             </p>
                         </div>
                         <div>
-                            <span class="badge bg-<?php echo $status_color; ?> fs-6">
-                                <?php echo ucwords(str_replace('_', ' ', $company_status)); ?>
-                            </span>
+                            <div class="editable-field" data-field="status">
+                                <div class="view-mode">
+                                    <span class="badge bg-<?php echo $status_color; ?> fs-6 clickable-field">
+                                        <span class="field-value"><?php echo ucwords(str_replace('_', ' ', $company_status)); ?></span>
+                                    </span>
+                                </div>
+                                <div class="edit-mode">
+                                    <select class="form-select field-input">
+                                        <option value="active" <?php echo $company_status == 'active' ? 'selected' : ''; ?>>Active</option>
+                                        <option value="inactive" <?php echo $company_status == 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+                                        <option value="pending" <?php echo $company_status == 'pending' ? 'selected' : ''; ?>>Pending</option>
+                                        <option value="pending_review" <?php echo $company_status == 'pending_review' ? 'selected' : ''; ?>>Pending Review</option>
+                                        <option value="approved_pending_data" <?php echo $company_status == 'approved_pending_data' ? 'selected' : ''; ?>>Approved Pending Data</option>
+                                        <option value="pending_final_review" <?php echo $company_status == 'pending_final_review' ? 'selected' : ''; ?>>Pending Final Review</option>
+                                        <option value="finalized" <?php echo $company_status == 'finalized' ? 'selected' : ''; ?>>Finalized</option>
+                                        <option value="rejected" <?php echo $company_status == 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+                                        <option value="submitted" <?php echo $company_status == 'submitted' ? 'selected' : ''; ?>>Submitted</option>
+                                    </select>
+                                    <div class="edit-actions">
+                                        <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                        <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                        <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -261,14 +309,28 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             $region_set = !empty($company['region_type']);
                             $region_class = $region_set ? 'stat-box-success' : 'stat-box-danger';
                             ?>
-                            <div class="border rounded p-2 <?php echo $region_class; ?>">
-                                <div class="h4 mb-0"><?php echo ucfirst($company['region_type'] ?? 'National'); ?></div>
-                                <small class="text-muted">Region</small>
-                                <?php if ($region_set): ?>
-                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 0.8rem;"></i>
-                                <?php else: ?>
-                                    <i class="bi bi-x-circle-fill text-danger" style="font-size: 0.8rem;"></i>
-                                <?php endif; ?>
+                            <div class="editable-field" data-field="region_type">
+                                <div class="view-mode border rounded p-2 <?php echo $region_class; ?>" style="cursor: pointer;">
+                                    <div class="h4 mb-0"><span class="field-value"><?php echo ucfirst($company['region_type'] ?? 'National'); ?></span></div>
+                                    <small class="text-muted">Region Type</small>
+                                    <?php if ($region_set): ?>
+                                        <i class="bi bi-check-circle-fill text-success" style="font-size: 0.8rem;"></i>
+                                    <?php else: ?>
+                                        <i class="bi bi-x-circle-fill text-danger" style="font-size: 0.8rem;"></i>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="edit-mode">
+                                    <select class="form-select field-input">
+                                        <option value="national" <?php echo ($company['region_type'] ?? 'national') == 'national' ? 'selected' : ''; ?>>National</option>
+                                        <option value="regional" <?php echo ($company['region_type'] ?? '') == 'regional' ? 'selected' : ''; ?>>Regional</option>
+                                        <option value="local" <?php echo ($company['region_type'] ?? '') == 'local' ? 'selected' : ''; ?>>Local</option>
+                                        <option value="international" <?php echo ($company['region_type'] ?? '') == 'international' ? 'selected' : ''; ?>>International</option>
+                                    </select>
+                                    <div class="edit-actions">
+                                        <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                        <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col">
@@ -290,88 +352,72 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Additional Details -->
-                    <div class="mt-3">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="text-muted small mb-1">Company Name</label>
-                                <div class="editable-field" data-field="company_name">
-                                    <div class="view-mode clickable-field">
-                                        <span class="field-value"><?php echo htmlspecialchars($company_name); ?></span>
-                                    </div>
-                                    <div class="edit-mode">
-                                        <input type="text" class="form-control field-input" value="<?php echo htmlspecialchars($company_name); ?>">
-                                        <div class="edit-actions">
-                                            <button class="btn btn-sm btn-primary save-btn">Save</button>
-                                            <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
-                                            <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
-                                        </div>
-                                    </div>
-                                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Other Details Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Other Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="text-muted small mb-1">Display Name</label>
+                    <div class="editable-field" data-field="company_display_name">
+                        <div class="view-mode clickable-field">
+                            <span class="field-value fw-medium"><?php echo htmlspecialchars($company_display_name); ?></span>
+                        </div>
+                        <div class="edit-mode">
+                            <input type="text" class="form-control field-input" value="<?php echo htmlspecialchars($company_display_name); ?>">
+                            <div class="edit-actions">
+                                <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
                             </div>
-                            <div class="col-md-6">
-                                <label class="text-muted small mb-1">Display Name</label>
-                                <div class="editable-field" data-field="company_display_name">
-                                    <div class="view-mode clickable-field">
-                                        <span class="field-value"><?php echo htmlspecialchars($company_display_name); ?></span>
-                                    </div>
-                                    <div class="edit-mode">
-                                        <input type="text" class="form-control field-input" value="<?php echo htmlspecialchars($company_display_name); ?>">
-                                        <div class="edit-actions">
-                                            <button class="btn btn-sm btn-primary save-btn">Save</button>
-                                            <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
-                                            <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
-                                        </div>
-                                    </div>
-                                </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small mb-1">Parent Company</label>
+                    <div class="editable-field" data-field="parent_company">
+                        <div class="view-mode clickable-field">
+                            <span class="field-value fw-medium"><?php echo htmlspecialchars($company['parent_company'] ?? 'None'); ?></span>
+                        </div>
+                        <div class="edit-mode">
+                            <input type="text" class="form-control field-input" value="<?php echo htmlspecialchars($company['parent_company'] ?? ''); ?>" placeholder="Enter parent company name">
+                            <div class="edit-actions">
+                                <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
                             </div>
-                            <div class="col-md-6">
-                                <label class="text-muted small mb-1">Category</label>
-                                <div class="editable-field" data-field="category">
-                                    <div class="view-mode clickable-field">
-                                        <span class="field-value"><?php echo ucfirst($company['category'] ?? 'Uncategorized'); ?></span>
-                                    </div>
-                                    <div class="edit-mode">
-                                        <select class="form-select field-input">
-                                            <option value="">Select Category</option>
-                                            <option value="restaurant" <?php echo ($company['category'] ?? '') == 'restaurant' ? 'selected' : ''; ?>>Restaurant</option>
-                                            <option value="retail" <?php echo ($company['category'] ?? '') == 'retail' ? 'selected' : ''; ?>>Retail</option>
-                                            <option value="entertainment" <?php echo ($company['category'] ?? '') == 'entertainment' ? 'selected' : ''; ?>>Entertainment</option>
-                                            <option value="services" <?php echo ($company['category'] ?? '') == 'services' ? 'selected' : ''; ?>>Services</option>
-                                            <option value="health" <?php echo ($company['category'] ?? '') == 'health' ? 'selected' : ''; ?>>Health</option>
-                                            <option value="beauty" <?php echo ($company['category'] ?? '') == 'beauty' ? 'selected' : ''; ?>>Beauty</option>
-                                            <option value="automotive" <?php echo ($company['category'] ?? '') == 'automotive' ? 'selected' : ''; ?>>Automotive</option>
-                                            <option value="other" <?php echo ($company['category'] ?? '') == 'other' ? 'selected' : ''; ?>>Other</option>
-                                        </select>
-                                        <div class="edit-actions">
-                                            <button class="btn btn-sm btn-primary save-btn">Save</button>
-                                            <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
-                                            <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="text-muted small mb-1">Region Type</label>
-                                <div class="editable-field" data-field="region_type">
-                                    <div class="view-mode clickable-field">
-                                        <span class="field-value"><?php echo ucfirst($company['region_type'] ?? 'National'); ?></span>
-                                    </div>
-                                    <div class="edit-mode">
-                                        <select class="form-select field-input">
-                                            <option value="national" <?php echo ($company['region_type'] ?? 'national') == 'national' ? 'selected' : ''; ?>>National</option>
-                                            <option value="regional" <?php echo ($company['region_type'] ?? '') == 'regional' ? 'selected' : ''; ?>>Regional</option>
-                                            <option value="local" <?php echo ($company['region_type'] ?? '') == 'local' ? 'selected' : ''; ?>>Local</option>
-                                            <option value="international" <?php echo ($company['region_type'] ?? '') == 'international' ? 'selected' : ''; ?>>International</option>
-                                        </select>
-                                        <div class="edit-actions">
-                                            <button class="btn btn-sm btn-primary save-btn">Save</button>
-                                            <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
-                                            <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
-                                        </div>
-                                    </div>
-                                </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-muted small mb-1">Category</label>
+                    <div class="editable-field" data-field="category">
+                        <div class="view-mode clickable-field">
+                            <span class="field-value fw-medium"><?php echo ucfirst($company['category'] ?? 'Uncategorized'); ?></span>
+                        </div>
+                        <div class="edit-mode">
+                            <select class="form-select field-input">
+                                <option value="">Select Category</option>
+                                <option value="restaurant" <?php echo ($company['category'] ?? '') == 'restaurant' ? 'selected' : ''; ?>>Restaurant</option>
+                                <option value="retail" <?php echo ($company['category'] ?? '') == 'retail' ? 'selected' : ''; ?>>Retail</option>
+                                <option value="entertainment" <?php echo ($company['category'] ?? '') == 'entertainment' ? 'selected' : ''; ?>>Entertainment</option>
+                                <option value="services" <?php echo ($company['category'] ?? '') == 'services' ? 'selected' : ''; ?>>Services</option>
+                                <option value="health" <?php echo ($company['category'] ?? '') == 'health' ? 'selected' : ''; ?>>Health</option>
+                                <option value="beauty" <?php echo ($company['category'] ?? '') == 'beauty' ? 'selected' : ''; ?>>Beauty</option>
+                                <option value="automotive" <?php echo ($company['category'] ?? '') == 'automotive' ? 'selected' : ''; ?>>Automotive</option>
+                                <option value="other" <?php echo ($company['category'] ?? '') == 'other' ? 'selected' : ''; ?>>Other</option>
+                            </select>
+                            <div class="edit-actions">
+                                <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
                             </div>
                         </div>
                     </div>
@@ -625,15 +671,17 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
         <div class="card-body">
             <?php
             // Get ABO progress
-            $abo_sql = "SELECT ca.name as processor, ca.description as status, ca.modify_dt,
+            $abo_sql = "SELECT ca.name as processor, ca.description as status, MAX(ca.modify_dt) as modify_dt,
                         c.config_value as display_name, 
-                        JSON_UNQUOTE(JSON_EXTRACT(c.config_data, '$.description')) as config_description
+                        JSON_UNQUOTE(JSON_EXTRACT(c.config_data, '$.description')) as config_description,
+                        c.display_order
                         FROM bg_company_attributes ca
                         LEFT JOIN bg_config c ON c.config_key COLLATE utf8mb4_unicode_ci = ca.name COLLATE utf8mb4_unicode_ci 
                             AND c.config_type = 'automation_processor'
                         WHERE ca.company_id = :company_id 
                         AND ca.type = 'onboarding_progress'
                         AND ca.status = 'active'
+                        GROUP BY ca.name, ca.description, c.config_value, c.config_data, c.display_order
                         ORDER BY c.display_order";
             $abo_stmt = $database->prepare($abo_sql);
             $abo_stmt->execute(['company_id' => $company_id]);
@@ -705,8 +753,10 @@ $(document).ready(function() {
     
     function initializeInlineEditing() {
         // Handle click-to-edit for clickable fields
-        $('.editable-field .clickable-field').on('click', function() {
+        $('.editable-field .clickable-field').on('click', function(e) {
+            e.stopPropagation();
             var field = $(this).closest('.editable-field');
+            console.log('Clickable field clicked:', field.data('field'));
             enterEditMode(field);
         });
         
@@ -722,8 +772,8 @@ $(document).ready(function() {
             enterEditMode(field);
         });
         
-        // Handle click-to-edit for age range
-        $('.age-range-field .view-mode').on('click', function() {
+        // Handle click-to-edit for age range and region type
+        $('.age-range-field .view-mode, .editable-field[data-field="region_type"] .view-mode').on('click', function() {
             var field = $(this).closest('.editable-field');
             enterEditMode(field);
         });
@@ -765,6 +815,10 @@ $(document).ready(function() {
     }
     
     function enterEditMode(field) {
+        // Debug for category field
+        if (field.data('field') === 'category') {
+            console.log('Category edit mode triggered');
+        }
         field.addClass('editing');
         field.find('.field-input').focus().select();
     }
@@ -820,10 +874,41 @@ $(document).ready(function() {
     
     function updateFieldDisplay(field, fieldName, value) {
         // Update the view mode display
-        if (fieldName === 'category' || fieldName === 'region_type') {
+        if (fieldName === 'category') {
             // For select fields, get the text of selected option
             var displayText = field.find('.field-input option:selected').text();
             field.find('.field-value').text(displayText);
+        } else if (fieldName === 'status') {
+            // For status field, update badge text and color
+            var displayText = field.find('.field-input option:selected').text();
+            field.find('.field-value').text(displayText);
+            
+            // Define status color mapping
+            var statusColors = {
+                'active': 'success',
+                'inactive': 'danger',
+                'pending': 'warning',
+                'pending_review': 'warning',
+                'approved_pending_data': 'info',
+                'pending_final_review': 'primary',
+                'finalized': 'primary',
+                'rejected': 'danger',
+                'submitted': 'secondary'
+            };
+            
+            // Update badge color
+            var badge = field.find('.badge');
+            badge.removeClass('bg-success bg-danger bg-warning bg-info bg-primary bg-secondary');
+            badge.addClass('bg-' + (statusColors[value] || 'secondary'));
+        } else if (fieldName === 'region_type') {
+            // For region type, update the display and styling
+            var displayText = field.find('.field-input option:selected').text();
+            field.find('.field-value').text(displayText);
+            // Update styling based on value
+            if (value && value !== '') {
+                field.find('.view-mode').removeClass('stat-box-danger').addClass('stat-box-success');
+                field.find('.bi-x-circle-fill').removeClass('bi-x-circle-fill text-danger').addClass('bi-check-circle-fill text-success');
+            }
         } else if (fieldName.includes('url') || fieldName === 'appgoogle' || fieldName === 'appapple') {
             // For URL fields, update the input and link
             field.find('.view-mode input').val(value);

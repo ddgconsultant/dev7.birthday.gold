@@ -42,7 +42,8 @@ $allowed_fields = [
     'region_type',
     'status',
     'minimum_age',
-    'maximum_age'
+    'maximum_age',
+    'parent_company'
 ];
 
 // Check if field is allowed
