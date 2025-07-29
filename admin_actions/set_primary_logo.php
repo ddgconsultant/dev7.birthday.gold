@@ -40,7 +40,7 @@ try {
     ]);
     
     // Log the change
-    $user_id = $_SESSION['user']['user_id'] ?? 'unknown';
+    $user_id = $current_user_data['user_id'] ?? 'unknown';
     $log_sql = "INSERT INTO bg_company_attributes (company_id, category, type, name, description, status, create_dt) 
                 VALUES (:company_id, 'audit_log', 'logo_change', 'primary_logo_set', :description, 'active', NOW())";
     $log_stmt = $database->prepare($log_sql);

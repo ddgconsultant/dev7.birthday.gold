@@ -43,7 +43,7 @@ try {
     $stmt->execute(['logo_id' => $logo_id]);
     
     // Log the deletion
-    $user_id = $_SESSION['user']['user_id'] ?? 'unknown';
+    $user_id = $current_user_data['user_id'] ?? 'unknown';
     $log_sql = "INSERT INTO bg_company_attributes (company_id, category, type, name, description, status, create_dt) 
                 VALUES (:company_id, 'audit_log', 'logo_delete', 'logo_deleted', :description, 'active', NOW())";
     $log_stmt = $database->prepare($log_sql);
