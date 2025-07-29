@@ -40,12 +40,13 @@ try {
     ]);
     
     // Log the change
+    $user_id = $_SESSION['user']['user_id'] ?? 'unknown';
     $log_sql = "INSERT INTO bg_company_attributes (company_id, category, type, name, description, status, create_dt) 
                 VALUES (:company_id, 'audit_log', 'logo_change', 'primary_logo_set', :description, 'active', NOW())";
     $log_stmt = $database->prepare($log_sql);
     $log_stmt->execute([
         'company_id' => $company_id,
-        'description' => "Primary logo set to attribute_id: {$logo_id} by user {$_SESSION['user']['user_id']}"
+        'description' => "Primary logo set to attribute_id: {$logo_id} by user {$user_id}"
     ]);
     
     // Commit transaction

@@ -176,12 +176,13 @@ echo '</div>';
 
 // Log the action
 if (isset($company_id)) {
+    $user_id = $_SESSION['user']['user_id'] ?? 'unknown';
     $log_sql = "INSERT INTO bg_company_attributes (company_id, category, type, name, description, status, create_dt) 
                 VALUES (:company_id, 'audit_log', 'logo_fetch', 'logos_fetched', :description, 'active', NOW())";
     $log_stmt = $database->prepare($log_sql);
     $log_stmt->execute([
         'company_id' => $company_id,
-        'description' => "Logos fetched from Apple App Store by user {$_SESSION['user']['user_id']}. Total processed: " . ($totalImagesProcessed ?? 0)
+        'description' => "Logos fetched from Apple App Store by user {$user_id}. Total processed: " . ($totalImagesProcessed ?? 0)
     ]);
 }
 ?>
