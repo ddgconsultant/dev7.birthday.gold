@@ -66,7 +66,7 @@ try {
         $processor_name = $processor['config_value'];
         
         // Check if progress record already exists
-        $check_sql = "SELECT id FROM bg_company_attributes 
+        $check_sql = "SELECT attribute_id FROM bg_company_attributes 
                       WHERE company_id = :company_id 
                       AND type = 'onboarding_progress' 
                       AND name = :processor_key";
