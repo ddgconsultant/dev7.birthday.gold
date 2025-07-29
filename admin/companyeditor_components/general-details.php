@@ -121,11 +121,13 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                         </div>
                         <div class="col">
                             <?php 
-                            $age_set = ($company['minage'] !== null && $company['maxage'] !== null);
+                            // Get age range using centralized function
+                            $age_data = $app->getagerange($company_id);
+                            $age_set = ($age_data['source'] !== 'default' && $age_data['confidence'] !== 'low');
                             $age_class = $age_set ? 'stat-box-success' : 'stat-box-danger';
                             ?>
-                            <div class="border rounded p-2 <?php echo $age_class; ?>">
-                                <div class="h4 mb-0"><?php echo $company['minage'] ?? 0; ?>-<?php echo $company['maxage'] ?? '99+'; ?></div>
+                            <div class="border rounded p-2 <?php echo $age_class; ?>" title="Source: <?php echo $age_data['source']; ?>, Confidence: <?php echo $age_data['confidence']; ?>">
+                                <div class="h4 mb-0"><?php echo $age_data['minimum_age']; ?>-<?php echo $age_data['maximum_age']; ?></div>
                                 <small class="text-muted">Age Range</small>
                                 <?php if ($age_set): ?>
                                     <i class="bi bi-check-circle-fill text-success" style="font-size: 0.8rem;"></i>

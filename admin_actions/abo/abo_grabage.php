@@ -425,18 +425,6 @@ try {
             'age' => $age_requirements['maximum_age']
         ]);
         
-        // Update the bg_company_rewards table to maintain consistency
-        // Update all rewards for this company with the extracted age requirements
-        $update_rewards_sql = "UPDATE bg_company_rewards 
-                              SET minage = :minage, 
-                                  maxage = :maxage,
-                                  modify_dt = NOW()
-                              WHERE company_id = :company_id";
-        $database->query($update_rewards_sql, [
-            'company_id' => $company_id,
-            'minage' => $age_requirements['minimum_age'],
-            'maxage' => $age_requirements['maximum_age']
-        ]);
         
         // Update progress status
         $complete_sql = "UPDATE bg_company_attributes 

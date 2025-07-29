@@ -111,34 +111,8 @@ foreach ($companies as $key => $company) {
     $company['form_mapping_version'] = $version_data['current_version'] ?? null;
     $company['form_mapping_field_count'] = $version_data['field_count'] ?? 0;
     
-    // Get age requirements from company rewards table (same source as company editor)
-    $age_sql = "SELECT MIN(COALESCE(minage, 0)) as minimum_age, 
-                       MAX(COALESCE(maxage, 200)) as maximum_age,
-                       COUNT(*) as reward_count
-                FROM bg_company_rewards 
-                WHERE company_id = :company_id";
-    $age_stmt = $database->query($age_sql, ['company_id' => $company['company_id']]);
-    $age_row = $age_stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($age_row && $age_row['reward_count'] > 0) {
-        $company['age_requirements'] = [
-            'minimum_age' => $age_row['minimum_age'],
-            'maximum_age' => $age_row['maximum_age'],
-            'source' => 'rewards_table'
-        ];
-    } else {
-        // Fallback to bg_company_attributes if no rewards exist
-        $attr_sql = "SELECT description FROM bg_company_attributes 
-                    WHERE company_id = :company_id 
-                    AND type = 'age_requirements' 
-                    AND name = 'birthday_program' 
-                    AND status = 'active'
-                    ORDER BY create_dt DESC
-                    LIMIT 1";
-        $attr_stmt = $database->query($attr_sql, ['company_id' => $company['company_id']]);
-        $attr_data = $attr_stmt->fetchColumn();
-        $company['age_requirements'] = $attr_data ? json_decode($attr_data, true) : null;
-    }
+    // Get age requirements using centralized function
+    $company['age_requirements'] = $app->getagerange($company['company_id']);
     
     // Get terms URL if exists
     $terms_sql = "SELECT description FROM bg_company_attributes 

@@ -3695,4 +3695,111 @@ function bg_businesshours() {
     
     return $locations;
   }
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Get age range for a company or specific reward
+   * 
+   * @param int $company_id Company ID
+   * @param string|int $scope 'full' (default) for company-wide range, or reward_id for specific reward
+   * @param string $return 'all' (default) returns array, 'min' returns minimum age, 'max' returns maximum age
+   * @return mixed Array with min/max/source or single value based on $return parameter
+   */
+  public function getagerange($company_id, $scope = 'full', $return = 'all') {
+    global $database, $bg_age_requirements_defaults;
+    
+    $result = [
+      'minimum_age' => $bg_age_requirements_defaults['minimum_age'] ?? 0,
+      'maximum_age' => $bg_age_requirements_defaults['maximum_age'] ?? 150,
+      'source' => 'default',
+      'confidence' => 'low'
+    ];
+    
+    try {
+      if ($scope === 'full') {
+        // First, check bg_company_attributes for ABO-extracted age requirements
+        $attr_sql = "SELECT description FROM bg_company_attributes 
+                    WHERE company_id = :company_id 
+                    AND type = 'age_requirements' 
+                    AND name = 'birthday_program' 
+                    AND status = 'active'
+                    ORDER BY modify_dt DESC, create_dt DESC
+                    LIMIT 1";
+        $attr_stmt = $database->query($attr_sql, ['company_id' => $company_id]);
+        $attr_row = $attr_stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($attr_row && !empty($attr_row['description'])) {
+          $age_data = json_decode($attr_row['description'], true);
+          if (is_array($age_data) && isset($age_data['minimum_age']) && isset($age_data['maximum_age'])) {
+            $result = array_merge($result, $age_data);
+            $result['source'] = $age_data['source'] ?? 'abo_extraction';
+          }
+        }
+        
+        // If no ABO data or low confidence, check actual rewards for age range
+        if ($result['source'] === 'default' || $result['confidence'] === 'low') {
+          $rewards_sql = "SELECT 
+                          MIN(COALESCE(NULLIF(minage, 0), :default_min)) as min_age,
+                          MAX(COALESCE(NULLIF(maxage, 0), :default_max)) as max_age,
+                          COUNT(*) as reward_count,
+                          COUNT(CASE WHEN minage > 0 OR maxage > 0 THEN 1 END) as rewards_with_age
+                         FROM bg_company_rewards 
+                         WHERE company_id = :company_id
+                         AND status = 'active'";
+          $rewards_stmt = $database->query($rewards_sql, [
+            'company_id' => $company_id,
+            'default_min' => $result['minimum_age'],
+            'default_max' => $result['maximum_age']
+          ]);
+          $rewards_row = $rewards_stmt->fetch(PDO::FETCH_ASSOC);
+          
+          if ($rewards_row && $rewards_row['reward_count'] > 0 && $rewards_row['rewards_with_age'] > 0) {
+            // Override with actual reward data if available
+            $result['minimum_age'] = $rewards_row['min_age'];
+            $result['maximum_age'] = $rewards_row['max_age'];
+            $result['source'] = 'rewards_data';
+            $result['confidence'] = 'high';
+            $result['reward_count'] = $rewards_row['reward_count'];
+            $result['rewards_with_age'] = $rewards_row['rewards_with_age'];
+          }
+        }
+      } else {
+        // Get age range for specific reward
+        $reward_sql = "SELECT minage, maxage, reward_name 
+                      FROM bg_company_rewards 
+                      WHERE reward_id = :reward_id 
+                      AND company_id = :company_id
+                      AND status = 'active'
+                      LIMIT 1";
+        $reward_stmt = $database->query($reward_sql, [
+          'reward_id' => $scope,
+          'company_id' => $company_id
+        ]);
+        $reward_row = $reward_stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($reward_row) {
+          $result['minimum_age'] = $reward_row['minage'] ?: $result['minimum_age'];
+          $result['maximum_age'] = $reward_row['maxage'] ?: $result['maximum_age'];
+          $result['source'] = 'specific_reward';
+          $result['confidence'] = 'high';
+          $result['reward_name'] = $reward_row['reward_name'];
+        }
+      }
+      
+    } catch (Exception $e) {
+      // Log error but return default values
+      error_log("getagerange error for company $company_id: " . $e->getMessage());
+    }
+    
+    // Return based on requested format
+    switch ($return) {
+      case 'min':
+        return $result['minimum_age'];
+      case 'max':
+        return $result['maximum_age'];
+      case 'all':
+      default:
+        return $result;
+    }
+  }
 }
