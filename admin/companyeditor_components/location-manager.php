@@ -108,12 +108,10 @@ if ($has_locations) {
 
                             <!-- Location Details -->
                             <div class="mb-3">
-                                <?php if (!empty($location['phone'])): ?>
-                                    <div class="d-flex align-items-center text-muted mb-2">
-                                        <i class="bi bi-telephone me-2"></i>
-                                        <span><?php echo htmlspecialchars($location['phone']); ?></span>
-                                    </div>
-                                <?php endif; ?>
+                                <div class="d-flex align-items-center text-muted mb-2">
+                                    <i class="bi bi-geo-alt me-2"></i>
+                                    <span><?php echo htmlspecialchars($location['zip_code']); ?></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -134,6 +132,7 @@ if ($has_locations) {
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="company_id" value="<?php echo $company_id; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="mb-3">
                         <label class="form-label">Address</label>
                         <input type="text" class="form-control" name="address" required>
@@ -157,10 +156,6 @@ if ($has_locations) {
                                 <input type="text" class="form-control" name="zip_code" required>
                             </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone Number</label>
-                        <input type="tel" class="form-control" name="phone">
                     </div>
                 </div>
                 <div class="modal-footer">

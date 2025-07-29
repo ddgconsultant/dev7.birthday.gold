@@ -60,6 +60,106 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
     border-color: #dc3545 !important;
     background-color: rgba(220, 53, 69, 0.05) !important;
 }
+
+/* Inline edit styles */
+.editable-field {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.editable-field .view-mode {
+    cursor: pointer;
+}
+
+.editable-field:hover .view-mode:not(.no-hover) {
+    background-color: rgba(0, 123, 255, 0.05);
+    border-radius: 4px;
+}
+
+.clickable-field {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.clickable-field:hover {
+    background-color: rgba(0, 123, 255, 0.08);
+    cursor: pointer;
+}
+
+.edit-mode {
+    display: none;
+}
+
+.editing .view-mode {
+    display: none;
+}
+
+.editing .edit-mode {
+    display: block;
+}
+
+.edit-actions {
+    margin-top: 5px;
+}
+
+.field-saving {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.success-indicator {
+    color: #198754;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Tooltip hint */
+.edit-hint {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.editable-field:hover .edit-hint {
+    opacity: 0.9;
+}
+
+/* Make URL inputs clickable */
+.editable-field .input-group input[readonly] {
+    cursor: pointer;
+    background-color: white;
+}
+
+.editable-field .input-group input[readonly]:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Social media field hover */
+.editable-field .view-mode > div.d-flex {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.editable-field .view-mode > div.d-flex:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 </style>
 
 <div class="company-details-section">
@@ -126,14 +226,34 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             $age_set = ($age_data['source'] !== 'default' && $age_data['confidence'] !== 'low');
                             $age_class = $age_set ? 'stat-box-success' : 'stat-box-danger';
                             ?>
-                            <div class="border rounded p-2 <?php echo $age_class; ?>" title="Source: <?php echo $age_data['source']; ?>, Confidence: <?php echo $age_data['confidence']; ?>">
-                                <div class="h4 mb-0"><?php echo $age_data['minimum_age']; ?>-<?php echo $age_data['maximum_age']; ?></div>
-                                <small class="text-muted">Age Range</small>
-                                <?php if ($age_set): ?>
-                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 0.8rem;"></i>
-                                <?php else: ?>
-                                    <i class="bi bi-x-circle-fill text-danger" style="font-size: 0.8rem;"></i>
-                                <?php endif; ?>
+                            <div class="editable-field age-range-field" data-field="age_range">
+                                <div class="view-mode border rounded p-2 <?php echo $age_class; ?>" title="Source: <?php echo $age_data['source']; ?>, Confidence: <?php echo $age_data['confidence']; ?>. Click to edit" style="cursor: pointer;">
+                                    <div class="h4 mb-0"><span class="age-range-display"><?php echo $age_data['minimum_age']; ?>-<?php echo $age_data['maximum_age']; ?></span></div>
+                                    <small class="text-muted">Age Range</small>
+                                    <?php if ($age_set): ?>
+                                        <i class="bi bi-check-circle-fill text-success" style="font-size: 0.8rem;"></i>
+                                    <?php else: ?>
+                                        <i class="bi bi-x-circle-fill text-danger" style="font-size: 0.8rem;"></i>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="edit-mode">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <input type="number" class="form-control form-control-sm min-age-input" 
+                                                   value="<?php echo $age_data['minimum_age']; ?>" 
+                                                   min="0" max="120" placeholder="Min">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="number" class="form-control form-control-sm max-age-input" 
+                                                   value="<?php echo $age_data['maximum_age']; ?>" 
+                                                   min="0" max="120" placeholder="Max">
+                                        </div>
+                                    </div>
+                                    <div class="edit-actions">
+                                        <button class="btn btn-sm btn-primary save-age-btn">Save</button>
+                                        <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col">
@@ -170,6 +290,91 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Additional Details -->
+                    <div class="mt-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="text-muted small mb-1">Company Name</label>
+                                <div class="editable-field" data-field="company_name">
+                                    <div class="view-mode clickable-field">
+                                        <span class="field-value"><?php echo htmlspecialchars($company_name); ?></span>
+                                    </div>
+                                    <div class="edit-mode">
+                                        <input type="text" class="form-control field-input" value="<?php echo htmlspecialchars($company_name); ?>">
+                                        <div class="edit-actions">
+                                            <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                            <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                            <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small mb-1">Display Name</label>
+                                <div class="editable-field" data-field="company_display_name">
+                                    <div class="view-mode clickable-field">
+                                        <span class="field-value"><?php echo htmlspecialchars($company_display_name); ?></span>
+                                    </div>
+                                    <div class="edit-mode">
+                                        <input type="text" class="form-control field-input" value="<?php echo htmlspecialchars($company_display_name); ?>">
+                                        <div class="edit-actions">
+                                            <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                            <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                            <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small mb-1">Category</label>
+                                <div class="editable-field" data-field="category">
+                                    <div class="view-mode clickable-field">
+                                        <span class="field-value"><?php echo ucfirst($company['category'] ?? 'Uncategorized'); ?></span>
+                                    </div>
+                                    <div class="edit-mode">
+                                        <select class="form-select field-input">
+                                            <option value="">Select Category</option>
+                                            <option value="restaurant" <?php echo ($company['category'] ?? '') == 'restaurant' ? 'selected' : ''; ?>>Restaurant</option>
+                                            <option value="retail" <?php echo ($company['category'] ?? '') == 'retail' ? 'selected' : ''; ?>>Retail</option>
+                                            <option value="entertainment" <?php echo ($company['category'] ?? '') == 'entertainment' ? 'selected' : ''; ?>>Entertainment</option>
+                                            <option value="services" <?php echo ($company['category'] ?? '') == 'services' ? 'selected' : ''; ?>>Services</option>
+                                            <option value="health" <?php echo ($company['category'] ?? '') == 'health' ? 'selected' : ''; ?>>Health</option>
+                                            <option value="beauty" <?php echo ($company['category'] ?? '') == 'beauty' ? 'selected' : ''; ?>>Beauty</option>
+                                            <option value="automotive" <?php echo ($company['category'] ?? '') == 'automotive' ? 'selected' : ''; ?>>Automotive</option>
+                                            <option value="other" <?php echo ($company['category'] ?? '') == 'other' ? 'selected' : ''; ?>>Other</option>
+                                        </select>
+                                        <div class="edit-actions">
+                                            <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                            <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                            <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-muted small mb-1">Region Type</label>
+                                <div class="editable-field" data-field="region_type">
+                                    <div class="view-mode clickable-field">
+                                        <span class="field-value"><?php echo ucfirst($company['region_type'] ?? 'National'); ?></span>
+                                    </div>
+                                    <div class="edit-mode">
+                                        <select class="form-select field-input">
+                                            <option value="national" <?php echo ($company['region_type'] ?? 'national') == 'national' ? 'selected' : ''; ?>>National</option>
+                                            <option value="regional" <?php echo ($company['region_type'] ?? '') == 'regional' ? 'selected' : ''; ?>>Regional</option>
+                                            <option value="local" <?php echo ($company['region_type'] ?? '') == 'local' ? 'selected' : ''; ?>>Local</option>
+                                            <option value="international" <?php echo ($company['region_type'] ?? '') == 'international' ? 'selected' : ''; ?>>International</option>
+                                        </select>
+                                        <div class="edit-actions">
+                                            <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                            <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                            <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -191,13 +396,25 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             <i class="bi bi-x-circle-fill text-danger ms-1" title="Not Set"></i>
                         <?php endif; ?>
                     </label>
-                    <div class="input-group">
-                        <input type="url" class="form-control <?php echo $company['company_url'] ? 'border-success' : 'border-danger'; ?>" value="<?php echo htmlspecialchars($company['company_url'] ?? ''); ?>" readonly>
-                        <?php if ($company['company_url']): ?>
-                        <a href="<?php echo htmlspecialchars($company['company_url']); ?>" target="_blank" class="btn btn-outline-success">
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                        <?php endif; ?>
+                    <div class="editable-field" data-field="company_url">
+                        <div class="view-mode">
+                            <div class="input-group">
+                                <input type="url" class="form-control <?php echo $company['company_url'] ? 'border-success' : 'border-danger'; ?>" value="<?php echo htmlspecialchars($company['company_url'] ?? ''); ?>" readonly>
+                                <?php if ($company['company_url']): ?>
+                                <a href="<?php echo htmlspecialchars($company['company_url']); ?>" target="_blank" class="btn btn-outline-success">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="edit-mode">
+                            <input type="url" class="form-control field-input" value="<?php echo htmlspecialchars($company['company_url'] ?? ''); ?>" placeholder="https://example.com">
+                            <div class="edit-actions">
+                                <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -209,13 +426,25 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             <i class="bi bi-x-circle-fill text-danger ms-1" title="Not Set"></i>
                         <?php endif; ?>
                     </label>
-                    <div class="input-group">
-                        <input type="url" class="form-control <?php echo $company['signup_url'] ? 'border-success' : 'border-danger'; ?>" value="<?php echo htmlspecialchars($company['signup_url'] ?? ''); ?>" readonly>
-                        <?php if ($company['signup_url']): ?>
-                        <a href="<?php echo htmlspecialchars($company['signup_url']); ?>" target="_blank" class="btn btn-outline-success">
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                        <?php endif; ?>
+                    <div class="editable-field" data-field="signup_url">
+                        <div class="view-mode">
+                            <div class="input-group">
+                                <input type="url" class="form-control <?php echo $company['signup_url'] ? 'border-success' : 'border-danger'; ?>" value="<?php echo htmlspecialchars($company['signup_url'] ?? ''); ?>" readonly>
+                                <?php if ($company['signup_url']): ?>
+                                <a href="<?php echo htmlspecialchars($company['signup_url']); ?>" target="_blank" class="btn btn-outline-success">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="edit-mode">
+                            <input type="url" class="form-control field-input" value="<?php echo htmlspecialchars($company['signup_url'] ?? ''); ?>" placeholder="https://example.com/signup">
+                            <div class="edit-actions">
+                                <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -227,13 +456,25 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             <i class="bi bi-x-circle-fill text-danger ms-1" title="Not Set"></i>
                         <?php endif; ?>
                     </label>
-                    <div class="input-group">
-                        <input type="url" class="form-control <?php echo $company['info_url'] ? 'border-success' : 'border-danger'; ?>" value="<?php echo htmlspecialchars($company['info_url'] ?? ''); ?>" readonly>
-                        <?php if ($company['info_url']): ?>
-                        <a href="<?php echo htmlspecialchars($company['info_url']); ?>" target="_blank" class="btn btn-outline-success">
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                        <?php endif; ?>
+                    <div class="editable-field" data-field="info_url">
+                        <div class="view-mode">
+                            <div class="input-group">
+                                <input type="url" class="form-control <?php echo $company['info_url'] ? 'border-success' : 'border-danger'; ?>" value="<?php echo htmlspecialchars($company['info_url'] ?? ''); ?>" readonly>
+                                <?php if ($company['info_url']): ?>
+                                <a href="<?php echo htmlspecialchars($company['info_url']); ?>" target="_blank" class="btn btn-outline-success">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="edit-mode">
+                            <input type="url" class="form-control field-input" value="<?php echo htmlspecialchars($company['info_url'] ?? ''); ?>" placeholder="https://example.com/info">
+                            <div class="edit-actions">
+                                <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -256,15 +497,28 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             <i class="bi bi-x-circle-fill text-danger ms-1" title="Not Available"></i>
                         <?php endif; ?>
                     </label>
-                    <div class="input-group">
-                        <input type="url" class="form-control <?php echo !empty($company['appgoogle']) ? 'border-success' : 'border-danger'; ?>" 
-                               value="<?php echo htmlspecialchars($company['appgoogle'] ?? ''); ?>" 
-                               placeholder="No Google Play app URL" readonly>
-                        <?php if (!empty($company['appgoogle'])): ?>
-                        <a href="<?php echo htmlspecialchars($company['appgoogle']); ?>" target="_blank" class="btn btn-outline-success">
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                        <?php endif; ?>
+                    <div class="editable-field" data-field="appgoogle">
+                        <div class="view-mode">
+                            <div class="input-group">
+                                <input type="url" class="form-control <?php echo !empty($company['appgoogle']) ? 'border-success' : 'border-danger'; ?>" 
+                                       value="<?php echo htmlspecialchars($company['appgoogle'] ?? ''); ?>" 
+                                       placeholder="No Google Play app URL" readonly>
+                                <?php if (!empty($company['appgoogle'])): ?>
+                                <a href="<?php echo htmlspecialchars($company['appgoogle']); ?>" target="_blank" class="btn btn-outline-success">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="edit-mode">
+                            <input type="url" class="form-control field-input" value="<?php echo htmlspecialchars($company['appgoogle'] ?? ''); ?>" 
+                                   placeholder="https://play.google.com/store/apps/details?id=...">
+                            <div class="edit-actions">
+                                <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -276,15 +530,28 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             <i class="bi bi-x-circle-fill text-danger ms-1" title="Not Available"></i>
                         <?php endif; ?>
                     </label>
-                    <div class="input-group">
-                        <input type="url" class="form-control <?php echo !empty($company['appapple']) ? 'border-success' : 'border-danger'; ?>" 
-                               value="<?php echo htmlspecialchars($company['appapple'] ?? ''); ?>" 
-                               placeholder="No Apple App Store URL" readonly>
-                        <?php if (!empty($company['appapple'])): ?>
-                        <a href="<?php echo htmlspecialchars($company['appapple']); ?>" target="_blank" class="btn btn-outline-success">
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                        <?php endif; ?>
+                    <div class="editable-field" data-field="appapple">
+                        <div class="view-mode">
+                            <div class="input-group">
+                                <input type="url" class="form-control <?php echo !empty($company['appapple']) ? 'border-success' : 'border-danger'; ?>" 
+                                       value="<?php echo htmlspecialchars($company['appapple'] ?? ''); ?>" 
+                                       placeholder="No Apple App Store URL" readonly>
+                                <?php if (!empty($company['appapple'])): ?>
+                                <a href="<?php echo htmlspecialchars($company['appapple']); ?>" target="_blank" class="btn btn-outline-success">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="edit-mode">
+                            <input type="url" class="form-control field-input" value="<?php echo htmlspecialchars($company['appapple'] ?? ''); ?>" 
+                                   placeholder="https://apps.apple.com/us/app/...">
+                            <div class="edit-actions">
+                                <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -317,19 +584,32 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                     $url = $company[$key] ?? '';
                 ?>
                 <div class="col-md-6 col-lg-4">
-                    <div class="d-flex align-items-center p-2 rounded <?php echo $url ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10'; ?>">
-                        <i class="bi bi-<?php echo $platform['icon']; ?> fs-4 me-2 <?php echo $url ? 'text-success' : 'text-danger'; ?>"></i>
-                        <?php if ($url): ?>
-                            <a href="<?php echo htmlspecialchars($url); ?>" target="_blank" class="text-decoration-none text-success fw-medium">
-                                <?php echo $platform['label']; ?>
-                                <i class="bi bi-box-arrow-up-right ms-1 small"></i>
-                            </a>
-                            <i class="bi bi-check-circle-fill text-success ms-auto" title="Connected"></i>
-                        <?php else: ?>
-                            <span class="text-danger"><?php echo $platform['label']; ?></span>
-                            <small class="text-muted ms-2">Not Set</small>
-                            <i class="bi bi-x-circle-fill text-danger ms-auto" title="Not Connected"></i>
-                        <?php endif; ?>
+                    <div class="editable-field" data-field="<?php echo $key; ?>">
+                        <div class="view-mode">
+                            <div class="d-flex align-items-center p-2 rounded <?php echo $url ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10'; ?> position-relative">
+                                <i class="bi bi-<?php echo $platform['icon']; ?> fs-4 me-2 <?php echo $url ? 'text-success' : 'text-danger'; ?>"></i>
+                                <?php if ($url): ?>
+                                    <a href="<?php echo htmlspecialchars($url); ?>" target="_blank" class="text-decoration-none text-success fw-medium">
+                                        <?php echo $platform['label']; ?>
+                                        <i class="bi bi-box-arrow-up-right ms-1 small"></i>
+                                    </a>
+                                    <i class="bi bi-check-circle-fill text-success ms-auto" title="Connected"></i>
+                                <?php else: ?>
+                                    <span class="text-danger"><?php echo $platform['label']; ?></span>
+                                    <small class="text-muted ms-2">Not Set</small>
+                                    <i class="bi bi-x-circle-fill text-danger ms-auto" title="Not Connected"></i>
+                                <?php endif; ?>
+                                            </div>
+                        </div>
+                        <div class="edit-mode">
+                            <input type="url" class="form-control field-input" value="<?php echo htmlspecialchars($url); ?>" 
+                                   placeholder="Enter <?php echo $platform['label']; ?> URL">
+                            <div class="edit-actions">
+                                <button class="btn btn-sm btn-primary save-btn">Save</button>
+                                <button class="btn btn-sm btn-secondary cancel-btn ms-1">Cancel</button>
+                                <span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -417,6 +697,257 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
         </div>
     </div>
 </div>
+
+<script>
+$(document).ready(function() {
+    // Initialize inline editing
+    initializeInlineEditing();
+    
+    function initializeInlineEditing() {
+        // Handle click-to-edit for clickable fields
+        $('.editable-field .clickable-field').on('click', function() {
+            var field = $(this).closest('.editable-field');
+            enterEditMode(field);
+        });
+        
+        // Handle click-to-edit for input groups (URLs)
+        $('.editable-field .input-group input[readonly]').on('click', function() {
+            var field = $(this).closest('.editable-field');
+            enterEditMode(field);
+        });
+        
+        // Handle click-to-edit for social media fields
+        $('.editable-field .view-mode > div.d-flex').on('click', function() {
+            var field = $(this).closest('.editable-field');
+            enterEditMode(field);
+        });
+        
+        // Handle click-to-edit for age range
+        $('.age-range-field .view-mode').on('click', function() {
+            var field = $(this).closest('.editable-field');
+            enterEditMode(field);
+        });
+        
+        // Handle cancel button
+        $(document).on('click', '.cancel-btn', function() {
+            var field = $(this).closest('.editable-field');
+            exitEditMode(field);
+        });
+        
+        // Handle save button
+        $(document).on('click', '.save-btn', function() {
+            var field = $(this).closest('.editable-field');
+            saveField(field);
+        });
+        
+        // Handle save age button
+        $(document).on('click', '.save-age-btn', function() {
+            var field = $(this).closest('.editable-field');
+            saveAgeRange(field);
+        });
+        
+        // Handle enter key in edit mode
+        $(document).on('keypress', '.field-input', function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                var field = $(this).closest('.editable-field');
+                saveField(field);
+            }
+        });
+        
+        // Handle escape key in edit mode
+        $(document).on('keyup', '.field-input, .min-age-input, .max-age-input', function(e) {
+            if (e.which === 27) {
+                var field = $(this).closest('.editable-field');
+                exitEditMode(field);
+            }
+        });
+    }
+    
+    function enterEditMode(field) {
+        field.addClass('editing');
+        field.find('.field-input').focus().select();
+    }
+    
+    function exitEditMode(field) {
+        field.removeClass('editing');
+        // Reset input value to original
+        var originalValue = field.find('.field-value').text();
+        field.find('.field-input').val(originalValue);
+    }
+    
+    function saveField(field) {
+        var fieldName = field.data('field');
+        var value = field.find('.field-input').val();
+        var companyId = <?php echo $company_id; ?>;
+        
+        // Add saving state
+        field.addClass('field-saving');
+        
+        $.ajax({
+            url: '/admin_actions/save_company_field.php',
+            method: 'POST',
+            data: {
+                company_id: companyId,
+                field: fieldName,
+                value: value
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update the display value
+                    updateFieldDisplay(field, fieldName, value);
+                    
+                    // Show success indicator
+                    field.find('.success-indicator').show();
+                    setTimeout(function() {
+                        field.find('.success-indicator').fadeOut();
+                    }, 2000);
+                    
+                    // Exit edit mode
+                    field.removeClass('editing');
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Error saving field. Please try again.');
+            },
+            complete: function() {
+                field.removeClass('field-saving');
+            }
+        });
+    }
+    
+    function updateFieldDisplay(field, fieldName, value) {
+        // Update the view mode display
+        if (fieldName === 'category' || fieldName === 'region_type') {
+            // For select fields, get the text of selected option
+            var displayText = field.find('.field-input option:selected').text();
+            field.find('.field-value').text(displayText);
+        } else if (fieldName.includes('url') || fieldName === 'appgoogle' || fieldName === 'appapple') {
+            // For URL fields, update the input and link
+            field.find('.view-mode input').val(value);
+            if (value) {
+                field.find('.view-mode input').removeClass('border-danger').addClass('border-success');
+                // Update or create the link button
+                var linkBtn = field.find('.view-mode a.btn-outline-success');
+                if (linkBtn.length) {
+                    linkBtn.attr('href', value);
+                } else {
+                    // Create new link button
+                    field.find('.edit-trigger').before('<a href="' + value + '" target="_blank" class="btn btn-outline-success"><i class="bi bi-box-arrow-up-right"></i></a>');
+                }
+            } else {
+                field.find('.view-mode input').removeClass('border-success').addClass('border-danger');
+                field.find('.view-mode a.btn-outline-success').remove();
+            }
+        } else if (['facebook', 'twitter', 'instagram', 'tiktok', 'youtube', 'linkedin'].includes(fieldName)) {
+            // For social media fields, update the display
+            var socialContainer = field.find('.view-mode > div');
+            if (value) {
+                // Change to success state
+                socialContainer.removeClass('bg-danger').addClass('bg-success');
+                socialContainer.find('.bi').first().removeClass('text-danger').addClass('text-success');
+                
+                // Update or create link
+                var existingLink = socialContainer.find('a');
+                if (existingLink.length) {
+                    existingLink.attr('href', value);
+                } else {
+                    // Replace the "Not Set" text with a link
+                    var platformLabel = socialContainer.find('.text-danger').text();
+                    socialContainer.find('.text-danger, .text-muted').remove();
+                    socialContainer.find('.bi').first().after('<a href="' + value + '" target="_blank" class="text-decoration-none text-success fw-medium">' + platformLabel + '<i class="bi bi-box-arrow-up-right ms-1 small"></i></a>');
+                }
+                
+                // Update icon
+                socialContainer.find('.bi-x-circle-fill').removeClass('bi-x-circle-fill text-danger').addClass('bi-check-circle-fill text-success');
+            } else {
+                // Change to danger state
+                socialContainer.removeClass('bg-success').addClass('bg-danger');
+                socialContainer.find('.bi').first().removeClass('text-success').addClass('text-danger');
+                
+                // Remove link and add "Not Set" text
+                var platformLabel = socialContainer.find('a').text().replace(/\s*$/, '');
+                socialContainer.find('a').remove();
+                socialContainer.find('.bi').first().after('<span class="text-danger">' + platformLabel + '</span><small class="text-muted ms-2">Not Set</small>');
+                
+                // Update icon
+                socialContainer.find('.bi-check-circle-fill').removeClass('bi-check-circle-fill text-success').addClass('bi-x-circle-fill text-danger');
+            }
+        } else {
+            // For text fields
+            field.find('.field-value').text(value);
+        }
+    }
+    
+    function saveAgeRange(field) {
+        var minAge = field.find('.min-age-input').val();
+        var maxAge = field.find('.max-age-input').val();
+        var companyId = <?php echo $company_id; ?>;
+        
+        // Validate ages
+        if (parseInt(minAge) > parseInt(maxAge)) {
+            alert('Minimum age cannot be greater than maximum age');
+            return;
+        }
+        
+        // Add saving state
+        field.addClass('field-saving');
+        
+        // Save both ages
+        var promises = [
+            $.ajax({
+                url: '/admin_actions/save_company_field.php',
+                method: 'POST',
+                data: {
+                    company_id: companyId,
+                    field: 'minimum_age',
+                    value: minAge
+                }
+            }),
+            $.ajax({
+                url: '/admin_actions/save_company_field.php',
+                method: 'POST',
+                data: {
+                    company_id: companyId,
+                    field: 'maximum_age',
+                    value: maxAge
+                }
+            })
+        ];
+        
+        Promise.all(promises).then(function(results) {
+            // Check if both succeeded
+            if (results[0].success && results[1].success) {
+                // Update display
+                field.find('.age-range-display').text(minAge + '-' + maxAge);
+                
+                // Update styling
+                field.find('.view-mode').removeClass('stat-box-danger').addClass('stat-box-success');
+                field.find('.bi-x-circle-fill').removeClass('bi-x-circle-fill text-danger').addClass('bi-check-circle-fill text-success');
+                
+                // Show success indicator
+                field.append('<span class="success-indicator ms-2"><i class="bi bi-check-circle-fill"></i> Saved</span>');
+                setTimeout(function() {
+                    field.find('.success-indicator').fadeOut(function() {
+                        $(this).remove();
+                    });
+                }, 2000);
+                
+                // Exit edit mode
+                field.removeClass('editing');
+            } else {
+                alert('Error saving age range');
+            }
+        }).catch(function() {
+            alert('Error saving age range. Please try again.');
+        }).finally(function() {
+            field.removeClass('field-saving');
+        });
+    }
+});
+</script>
 
 <!-- Logo Upload Modal -->
 <div class="modal fade" id="uploadLogoModal" tabindex="-1">
