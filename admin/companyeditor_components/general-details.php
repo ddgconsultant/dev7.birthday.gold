@@ -1079,13 +1079,17 @@ $(document).ready(function() {
 
 // Initialize ABO Processing
 function initializeABO() {
-    if (!confirm('This will initialize the Automated Business Onboarding (ABO) process for this company. Continue?')) {
-        return;
-    }
+    var modal = new bootstrap.Modal(document.getElementById('initializeABOModal'));
+    modal.show();
+}
+
+function confirmInitializeABO() {
+    // Close the confirmation modal
+    bootstrap.Modal.getInstance(document.getElementById('initializeABOModal')).hide();
     
-    var btn = $('#initABOBtn');
-    var originalHtml = btn.html();
-    btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i>Initializing...');
+    // Show progress modal
+    var progressModal = new bootstrap.Modal(document.getElementById('aboProgressModal'));
+    progressModal.show();
     
     $.ajax({
         url: '/admin_actions/abo/initialize_company_progress.php',
@@ -1096,30 +1100,73 @@ function initializeABO() {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                alert('ABO Processing initialized successfully!\n\n' + 
-                      'Initialized: ' + response.processors_initialized + ' processors\n' +
-                      'Skipped: ' + response.processors_skipped + ' existing records\n\n' +
-                      'The page will now reload to show the progress.');
-                location.reload();
+                // Update modal content with success message
+                $('#aboProgressContent').html(
+                    '<div class="text-center">' +
+                    '<i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>' +
+                    '<h5 class="mt-3">ABO Processing Initialized Successfully!</h5>' +
+                    '<div class="mt-3">' +
+                    '<p class="mb-1"><strong>Initialized:</strong> ' + response.processors_initialized + ' processors</p>' +
+                    '<p class="mb-0"><strong>Skipped:</strong> ' + response.processors_skipped + ' existing records</p>' +
+                    '</div>' +
+                    '<p class="text-muted mt-3">The page will reload to show the updated progress.</p>' +
+                    '</div>'
+                );
+                $('#aboReloadBtn').show();
+                
+                // Auto reload after 3 seconds
+                setTimeout(function() {
+                    location.reload();
+                }, 3000);
             } else {
-                alert('Error initializing ABO: ' + (response.message || 'Unknown error'));
-                btn.prop('disabled', false).html(originalHtml);
+                // Update modal content with error message
+                $('#aboProgressContent').html(
+                    '<div class="text-center">' +
+                    '<i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>' +
+                    '<h5 class="mt-3">Error Initializing ABO</h5>' +
+                    '<p class="text-danger mt-3">' + (response.message || 'Unknown error') + '</p>' +
+                    '<button class="btn btn-secondary" onclick="bootstrap.Modal.getInstance(document.getElementById(\'aboProgressModal\')).hide()">Close</button>' +
+                    '</div>'
+                );
             }
         },
         error: function(xhr, status, error) {
-            alert('Error initializing ABO: ' + error);
-            btn.prop('disabled', false).html(originalHtml);
+            // Update modal content with error message
+            $('#aboProgressContent').html(
+                '<div class="text-center">' +
+                '<i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>' +
+                '<h5 class="mt-3">Connection Error</h5>' +
+                '<p class="text-danger mt-3">' + error + '</p>' +
+                '<button class="btn btn-secondary" onclick="bootstrap.Modal.getInstance(document.getElementById(\'aboProgressModal\')).hide()">Close</button>' +
+                '</div>'
+            );
         }
     });
 }
 
 // Re-run incomplete ABO processes
 function rerunABO() {
-    if (!confirm('This will re-run all incomplete ABO processes for this company. Continue?')) {
-        return;
-    }
+    var modal = new bootstrap.Modal(document.getElementById('rerunABOModal'));
+    modal.show();
+}
+
+function confirmRerunABO() {
+    // Close the modal
+    bootstrap.Modal.getInstance(document.getElementById('rerunABOModal')).hide();
     
-    alert('Re-running ABO processes...\n\nThe individual processes will now be triggered. You can monitor progress by refreshing this page.');
+    // Show progress modal
+    var progressModal = new bootstrap.Modal(document.getElementById('aboProgressModal'));
+    progressModal.show();
+    
+    // Update progress modal for re-run
+    $('#aboProgressContent').html(
+        '<div class="text-center">' +
+        '<div class="spinner-border text-warning mb-3" role="status">' +
+        '<span class="visually-hidden">Loading...</span>' +
+        '</div>' +
+        '<p>Triggering incomplete ABO processes...</p>' +
+        '</div>'
+    );
     
     // Find all incomplete processes and trigger them
     var incompleteProcesses = [];
@@ -1141,12 +1188,18 @@ function rerunABO() {
         }, index * 1000); // Stagger opening tabs by 1 second
     });
     
-    // Suggest refresh after some time
+    // Update modal after processes are triggered
     setTimeout(function() {
-        if (confirm('ABO processes have been triggered. Would you like to refresh the page to see updated progress?')) {
-            location.reload();
-        }
-    }, (incompleteProcesses.length + 2) * 1000);
+        $('#aboProgressContent').html(
+            '<div class="text-center">' +
+            '<i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>' +
+            '<h5 class="mt-3">ABO Processes Triggered</h5>' +
+            '<p class="mt-3">' + incompleteProcesses.length + ' process(es) have been opened in new tabs.</p>' +
+            '<p class="text-muted">Monitor their progress and refresh this page to see updates.</p>' +
+            '</div>'
+        );
+        $('#aboReloadBtn').show();
+    }, (incompleteProcesses.length + 1) * 1000);
 }
 </script>
 
@@ -1163,6 +1216,81 @@ function rerunABO() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Initialize ABO Modal -->
+<div class="modal fade" id="initializeABOModal" tabindex="-1" aria-labelledby="initializeABOModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="initializeABOModalLabel">Initialize ABO Processing</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This will initialize the Automated Business Onboarding (ABO) process for this company.</p>
+                <p class="text-muted">The system will create tracking records for all available ABO processors, allowing the company to be processed through automated data collection and enrichment.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmInitializeABO()">Initialize ABO</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ABO Progress Modal -->
+<div class="modal fade" id="aboProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ABO Processing</h5>
+            </div>
+            <div class="modal-body">
+                <div id="aboProgressContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Initializing ABO processors...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="location.reload()" style="display:none;" id="aboReloadBtn">Reload Page</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Re-run ABO Modal -->
+<div class="modal fade" id="rerunABOModal" tabindex="-1" aria-labelledby="rerunABOModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rerunABOModalLabel">Re-run Incomplete ABO Processes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This will re-run all incomplete ABO processes for this company.</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>The following processes will be triggered:
+                    <ul class="mb-0 mt-2">
+                        <?php if ($abo_progress): ?>
+                        <?php foreach ($abo_progress as $progress): ?>
+                            <?php if (!in_array($progress['status'], ['completed', 'skipped', 'in_progress'])): ?>
+                            <li><?php echo htmlspecialchars($progress['display_name'] ?? $progress['processor']); ?></li>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="confirmRerunABO()">Re-run Processes</button>
             </div>
         </div>
     </div>
