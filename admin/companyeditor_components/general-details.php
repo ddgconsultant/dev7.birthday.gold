@@ -899,7 +899,9 @@ $(document).ready(function() {
                     field.find('.success-indicator').show();
                     setTimeout(function() {
                         field.find('.success-indicator').fadeOut();
-                    }, 2000);
+                        // Reload page to update all indicators
+                        location.reload();
+                    }, 1000);
                     
                     // Exit edit mode
                     field.removeClass('editing');
@@ -1061,8 +1063,10 @@ $(document).ready(function() {
                 setTimeout(function() {
                     field.find('.success-indicator').fadeOut(function() {
                         $(this).remove();
+                        // Reload page to update all indicators
+                        location.reload();
                     });
-                }, 2000);
+                }, 1000);
                 
                 // Exit edit mode
                 field.removeClass('editing');

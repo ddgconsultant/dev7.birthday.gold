@@ -230,7 +230,7 @@ echo $additionalstyles;
                                             <div class="d-flex justify-content-between align-items-start mb-3">
                                                 <div>
                                                     <h5 class="card-title mb-1">
-                                                        <?php echo htmlspecialchars($reward['reward_name']); ?>
+                                                        <?php echo htmlspecialchars($reward['reward_name'] ?? ''); ?>
                                                     </h5>
                                                     <span class="reward-badge <?php echo $reward['reward_type']; ?>">
                                                         <?php echo ucfirst($reward['reward_type']); ?>
@@ -249,7 +249,7 @@ echo $additionalstyles;
                                             </div>
 
                                             <p class="card-text text-muted mb-3">
-                                                <?php echo htmlspecialchars($reward['reward_description_short']); ?>
+                                                <?php echo htmlspecialchars($reward['reward_description_short'] ?? ''); ?>
                                             </p>
 
                                             <?php if ($reward['reward_value'] || $reward['cash_value']): ?>
@@ -328,7 +328,7 @@ echo $additionalstyles;
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">
                                         <i class="bi bi-geo-alt me-2"></i>
-                                        <?php echo htmlspecialchars($location['location_name']); ?>
+                                        <?php echo htmlspecialchars($location['location_name'] ?? ''); ?>
                                     </h5>
                                     <button type="button" class="btn btn-sm btn-primary" 
                                             onclick="createReward(<?php echo $location['location_id']; ?>)">
@@ -424,7 +424,7 @@ echo $additionalstyles;
                                 <option value="">Company-wide</option>
                                 <?php foreach ($locations as $location): ?>
                                     <option value="<?php echo $location['location_id']; ?>">
-                                        <?php echo htmlspecialchars($location['location_name']); ?>
+                                        <?php echo htmlspecialchars($location['location_name'] ?? ''); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
