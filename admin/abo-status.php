@@ -717,6 +717,14 @@ function refreshStatus() {
     location.reload();
 }
 
+// Initialize Bootstrap popovers
+document.addEventListener("DOMContentLoaded", function() {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll(\'[data-bs-toggle="popover"]\'))
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl)
+    })
+});
+
 // Auto-refresh every 30 seconds if there are in-progress items
 if (document.querySelector(".status-badge.in_progress")) {
     setTimeout(refreshStatus, 30000);
@@ -954,6 +962,17 @@ include($dir['core_components'] . '/bg_header.inc');
                                             <i class="bi bi-check-circle text-success ms-1" style="font-size: 0.75rem;"></i>
                                         <?php elseif ($processor['processor_key'] === 'abo_grablocations' && $company['location_count'] > 0 && $processor_status === 'completed'): ?>
                                             <small class="text-info">(<?php echo $company['location_count']; ?>)</small>
+                                            <?php
+                                            // Check if any locations need enrichment
+                                            $enrich_check_sql = "SELECT COUNT(*) FROM bg_company_locations 
+                                                               WHERE company_id = :company_id 
+                                                               AND status = 'active' 
+                                                               AND (is_verified = 0 OR business_hours IS NULL)";
+                                            $enrich_stmt = $database->query($enrich_check_sql, ['company_id' => $company['company_id']]);
+                                            $needs_enrichment = $enrich_stmt->fetchColumn() > 0;
+                                            if ($needs_enrichment): ?>
+                                                <i class="bi bi-exclamation-circle text-warning ms-1" style="font-size: 0.75rem;" title="Some locations need enrichment"></i>
+                                            <?php endif; ?>
                                         <?php elseif ((($processor['processor_key'] === 'abo_grabgoogleapp' && $company['google_app']) || 
                                                       ($processor['processor_key'] === 'abo_grabiosapp' && $company['ios_app'])) && 
                                                       $processor_status === 'completed'): ?>
@@ -1253,9 +1272,46 @@ include($dir['core_components'] . '/bg_header.inc');
                                                                         </span>
                                                                     <?php endif; ?>
                                                                 <?php elseif ($processor['processor_key'] === 'abo_grablocations' && $company['location_count'] > 0 && $processor_status === 'completed'): ?>
-                                                                    <span class="badge bg-info ms-2">
+                                                                    <?php
+                                                                    // Get location details
+                                                                    $loc_sql = "SELECT l.*, 
+                                                                               CONCAT(l.address, ', ', l.city, ', ', l.state, ' ', l.zip_code) as full_address,
+                                                                               (CASE WHEN l.is_verified = 1 THEN 1 ELSE 0 END) as verified
+                                                                               FROM bg_company_locations l
+                                                                               WHERE l.company_id = :company_id 
+                                                                               AND l.status = 'active'
+                                                                               ORDER BY l.is_verified DESC, l.city ASC
+                                                                               LIMIT 3";
+                                                                    $loc_stmt = $database->query($loc_sql, ['company_id' => $company['company_id']]);
+                                                                    $locations = $loc_stmt->fetchAll(PDO::FETCH_ASSOC);
+                                                                    $verified_count = array_sum(array_column($locations, 'verified'));
+                                                                    ?>
+                                                                    <span class="badge bg-info ms-2" data-bs-toggle="popover" 
+                                                                          data-bs-trigger="hover" 
+                                                                          data-bs-html="true"
+                                                                          data-bs-content="<?php 
+                                                                            echo '<strong>Locations:</strong><br>';
+                                                                            foreach ($locations as $loc) {
+                                                                                echo htmlspecialchars($loc['full_address']);
+                                                                                if ($loc['verified']) echo ' <i class=\'bi bi-check-circle-fill text-success\'></i>';
+                                                                                echo '<br>';
+                                                                            }
+                                                                            if ($company['location_count'] > 3) {
+                                                                                echo '<em>... and ' . ($company['location_count'] - 3) . ' more</em>';
+                                                                            }
+                                                                          ?>">
                                                                         <i class="bi bi-geo-alt"></i> <?php echo $company['location_count']; ?> location<?php echo $company['location_count'] > 1 ? 's' : ''; ?>
+                                                                        <?php if ($verified_count > 0): ?>
+                                                                            <span class="text-success">(<?php echo $verified_count; ?> verified)</span>
+                                                                        <?php endif; ?>
                                                                     </span>
+                                                                    <?php if ($verified_count < $company['location_count']): ?>
+                                                                        <a href="/admin_actions/abo/abo_enrichlocations.php?rawid=<?php echo $company['company_id']; ?>" 
+                                                                           class="badge bg-warning ms-1 text-decoration-none"
+                                                                           title="Enrich location data with Google Places">
+                                                                            <i class="bi bi-arrow-repeat"></i> Enrich
+                                                                        </a>
+                                                                    <?php endif; ?>
                                                                 <?php elseif ($processor['processor_key'] === 'abo_grabgoogleapp' && $company['google_app'] && $processor_status === 'completed'): ?>
                                                                     <a href="<?php echo htmlspecialchars($company['google_app']['app_link'] ?? '#'); ?>" 
                                                                        target="_blank" 
