@@ -175,6 +175,11 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
 .card-body {
     overflow: visible !important;
 }
+
+/* Non-editable age range styling */
+.non-editable-age-range {
+    cursor: default !important;
+}
 </style>
 
 <div class="company-details-section">
@@ -273,7 +278,22 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                             $age_data = $app->getagerange($company_id);
                             $age_set = ($age_data['source'] !== 'default' && $age_data['confidence'] !== 'low');
                             $age_class = $age_set ? 'stat-box-success' : 'stat-box-danger';
+                            $is_aggregate = ($age_data['source'] === 'rewards_data');
                             ?>
+                            <?php if ($is_aggregate): ?>
+                            <div class="border rounded p-2 non-editable-age-range <?php echo $age_class; ?>" 
+                                 data-bs-toggle="tooltip" 
+                                 data-bs-placement="top" 
+                                 title="This age range is calculated from <?php echo $age_data['rewards_with_age'] ?? 'all'; ?> reward(s). To edit individual reward age ranges, use the Rewards Management tab.">
+                                <div class="h4 mb-0"><?php echo $age_data['minimum_age']; ?>-<?php echo $age_data['maximum_age']; ?></div>
+                                <small class="text-muted">Age Range <i class="bi bi-info-circle" style="font-size: 0.75rem;"></i></small>
+                                <?php if ($age_set): ?>
+                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 0.8rem;"></i>
+                                <?php else: ?>
+                                    <i class="bi bi-x-circle-fill text-danger" style="font-size: 0.8rem;"></i>
+                                <?php endif; ?>
+                            </div>
+                            <?php else: ?>
                             <div class="editable-field age-range-field" data-field="age_range">
                                 <div class="view-mode border rounded p-2 <?php echo $age_class; ?>" title="Source: <?php echo $age_data['source']; ?>, Confidence: <?php echo $age_data['confidence']; ?>. Click to edit" style="cursor: pointer;">
                                     <div class="h4 mb-0"><span class="age-range-display"><?php echo $age_data['minimum_age']; ?>-<?php echo $age_data['maximum_age']; ?></span></div>
@@ -303,6 +323,7 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
                                     </div>
                                 </div>
                             </div>
+                            <?php endif; ?>
                         </div>
                         <div class="col">
                             <?php 
