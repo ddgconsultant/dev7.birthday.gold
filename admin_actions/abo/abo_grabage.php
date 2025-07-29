@@ -387,7 +387,7 @@ try {
             exit;
         }
         
-        // Store the age requirements
+        // Store the age requirements in bg_company_attributes for reference
         $age_sql = "INSERT INTO bg_company_attributes 
                    (company_id, type, name, description, status, create_dt)
                    VALUES 
@@ -423,6 +423,19 @@ try {
         $database->query($max_sql, [
             'company_id' => $company_id,
             'age' => $age_requirements['maximum_age']
+        ]);
+        
+        // Update the bg_company_rewards table to maintain consistency
+        // Update all rewards for this company with the extracted age requirements
+        $update_rewards_sql = "UPDATE bg_company_rewards 
+                              SET minage = :minage, 
+                                  maxage = :maxage,
+                                  modify_dt = NOW()
+                              WHERE company_id = :company_id";
+        $database->query($update_rewards_sql, [
+            'company_id' => $company_id,
+            'minage' => $age_requirements['minimum_age'],
+            'maxage' => $age_requirements['maximum_age']
         ]);
         
         // Update progress status

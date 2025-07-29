@@ -111,6 +111,115 @@ foreach ($companies as $key => $company) {
     $company['form_mapping_version'] = $version_data['current_version'] ?? null;
     $company['form_mapping_field_count'] = $version_data['field_count'] ?? 0;
     
+    // Get age requirements from company rewards table (same source as company editor)
+    $age_sql = "SELECT MIN(COALESCE(minage, 0)) as minimum_age, 
+                       MAX(COALESCE(maxage, 200)) as maximum_age,
+                       COUNT(*) as reward_count
+                FROM bg_company_rewards 
+                WHERE company_id = :company_id";
+    $age_stmt = $database->query($age_sql, ['company_id' => $company['company_id']]);
+    $age_row = $age_stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($age_row && $age_row['reward_count'] > 0) {
+        $company['age_requirements'] = [
+            'minimum_age' => $age_row['minimum_age'],
+            'maximum_age' => $age_row['maximum_age'],
+            'source' => 'rewards_table'
+        ];
+    } else {
+        // Fallback to bg_company_attributes if no rewards exist
+        $attr_sql = "SELECT description FROM bg_company_attributes 
+                    WHERE company_id = :company_id 
+                    AND type = 'age_requirements' 
+                    AND name = 'birthday_program' 
+                    AND status = 'active'
+                    ORDER BY create_dt DESC
+                    LIMIT 1";
+        $attr_stmt = $database->query($attr_sql, ['company_id' => $company['company_id']]);
+        $attr_data = $attr_stmt->fetchColumn();
+        $company['age_requirements'] = $attr_data ? json_decode($attr_data, true) : null;
+    }
+    
+    // Get terms URL if exists
+    $terms_sql = "SELECT description FROM bg_company_attributes 
+                  WHERE company_id = :company_id 
+                  AND type = 'url' 
+                  AND name = 'terms' 
+                  AND `grouping` = 'policies' 
+                  AND status = 'active'
+                  LIMIT 1";
+    $terms_stmt = $database->query($terms_sql, ['company_id' => $company['company_id']]);
+    $company['terms_url'] = $terms_stmt->fetchColumn();
+    
+    // Get privacy URL if exists
+    $privacy_sql = "SELECT description FROM bg_company_attributes 
+                    WHERE company_id = :company_id 
+                    AND type = 'url' 
+                    AND name = 'privacy' 
+                    AND `grouping` = 'policies' 
+                    AND status = 'active'
+                    LIMIT 1";
+    $privacy_stmt = $database->query($privacy_sql, ['company_id' => $company['company_id']]);
+    $company['privacy_url'] = $privacy_stmt->fetchColumn();
+    
+    // Get birthday program data if exists
+    $birthday_sql = "SELECT description FROM bg_company_attributes 
+                     WHERE company_id = :company_id 
+                     AND type = 'birthday_program' 
+                     AND name = 'program_data' 
+                     AND status = 'active'
+                     ORDER BY create_dt DESC
+                     LIMIT 1";
+    $birthday_stmt = $database->query($birthday_sql, ['company_id' => $company['company_id']]);
+    $birthday_data = $birthday_stmt->fetchColumn();
+    $company['birthday_program'] = $birthday_data ? json_decode($birthday_data, true) : null;
+    
+    // Get location count if exists
+    $location_sql = "SELECT COUNT(*) FROM bg_company_locations 
+                     WHERE company_id = :company_id 
+                     AND status = 'active'";
+    $location_stmt = $database->query($location_sql, ['company_id' => $company['company_id']]);
+    $company['location_count'] = $location_stmt->fetchColumn();
+    
+    // Get app data if exists
+    $googleapp_sql = "SELECT description FROM bg_company_attributes 
+                      WHERE company_id = :company_id 
+                      AND type = 'app_data' 
+                      AND name = 'google_app' 
+                      AND status = 'active'
+                      LIMIT 1";
+    $googleapp_stmt = $database->query($googleapp_sql, ['company_id' => $company['company_id']]);
+    $googleapp_data = $googleapp_stmt->fetchColumn();
+    $company['google_app'] = $googleapp_data ? json_decode($googleapp_data, true) : null;
+    
+    $iosapp_sql = "SELECT description FROM bg_company_attributes 
+                   WHERE company_id = :company_id 
+                   AND type = 'app_data' 
+                   AND name = 'ios_app' 
+                   AND status = 'active'
+                   LIMIT 1";
+    $iosapp_stmt = $database->query($iosapp_sql, ['company_id' => $company['company_id']]);
+    $iosapp_data = $iosapp_stmt->fetchColumn();
+    $company['ios_app'] = $iosapp_data ? json_decode($iosapp_data, true) : null;
+    
+    // Get social media links count
+    $social_sql = "SELECT COUNT(*) FROM bg_company_attributes 
+                   WHERE company_id = :company_id 
+                   AND type = 'social_media' 
+                   AND status = 'active'";
+    $social_stmt = $database->query($social_sql, ['company_id' => $company['company_id']]);
+    $company['social_media_count'] = $social_stmt->fetchColumn();
+    
+    // Get metadata (description, contact info)
+    $metadata_sql = "SELECT description FROM bg_company_attributes 
+                     WHERE company_id = :company_id 
+                     AND type = 'metadata' 
+                     AND name = 'company_description' 
+                     AND status = 'active'
+                     LIMIT 1";
+    $metadata_stmt = $database->query($metadata_sql, ['company_id' => $company['company_id']]);
+    $company['has_metadata'] = (bool)$metadata_stmt->fetchColumn();
+    
     // Check for data inconsistency - if marked as completed but no mappings exist
     $company['form_mapping_data_missing'] = false;
     if (isset($company['progress']['abo_mapformfields']) && 
@@ -598,6 +707,34 @@ $additionalstyles = '
         border-right: none;
     }
 }
+
+/* Quick detail badges */
+.badge a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.badge a:hover {
+    text-decoration: underline;
+}
+
+/* Icon link style */
+a.badge {
+    transition: transform 0.2s ease;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+a.badge:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+/* Small info text in mobile view */
+.mobile-status-item .processor-name small {
+    font-weight: normal;
+    font-size: 0.65rem;
+}
 </style>';
 
 $additionalscripts = '
@@ -835,6 +972,22 @@ include($dir['core_components'] . '/bg_header.inc');
                                         <?php echo htmlspecialchars($processor['processor_name']); ?>
                                         <?php if ($processor['processor_key'] === 'abo_mapformfields' && $company['form_mapping_data_missing']): ?>
                                             <i class="bi bi-exclamation-triangle text-danger ms-1" title="Data missing!"></i>
+                                        <?php elseif ($processor['processor_key'] === 'abo_mapformfields' && $company['form_mapping_version'] && $processor_status === 'completed'): ?>
+                                            <small class="text-info">(v<?php echo $company['form_mapping_version']; ?>)</small>
+                                        <?php elseif ($processor['processor_key'] === 'abo_grabage' && $company['age_requirements'] && $processor_status === 'completed'): ?>
+                                            <small class="text-info">(<?php echo $company['age_requirements']['minimum_age']; ?>-<?php echo $company['age_requirements']['maximum_age']; ?>)</small>
+                                        <?php elseif (($processor['processor_key'] === 'abo_grabterms' || $processor['processor_key'] === 'abo_grabprivacy') && $processor_status === 'completed'): ?>
+                                            <i class="bi bi-check-circle text-success ms-1" style="font-size: 0.75rem;"></i>
+                                        <?php elseif ($processor['processor_key'] === 'abo_grablocations' && $company['location_count'] > 0 && $processor_status === 'completed'): ?>
+                                            <small class="text-info">(<?php echo $company['location_count']; ?>)</small>
+                                        <?php elseif ((($processor['processor_key'] === 'abo_grabgoogleapp' && $company['google_app']) || 
+                                                      ($processor['processor_key'] === 'abo_grabiosapp' && $company['ios_app'])) && 
+                                                      $processor_status === 'completed'): ?>
+                                            <i class="bi bi-check-circle text-success ms-1" style="font-size: 0.75rem;"></i>
+                                        <?php elseif ($processor['processor_key'] === 'abo_grabsocialmedia' && $company['social_media_count'] > 0 && $processor_status === 'completed'): ?>
+                                            <small class="text-info">(<?php echo $company['social_media_count']; ?>)</small>
+                                        <?php elseif (($processor['processor_key'] === 'abo_grabmetadata' || $processor['processor_key'] === 'abo_grabimages') && $processor_status === 'completed'): ?>
+                                            <i class="bi bi-check-circle text-success ms-1" style="font-size: 0.75rem;"></i>
                                         <?php endif; ?>
                                     </span>
                                     <div class="status-line">
@@ -1092,6 +1245,78 @@ include($dir['core_components'] . '/bg_header.inc');
                                                                         }
                                                                         ?>
                                                                         <span class="badge <?php echo $method_badge_class; ?> ms-1"><?php echo $method_display; ?></span>
+                                                                    <?php endif; ?>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grabage' && $company['age_requirements'] && $processor_status === 'completed'): ?>
+                                                                    <span class="badge bg-info ms-2">
+                                                                        <i class="bi bi-person-badge"></i> <?php echo $company['age_requirements']['minimum_age']; ?>-<?php echo $company['age_requirements']['maximum_age']; ?>
+                                                                    </span>
+                                                                    <?php if ($company['age_requirements']['confidence'] === 'low'): ?>
+                                                                        <span class="badge bg-warning ms-1">Low Confidence</span>
+                                                                    <?php endif; ?>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grabterms' && $company['terms_url'] && $processor_status === 'completed'): ?>
+                                                                    <a href="<?php echo htmlspecialchars($company['terms_url']); ?>" 
+                                                                       target="_blank" 
+                                                                       class="badge bg-info ms-2 text-decoration-none"
+                                                                       title="View Terms of Service">
+                                                                        <i class="bi bi-link-45deg"></i> View Terms
+                                                                    </a>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grabprivacy' && $company['privacy_url'] && $processor_status === 'completed'): ?>
+                                                                    <a href="<?php echo htmlspecialchars($company['privacy_url']); ?>" 
+                                                                       target="_blank" 
+                                                                       class="badge bg-info ms-2 text-decoration-none"
+                                                                       title="View Privacy Policy">
+                                                                        <i class="bi bi-link-45deg"></i> View Privacy
+                                                                    </a>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grabbirthday' && $company['birthday_program'] && $processor_status === 'completed'): ?>
+                                                                    <?php if (!empty($company['birthday_program']['rewards'])): ?>
+                                                                        <span class="badge bg-success ms-2">
+                                                                            <i class="bi bi-gift"></i> <?php echo htmlspecialchars(implode(', ', array_slice($company['birthday_program']['rewards'], 0, 2))); ?>
+                                                                        </span>
+                                                                    <?php endif; ?>
+                                                                    <?php if (!empty($company['birthday_program']['signup_method'])): ?>
+                                                                        <span class="badge bg-secondary ms-1">
+                                                                            <?php echo htmlspecialchars(str_replace('_', ' ', $company['birthday_program']['signup_method'])); ?>
+                                                                        </span>
+                                                                    <?php endif; ?>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grablocations' && $company['location_count'] > 0 && $processor_status === 'completed'): ?>
+                                                                    <span class="badge bg-info ms-2">
+                                                                        <i class="bi bi-geo-alt"></i> <?php echo $company['location_count']; ?> location<?php echo $company['location_count'] > 1 ? 's' : ''; ?>
+                                                                    </span>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grabgoogleapp' && $company['google_app'] && $processor_status === 'completed'): ?>
+                                                                    <a href="<?php echo htmlspecialchars($company['google_app']['app_link'] ?? '#'); ?>" 
+                                                                       target="_blank" 
+                                                                       class="badge bg-success ms-2 text-decoration-none"
+                                                                       title="View on Google Play">
+                                                                        <i class="bi bi-google-play"></i> Android App
+                                                                    </a>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grabiosapp' && $company['ios_app'] && $processor_status === 'completed'): ?>
+                                                                    <a href="<?php echo htmlspecialchars($company['ios_app']['app_link'] ?? '#'); ?>" 
+                                                                       target="_blank" 
+                                                                       class="badge bg-dark ms-2 text-decoration-none"
+                                                                       title="View on App Store">
+                                                                        <i class="bi bi-apple"></i> iOS App
+                                                                    </a>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grabsocialmedia' && $company['social_media_count'] > 0 && $processor_status === 'completed'): ?>
+                                                                    <span class="badge bg-info ms-2">
+                                                                        <i class="bi bi-share"></i> <?php echo $company['social_media_count']; ?> profile<?php echo $company['social_media_count'] > 1 ? 's' : ''; ?>
+                                                                    </span>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grabmetadata' && $company['has_metadata'] && $processor_status === 'completed'): ?>
+                                                                    <span class="badge bg-success ms-2">
+                                                                        <i class="bi bi-info-circle"></i> Metadata
+                                                                    </span>
+                                                                <?php elseif ($processor['processor_key'] === 'abo_grabimages' && $processor_status === 'completed'): ?>
+                                                                    <?php 
+                                                                    // Check if we have images
+                                                                    $image_sql = "SELECT COUNT(*) FROM bg_company_attributes 
+                                                                                  WHERE company_id = :company_id 
+                                                                                  AND type IN ('logo', 'image') 
+                                                                                  AND status = 'active'";
+                                                                    $image_stmt = $database->query($image_sql, ['company_id' => $company['company_id']]);
+                                                                    $image_count = $image_stmt->fetchColumn();
+                                                                    if ($image_count > 0): ?>
+                                                                        <span class="badge bg-success ms-2">
+                                                                            <i class="bi bi-image"></i> <?php echo $image_count; ?> image<?php echo $image_count > 1 ? 's' : ''; ?>
+                                                                        </span>
                                                                     <?php endif; ?>
                                                                 <?php endif; ?>
                                                             </div>
