@@ -146,7 +146,7 @@ try {
                                 'source' => 'website_scrape'
                             ];
                             
-                            // Validate it's not a PO Box
+                            // Validate it is not a PO Box
                             if (!preg_match('/P\.?O\.?\s*Box/i', $location['address'])) {
                                 $locations_found[] = $location;
                             }
@@ -306,6 +306,343 @@ try {
             }
         }
         
+        // Method 3: Google search for locations page if no locations found and no locations URL discovered
+        if (empty($locations_found)) {
+            // TODO: Consider using Airtop for complex location pages that require JavaScript rendering
+            // or advanced parsing. Airtop can handle dynamic content and complex page structures
+            // that our current regex-based approach might miss.
+            // Check if we found a locations URL in Method 1
+            $check_url_sql = "SELECT description FROM bg_company_attributes 
+                             WHERE company_id = :company_id 
+                             AND type = 'data_collection' 
+                             AND name = 'locations_url' 
+                             AND status = 'active'";
+            $url_stmt = $database->query($check_url_sql, ['company_id' => $company_id]);
+            $existing_locations_url = $url_stmt->fetchColumn();
+            
+            if (empty($existing_locations_url)) {
+                // Try Google search to find locations page
+                $domain = parse_url($company['company_url'], PHP_URL_HOST);
+                
+                // First try Google Custom Search API if we have credentials
+                $google_cse_key = $configs['GOOGLE_CSE_API_KEY'] ?? '';
+                $google_cse_cx = $configs['GOOGLE_CSE_CX'] ?? '';
+                
+                if (!empty($google_cse_key) && !empty($google_cse_cx)) {
+                    // Search for location pages on this domain
+                    $search_query = urlencode("site:{$domain} locations OR store locator OR find a store OR our locations");
+                    $google_search_url = "https://www.googleapis.com/customsearch/v1?key={$google_cse_key}&cx={$google_cse_cx}&q={$search_query}&num=10";
+                    
+                    $ch = curl_init($google_search_url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                    $search_response = curl_exec($ch);
+                    $search_http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+                    
+                    if ($search_http_code === 200) {
+                        $search_results = json_decode($search_response, true);
+                        
+                        if (isset($search_results['items']) && is_array($search_results['items'])) {
+                            foreach ($search_results['items'] as $item) {
+                                $found_url = $item['link'] ?? '';
+                                
+                                // Check if this URL looks like a locations page
+                                if (preg_match('/\/(locations?|stores?|find-?(?:a-)?store|store-?locator|our-?locations?)/i', $found_url)) {
+                                    // Verify the URL is accessible
+                                    $ch = curl_init($found_url);
+                                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                                    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+                                    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                                    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+                                    
+                                    $locations_html = curl_exec($ch);
+                                    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                                    curl_close($ch);
+                                    
+                                    if ($http_code === 200 && !empty($locations_html)) {
+                                        // Save the discovered URL
+                                        $attr_sql = "INSERT INTO bg_company_attributes 
+                                                    (company_id, type, name, description, category, status, create_dt)
+                                                    VALUES 
+                                                    (:company_id, 'data_collection', 'locations_url_google_discovered', :url, 'location_discovery', 'active', NOW())";
+                                        $database->query($attr_sql, [
+                                            'company_id' => $company_id,
+                                            'url' => $found_url
+                                        ]);
+                                        
+                                        // Parse locations from the discovered page
+                                        libxml_use_internal_errors(true);
+                                        $dom = new DOMDocument();
+                                        @$dom->loadHTML($locations_html);
+                                        libxml_clear_errors();
+                                        
+                                        // Look for location containers (common patterns)
+                                        $xpath = new DOMXPath($dom);
+                                        
+                                        // Try to find location blocks
+                                        $location_blocks = [];
+                                        
+                                        // Common selectors for location containers
+                                        $container_selectors = [
+                                            '//div[contains(@class, "location")]',
+                                            '//article[contains(@class, "location")]',
+                                            '//div[contains(@class, "store")]',
+                                            '//div[contains(@class, "theater")]',
+                                            '//div[contains(@class, "branch")]'
+                                        ];
+                                        
+                                        $container_search_results = [];
+                                        foreach ($container_selectors as $selector) {
+                                            $containers = $xpath->query($selector);
+                                            $container_search_results[$selector] = $containers->length;
+                                            if ($containers->length > 0) {
+                                                foreach ($containers as $container) {
+                                                    $location_blocks[] = $container;
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Track container search results
+                                        session_tracking('abo_location_containers', [
+                                            'url' => $found_url,
+                                            'container_search_results' => $container_search_results,
+                                            'total_containers_found' => count($location_blocks),
+                                            'page_length' => strlen($locations_html),
+                                            'company_id' => $company_id
+                                        ]);
+                                        
+                                        // If no containers found, look for addresses directly
+                                        if (empty($location_blocks)) {
+                                            // Look for addresses in the entire page
+                                            $full_address_pattern = '/(\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Way|Court|Ct|Plaza|Place|Pl)\.?(?:\s+(?:Suite|Ste|Unit|Apt|#)\s*\w+)?)[,\s]+([A-Za-z\s]+),?\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)/i';
+                                            
+                                            if (preg_match_all($full_address_pattern, $locations_html, $matches, PREG_SET_ORDER)) {
+                                                foreach ($matches as $match) {
+                                                    $location = [
+                                                        'address' => trim($match[1]),
+                                                        'city' => trim($match[2]),
+                                                        'state' => trim($match[3]),
+                                                        'zip_code' => trim($match[4]),
+                                                        'source' => 'discovered_locations_page: ' . $found_url
+                                                    ];
+                                                    
+                                                    // Try to find associated phone number (within reasonable proximity)
+                                                    $context_start = max(0, strpos($locations_html, $match[0]) - 200);
+                                                    $context_end = min(strlen($locations_html), strpos($locations_html, $match[0]) + strlen($match[0]) + 200);
+                                                    $context = substr($locations_html, $context_start, $context_end - $context_start);
+                                                    
+                                                    // Phone pattern
+                                                    if (preg_match('/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/', $context, $phone_match)) {
+                                                        $location['phone_number'] = preg_replace('/[^\d]/', '', $phone_match[0]);
+                                                        $location['phone_number'] = substr($location['phone_number'], 0, 3) . '-' . substr($location['phone_number'], 3, 3) . '-' . substr($location['phone_number'], 6);
+                                                    }
+                                                    
+                                                    // Validate it is not a PO Box
+                                                    if (!preg_match('/P\.?O\.?\s*Box/i', $location['address'])) {
+                                                        $locations_found[] = $location;
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            // Process each location container
+                                            foreach ($location_blocks as $block_index => $block) {
+                                                $block_html = $dom->saveHTML($block);
+                                                
+                                                // Initialize tracking array for this block
+                                                $tracking_data = [
+                                                    'block_index' => $block_index,
+                                                    'raw_html' => substr($block_html, 0, 5000), // Limit size for tracking
+                                                    'parsed_elements' => [],
+                                                    'extraction_attempts' => []
+                                                ];
+                                                
+                                                // Extract location name
+                                                $location_name = '';
+                                                if (preg_match('/<h[1-6][^>]*>([^<]+)<\/h[1-6]>/i', $block_html, $name_match)) {
+                                                    $location_name = trim(strip_tags($name_match[1]));
+                                                    $tracking_data['parsed_elements']['location_name'] = $location_name;
+                                                } else {
+                                                    $tracking_data['extraction_attempts'][] = 'No h1-h6 tags found for location name';
+                                                }
+                                                
+                                                // Extract full address
+                                                $full_address_pattern = '/(\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Way|Court|Ct|Plaza|Place|Pl)\.?(?:\s+(?:Suite|Ste|Unit|Apt|#)\s*\w+)?)[,\s]+([A-Za-z\s]+),?\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)/i';
+                                                
+                                                if (preg_match($full_address_pattern, $block_html, $addr_match)) {
+                                                    $location = [
+                                                        'name' => $location_name,
+                                                        'address' => trim($addr_match[1]),
+                                                        'city' => trim($addr_match[2]),
+                                                        'state' => trim($addr_match[3]),
+                                                        'zip_code' => trim($addr_match[4]),
+                                                        'source' => 'discovered_locations_page: ' . $found_url
+                                                    ];
+                                                    
+                                                    $tracking_data['parsed_elements']['address'] = $location['address'];
+                                                    $tracking_data['parsed_elements']['city'] = $location['city'];
+                                                    $tracking_data['parsed_elements']['state'] = $location['state'];
+                                                    $tracking_data['parsed_elements']['zip_code'] = $location['zip_code'];
+                                                    
+                                                    // Extract phone number
+                                                    if (preg_match('/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/', $block_html, $phone_match)) {
+                                                        $location['phone_number'] = preg_replace('/[^\d]/', '', $phone_match[0]);
+                                                        $location['phone_number'] = substr($location['phone_number'], 0, 3) . '-' . substr($location['phone_number'], 3, 3) . '-' . substr($location['phone_number'], 6);
+                                                        $tracking_data['parsed_elements']['phone_number'] = $location['phone_number'];
+                                                    } else {
+                                                        $tracking_data['extraction_attempts'][] = 'No phone number found with pattern';
+                                                    }
+                                                    
+                                                    // Extract location-specific URL
+                                                    if (preg_match('/<a[^>]+href=["\']([^"\']+)["\'][^>]*>(?:.*?(?:details|more|visit|view|location).*?)<\/a>/i', $block_html, $url_match)) {
+                                                        $location_url = $url_match[1];
+                                                        if (!filter_var($location_url, FILTER_VALIDATE_URL)) {
+                                                            $parsed = parse_url($found_url);
+                                                            if (substr($location_url, 0, 1) === '/') {
+                                                                $location_url = $parsed['scheme'] . '://' . $parsed['host'] . $location_url;
+                                                            } else {
+                                                                $location_url = $parsed['scheme'] . '://' . $parsed['host'] . '/' . $location_url;
+                                                            }
+                                                        }
+                                                        $location['location_url'] = $location_url;
+                                                        $tracking_data['parsed_elements']['location_url'] = $location_url;
+                                                    } else {
+                                                        $tracking_data['extraction_attempts'][] = 'No location URL found with pattern';
+                                                    }
+                                                    
+                                                    // Track this location parsing attempt
+                                                    session_tracking('abo_location_parse', $tracking_data);
+                                                    
+                                                    // Validate it is not a PO Box
+                                                    if (!preg_match('/P\.?O\.?\s*Box/i', $location['address'])) {
+                                                        $locations_found[] = $location;
+                                                    }
+                                                } else {
+                                                    // Track failed address extraction
+                                                    $tracking_data['extraction_attempts'][] = 'Address pattern did not match';
+                                                    $tracking_data['company_id'] = $company_id;
+                                                    $tracking_data['url'] = $found_url;
+                                                    session_tracking('abo_location_parse_failed', $tracking_data);
+                                                }
+                                            }
+                                        }
+                                        
+                                        // If we found locations, stop searching
+                                        if (!empty($locations_found)) {
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Fallback: Try common URL patterns if Google Search did not work
+                if (empty($locations_found)) {
+                    // Try to find common location page URLs
+                    $possible_urls = [
+                        $company['company_url'] . '/locations',
+                        $company['company_url'] . '/stores',
+                        $company['company_url'] . '/store-locator',
+                        $company['company_url'] . '/find-a-store',
+                        $company['company_url'] . '/locations/all',
+                        $company['company_url'] . '/our-locations',
+                        str_replace('www.', 'locations.', $company['company_url'])
+                    ];
+                    
+                    foreach ($possible_urls as $test_url) {
+                        $ch = curl_init($test_url);
+                        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                        curl_setopt($ch, CURLOPT_NOBODY, true); // HEAD request only
+                        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+                        
+                        curl_exec($ch);
+                        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                        $final_url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+                        curl_close($ch);
+                        
+                        if ($http_code === 200) {
+                            // Found a valid locations page
+                            $attr_sql = "INSERT INTO bg_company_attributes 
+                                        (company_id, type, name, description, status, create_dt)
+                                        VALUES 
+                                        (:company_id, 'data_collection', 'locations_url_discovered', :url, 'active', NOW())";
+                            $database->query($attr_sql, [
+                                'company_id' => $company_id,
+                                'url' => $final_url
+                            ]);
+                            
+                            // Now scrape this page for locations
+                            $ch = curl_init($final_url);
+                            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+                            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+                            
+                            $locations_html = curl_exec($ch);
+                            curl_close($ch);
+                            
+                            if (!empty($locations_html)) {
+                                // Look for addresses in the locations page
+                                $address_patterns = [
+                                    // US address pattern
+                                    '/(\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Way|Court|Ct|Plaza|Place|Pl)\.?(?:\s+(?:Suite|Ste|Unit|Apt|#)\s*\w+)?),?\s*([A-Za-z\s]+),?\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)/i',
+                                    // Simple city, state pattern
+                                    '/([A-Za-z\s]+),\s*([A-Z]{2})\s+(\d{5})/i'
+                                ];
+                                
+                                foreach ($address_patterns as $pattern) {
+                                    if (preg_match_all($pattern, $locations_html, $matches, PREG_SET_ORDER)) {
+                                        foreach ($matches as $match) {
+                                            if (count($match) >= 4) {
+                                                $location = [
+                                                    'address' => trim($match[1]),
+                                                    'city' => trim($match[count($match) - 3]),
+                                                    'state' => trim($match[count($match) - 2]),
+                                                    'zip_code' => trim($match[count($match) - 1]),
+                                                    'source' => 'discovered_locations_page: ' . $final_url
+                                                ];
+                                                
+                                                // Validate it is not a PO Box
+                                                if (!preg_match('/P\.?O\.?\s*Box/i', $location['address'])) {
+                                                    $locations_found[] = $location;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Also check for structured data on the locations page
+                                if (preg_match_all('/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/is', $locations_html, $jsonld_matches)) {
+                                    foreach ($jsonld_matches[1] as $jsonld) {
+                                        try {
+                                            $data = json_decode($jsonld, true);
+                                            // Process structured data similar to Method 1
+                                            // ... (similar code to extract locations from JSON-LD)
+                                        } catch (Exception $e) {
+                                            // Ignore JSON parse errors
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // If we found locations, stop searching
+                            if (!empty($locations_found)) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         // Deduplicate locations by address
         $unique_locations = [];
         $seen_addresses = [];
@@ -317,6 +654,15 @@ try {
                 $unique_locations[] = $location;
             }
         }
+        
+        // Track unique locations found
+        session_tracking('abo_locations_summary', [
+            'company_id' => $company_id,
+            'company_name' => $company_name,
+            'total_locations_found' => count($locations_found),
+            'unique_locations' => count($unique_locations),
+            'location_sources' => array_unique(array_column($unique_locations, 'source'))
+        ]);
         
         // Save locations to database
         $locations_saved = 0;
@@ -337,15 +683,16 @@ try {
             if ($check_stmt->rowCount() == 0) {
                 // Insert new location
                 $insert_sql = "INSERT INTO bg_company_locations 
-                              (company_id, source, address, city, state, zip_code, country, 
-                               phone_number, latitude, longitude, business_hours, is_verified, status)
+                              (company_id, source, location_name, address, city, state, zip_code, country, 
+                               phone_number, latitude, longitude, business_hours, location_url, is_verified, status)
                               VALUES 
-                              (:company_id, :source, :address, :city, :state, :zip_code, :country,
-                               :phone_number, :latitude, :longitude, :business_hours, 0, 'active')";
+                              (:company_id, :source, :location_name, :address, :city, :state, :zip_code, :country,
+                               :phone_number, :latitude, :longitude, :business_hours, :location_url, 0, 'active')";
                 
                 $insert_params = [
                     'company_id' => $company_id,
                     'source' => $location['source'],
+                    'location_name' => $location['name'] ?? null,
                     'address' => $location['address'],
                     'city' => $location['city'],
                     'state' => $location['state'] ?? null,
@@ -354,7 +701,8 @@ try {
                     'phone_number' => $location['phone_number'] ?? null,
                     'latitude' => $location['latitude'] ?? null,
                     'longitude' => $location['longitude'] ?? null,
-                    'business_hours' => $location['business_hours'] ?? null
+                    'business_hours' => $location['business_hours'] ?? null,
+                    'location_url' => $location['location_url'] ?? null
                 ];
                 
                 $database->query($insert_sql, $insert_params);
