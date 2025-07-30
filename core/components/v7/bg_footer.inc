@@ -623,7 +623,8 @@ switch ($display_footertype ?? 'default') {
         // Social links
 
         // social media links
-        echo '
+        if (isset($display) && is_object($display) && method_exists($display, 'socialapplink')) {
+            echo '
 <div class="social-links">
     ' . $display->socialapplink('twitter', 'https://twitter.com/birthday_gold') . '
     ' . $display->socialapplink('facebook', 'https://www.facebook.com/birthdaygold/') . '
@@ -635,6 +636,21 @@ switch ($display_footertype ?? 'default') {
 </div>
 
 ';
+        } else {
+            // Fallback when $display is not available
+            echo '
+<div class="social-links">
+    <a href="https://twitter.com/birthday_gold" target="_blank" rel="noopener"><i class="bi bi-twitter"></i></a>
+    <a href="https://www.facebook.com/birthdaygold/" target="_blank" rel="noopener"><i class="bi bi-facebook"></i></a>
+    <a href="https://www.instagram.com/birthday_gold/" target="_blank" rel="noopener"><i class="bi bi-instagram"></i></a>
+    <a href="https://www.linkedin.com/company/birthdaygold" target="_blank" rel="noopener"><i class="bi bi-linkedin"></i></a>
+    <a href="https://www.tiktok.com/@birthday.gold" target="_blank" rel="noopener"><i class="bi bi-tiktok"></i></a>
+    <a href="https://www.youtube.com/@birthdaygold" target="_blank" rel="noopener"><i class="bi bi-youtube"></i></a>
+    <a href="https://www.pinterest.com/birthdaygold/" target="_blank" rel="noopener"><i class="bi bi-pinterest"></i></a>
+</div>
+
+';
+        }
         /*
 
             echo '
@@ -714,7 +730,9 @@ switch ($display_footertype ?? 'default') {
                                 <h6 class="footer-title">Newsletter</h6>
                                 <div class="newsletter-signup">
                                     <form action="/newsletter" method="post">
-                                        ' . $display->inputcsrf_token() . '
+                                        ' . (isset($display) && is_object($display) && method_exists($display, 'inputcsrf_token') 
+                                            ? $display->inputcsrf_token() 
+                                            : '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">') . '
                                         <div class="input-group input-group-sm mb-3">
                                             <input type="email" class="form-control" name="email" placeholder="Your email" aria-label="Email address">
                                             <button class="btn btn-outline-light" type="submit">

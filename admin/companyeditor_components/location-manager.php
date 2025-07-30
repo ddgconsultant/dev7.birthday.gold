@@ -47,9 +47,16 @@ if ($has_locations) {
                 <?php endif; ?>
             </p>
         </div>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLocationModal">
-            <i class="bi bi-plus-circle me-2"></i>Add First Location
-        </button>
+        <div>
+            <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addLocationModal">
+                <i class="bi bi-plus-circle me-2"></i>Add Location
+            </button>
+            <button type="button" class="btn btn-secondary" id="refreshLocationsBtn" 
+                    data-company-id="<?php echo $company_id; ?>" 
+                    title="Run automated location extraction">
+                <i class="bi bi-arrow-clockwise me-2"></i>Refresh Locations
+            </button>
+        </div>
     </div>
 
     <?php if (!$has_locations): ?>
@@ -74,10 +81,19 @@ if ($has_locations) {
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <h5 class="card-title mb-1">
-                                        <?php echo htmlspecialchars($location['city'] . ', ' . $location['state']); ?>
+                                        <?php 
+                                        // Use location_name if available, otherwise fall back to city, state
+                                        $display_name = !empty($location['location_name']) 
+                                            ? htmlspecialchars($location['location_name'])
+                                            : htmlspecialchars($location['city'] . ', ' . $location['state']);
+                                        echo $display_name;
+                                        ?>
                                     </h5>
                                     <p class="text-muted small mb-0">
                                         <?php echo htmlspecialchars($location['address']); ?>
+                                        <?php if (!empty($location['city']) && !empty($location['state'])): ?>
+                                            <br><?php echo htmlspecialchars($location['city'] . ', ' . $location['state'] . ' ' . ($location['zip_code'] ?? '')); ?>
+                                        <?php endif; ?>
                                     </p>
                                 </div>
                                 <div class="dropdown">
@@ -86,9 +102,7 @@ if ($has_locations) {
                                     </button>
                                     <ul class="dropdown-menu">
                                         <li>
-                                            <a class="dropdown-item" href="#" data-bs-toggle="modal" 
-                                               data-bs-target="#editLocationModal" 
-                                               data-location-id="<?php echo $location['location_id']; ?>">
+                                            <a class="dropdown-item" href="/admin/location-editor.php?lid=<?php echo $location['location_id']; ?>&cid=<?php echo $company_id; ?>">
                                                 <i class="bi bi-pencil me-2"></i>Edit
                                             </a>
                                         </li>
@@ -108,11 +122,59 @@ if ($has_locations) {
 
                             <!-- Location Details -->
                             <div class="mb-3">
-                                <div class="d-flex align-items-center text-muted mb-2">
-                                    <i class="bi bi-geo-alt me-2"></i>
-                                    <span><?php echo htmlspecialchars($location['zip_code']); ?></span>
+                                <?php if (!empty($location['phone_number'])): ?>
+                                    <div class="d-flex align-items-center text-muted mb-2">
+                                        <i class="bi bi-telephone me-2"></i>
+                                        <span><?php echo htmlspecialchars($location['phone_number']); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($location['business_hours'])): ?>
+                                    <div class="d-flex align-items-start text-muted mb-2">
+                                        <i class="bi bi-clock me-2"></i>
+                                        <span class="small"><?php echo nl2br(htmlspecialchars($location['business_hours'])); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($location['location_url'])): ?>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-link-45deg me-2"></i>
+                                        <a href="<?php echo htmlspecialchars($location['location_url']); ?>" 
+                                           target="_blank" 
+                                           class="small text-decoration-none">
+                                            View Location Page
+                                        </a>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <?php if ($location['is_verified'] == 1): ?>
+                                    <div class="d-flex align-items-center text-success mb-2">
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        <span class="small">Verified Location</span>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <div class="d-flex align-items-center text-muted small">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <span>Source: <?php echo htmlspecialchars($location['source'] ?? 'Manual'); ?></span>
                                 </div>
                             </div>
+                            
+                            <?php if ($location['reward_count'] > 0): ?>
+                                <!-- Rewards Badge -->
+                                <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                                    <span class="text-muted small">
+                                        <i class="bi bi-gift me-1"></i>
+                                        <?php echo $location['reward_count']; ?> reward<?php echo $location['reward_count'] > 1 ? 's' : ''; ?>
+                                    </span>
+                                    <a href="#" class="btn btn-sm btn-outline-primary"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#manageRewardsModal"
+                                       data-location-id="<?php echo $location['location_id']; ?>">
+                                        Manage
+                                    </a>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -133,6 +195,11 @@ if ($has_locations) {
                 <div class="modal-body">
                     <input type="hidden" name="company_id" value="<?php echo $company_id; ?>">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                    <div class="mb-3">
+                        <label class="form-label">Location Name</label>
+                        <input type="text" class="form-control" name="location_name" placeholder="e.g., Downtown Austin">
+                        <small class="form-text text-muted">Optional - will use City, State if not provided</small>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Address</label>
                         <input type="text" class="form-control" name="address" required>
@@ -157,6 +224,15 @@ if ($has_locations) {
                             </div>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" name="phone_number" placeholder="555-123-4567">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Location URL</label>
+                        <input type="url" class="form-control" name="location_url" placeholder="https://example.com/locations/austin">
+                        <small class="form-text text-muted">Optional - link to this specific location's page</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -166,3 +242,57 @@ if ($has_locations) {
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Refresh Locations button
+    const refreshBtn = document.getElementById('refreshLocationsBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            const companyId = this.getAttribute('data-company-id');
+            const btn = this;
+            const originalHtml = btn.innerHTML;
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Extracting...';
+            
+            // Call the location grabber
+            fetch(`/admin_actions/abo/abo_grablocations.php?rawid=${companyId}&retrigger=1`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    let message = 'Location extraction completed. ';
+                    if (data.locations_summary) {
+                        message += `Found: ${data.locations_summary.found}, `;
+                        message += `Inserted: ${data.locations_summary.inserted}, `;
+                        message += `Updated: ${data.locations_summary.updated}`;
+                    }
+                    alert(message);
+                    
+                    // Reload the page if any locations were processed
+                    if (data.locations_summary && (data.locations_summary.inserted > 0 || data.locations_summary.updated > 0)) {
+                        location.reload();
+                    }
+                } else {
+                    alert('Error: ' + (data.message || 'Location extraction failed'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to extract locations. Please try again.');
+            })
+            .finally(() => {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            });
+        });
+    }
+});
+</script>
