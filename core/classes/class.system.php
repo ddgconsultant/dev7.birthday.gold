@@ -579,6 +579,82 @@ function curlRequest($url, $headers, $data = [], $method = 'POST', $options = []
    # echo 'CURL Version: ' . curl_version()['version'] . PHP_EOL;
    # echo 'SSL Backend: ' . curl_version()['ssl_version'] . PHP_EOL;
 
+    // Handle additional options
+    if (!empty($options)) {
+        if (isset($options['timeout'])) {
+            curl_setopt($ch, CURLOPT_TIMEOUT, $options['timeout']);
+        }
+        if (isset($options['followlocation'])) {
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $options['followlocation']);
+        }
+        if (isset($options['maxredirs'])) {
+            curl_setopt($ch, CURLOPT_MAXREDIRS, $options['maxredirs']);
+        }
+        if (isset($options['nobody'])) {
+            curl_setopt($ch, CURLOPT_NOBODY, $options['nobody']);
+        }
+        if (isset($options['useragent'])) {
+            curl_setopt($ch, CURLOPT_USERAGENT, $options['useragent']);
+        }
+        if (isset($options['encoding'])) {
+            curl_setopt($ch, CURLOPT_ENCODING, $options['encoding']);
+        }
+        if (isset($options['connecttimeout'])) {
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $options['connecttimeout']);
+        }
+        if (isset($options['referer'])) {
+            curl_setopt($ch, CURLOPT_REFERER, $options['referer']);
+        }
+        if (isset($options['cookiejar'])) {
+            curl_setopt($ch, CURLOPT_COOKIEJAR, $options['cookiejar']);
+        }
+        if (isset($options['cookiefile'])) {
+            curl_setopt($ch, CURLOPT_COOKIEFILE, $options['cookiefile']);
+        }
+        if (isset($options['header'])) {
+            curl_setopt($ch, CURLOPT_HEADER, $options['header']);
+        }
+        if (isset($options['post'])) {
+            curl_setopt($ch, CURLOPT_POST, $options['post']);
+        }
+        if (isset($options['httpauth'])) {
+            curl_setopt($ch, CURLOPT_HTTPAUTH, $options['httpauth']);
+        }
+        if (isset($options['userpwd'])) {
+            curl_setopt($ch, CURLOPT_USERPWD, $options['userpwd']);
+        }
+        if (isset($options['proxy'])) {
+            curl_setopt($ch, CURLOPT_PROXY, $options['proxy']);
+        }
+        if (isset($options['proxytype'])) {
+            curl_setopt($ch, CURLOPT_PROXYTYPE, $options['proxytype']);
+        }
+        if (isset($options['proxyuserpwd'])) {
+            curl_setopt($ch, CURLOPT_PROXYUSERPWD, $options['proxyuserpwd']);
+        }
+        if (isset($options['verbose'])) {
+            curl_setopt($ch, CURLOPT_VERBOSE, $options['verbose']);
+        }
+        if (isset($options['headerfunction'])) {
+            curl_setopt($ch, CURLOPT_HEADERFUNCTION, $options['headerfunction']);
+        }
+        if (isset($options['writefunction'])) {
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, $options['writefunction']);
+        }
+        if (isset($options['progressfunction'])) {
+            curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, $options['progressfunction']);
+        }
+        if (isset($options['noprogress'])) {
+            curl_setopt($ch, CURLOPT_NOPROGRESS, $options['noprogress']);
+        }
+        // Allow raw curl options for advanced usage
+        if (isset($options['curl_options']) && is_array($options['curl_options'])) {
+            foreach ($options['curl_options'] as $option => $value) {
+                curl_setopt($ch, $option, $value);
+            }
+        }
+    }
+
     // Handle POST data
     if (!empty($data)) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
@@ -589,17 +665,42 @@ function curlRequest($url, $headers, $data = [], $method = 'POST', $options = []
     // Execute CURL request
     $responseRaw = curl_exec($ch);
     $error = curl_error($ch);
+    $errno = curl_errno($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $effectiveUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+    $totalTime = curl_getinfo($ch, CURLINFO_TOTAL_TIME);
+    $redirectCount = curl_getinfo($ch, CURLINFO_REDIRECT_COUNT);
+    $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
 
     // Close CURL session
     curl_close($ch);
 
     // Parse response
-    $response = [];
+    $response = [
+        'http_code' => $httpCode,
+        'effective_url' => $effectiveUrl,
+        'total_time' => $totalTime,
+        'redirect_count' => $redirectCount,
+        'content_type' => $contentType
+    ];
+    
     if ($responseRaw === false) {
         $response['error'] = $error;
+        $response['errno'] = $errno;
+        $response['raw'] = '';
+        $response['decoded'] = null;
     } else {
         $response['raw'] = $responseRaw;
-        $response['decoded'] = json_decode($responseRaw, true);
+        // Only try to decode JSON if content type suggests it
+        if (stripos($contentType, 'json') !== false) {
+            $response['decoded'] = json_decode($responseRaw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $response['json_error'] = json_last_error_msg();
+                $response['decoded'] = null;
+            }
+        } else {
+            $response['decoded'] = null;
+        }
     }
 
     return $response;
