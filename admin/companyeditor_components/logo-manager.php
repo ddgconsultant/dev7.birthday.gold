@@ -78,6 +78,59 @@ if (isset($logo_groups['primary_logo']) && !empty($logo_groups['primary_logo']))
     right: 10px;
     z-index: 10;
 }
+
+/* Fetch Results Scrollable Area */
+#fetchResultsContent {
+    background-color: #f8f9fa;
+}
+
+#fetchResultsContent::-webkit-scrollbar {
+    width: 8px;
+}
+
+#fetchResultsContent::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#fetchResultsContent::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#fetchResultsContent::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Logo fetch results styling */
+.logo-fetch-results img {
+    max-width: 200px;
+    height: auto;
+    margin: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 5px;
+    background: white;
+}
+
+/* Lazy loading styles */
+img.lazy {
+    filter: blur(5px);
+    transition: filter 0.3s;
+}
+
+img.lazy:not([src]) {
+    visibility: hidden;
+}
+
+img:not(.lazy) {
+    filter: none;
+}
+
+.logo-card img {
+    min-height: 100px;
+    background-color: #f8f9fa;
+}
 </style>
 
 <div class="logo-manager-section">
@@ -85,7 +138,14 @@ if (isset($logo_groups['primary_logo']) && !empty($logo_groups['primary_logo']))
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Company Logos</h4>
         <div>
-            <button class="btn btn-primary" onclick="fetchNewLogos()">
+            <?php 
+            // Check if company has Apple App URL
+            $hasAppleAppUrl = !empty($company['appapple']);
+            ?>
+            <button class="btn btn-primary" 
+                    onclick="fetchNewLogos()" 
+                    <?php echo !$hasAppleAppUrl ? 'disabled' : ''; ?>
+                    <?php echo !$hasAppleAppUrl ? 'title="Apple App URL is required to fetch logos"' : ''; ?>>
                 <i class="bi bi-cloud-download me-2"></i>Fetch New Logos
             </button>
             <button class="btn btn-outline-secondary ms-2" onclick="uploadLogo()">
@@ -93,6 +153,12 @@ if (isset($logo_groups['primary_logo']) && !empty($logo_groups['primary_logo']))
             </button>
         </div>
     </div>
+
+    <?php if (!$hasAppleAppUrl): ?>
+    <div class="alert alert-info mb-3">
+        <i class="bi bi-info-circle me-2"></i>To fetch logos from the Apple App Store, please add an Apple App URL in the General Details tab.
+    </div>
+    <?php endif; ?>
 
     <?php if ($primary_logo): ?>
     <!-- Current Primary Logo -->
@@ -103,6 +169,7 @@ if (isset($logo_groups['primary_logo']) && !empty($logo_groups['primary_logo']))
         <div class="card-body text-center">
             <img src="<?php echo $display->companyimage($company_id . '/' . $primary_logo['description']); ?>" 
                  alt="Primary Logo" 
+                 loading="lazy"
                  style="max-height: 200px; max-width: 100%;">
             <div class="mt-3">
                 <p class="text-muted mb-1">Filename: <?php echo htmlspecialchars($primary_logo['description']); ?></p>
@@ -134,8 +201,11 @@ if (isset($logo_groups['primary_logo']) && !empty($logo_groups['primary_logo']))
                                 <span class="badge bg-success primary-badge">Primary</span>
                             <?php endif; ?>
                             
-                            <img src="<?php echo $display->companyimage($company_id . '/' . $logo['description']); ?>" 
+                            <img src="/public/images/placeholder-logo.svg" 
+                                 data-src="<?php echo $display->companyimage($company_id . '/' . $logo['description']); ?>" 
                                  alt="Logo <?php echo htmlspecialchars($logo['name']); ?>"
+                                 loading="lazy"
+                                 class="lazy"
                                  onerror="this.onerror=null; this.src='/public/images/placeholder-logo.svg';">
                             
                             <div class="logo-info">
@@ -186,13 +256,14 @@ if (isset($logo_groups['primary_logo']) && !empty($logo_groups['primary_logo']))
 
 <!-- Fetch Progress Modal -->
 <div class="modal fade" id="fetchProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Fetching Logos...</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="text-center">
+                <div class="text-center" id="fetchLoadingSection">
                     <div class="spinner-border text-primary mb-3" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
@@ -200,11 +271,52 @@ if (isset($logo_groups['primary_logo']) && !empty($logo_groups['primary_logo']))
                 </div>
                 <div id="fetchResults" class="mt-3" style="display:none;">
                     <h6>Results:</h6>
-                    <div id="fetchResultsContent" class="small"></div>
+                    <div id="fetchResultsContent" class="small" style="max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 1rem;"></div>
                 </div>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="display:none;" id="closeButton">Close</button>
                 <button type="button" class="btn btn-primary" onclick="location.reload()" style="display:none;" id="refreshButton">Refresh Page</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Logo Confirmation Modal -->
+<div class="modal fade" id="deleteLogoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Delete Logo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-trash text-danger" style="font-size: 3rem;"></i>
+                </div>
+                <h6>Are you sure you want to delete this logo?</h6>
+                <div id="deleteLogoInfo" class="mt-3">
+                    <!-- Logo info will be populated here -->
+                </div>
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Note:</strong> This action will mark the logo as inactive. The image will be permanently removed from our servers after 120 days.
+                </div>
+                <div class="text-muted small">
+                    <p class="mb-1"><strong>Deletion Timeline:</strong></p>
+                    <ul class="mb-0">
+                        <li>Day 1-59: Logo is hidden but can be restored</li>
+                        <li>Day 60: First deletion warning sent</li>
+                        <li>Day 90: Final deletion warning sent</li>
+                        <li>Day 120: Logo permanently deleted</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteLogo">
+                    <i class="bi bi-trash me-2"></i>Delete Logo
+                </button>
             </div>
         </div>
     </div>
@@ -232,16 +344,22 @@ function executeFetchLogos() {
             cid: <?php echo $company_id; ?>
         },
         success: function(response) {
-            $('.spinner-border').hide();
+            $('#fetchLoadingSection').hide();
             $('#fetchResults').show();
             $('#fetchResultsContent').html(response);
             $('#refreshButton').show();
+            $('#closeButton').show();
+            // Update modal title
+            $('.modal-title', '#fetchProgressModal').text('Logo Fetch Results');
         },
         error: function(xhr, status, error) {
-            $('.spinner-border').hide();
+            $('#fetchLoadingSection').hide();
             $('#fetchResults').show();
             $('#fetchResultsContent').html('<div class="alert alert-danger">Error: ' + error + '</div>');
             $('#refreshButton').show();
+            $('#closeButton').show();
+            // Update modal title
+            $('.modal-title', '#fetchProgressModal').text('Logo Fetch Error');
         }
     });
 }
@@ -269,29 +387,99 @@ function setPrimaryLogo(logoId) {
     }
 }
 
+var pendingDeleteLogoId = null;
+
 function deleteLogo(logoId) {
-    if (confirm('Are you sure you want to delete this logo?')) {
+    // Store the logo ID
+    pendingDeleteLogoId = logoId;
+    
+    // Find the logo card to get info
+    var logoCard = $('[data-logo-id="' + logoId + '"]');
+    var logoName = logoCard.find('.logo-info strong').text();
+    var logoFilename = logoCard.find('.logo-info .text-truncate').text();
+    var logoImg = logoCard.find('img').attr('data-src') || logoCard.find('img').attr('src');
+    
+    // Populate modal with logo info
+    var infoHtml = '<div class="d-flex align-items-center">';
+    infoHtml += '<img src="' + logoImg + '" style="max-width: 100px; max-height: 100px; margin-right: 1rem;" class="border rounded">';
+    infoHtml += '<div>';
+    infoHtml += '<p class="mb-1"><strong>Name:</strong> ' + logoName + '</p>';
+    infoHtml += '<p class="mb-0"><strong>File:</strong> ' + logoFilename + '</p>';
+    infoHtml += '</div>';
+    infoHtml += '</div>';
+    
+    $('#deleteLogoInfo').html(infoHtml);
+    
+    // Show modal
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteLogoModal'));
+    deleteModal.show();
+}
+
+// Handle delete confirmation
+$('#confirmDeleteLogo').on('click', function() {
+    if (pendingDeleteLogoId) {
+        // Show loading state
+        $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Deleting...');
+        
         $.ajax({
             url: '/admin_actions/delete_logo.php',
             method: 'POST',
             data: {
-                logo_id: logoId
+                logo_id: pendingDeleteLogoId
             },
             success: function(response) {
                 if (response.success) {
                     location.reload();
                 } else {
+                    // Hide modal and show error
+                    bootstrap.Modal.getInstance(document.getElementById('deleteLogoModal')).hide();
                     alert('Error: ' + response.message);
+                    
+                    // Reset button
+                    $('#confirmDeleteLogo').prop('disabled', false).html('<i class="bi bi-trash me-2"></i>Delete Logo');
                 }
             },
             error: function() {
+                // Hide modal and show error
+                bootstrap.Modal.getInstance(document.getElementById('deleteLogoModal')).hide();
                 alert('Error deleting logo. Please try again.');
+                
+                // Reset button
+                $('#confirmDeleteLogo').prop('disabled', false).html('<i class="bi bi-trash me-2"></i>Delete Logo');
             }
         });
     }
-}
+});
 
 function uploadLogo() {
     alert('Upload functionality coming soon. For now, use the "Fetch New Logos" feature.');
 }
+// Lazy loading implementation
+document.addEventListener('DOMContentLoaded', function() {
+    // Native lazy loading fallback using Intersection Observer
+    const lazyImages = document.querySelectorAll('img.lazy');
+    
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver(function(entries, observer) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    const image = entry.target;
+                    image.src = image.dataset.src;
+                    image.classList.remove('lazy');
+                    imageObserver.unobserve(image);
+                }
+            });
+        });
+
+        lazyImages.forEach(function(image) {
+            imageObserver.observe(image);
+        });
+    } else {
+        // Fallback for browsers that don't support Intersection Observer
+        lazyImages.forEach(function(image) {
+            image.src = image.dataset.src;
+            image.classList.remove('lazy');
+        });
+    }
+});
 </script>

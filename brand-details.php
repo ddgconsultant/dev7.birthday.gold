@@ -107,12 +107,12 @@ echo '
                   <div class="product-slider" id="galleryTop">
                     <div class="swiper theme-slider position-lg-absolute all-0" data-swiper='{"autoHeight":true,"spaceBetween":5,"loop":true,"loopedSlides":5,"thumb":{"spaceBetween":5,"slidesPerView":5,"loop":true,"freeMode":true,"grabCursor":true,"loopedSlides":5,"centeredSlides":true,"slideToClickedSlide":true,"watchSlidesVisibility":true,"watchSlidesProgress":true,"parent":"#galleryTop"},"slideToClickedSlide":true}'>
                       <div class="swiper-wrapper h-100">
-                        <div class="swiper-slide h-100"><img class="rounded-1 object-fit-cover h-100 w-100" src="https://dev6.birthday.gold/v_3.21/assets/img/products/1.jpg" alt="" /></div>
-                        <div class="swiper-slide h-100"><img class="rounded-1 object-fit-cover h-100 w-100" src="https://dev6.birthday.gold/v_3.21/assets/img/products/1-2.jpg" alt="" /></div>
-                        <div class="swiper-slide h-100"> <img class="rounded-1 object-fit-cover h-100 w-100" src="https://dev6.birthday.gold/v_3.21/assets/img/products/1-3.jpg" alt="" /></div>
-                        <div class="swiper-slide h-100"> <img class="rounded-1 object-fit-cover h-100 w-100" src="https://dev6.birthday.gold/v_3.21/assets/img/products/1-4.jpg" alt="" /></div>
-                        <div class="swiper-slide h-100"> <img class="rounded-1 object-fit-cover h-100 w-100" src="https://dev6.birthday.gold/v_3.21/assets/img/products/1-5.jpg" alt="" /></div>
-                        <div class="swiper-slide h-100"> <img class="rounded-1 object-fit-cover h-100 w-100" src="https://dev6.birthday.gold/v_3.21/assets/img/products/1-6.jpg" alt="" /></div>
+                        <div class="swiper-slide h-100"><img class="rounded-1 object-fit-cover h-100 w-100" src="/public/images/placeholder-product.jpg" alt="" /></div>
+                        <div class="swiper-slide h-100"><img class="rounded-1 object-fit-cover h-100 w-100" src="/public/images/placeholder-product.jpg" alt="" /></div>
+                        <div class="swiper-slide h-100"> <img class="rounded-1 object-fit-cover h-100 w-100" src="/public/images/placeholder-product.jpg" alt="" /></div>
+                        <div class="swiper-slide h-100"> <img class="rounded-1 object-fit-cover h-100 w-100" src="/public/images/placeholder-product.jpg" alt="" /></div>
+                        <div class="swiper-slide h-100"> <img class="rounded-1 object-fit-cover h-100 w-100" src="/public/images/placeholder-product.jpg" alt="" /></div>
+                        <div class="swiper-slide h-100"> <img class="rounded-1 object-fit-cover h-100 w-100" src="/public/images/placeholder-product.jpg" alt="" /></div>
                       </div>
                       <div class="swiper-nav">
                         <div class="swiper-button-next swiper-button-white"></div>

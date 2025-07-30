@@ -110,6 +110,9 @@ try {
             // Priority 1: Look for logo in meta tags
             $xpath = new DOMXPath($dom);
             
+            // DISABLED: We don't want to scrape Open Graph/Twitter meta images
+            // These are not actual company logos
+            /*
             // Check Open Graph image
             $og_images = $xpath->query('//meta[@property="og:image"]/@content');
             foreach ($og_images as $og_img) {
@@ -127,6 +130,7 @@ try {
                     $images_found['twitter_logo'] = $img_url;
                 }
             }
+            */
             
             // Priority 2: Look for logos in common locations
             $logo_selectors = [
@@ -150,6 +154,9 @@ try {
                 }
             }
             
+            // DISABLED: We don't want to scrape favicons
+            // These are not actual company logos
+            /*
             // Priority 3: Look for favicon
             $favicon_selectors = [
                 '//link[@rel="icon"]/@href',
@@ -167,7 +174,11 @@ try {
                     }
                 }
             }
+            */
             
+            // DISABLED: We don't want to scrape hero/banner images
+            // These are not company logos
+            /*
             // Priority 4: Get hero/banner images
             $hero_selectors = [
                 '//section[contains(@class, "hero")]//img/@src',
@@ -188,6 +199,7 @@ try {
                 }
                 if ($hero_count >= 3) break;
             }
+            */
             
             // Process and download found images
             foreach ($images_found as $type => $url) {
