@@ -104,6 +104,52 @@ function terminateAirtopSession($system, $airtopApiUrl, $airtopApiKey, $sessionI
     );
 }
 
+// Helper function to geocode an address and get lat/lon
+function geocodeAddress($address, $city, $state, $zip_code, $system) {
+    // Build full address string
+    $address_parts = array_filter([
+        $address,
+        $city,
+        $state,
+        $zip_code
+    ]);
+    
+    if (empty($address_parts)) {
+        return ['lat' => null, 'lon' => null];
+    }
+    
+    $full_address = implode(', ', $address_parts);
+    
+    // Use OpenStreetMap Nominatim API (free, no key required)
+    $geocode_url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
+        'q' => $full_address,
+        'format' => 'json',
+        'limit' => 1,
+        'countrycodes' => 'us' // Limit to US addresses
+    ]);
+    
+    $headers = [
+        'User-Agent: Birthday Gold Location Geocoder/1.0'
+    ];
+    
+    try {
+        $response = $system->curlRequest($geocode_url, $headers, [], 'GET');
+        
+        if (!empty($response['decoded']) && is_array($response['decoded']) && count($response['decoded']) > 0) {
+            $result = $response['decoded'][0];
+            return [
+                'lat' => $result['lat'] ?? null,
+                'lon' => $result['lon'] ?? null
+            ];
+        }
+    } catch (Exception $e) {
+        // Log error but continue
+        error_log('Geocoding error for address: ' . $full_address . ' - ' . $e->getMessage());
+    }
+    
+    return ['lat' => null, 'lon' => null];
+}
+
 try {
     // Get companies to process
     if ($specific_company_id) {
@@ -570,7 +616,8 @@ try {
             foreach ($unique_locations as $idx => $location) {
                 // Check if location already exists - use a more flexible matching approach
                 // First try exact match on all fields
-                $check_sql = "SELECT location_id, address, city, state, zip_code, phone_number, business_hours, location_name, location_url 
+                $check_sql = "SELECT location_id, address, city, state, zip_code, phone_number, business_hours, 
+                                     location_name, location_url, latitude, longitude
                             FROM bg_company_locations 
                             WHERE company_id = :company_id 
                             AND city = :city";
@@ -618,6 +665,9 @@ try {
                     $updates = [];
                     $update_params = ['location_id' => $existing_location['location_id']];
                     $needs_update = false;
+                    
+                    // Check if we need to geocode (if lat/lon are empty)
+                    $needs_geocoding = empty($existing_location['latitude']) || empty($existing_location['longitude']);
                     
                     // Check address change
                     if ($existing_location['address'] !== $location['address']) {
@@ -702,10 +752,36 @@ try {
                         ];
                     }
                     
-                    if ($needs_update) {
+                    if ($needs_update || $needs_geocoding) {
                         $updates[] = 'source = :source';
                         $update_params['source'] = $location['source'];
                         $updates[] = 'modify_dt = NOW()';
+                        
+                        // Geocode if needed
+                        if ($needs_geocoding) {
+                            $geo_result = geocodeAddress(
+                                $location['address'],
+                                $location['city'],
+                                $location['state'] ?? '',
+                                $location['zip_code'] ?? '',
+                                $system
+                            );
+                            
+                            if (!empty($geo_result['lat']) && !empty($geo_result['lon'])) {
+                                $updates[] = 'latitude = :latitude';
+                                $updates[] = 'longitude = :longitude';
+                                $update_params['latitude'] = $geo_result['lat'];
+                                $update_params['longitude'] = $geo_result['lon'];
+                                
+                                if ($debug && $idx < 3) {
+                                    $debug_output['geocoding_' . $idx] = [
+                                        'address' => $location['address'] . ', ' . $location['city'] . ', ' . ($location['state'] ?? ''),
+                                        'lat' => $geo_result['lat'],
+                                        'lon' => $geo_result['lon']
+                                    ];
+                                }
+                            }
+                        }
                         
                         $update_sql = "UPDATE bg_company_locations SET " . implode(', ', $updates) . 
                                     " WHERE location_id = :location_id";
@@ -713,15 +789,24 @@ try {
                         $locations_updated++;
                     }
                 } else {
+                    // Geocode the new location
+                    $geo_result = geocodeAddress(
+                        $location['address'],
+                        $location['city'],
+                        $location['state'] ?? '',
+                        $location['zip_code'] ?? '',
+                        $system
+                    );
+                    
                     // Insert new location
                     $insert_sql = "INSERT INTO bg_company_locations 
                                 (company_id, source, location_name, location_url, address, city, state, zip_code, 
-                                 phone_number, business_hours, is_verified, status, create_dt)
+                                 phone_number, business_hours, latitude, longitude, is_verified, status, create_dt)
                                 VALUES 
                                 (:company_id, :source, :location_name, :location_url, :address, :city, :state, :zip_code,
-                                 :phone_number, :business_hours, 0, 'active', NOW())";
+                                 :phone_number, :business_hours, :latitude, :longitude, 0, 'active', NOW())";
                     
-                    $database->query($insert_sql, [
+                    $insert_params = [
                         'company_id' => $company_id,
                         'source' => $location['source'],
                         'location_name' => $location['location_name'] ?? null,
@@ -731,8 +816,20 @@ try {
                         'state' => $location['state'] ?? null,
                         'zip_code' => $location['zip_code'] ?? null,
                         'phone_number' => $location['phone_number'] ?? null,
-                        'business_hours' => $location['business_hours'] ?? null
-                    ]);
+                        'business_hours' => $location['business_hours'] ?? null,
+                        'latitude' => !empty($geo_result['lat']) ? $geo_result['lat'] : null,
+                        'longitude' => !empty($geo_result['lon']) ? $geo_result['lon'] : null
+                    ];
+                    
+                    $database->query($insert_sql, $insert_params);
+                    
+                    if ($debug && $idx < 3 && !empty($geo_result['lat'])) {
+                        $debug_output['geocoding_new_' . $idx] = [
+                            'address' => $location['address'] . ', ' . $location['city'] . ', ' . ($location['state'] ?? ''),
+                            'lat' => $geo_result['lat'],
+                            'lon' => $geo_result['lon']
+                        ];
+                    }
                     
                     $locations_inserted++;
                 }

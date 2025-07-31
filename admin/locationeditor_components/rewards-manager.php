@@ -119,7 +119,7 @@ $company_rewards = $company_stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="list-group-item">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1"><?php echo htmlspecialchars($reward['reward_name']); ?></h6>
+                                <h6 class="mb-1"><?php echo htmlspecialchars($reward['reward_name'] ?? ''); ?></h6>
                                 <p class="text-muted small mb-0">
                                     <i class="bi bi-tag me-1"></i><?php echo htmlspecialchars($reward['reward_type'] ?? 'Unknown Type'); ?>
                                     <?php if ($reward['status'] !== 'active'): ?>
