@@ -30,6 +30,17 @@ if ($userId==0) {
     return false;
 }
 
+// Special handling for test mode when uid=-1
+if ($userId == -1) {
+    // Test mode - let the enrollment class handle everything
+    // Just proceed normally - the enrollment->grabdetails will handle userId=-1
+    session_tracking('TEST MODE DETECTED', [
+        'userId' => $userId,
+        'companyId' => $companyId,
+        'message' => 'Passing to enrollment class for test mode handling'
+    ]);
+}
+
 
 #-------------------------------------------------------------------------------
 if (empty($aid)) {
@@ -70,7 +81,10 @@ if (empty($authcode)) {
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
- list($output, $adminDetails, $userDetails, $registrationList)=$enrollment->grabdetails($database, $adminDetails, $userId, $companyId, $return) ;
+// Get suffix parameter if provided (for test mode)
+$suffix = isset($_GET['suffix']) ? $_GET['suffix'] : null;
+
+list($output, $adminDetails, $userDetails, $registrationList)=$enrollment->grabdetails($database, $adminDetails, $userId, $companyId, $return, $suffix) ;
 
 
 #breakpoint( $registrationList);

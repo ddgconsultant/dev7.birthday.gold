@@ -5,7 +5,103 @@ require_once($BASEDIR . '/core/site-controller.php');
 #-------------------------------------------------------------------------------
 # PREP VARIABLES PAGE
 #-------------------------------------------------------------------------------
-$bodycontentclass = '';
+$bodycontentclass = ''; // This removes the my-4 margin from the row after nav
+$header_flush = true; // Ensure header content is flush with admin header
+
+// Admin header styles
+$additionalstyles = '
+<style>
+/* Ensure content header is flush with navbar */
+.content-header-admin {
+    margin-top: 0 !important;
+}
+
+/* Remove the row div spacing after navbar */
+.navbar + .row {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+}
+
+/* Force admin header to be flush */
+.navbar + .row + .content-header-admin {
+    margin-top: 0 !important;
+}
+
+/* Modern Tab Navigation */
+.nav-tabs-modern {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
+    gap: 0;
+    overflow: visible;
+    position: relative;
+}
+
+.nav-tab-item {
+    flex: 0 0 auto;
+    padding: 1rem 1.5rem;
+    text-decoration: none;
+    color: #6c757d;
+    font-weight: 500;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.3s ease-out;
+    background: none;
+    border-radius: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.nav-tab-item::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background-color: #6c757d;
+    transition: width 0.3s ease-out;
+}
+
+.nav-tab-item:hover {
+    color: #495057;
+    text-decoration: none;
+}
+
+.nav-tab-item:hover::after {
+    width: 100%;
+}
+
+.nav-tab-item.active {
+    color: #0d6efd;
+    border-bottom: 3px solid #0d6efd;
+    background: none;
+    position: relative;
+    z-index: 1;
+}
+
+.nav-tab-item.active::after {
+    display: none;
+}
+
+/* Badge styling */
+.badge-count {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    border-radius: 0.375rem;
+    margin-left: 0.25rem;
+    background-color: #6c757d;
+    color: #fff;
+}
+</style>
+';
 
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 // Generate statistics cards
@@ -151,7 +247,7 @@ $buttonContainerClass = $scheduleresult['allow_enrollment'] ?
             foreach ($company_list as $company_info) {
                 $parts = explode('|', $company_info);
                 
-                // Skip if we don't have both parts
+                // Skip if we do not have both parts
                 if (count($parts) < 2) {
                     continue;
                 }
@@ -264,32 +360,43 @@ $testUsers = $testResult->fetchAll();
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
-include($dir['core_components'] . '/bg_user_profileheader.inc');
+?>
 
+<!-- Hero Section -->
+<div class="content-header-admin no-rounded-corners">
+    <div class="container">
+        <h1 class="mt-3">Pending Enrollments V2</h1>
+        <p class="lead mb-4">Manage and process user birthday reward enrollments</p>
+    </div>
+</div>
+
+<?php
 // Generate the tabbed interface
-echo '    <section class="container mt-5 main-content">
-<div class="d-flex justify-content-between align-items-center mb-4">
-<h2 class="mb-0">Pending Enrollments V2</h2>
-<div class="text-end">
-<a href="/admin/" class="btn btn-sm btn-outline-secondary mb-1">Back To Admin</a>
-<br>
-<div>
-<a href="https://birthday.gold/admin/bgreb_v3/instructions" class="btn btn-sm btn-outline-secondary">Instructions</a>'.$display->enrollerextensiondownload().'
-</div>
-</div>
-</div>
-';
+echo '    <section class="container mt-5 main-content">';
+
+// Get counts for badges
+$realCount = count($realUsers);
+$testCount = count($testUsers);
 
 echo '
 <div class="container">
-<ul class="nav nav-tabs" id="userTabs" role="tablist">
-<li class="nav-item" role="presentation">
-<button class="nav-link active" id="real-tab" data-bs-toggle="tab" data-bs-target="#real" type="button">Real Users</button>
-</li>
-<li class="nav-item" role="presentation">
-<button class="nav-link" id="test-tab" data-bs-toggle="tab" data-bs-target="#test" type="button">Test Users</button>
-</li>
-</ul>
+<div class="d-flex justify-content-between align-items-center mb-2">
+<nav class="nav-tabs-modern flex-grow-1">
+<button class="nav-tab-item active" id="real-tab" data-bs-toggle="tab" data-bs-target="#real" type="button">
+Real Users
+<span class="badge-count">'.$realCount.'</span>
+</button>
+<button class="nav-tab-item" id="test-tab" data-bs-toggle="tab" data-bs-target="#test" type="button">
+Test Users
+<span class="badge-count">'.$testCount.'</span>
+</button>
+</nav>
+<div class="d-flex gap-2">
+<a href="/admin/" class="btn btn-sm btn-outline-secondary">Back To Admin</a>
+<a href="https://birthday.gold/admin/bgreb_v3/instructions" class="btn btn-sm btn-outline-secondary">Instructions</a>
+'.$display->enrollerextensiondownload().'
+</div>
+</div>
 
 <div class="tab-content" id="userTabsContent">
 ';
@@ -352,8 +459,32 @@ echo '<!-- Profile Modal -->
 </div>
 </div>';
 
-// Add JavaScript for handling the modal
+// Add JavaScript for handling the modal and tabs
 echo "<script>
+// Handle modern tab switching
+document.querySelectorAll('.nav-tab-item').forEach(button => {
+    button.addEventListener('click', function() {
+        // Remove active class from all tabs
+        document.querySelectorAll('.nav-tab-item').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Add active class to clicked tab
+        this.classList.add('active');
+        
+        // Hide all tab panes
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('show', 'active');
+        });
+        
+        // Show the target tab pane
+        const target = this.getAttribute('data-bs-target');
+        const targetPane = document.querySelector(target);
+        if (targetPane) {
+            targetPane.classList.add('show', 'active');
+        }
+    });
+});
 function loadProfileDetails(userId) {
 const modalBody = document.getElementById('profileModalBody');
 modalBody.innerHTML = '<div class=\"text-center\"><div class=\"spinner-border\" role=\"status\"><span class=\"visually-hidden\">Loading...</span></div></div>';

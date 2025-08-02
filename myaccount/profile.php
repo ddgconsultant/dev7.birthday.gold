@@ -107,6 +107,14 @@ exit;
     $userdata_after = $current_user_data;
     unset($userdata_after['modify_dt']);
     $userdata_afterhash = hash('sha256', serialize($userdata_after));
+    
+    // Mark eligibility for refresh if profile changed
+    if ($userdata_beforehash != $userdata_afterhash) {
+        require_once($installpath . 'core/classes/class.enrollment.php');
+        $enrollment = new Enrollment();
+        $enrollment->markMemberEligibilityStale($current_user_data['user_id']);
+        session_tracking('ELIGIBILITY', 'Marked user eligibility stale after profile update');
+    }
 
   if (
     isset($updatefields['username']) && $updatefields['username'] != $userdata_before['username'] ||

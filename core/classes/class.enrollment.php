@@ -22,16 +22,43 @@ class enrollment
 
 
     # ##--------------------------------------------------------------------------------------------------------------------------------------------------
-    function grabdetails($database, $adminDetails, $userId, $companyId, $return)
-    {
+function grabdetails($database, $adminDetails, $userId, $companyId, $return, $suffix = null)  {
+        // Check for test mode
+        $test_mode = ($userId == -1);
+        
         // Get user details
         global $account;
-        #$stmt = $database->query("SELECT * FROM bg_users WHERE user_id = :userId", ['userId' => $userId]);
-        #$userDetails = $stmt->fetch(PDO::FETCH_ASSOC);
-        $userDetails = $account->getuserdata($userId, 'user_id');
+        if ($test_mode) {
+            // In test mode, use user 20's data
+            $real_userId = 20;
+            $userDetails = $account->getuserdata($real_userId, 'user_id');
+            session_tracking('ENROLLMENT TEST MODE', 'Using user 20 data for test mode');
+        } else {
+            $userDetails = $account->getuserdata($userId, 'user_id');
+        }
 
-
-        $sql = "SELECT uc.user_company_id, c.company_name, uc.user_id, uc.company_id, uc.status,  c.status as company_status, 
+        // Build SQL query based on mode
+        if ($test_mode) {
+            // Test mode query - no user join required, no finalized status check
+            $sql = "SELECT 
+                    999999 as user_company_id,  -- Fake ID for test mode
+                    c.company_name, 
+                    20 as user_id,  -- Always user 20 for test
+                    c.company_id, 
+                    'selected' as status,  -- Default status for test
+                    c.status as company_status, 
+                    SUBSTRING_INDEX(c.signup_url, '/', 3) AS signup_domain, 
+                    c.signup_url,  
+                    c.bgrab_domain
+                    FROM bg_companies c
+                    WHERE c.signup_url IS NOT NULL 
+                    AND c.signup_url != '' 
+                    AND c.signup_url != 'APP ONLY' 
+                    {{find_company}}
+                    ORDER BY c.company_name ASC";
+        } else {
+            // Production query - original logic
+            $sql = "SELECT uc.user_company_id, c.company_name, uc.user_id, uc.company_id, uc.status,  c.status as company_status, 
 SUBSTRING_INDEX(c.signup_url, '/', 3) AS signup_domain, c.signup_url,  c.bgrab_domain
 FROM bg_user_companies uc
 LEFT JOIN bg_companies c ON uc.company_id = c.company_id
@@ -40,6 +67,7 @@ WHERE ((uc.status not in ('success', 'success-btn', 'success-sub', 'failed', 're
 and uc.user_id = :userId {{find_company}}  
 AND NOT (uc.`status` LIKE '%failed%' AND uc.`reason` = 'account_exists')
 order by uc.create_dt desc ";
+        }
 
 
 if ($companyId == 0) {
@@ -54,12 +82,22 @@ if ($companyId == 0) {
 */
         // Get companies
         $sql = str_replace('{{find_company}}', $findcompanytag, $sql);
-    #    if ($return == 'js')
-   #         $stmt = $database->query($sql, [':userId' => $userId]);
-   #     else
+        
+        // Execute query based on mode
+        if ($test_mode) {
+            // Test mode doesn't need userId parameter
+            if ($companyId == 0) {
+                $stmt = $database->query($sql, [':companyId' => $companyId]);
+            } else {
+                $stmt = $database->query($sql, [':companyId' => $companyId]);
+            }
+        } else {
+            // Production mode with userId
             $stmt = $database->query($sql, [':userId' => $userId, ':companyId' => $companyId]);
+        }
+        
         $registrationList = $stmt->fetchAll(PDO::FETCH_ASSOC);
-session_tracking('number of records found', count($registrationList));
+        session_tracking('number of records found', count($registrationList));
 
 
 //       // Get field mappings for each company
@@ -352,6 +390,31 @@ FROM bg_form_field_mappings WHERE `status`='active' and company_id = :companyId 
             $registrationList[$key]['FIELDMAPPING'] = $updatedFieldMappings;
         }
 
+        // Modify user details for test mode before returning
+        if ($test_mode && $userDetails) {
+            $timestamp = time();
+            // Use provided suffix or generate a random one
+            if (!empty($suffix)) {
+                $random = $suffix;
+            } else {
+                $random = substr(md5(uniqid(rand(), true)), 0, 8);
+            }
+            $test_email = "test-20-{$random}@birthday-gold.xyz";
+            
+            // Override sensitive fields with test data
+            $userDetails['profile_email'] = $test_email;
+            $userDetails['email'] = $test_email;
+            $userDetails['profile_username'] = "testuser_20_{$random}";
+            $userDetails['username'] = "testuser_20_{$random}";
+            $userDetails['profile_password'] = 'TestPass123!';
+            $userDetails['test_mode'] = true;
+            $userDetails['original_user_id'] = 20;
+            
+            session_tracking('TEST MODE - Modified user data', [
+                'test_email' => $test_email,
+                'test_username' => "testuser_20_{$random}"
+            ]);
+        }
 
         // Output as JSON
         return array(json_encode(['ADMINDETAILS' => $adminDetails,  'USERDETAILS' => $userDetails, 'REGISTRATIONLIST' => $registrationList]), $adminDetails, $userDetails, $registrationList);
@@ -414,6 +477,474 @@ FROM bg_form_field_mappings WHERE `status`='active' and company_id = :companyId 
         $response = curl_exec($ch);
         curl_close($ch);
         return $response;
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    # ELIGIBILITY SYSTEM METHODS
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    // Class constants for eligibility tables
+    const ELIGIBILITY_TABLE = 'bg_user_eligibility';
+    const REASONS_TABLE = 'bg_eligibility_reasons';
+    
+    // Reason ID constants for easy reference
+    const REASON_INCOMPLETE_PROFILE = 1;
+    const REASON_MISSING_PHONE = 2;
+    const REASON_MISSING_EMAIL = 3;
+    const REASON_MISSING_BIRTHDATE = 4;
+    const REASON_PASSWORD_REQUIREMENTS = 40;
+    const REASON_AGE_RESTRICTION = 61;
+    const REASON_ACCOUNT_SUSPENDED = 81;
+    
+    /**
+     * Check and store eligibility for a member/company combination
+     * @param int $member_id
+     * @param int $company_id
+     * @return int|null Reason ID if ineligible, null if eligible
+     */
+    public function checkAndStoreEligibility($member_id, $company_id) {
+        global $database;
+        
+        $member = $this->getMemberProfile($member_id);
+        $requirements = $this->getCompanyRequirements($company_id);
+        
+        $reason_id = $this->evaluateEligibility($member, $requirements);
+        
+        if ($reason_id) {
+            $this->storeEligibilityIssue($member_id, $company_id, $reason_id);
+        } else {
+            $this->removeEligibilityIssue($member_id, $company_id);
+        }
+        
+        return $reason_id;
+    }
+    
+    /**
+     * Get eligibility status for multiple companies
+     * @param int $member_id
+     * @param array $company_ids
+     * @return array Company ID => eligibility data
+     */
+    public function getCompanyEligibilities($member_id, $company_ids) {
+        global $database;
+        
+        if (empty($company_ids)) {
+            return array();
+        }
+        
+        $placeholders = array_map(function($i) { return ':company_' . $i; }, array_keys($company_ids));
+        $params = ['member_id' => $member_id];
+        foreach ($company_ids as $i => $id) {
+            $params['company_' . $i] = $id;
+        }
+        
+        $sql = "SELECT e.company_id, e.reason_id, r.message, r.code
+                FROM " . self::ELIGIBILITY_TABLE . " e
+                JOIN " . self::REASONS_TABLE . " r ON e.reason_id = r.id
+                WHERE e.member_id = :member_id
+                AND e.company_id IN (" . implode(',', $placeholders) . ")";
+        
+        $issues = $database->getrows($sql, $params);
+        $issues_by_company = [];
+        
+        foreach ($issues as $issue) {
+            $issues_by_company[$issue['company_id']] = $issue;
+        }
+        
+        $eligibilities = array();
+        foreach ($company_ids as $company_id) {
+            if (isset($issues_by_company[$company_id])) {
+                $eligibilities[$company_id] = array(
+                    'eligible' => false,
+                    'reason_id' => $issues_by_company[$company_id]['reason_id'],
+                    'message' => $issues_by_company[$company_id]['message'],
+                    'code' => $issues_by_company[$company_id]['code'],
+                    'action_url' => $this->getActionUrlForCode($issues_by_company[$company_id]['code'])
+                );
+            } else {
+                $eligibilities[$company_id] = array(
+                    'eligible' => true
+                );
+            }
+        }
+        
+        return $eligibilities;
+    }
+    
+    /**
+     * Evaluate eligibility in priority order
+     * @param object $member Member data object
+     * @param object $requirements Company requirements
+     * @return int|null Reason ID or null if eligible
+     */
+    private function evaluateEligibility($member, $requirements) {
+        // Critical account issues first
+        if ($member['status'] == 'suspended') return self::REASON_ACCOUNT_SUSPENDED;
+        if (!empty($member['fraud_flag'])) return 87; // fraud_flag
+        
+        // Basic profile requirements
+        if (empty($member['email'])) return self::REASON_MISSING_EMAIL;
+        if (!filter_var($member['email'], FILTER_VALIDATE_EMAIL)) return 8; // invalid_email
+        
+        if ($requirements->requires_phone && empty($member['phone'])) return self::REASON_MISSING_PHONE;
+        if ($requirements->requires_birthdate && empty($member['birthdate'])) return self::REASON_MISSING_BIRTHDATE;
+        
+        // Address requirements
+        if ($requirements->requires_address) {
+            if (empty($member['address']) && empty($member['address1'])) return 5; // missing_address
+        }
+        
+        // Password requirements (if we store password status)
+        if (!empty($member['password_expired'])) return 47; // password_expired
+        
+        // Verification requirements
+        if ($requirements->requires_email_verification && empty($member['email_verified'])) return 21; // email_unverified
+        if ($requirements->requires_phone_verification && empty($member['phone_verified'])) return 22; // phone_unverified
+        
+        // Age restrictions
+        if ($requirements->minimum_age && $this->getMemberAge($member) < $requirements->minimum_age) return self::REASON_AGE_RESTRICTION;
+        
+        // Location restrictions
+        if (!empty($requirements->restricted_states) && !empty($member['state'])) {
+            $restricted_states = json_decode($requirements->restricted_states, true);
+            if (is_array($restricted_states) && in_array($member['state'], $restricted_states)) {
+                return 62; // location_restricted
+            }
+        }
+        
+        return null; // Eligible
+    }
+    
+    /**
+     * Store eligibility issue
+     * @param int $member_id
+     * @param int $company_id
+     * @param int $reason_id
+     */
+    private function storeEligibilityIssue($member_id, $company_id, $reason_id) {
+        global $database;
+        
+        $sql = "INSERT INTO " . self::ELIGIBILITY_TABLE . " 
+                (member_id, company_id, reason_id) 
+                VALUES (:member_id, :company_id, :reason_id)
+                ON DUPLICATE KEY UPDATE 
+                reason_id = VALUES(reason_id),
+                last_checked = CURRENT_TIMESTAMP";
+        
+        $params = [
+            'member_id' => $member_id,
+            'company_id' => $company_id,
+            'reason_id' => $reason_id
+        ];
+        
+        $database->query($sql, $params);
+    }
+    
+    /**
+     * Remove eligibility issue (member is now eligible)
+     * @param int $member_id
+     * @param int $company_id
+     */
+    private function removeEligibilityIssue($member_id, $company_id) {
+        global $database;
+        
+        $sql = "DELETE FROM " . self::ELIGIBILITY_TABLE . " 
+                WHERE member_id = :member_id 
+                AND company_id = :company_id";
+        
+        $params = [
+            'member_id' => $member_id,
+            'company_id' => $company_id
+        ];
+        
+        $database->query($sql, $params);
+    }
+    
+    /**
+     * Get display-friendly reason
+     * @param int $reason_id
+     * @param bool $detailed Show specific message or general category
+     * @return array Reason data
+     */
+    public function getDisplayReason($reason_id, $detailed = false) {
+        global $database;
+        
+        // Group similar issues for cleaner display
+        if (!$detailed) {
+            // Password issues -> general message
+            if (in_array($reason_id, array(41, 42, 43, 44, 45, 46, 47))) {
+                $reason_id = self::REASON_PASSWORD_REQUIREMENTS;
+            }
+            
+            // Profile issues -> general message
+            if (in_array($reason_id, array(2, 3, 4, 5, 6, 7, 8))) {
+                $reason_id = self::REASON_INCOMPLETE_PROFILE;
+            }
+        }
+        
+        $sql = "SELECT * FROM " . self::REASONS_TABLE . " WHERE id = :reason_id";
+        return $database->getrow($sql, ['reason_id' => $reason_id]);
+    }
+    
+    /**
+     * Get member profile data needed for eligibility checks
+     * @param int $member_id
+     * @return array Member data
+     */
+    private function getMemberProfile($member_id) {
+        global $database;
+        
+        // Get user data
+        $sql = "SELECT u.*
+                FROM bg_users u 
+                WHERE u.user_id = :user_id";
+        
+        $user = $database->getrow($sql, ['user_id' => $member_id]);
+        
+        if ($user) {
+            // Check email verification status from validations table
+            $verify_sql = "SELECT COUNT(*) as verified 
+                          FROM bg_validations 
+                          WHERE user_id = :user_id 
+                          AND validation_type = 'email' 
+                          AND status = 'validated'
+                          AND validation_dt IS NOT NULL";
+            
+            $email_result = $database->getrow($verify_sql, ['user_id' => $member_id]);
+            $user['email_verified'] = $email_result['verified'] > 0 ? 1 : 0;
+            
+            // Check phone verification status
+            $phone_sql = "SELECT COUNT(*) as verified 
+                         FROM bg_validations 
+                         WHERE user_id = :user_id 
+                         AND validation_type = 'phone' 
+                         AND status = 'validated'
+                         AND validation_dt IS NOT NULL";
+            
+            $phone_result = $database->getrow($phone_sql, ['user_id' => $member_id]);
+            $user['phone_verified'] = $phone_result['verified'] > 0 ? 1 : 0;
+        }
+        
+        return $user;
+    }
+    
+    /**
+     * Get company requirements
+     * @param int $company_id
+     * @return object Requirements data
+     */
+    private function getCompanyRequirements($company_id) {
+        global $database;
+        
+        // Default requirements if none specified
+        $requirements = new stdClass();
+        $requirements->requires_phone = false;
+        $requirements->requires_birthdate = true; // Birthday Gold always needs birthdate
+        $requirements->requires_address = false;
+        $requirements->requires_email_verification = false;
+        $requirements->requires_phone_verification = false;
+        $requirements->minimum_age = 13;  // Default minimum age
+        $requirements->maximum_age = 120; // Default maximum age
+        $requirements->restricted_states = null;
+        $requirements->restricted_countries = null;
+        
+        // Get age requirements from bg_company_attributes (ABO extracted data)
+        $age_sql = "SELECT description FROM bg_company_attributes 
+                    WHERE company_id = :company_id 
+                    AND type = 'age_requirements' 
+                    AND name = 'birthday_program' 
+                    AND status = 'active'
+                    ORDER BY modify_dt DESC
+                    LIMIT 1";
+        
+        $age_result = $database->getrow($age_sql, ['company_id' => $company_id]);
+        
+        if ($age_result && !empty($age_result['description'])) {
+            $age_data = json_decode($age_result['description'], true);
+            if (is_array($age_data)) {
+                if (isset($age_data['minimum_age']) && is_numeric($age_data['minimum_age'])) {
+                    $requirements->minimum_age = (int)$age_data['minimum_age'];
+                }
+                if (isset($age_data['maximum_age']) && is_numeric($age_data['maximum_age'])) {
+                    $requirements->maximum_age = (int)$age_data['maximum_age'];
+                }
+            }
+        }
+        
+        // Check for verification requirements from company policies
+        $policy_sql = "SELECT name, description FROM bg_company_attributes 
+                      WHERE company_id = :company_id 
+                      AND type = 'policy' 
+                      AND status = 'active'
+                      AND name IN ('email_verification_required', 'phone_verification_required')";
+        
+        $policies = $database->getrows($policy_sql, ['company_id' => $company_id]);
+        
+        foreach ($policies as $policy) {
+            if ($policy['name'] === 'email_verification_required' && $policy['description'] === '1') {
+                $requirements->requires_email_verification = true;
+            }
+            if ($policy['name'] === 'phone_verification_required' && $policy['description'] === '1') {
+                $requirements->requires_phone_verification = true;
+            }
+        }
+        
+        // Get location restrictions if any
+        $location_sql = "SELECT description FROM bg_company_attributes 
+                        WHERE company_id = :company_id 
+                        AND type = 'location_restrictions' 
+                        AND status = 'active'
+                        LIMIT 1";
+        
+        $location_result = $database->getrow($location_sql, ['company_id' => $company_id]);
+        
+        if ($location_result && !empty($location_result['description'])) {
+            $location_data = json_decode($location_result['description'], true);
+            if (is_array($location_data)) {
+                if (isset($location_data['restricted_states']) && is_array($location_data['restricted_states'])) {
+                    $requirements->restricted_states = $location_data['restricted_states'];
+                }
+                if (isset($location_data['restricted_countries']) && is_array($location_data['restricted_countries'])) {
+                    $requirements->restricted_countries = $location_data['restricted_countries'];
+                }
+            }
+        }
+        
+        // For backward compatibility, also check bg_companies table
+        $company_sql = "SELECT * FROM bg_companies WHERE company_id = :company_id";
+        $company_data = $database->getrow($company_sql, ['company_id' => $company_id]);
+        
+        if ($company_data) {
+            if (!empty($company_data['min_age'])) {
+                $requirements->minimum_age = $company_data['min_age'];
+            }
+            if (!empty($company_data['max_age'])) {
+                $requirements->maximum_age = $company_data['max_age'];
+            }
+        }
+        
+        return $requirements;
+    }
+    
+    /**
+     * Mark member eligibility for refresh when profile changes
+     * @param int $member_id
+     */
+    public function markMemberEligibilityStale($member_id) {
+        global $database;
+        
+        $sql = "UPDATE " . self::ELIGIBILITY_TABLE . " 
+                SET last_checked = DATE_SUB(NOW(), INTERVAL 2 DAY)
+                WHERE member_id = :member_id";
+        
+        $database->query($sql, ['member_id' => $member_id]);
+    }
+    
+    /**
+     * Get eligibility statistics
+     * @return array Statistics data
+     */
+    public function getEligibilityStats() {
+        global $database;
+        
+        $stats = array();
+        
+        // Total issues
+        $sql = "SELECT COUNT(*) as total FROM " . self::ELIGIBILITY_TABLE;
+        $result = $database->getrow($sql);
+        $stats['total_issues'] = $result['total'] ?? 0;
+        
+        // Issues by reason
+        $sql = "SELECT r.code, r.message, COUNT(*) as count 
+                FROM " . self::ELIGIBILITY_TABLE . " e
+                JOIN " . self::REASONS_TABLE . " r ON e.reason_id = r.id
+                GROUP BY e.reason_id
+                ORDER BY count DESC
+                LIMIT 10";
+        
+        $stats['top_issues'] = $database->getrows($sql);
+        
+        // Stale records
+        $sql = "SELECT COUNT(*) as count 
+                FROM " . self::ELIGIBILITY_TABLE . "
+                WHERE last_checked < DATE_SUB(NOW(), INTERVAL 48 HOUR)";
+        
+        $result = $database->getrow($sql);
+        $stats['stale_records'] = $result['count'] ?? 0;
+        
+        // Affected users and companies
+        $sql = "SELECT 
+                COUNT(DISTINCT member_id) as affected_users,
+                COUNT(DISTINCT company_id) as affected_companies
+                FROM " . self::ELIGIBILITY_TABLE;
+        
+        $counts = $database->getrow($sql);
+        $stats['affected_users'] = $counts['affected_users'];
+        $stats['affected_companies'] = $counts['affected_companies'];
+        
+        return $stats;
+    }
+    
+    /**
+     * Get member age from birthdate
+     * @param array $member
+     * @return int Age in years
+     */
+    private function getMemberAge($member) {
+        if (empty($member['birthdate'])) {
+            return 0;
+        }
+        
+        $birthdate = new DateTime($member['birthdate']);
+        $today = new DateTime();
+        $age = $today->diff($birthdate);
+        
+        return $age->y;
+    }
+    
+    /**
+     * Get action URL for a specific reason code
+     * @param string $code Reason code
+     * @return string|null Action URL or null
+     */
+    private function getActionUrlForCode($code) {
+        $action_urls = array(
+            // Profile issues
+            'incomplete_profile' => '/myaccount/profile.php',
+            'missing_phone' => '/myaccount/profile.php',
+            'missing_email' => '/myaccount/profile.php',
+            'missing_birthdate' => '/myaccount/profile.php',
+            'missing_address' => '/myaccount/profile.php',
+            'missing_name' => '/myaccount/profile.php',
+            'invalid_phone' => '/myaccount/profile.php',
+            'invalid_email' => '/myaccount/profile.php',
+            
+            // Verification issues
+            'email_unverified' => '/myaccount/verify-email.php',
+            'phone_unverified' => '/myaccount/verify-phone.php',
+            'identity_unverified' => '/myaccount/verify-identity.php',
+            'address_unverified' => '/myaccount/verify-address.php',
+            
+            // Security issues
+            'password_requirements' => '/myaccount/security.php',
+            'missing_password' => '/myaccount/security.php',
+            'weak_password' => '/myaccount/security.php',
+            'password_no_number' => '/myaccount/security.php',
+            'password_no_special' => '/myaccount/security.php',
+            'password_no_uppercase' => '/myaccount/security.php',
+            'password_common' => '/myaccount/security.php',
+            'password_expired' => '/myaccount/security.php',
+            'mfa_required' => '/myaccount/2fa-setup.php',
+            
+            // Account issues
+            'account_suspended' => '/support/contact.php',
+            'account_inactive' => '/myaccount/',
+            'payment_required' => '/myaccount/billing.php',
+            'terms_not_accepted' => '/terms.php',
+            'fraud_flag' => '/support/contact.php'
+        );
+        
+        return isset($action_urls[$code]) ? $action_urls[$code] : null;
     }
 }
 

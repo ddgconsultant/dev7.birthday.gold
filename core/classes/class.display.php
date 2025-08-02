@@ -1346,21 +1346,54 @@ if (strpos($errormessage, 'alert') === false) {
 
 
 public function enrollerextensiondownload($options=[]){
-global $website;
-// Path to your manifest.json file
-$manifestPath = 'https://dev.birthday.gold/admin/bgreb_v3/chrome_extension/'.$website['bge_extensionversion'].'/manifest.json';
+global $website, $mode;
 
-  // Read the file contents
-  $manifestContents = file_get_contents($manifestPath);
-  
-  // Decode the JSON data
-  $manifestData = json_decode($manifestContents, true);
-  
-  // Get the version
-  $version = $manifestData['version'];
+// Force refresh if requested
+$forceRefresh = isset($options['refresh']) && $options['refresh'] === true;
+
+// Get current domain - use dev.birthday.gold for production, otherwise use current host
+if ($mode == 'production') {
+    $currentDomain = 'dev.birthday.gold';
+} else {
+    $currentDomain = $_SERVER['HTTP_HOST'] ?? 'dev.birthday.gold';
+}
+
+// Check if version is cached in session
+$sessionKey = 'bgreb_extension_version_' . md5($currentDomain . $website['bge_extensionversion']);
+$cachedVersion = $_SESSION[$sessionKey] ?? null;
+
+if (!$cachedVersion || $forceRefresh) {
+    // Path to your manifest.json file
+    $manifestPath = 'https://' . $currentDomain . '/admin/bgreb_v3/chrome_extension/'.$website['bge_extensionversion'].'/manifest.json';
+    
+    // Read the file contents
+    $manifestContents = @file_get_contents($manifestPath);
+    
+    if ($manifestContents) {
+        // Decode the JSON data
+        $manifestData = json_decode($manifestContents, true);
+        
+        // Get the version
+        $version = $manifestData['version'] ?? 'Unknown';
+        
+        // Cache in session for 5 minutes
+        $_SESSION[$sessionKey] = $version;
+        $_SESSION[$sessionKey . '_time'] = time();
+    } else {
+        $version = 'Unknown';
+    }
+} else {
+    // Check if cache is older than 5 minutes
+    $cacheTime = $_SESSION[$sessionKey . '_time'] ?? 0;
+    if ((time() - $cacheTime) > 300) {
+        // Cache expired, force refresh
+        return $this->enrollerextensiondownload(['refresh' => true]);
+    }
+    $version = $cachedVersion;
+}
   
  $button='
-  <a href="https://dev.birthday.gold/admin/bgreb_v3/produce-download?zip=1" class="btn btn-primary">Download Chrome Extension: v.' . $version . '</a>
+  <a href="https://' . $currentDomain . '/admin/bgreb_v3/produce-download?zip=1" class="btn btn-sm btn-primary">Download Chrome Extension: v.' . $version . '</a>
   ';
   return $button;
 }

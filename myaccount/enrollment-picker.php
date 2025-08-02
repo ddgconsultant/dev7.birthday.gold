@@ -7,6 +7,7 @@
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.allocationmanager.php');
 include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.configmanager.php');
+include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.enrollment.php');
 
 // Check login
 $activeuser = $account->isactive();
@@ -17,6 +18,7 @@ if (empty($activeuser)) {
 
 $allocationManager = new AllocationManager($database);
 $configManager = new ConfigManager($database);
+$enrollment = new Enrollment();
 
 // Get current user data using existing patterns from businessselect.php
 $current_user_data = $session->get('current_user_data');
@@ -102,6 +104,10 @@ if ($search_query) {
     }
 }
 
+// Get all company IDs for eligibility check
+$company_ids = array_column($companies, 'company_id');
+$eligibilities = $enrollment->getCompanyEligibilities($user_id, $company_ids);
+
 // Process companies to add additional data
 $processed_companies = [];
 foreach ($companies as $company) {
@@ -140,6 +146,9 @@ foreach ($companies as $company) {
     
     // Category for display
     $company['categories'] = $company['display_category'] ?? '';
+    
+    // Add eligibility information
+    $company['eligibility'] = $eligibilities[$company['company_id']] ?? ['eligible' => true];
     
     $processed_companies[] = $company;
 }
@@ -343,6 +352,16 @@ endif; ?>
                     <span class="category-tag value">$<?php echo number_format($company['total_value'], 0); ?> value</span>
                     <?php endif; ?>
                 </div>
+                
+                <?php if (!$company['eligibility']['eligible']): ?>
+                <div class="eligibility-warning mt-2">
+                    <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                    <span class="text-danger small"><?php echo htmlspecialchars($company['eligibility']['message']); ?></span>
+                    <?php if (!empty($company['eligibility']['action_url'])): ?>
+                    <a href="<?php echo htmlspecialchars($company['eligibility']['action_url']); ?>" class="small">Fix</a>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
             </div>
             
             <!-- Action Button -->
@@ -350,6 +369,13 @@ endif; ?>
                 <?php if ($company['is_enrolled']): ?>
                 <button class="action-btn enrolled" disabled>
                     <i class="bi bi-check-circle-fill"></i> <?php echo $label_tokened; ?>
+                </button>
+                <?php elseif (!$company['eligibility']['eligible']): ?>
+                <button class="action-btn disabled" disabled 
+                        data-bs-toggle="tooltip" 
+                        data-bs-placement="top" 
+                        title="<?php echo htmlspecialchars($company['eligibility']['message']); ?>">
+                    <i class="bi bi-exclamation-circle"></i> Not Eligible
                 </button>
                 <?php elseif ($balance['available_allocations'] > 0): ?>
                 <button class="action-btn enroll" 
@@ -597,6 +623,33 @@ body {
 /* Ensure header stays on top during transitions */
 .enrollment-header {
     transition: transform 0.3s ease-in-out;
+}
+
+/* Eligibility warning styles */
+.eligibility-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: #fff3cd;
+    border-radius: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.eligibility-warning i {
+    flex-shrink: 0;
+}
+
+.eligibility-warning a {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+/* Not eligible button styling */
+.action-btn.disabled[data-bs-toggle="tooltip"] {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
 }
 </style>
 

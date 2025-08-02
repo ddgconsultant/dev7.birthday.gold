@@ -533,6 +533,25 @@ $businessHours = $app->bg_businesshours();
                     <p class="admin-card-text">User interaction analytics</p>
                 </div>
             </a>
+            
+            <a href="/admin/eligibility-dashboard" class="admin-card">
+                <div class="admin-icon icon-system">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Eligibility Monitor
+                        <?php
+                        // Get count of stale eligibility records
+                        $stale_date = date('Y-m-d H:i:s', strtotime('-24 hours'));
+                        $stale_count = $database->query("SELECT COUNT(*) FROM bg_user_eligibility WHERE last_checked < '$stale_date'")->fetchColumn();
+                        if ($stale_count > 1000):
+                        ?>
+                        <span class="enrollment-badge"><?php echo number_format($stale_count); ?></span>
+                        <?php endif; ?>
+                    </h3>
+                    <p class="admin-card-text">Monitor user eligibility issues and requirements</p>
+                </div>
+            </a>
         </div>
         
         <?php if ($account->isadmin()): ?>
@@ -764,6 +783,26 @@ $businessHours = $app->bg_businesshours();
                 <div class="admin-content">
                     <h3 class="admin-card-title">Organization Chart</h3>
                     <p class="admin-card-text">Company organizational structure</p>
+                </div>
+            </a>
+        </div>
+        <?php endif; ?>
+        
+        <?php if ($current_user_data['username'] == 'ddgconsultant'): ?>
+        <!-- HR Management Section -->
+        <div class="section-header" style="margin-top: 3rem;">
+            <h2 class="section-title">HR Management</h2>
+            <p class="section-subtitle">Human resources and payroll management</p>
+        </div>
+        
+        <div class="admin-grid">
+            <a href="/admin/hr_handler.php" class="admin-card">
+                <div class="admin-icon icon-admin">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Payroll Management</h3>
+                    <p class="admin-card-text">Process monthly payroll for contractors</p>
                 </div>
             </a>
         </div>
