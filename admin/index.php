@@ -92,26 +92,36 @@ body {
     color: #6c757d;
 }
 
+/* CSS Variables for responsive spacing */
+:root {
+    --admin-grid-gap: 1.5rem;
+    --admin-grid-mb: 3rem;
+    --admin-card-padding: 1.5rem;
+    --admin-card-gap: 1rem;
+    --admin-icon-size: 48px;
+    --admin-icon-img-size: 40px;
+}
+
 /* Admin Cards Grid */
 .admin-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
+    gap: var(--admin-grid-gap);
+    margin-bottom: var(--admin-grid-mb);
 }
 
 /* Admin Card */
 .admin-card {
     background: white;
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: var(--admin-card-padding);
     border: 1px solid #e9ecef;
     transition: all 0.2s ease;
     cursor: pointer;
     text-decoration: none;
     display: flex;
-    align-items: flex-start;
-    gap: 1rem;
+    align-items: center; /* Changed to center for vertical alignment */
+    gap: var(--admin-card-gap);
 }
 
 .admin-card:hover {
@@ -123,8 +133,8 @@ body {
 
 .admin-icon {
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
+    width: var(--admin-icon-size);
+    height: var(--admin-icon-size);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -133,8 +143,8 @@ body {
 }
 
 .admin-icon img {
-    max-width: 40px;
-    max-height: 40px;
+    max-width: var(--admin-icon-img-size);
+    max-height: var(--admin-icon-img-size);
     width: auto;
     height: auto;
 }
@@ -223,6 +233,16 @@ body {
 
 /* Mobile adjustments */
 @media (max-width: 767px) {
+    /* Override CSS variables for mobile */
+    :root {
+        --admin-grid-gap: 0.25rem;
+        --admin-grid-mb: 1rem;
+        --admin-card-padding: 0.75rem;
+        --admin-card-gap: 0.75rem;
+        --admin-icon-size: 32px;
+        --admin-icon-img-size: 24px;
+    }
+    
     /* Remove Bootstrap default container padding on mobile */
     body > .container,
     body > .container-fluid {
@@ -230,18 +250,131 @@ body {
         padding-right: 0 !important;
     }
     
+    /* Compact hero section on mobile */
+    .content-header-admin {
+        padding: 1.5rem 0 !important;
+    }
+    
+    .content-header-admin h1 {
+        font-size: 1.75rem !important;
+        margin-top: 0 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .content-header-admin .lead {
+        font-size: 0.9rem !important;
+        margin-bottom: 1.5rem !important;
+        line-height: 1.4 !important;
+    }
+    
     /* Admin search positioning */
     .admin-search {
-        margin: -2.5rem auto 2rem; /* Move search higher on mobile */
+        margin: -1.5rem auto 1.5rem; /* Less negative margin on mobile */
         padding: 0 15px;
         position: relative;
-        z-index: 1100; /* Much higher to ensure it is above the header */
+        z-index: 1100;
+    }
+    
+    /* Smaller search input on mobile */
+    .search-input {
+        padding: 0.75rem 2.5rem 0.75rem 1rem !important;
+        font-size: 1rem !important;
+    }
+    
+    .search-icon {
+        right: 1rem !important;
     }
     
     /* Ensure search has white background on mobile */
     .admin-search .search-input {
         background: white;
         box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* Compact main content padding */
+    .main-content {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    /* Hide stats grid on mobile - too much space */
+    .stats-grid {
+        display: none !important;
+    }
+    
+    /* Compact section headers */
+    .section-header {
+        margin-bottom: 1rem !important;
+    }
+    
+    .section-title {
+        font-size: 1.25rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .section-subtitle {
+        font-size: 0.875rem !important;
+        display: none; /* Hide subtitles on mobile to save space */
+    }
+    
+    /* Mobile-specific adjustments */
+    .admin-icon {
+        font-size: 0.875rem !important;
+        border-radius: 8px !important;
+    }
+    
+    .admin-card-title {
+        font-size: 0.9375rem !important;
+        line-height: 1.2 !important;
+        margin-bottom: 0 !important;
+    }
+    
+    .admin-card-text {
+        display: none; /* Hide description text on mobile */
+    }
+    
+    /* Enrollment badge smaller on mobile */
+    .enrollment-badge {
+        font-size: 0.65rem !important;
+        padding: 0.15rem 0.4rem !important;
+    }
+    
+    /* Collapsible sections on mobile */
+    .mobile-collapse {
+        display: block;
+    }
+    
+    /* Add expand/collapse buttons for sections - mobile only */
+    .section-header {
+        cursor: pointer;
+        position: relative;
+        padding-right: 30px;
+    }
+    
+    .section-header::after {
+        content: "\\F282"; /* Bootstrap Icons chevron-down */
+        font-family: "bootstrap-icons";
+        position: absolute;
+        right: 0;
+        top: 0;
+        font-size: 1rem;
+        transition: transform 0.3s;
+    }
+    
+    .section-header.collapsed::after {
+        transform: rotate(-90deg);
+    }
+}
+
+/* Remove collapse styling on desktop */
+@media (min-width: 768px) {
+    .section-header {
+        cursor: default !important;
+        padding-right: 0 !important;
+    }
+    
+    .section-header::after {
+        display: none !important;
     }
 }
 
@@ -316,6 +449,31 @@ $businessHours = $app->bg_businesshours();
 
 <div class="main-content py-4 py-md-5 bg-light">
     <div class="container" style="max-width: 1400px;">
+        
+        <!-- Mobile Quick Access (only shown on mobile) -->
+        <div class="d-block d-md-none mb-3">
+            <div class="card">
+                <div class="card-body p-2">
+                    <div class="d-flex justify-content-around flex-wrap">
+                        <a href="/admin/redirect-enrollments" class="btn btn-sm btn-outline-primary m-1">
+                            <i class="bi bi-person-plus"></i> Enrollments
+                            <?php if ($enrollmentCount > 0): ?>
+                            <span class="badge bg-danger"><?php echo $enrollmentCount; ?></span>
+                            <?php endif; ?>
+                        </a>
+                        <a href="/admin/user-list-v2" class="btn btn-sm btn-outline-primary m-1">
+                            <i class="bi bi-people"></i> Users
+                        </a>
+                        <a href="/admin/business-submissions" class="btn btn-sm btn-outline-primary m-1">
+                            <i class="bi bi-inbox"></i> Submissions
+                        </a>
+                        <a href="/admin/eligibility-dashboard" class="btn btn-sm btn-outline-primary m-1">
+                            <i class="bi bi-shield-check"></i> Eligibility
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <!-- Quick Stats -->
         <?php if ($account->isadmin()): ?>
@@ -988,8 +1146,64 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         });
         
-        // Focus search input on page load
-        searchInput.focus();
+        // Focus search input on page load (not on mobile)
+        if (window.innerWidth > 767) {
+            searchInput.focus();
+        }
+    }
+    
+    // Mobile collapsible sections
+    if (window.innerWidth <= 767) {
+        // Add collapsible functionality to section headers
+        sectionHeaders.forEach((header, index) => {
+            const grid = header.nextElementSibling;
+            
+            // Skip if not followed by admin-grid
+            if (!grid || !grid.classList.contains(\'admin-grid\')) return;
+            
+            // Set initial state - collapse all except first section
+            if (index > 0) {
+                header.classList.add(\'collapsed\');
+                grid.style.display = \'none\';
+            }
+            
+            // Add click handler
+            header.addEventListener(\'click\', function(e) {
+                // Do not collapse if clicking on a link inside header
+                if (e.target.tagName === \'A\') return;
+                
+                this.classList.toggle(\'collapsed\');
+                const isCollapsed = this.classList.contains(\'collapsed\');
+                grid.style.display = isCollapsed ? \'none\' : \'\';
+                
+                // Save state to localStorage
+                const sectionTitle = this.querySelector(\'.section-title\').textContent;
+                const storageKey = `admin-section-${sectionTitle.replace(/\s+/g, \'-\')}`;
+                localStorage.setItem(storageKey, isCollapsed ? \'collapsed\' : \'expanded\');
+            });
+            
+            // Restore saved state
+            const sectionTitle = header.querySelector(\'.section-title\').textContent;
+            const storageKey = `admin-section-${sectionTitle.replace(/\s+/g, \'-\')}`;
+            const savedState = localStorage.getItem(storageKey);
+            
+            if (savedState === \'collapsed\') {
+                header.classList.add(\'collapsed\');
+                grid.style.display = \'none\';
+            } else if (savedState === \'expanded\' && index > 0) {
+                header.classList.remove(\'collapsed\');
+                grid.style.display = \'\';
+            }
+        });
+    } else {
+        // On desktop, ensure all sections are visible and remove collapse styling
+        sectionHeaders.forEach(header => {
+            header.classList.remove(\'collapsed\');
+            const grid = header.nextElementSibling;
+            if (grid && grid.classList.contains(\'admin-grid\')) {
+                grid.style.display = \'\';
+            }
+        });
     }
 });
 </script>

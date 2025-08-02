@@ -29,7 +29,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'add_post') {
         $tags = trim($tags . ', ' . $read_time . ' min read');
     }
     
-    $sql = "INSERT INTO bg_content (name, category, type, grouping, display_name, description, content, tags, rank, status, publish_dt, create_dt, modify_dt) 
+    $sql = "INSERT INTO bg_content (name, category, type, `grouping`, display_name, description, content, tags, `rank`, status, publish_dt, create_dt, modify_dt) 
             VALUES (?, 'blog', 'post', ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())";
     
     $stmt = $database->prepare($sql);
@@ -57,7 +57,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'update_post') {
         $tags = trim($tags . ', ' . $read_time . ' min read');
     }
     
-    $sql = "UPDATE bg_content SET name=?, grouping=?, display_name=?, description=?, content=?, tags=?, rank=?, status=?, modify_dt=NOW() WHERE id=?";
+    $sql = "UPDATE bg_content SET name=?, `grouping`=?, display_name=?, description=?, content=?, tags=?, `rank`=?, status=?, modify_dt=NOW() WHERE id=?";
     
     $stmt = $database->prepare($sql);
     if ($stmt->execute([$name, $grouping, $display_name, $description, $content, $tags, $rank, $status, $id])) {
