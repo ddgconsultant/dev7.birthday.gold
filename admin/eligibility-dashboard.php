@@ -9,6 +9,27 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 // Get statistics
 $stats = $enrollment->getEligibilityStats();
 
+// Check if all members have been processed
+$total_checks_sql = "SELECT 
+    (SELECT COUNT(*) FROM bg_users WHERE status = 'active') as active_users,
+    (SELECT COUNT(*) FROM bg_companies WHERE status = 'finalized') as active_companies";
+$total_counts = $database->getrow($total_checks_sql);
+
+$total_possible_checks = $total_counts['active_users'] * $total_counts['active_companies'];
+
+// Get how many have been checked in the last 24 hours
+$recent_checks_sql = "SELECT COUNT(*) as recent_checks 
+                     FROM bg_user_eligibility 
+                     WHERE last_checked >= DATE_SUB(NOW(), INTERVAL 24 HOUR)";
+$recent_result = $database->getrow($recent_checks_sql);
+$recent_checks = $recent_result['recent_checks'];
+
+// Calculate processing status
+$all_processed = ($stats['stale_records'] == 0);
+$processing_percentage = $total_possible_checks > 0 
+    ? round((($total_possible_checks - $stats['stale_records']) / $total_possible_checks) * 100, 1) 
+    : 100;
+
 // Handle actions
 $action = $_GET['action'] ?? '';
 $message = '';
@@ -100,7 +121,7 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="container-fluid my-4">
+<div class="container my-4">
     <h1>User Eligibility Dashboard</h1>
     
     <?php echo $display->formaterrormessage($message); ?>
@@ -146,6 +167,57 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
     </div>
     
+    <!-- Processing Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card <?php echo $all_processed ? 'border-success' : 'border-warning'; ?>">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="card-title mb-1">
+                                <?php if ($all_processed): ?>
+                                    <i class="bi bi-check-circle-fill text-success"></i> All Members Processed
+                                <?php else: ?>
+                                    <i class="bi bi-clock-history text-warning"></i> Processing In Progress
+                                <?php endif; ?>
+                            </h5>
+                            <p class="mb-0">
+                                <strong><?php echo number_format($processing_percentage, 1); ?>%</strong> of all user-company combinations have been checked.
+                                <br>
+                                <small class="text-muted">
+                                    <?php echo number_format($recent_checks); ?> checks completed in the last 24 hours.
+                                    Total possible: <?php echo number_format($total_possible_checks); ?> 
+                                    (<?php echo number_format($total_counts['active_users']); ?> users × <?php echo number_format($total_counts['active_companies']); ?> companies)
+                                </small>
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar <?php echo $all_processed ? 'bg-success' : 'bg-warning'; ?>" 
+                                     role="progressbar" 
+                                     style="width: <?php echo $processing_percentage; ?>%"
+                                     aria-valuenow="<?php echo $processing_percentage; ?>" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    <?php echo number_format($processing_percentage, 1); ?>%
+                                </div>
+                            </div>
+                            <?php if ($all_processed): ?>
+                                <small class="text-success mt-1 d-block">
+                                    <i class="bi bi-check-circle"></i> Last full check completed
+                                </small>
+                            <?php else: ?>
+                                <small class="text-muted mt-1 d-block">
+                                    <?php echo number_format($stats['stale_records']); ?> records pending
+                                </small>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Action Buttons -->
     <div class="card mb-4">
         <div class="card-header">
@@ -168,25 +240,25 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Charts Row -->
     <div class="row mb-4">
         <!-- Category Breakdown -->
-        <div class="col-md-6">
+        <div class="col-md-5">
             <div class="card">
                 <div class="card-header">
                     <h5>Issues by Category</h5>
                 </div>
-                <div class="card-body">
-                    <canvas id="categoryChart"></canvas>
+                <div class="card-body" style="max-height: 400px;">
+                    <canvas id="categoryChart" style="height: 300px;"></canvas>
                 </div>
             </div>
         </div>
         
         <!-- Top Issues -->
-        <div class="col-md-6">
+        <div class="col-md-7">
             <div class="card">
                 <div class="card-header">
                     <h5>Top 10 Issues</h5>
                 </div>
-                <div class="card-body">
-                    <canvas id="topIssuesChart"></canvas>
+                <div class="card-body" style="max-height: 400px;">
+                    <canvas id="topIssuesChart" style="width: 100%; height: 300px;"></canvas>
                 </div>
             </div>
         </div>
@@ -194,12 +266,16 @@ include($dir['core_components'] . '/bg_header.inc');
     
     <!-- Issue Details Table -->
     <div class="card mb-4">
-        <div class="card-header">
-            <h5>Issue Breakdown</h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Issue Breakdown</h5>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="viewToggle" role="switch">
+                <label class="form-check-label" for="viewToggle">Extended View</label>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped" id="issueTable">
                     <thead>
                         <tr>
                             <th>Issue</th>
@@ -215,8 +291,8 @@ include($dir['core_components'] . '/bg_header.inc');
                         <tr>
                             <td>
                                 <strong><?php echo htmlspecialchars($issue['message']); ?></strong>
-                                <br>
-                                <small class="text-muted"><?php echo htmlspecialchars($issue['code']); ?></small>
+                                <br class="issue-byline">
+                                <small class="text-muted issue-byline"><?php echo htmlspecialchars($issue['code']); ?></small>
                             </td>
                             <td>
                                 <span class="badge bg-secondary">
@@ -308,6 +384,23 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 </div>
 
+<!-- Styles for compact/extended view -->
+<style>
+/* Hide bylines by default (compact view) */
+.issue-byline {
+    display: none;
+}
+
+/* Show bylines when extended view is active */
+.extended-view .issue-byline {
+    display: inline;
+}
+
+.extended-view br.issue-byline {
+    display: block;
+}
+</style>
+
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -330,9 +423,16 @@ new Chart(categoryCtx, {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
-                position: 'bottom'
+                position: 'left',
+                labels: {
+                    padding: 10,
+                    font: {
+                        size: 11
+                    }
+                }
             }
         }
     }
@@ -352,6 +452,7 @@ new Chart(topIssuesCtx, {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         indexAxis: 'y',
         plugins: {
             legend: {
@@ -362,16 +463,24 @@ new Chart(topIssuesCtx, {
             x: {
                 beginAtZero: true
             }
+        },
+        layout: {
+            padding: {
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0
+            }
         }
     }
 });
 
-// Auto-refresh every 30 seconds if on dashboard
+// Auto-refresh every 300 seconds if on dashboard
 setTimeout(function() {
     if (!document.hidden && !window.location.search.includes('action=')) {
         location.reload();
     }
-}, 30000);
+}, 300000);
 
 // Handle process batch modal
 const processBatchModal = document.getElementById('processBatchModal');
@@ -382,6 +491,28 @@ processBatchModal.addEventListener('show.bs.modal', function (event) {
     // Update modal content
     document.getElementById('batchSizeText').textContent = batchSize;
     document.getElementById('processBatchConfirm').href = '?action=process_batch&limit=' + batchSize;
+});
+
+// Handle compact/extended view toggle
+const viewToggle = document.getElementById('viewToggle');
+const issueTable = document.getElementById('issueTable');
+
+// Load saved preference from localStorage
+const savedView = localStorage.getItem('eligibilityViewMode');
+if (savedView === 'extended') {
+    viewToggle.checked = true;
+    issueTable.classList.add('extended-view');
+}
+
+// Toggle event listener
+viewToggle.addEventListener('change', function() {
+    if (this.checked) {
+        issueTable.classList.add('extended-view');
+        localStorage.setItem('eligibilityViewMode', 'extended');
+    } else {
+        issueTable.classList.remove('extended-view');
+        localStorage.setItem('eligibilityViewMode', 'compact');
+    }
 });
 </script>
 
