@@ -25,6 +25,9 @@ $allocationManager = new AllocationManager($database);
 // Get user's current allocation balance
 $balance = $allocationManager->getUserBalance($user_id);
 
+// Get referral code
+$referralcode = $account->manageReferralCode();
+
 // Page setup
 $pagetitle = 'Earn More Enrollments';
 $additionalstyles .= '
@@ -225,7 +228,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 </div>
 
-<div class="container my-5">
+<div class="container my-5 pb-5">
     <div class="row">
         <div class="col-lg-8">
             <!-- Recommend Businesses Section -->
@@ -343,7 +346,7 @@ include($dir['core_components'] . '/bg_header.inc');
                             <div class="d-flex align-items-center gap-4">
                                 <div>
                                     <strong class="d-block">Your referral code:</strong>
-                                    <code class="fs-5">BG<?php echo strtoupper(substr(md5($user_id), 0, 6)); ?></code>
+                                    <code class="fs-5"><?php echo htmlspecialchars($referralcode['code']); ?></code>
                                 </div>
                                 <div>
                                     <div class="reward-amount">+5</div>
@@ -438,9 +441,10 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 </div>
 
+
 <script>
 function copyReferralCode() {
-    const code = 'BG<?php echo strtoupper(substr(md5($user_id), 0, 6)); ?>';
+    const code = '<?php echo htmlspecialchars($referralcode['code']); ?>';
     navigator.clipboard.writeText(code).then(function() {
         // Show success message
         const btn = event.target.closest('button');
