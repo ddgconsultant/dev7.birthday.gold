@@ -1,14 +1,13 @@
 <?PHP
+
+$addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.productmanager.php');
 
 // Page metadata
 $pagedata['pagetitle'] = 'Pricing Plans - Birthday Gold';
 $pagedata['metakeywords'] = 'Birthday Gold Pricing, Birthday Rewards Plans, Birthday Deals Pricing';
 $pagedata['metadescriptions'] = 'Choose the perfect Birthday Gold plan for you. Free, Gold, and Lifetime options available. Start collecting birthday rewards from 500+ businesses!';
 
-// Initialize ProductManager
-$productManager = new ProductManager($database, $qik);
 
 // Get the product version from site configuration
 global $website;
@@ -18,12 +17,12 @@ $selectedVersion = $_REQUEST['version'] ?? $website['plan_version'];
 $selectedAccountType = $_REQUEST['account_type'] ?? 'individual';
 
 // Get all available plans regardless of account type
-$availablePlans = $productManager->getAllProductsWithFeatures($selectedVersion);
+$availablePlans = $productmanager->getAllProductsWithFeatures($selectedVersion);
 $planCount = count($availablePlans);
 
 // Get available account types for the selector
-$accountTypes = $productManager->getAvailableAccountTypes($selectedVersion);
-$accountTypeConfig = $productManager->getAccountTypeConfig($selectedAccountType);
+$accountTypes = $productmanager->getAvailableAccountTypes($selectedVersion);
+$accountTypeConfig = $productmanager->getAccountTypeConfig($selectedAccountType);
 
 // Handle AJAX requests
 if (isset($_REQUEST['ajax_action'])) {
@@ -32,7 +31,7 @@ if (isset($_REQUEST['ajax_action'])) {
     switch ($_REQUEST['ajax_action']) {
         case 'get_plans':
             $accountType = $_REQUEST['account_type'] ?? 'individual';
-            $plans = $productManager->getProductsWithFeatures($accountType, $selectedVersion);
+            $plans = $productmanager->getProductsWithFeatures($accountType, $selectedVersion);
             
             // Format for frontend
             $response = [];
@@ -753,7 +752,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <div class="account-type-details">
                     <?php
                     foreach ($accountTypes as $accountType) {
-                        $config = $productManager->getAccountTypeConfig($accountType['account_type']);
+                        $config = $productmanager->getAccountTypeConfig($accountType['account_type']);
                         echo '<div class="mb-4">
                                 <h6><i class="bi ' . $config['icon'] . ' me-2"></i>' . $config['label'] . '</h6>
                                 <p>' . $config['description'] . '</p>

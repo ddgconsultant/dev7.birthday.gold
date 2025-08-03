@@ -42,26 +42,11 @@ $additionalstyles .= '
     min-height: calc(100vh - 200px);
     padding-top: 2rem;
     padding-bottom: 2rem;
-    background: #f8f9fa;
 }
 
-/* Header Section */
-.page-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #212529;
-    margin-bottom: 0.25rem;
-}
-
-.page-header p {
-    font-size: 1.25rem;
-    color: #6c757d;
-    margin: 0;
+/* Ensure content header is flush with navbar */
+.content-header-admin {
+    margin-top: 0 !important;
 }
 
 /* Main Card Styling */
@@ -297,7 +282,7 @@ $additionalstyles .= '
 }
 
 /* Remove extra padding/margins */
-.main-content.container {
+.main-content.container-fluid {
     max-width: 100%;
     padding: 0;
 }
@@ -353,21 +338,24 @@ $additionalstyles .= '
 ';
 
 $bodycontentclass = '';
+$header_flush = true; // Ensure header content is flush with admin header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_admin_leftpanel.inc');
 
 
 ?>
 
-<div class="container-fluid main-content">
+<!-- Admin Header Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <h1 class="mb-3"><i class="bi bi-people me-3"></i>User Management</h1>
+        <p class="lead mb-4">View and manage all platform users</p>
+    </div>
+</div>
+
+<div class="container main-content">
     <div class="row">
         <div class="col-12">
-            <!-- Page Header -->
-            <div class="page-header">
-                <h1>User Management</h1>
-                <p>View and manage all platform users</p>
-            </div>
             
             <!-- Main Content Card -->
             <div class="card main-card">
