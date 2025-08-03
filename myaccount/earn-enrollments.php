@@ -29,42 +29,12 @@ $balance = $allocationManager->getUserBalance($user_id);
 $pagetitle = 'Earn More Enrollments';
 $additionalstyles .= '
 <style>
-/* Hero Section */
-.earn-hero {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 4rem 0;
-    margin-bottom: 3rem;
-    position: relative;
-    overflow: hidden;
-}
-
-.earn-hero::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.3; }
-    50% { transform: scale(1.1); opacity: 0.1; }
-}
-
-.earn-hero-content {
-    position: relative;
-    z-index: 1;
-}
-
-.balance-display {
-    font-size: 4rem;
+/* Balance Display in Header */
+.content-header-dark .balance-display {
+    font-size: 3rem;
     font-weight: 700;
     line-height: 1;
-    margin-bottom: 0.5rem;
+    color: #fff;
 }
 
 /* Method Cards */
@@ -234,21 +204,28 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<!-- Hero Section -->
-<div class="earn-hero">
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
     <div class="container">
-        <div class="earn-hero-content text-center">
-            <h1 class="display-4 mb-4">Earn More Enrollments</h1>
-            <div class="balance-display"><?php echo $balance['available_allocations']; ?></div>
-            <p class="lead mb-0">Available Enrollments</p>
-            <?php if ($balance['pending_allocations'] > 0): ?>
-            <p class="mt-2 mb-0"><small><?php echo $balance['pending_allocations']; ?> pending approval</small></p>
-            <?php endif; ?>
+        <div class="row align-items-center">
+            <div class="col-md-8 text-center text-md-start">
+                <h1 class="mb-3"><i class="bi bi-stars me-3"></i>Earn More Enrollments</h1>
+                <p class="lead mb-0">Discover ways to increase your enrollment allocations</p>
+            </div>
+            <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
+                <div class="d-inline-block text-center">
+                    <div class="balance-display"><?php echo $balance['available_allocations']; ?></div>
+                    <p class="mb-0">Available Enrollments</p>
+                    <?php if ($balance['pending_allocations'] > 0): ?>
+                    <p class="mt-1 mb-0"><small class="text-warning"><i class="bi bi-clock-history me-1"></i><?php echo $balance['pending_allocations']; ?> pending</small></p>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="container">
+<div class="container my-5">
     <div class="row">
         <div class="col-lg-8">
             <!-- Recommend Businesses Section -->
