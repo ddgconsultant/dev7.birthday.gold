@@ -176,13 +176,13 @@ if ($app->formposted()) {
                                 :company_id,
                                 :created_by,
                                 NOW(),
-                                'revoked'  // Using 'revoked' temporarily to indicate pending approval
+                                'pending'
                             )";
                 
                 $allocation_result = $database->query($alloc_sql, [
                     'user_id' => $current_user_data['user_id'],
                     'year' => date('Y'),
-                    'comment' => '[PENDING APPROVAL] Business recommendation reward: ' . $business_name,
+                    'comment' => 'Business recommendation reward: ' . $business_name . ' (pending approval)',
                     'company_id' => $company_id,
                     'created_by' => $current_user_data['user_id']
                 ]);
