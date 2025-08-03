@@ -29,17 +29,17 @@ $balance = $allocationManager->getUserBalance($user_id);
 $pagetitle = 'Earn More Enrollments';
 $additionalstyles .= '
 <style>
-.earn-header {
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
+/* Hero Section */
+.earn-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 2rem 0;
-    margin-bottom: 2rem;
+    padding: 4rem 0;
+    margin-bottom: 3rem;
     position: relative;
     overflow: hidden;
 }
 
-/* Animated background effect */
-.earn-header::before {
+.earn-hero::before {
     content: "";
     position: absolute;
     top: -50%;
@@ -51,74 +51,180 @@ $additionalstyles .= '
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.1); opacity: 0.5; }
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0.1; }
 }
 
-.earn-header h1 {
+.earn-hero-content {
     position: relative;
     z-index: 1;
-    color: #fff;
 }
 
-.earn-header p {
-    position: relative;
-    z-index: 1;
-    color: #fff;
-}
-
-.balance-card {
-    background: white;
-    border-radius: 1rem;
-    padding: 2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.balance-number {
-    font-size: 3rem;
+.balance-display {
+    font-size: 4rem;
     font-weight: 700;
-    color: #667eea;
-    margin: 0;
+    line-height: 1;
+    margin-bottom: 0.5rem;
 }
 
-.balance-label {
-    color: #6c757d;
-    font-size: 1.1rem;
+/* Method Cards */
+.method-section {
+    margin-bottom: 3rem;
 }
 
-.earn-method-card {
+.method-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.method-icon {
+    width: 48px;
+    height: 48px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.method-card {
     background: white;
-    border-radius: 0.5rem;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1rem;
-    border: 2px solid #f0f0f0;
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.earn-method-card:hover {
+.method-card:hover {
     border-color: #667eea;
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
 }
 
-.allocation-amount {
+.method-card.featured {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+}
+
+.method-card.featured::before {
+    content: "FEATURED";
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #667eea;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 1rem;
+    border-bottom-left-radius: 12px;
+}
+
+.reward-amount {
     font-size: 2rem;
     font-weight: 700;
     color: #28a745;
 }
 
-.earn-icon {
-    width: 60px;
-    height: 60px;
-    background: #f8f9fa;
-    border-radius: 50%;
-    display: flex;
+.method-status {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.method-status.available {
+    color: #28a745;
+}
+
+.method-status.completed {
+    color: #6c757d;
+}
+
+.method-status.locked {
+    color: #dc3545;
+}
+
+/* Quick Stats */
+.stats-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    height: 100%;
+}
+
+.stat-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-value {
     font-size: 1.5rem;
+    font-weight: 700;
+    color: #212529;
+}
+
+/* Progress Bar */
+.allocation-progress {
+    margin-top: 1rem;
+}
+
+.progress-custom {
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-custom {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* CTA Sections */
+.cta-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.cta-section h3 {
     margin-bottom: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .earn-hero {
+        padding: 2rem 0;
+    }
+    
+    .balance-display {
+        font-size: 3rem;
+    }
+    
+    .method-card {
+        padding: 1rem;
+    }
+    
+    .reward-amount {
+        font-size: 1.5rem;
+    }
 }
 </style>
 ';
@@ -128,161 +234,252 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="earn-header">
+<!-- Hero Section -->
+<div class="earn-hero">
     <div class="container">
-        <h1 class="mb-0">Earn More Enrollments</h1>
+        <div class="earn-hero-content text-center">
+            <h1 class="display-4 mb-4">Earn More Enrollments</h1>
+            <div class="balance-display"><?php echo $balance['available_allocations']; ?></div>
+            <p class="lead mb-0">Available Enrollments</p>
+            <?php if ($balance['pending_allocations'] > 0): ?>
+            <p class="mt-2 mb-0"><small><?php echo $balance['pending_allocations']; ?> pending approval</small></p>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
-<div class="container main-content">
-    <!-- Current Balance -->
-    <div class="balance-card">
-        <p class="balance-label">Your Current Balance</p>
-        <h2 class="balance-number"><?php echo $balance['available_allocations']; ?></h2>
-        <p class="balance-label">available enrollments</p>
-    </div>
-
-    <!-- Ways to Earn -->
+<div class="container">
     <div class="row">
         <div class="col-lg-8">
-            <h2 class="mb-4">Ways to Earn Enrollments</h2>
-            
-            <!-- Bonus Allocations -->
-            <div class="mb-5">
-                <h3 class="h5 mb-3">🎁 Bonus Enrollments</h3>
-                
-                <div class="earn-method-card">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <div class="earn-icon">🎉</div>
-                        </div>
-                        <div class="col">
-                            <h4 class="h5 mb-1">Welcome Bonus</h4>
-                            <p class="text-muted mb-2">Get 5 bonus enrollments when you sign up</p>
-                            <span class="badge bg-success">Available</span>
-                        </div>
-                        <div class="col-auto text-end">
-                            <div class="allocation-amount">+5</div>
-                            <p class="text-muted mb-0">enrollments</p>
-                        </div>
+            <!-- Recommend Businesses Section -->
+            <div class="method-section">
+                <div class="method-header">
+                    <div class="method-icon" style="background: #d4edda;">
+                        <i class="bi bi-building-add text-success"></i>
+                    </div>
+                    <div>
+                        <h2 class="h3 mb-0">Recommend Businesses</h2>
+                        <p class="text-muted mb-0">Earn rewards by helping us grow our directory</p>
                     </div>
                 </div>
                 
-                <div class="earn-method-card">
+                <div class="method-card featured">
                     <div class="row align-items-center">
-                        <div class="col-auto">
-                            <div class="earn-icon">🏆</div>
-                        </div>
                         <div class="col">
-                            <h4 class="h5 mb-1">Profile Completion</h4>
-                            <p class="text-muted mb-2">Complete your profile to earn 3 bonus enrollments</p>
-                            <span class="badge bg-success">Available</span>
-                        </div>
-                        <div class="col-auto text-end">
-                            <div class="allocation-amount">+3</div>
-                            <p class="text-muted mb-0">enrollments</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="earn-method-card">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <div class="earn-icon">👥</div>
-                        </div>
-                        <div class="col">
-                            <h4 class="h5 mb-1">Refer a Friend</h4>
-                            <p class="text-muted mb-2">Earn 2 enrollments for each friend who signs up</p>
-                            <span class="badge bg-success">Available</span>
-                        </div>
-                        <div class="col-auto text-end">
-                            <div class="allocation-amount">+2</div>
-                            <p class="text-muted mb-0">enrollments</p>
+                            <h4 class="h5 mb-2">Submit Business Recommendations</h4>
+                            <p class="text-muted mb-3">Know a business that offers birthday rewards? Share it with our community!</p>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div>
+                                    <div class="reward-amount text-success">+1</div>
+                                    <small class="text-muted">Immediate reward</small>
+                                </div>
+                                <div class="text-muted">+</div>
+                                <div>
+                                    <div class="reward-amount text-success">+2</div>
+                                    <small class="text-muted">When someone enrolls</small>
+                                </div>
+                            </div>
+                            <a href="/myaccount/recommend-business" class="btn btn-success">
+                                <i class="bi bi-plus-circle me-2"></i>Recommend a Business
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Purchase Options -->
-            <div class="mb-5">
-                <h3 class="h5 mb-3">💳 Upgrade Your Plan</h3>
-                <p class="text-muted mb-3">Get more enrollments with our premium plans</p>
+            <!-- Quick Actions Section -->
+            <div class="method-section">
+                <div class="method-header">
+                    <div class="method-icon" style="background: #cfe2ff;">
+                        <i class="bi bi-lightning-charge-fill text-primary"></i>
+                    </div>
+                    <div>
+                        <h2 class="h3 mb-0">Quick Actions</h2>
+                        <p class="text-muted mb-0">Complete these tasks to earn instant rewards</p>
+                    </div>
+                </div>
                 
-                <div class="earn-method-card">
-                    <h4 class="h5 mb-1">Premium Plan</h4>
-                    <p class="text-muted mb-2">Unlock 25 annual enrollments</p>
-                    <p class="h4 mb-0">$49.99/year</p>
-                    <a href="/myaccount/subscription" class="btn btn-primary mt-3">View Plans</a>
+                <div class="method-card">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-person-circle fs-4 text-primary me-3 mt-1"></i>
+                                <div class="flex-grow-1">
+                                    <h4 class="h5 mb-1">Complete Your Profile</h4>
+                                    <p class="text-muted mb-2">Add your birthday and preferences to unlock personalized recommendations</p>
+                                    <div class="method-status available">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        Available
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto text-center">
+                            <div class="reward-amount">+3</div>
+                            <small class="text-muted d-block">enrollments</small>
+                            <a href="/myaccount/profile" class="btn btn-sm btn-primary mt-2">Complete Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="method-card">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-envelope-check fs-4 text-primary me-3 mt-1"></i>
+                                <div class="flex-grow-1">
+                                    <h4 class="h5 mb-1">Verify Your Email</h4>
+                                    <p class="text-muted mb-2">Confirm your email address to secure your account</p>
+                                    <div class="method-status completed">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        Completed
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto text-center">
+                            <div class="reward-amount text-muted">+2</div>
+                            <small class="text-muted d-block">enrollments</small>
+                            <button class="btn btn-sm btn-secondary mt-2" disabled>Earned</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Special Offers -->
-            <div class="mb-5">
-                <h3 class="h5 mb-3">⭐ Special Offers</h3>
-                <div class="earn-method-card">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <div class="earn-icon">📧</div>
-                        </div>
-                        <div class="col">
-                            <h4 class="h5 mb-1">Subscribe to Newsletter</h4>
-                            <p class="text-muted mb-0">Get 5 bonus enrollments when you subscribe to our weekly newsletter</p>
-                        </div>
-                        <div class="col-auto">
-                            <a href="/myaccount/preferences" class="btn btn-outline-primary">Subscribe</a>
-                        </div>
+            <!-- Referral Section -->
+            <div class="method-section">
+                <div class="method-header">
+                    <div class="method-icon" style="background: #f8d7da;">
+                        <i class="bi bi-people-fill text-danger"></i>
+                    </div>
+                    <div>
+                        <h2 class="h3 mb-0">Refer Friends</h2>
+                        <p class="text-muted mb-0">Share Birthday Gold with friends and earn rewards</p>
                     </div>
                 </div>
                 
-                <div class="earn-method-card">
+                <div class="method-card">
                     <div class="row align-items-center">
-                        <div class="col-auto">
-                            <div class="earn-icon">📱</div>
-                        </div>
                         <div class="col">
-                            <h4 class="h5 mb-1">Download Mobile App</h4>
-                            <p class="text-muted mb-0">Get 10 bonus enrollments when you download our mobile app</p>
+                            <h4 class="h5 mb-2">Invite Your Friends</h4>
+                            <p class="text-muted mb-3">Get rewarded when your friends join and start earning birthday rewards</p>
+                            <div class="d-flex align-items-center gap-4">
+                                <div>
+                                    <strong class="d-block">Your referral code:</strong>
+                                    <code class="fs-5">BG<?php echo strtoupper(substr(md5($user_id), 0, 6)); ?></code>
+                                </div>
+                                <div>
+                                    <div class="reward-amount">+5</div>
+                                    <small class="text-muted">per friend</small>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-auto">
-                            <button class="btn btn-outline-primary" disabled>Coming Soon</button>
+                            <button class="btn btn-outline-primary" onclick="copyReferralCode()">
+                                <i class="bi bi-clipboard me-2"></i>Copy Code
+                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Upgrade CTA -->
+            <div class="cta-section">
+                <i class="bi bi-rocket-takeoff fs-1 text-primary mb-3 d-block"></i>
+                <h3>Need More Enrollments?</h3>
+                <p class="text-muted mb-4">Upgrade to Premium and get unlimited annual enrollments</p>
+                <a href="/myaccount/subscription" class="btn btn-primary btn-lg">
+                    <i class="bi bi-star-fill me-2"></i>View Premium Plans
+                </a>
             </div>
         </div>
 
-        <!-- Side Stats -->
+        <!-- Sidebar -->
         <div class="col-lg-4">
-            <h3 class="h5 mb-3">Your Enrollment Stats</h3>
-            <div class="card">
-                <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        <li class="mb-2">
-                            <strong>Available Enrollments:</strong> 
-                            <span class="text-primary"><?php echo $balance['available_allocations']; ?></span>
-                        </li>
-                        <li class="mb-2">
-                            <strong>Plan Enrollments:</strong> 
-                            <span><?php echo $balance['plan_allocations'] ?? 10; ?></span>
-                        </li>
-                        <li class="mb-2">
-                            <strong>Bonus Enrollments:</strong> 
-                            <span><?php echo ($balance['available_allocations'] - ($balance['plan_allocations'] ?? 10)) > 0 ? ($balance['available_allocations'] - ($balance['plan_allocations'] ?? 10)) : 0; ?></span>
-                        </li>
-                        <li class="mb-2">
-                            <strong>Used Enrollments:</strong> 
-                            <span><?php echo $balance['total_used'] ?? 0; ?></span>
-                        </li>
-                    </ul>
+            <!-- Stats Card -->
+            <div class="stats-card mb-4">
+                <h3 class="h5 mb-3">Your Allocation Summary</h3>
+                
+                <div class="stat-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Available Now</span>
+                        <span class="stat-value text-primary"><?php echo $balance['available_allocations']; ?></span>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Total Earned</span>
+                        <span class="stat-value"><?php echo $balance['total_earned']; ?></span>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Total Used</span>
+                        <span class="stat-value"><?php echo $balance['total_used']; ?></span>
+                    </div>
+                </div>
+                
+                <?php if ($balance['pending_allocations'] > 0): ?>
+                <div class="stat-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Pending</span>
+                        <span class="stat-value text-warning"><?php echo $balance['pending_allocations']; ?></span>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <div class="allocation-progress mt-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">Usage</small>
+                        <small class="text-muted"><?php echo $balance['total_used']; ?>/<?php echo $balance['total_earned']; ?></small>
+                    </div>
+                    <div class="progress-custom">
+                        <div class="progress-bar-custom" style="width: <?php echo $balance['total_earned'] > 0 ? ($balance['total_used'] / $balance['total_earned'] * 100) : 0; ?>%"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <a href="/myaccount/allocation-history" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-clock-history me-2"></i>View History
+                    </a>
                 </div>
             </div>
             
-            <div class="mt-3 text-center">
-                <a href="/myaccount/enrollment-history" class="btn btn-sm btn-outline-secondary">View Full History</a>
+            <!-- Help Card -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-question-circle me-2"></i>Need Help?
+                    </h5>
+                    <p class="card-text">Learn more about how allocations work and how to maximize your earnings.</p>
+                    <a href="/help/allocations" class="btn btn-sm btn-outline-primary">Learn More</a>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function copyReferralCode() {
+    const code = 'BG<?php echo strtoupper(substr(md5($user_id), 0, 6)); ?>';
+    navigator.clipboard.writeText(code).then(function() {
+        // Show success message
+        const btn = event.target.closest('button');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check me-2"></i>Copied!';
+        btn.classList.remove('btn-outline-primary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-primary');
+        }, 2000);
+    });
+}
+</script>
 
 <?php
 include($dir['core_components'] . '/bg_footer.inc');
