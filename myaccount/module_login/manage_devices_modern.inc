@@ -111,15 +111,15 @@ foreach ($device_result as $logrow) {
             <div class="device-actions">
                 ' . (!$is_current ? '
                 <button type="button" 
-                    class="btn btn-sm btn-warning" 
+                    class="btn btn-sm btn-danger" 
                     onclick="reportDevice(\'' . htmlspecialchars($logrow['name']) . '\', \'' . htmlspecialchars($deviceType . ' - ' . $browser) . '\', \'' . htmlspecialchars($locationStr) . '\')">
                     <i class="bi bi-exclamation-triangle me-1"></i>Report
                 </button>
-                <a href="/myaccount/loginhistory?view=devices&act=delete&devicelist=' . $logrow['name'] . '&_token=' . $display->inputcsrf_token('tokenonly') . '" 
-                    class="btn btn-sm btn-danger" 
-                    onclick="return confirm(\'Remove this device? You will need to log in again on this device.\');">
+                <button type="button" 
+                    class="btn btn-sm btn-warning" 
+                    onclick="confirmRemoveDevice(\'' . htmlspecialchars($logrow['name']) . '\', \'' . htmlspecialchars($deviceType . ' - ' . $browser) . '\')">
                     <i class="bi bi-trash me-1"></i>Remove
-                </a>' : '<span class="text-muted">Cannot remove current device</span>') . '
+                </button>' : '<span class="text-muted">Cannot remove current device</span>') . '
             </div>
         </div>';
     }
@@ -138,16 +138,10 @@ echo '
 // Show delete all button only if more than one device
 if (count($devicelist) > 1) {
     echo '
-        <form method="POST" action="/myaccount/loginhistory" class="d-inline">
-            <input type="hidden" name="act" value="delete">
-            <input type="hidden" name="view" value="devices">
-            <input type="hidden" name="_token" value="' . $display->inputcsrf_token('tokenonly') . '">
-            <input type="hidden" name="devicelist" value="' . implode(',', $devicelist) . '">
-            <button type="submit" class="btn btn-sm btn-outline-danger" 
-                onclick="return confirm(\'Remove all devices? You will need to log in again on each device.\');">
-                Delete All Devices
-            </button>
-        </form>';
+        <button type="button" class="btn btn-sm btn-outline-danger" 
+            onclick="confirmRemoveAllDevices()">
+            Delete All Devices
+        </button>';
 }
 
 echo '
@@ -222,6 +216,94 @@ echo '
   </div>
 </div>
 
+<!-- Remove Device Modal -->
+<div class="modal fade" id="removeDeviceModal" tabindex="-1" aria-labelledby="removeDeviceModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeDeviceModalLabel">
+          <i class="bi bi-laptop me-2"></i>Remove Device
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">Remove this device from your saved logins?</p>
+        
+        <div class="bg-light p-3 rounded mb-3">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-laptop fs-4 me-3 text-muted"></i>
+            <div>
+              <div class="fw-bold" id="removeDeviceInfo"></div>
+              <small class="text-muted">This device will no longer stay logged in</small>
+            </div>
+          </div>
+        </div>
+        
+        <p class="text-muted small mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          You can always log in again and choose "Remember Me" to re-add this device.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="GET" action="/myaccount/loginhistory" style="display: inline;">
+          <input type="hidden" name="view" value="devices">
+          <input type="hidden" name="act" value="delete">
+          <input type="hidden" name="devicelist" id="removeDeviceId" value="">
+          <input type="hidden" name="_token" value="' . $display->inputcsrf_token('tokenonly') . '">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check me-1"></i>Remove Device
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Remove All Devices Modal -->
+<div class="modal fade" id="removeAllDevicesModal" tabindex="-1" aria-labelledby="removeAllDevicesModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="removeAllDevicesModalLabel">
+          <i class="bi bi-shield-x me-2"></i>Remove All Devices
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <strong>Warning!</strong> This action will remove ALL trusted devices from your account.
+        </div>
+        
+        <p>You are about to remove <strong>' . count($devicelist) . ' devices</strong> from your trusted devices list.</p>
+        
+        <div class="alert alert-warning">
+          <h6 class="alert-heading">Important:</h6>
+          <ul class="mb-0">
+            <li>You will need to log in again on each device</li>
+            <li>All "Remember Me" sessions will be terminated</li>
+            <li>This action cannot be undone</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" action="/myaccount/loginhistory" style="display: inline;">
+          <input type="hidden" name="act" value="delete">
+          <input type="hidden" name="view" value="devices">
+          <input type="hidden" name="_token" value="' . $display->inputcsrf_token('tokenonly') . '">
+          <input type="hidden" name="devicelist" value="' . implode(',', $devicelist) . '">
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i>Yes, Remove All Devices
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script>
 // Report device functionality
 function reportDevice(deviceId, deviceInfo, location) {
@@ -237,17 +319,104 @@ function reportDevice(deviceId, deviceInfo, location) {
 }
 
 function confirmReport() {
-    // In production, this would submit a security report
-    alert("Security report submitted. We recommend changing your password immediately.");
+    // Submit the security report via AJAX
+    const deviceId = window.reportedDeviceId;
     
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById("reportDeviceModal"));
-    modal.hide();
+    // Create form data
+    const formData = new FormData();
+    formData.append("action", "report_device");
+    formData.append("device_id", deviceId);
+    formData.append("_token", "' . $display->inputcsrf_token('tokenonly') . '");
     
-    // Redirect to security settings
-    if (confirm("Would you like to go to Security Settings to change your password?")) {
-        window.location.href = "/myaccount/security-settings";
-    }
+    // Submit report
+    fetch("/myaccount/ajax/security-report.php", {
+        method: "POST",
+        body: formData,
+        credentials: "same-origin"
+    })
+    .then(response => {
+        if (!response.ok) {
+            console.error("HTTP Error:", response.status, response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("Security report response:", data);
+        if (data.success) {
+            // Close the report modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById("reportDeviceModal"));
+            modal.hide();
+            
+            // Show success alert at top of page
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <strong>Security report submitted successfully!</strong> Our security team will review your report. 
+                    We recommend you <a href="/myaccount/security-settings" class="alert-link">change your password</a> immediately.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+            
+            // Insert alert at the beginning of login-container
+            const container = document.querySelector(".login-container");
+            if (container) {
+                container.insertAdjacentHTML("afterbegin", alertHtml);
+                // Scroll to top to show the alert
+                window.scrollTo(0, 0);
+            }
+        } else {
+            // Close modal and show error alert
+            const modal = bootstrap.Modal.getInstance(document.getElementById("reportDeviceModal"));
+            modal.hide();
+            
+            const errorHtml = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    <strong>Error:</strong> ${data.error || "Failed to submit security report"}. Please try again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>`;
+            
+            const container = document.querySelector(".login-container");
+            if (container) {
+                container.insertAdjacentHTML("afterbegin", errorHtml);
+                window.scrollTo(0, 0);
+            }
+        }
+    })
+    .catch(error => {
+        console.error("Error submitting report:", error);
+        // Close modal and show error
+        const modal = bootstrap.Modal.getInstance(document.getElementById("reportDeviceModal"));
+        modal.hide();
+        
+        const errorHtml = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                There was an error submitting your security report. Please try again.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>`;
+        
+        const container = document.querySelector(".login-container");
+        if (container) {
+            container.insertAdjacentHTML("afterbegin", errorHtml);
+            window.scrollTo(0, 0);
+        }
+    });
+}
+
+// Remove device functionality
+function confirmRemoveDevice(deviceId, deviceInfo) {
+    document.getElementById("removeDeviceInfo").textContent = deviceInfo;
+    document.getElementById("removeDeviceId").value = deviceId;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById("removeDeviceModal"));
+    modal.show();
+}
+
+// Remove all devices functionality
+function confirmRemoveAllDevices() {
+    const modal = new bootstrap.Modal(document.getElementById("removeAllDevicesModal"));
+    modal.show();
 }
 </script>';
 ?>

@@ -99,9 +99,9 @@ $outputcontent.= '
 
 <div class="modal-body">
 <!-- Name Field -->
-<div class="mb-3">
-<label for="edit-name" class="form-label">Name</label>
-<input type="text" class="form-control" id="edit-name" name="name" value="'.$row['name'].'">
+<div class="floating-label-group">
+<input type="text" class="form-control floating-input" id="edit-name" name="name" placeholder=" " value="'.$row['name'].'" required>
+<label for="edit-name" class="floating-label">Name</label>
 </div>
 
 ';
@@ -131,9 +131,12 @@ case 'special':
 $outputcontent .= '
 <!-- Special Fields -->
 <!-- Value Field -->
-<div class="mb-3">
-<label for="edit-password" class="form-label">Value</label>
-<input type="password" class="form-control" id="edit-password" name="password" placeholder="Enter Value" autocomplete="new-password">
+<div class="floating-label-group password-input-group">
+<input type="password" class="form-control floating-input" id="edit-password" name="password" placeholder=" " autocomplete="new-password" value="'.htmlspecialchars($row['encrypted_value'] ?? '').'">
+<label for="edit-password" class="floating-label">Value</label>
+<button type="button" class="password-toggle-btn" onclick="togglePasswordField(\'edit-password\')">
+<i class="bi bi-eye" id="edit-password-toggle-icon"></i>
+</button>
 </div>
 <input type="hidden" id="hiddenFieldId" name="passwordstrength" value="100">
 ';
@@ -195,18 +198,18 @@ $("#multiple-checkboxes").multiselect();
 
 $outputcontent.= '
 <!-- Users/Groups Field -->
-<div class="mb-3">
-<label for="edit-users-groups" class="form-label">Users/Groups</label>
-<input type="text" class="form-control" id="edit-users-groups" name="users_groups" values="">
+<div class="floating-label-group">
+<input type="text" class="form-control floating-input" id="edit-users-groups" name="users_groups" placeholder=" " value="">
+<label for="edit-users-groups" class="floating-label">Users/Groups</label>
 </div>
 ';
 
 
 $outputcontent.= '
 <!-- Notes Field -->
-<div class="mb-3">
-<label for="edit-notes" class="form-label">Notes</label>
-<textarea class="form-control" id="edit-notes" name="notes" rows="10">'.htmlspecialchars($row['notes']).'</textarea>
+<div class="floating-label-group">
+<textarea class="form-control floating-input" id="edit-notes" name="notes" placeholder=" " rows="10">'.htmlspecialchars($row['notes']).'</textarea>
+<label for="edit-notes" class="floating-label">Notes</label>
 </div>
 
 <!-- Files or Photos Field -->

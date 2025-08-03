@@ -21,6 +21,7 @@ if (isset($_REQUEST['uid'])) {
 
 $workinguserdata = $account->getuserdata($workingUser, 'user_id');
 $displaysection = $_REQUEST['view'] ?? '';
+$sessionid = $_REQUEST['sessionid'] ?? '';
 
 
 
@@ -46,6 +47,7 @@ if (isset($_REQUEST['act']) && ($_REQUEST['act'] == 'delete') && ($app->formpost
   // Get current device ID from cookies to check if we need to clear cookies
   $current_device_id = $_COOKIE['bg_device_id'] ?? $_COOKIE['bgdeviceid'] ?? null;
   $should_clear_cookies = false;
+  $devices_deleted = 0;
   
   foreach ($deviceList as $device_id) {
       if (!empty($device_id)) {
@@ -65,12 +67,21 @@ if (isset($_REQUEST['act']) && ($_REQUEST['act'] == 'delete') && ($app->formpost
                   WHERE user_id=:user_id AND device_id=:device_id AND validation_type='bgrememberme_autologin'  and `status`='cookie'";
           $stmt = $database->prepare($sql);
           $stmt->execute([':user_id' => $current_user_data['user_id'], ':device_id' => $device_id]);
+          
+          $devices_deleted++;
       }
   }
   
   // If the current device was deleted, clear the rememberme cookies
   if ($should_clear_cookies) {
       $account->clearRememberMeCookies();
+  }
+
+  // Set success message in session
+  if ($devices_deleted == 1) {
+      $_SESSION['device_success_message'] = 'Device has been successfully removed.';
+  } else if ($devices_deleted > 1) {
+      $_SESSION['device_success_message'] = 'All devices have been successfully removed.';
   }
 
   $goto = '/myaccount/loginhistory';
@@ -336,6 +347,33 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
     padding: 0.35em 0.85em;
 }
 
+/* Clickable session entries */
+.timeline-entry[onclick] {
+    cursor: pointer;
+    position: relative;
+}
+
+.timeline-entry[onclick]:hover {
+    background-color: #f8f9fa;
+    border-color: #0d6efd;
+}
+
+.timeline-entry[onclick]::after {
+    content: "\\F5D0";
+    font-family: "bootstrap-icons";
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #0d6efd;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.timeline-entry[onclick]:hover::after {
+    opacity: 1;
+}
+
 /* Square session badges for timeline */
 .session-badge {
     border-radius: 4px !important;
@@ -377,6 +415,402 @@ include($dir['core_components'] . '/bg_header.inc');
 echo '<div class="container my-5 pt-5">
 <div class="login-container">
 ';
+
+// Display success message if exists
+if (isset($_SESSION['device_success_message'])) {
+    echo '<div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            ' . htmlspecialchars($_SESSION['device_success_message']) . '
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>';
+    unset($_SESSION['device_success_message']);
+}
+
+// Check if we're viewing session details
+if (!empty($sessionid)) {
+    // Verify user has permission to view session details
+    $canViewSession = false;
+    
+    // Check if user is admin
+    if ($account->isadmin()) {
+        $canViewSession = true;
+    } else {
+        // Check if this is their own session or an impersonated session
+        $sql = "SELECT * FROM bg_logintracking 
+                WHERE user_id = :user_id 
+                AND description LIKE :session_pattern 
+                AND `status` = 'A' 
+                LIMIT 1";
+        $stmt = $database->prepare($sql);
+        $stmt->execute([
+            ':user_id' => $workinguserdata['user_id'],
+            ':session_pattern' => '%"session_id":"' . $sessionid . '"%'
+        ]);
+        $loginRecord = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($loginRecord && (strpos($loginRecord['name'] ?? '', 'IMPERSONATED') !== false || 
+                            strpos($loginRecord['name'] ?? '', 'ADMIN') !== false)) {
+            $canViewSession = true;
+        }
+    }
+    
+    if ($canViewSession) {
+        // Add custom styles for session details
+        $additionalstyles .= '
+        <style>
+        .session-details-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .session-summary-card {
+            background: #f8f9fa;
+            border: none;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .session-stat {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .session-stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #0d6efd;
+            margin-bottom: 0.25rem;
+        }
+        
+        .session-stat-label {
+            color: #6c757d;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .activity-card {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+        
+        .activity-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .activity-header {
+            padding: 1rem;
+            background: #fff;
+            border-bottom: 1px solid #e9ecef;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .activity-header:hover {
+            background: #f8f9fa;
+        }
+        
+        .activity-time {
+            font-weight: 600;
+            color: #212529;
+            margin-right: 1rem;
+        }
+        
+        .activity-page {
+            color: #0d6efd;
+            flex: 1;
+        }
+        
+        .activity-user {
+            color: #6c757d;
+            font-size: 0.875rem;
+            margin-left: 1rem;
+        }
+        
+        .activity-toggle {
+            color: #6c757d;
+            transition: transform 0.2s ease;
+        }
+        
+        .activity-card.expanded .activity-toggle {
+            transform: rotate(180deg);
+        }
+        
+        .activity-details {
+            display: none;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .activity-card.expanded .activity-details {
+            display: block;
+        }
+        
+        .detail-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            color: #495057;
+            display: inline-block;
+            min-width: 120px;
+        }
+        
+        .detail-value {
+            color: #6c757d;
+        }
+        
+        .detail-json {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            font-family: monospace;
+            font-size: 0.813rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        @media (max-width: 768px) {
+            .session-stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .activity-header {
+                flex-wrap: wrap;
+            }
+            
+            .activity-time {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+        }
+        </style>
+        <script>
+        function toggleActivity(element) {
+            const card = element.closest(".activity-card");
+            card.classList.toggle("expanded");
+        }
+        </script>
+        ';
+        
+        // Display session details
+        echo '<div class="session-details-container">
+                <div class="mb-4">
+                    <a href="/myaccount/loginhistory" class="btn btn-sm btn-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Login History
+                    </a>
+                </div>';
+        
+        // Fetch session tracking data with limit to prevent memory issues
+        $sql = "SELECT * FROM bg_sessiontracking 
+                WHERE sessionid = :sessionid 
+                ORDER BY create_dt ASC
+                LIMIT 500";
+        $stmt = $database->prepare($sql);
+        $stmt->execute([':sessionid' => $sessionid]);
+        $sessionData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Check if there are more records
+        $countSql = "SELECT COUNT(*) as total FROM bg_sessiontracking WHERE sessionid = :sessionid";
+        $countStmt = $database->prepare($countSql);
+        $countStmt->execute([':sessionid' => $sessionid]);
+        $totalCount = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+        
+        if (!empty($sessionData)) {
+            // Calculate session duration
+            $sessionStart = new DateTime($sessionData[0]['create_dt']);
+            $sessionEnd = new DateTime(end($sessionData)['create_dt']);
+            $duration = $sessionStart->diff($sessionEnd);
+            
+            // Session summary card
+            echo '<div class="session-summary-card">
+                    <h5 class="mb-4">
+                        <i class="bi bi-activity me-2"></i>Session Overview
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-3 col-6">
+                            <div class="session-stat">
+                                <div class="session-stat-value">' . count($sessionData) . '</div>
+                                <div class="session-stat-label">Pages Viewed</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="session-stat">
+                                <div class="session-stat-value">' . $duration->format('%H:%I:%S') . '</div>
+                                <div class="session-stat-label">Duration</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="session-stat">
+                                <div class="session-stat-value">' . $sessionStart->format('g:i A') . '</div>
+                                <div class="session-stat-label">Start Time</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="session-stat">
+                                <div class="session-stat-value">' . $sessionEnd->format('g:i A') . '</div>
+                                <div class="session-stat-label">End Time</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">Session ID: ' . htmlspecialchars($sessionid) . '</small>
+                    </div>
+                  </div>';
+            
+            // Activity timeline
+            echo '<h6 class="mb-3">
+                    <i class="bi bi-clock-history me-2"></i>Activity Timeline
+                    <small class="text-muted ms-2">Click on any activity to view details</small>
+                  </h6>';
+            
+            // Show notice if data is limited
+            if ($totalCount > 500) {
+                echo '<div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        This session has ' . number_format($totalCount) . ' total activities. Showing first 500 for performance reasons.
+                      </div>';
+            }
+            
+            $activityIndex = 0;
+            foreach ($sessionData as $activity) {
+                $activityTime = new DateTime($activity['create_dt']);
+                $activityIndex++;
+                
+                echo '<div class="activity-card" id="activity-' . $activityIndex . '">
+                        <div class="activity-header" onclick="toggleActivity(this)">
+                            <span class="activity-time">
+                                <i class="bi bi-clock me-1"></i>' . $activityTime->format('g:i:s A') . '
+                            </span>
+                            <span class="activity-page">
+                                <i class="bi bi-file-earmark me-1"></i>' . htmlspecialchars($activity['page'] ?? 'Unknown Page') . '
+                            </span>
+                            <span class="activity-user">
+                                <i class="bi bi-person me-1"></i>' . htmlspecialchars($activity['username'] ?? 'Guest') . '
+                            </span>
+                            <span class="activity-toggle">
+                                <i class="bi bi-chevron-down"></i>
+                            </span>
+                        </div>
+                        <div class="activity-details">';
+                
+                // Basic details
+                echo '<div class="detail-item">
+                        <span class="detail-label">IP Address:</span>
+                        <span class="detail-value">' . htmlspecialchars($activity['ip'] ?? 'Unknown') . '</span>
+                      </div>';
+                
+                if (!empty($activity['site'])) {
+                    echo '<div class="detail-item">
+                            <span class="detail-label">Site:</span>
+                            <span class="detail-value">' . htmlspecialchars($activity['site']) . '</span>
+                          </div>';
+                }
+                
+                // Parse and display tracking data
+                if (!empty($activity['tracking_data'])) {
+                    $trackingData = json_decode($activity['tracking_data'], true);
+                    if (is_array($trackingData)) {
+                        echo '<div class="detail-item">
+                                <span class="detail-label">Tracking Data:</span>
+                                <div class="detail-json"><pre style="margin: 0; white-space: pre-wrap;">' . 
+                                htmlspecialchars(json_encode($trackingData, JSON_PRETTY_PRINT)) . 
+                                '</pre></div>
+                              </div>';
+                    }
+                }
+                
+                // Parse and display session data if available
+                if (!empty($activity['session_data'])) {
+                    $sessionDataParsed = json_decode($activity['session_data'], true);
+                    if (is_array($sessionDataParsed) && !empty($sessionDataParsed)) {
+                        echo '<div class="detail-item">
+                                <span class="detail-label">Session Data:</span>
+                                <div class="detail-json"><pre style="margin: 0; white-space: pre-wrap;">' . 
+                                htmlspecialchars(json_encode($sessionDataParsed, JSON_PRETTY_PRINT)) . 
+                                '</pre></div>
+                              </div>';
+                    }
+                }
+                
+                echo '</div>
+                      </div>';
+            }
+            
+            // Show raw data for debugging (admin only)
+            if ($account->isadmin()) {
+                echo '<div class="mt-4">
+                        <div class="card">
+                            <div class="card-header" onclick="toggleActivity(this)" style="cursor: pointer;">
+                                <i class="bi bi-code-slash me-2"></i>Raw Session Data (Admin View) - Limited to first 10 entries
+                                <span class="float-end">
+                                    <i class="bi bi-chevron-down"></i>
+                                </span>
+                            </div>
+                            <div class="card-body" style="display: none;">
+                                <pre style="font-size: 0.8rem; max-height: 400px; overflow-y: auto;">';
+                
+                // Limit raw data to prevent memory issues
+                $limitedData = array_slice($sessionData, 0, 10);
+                foreach ($limitedData as $index => $data) {
+                    // Remove large fields that might cause memory issues
+                    unset($data['request_data']);
+                    unset($data['server_data']);
+                    if (isset($data['session_data'])) {
+                        $data['session_data'] = '(truncated)';
+                    }
+                    if (isset($data['tracking_data'])) {
+                        $data['tracking_data'] = '(truncated)';
+                    }
+                    echo "Entry " . ($index + 1) . ":\n";
+                    echo htmlspecialchars(json_encode($data, JSON_PRETTY_PRINT)) . "\n\n";
+                }
+                
+                if (count($sessionData) > 10) {
+                    echo "... and " . (count($sessionData) - 10) . " more entries";
+                }
+                
+                echo '</pre>
+                            </div>
+                        </div>
+                      </div>';
+            }
+        } else {
+            echo '<div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    No session tracking data found for this session ID.
+                  </div>';
+        }
+        
+        echo '</div>'; // Close session-details-container
+        echo '</div></div>'; // Close original containers
+        include($dir['core_components'] . '/bg_footer.inc');
+        $app->outputpage();
+        exit;
+    } else {
+        // User does not have permission
+        echo '<div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                You do not have permission to view this session.
+              </div>';
+    }
+}
 
 // Tab navigation
 $device_result = $account->user_activedevices($workinguserdata['user_id']);

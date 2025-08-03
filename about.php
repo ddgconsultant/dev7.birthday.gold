@@ -243,8 +243,10 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 
                 <div class="mt-4">
-                    <a href="/signup" class="btn-get-started me-3">Get Started Free</a>
-                    <a href="/how" class="btn btn-outline-primary btn-lg px-4">Learn More</a>
+                    <a href="/signup" class="btn-get-started">Get Started Free</a>
+                    <div class="mt-3">
+                        <a href="/how" class="btn btn-outline-primary btn-lg px-4">Learn More</a>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,14 +1,11 @@
-    <h5 class="mb-0 mt-5">Notifications Settings</h5>
-    <p>Select notifications you want to receive</p>
-    <hr class="my-4" />
-    <strong class="mb-0">Security</strong>
+    <h6 class="mb-0 text-muted">Security</h6>
     <p>Control security alerts you will be notified about.</p>
     <div class="list-group mb-5 shadow">
         <div class="list-group-item">
             <div class="row align-items-center">
                 <div class="col">
-                    <strong class="mb-0">Unusual Activity Notifications</strong>
-                    <p class="text-muted mb-0">Get alerts when unusual activity is detected on your account, helping you to quickly respond to potential security threats.</p>
+                    <div class="mb-0 fw-bold">Unusual Activity Notifications</div>
+                    <p class="text-muted mb-0 small">Get alerts when unusual activity is detected on your account, helping you to quickly respond to potential security threats.</p>
                 </div>
 
                 <div class="col-auto">
@@ -21,14 +18,14 @@
         </div>
     </div>
     <hr class="my-4" />
-    <strong class="mb-0">System</strong>
+    <h6 class="mb-0 text-muted">System</h6>
     <p>Please enable system alerts you will get.</p>
     <div class="list-group mb-5 shadow">
         <div class="list-group-item">
             <div class="row align-items-center">
                 <div class="col">
-                    <strong class="mb-0">Notify me about new features and updates</strong>
-                    <p class="text-muted mb-0">Receive notifications about new features, enhancements, and important updates to keep your experience up-to-date.</p>
+                    <div class="mb-0 fw-bold">Notify me about new features and updates</div>
+                    <p class="text-muted mb-0 small">Receive notifications about new features, enhancements, and important updates to keep your experience up-to-date.</p>
                 </div>
 
                 <div class="col-auto">
@@ -42,8 +39,8 @@
         <div class="list-group-item">
             <div class="row align-items-center">
                 <div class="col">
-                    <strong class="mb-0">Notify me by email for the latest news</strong>
-                    <p class="text-muted mb-0">Stay updated with the latest news and updates by receiving email notifications directly to your inbox.</p>
+                    <div class="mb-0 fw-bold">Notify me by email for the latest news</div>
+                    <p class="text-muted mb-0 small">Stay updated with the latest news and updates by receiving email notifications directly to your inbox.</p>
                 </div>
 
                 <div class="col-auto">
@@ -57,8 +54,8 @@
         <div class="list-group-item">
             <div class="row align-items-center">
                 <div class="col">
-                    <strong class="mb-0">Notify me about tips on using my account</strong>
-                    <p class="text-muted mb-0">Receive helpful tips and guidance on how to effectively use your account features and settings.</p>
+                    <div class="mb-0 fw-bold">Notify me about tips on using my account</div>
+                    <p class="text-muted mb-0 small">Receive helpful tips and guidance on how to effectively use your account features and settings.</p>
                 </div>
 
                 <div class="col-auto">

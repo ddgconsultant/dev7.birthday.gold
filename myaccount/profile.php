@@ -732,14 +732,19 @@ include($dir['core_components'] . '/bg_header.inc');
 
 ### nav-myaccount.php  DISPLAYS THE WIZARD WHEN $wizardmode = true
 #include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/nav-myaccount.php');
+?>
 
-include($dir['core_components'] . '/bg_user_profileheader.inc');
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-person-circle me-3"></i>My Profile</h1>
+            <p class="lead mb-0">Manage your enrollment profile information</p>
+        </div>
+    </div>
+</div>
 
-
-
-
-
-
+<?php
 
 
 
@@ -761,7 +766,7 @@ if ($locked) {
 }
 
 echo '
-<div class="container profile-container mt-4">
+<div class="container profile-container my-5">
 ' . $showtip . '
 <section id="body" class="mt-1 pt-1">
 <div class="row">

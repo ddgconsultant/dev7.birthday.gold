@@ -214,6 +214,7 @@ echo '                   <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-3 
                         <a class="dropdown-item" href="/admin/user-list"><i class="bi bi-list-ul"></i> User List</a>
                         <a class="dropdown-item long-text" href="/admin/brands"><i class="bi bi-briefcase"></i> '.ucfirst($website['bizname']).' Management</a>
                         <a class="dropdown-item short-text" href="/admin/brands"><i class="bi bi-briefcase"></i> '.ucfirst($website['biznames']).'</a>
+                        <a class="dropdown-item" href="/admin/security-reports"><i class="bi bi-shield-exclamation"></i> Security Reports</a>
                         <a class="dropdown-item long-text" href="/admin/redirect-metabase"><i class="bi bi-bar-chart"></i> Charts and Graphs</a>
                         <a class="dropdown-item long-text" href="/admin/systemavailability"><i class="bi bi-cpu"></i> System Availability</a>
                         <a class="dropdown-item short-text" href="/admin/systemavailability"><i class="bi bi-cpu"></i> Systems</a>

@@ -101,33 +101,39 @@ if ($current_user_data['account_plan'] != 'free') {
 #-------------------------------------------------------------------------------
 
 $bodycontentclass = '';
+
+// Add v7 theme CSS
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+?>
 
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-card-checklist me-3"></i>Enrollment Dashboard</h1>
+            <p class="lead mb-0">Manage your birthday reward enrollments and track your progress</p>
+        </div>
+    </div>
+</div>
+
+<?php
 echo '
-<div class="container mt-0 pt-0 main-content">
+<div class="container mt-5 pt-5 main-content">
 ' .
     $display->formaterrormessage($errormessage) . '
   ';
-
-
-
-    echo '    
-<div class="container main-content mt-0 pt-0">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-  <h2 class="mb-0">Enrollment Dashboard</h2>
-  <a href="/myaccount/" class="btn btn-sm btn-outline-secondary">Back To Account Home</a>
-</div>
-';
 
 #-------------------------------------------------------------------------------
 # SHOW ENROLLMENT DETAILS
 #-------------------------------------------------------------------------------
 
 ### ------------------------------------------------------------------------------
-echo '<div class="content-panel mx-0 ">
+echo '<div class="row">
+<div class="col-lg-8 mx-auto">
+<div class="row g-4">
 <div class="col-12 mb-4">
     <!-- Enrollment Details Card -->
     <div class="card h-100 border-start-lg border-start-primary">
@@ -197,12 +203,11 @@ if ($plandatafeatures['upgradeable'] == 1 || $plandatafeatures['upgradeable'] ==
 echo '    </div>
     </div>
 </div>
-</div>
 
-</div>
-</div>
-</div>
-</div>';
+</div><!-- End row g-4 -->
+</div><!-- End col-lg-8 -->
+</div><!-- End row -->
+</div><!-- End container -->';
 
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

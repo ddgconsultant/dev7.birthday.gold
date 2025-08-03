@@ -416,7 +416,7 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
     color: #666;
     font-weight: 500;
     font-size: 16px;
-    text-transform: uppercase;
+    /* text-transform: uppercase; removed for proper casing */
     letter-spacing: 0.5px;
     transition: color 0.2s ease;
     border: none;
@@ -673,7 +673,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </ul>
             <ul class="nav-tabs-clean mb-0">
                 <li class="nav-tab-clean settings-tab">
-                    <a href="/myaccount/manage-mail#settings" id="settingsButton">
+                    <a href="#settings" id="settingsButton">
                         <i class="bi bi-gear-fill"></i>
                     </a>
                 </li>
@@ -988,6 +988,22 @@ if ($total_pages > 1) {
                     </div>
                 </div>
             </div>
+            
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="bi bi-gear me-2"></i>BGInbox Settings</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="bg-light p-4 text-center rounded">
+                            <i class="bi bi-gear fs-1 text-muted mb-3 d-block"></i>
+                            <h5>Settings Coming Soon</h5>
+                            <p class="text-muted">BGInbox settings and preferences will be available here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1044,10 +1060,18 @@ function activateTab(targetHash) {
         if (targetPane) {
             targetPane.classList.add('show', 'active');
         }
+        
+        // Update URL hash without scrolling
+        history.replaceState(null, null, targetHash);
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if URL has a hash and activate corresponding tab
+    if (window.location.hash) {
+        activateTab(window.location.hash);
+    }
+    
     // Ensure filter bar starts collapsed on mobile
     if (window.innerWidth < 768) {
         const filterBar = document.getElementById('filterBar');

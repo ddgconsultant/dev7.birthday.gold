@@ -1,16 +1,22 @@
 <?php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-// Assuming $user_plan is retrieved from the user's session or database
-// Example: $user_plan = 'gold';
-
+// Check if user is logged in
+if (!$account->isactive()) {
+    header('Location: /login?redirect=' . urlencode($_SERVER['REQUEST_URI']));
+    exit();
+}
 
 #-------------------------------------------------------------------------------
 # PREP VARIABLES
 #-------------------------------------------------------------------------------
 
-$plans = ['free', 'gold', 'lifetime'];
-$user_plan = 'gold'; // This should be dynamically set based on the actual user's plan
+// Include user account details to get proper plan information
+include_once($dir['core_components'] . '/user_getaccountdetails.inc');
+
+// Get user's actual plan from their account data
+$user_plan = $current_user_data['account_plan'] ?? 'free';
+$user_product_id = $current_user_data['account_product_id'] ?? null;
 
 $outputm='';
 
@@ -41,46 +47,169 @@ if ($app->formposted()) {
 # DISPLAY THE PAGE
 #-------------------------------------------------------------------------------
 
+// Add v7 theme CSS for content-header-dark class
+$additionalstyles .= '<link href="/public/css/v7/bg_theme.css" rel="stylesheet">';
+
 $additionalstyles .= '
 <style>
-.hover-card {
-    perspective: 1000px;
+/* Enhanced Plan Details Styles */
+.plan-details-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
 }
 
-.hover-card .card {
-    width: 99.5%;
-    height: 200px; /* Set a fixed height for the cards */
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
-    position: relative;
+.feature-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 2rem;
+    height: 100%;
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
 }
 
-.hover-card:hover .card {
-    transform: rotateY(180deg);
+.feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #cbd5e0;
 }
 
-.card-front, .card-back {
-    position: absolute;
-    width: 100%;
-    height: 100%; /* Ensure the back face has the same height as the card */
-    backface-visibility: hidden;
-    border-radius: 15px;
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
 }
 
-.card-front {
-    background-color: #fff;
+.feature-icon.primary {
+    background: #2d3748;
+    color: #FFD700;
 }
 
-.card-back {
-    background-color: #ddd !important;
-    transform: rotateY(180deg);
+.feature-icon.success {
+    background: #1a1a1a;
+    color: #48bb78;
 }
 
+.feature-icon.info {
+    background: #2d3748;
+    color: #4299e1;
+}
 
+.feature-icon.warning {
+    background: #1a1a1a;
+    color: #FFD700;
+}
+
+.feature-icon.danger {
+    background: #2d3748;
+    color: #f56565;
+}
+
+.feature-icon.dark {
+    background: #1a1a1a;
+    color: #a0aec0;
+}
+
+.feature-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+}
+
+.feature-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 1rem;
+}
+
+.feature-description {
+    color: #718096;
+    line-height: 1.7;
+    font-size: 1rem;
+}
+
+.plan-summary {
+    background: #1a1a1a;
+    color: white;
+    border-radius: 20px;
+    padding: 3rem;
+    margin-bottom: 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.plan-summary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.1) 50%, transparent 70%);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.plan-summary h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #FFD700;
+    position: relative;
+    z-index: 1;
+}
+
+.plan-summary .price {
+    font-size: 3.5rem;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.plan-summary .billing-cycle {
+    font-size: 1.1rem;
+    opacity: 0.8;
+    position: relative;
+    z-index: 1;
+}
+
+.upgrade-section {
+    text-align: center;
+    margin-top: 3rem;
+    padding: 2rem;
+    background: #f7fafc;
+    border-radius: 15px;
+}
+
+@media (max-width: 768px) {
+    .feature-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .plan-summary h2 {
+        font-size: 2rem;
+    }
+    
+    .plan-summary .price {
+        font-size: 2.5rem;
+    }
+}
 </style>
 ';
 
@@ -88,18 +217,40 @@ $additionalstyles .= '
 $bodycontentclass='';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
+?>
 
+<!-- Dark Header Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <h1>Plan Details</h1>
+        <p class="lead">Everything included in your <?php echo htmlspecialchars($userplanname ?? 'current'); ?> plan</p>
+    </div>
+</div>
+
+<?php
+// Remove left panel and use full width
 echo '    
-<div class="container  main-content pt-0 mt-0 mb-5">
-    <div class="row">
-        <div class="col">
+<div class="plan-details-container">
         ';
      
-// Display only the Lifetime plan details
+// Get plan details based on user's actual product ID
+if ($user_product_id) {
+    $plandatafeatures = $app->plandetail('detailsfull_id', $user_product_id);
+} else {
+    // Fallback - get plan details by plan name if no product ID
+    $plandatafeatures = $app->plandetail('detailsfull_plan', $user_plan);
+}
 
-$plandatafeatures=$app->plandetail('detailsfull_id', $current_user_data['account_product_id']);
+// Ensure we have valid plan data
+if (empty($plandatafeatures)) {
+    // Set some defaults if plan data is not found
+    $plandatafeatures = [
+        'plan_pricetag' => ['value' => 'Free'],
+        'plan_pricedescription' => ['value' => 'No charge'],
+        'max_business_select_tag' => ['value' => 'Limited'],
+        'max_business_select_description' => ['value' => 'Limited brand selections available']
+    ];
+}
 #breakpoint($plandatafeatures);
 function editbuttons($front=[], $back=[]) {
     global $account , $outputm;
@@ -162,141 +313,128 @@ function generateModal($item) {
 
 
 
-echo '
-<div class="container pt-0 mt-0 pb-5 mb-5" style="overflow: hidden;">
-    <div class="mb-3">
-        <h2 class="text-primary">Your Current Plan: <strong>'.$userplanname.'</strong></h2>
-    </div>
-    <div class="row gy-4">
-        <!-- Card 1: Plan Cost -->
-        <div class="col-md-6">
-            <div class="hover-card">
-                <div class="card">
-                    <!-- Card Front -->
-                    <div class="card-front card-body d-flex flex-column justify-content-center text-center bg-gradient-primary">
-                        <i class="bi bi-currency-dollar fa-3x mb-3 "></i>
-                        <h5 class="card-title ">Plan Cost</h5>
-                        <p class="card-text "><strong>'.$plandatafeatures['plan_pricetag']['value'].'</strong></p>
-                    </div>
-                    <!-- Card Back -->
-                    <div class="card-back p-4 text-center bg-white">
-                        <p class="card-text">'.$plandatafeatures['plan_pricedescription']['value'].'</p>
-                        '.editbuttons($plandatafeatures['plan_pricetag'], $plandatafeatures['plan_pricedescription']).'
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Card 2: Brands Registered -->
-        <div class="col-md-6">
-            <div class="hover-card">
-                <div class="card">
-                    <!-- Card Front -->
-                    <div class="card-front card-body d-flex flex-column justify-content-center text-center bg-gradient-success">
-                        <i class="bi bi-tags fa-3x mb-3 "></i>
-                        <h5 class="card-title ">Brands Registered</h5>
-                        <p class="card-text "><strong>'.$plandatafeatures['max_business_select_tag']['value'].'</strong></p>
-                    </div>
-                    <!-- Card Back -->
-                    <div class="card-back p-4 text-center bg-white">
-                        <p class="card-text">'.$plandatafeatures['max_business_select_description']['value'].'</p>
-                         '.editbuttons($plandatafeatures['max_business_select_tag'], $plandatafeatures['max_business_select_description']).'
-                     </div>
-                </div>
-            </div>
-        </div>
-        <!-- Card 3: Planning Tools -->
-        <div class="col-md-6">
-            <div class="hover-card">
-                <div class="card">
-                    <!-- Card Front -->
-                    <div class="card-front card-body d-flex flex-column justify-content-center text-center bg-gradient-info">
-                        <i class="bi bi-map fa-3x mb-3 "></i>
-                        <h5 class="card-title ">Planning Tools</h5>
-                        <p class="card-text ">Comprehensive Tools</p>
-                    </div>
-                    <!-- Card Back -->
-                    <div class="card-back p-4 text-center bg-white">
-                        <p class="card-text">We make celebrating easy! We can produce a Celebration Tour Schedule for you complete with a Tour Map that lays out the times and route for you to make the most of your special day. What\'s more, you can plan a birthday month-long tour. We can lay out all the brands you are signed up for day by day and hour by hour.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Card 4: Alerts & Reminders -->
-        <div class="col-md-6">
-            <div class="hover-card">
-                <div class="card">
-                    <!-- Card Front -->
-                    <div class="card-front card-body d-flex flex-column justify-content-center text-center bg-gradient-warning">
-                        <i class="bi bi-bell fa-3x mb-3 "></i>
-                        <h5 class="card-title ">Alerts & Reminders</h5>
-                        <p class="card-text ">Never Miss Out!</p>
-                    </div>
-                    <!-- Card Back -->
-                    <div class="card-back p-4 text-center bg-white">
-                        <p class="card-text">We know you don\'t want to miss out on the best birthday freebies so we will send you reminders during your birthday month.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Card 5: Support -->
-        <div class="col-md-6">
-            <div class="hover-card">
-                <div class="card">
-                    <!-- Card Front -->
-                    <div class="card-front card-body d-flex flex-column justify-content-center text-center bg-gradient-danger">
-                        <i class="bi bi-envelope fa-3x mb-3 "></i>
-                        <h5 class="card-title ">Support</h5>
-                        <p class="card-text "><strong>Email</strong></p>
-                    </div>
-                    <!-- Card Back -->
-                    <div class="card-back p-4 text-center bg-white">
-                        <p class="card-text">Email support available for your queries and assistance.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Card 6: Social Celebration -->
-        <div class="col-md-6">
-            <div class="hover-card">
-                <div class="card">
-                    <!-- Card Front -->
-                    <div class="card-front card-body d-flex flex-column justify-content-center text-center bg-gradient-secondary">
-                        <i class="bi bi-people fa-3x mb-3 "></i>
-                        <h5 class="card-title ">Social Celebration</h5>
-                        <p class="card-text ">Connect & Celebrate</p>
-                    </div>
-                    <!-- Card Back -->
-                    <div class="card-back p-4 text-center bg-white">
-                        <p class="card-text">This future feature will allow you to connect with other users on their celebration tour and make it a big live video party.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Card 7: Contests -->
-        <div class="col-md-12 d-none">
-            <div class="hover-card">
-                <div class="card">
-                    <!-- Card Front -->
-                    <div class="card-front card-body d-flex flex-column justify-content-center text-center bg-gradient-dark">
-                        <i class="bi bi-trophy fa-3x mb-3 "></i>
-                        <h5 class="card-title ">Contests</h5>
-                        <p class="card-text ">Weekly Prizes</p>
-                    </div>
-                    <!-- Card Back -->
-                    <div class="card-back p-4 text-center bg-white">
-                        <p class="card-text">We are so excited about this upcoming feature! The Gold Pot will be a weekly drawing where you are automatically entered to win the random Gold Pot Giveaway. The nice thing is, you are only competing against other "Lifetime Users" who have birthdays during the same month as you. Automatically earn double entries when it is your birthday week. Gold Pot prizes range anywhere from $50 - $500.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+// Get plan price for display
+$planPrice = isset($plandatafeatures['plan_pricetag']['value']) ? $plandatafeatures['plan_pricetag']['value'] : '$0';
+$planPriceDesc = isset($plandatafeatures['plan_pricedescription']['value']) ? $plandatafeatures['plan_pricedescription']['value'] : '';
+$maxBrands = isset($plandatafeatures['max_business_select_tag']['value']) ? $plandatafeatures['max_business_select_tag']['value'] : 'Unlimited';
+$maxBrandsDesc = isset($plandatafeatures['max_business_select_description']['value']) ? $plandatafeatures['max_business_select_description']['value'] : '';
 
-</div>
-</div>
-</div>
-</div>
-</div>
+// Ensure userplanname is set
+if (empty($userplanname)) {
+    $userplanname = ucfirst($user_plan);
+}
+
+// Debug info for admins
+if ($account->isadmin() && isset($_GET['debug'])) {
+    echo '<div class="alert alert-info mb-3">
+        <h5>Debug Info:</h5>
+        <p>User ID: ' . htmlspecialchars($current_user_data['user_id'] ?? 'Not set') . '</p>
+        <p>Account Plan: ' . htmlspecialchars($user_plan) . '</p>
+        <p>Product ID: ' . htmlspecialchars($user_product_id ?? 'Not set') . '</p>
+        <p>Plan Name: ' . htmlspecialchars($userplanname) . '</p>
+        <p>Plan Features Loaded: ' . (empty($plandatafeatures) ? 'No' : 'Yes (' . count($plandatafeatures) . ' features)') . '</p>
+    </div>';
+}
+
+echo '
+    <!-- Plan Summary Card -->
+    <div class="plan-summary">
+        <h2>' . htmlspecialchars($userplanname) . ' Plan</h2>
+        <div class="price">' . htmlspecialchars($planPrice) . '</div>
+        <div class="billing-cycle">' . htmlspecialchars($planPriceDesc) . '</div>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="row g-4">
+        <!-- Brands Registered -->
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card">
+                <div class="feature-icon success">
+                    <i class="bi bi-building-check"></i>
+                </div>
+                <h3 class="feature-title">Brands You Can Register</h3>
+                <div class="feature-value">' . htmlspecialchars($maxBrands) . '</div>
+                <p class="feature-description">' . htmlspecialchars($maxBrandsDesc) . '</p>
+                '.editbuttons($plandatafeatures['max_business_select_tag'] ?? [], $plandatafeatures['max_business_select_description'] ?? []).'
+            </div>
+        </div>
+
+        <!-- Birthday Reminders -->
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card">
+                <div class="feature-icon warning">
+                    <i class="bi bi-bell-fill"></i>
+                </div>
+                <h3 class="feature-title">Birthday Reminders</h3>
+                <div class="feature-value">Automated</div>
+                <p class="feature-description">Never miss out on your birthday rewards! We\'ll send you timely reminders throughout your birthday month so you can claim every reward.</p>
+            </div>
+        </div>
+
+        <!-- Celebration Planning -->
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card">
+                <div class="feature-icon info">
+                    <i class="bi bi-calendar-event"></i>
+                </div>
+                <h3 class="feature-title">Celebration Planner</h3>
+                <div class="feature-value">Tour Maps</div>
+                <p class="feature-description">Plan your perfect birthday celebration! Generate custom tour schedules and maps to maximize your birthday rewards collection.</p>
+            </div>
+        </div>
+
+        <!-- Email Support -->
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card">
+                <div class="feature-icon primary">
+                    <i class="bi bi-headset"></i>
+                </div>
+                <h3 class="feature-title">Priority Support</h3>
+                <div class="feature-value">Email</div>
+                <p class="feature-description">Get help when you need it. Our support team is ready to assist you with any questions about your birthday rewards.</p>
+            </div>
+        </div>
+
+        <!-- Reward Tracking -->
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card">
+                <div class="feature-icon danger">
+                    <i class="bi bi-gift-fill"></i>
+                </div>
+                <h3 class="feature-title">Reward Tracking</h3>
+                <div class="feature-value">Dashboard</div>
+                <p class="feature-description">Keep track of all your birthday rewards in one place. See what\'s available, what you\'ve claimed, and what\'s coming up.</p>
+            </div>
+        </div>
+
+        <!-- Coming Soon: Social Features -->
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card">
+                <div class="feature-icon dark">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <h3 class="feature-title">Social Celebrations</h3>
+                <div class="feature-value">Coming Soon</div>
+                <p class="feature-description">Connect with other birthday celebrants! Share your experiences and celebrate together in our upcoming social features.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upgrade Section for Free Users -->
+    <?php if ($user_plan === 'free'): ?>
+    <div class="upgrade-section">
+        <h3 class="mb-3">Ready to unlock more birthday rewards?</h3>
+        <p class="mb-4">Upgrade to Gold and get access to unlimited brands, priority support, and exclusive features!</p>
+        <a href="/myaccount/upgrade-plan" class="btn btn-primary btn-lg">Upgrade to Gold</a>
+    </div>
+    <?php elseif ($user_plan === 'gold'): ?>
+    <div class="upgrade-section">
+        <h3 class="mb-3">Want lifetime access?</h3>
+        <p class="mb-4">Upgrade to our Lifetime plan and never worry about renewals again!</p>
+        <a href="/myaccount/upgrade-plan" class="btn btn-primary btn-lg">Get Lifetime Access</a>
+    </div>
+    <?php endif; ?>
+
 </div>
 ';
 echo $outputm;

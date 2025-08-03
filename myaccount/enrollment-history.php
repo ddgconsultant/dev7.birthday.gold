@@ -94,6 +94,9 @@ if (!empty($_GET['getcontent'])) {
 #-------------------------------------------------------------------------------
 $bodycontentclass = '';
 
+// Add v7 theme CSS
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
 // Move styles before includes
 $additionalstyles .= '
 <style>
@@ -106,8 +109,8 @@ $additionalstyles .= '
 }
 
 .enrollment-title {
-    font-size: 2.5rem;
-    font-weight: 400;
+    font-size: 2rem;
+    font-weight: 500;
     color: #212529;
     margin: 0;
 }
@@ -123,25 +126,175 @@ $additionalstyles .= '
     margin-left: 0.5rem;
 }
 
-/* Tab styles */
-.nav-tabs .nav-link { padding: 10px 20px; width: auto; background-color: #f8f9fa; border: 1px solid #dee2e6; color: #6c757d; }
-.nav-tabs .nav-link.active { background-color: #e9ecef; border-color: #dee2e6 #dee2e6 #fff; color: #007bff; }
-.nav-tabs .nav-link.active .bi-info-circle-fill { color: #007bff; }
-.nav-tabs .nav-link.active .badge { background-color: #6c757d; color: #ffffff; }
-.nav-tabs .nav-link .bi-info-circle-fill { color: #6c757d; }
-.nav-tabs .nav-link .badge { background-color: #dee2e6; color: #6c757d; }
+/* Modern tab navigation */
+.nav-tabs-modern {
+    display: flex;
+    border-bottom: none;
+    margin-bottom: 0;
+    gap: 0;
+    background: #f8f9fa;
+    border-radius: 0.5rem 0.5rem 0 0;
+    position: relative;
+    padding: 0.5rem 0.5rem 0 0.5rem;
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+}
+
+.nav-tab-item {
+    flex: 0 0 auto;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    color: #6c757d;
+    font-weight: 500;
+    font-size: 0.95rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.375rem 0.375rem 0 0;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-right: 0.25rem;
+}
+
+.nav-tab-item:hover {
+    color: #495057;
+    text-decoration: none;
+    background: #e9ecef;
+}
+
+.nav-tab-item.active {
+    color: #495057;
+    background: white;
+    border-color: #dee2e6;
+    border-bottom-color: white;
+    z-index: 10;
+}
+
+.nav-tab-item .badge {
+    background-color: #6c757d;
+    color: white;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 10px;
+    margin-left: 0.5rem;
+}
+
+.nav-tab-item.active .badge {
+    background-color: #0d6efd;
+}
+
+/* Settings tab aligned to the right */
+.nav-tab-item.settings-tab {
+    margin-left: auto;
+}
+
+/* Info icon styling */
+.nav-tab-item .bi-info-circle-fill {
+    color: #6c757d;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.nav-tab-item:hover .bi-info-circle-fill {
+    color: #495057;
+}
+
+.nav-tab-item.active .bi-info-circle-fill {
+    color: #0d6efd;
+}
+
+/* Search bar styling */
+.search-input {
+    border-radius: 25px;
+}
+
+.input-group-text {
+    background: white;
+    border-radius: 25px 0 0 25px;
+}
+
+.input-group-text:last-child {
+    border-radius: 0 25px 25px 0;
+}
+
+/* Search in header styling */
+.search-in-header {
+    margin-bottom: 2rem;
+}
+
+.search-in-header .form-control {
+    border-left: none;
+    border-right: none;
+}
+
+.search-in-header .input-group-text {
+    border: 1px solid #dee2e6;
+}
+
+.search-in-header .input-group-text:first-child {
+    border-right: none;
+}
+
+.search-in-header .input-group-text:last-child {
+    border-left: none;
+}
+
+/* Tab content styling */
+.tab-content {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    padding: 2rem;
+    margin-top: -1px;
+}
+
+/* List styling */
 .form-control::placeholder { color: #b0b0b0; opacity: 1; }
-.row-hover:hover { background-color: #eee; }
+.row-hover:hover { background-color: #f8f9fa; transition: background-color 0.2s; }
 .muted-company { opacity: 0.8; color: #6c757d; }
 .muted-company .company-name { color: inherit; }
 .muted-company img { filter: grayscale(100%); opacity: 0.8; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .nav-tab-item {
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .nav-tab-item .badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
 </style>
 ';
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
+?>
+
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-clock-history me-3"></i>Enrollment History</h1>
+            <p class="lead mb-4">Track and manage your birthday reward enrollments</p>
+        </div>
+        <!-- Search Bar in Header -->
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="input-group search-in-header">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" id="globalSearchBar" class="form-control search-input" placeholder="Search all enrollments...">
+                    <span class="input-group-text bg-white clear-icon" style="cursor: pointer; display: none;" id="globalClearIcon"><i class="bi bi-x-circle-fill"></i></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php
 
 
 if (!empty($_REQUEST['id'])) {
@@ -226,13 +379,15 @@ $apptype = $current_user_data['profile_phone_type'] ?? '';
 $displayType = isset($_GET['displayType']) ? $_GET['displayType'] : 'link';
 
 
-// main right section
-echo '<div class="col-md-9 col-lg-9">';
-echo '<div class="enrollment-header">
-    <h1 class="enrollment-title">Your Enrollments<span class="enrollment-count">' . $totalEnrollments . '</span></h1>
-    <a href="/myaccount/select" class="btn btn-primary">Add New Enrollments</a>
-</div>
-' . $display->formaterrormessage($transferpagedata['message']);
+// main content section
+echo '<div class="container my-5">';
+echo '<div class="row">';
+echo '<div class="col-lg-10 mx-auto">';
+
+// Show messages if any
+if (!empty($transferpagedata['message'])) {
+    echo $display->formaterrormessage($transferpagedata['message']);
+}
 echo '<div class="alert alert-info mb-4 d-flex justify-content-between align-items-center" role="alert">';
 echo '<span>';
 
@@ -363,29 +518,24 @@ $statusDetails = [
 
 
 
-echo '<ul class="nav nav-tabs mb-4" id="statusTabs" role="tablist">';
+echo '<div class="nav-tabs-modern" id="statusTabs" role="tablist">';
 foreach ($statusCounters as $status => $count) {
     if ($status != 'total' && $count > 0) {
         $details = $statusDetails[$status];
-        echo '<li class="nav-item" role="presentation">';
-        echo '<button class="nav-link ' . ($firstPanel ? 'active' : '') . ' px-5 text-' . $details['color'] . ' id="tab-' . htmlspecialchars($status) . '" data-bs-toggle="tab" data-bs-target="#section-' . htmlspecialchars($status) . '" type="button" role="tab" aria-controls="section-' . htmlspecialchars($status) . '" aria-selected="' . ($firstPanel ? 'true' : 'false') . '">';
+        echo '<button class="nav-tab-item ' . ($firstPanel ? 'active' : '') . '" id="tab-' . htmlspecialchars($status) . '" data-bs-toggle="tab" data-bs-target="#section-' . htmlspecialchars($status) . '" type="button" role="tab" aria-controls="section-' . htmlspecialchars($status) . '" aria-selected="' . ($firstPanel ? 'true' : 'false') . '">';
         echo '<i class="bi bi-info-circle-fill me-2" data-bs-toggle="modal" data-bs-target="#infoModal" data-status="' . htmlspecialchars($status) . '" style="cursor: pointer;"></i>';
-        echo htmlspecialchars($details['label']) . ' <span class="badge ms-2 mt-0">' . $count . '</span>';
+        echo htmlspecialchars($details['label']) . '<span class="badge">' . $count . '</span>';
         echo '</button>';
-        echo '</li>';
         $firstPanel = false;
     }
 }
 
-
 // settings tab
 // -----------------------------------------------------
-echo '
-<li class="nav-item" role="presentation">
-<button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false"><i class="bi bi-gear me-2"></i>Settings</button>
-</li>
-';
-echo '</ul>';
+echo '<button class="nav-tab-item settings-tab" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false">
+        <i class="bi bi-gear"></i>
+      </button>';
+echo '</div>';
 
 echo '<div class="tab-content" id="statusTabsContent">';
 $firstPanel = true;
@@ -738,10 +888,10 @@ echo '<!-- Modal Structure -->
 
 
 $csrfToken = $display->inputcsrf_token('tokenonly');
-?> <!-- close col-md-9 -->
+?> 
+</div> <!-- close col-lg-10 -->
 </div> <!-- close row -->
 </div> <!-- close container -->
-</div> <!-- close main-content -->
 
 <!-- Modal Structure for QR Code -->
 <div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
@@ -860,6 +1010,48 @@ $csrfToken = $display->inputcsrf_token('tokenonly');
             var status = $(this).data('status');
             //   console.log('Clear search for status:', status);
             $('#searchBar-' + status).val('').trigger('keyup');
+        });
+        
+        // Global search functionality
+        $('#globalSearchBar').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            
+            // Show/hide clear icon
+            if (value.length > 0) {
+                $('#globalClearIcon').show();
+            } else {
+                $('#globalClearIcon').hide();
+            }
+            
+            // Search across all tabs
+            $('.list-group-item').each(function() {
+                var itemText = $(this).data('full-context').toLowerCase();
+                if (itemText.includes(value)) {
+                    $(this).show();
+                    $(this).css('display', '');
+                } else {
+                    $(this).hide();
+                    $(this).attr('style', 'display: none !important;');
+                }
+            });
+            
+            // If searching globally, clear individual search bars
+            if (value.length > 0) {
+                $('.search-input[data-status]').val('');
+            }
+        });
+        
+        // Global clear icon
+        $('#globalClearIcon').on('click', function() {
+            $('#globalSearchBar').val('').trigger('keyup');
+        });
+        
+        // Clear global search when using individual search
+        $('.search-input[data-status]').on('focus', function() {
+            $('#globalSearchBar').val('');
+            $('#globalClearIcon').hide();
+            // Show all items first
+            $('.list-group-item').show().css('display', '');
         });
     });
 </script>

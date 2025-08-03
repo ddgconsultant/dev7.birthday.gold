@@ -82,7 +82,7 @@ function populateRightColumn(itemId) {
         formData.append('act', 'getdata');
         
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', <?php echo $amscriptendpoint; ?>, true);
+        xhr.open('POST', '<?php echo str_replace("'", "\\'", $amscriptendpoint); ?>', true);
         
         xhr.onreadystatechange = function() {
             if (xhr.readyState == 4 && xhr.status == 200) {
@@ -158,7 +158,7 @@ function populateRightColumn(itemId) {
 
         // Create an AJAX request
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', <?php echo $amscriptendpoint; ?>, true);
+        xhr.open('POST', '<?php echo str_replace("'", "\\'", $amscriptendpoint); ?>', true);
 
         // When the request completes
         xhr.onreadystatechange = function() {
@@ -232,7 +232,7 @@ function recordAccess(itemId, action = 'show') {
 
     // Create an AJAX request to log access
     const xhr = new XMLHttpRequest();
-    xhr.open('POST',  <?php echo $amscriptendpoint; ?>, true); // POST request to the logging script
+    xhr.open('POST', '<?php echo str_replace("'", "\\'", $amscriptendpoint); ?>', true); // POST request to the logging script
 
     // Set the request header for form submission
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -500,7 +500,7 @@ function loadEditForm(itemId) {
     formData.append('_token', csrfToken);
     
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', <?php echo $amscriptendpoint; ?>, true);
+    xhr.open('POST', '<?php echo str_replace("'", "\\'", $amscriptendpoint); ?>', true);
     
     xhr.onreadystatechange = function() {
         if (xhr.readyState == 4 && xhr.status == 200) {

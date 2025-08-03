@@ -196,6 +196,196 @@ width: 140px;
     border-radius: 0 25px 25px 0 !important;
 }
 
+/* Floating Label Styles */
+.floating-label-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.floating-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #e9ecef;
+    border-radius: 0;
+    padding: 1.625rem 0 0.625rem 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    transition: all 0.3s ease;
+    width: 100%;
+    height: 3.75rem;
+}
+
+.floating-input:focus {
+    outline: none;
+    border-bottom-color: var(--bs-primary);
+    box-shadow: none;
+}
+
+.floating-input.is-invalid {
+    border-bottom-color: #dc3545;
+}
+
+.floating-label {
+    position: absolute;
+    left: 0;
+    top: 1rem;
+    color: #6c757d;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    transform-origin: left top;
+}
+
+/* Float label when input is focused or has content */
+.floating-input:focus + .floating-label,
+.floating-input:not(:placeholder-shown) + .floating-label {
+    transform: translateY(-1.25rem) scale(0.85);
+    color: var(--bs-primary);
+}
+
+.floating-input:focus.is-invalid + .floating-label,
+.floating-input:not(:placeholder-shown).is-invalid + .floating-label {
+    color: #dc3545;
+}
+
+/* Desktop-specific adjustments */
+@media (min-width: 992px) {
+    .floating-input {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.625rem 1rem 0.625rem 1rem;
+        background: white !important;
+        transition: all 0.2s ease;
+        height: calc(3.75rem + 2px);
+    }
+    
+    .floating-input:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+    
+    .floating-label {
+        left: 1rem;
+        top: 1.125rem;
+    }
+    
+    .floating-input:focus + .floating-label,
+    .floating-input:not(:placeholder-shown) + .floating-label {
+        transform: translateY(-1.1rem) scale(0.85);
+    }
+}
+
+/* Mobile optimizations for floating labels */
+@media (max-width: 576px) {
+    .floating-input {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+/* Select/dropdown styling with floating labels */
+.floating-label-group select.floating-select {
+    padding-top: 1.875rem;
+    padding-bottom: 0.625rem;
+    height: 3.75rem;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+}
+
+/* Make floating label work with selects */
+.floating-label-group select.floating-select ~ .floating-label {
+    transform: translateY(-1.2rem) translateX(-0.25rem) scale(0.85);
+    color: var(--bs-primary);
+    background: none;
+    padding: 0 0.25rem;
+    left: 0.75rem;
+}
+
+/* Mobile: Move dropdown labels to the left */
+@media (max-width: 991px) {
+    .floating-label-group select.floating-select ~ .floating-label {
+        left: 0;
+        transform: translateY(-1.2rem) translateX(0) scale(0.85);
+    }
+}
+
+/* Desktop styles for floating select */
+@media (min-width: 992px) {
+    .floating-label-group select.floating-select {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        background-color: white;
+        height: calc(3.75rem + 2px);
+    }
+    
+    .floating-label-group select.floating-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+}
+
+/* Input group with floating labels */
+.floating-label-group .input-group {
+    position: relative;
+}
+
+.floating-label-group .input-group .floating-input {
+    padding-top: 1.625rem;
+    padding-bottom: 0.625rem;
+    height: 3.75rem;
+}
+
+.floating-label-group .input-group .btn {
+    height: 3.75rem;
+    border-left: 0;
+    padding: 0 1rem;
+}
+
+/* Position label for input groups */
+.floating-label-group .input-group ~ .floating-label {
+    transform: translateY(-1.25rem) scale(0.85);
+    z-index: 10;
+    color: var(--bs-primary);
+}
+
+/* Desktop specific input group styling */
+@media (min-width: 992px) {
+    .floating-label-group .input-group .floating-input {
+        border-radius: 0.375rem 0 0 0.375rem;
+    }
+    
+    .floating-label-group .input-group .btn {
+        border-radius: 0 0.375rem 0.375rem 0;
+        border: 1px solid #dee2e6;
+        border-left: 0;
+    }
+    
+    .floating-label-group .input-group .floating-input:focus + .btn {
+        border-color: #86b7fe;
+    }
+}
+
+/* Mobile styles for input group with floating labels */
+@media (max-width: 991px) {
+    .floating-label-group .input-group .btn {
+        border: none;
+        border-bottom: 2px solid #e9ecef;
+        border-radius: 0;
+        background: transparent;
+        color: var(--bs-primary);
+    }
+}
+
+
+
+/* Fix label positioning for input groups */
+.input-group ~ .floating-label {
+    z-index: 10;
+    pointer-events: none;
+}
+
 /* Account switch buttons */
 .accountswitch {
     border-radius: 25px !important;
@@ -651,37 +841,47 @@ echo '
 <div class="row gx-3 mb-3">
 <!-- Form Group (title)-->
 <div class="col-md-2">
-<label class="small mb-1" for="inputtitle">Title</label>
-<select name="inputtitle" class="form-control custom-select select-form-background">
+<div class="floating-label-group">
+<select name="inputtitle" id="inputtitle" class="form-control floating-input floating-select">
 ' . $display->list_title($current_user_data['title']) . '
 </select>
+<label for="inputtitle" class="floating-label">Title</label>
+</div>
 </div>
 
 
 <!-- Form Group (first name)-->
 <div class="col-md-4">
-<label class="small mb-1" for="inputfirst_name">First name</label>
-<input class="form-control" name="inputfirst_name"  id="inputfirst_name" type="text" placeholder="Enter your first name" value="' . $current_user_data['first_name'] . '">
+<div class="floating-label-group">
+<input class="form-control floating-input" name="inputfirst_name" id="inputfirst_name" type="text" placeholder=" " value="' . $current_user_data['first_name'] . '">
+<label for="inputfirst_name" class="floating-label">First name</label>
+</div>
 </div>
 <!-- Form Group (middle name)-->
 <div class="col-md-2">
-<label class="small mb-1" for="inputmiddle_name">Middle name</label>
-<input class="form-control" name="inputmiddle_name"  id="inputmiddle_name" type="text" placeholder="" value="' . $current_user_data['middle_name'] . '">
+<div class="floating-label-group">
+<input class="form-control floating-input" name="inputmiddle_name" id="inputmiddle_name" type="text" placeholder=" " value="' . $current_user_data['middle_name'] . '">
+<label for="inputmiddle_name" class="floating-label">Middle name</label>
+</div>
 </div>
 <!-- Form Group (last name)-->
 <div class="col-md-4">
-<label class="small mb-1" for="inputlast_name">Last name</label>
-<input class="form-control" name="inputlast_name" id="inputlast_name" type="text" placeholder="Last name" value="' . $current_user_data['last_name'] . '">
+<div class="floating-label-group">
+<input class="form-control floating-input" name="inputlast_name" id="inputlast_name" type="text" placeholder=" " value="' . $current_user_data['last_name'] . '">
+<label for="inputlast_name" class="floating-label">Last name</label>
+</div>
 </div>
 </div>
 
 <div class="row gx-3 mb-3">
 <!-- Form Group (gender)-->
 <div class="col-md-4">
-<label class="small mb-1" for="inputgender">Gender</label>                      
-<select name="inputgender" class="form-control custom-select select-form-background">
+<div class="floating-label-group">
+<select name="inputgender" id="inputgender" class="form-control floating-input floating-select">
 ' . $display->list_gender($current_user_data['gender']) . '
 </select>
+<label for="inputgender" class="floating-label">Gender</label>
+</div>
 </div>
 </div>
 
@@ -698,26 +898,33 @@ echo '
 <div><h4 class="fw-bold">User Account Details:</h4></div>
 <!-- Form Group (username)-->
 <div class="col-md-6">
-<label class="small mb-1" for="inputUsername">Username  <span id="availability"></span></label>
-<div class="input-group mb-3">
-<input type="text" class="form-control" name="inputUsername" id="inputUsername" placeholder="Enter your username" value="' . $current_user_data['username'] . '">
-<button class="btn btn-outline-secondary ms-0 p-1" type="button" id="checkButton">Check</button>
+<div class="floating-label-group">
+<div class="input-group">
+<input type="text" class="form-control floating-input" name="inputUsername" id="inputUsername" placeholder=" " value="' . $current_user_data['username'] . '">
+<button class="btn btn-outline-secondary" type="button" id="checkButton">Check</button>
+</div>
+<label for="inputUsername" class="floating-label">Username</label>
+<small class="text-muted" id="availability"></small>
 </div>
 </div>
 
 
 <!-- Form Group (email)-->
 <div class="col-md-6">
-<label class="small mb-1" for="inputemail">Email Address</label>
-<input class="form-control" name="inputemail" id="inputemail" type="email" placeholder="Enter your email address" value="' . $current_user_data['email'] . '">
+<div class="floating-label-group">
+<input class="form-control floating-input" name="inputemail" id="inputemail" type="email" placeholder=" " value="' . $current_user_data['email'] . '">
+<label for="inputemail" class="floating-label">Email Address</label>
+</div>
 </div>
 
 
 
 <!-- Form Group (phone_number)-->
 <div class="col-md-6">
-<label class="small mb-1" for="inputphone_number">Mobile Phone Number</label>
-<input class="form-control" name="inputphone_number" id="inputphone_number" type="tel" placeholder="Enter your mobile number" value="' . $current_user_data['phone_number'] . '">
+<div class="floating-label-group">
+<input class="form-control floating-input" name="inputphone_number" id="inputphone_number" type="tel" placeholder=" " value="' . $current_user_data['phone_number'] . '">
+<label for="inputphone_number" class="floating-label">Mobile Phone Number</label>
+</div>
 </div>
 </div>
 
@@ -735,7 +942,10 @@ echo '
 <small class="mb-2">Used for birthday.gold gifts.</small>
 <!-- Form Group (organization name)-->
 <div class="col-md-12">
-<input class="form-control" name="inputmailing_address"  id="inputmailing_address" type="text" placeholder="Mailing Address" value="' . $current_user_data['mailing_address'] . '">
+<div class="floating-label-group">
+<input class="form-control floating-input" name="inputmailing_address" id="inputmailing_address" type="text" placeholder=" " value="' . $current_user_data['mailing_address'] . '">
+<label for="inputmailing_address" class="floating-label">Mailing Address</label>
+</div>
 </div>
 
 </div>
@@ -744,22 +954,29 @@ echo '
 
 <!-- Form Group (location)-->
 <div class="col-md-4">
-<input class="form-control" name="inputCity"  id="inputCity" type="text" placeholder="City" value="' . $current_user_data['city'] . '">
+<div class="floating-label-group">
+<input class="form-control floating-input" name="inputCity" id="inputCity" type="text" placeholder=" " value="' . $current_user_data['city'] . '">
+<label for="inputCity" class="floating-label">City</label>
+</div>
 </div>
 
 
 
 <!-- Form Group (state)-->
 <div class="col-md-4">
-<select name="inputState" id="inputState" class="form-select form-select mb-3" aria-label=".form-select example">
+<div class="floating-label-group">
+<select name="inputState" id="inputState" class="form-control floating-input floating-select" aria-label=".form-select example">
 ' . $display->list_state($state) . '
 </select>
-
-
+<label for="inputState" class="floating-label">State</label>
+</div>
 </div>
 <!-- Form Group (location)-->
 <div class="col-md-4">
-<input class="form-control"  name="inputzip_code"  id="inputzip_code" type="text" placeholder="Zipcode" value="' . $current_user_data['zip_code'] . '">
+<div class="floating-label-group">
+<input class="form-control floating-input" name="inputzip_code" id="inputzip_code" type="text" placeholder=" " value="' . $current_user_data['zip_code'] . '">
+<label for="inputzip_code" class="floating-label">Zipcode</label>
+</div>
 </div>
 </div>
 
@@ -812,8 +1029,10 @@ Instructions
 
 <!-- Form Group (email)-->
 <div class="col-md-6">
-<label class="small mb-1" for="inputemail">Email Address</label>
-<input class="form-control" name="inputemail" id="inputemail" type="email" placeholder="Enter your email address" value="' . $current_user_data['email'] . '">
+<div class="floating-label-group">
+<input class="form-control floating-input" name="inputemail" id="inputemail" type="email" placeholder=" " value="' . $current_user_data['email'] . '">
+<label for="inputemail" class="floating-label">Email Address</label>
+</div>
 </div>
 
 
@@ -983,19 +1202,19 @@ echo '
 ' . $display->inputcsrf_token() . '
 <input name="returnto" type="hidden" value="/myaccount/account">
         <!-- Form Group (current password)-->
-        <div class="mb-3">
-            <label class="small mb-1" for="inputcurrentPassword">Current Password</label>
-            <input class="form-control" name="inputcurrentPassword" id="inputcurrentPassword" type="password" placeholder="Enter current password">
+        <div class="floating-label-group">
+            <input class="form-control floating-input" name="inputcurrentPassword" id="inputcurrentPassword" type="password" placeholder=" ">
+            <label for="inputcurrentPassword" class="floating-label">Current Password</label>
         </div>
         <!-- Form Group (new password)-->
-        <div class="mb-3">
-            <label class="small mb-1" for="inputnewPassword">New Password</label>
-            <input class="form-control"  name="inputnewPassword" id="newPassword" type="password" placeholder="Enter new password">
+        <div class="floating-label-group">
+            <input class="form-control floating-input" name="inputnewPassword" id="newPassword" type="password" placeholder=" ">
+            <label for="inputnewPassword" class="floating-label">New Password</label>
         </div>
         <!-- Form Group (confirm password)-->
-        <div class="mb-3">
-            <label class="small mb-1" for="inputconfirmPassword">Confirm Password</label>
-            <input class="form-control"  name="inputconfirmPassword" id="inputconfirmPassword" type="password" placeholder="Confirm new password">
+        <div class="floating-label-group">
+            <input class="form-control floating-input" name="inputconfirmPassword" id="inputconfirmPassword" type="password" placeholder=" ">
+            <label for="inputconfirmPassword" class="floating-label">Confirm Password</label>
         </div>
         <button class="btn btn-primary" type="submit">Save</button>
     </form>
@@ -1032,8 +1251,11 @@ echo '<!-- Settings card-->
                         </div>
                         <i class="bi bi-chevron-right"></i>
                     </a>
-                </li>
-                <li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/manage-mail"><div><i class="bi bi-envelope me-2"></i>BGInbox Settings</div> <i class="bi bi-chevron-right"></i></a></li>';
+                </li>';
+
+if (!empty($current_user_data['feature_email'])) {
+    echo '<li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/mail-box#settings"><div><i class="bi bi-envelope me-2"></i>BGInbox Settings</div> <i class="bi bi-chevron-right"></i></a></li>';
+}
              
 if (!$account->isverified() && $account->isadmin()) {
     echo '<li class="mb-3"><a class="d-flex justify-content-between align-items-center" href="/myaccount/manage-verification"><div><i class="bi bi-patch-check me-2"></i>Become Verified</div> <i class="bi bi-chevron-right"></i></a></li>';
@@ -1133,7 +1355,10 @@ echo '<!-- Modal -->
         ' . $display->inputcsrf_token() . '
             <div class="modal-body">
                 <p>Type "delete" in the field below to confirm.</p>
-                <input type="text" name="deleteConfirm" id="deleteConfirm" class="form-control">
+                <div class="floating-label-group">
+                    <input type="text" name="deleteConfirm" id="deleteConfirm" class="form-control floating-input" placeholder=" ">
+                    <label for="deleteConfirm" class="floating-label">Type "delete" to confirm</label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, I changed my mind</button>

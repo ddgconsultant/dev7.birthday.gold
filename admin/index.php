@@ -582,6 +582,16 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
+            <a href="/admin/security-reports" class="admin-card">
+                <div class="admin-icon icon-security">
+                    <i class="bi bi-shield-exclamation"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Security Reports</h3>
+                    <p class="admin-card-text">Review and manage device security reports</p>
+                </div>
+            </a>
+            
             <a href="/admin/redirect-enrollments" target="_blank" class="admin-card">
                 <div class="admin-icon icon-enrollment">
                     <i class="bi bi-person-plus"></i>

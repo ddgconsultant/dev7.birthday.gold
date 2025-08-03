@@ -428,6 +428,20 @@ foreach ($loginsByPeriod as $yearMonth => $days) {
             $decoded = !empty($login['description']) ? json_decode($login['description'], true) : [];
             $isValidJson = json_last_error() === JSON_ERROR_NONE && is_array($decoded);
             
+            // Check if user is ADMIN or IMPERSONATED for session drill-down
+            $sessionLink = '';
+            $isAdminOrImpersonated = false;
+            if ($isValidJson && !empty($decoded['session_id'])) {
+                // Check if current user has admin access or this is an impersonated session
+                if ($account->isadmin() || 
+                    (isset($decoded['impersonated']) && $decoded['impersonated'] === true) ||
+                    strpos($login['name'] ?? '', 'IMPERSONATED') !== false ||
+                    strpos($login['name'] ?? '', 'ADMIN') !== false) {
+                    $isAdminOrImpersonated = true;
+                    $sessionLink = '/myaccount/loginhistory?sessionid=' . htmlspecialchars($decoded['session_id']);
+                }
+            }
+            
             // Get location
             $location = 'Unknown Location';
             if ($isValidJson && !empty($decoded['location'])) {
@@ -458,9 +472,17 @@ foreach ($loginsByPeriod as $yearMonth => $days) {
             
             $loginTime = new DateTime($login['create_dt']);
             
+            // Add clickable wrapper for admin/impersonated sessions
+            $wrapperOpen = '';
+            $wrapperClose = '';
+            $clickableStyle = '';
+            if ($isAdminOrImpersonated && $sessionLink) {
+                $clickableStyle = ' style="cursor: pointer;" onclick="window.location.href=\'' . $sessionLink . '\'"';
+            }
+            
             // Different layouts based on entry count
             if ($layoutType === 'large') {
-                echo '<div class="' . $entryClasses . '">
+                echo '<div class="' . $entryClasses . '"' . $clickableStyle . '>
                         ' . $sessionBadge . '
                         <div class="entry-content">
                             <div class="entry-time">' . $loginTime->format('g:i A') . '</div>
@@ -486,7 +508,7 @@ foreach ($loginsByPeriod as $yearMonth => $days) {
                       </div>';
             } elseif ($layoutType === 'medium') {
                 // Medium layout - 2 lines
-                echo '<div class="' . $entryClasses . '">
+                echo '<div class="' . $entryClasses . '"' . $clickableStyle . '>
                         ' . $sessionBadge . '
                         <div class="entry-content">
                             <div class="entry-time">' . $loginTime->format('g:i A') . '</div>
@@ -512,7 +534,7 @@ foreach ($loginsByPeriod as $yearMonth => $days) {
                       </div>';
             } else {
                 // Compact layout - 1 line
-                echo '<div class="' . $entryClasses . ' compact d-flex align-items-start gap-2 mb-2">
+                echo '<div class="' . $entryClasses . ' compact d-flex align-items-start gap-2 mb-2"' . $clickableStyle . '>
                 ' . $sessionBadge . '
                 <div class="entry-content d-flex align-items-center flex-wrap w-100" style="gap: 1rem;">
                     <div class="entry-time text-nowrap" style="min-width: 65px;">' . $loginTime->format('g:i A') . '</div>

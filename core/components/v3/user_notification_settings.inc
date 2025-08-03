@@ -1,6 +1,3 @@
-    <h5 class="mb-0 mt-5">Notifications Settings</h5>
-    <p>Select notifications you want to receive</p>
-    <hr class="my-4" />
     <strong class="mb-0">Security</strong>
     <p>Control security alerts you will be notified about.</p>
     <div class="list-group mb-5 shadow">

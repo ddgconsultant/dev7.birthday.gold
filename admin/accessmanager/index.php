@@ -25,7 +25,7 @@ if (preg_match('/^(www|dev|dev6|[^.]+)\.birthday\.gold$/', $currentHost, $matche
 // Add "." only if subdomaintag is not empty
 $subdomainPrefix = ($subdomaintag !== '') ? $subdomaintag . '.' : '';
 // Set the amscriptendpoint based on the actual host domain
-$amscriptendpoint = "'https://" . $subdomainPrefix . "birthday.gold" . $dir['ampath'] . "/'";
+$amscriptendpoint = "https://" . $subdomainPrefix . "birthday.gold" . $dir['ampath'] . "/index.php";
 
 
 #-------------------------------------------------------------------------------
@@ -85,6 +85,13 @@ switch ($action) {
         $datastore_datatype = $_POST['type'];
         $accessmanager->logAccess($current_user_data['user_id'], 0, 'create');
         include($_SERVER['DOCUMENT_ROOT'] .  $dir['ampath'].'/accessmanager_dataaction.php');
+        // If AJAX request, return only the form content
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            echo $outputcontent;
+            exit;
+        }
+        // Set a flag to show create form on mobile
+        $showCreateFormOnMobile = true;
         break;   
     // ADD THE NEW DATA ELEMENT ///////////////////////////////////////////////////////////////////////////
     case 'addnew':
@@ -544,14 +551,28 @@ body {
         margin-bottom: 1rem;
     }
     
-    /* Hide right panel on mobile - will show in modal */
+    /* Hide right panel on mobile by default */
     #datapanel,
     .col-lg-8 {
         display: none;
     }
     
-    /* Make left panel full width */
-    .col-lg-4 {
+    /* Show right panel on mobile when create form is active */
+    .mobile-show-create #datapanel,
+    .mobile-show-create .col-lg-8 {
+        display: block !important;
+        order: -1; /* Move to top */
+        margin-bottom: 1rem;
+    }
+    
+    /* Hide left panel when create form is active on mobile */
+    .mobile-show-create .col-lg-4 {
+        display: none !important;
+    }
+    
+    /* Make panels full width on mobile */
+    .col-lg-4,
+    .col-lg-8 {
         flex: 0 0 100%;
         max-width: 100%;
     }
@@ -561,12 +582,166 @@ body {
         /* Remove max-height for mobile as well */
         min-height: 300px;
     }
+    
+    /* Add close button for create form on mobile */
+    .mobile-close-create {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 10;
+    }
 }
 
 /* Desktop only styles */
 @media (min-width: 992px) {
     .mobile-filter-row {
         display: none !important;
+    }
+}
+
+/* Floating Label Styles */
+.floating-label-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.floating-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #e9ecef;
+    border-radius: 0;
+    padding: 1rem 0 0.5rem 0;
+    font-size: 1rem;
+    line-height: 1.5;
+    transition: all 0.3s ease;
+    width: 100%;
+    min-height: 44px;
+}
+
+.floating-input:focus {
+    outline: none;
+    border-bottom-color: var(--bs-primary);
+    box-shadow: none;
+}
+
+.floating-input.is-invalid {
+    border-bottom-color: #dc3545;
+}
+
+.floating-label {
+    position: absolute;
+    left: 0;
+    top: 1rem;
+    color: #6c757d;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    transform-origin: left top;
+}
+
+/* Float label when input is focused or has content */
+.floating-input:focus + .floating-label,
+.floating-input:not(:placeholder-shown) + .floating-label {
+    transform: translateY(-1.25rem) scale(0.85);
+    color: var(--bs-primary);
+}
+
+.floating-input:focus.is-invalid + .floating-label,
+.floating-input:not(:placeholder-shown).is-invalid + .floating-label {
+    color: #dc3545;
+}
+
+/* Desktop-specific adjustments */
+@media (min-width: 992px) {
+    .floating-input {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 2rem 1rem 0.375rem 1rem;
+        background: white !important;
+        transition: all 0.2s ease;
+    }
+    
+    .floating-input:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+    
+    .floating-label {
+        left: 1rem;
+        top: 1.125rem;
+    }
+    
+    .floating-input:focus + .floating-label,
+    .floating-input:not(:placeholder-shown) + .floating-label {
+        transform: translateY(-1.1rem) scale(0.85);
+    }
+}
+
+/* Mobile optimizations for floating labels */
+@media (max-width: 576px) {
+    .floating-input {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+/* Password field with toggle button */
+.password-input-group {
+    position: relative;
+}
+
+.password-input-group .floating-input {
+    padding-right: 3rem;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 0;
+    top: 1rem;
+    background: transparent;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 2;
+}
+
+.password-toggle-btn:hover {
+    color: #495057;
+}
+
+/* Textarea floating labels */
+textarea.floating-input {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* Select/dropdown styling to match */
+.form-select.modern-select {
+    border: none;
+    border-bottom: 2px solid #e9ecef;
+    border-radius: 0;
+    background: transparent;
+    padding: 0.5rem 0;
+    transition: border-color 0.3s ease;
+}
+
+.form-select.modern-select:focus {
+    outline: none;
+    border-bottom-color: var(--bs-primary);
+    box-shadow: none;
+}
+
+@media (min-width: 992px) {
+    .form-select.modern-select {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        background: white;
+    }
+    
+    .form-select.modern-select:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
     }
 }
 </style>
@@ -743,7 +918,7 @@ echo '
 
 // DISPLAY THE DATA
 echo '
-<div class="container">
+<div class="container' . (isset($showCreateFormOnMobile) && $showCreateFormOnMobile ? ' mobile-show-create' : '') . '" id="mainContainer">
     <div class="row g-4">
         <!-- Left Column (1/3) -->
         <div class="col-lg-4">
@@ -767,8 +942,8 @@ foreach ($rows as $row) {
 echo  ' 
 <a href="javascript:void(0);" class="list-group-item list-group-item-action" 
     data-category="'.htmlspecialchars($row['category']).'" 
-    data-full-context="'. trim(htmlspecialchars($row['category'].' '.$row['host'].' '.$row['name'].' '.$row['description']).'"  
-    onclick="selectItem(this, '.addslashes($row['id'])) . ')">
+    data-full-context="'. trim(htmlspecialchars($row['category'].' '.$row['host'].' '.$row['name'].' '.$row['description'])) .'"  
+    onclick="selectItem(this, \''.addslashes($row['id']).'\')">
     <div class="d-flex align-items-center">
         <span class="strength-bar bg-'.$strengthresult['color'].'"></span>
         <div class="item-icon">
@@ -796,8 +971,9 @@ echo '
     <!-- Right Column (2/3) -->
     <div class="col-lg-8">
         <div class="card am-card-container" id="datapanel">
-            <div class="card-header card-header-dark">
-                <h2 class="mb-0">Select an item to view details</h2>
+            <div class="card-header card-header-dark position-relative">
+                <h2 class="mb-0">' . (isset($showCreateFormOnMobile) && $showCreateFormOnMobile ? 'Create New ' . htmlspecialchars($datastore_datatype ?? '') : 'Select an item to view details') . '</h2>
+                ' . (isset($showCreateFormOnMobile) && $showCreateFormOnMobile ? '<button type="button" class="btn-close btn-close-white mobile-close-create d-lg-none" onclick="closeMobileCreateForm()" aria-label="Close"></button>' : '') . '
             </div>
 ';
 if ($outputcontent=='')  {
@@ -824,6 +1000,100 @@ echo '
     </div>
 </div>
 </div>
+';
+
+// Add JavaScript for mobile create form handling
+echo '
+<script>
+function closeMobileCreateForm() {
+    // Remove the mobile-show-create class
+    document.getElementById("mainContainer").classList.remove("mobile-show-create");
+    // Reload the page to reset the state
+    window.location.href = window.location.pathname;
+}
+
+// Toggle password visibility for floating label fields
+function togglePasswordField(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + \'-toggle-icon\');
+    
+    if (field.type === \'password\') {
+        field.type = \'text\';
+        icon.classList.remove(\'bi-eye\');
+        icon.classList.add(\'bi-eye-slash\');
+    } else {
+        field.type = \'password\';
+        icon.classList.remove(\'bi-eye-slash\');
+        icon.classList.add(\'bi-eye\');
+    }
+}
+
+// Handle mobile create new with AJAX instead of form submission
+document.addEventListener(\"DOMContentLoaded\", function() {
+    if (window.innerWidth < 992) {
+        // Override mobile create new buttons to use AJAX
+        document.querySelectorAll(\".type-filter-dropdown\").forEach(item => {
+            item.removeEventListener(\"click\", null);
+            item.addEventListener(\"click\", function(e) {
+                e.preventDefault();
+                var type = this.getAttribute(\"data-type\");
+                showMobileCreateForm(type);
+            });
+        });
+    }
+});
+
+function showMobileCreateForm(type) {
+    // Add the mobile-show-create class to show the form
+    document.getElementById(\"mainContainer\").classList.add(\"mobile-show-create\");
+    
+    // Update the panel header
+    const panelHeader = document.querySelector(\"#datapanel .card-header h2\");
+    if (panelHeader) {
+        panelHeader.textContent = \"Create New \" + type.replace(\"_\", \" \").replace(/\\b\\w/g, l => l.toUpperCase());
+    }
+    
+    // Add close button if not exists
+    const cardHeader = document.querySelector(\"#datapanel .card-header\");
+    if (cardHeader && !cardHeader.querySelector(\".mobile-close-create\")) {
+        const closeBtn = document.createElement(\"button\");
+        closeBtn.type = \"button\";
+        closeBtn.className = \"btn-close btn-close-white mobile-close-create d-lg-none\";
+        closeBtn.onclick = closeMobileCreateForm;
+        closeBtn.setAttribute(\"aria-label\", \"Close\");
+        cardHeader.appendChild(closeBtn);
+    }
+    
+    // Load the create form via AJAX
+    const formData = new FormData();
+    formData.append(\"act\", \"createnew\");
+    formData.append(\"type\", type);
+    formData.append(\"_token\", \"' . addslashes($csrf_token) . '\");
+    
+    const xhr = new XMLHttpRequest();
+    xhr.open(\"POST\", \"' . $_SERVER['PHP_SELF'] . '\", true);
+    xhr.setRequestHeader(\"X-Requested-With\", \"XMLHttpRequest\");
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            // Since we now return only the form content for AJAX, use it directly
+            const currentCardBody = document.querySelector(\"#datapanel .card-body\");
+            if (currentCardBody) {
+                currentCardBody.innerHTML = xhr.responseText;
+                currentCardBody.classList.remove(\"d-flex\", \"align-items-center\", \"justify-content-center\");
+            }
+            
+            // Scroll to top on mobile
+            window.scrollTo(0, 0);
+            
+            // Re-initialize any necessary scripts
+            initializeTooltips();
+        }
+    };
+    
+    xhr.send(formData);
+}
+</script>
 ';
 
 // Modal for mobile credential details

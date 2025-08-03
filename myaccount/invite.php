@@ -112,263 +112,51 @@ $transferpagedata = $system->startpostpage($transferpagedata);
 
 $additionalstyles = '
 <style>
-/* Hero Invite Page Styles - Matching Login Design */
-* {
-    box-sizing: border-box !important;
-}
-
-/* Main wrapper */
-.invite-wrapper {
-    width: 100%;
-    max-width: 1200px;
-    display: grid;
-    grid-template-columns: 1fr 500px;
-    gap: 4rem;
-    align-items: center;
-    padding: 0 2rem;
-    margin: 0 auto;
-}
-
-/* Welcome content for desktop */
-.welcome-content {
-    color: #212529;
-}
-
-.welcome-content h2 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    line-height: 1.2;
-}
-
-.welcome-content h2 span {
-    color: var(--bs-primary);
-}
-
-.welcome-content p {
-    font-size: 1.25rem;
-    color: #6c757d;
-    margin-bottom: 2rem;
-    line-height: 1.6;
-}
-
-.feature-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-}
-
-.feature-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-}
-
-.feature-icon {
-    flex-shrink: 0;
-    width: 48px;
-    height: 48px;
-    background: var(--bs-secondary);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--bs-primary);
-    font-size: 1.25rem;
-}
-
-.feature-text h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #212529;
-    margin-bottom: 0.25rem;
-}
-
-.feature-text p {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin: 0;
-    line-height: 1.4;
-}
-
-/* Card Container */
-.invite-container {
-    width: 100%;
-    max-width: 480px;
-    margin: 2rem auto;
-}
-
-.invite-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-}
-
-/* Header Section */
-.invite-header {
-    text-align: center;
-    padding: 2rem 1.5rem 1rem;
-}
-
-.invite-header h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #212529;
-    margin-bottom: 0.5rem;
-}
-
-.invite-header p {
-    font-size: 1rem;
-    color: #6c757d;
-    margin: 0;
-}
-
-/* Badge */
-.invite-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #e8f5e8;
-    color: var(--bs-primary);
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-}
-
-.invite-badge i {
-    font-size: 1rem;
-}
-
-/* Form Section */
-.invite-body {
-    padding: 0 1.5rem 2rem;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.5rem;
-}
-
-/* Input Fields */
-.form-control {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    background: white;
-    color: #212529;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
-}
-
-.form-control::placeholder {
-    color: #adb5bd;
-}
-
-/* Preview Button */
-.btn-preview {
-    width: 100%;
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    background: var(--bs-primary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-preview:hover:not(:disabled) {
-    background: #0b5ed7;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
-}
-
-.btn-preview:active {
-    transform: translateY(0);
-}
-
 /* Referral Code Section */
 .referral-section {
-    background: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin-top: 2rem;
+    background: transparent;
+    padding: 1rem 0;
     text-align: center;
-}
-
-.referral-section h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
 }
 
 .referral-code {
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--bs-primary);
-    margin-bottom: 1rem;
     font-family: monospace;
+    letter-spacing: 3px;
+    user-select: all;
+    cursor: pointer;
 }
 
 .referral-section p {
     font-size: 0.875rem;
     color: #6c757d;
     margin-bottom: 0;
+    margin-top: 1rem;
 }
 
-/* Responsive */
-@media (max-width: 992px) {
-    .invite-wrapper {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-    }
-    
-    .welcome-content {
-        display: none;
-    }
-    
-    .invite-container {
-        margin: 0 auto;
-    }
+/* Copy button hover effect */
+.btn-outline-primary:hover .bi-clipboard {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
 }
 
-@media (max-width: 768px) {
-    .invite-container {
-        max-width: 100%;
-        margin: 1rem auto;
-    }
-    
-    .invite-header {
-        padding: 1.5rem 1rem 0.75rem;
-    }
-    
-    .invite-header h1 {
-        font-size: 1.5rem;
-    }
-    
-    .invite-body {
-        padding: 0 1rem 1.5rem;
-    }
+/* Feature icons */
+.feature-icon {
+    font-size: 3rem;
+    color: var(--bs-primary);
+    margin-bottom: 1rem;
+}
+
+/* Form styling */
+.form-floating label {
+    color: #6c757d;
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+    color: var(--bs-primary);
 }
 </style>
 ';
@@ -377,111 +165,122 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="main-content">
-    <!-- Desktop wrapper for side-by-side layout -->
-    <div class="invite-wrapper">
-        <!-- Welcome content - Desktop only -->
-        <div class="welcome-content d-none d-lg-block">
-            <h2>Share the <span>Birthday Love</span></h2>
-            <p>Invite your friends and family to join Birthday.Gold and help them never miss their special birthday rewards!</p>
-            
-            <div class="feature-grid">
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Grow Together</h3>
-                        <p>Build your birthday celebration community</p>
-                    </div>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="bi bi-gift-fill"></i>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Share Rewards</h3>
-                        <p>Help friends discover amazing birthday deals</p>
-                    </div>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="bi bi-envelope-heart-fill"></i>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Personal Touch</h3>
-                        <p>Send personalized invitations they will love</p>
-                    </div>
-                </div>
-                
-                <div class="feature-item">
-                    <div class="feature-icon">
-                        <i class="bi bi-link-45deg"></i>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Easy Sharing</h3>
-                        <p>Your unique referral link makes it simple</p>
-                    </div>
-                </div>
-            </div>
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-envelope-heart me-3"></i>Invite Friends</h1>
+            <p class="lead mb-0">Share the Birthday Love - Help friends discover amazing birthday rewards!</p>
         </div>
-        
-        <!-- Invite Card -->
-        <div class="invite-container mb-md-5">
-            <div class="invite-card">
-                <!-- Header Section -->
-                <div class="invite-header">
-                    <div class="invite-badge">
-                        <i class="bi bi-envelope-plus-fill"></i>
-                        <span>Send Invitation</span>
-                    </div>
-                    <h1>Invite a Friend</h1>
-                    <p>Fill in their details to send a personalized invitation</p>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            
+            <?php if (!empty($transferpagedata['message'])): ?>
+                <?php echo $transferpagedata['message']; ?>
+            <?php endif; ?>
+            
+            <!-- Main Invite Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Send an Invitation</h5>
                 </div>
-                
-                <!-- Form Section -->
-                <div class="invite-body">
-                    <?php if (!empty($transferpagedata['message'])): ?>
-                        <div class="alert-container">
-                            <?php echo $transferpagedata['message']; ?>
-                        </div>
-                    <?php endif; ?>
-                    
+                <div class="card-body">
                     <form method="POST" action="/myaccount/invite" id="inviteForm">
                         <?php echo $display->inputcsrf_token(); ?>
                         
-                        <div class="form-group">
-                            <label class="form-label" for="name">Their Name</label>
-                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter friend's name" required>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="Friend's Name" required>
+                                    <label for="name">Their Name</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="relationship" name="relationship" required>
+                                        <?php echo $display->list_relationships(); ?>
+                                    </select>
+                                    <label for="relationship">Relationship</label>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label class="form-label" for="relationship">Relationship</label>
-                            <select class="form-control" id="relationship" name="relationship" required>
-                                <?php echo $display->list_relationships(); ?>
-                            </select>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="email" name="email" placeholder="friend@example.com" required>
+                                <label for="email">Their Email Address</label>
+                            </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label class="form-label" for="email">Their Email Address</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="friend@example.com" required>
+                        <div class="text-center">
+                            <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#previewModal">
+                                <i class="bi bi-eye me-2"></i>Preview Invitation
+                            </button>
                         </div>
-                        
-                        <button type="button" class="btn-preview" data-bs-toggle="modal" data-bs-target="#previewModal">
-                            Preview Invitation
-                        </button>
                     </form>
-                    
-                    <!-- Referral Code Section -->
+                </div>
+            </div>
+            
+            <!-- Referral Code Card -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Your Referral Code</h5>
+                </div>
+                <div class="card-body text-center">
                     <div class="referral-section">
-                        <h3>Your Referral Code</h3>
-                        <div class="referral-code"><?php echo htmlspecialchars($referralcode['code']); ?></div>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="referral-code me-3" id="referralCode"><?php echo htmlspecialchars($referralcode['code']); ?></div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="copyReferralCode()" title="Copy code">
+                                <i class="bi bi-clipboard" id="copyIcon"></i>
+                            </button>
+                        </div>
                         <p>Share this code with friends for direct sign-up</p>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Friends who use your code will get special benefits when they sign up!
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
+            
+            <!-- Why Invite Section -->
+            <div class="row text-center">
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="feature-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <h6>Grow Together</h6>
+                    <p class="small text-muted">Build your birthday celebration community</p>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="feature-icon">
+                        <i class="bi bi-gift-fill"></i>
+                    </div>
+                    <h6>Share Rewards</h6>
+                    <p class="small text-muted">Help friends discover birthday deals</p>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="feature-icon">
+                        <i class="bi bi-envelope-heart-fill"></i>
+                    </div>
+                    <h6>Personal Touch</h6>
+                    <p class="small text-muted">Send personalized invitations</p>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="feature-icon">
+                        <i class="bi bi-link-45deg"></i>
+                    </div>
+                    <h6>Easy Sharing</h6>
+                    <p class="small text-muted">Your unique link makes it simple</p>
+                </div>
+            </div>
+            
         </div>
     </div>
 </div>
@@ -508,6 +307,35 @@ include($dir['core_components'] . '/bg_header.inc');
 </div>
 
 <script>
+// Copy referral code function
+function copyReferralCode() {
+    const referralCode = document.getElementById('referralCode').textContent;
+    const copyIcon = document.getElementById('copyIcon');
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(referralCode).then(() => {
+        // Change icon to checkmark
+        copyIcon.classList.remove('bi-clipboard');
+        copyIcon.classList.add('bi-check-lg');
+        
+        // Show success message (optional)
+        const button = copyIcon.parentElement;
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-success');
+        
+        // Reset after 2 seconds
+        setTimeout(() => {
+            copyIcon.classList.remove('bi-check-lg');
+            copyIcon.classList.add('bi-clipboard');
+            button.classList.remove('btn-success');
+            button.classList.add('btn-outline-primary');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        alert('Failed to copy code. Please select and copy manually.');
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const previewButton = document.querySelector('[data-bs-target="#previewModal"]');
     const form = document.querySelector('#inviteForm');

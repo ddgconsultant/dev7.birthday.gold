@@ -3,21 +3,24 @@
 
 $outputcontent .= '
 <!-- Login URL Field -->
-<div class="mb-3">
-<label for="edit-host" class="form-label">Login URL</label>
-<input type="url" class="form-control" id="edit-host" name="host" value="'.$row['host'].'">
+<div class="floating-label-group">
+<input type="url" class="form-control floating-input" id="edit-host" name="host" placeholder=" " value="'.$row['host'].'">
+<label for="edit-host" class="floating-label">Login URL</label>
 </div>
 
 <!-- Username Field -->
-<div class="mb-3">
-<label for="edit-username" class="form-label">Username</label>
-<input type="search" class="form-control" id="edit-username" name="username" placeholder="Enter username" value="'.htmlspecialchars($row['encrypted_name']).'">
+<div class="floating-label-group">
+<input type="search" class="form-control floating-input" id="edit-username" name="username" placeholder=" " value="'.htmlspecialchars($row['encrypted_name']).'">
+<label for="edit-username" class="floating-label">Username</label>
 </div>
 
 <!-- Password Field -->
-<div class="mb-3">
-<label for="edit-password" class="form-label">Password</label>
-<input type="password" class="form-control" id="edit-password" name="password" placeholder="Enter password" autocomplete="new-password" value="'.htmlspecialchars($row['encrypted_value']).'">
+<div class="floating-label-group password-input-group">
+<input type="password" class="form-control floating-input" id="edit-password" name="password" placeholder=" " autocomplete="new-password" value="'.htmlspecialchars($row['encrypted_value']).'">
+<label for="edit-password" class="floating-label">Password</label>
+<button type="button" class="password-toggle-btn" onclick="togglePasswordField(\'edit-password\')">
+<i class="bi bi-eye" id="edit-password-toggle-icon"></i>
+</button>
 </div>
 
 <!-- Password Strength Indicator -->

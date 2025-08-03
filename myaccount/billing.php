@@ -19,6 +19,9 @@ $pagedata = [
     'activepage' => 'account'
 ];
 
+// Add v7 theme CSS for content-header-dark class
+$additionalstyles = '<link href="/public/css/v7/bg_theme.css" rel="stylesheet">';
+
 // Use the current_user_data that's already properly set up in site-controller.php
 // This ensures we're using the correct user data
 $currentUserId = $current_user_data['user_id'];
@@ -85,11 +88,20 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
+<!-- Dark Header Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <h1>Billing & Payment History</h1>
+        <p class="lead">Manage your subscription and view payment details</p>
+    </div>
+</div>
+
 <style>
 .billing-container {
     max-width: 1000px;
     margin: 0 auto;
     padding: 2rem;
+    margin-top: -1rem; /* Reduce gap after dark header */
 }
 
 .plan-status-card {
@@ -229,8 +241,6 @@ include($dir['core_components'] . '/bg_header.inc');
 </style>
 
 <div class="billing-container">
-    <h1 class="mb-4">Billing & Payment History</h1>
-    
     <?php if (isset($_GET['debug'])): ?>
     <div class="alert alert-info">
         <h5>Debug Information</h5>

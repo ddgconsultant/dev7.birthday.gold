@@ -134,56 +134,49 @@ $days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satu
 
 $bodycontentclass='';
 
+// Add v7 theme CSS
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+?>
 
-/*
-### nav-myaccount.php  DISPLAYS THE WIZARD WHEN $wizardmode = true
-echo '
-<div class="container-xl px-4 mt-4">
-<!-- Account page navigation-->
-';
-include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/nav-myaccount.php'); 
-*/
-
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-
-echo '<section class="pt-3 mt-3 main-content">';
-
-
-// SCHEDULING TIP
-echo '
-<!-- Start -->
-<div class="container">
-<div class="row">
-<div class="col-12 mt-5">
-';
-echo '<div class="mb-3">
-<h2 class="text-primary">Your Enrollment Schedule</h2>
-</div>
-';
-echo '
-'. $display->formaterrormessage($transferpagedata['message']).'
-</div>
-</div>
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-calendar3 me-3"></i>Enrollment Schedule</h1>
+            <p class="lead mb-0">Set your preferred times for enrollment processing</p>
+        </div>
+    </div>
 </div>
 
-<form method="post" id="scheduleform" action="/myaccount/enrollment-schedule">
-'. $display->inputcsrf_token().'';
+<!-- Tip Section at the Top -->
+<div class="container my-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <?php echo $display->formaterrormessage($transferpagedata['message']); ?>
+        </div>
+    </div>
+</div>
 
+<!-- Main Content Section -->
+<div class="container mb-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
 
+<?php
 
-
+// Start the form
+echo '<form method="post" id="scheduleform" action="/myaccount/enrollment-schedule">';
+echo $display->inputcsrf_token();
 
 // QUICK SELECT FORM
-echo '<div class="container col-12">
-<div class="row align-items-center">'; // Remove gaps between columns and align items to the center
+echo '<div class="row align-items-center">'; // Remove gaps between columns and align items to the center
 
 ## --- QUICK SELECT BUTTONS
 echo '<div class="col-12 col-md-8 d-flex align-items-center my-sm-3">';
-echo '<div class="card w-100">
-<div class="card-header fw-bold p-1 ps-3">Quick Select: ';
+echo '<div class="card w-100"><div class="card-header fw-bold p-1 ps-3">Quick Select: ';
 
 $buttons = array(
     array('name' => 'Anytime', 'id'=> 'anytimeButton', 'onclick' => 'enableAllCheckboxes()'),
@@ -235,19 +228,13 @@ echo '<button class="btn btn-success w-100" type="submit" value="Save Schedule">
 echo '</div>'; // End of Save Button Column
 
 echo '</div>'; // End of Row
-echo '</div>'; // End of Container
-
-echo '</div>'; // End of Container
-
 
 // SCHEDULE FORM
-echo '<div class="container mt-3 col-12">';
+echo '<div class="mt-3">';
 // SELECTORS FOR EACH DAY
 foreach ($days as $day) {
     echo '<div class="card mb-3">';
-    echo '<div class="card-header h3 fw-bold">' . $day . '  
-    <button type="button" class="btn btn-sm btn-primary ms-5 mx-3 p-1 d-none" onclick="enableAllDay(\'' . $day . '\')">All Day</button>
-    </div>';
+    echo '<div class="card-header h3 fw-bold">' . $day . '  <button type="button" class="btn btn-sm btn-primary ms-5 mx-3 p-1 d-none" onclick="enableAllDay(\'' . $day . '\')">All Day</button></div>';
     echo '<div class="card-body">';
     echo '<div class="row ms-5">';
     
@@ -256,36 +243,29 @@ foreach ($days as $day) {
         $end_time = (($i * 4 + 4) % 24 === 0) ? 'midnight' : ((($i * 4 + 4) % 12) === 0 ? 12 : (($i * 4 + 4) % 12)) . ':00 ' . ((($i * 4 + 4) / 12) >= 1 ? 'PM' : 'AM');
         
         echo '<div class="col-md-4">';
-        echo '<div class="form-check form-switch">
-        ';
-        echo '<input class="form-check-input" type="checkbox" role="switch" id="schedule_'.$day.'_'.$i.'" name="schedule[' . $day . '][]" value="' . $i . '"
-        ';
+        echo '<div class="form-check form-switch">';
+        echo '<input class="form-check-input" type="checkbox" role="switch" id="schedule_'.$day.'_'.$i.'" name="schedule[' . $day . '][]" value="' . $i . '"';
         if (!empty($existingSchedule[$day])) {
             echo in_array($i, $existingSchedule[$day]) ? ' checked' : '';
         }
         echo '> ';
         
         echo '<label class="form-check-label" for="schedule_'.$day.'_'.$i.'">'.$start_time . '-' . $end_time.'</label>';
-        echo '</div>
-        </div>';
+        echo '</div></div>';
     }
     
-    echo '
-    </div>
-    </div>
-    </div>';
+    echo '</div></div></div>';
 }
 
-echo '<div class="flex justify-content-center">
-<button class="btn btn-success btn-lg btn-block" type="submit" value="Save Schedule">Save Schedule</button>
-</div>
-</form>
-</div>
-</div>
-</section>';
+echo '<div class="text-center mt-4"><button class="btn btn-success btn-lg px-5" type="submit" value="Save Schedule">Save Schedule</button></div>';
 
-
+// Close schedule form div
+echo '</div><!-- End schedule form -->';
 ?>
+            </form>
+        </div><!-- End col-lg-10 -->
+    </div><!-- End row -->
+</div><!-- End container -->
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -356,7 +336,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-
+    function enableAllDay(day) {
+        const checkboxes = document.querySelectorAll(`#scheduleform input[id*="${day}"]`);
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+    }
 
 </script>
 <?PHP

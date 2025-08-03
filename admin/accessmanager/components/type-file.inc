@@ -2,9 +2,9 @@
 
 $outputcontent .= '
 <!-- File Fields -->
-<div class="mb-3">
-<label for="edit-file-title" class="form-label">File Title</label>
-<input type="text" class="form-control" id="edit-file-title" name="file_title" placeholder="Enter file title">
+<div class="floating-label-group">
+<input type="text" class="form-control floating-input" id="edit-file-title" name="file_title" placeholder=" " value="'.htmlspecialchars($row['encrypted_name'] ?? '').'">
+<label for="edit-file-title" class="floating-label">File Title</label>
 </div>
 
 <div class="mb-3">
