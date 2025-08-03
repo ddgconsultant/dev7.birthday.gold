@@ -312,13 +312,24 @@ foreach ($filters as $filter) {
                 <div class="bulk-actions-bar" data-tab="' . $key . '">
                     <span class="bulk-select-all" onclick="toggleSelectAll(\'' . $key . '\')">Select All</span>
                     <span class="selected-count">0 selected</span>
-                    <div class="ms-auto d-flex gap-2">
+                    <div class="ms-auto d-flex gap-2">';
+                
+                // Show appropriate buttons based on tab
+                if ($key !== 'read') {
+                    echo '
                         <button class="btn btn-sm btn-outline-primary bulk-action-btn" onclick="bulkMarkAs(\'' . $key . '\', \'read\')" title="Mark selected as read" disabled>
                             <i class="bi bi-envelope-open"></i> Mark as Read
-                        </button>
+                        </button>';
+                }
+                
+                if ($key !== 'unread') {
+                    echo '
                         <button class="btn btn-sm btn-outline-primary bulk-action-btn" onclick="bulkMarkAs(\'' . $key . '\', \'unread\')" title="Mark selected as unread" disabled>
                             <i class="bi bi-envelope"></i> Mark as Unread
-                        </button>
+                        </button>';
+                }
+                
+                echo '
                         <button class="btn btn-sm btn-outline-danger bulk-action-btn" onclick="bulkDelete(\'' . $key . '\')" title="Delete selected" disabled>
                             <i class="bi bi-trash"></i> Delete
                         </button>
