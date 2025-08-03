@@ -291,37 +291,83 @@ include($dir['core_components'] . '/bg_header.inc');
             <h4 class="mb-3">Recent Activity</h4>
             <div class="history-table">
                 <?php 
-                // Show last 5 enrollments
-                $recent_enrollments = array_slice($enrollment_history, 0, 5);
-                if (!empty($recent_enrollments)): 
+                // Combine allocations and enrollments for recent activity
+                $recent_activity = [];
+                
+                // Add allocations to activity
+                foreach ($user_allocations as $alloc) {
+                    $recent_activity[] = [
+                        'type' => 'allocation',
+                        'date' => $alloc['created_at'],
+                        'data' => $alloc
+                    ];
+                }
+                
+                // Add enrollments to activity
+                foreach ($enrollment_history as $enrollment) {
+                    $recent_activity[] = [
+                        'type' => 'enrollment',
+                        'date' => $enrollment['enrollment_date'],
+                        'data' => $enrollment
+                    ];
+                }
+                
+                // Sort by date descending
+                usort($recent_activity, function($a, $b) {
+                    return strtotime($b['date']) - strtotime($a['date']);
+                });
+                
+                // Get last 5 activities
+                $recent_activities = array_slice($recent_activity, 0, 5);
+                
+                if (!empty($recent_activities)): 
                 ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Company</th>
+                                <th>Description</th>
                                 <th>Type</th>
                                 <th class="text-end">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($recent_enrollments as $enrollment): ?>
+                            <?php foreach ($recent_activities as $activity): ?>
                             <tr>
-                                <td><?php echo date('M j, Y', strtotime($enrollment['enrollment_date'])); ?></td>
+                                <td><?php echo date('M j, Y', strtotime($activity['date'])); ?></td>
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <?php if (!empty($enrollment['company_logo'])): ?>
-                                        <img src="<?php echo $display->companyimage($enrollment['company_id'] . '/' . $enrollment['company_logo']); ?>" 
-                                             class="rounded me-2" 
-                                             style="width: 24px; height: 24px; object-fit: cover;"
-                                             alt="">
-                                        <?php endif; ?>
-                                        <strong><?php echo htmlspecialchars($enrollment['company_name']); ?></strong>
-                                    </div>
+                                    <?php if ($activity['type'] == 'allocation'): ?>
+                                        <div>
+                                            <strong><?php echo ucfirst($activity['data']['allocation_type']); ?> Allocation</strong>
+                                            <?php if (!empty($activity['data']['allocation_comment'])): ?>
+                                                <br><small class="text-muted"><?php echo htmlspecialchars($activity['data']['allocation_comment']); ?></small>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="d-flex align-items-center">
+                                            <?php if (!empty($activity['data']['company_logo'])): ?>
+                                            <img src="<?php echo $display->companyimage($activity['data']['company_id'] . '/' . $activity['data']['company_logo']); ?>" 
+                                                 class="rounded me-2" 
+                                                 style="width: 24px; height: 24px; object-fit: cover;"
+                                                 alt="">
+                                            <?php endif; ?>
+                                            <strong><?php echo htmlspecialchars($activity['data']['company_name']); ?></strong>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
-                                <td><span class="badge bg-danger">Used</span></td>
-                                <td class="text-end allocation-negative">-1</td>
+                                <td>
+                                    <?php if ($activity['type'] == 'allocation'): ?>
+                                        <span class="badge bg-<?php echo $activity['data']['status'] == 'pending' ? 'warning' : 'success'; ?>">
+                                            <?php echo $activity['data']['status'] == 'pending' ? 'Pending' : 'Earned'; ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">Used</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-end <?php echo $activity['type'] == 'allocation' ? 'allocation-positive' : 'allocation-negative'; ?>">
+                                    <?php echo $activity['type'] == 'allocation' ? '+' . $activity['data']['amount'] : '-1'; ?>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
