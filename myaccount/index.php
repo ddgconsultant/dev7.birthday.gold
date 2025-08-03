@@ -525,6 +525,11 @@ echo '
                 <div><i class="bi bi-hand-thumbs-up me-2"></i>Invite Friends</div>
                 <i class="bi bi-chevron-right"></i>
             </a>
+
+            <a href="/recommend-business" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                <div><i class="bi bi-building-add me-2"></i>Recommend Business</div>
+                <i class="bi bi-chevron-right"></i>
+            </a>
         </div>
     </div>
 </div>';
