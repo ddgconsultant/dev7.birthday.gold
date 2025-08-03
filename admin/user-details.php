@@ -1,4 +1,10 @@
 <?php
+// Temporary redirect to new user details page
+if (isset($_GET['u'])) {
+    header('Location: /admin/user-details-v2.php?u=' . $_GET['u']);
+    exit;
+}
+
 $addClasses[] = 'Referral';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
