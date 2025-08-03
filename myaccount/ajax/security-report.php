@@ -144,30 +144,54 @@ if ($action === 'report_device') {
             
             // Send notification email to admin
             $admin_email = 'security@birthday.gold';
-            $subject = 'Security Alert: Suspicious Device Reported';
+            $subject = '[Birthday.Gold] Security Alert: Suspicious Device Reported';
             
-            // Build email message
-            $email_body = "Security Alert: A user has reported a suspicious device.\n\n";
-            $email_body .= "User Information:\n";
-            $email_body .= "- User ID: $user_id\n";
-            $email_body .= "- Username: " . ($current_user_data['username'] ?? 'N/A') . "\n";
-            $email_body .= "- Email: " . ($current_user_data['email'] ?? 'N/A') . "\n\n";
+            // Build HTML email message for admin
+            $email_body = '<h2 style="color: #dc3545;">Security Alert: Suspicious Device Reported</h2>';
             
-            $email_body .= "Device Information:\n";
-            $email_body .= "- Device ID: $device_id\n";
-            $email_body .= "- Reported at: " . date('Y-m-d H:i:s') . "\n";
-            $email_body .= "- Reporter IP: " . $_SERVER['REMOTE_ADDR'] . "\n\n";
+            $email_body .= '<div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">';
+            $email_body .= '<h3 style="margin-top: 0;">User Information:</h3>';
+            $email_body .= '<ul style="list-style: none; padding-left: 0;">';
+            $email_body .= '<li><strong>User ID:</strong> ' . htmlspecialchars($user_id) . '</li>';
+            $email_body .= '<li><strong>Username:</strong> ' . htmlspecialchars($current_user_data['username'] ?? 'N/A') . '</li>';
+            $email_body .= '<li><strong>Email:</strong> ' . htmlspecialchars($current_user_data['email'] ?? 'N/A') . '</li>';
+            $email_body .= '<li><strong>Name:</strong> ' . htmlspecialchars(($current_user_data['first_name'] ?? '') . ' ' . ($current_user_data['last_name'] ?? '')) . '</li>';
+            $email_body .= '</ul>';
+            $email_body .= '</div>';
             
-            $email_body .= "Device Details:\n";
+            $email_body .= '<div style="background-color: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0;">';
+            $email_body .= '<h3 style="margin-top: 0;">Report Details:</h3>';
+            $email_body .= '<ul style="list-style: none; padding-left: 0;">';
+            $email_body .= '<li><strong>Device ID:</strong> ' . htmlspecialchars($device_id) . '</li>';
+            $email_body .= '<li><strong>Reported at:</strong> ' . date('Y-m-d H:i:s') . '</li>';
+            $email_body .= '<li><strong>Reporter IP:</strong> ' . htmlspecialchars($_SERVER['REMOTE_ADDR']) . '</li>';
+            $email_body .= '<li><strong>User Agent:</strong> ' . htmlspecialchars($_SERVER['HTTP_USER_AGENT']) . '</li>';
+            $email_body .= '</ul>';
+            $email_body .= '</div>';
+            
             if (!empty($report_data['device_data'])) {
-                $email_body .= "- Browser: " . ($report_data['device_data']['browser'] ?? 'Unknown') . "\n";
-                $email_body .= "- OS: " . ($report_data['device_data']['os'] ?? 'Unknown') . "\n";
-                $email_body .= "- Device Type: " . ($report_data['device_data']['deviceType'] ?? 'Unknown') . "\n";
-                $email_body .= "- Location: " . ($report_data['device_data']['location_string'] ?? 'Unknown') . "\n";
-                $email_body .= "- Last Seen: " . ($report_data['device_data']['last_used'] ?? 'Unknown') . "\n";
+                $email_body .= '<div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">';
+                $email_body .= '<h3 style="margin-top: 0;">Device Details:</h3>';
+                $email_body .= '<ul style="list-style: none; padding-left: 0;">';
+                $email_body .= '<li><strong>Browser:</strong> ' . htmlspecialchars($report_data['device_data']['browser'] ?? 'Unknown') . '</li>';
+                $email_body .= '<li><strong>OS:</strong> ' . htmlspecialchars($report_data['device_data']['os'] ?? 'Unknown') . '</li>';
+                $email_body .= '<li><strong>Device Type:</strong> ' . htmlspecialchars($report_data['device_data']['deviceType'] ?? 'Unknown') . '</li>';
+                $email_body .= '<li><strong>Location:</strong> ' . htmlspecialchars($report_data['device_data']['location_string'] ?? 'Unknown') . '</li>';
+                $email_body .= '<li><strong>Last Seen:</strong> ' . htmlspecialchars($report_data['device_data']['last_used'] ?? 'Unknown') . '</li>';
+                $email_body .= '</ul>';
+                $email_body .= '</div>';
             }
             
-            $email_body .= "\nFull Device Data:\n" . print_r($report_data['device_data'], true);
+            $email_body .= '<div style="margin: 20px 0;">';
+            $email_body .= '<a href="https://birthday.gold/admin/security-reports" style="display: inline-block; padding: 10px 20px; background-color: #dc3545; color: #ffffff; text-decoration: none; border-radius: 25px;">View Security Reports</a>';
+            $email_body .= '</div>';
+            
+            $email_body .= '<details style="margin-top: 30px;">';
+            $email_body .= '<summary style="cursor: pointer; color: #6c757d;">Full Device Data (Debug)</summary>';
+            $email_body .= '<pre style="background-color: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto;">';
+            $email_body .= htmlspecialchars(print_r($report_data, true));
+            $email_body .= '</pre>';
+            $email_body .= '</details>';
             
             // Send notification emails using the Mail class
             session_tracking('AJAX-security_report_email_start', 'Preparing to send emails');
@@ -176,7 +200,7 @@ if ($action === 'report_device') {
             $admin_details = [
                 'to' => 'security@birthday.gold',
                 'subject' => $subject,
-                'body' => nl2br($email_body),
+                'body' => $email_body,
                 'donottrack' => true
             ];
             
@@ -187,25 +211,55 @@ if ($action === 'report_device') {
                 session_tracking('AJAX-security_report_email_admin_fail', 'Admin email failed');
             }
             
-            // Send user confirmation email
+            // Send user confirmation email using member account notification
             if (!empty($current_user_data['email'])) {
-                $user_subject = 'Security Report Confirmation';
-                $user_body = "Hello,<br><br>";
-                $user_body .= "This email confirms that you have reported a suspicious device on your Birthday Gold account.<br><br>";
-                $user_body .= "<strong>Device Details:</strong><br>";
-                $user_body .= "- Device ID: $device_id<br>";
-                $user_body .= "- Reported at: " . date('Y-m-d H:i:s') . "<br><br>";
-                $user_body .= "We take security seriously and will investigate this report. ";
-                $user_body .= "As a precaution, we recommend you:<br>";
-                $user_body .= "1. Change your password immediately<br>";
-                $user_body .= "2. Review your recent account activity<br>";
-                $user_body .= "3. Enable two-factor authentication if available<br><br>";
-                $user_body .= "If you did not make this report, please contact us immediately.<br><br>";
-                $user_body .= "Thank you,<br>Birthday Gold Security Team";
+                // Get device details for the email
+                $device_details = !empty($report_data['device_data']) ? $report_data['device_data'] : [];
+                
+                $user_body = '<div class="security-alert">';
+                $user_body .= '<h3 style="color: #856404; margin-top: 0;">Security Alert Confirmation</h3>';
+                $user_body .= '<p>You have successfully reported a suspicious device on your Birthday.Gold account.</p>';
+                $user_body .= '</div>';
+                
+                $user_body .= '<div class="info-box">';
+                $user_body .= '<h4 style="margin-top: 0;">Reported Device Details:</h4>';
+                $user_body .= '<ul style="margin: 10px 0; padding-left: 20px;">';
+                $user_body .= '<li><strong>Device ID:</strong> ' . htmlspecialchars($device_id) . '</li>';
+                $user_body .= '<li><strong>Browser:</strong> ' . htmlspecialchars($device_details['browser'] ?? 'Unknown') . '</li>';
+                $user_body .= '<li><strong>Operating System:</strong> ' . htmlspecialchars($device_details['os'] ?? 'Unknown') . '</li>';
+                $user_body .= '<li><strong>Device Type:</strong> ' . htmlspecialchars($device_details['deviceType'] ?? 'Unknown') . '</li>';
+                $user_body .= '<li><strong>Location:</strong> ' . htmlspecialchars($device_details['location_string'] ?? 'Unknown') . '</li>';
+                $user_body .= '<li><strong>Last Seen:</strong> ' . htmlspecialchars($device_details['last_used'] ?? 'Unknown') . '</li>';
+                $user_body .= '<li><strong>Reported at:</strong> ' . date('F j, Y at g:i A') . '</li>';
+                $user_body .= '</ul>';
+                $user_body .= '</div>';
+                
+                $user_body .= '<p><strong>What happens next?</strong></p>';
+                $user_body .= '<p>Our security team has been notified and will investigate this report. The device has been flagged in our system.</p>';
+                
+                $user_body .= '<div class="security-alert" style="background-color: #f8d7da; border-color: #f5c6cb;">';
+                $user_body .= '<h4 style="color: #721c24; margin-top: 0;">Recommended Security Actions:</h4>';
+                $user_body .= '<ol style="margin: 10px 0; padding-left: 20px;">';
+                $user_body .= '<li>Change your password immediately</li>';
+                $user_body .= '<li>Review your recent account activity</li>';
+                $user_body .= '<li>Check your enrolled rewards for any unauthorized changes</li>';
+                $user_body .= '<li>Consider enabling additional security features</li>';
+                $user_body .= '</ol>';
+                $user_body .= '</div>';
+                
+                $user_body .= '<p style="text-align: center; margin: 30px 0;">';
+                $user_body .= '<a href="https://birthday.gold/myaccount/security-settings" class="action-button">Security Settings</a>';
+                $user_body .= '<a href="https://birthday.gold/myaccount/loginhistory" class="action-button secondary">View All Devices</a>';
+                $user_body .= '</p>';
+                
+                $user_body .= '<p style="color: #dc3545; font-weight: 600;">If you did not make this report, please contact us immediately at <a href="mailto:security@birthday.gold">security@birthday.gold</a></p>';
+                
+                // For now, use the traditional email method until we debug the new system
+                session_tracking('AJAX-security_report_using_fallback', 'Using traditional email method');
                 
                 $user_details = [
                     'to' => $current_user_data['email'],
-                    'subject' => $user_subject,
+                    'subject' => '[Birthday.Gold] Device Security Report Confirmation',
                     'body' => $user_body,
                     'donottrack' => true
                 ];
@@ -216,6 +270,31 @@ if ($action === 'report_device') {
                 } else {
                     session_tracking('AJAX-security_report_email_user_fail', 'User email failed');
                 }
+                
+                // TODO: Re-enable member account notification system after debugging
+                /*
+                // Send using member account notification system
+                try {
+                    $notification_data = [
+                        'user_id' => $user_id,
+                        'subject' => 'Device Security Report Confirmation',
+                        'content' => $user_body,
+                        'notification_type' => 'security_alert',
+                        'priority' => 'high'
+                    ];
+                    
+                    $notification_result = $mail->sendMemberAccountNotification($notification_data);
+                    
+                    if ($notification_result['success']) {
+                        session_tracking('AJAX-security_report_notification', 'User notification created: ' . $notification_result['notification_id']);
+                    } else {
+                        session_tracking('AJAX-security_report_notification_fail', 'Failed to create user notification');
+                    }
+                } catch (Exception $e) {
+                    session_tracking('AJAX-security_report_notification_error', 'Exception: ' . $e->getMessage());
+                    // Don't fail the whole report, just log the email error
+                }
+                */
             }
             
             // Log successful report

@@ -1300,6 +1300,94 @@ class MailQueue
 
     // Log tags used
   }
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  function sendMemberAccountNotification($input)
+  {
+    global $dir, $app, $qik, $database;
+    
+    // Required fields
+    if (!$qik->checkvariables($input, ['user_id', 'subject', 'content', 'notification_type'])) {
+      session_tracking('sendMemberAccountNotification_error', 'Missing required fields');
+      return false;
+    }
+    
+    // Get user info
+    $sql = "SELECT user_id, email, first_name, last_name, username FROM bg_users WHERE user_id = :user_id";
+    $stmt = $database->query($sql, [':user_id' => $input['user_id']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$user) {
+      session_tracking('sendMemberAccountNotification_error', 'User not found');
+      return false;
+    }
+    
+    // Create notification record first
+    $notification_sql = "INSERT INTO bg_user_notifications 
+                        (user_id, type, subject, message, status, priority, create_dt, modify_dt) 
+                        VALUES 
+                        (:user_id, :type, :subject, :message, 'unread', :priority, NOW(), NOW())";
+    
+    $notification_params = [
+      ':user_id' => $user['user_id'],
+      ':type' => $input['notification_type'],
+      ':subject' => $input['subject'],
+      ':message' => $input['content'],
+      ':priority' => $input['priority'] ?? 'normal'
+    ];
+    
+    try {
+      $database->query($notification_sql, $notification_params);
+      $notification_id = $database->lastInsertId();
+    } catch (Exception $e) {
+      session_tracking('sendMemberAccountNotification_error', 'Failed to create notification: ' . $e->getMessage());
+      return false;
+    }
+    
+    // Load member account template
+    global $dir;
+    $template_path = $_SERVER['DOCUMENT_ROOT'] . '/core/v7/email/email-template_member_account.inc';
+    if (!file_exists($template_path)) {
+      // Fallback to v3 if v7 doesn't exist
+      $template_path = $_SERVER['DOCUMENT_ROOT'] . '/core/v3/email/email-template_member_account.inc';
+    }
+    include($template_path);
+    
+    // Prepare email
+    $message = [
+      'toemail' => $user['email'],
+      'subject' => '[Birthday.Gold] ' . $input['subject'],
+      'notificationid' => $notification_id // This will enable tracking
+    ];
+    
+    // Build tracking pixel
+    $tracking_pixel = '';
+    if ($notification_id) {
+      $tracking_url = 'https://birthday.gold/mtrk?i=' . $qik->encodeId($notification_id);
+      $tracking_pixel = '<img src="' . $tracking_url . '" alt="" width="1" height="1" style="display:none;">';
+    }
+    
+    // Replace placeholders in template
+    $message['body'] = str_replace('{{MESSAGE_CONTENT}}', $input['content'], $output);
+    $message['body'] = str_replace('{{TRACKING_PIXEL}}', $tracking_pixel, $message['body']);
+    
+    // Send email
+    $result = $this->sendmail($message);
+    
+    if ($result['mail_sent']) {
+      // Update notification with email sent status
+      $update_sql = "UPDATE bg_user_notifications 
+                     SET email_sent = 1, modify_dt = NOW() 
+                     WHERE notification_id = :notification_id";
+      $database->query($update_sql, [':notification_id' => $notification_id]);
+    }
+    
+    return [
+      'success' => $result['mail_sent'],
+      'notification_id' => $notification_id,
+      'email_result' => $result
+    ];
+  }
 }
   
   // Usage:
