@@ -91,12 +91,6 @@ $additionalstyles = '
     margin-bottom: 2rem;
 }
 
-.platform-icon {
-    width: 48px;
-    height: 48px;
-    margin-right: 1rem;
-}
-
 .code-display {
     font-size: 2rem;
     font-weight: bold;
@@ -217,20 +211,20 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="row mb-4">
             <div class="col-md-4 mb-3">
                 <button class="btn btn-outline-primary w-100 p-3" onclick="showInstructions('google')">
-                    <img src="/public/images/google-assistant.png" alt="Google" class="platform-icon">
-                    <br>Google Assistant
+                    <i class="bi bi-google fs-1 mb-2 d-block"></i>
+                    Google Assistant
                 </button>
             </div>
             <div class="col-md-4 mb-3">
                 <button class="btn btn-outline-primary w-100 p-3" onclick="showInstructions('alexa')">
-                    <img src="/public/images/alexa.png" alt="Alexa" class="platform-icon">
-                    <br>Amazon Alexa
+                    <i class="bi bi-alexa fs-1 mb-2 d-block"></i>
+                    Amazon Alexa
                 </button>
             </div>
             <div class="col-md-4 mb-3">
                 <button class="btn btn-outline-secondary w-100 p-3" disabled>
-                    <img src="/public/images/siri.png" alt="Siri" class="platform-icon">
-                    <br>Siri<br><small>(Coming Soon)</small>
+                    <i class="bi bi-phone fs-1 mb-2 d-block"></i>
+                    Siri<br><small>(Coming Soon)</small>
                 </button>
             </div>
         </div>
@@ -316,10 +310,10 @@ include($dir['core_components'] . '/bg_header.inc');
         <h3 class="mb-3">What You Can Ask</h3>
         <p class="text-muted">Once linked, try these voice commands:</p>
         <ul class="list-unstyled mt-3">
-            <li class="mb-2"><i class="fas fa-microphone text-primary"></i> "Hey Google, ask Birthday Gold how many enrollments I have"</li>
-            <li class="mb-2"><i class="fas fa-microphone text-primary"></i> "Alexa, ask Birthday Gold what rewards I'm enrolled in"</li>
-            <li class="mb-2"><i class="fas fa-microphone text-primary"></i> "How many allocations do I have left?"</li>
-            <li class="mb-2"><i class="fas fa-microphone text-primary"></i> "What's my account status?"</li>
+            <li class="mb-2"><i class="bi bi-mic-fill text-primary me-2"></i> "Hey Google, ask Birthday Gold how many enrollments I have"</li>
+            <li class="mb-2"><i class="bi bi-mic-fill text-primary me-2"></i> "Alexa, ask Birthday Gold what rewards I'm enrolled in"</li>
+            <li class="mb-2"><i class="bi bi-mic-fill text-primary me-2"></i> "How many allocations do I have left?"</li>
+            <li class="mb-2"><i class="bi bi-mic-fill text-primary me-2"></i> "What's my account status?"</li>
         </ul>
     </div>
 </div>
