@@ -401,6 +401,31 @@ echo '
 //==================================================================================================================
 echo '
     
+    <!-- Voice Assistant Section -->
+    <div class="panel-section">
+        <a href="/myaccount/assistant-link.php" class="section-header">
+            <i class="bi bi-mic-fill"></i>Voice Assistant
+        </a>
+        <ul class="list-unstyled list-userdetail">
+            <li>
+                <a href="/myaccount/assistant-instructions.php">
+                    <span class="list-label">
+                        <i class="bi bi-book"></i> 
+                        Setup Guide
+                    </span>
+                </a>
+            </li>
+            <li>
+                <a href="/myaccount/assistant-link.php">
+                    <span class="list-label">
+                        <i class="bi bi-gear"></i> 
+                        Manage Devices
+                    </span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
     <!-- Statistics Section (Larger screens only) -->
     <div class="panel-section d-none d-xxl-block">
         <a href="/myaccount/loginhistory" class="section-header">
