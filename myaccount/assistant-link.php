@@ -222,9 +222,9 @@ include($dir['core_components'] . '/bg_header.inc');
                 </button>
             </div>
             <div class="col-md-4 mb-3">
-                <button class="btn btn-outline-secondary w-100 p-3" disabled>
+                <button class="btn btn-outline-primary w-100 p-3" onclick="showInstructions('siri')">
                     <i class="bi bi-phone fs-1 mb-2 d-block"></i>
-                    Siri<br><small>(Coming Soon)</small>
+                    Siri
                 </button>
             </div>
         </div>
@@ -278,6 +278,30 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
         </div>
         
+        <div id="siriInstructions" class="platform-instructions" style="display:none;">
+            <h4>Setup Siri</h4>
+            <ol class="mt-3">
+                <li class="mb-2">
+                    <span class="step-number">1</span>
+                    Download the Birthday Gold app from the App Store
+                </li>
+                <li class="mb-2">
+                    <span class="step-number">2</span>
+                    Open the app and go to Settings > Siri Integration
+                </li>
+                <li class="mb-2">
+                    <span class="step-number">3</span>
+                    Enable "Use with Siri" and link your account
+                </li>
+            </ol>
+            
+            <div class="mt-4 p-3 bg-light rounded">
+                <h5>Or use a linking code:</h5>
+                <button class="btn btn-primary mt-2" onclick="generateNewCode('siri')">Generate Code</button>
+                <p class="mt-2 text-muted small">Enter this code in the iOS app's Siri settings</p>
+            </div>
+        </div>
+        
         <!-- Manual Code Entry -->
         <div class="mt-4 p-3 bg-light rounded">
             <h5>Have a linking code?</h5>
@@ -290,6 +314,7 @@ include($dir['core_components'] . '/bg_header.inc');
                             <option value="">Select...</option>
                             <option value="google">Google Assistant</option>
                             <option value="alexa">Amazon Alexa</option>
+                            <option value="siri">Siri</option>
                         </select>
                     </div>
                     <div class="col-md-4">
