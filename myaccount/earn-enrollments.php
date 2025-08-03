@@ -266,7 +266,8 @@ include($dir['core_components'] . '/bg_header.inc');
                     </div>
                 </div>
             </div>
-
+<?PHP
+/*
             <!-- Quick Actions Section -->
             <div class="method-section">
                 <div class="method-header">
@@ -325,7 +326,8 @@ include($dir['core_components'] . '/bg_header.inc');
                     </div>
                 </div>
             </div>
-
+*/
+?>
             <!-- Referral Section -->
             <div class="method-section">
                 <div class="method-header">
@@ -349,7 +351,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                     <code class="fs-5"><?php echo htmlspecialchars($referralcode['code']); ?></code>
                                 </div>
                                 <div>
-                                    <div class="reward-amount">+5</div>
+                                    <div class="reward-amount">+1</div>
                                     <small class="text-muted">per friend</small>
                                 </div>
                             </div>
@@ -363,6 +365,11 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
             </div>
 
+            <?php 
+            // Only show upgrade CTA for users on free or gold plans (not lifetime)
+            if (empty($current_user_data['account_plan']) || 
+                in_array(strtolower($current_user_data['account_plan']), ['free', 'gold', 'bgfree1', 'bggold1'])):
+            ?>
             <!-- Upgrade CTA -->
             <div class="cta-section">
                 <i class="bi bi-rocket-takeoff fs-1 text-primary mb-3 d-block"></i>
@@ -372,6 +379,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <i class="bi bi-star-fill me-2"></i>View Premium Plans
                 </a>
             </div>
+            <?php endif; ?>
         </div>
 
         <!-- Sidebar -->
