@@ -280,8 +280,8 @@ class Assistant
                 $response = "I can help you check your enrollments, rewards, and account status. What would you like to know?";
         }
         
-        // Log the query
-        $this->logQuery($userId, $platform, $intent, $response);
+        // Log the query (commented out - table doesn't exist yet)
+        // $this->logQuery($userId, $platform, $intent, $response);
         
         return $response;
     }

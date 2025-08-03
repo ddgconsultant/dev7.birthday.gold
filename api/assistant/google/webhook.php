@@ -13,6 +13,11 @@ header('Content-Type: application/json');
 // Initialize Assistant
 $assistant = new Assistant($database, $app, $account, $session);
 
+// Get request body (either from parent webhook or direct call)
+if (!isset($body)) {
+    $body = file_get_contents('php://input');
+}
+
 // Parse Google Assistant request
 $request = json_decode($body, true);
 

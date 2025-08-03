@@ -83,8 +83,8 @@ $app->session_tracking('assistant_oauth_authorized', [
 // Show consent screen
 if (!isset($_GET['consent'])) {
     $pagetitle = 'Link ' . ucfirst($platform) . ' Assistant';
-    include $installpath . 'core/components/v3/bg_pagestart.inc';
-    include $installpath . 'core/components/v3/bg_header.inc';
+    include $dir['core_components'] . '/bg_pagestart.inc';
+    include $dir['core_components'] . '/bg_header.inc';
     ?>
     
     <div class="container mt-4">
@@ -96,8 +96,13 @@ if (!isset($_GET['consent'])) {
                     </div>
                     <div class="card-body">
                         <div class="text-center mb-4">
-                            <img src="/public/images/<?php echo $platform; ?>-assistant-icon.png" 
-                                 alt="<?php echo ucfirst($platform); ?>" style="width: 80px;">
+                            <?php if ($platform === 'google'): ?>
+                                <i class="bi bi-google" style="font-size: 4rem; color: #4285F4;"></i>
+                            <?php elseif ($platform === 'alexa'): ?>
+                                <i class="bi bi-alexa" style="font-size: 4rem; color: #00CAFF;"></i>
+                            <?php else: ?>
+                                <i class="bi bi-mic-fill" style="font-size: 4rem; color: #007bff;"></i>
+                            <?php endif; ?>
                         </div>
                         
                         <p><?php echo ucfirst($platform); ?> Assistant would like to:</p>
@@ -109,7 +114,7 @@ if (!isset($_GET['consent'])) {
                         </ul>
                         
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> 
+                            <i class="bi bi-info-circle-fill"></i> 
                             Your Birthday Gold password will not be shared with <?php echo ucfirst($platform); ?>.
                         </div>
                         
@@ -126,7 +131,9 @@ if (!isset($_GET['consent'])) {
     </div>
     
     <?php
-    include $installpath . 'core/components/v3/bg_footer.inc';
+    $display_footertype='';
+    include($dir['core_components'] . '/bg_footer.inc');
+    $app->outputpage();
     exit;
 }
 
