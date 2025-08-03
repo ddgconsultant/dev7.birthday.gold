@@ -14,11 +14,21 @@ $success_message = '';
 // Retrieve any messages
 $transferpagedata = $system->startpostpage();
 
+// Get current user data
+$current_user_data = $session->get('current_user_data');
+if (!$current_user_data || !isset($current_user_data['user_id'])) {
+    session_tracking('recommend_business_no_user_data', ['session' => $_SESSION]);
+    $messages[] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Session error. Please try logging in again.</div>';
+}
+
 #-------------------------------------------------------------------------------
 # HANDLE PAGE ACTIONS
 #-------------------------------------------------------------------------------
 // Handle form submission
 if ($app->formposted()) {
+    // Track form submission
+    session_tracking('recommend_business_submit', $_POST);
+    
     // Get form data
     $business_name = trim($_POST['business_name'] ?? '');
     $home_url = trim($_POST['home_url'] ?? '');
@@ -30,6 +40,12 @@ if ($app->formposted()) {
     } elseif (!filter_var($home_url, FILTER_VALIDATE_URL) || !filter_var($signup_url, FILTER_VALIDATE_URL)) {
         $messages[] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Please enter valid URLs</div>';
     } else {
+        session_tracking('recommend_business_validation_passed', [
+            'business_name' => $business_name,
+            'home_url' => $home_url,
+            'signup_url' => $signup_url
+        ]);
+        
         // Normalize URLs for comparison - remove protocol and trailing slash
         $normalized_home_url = preg_replace('#^https?://#', '', $home_url);
         $normalized_home_url = rtrim($normalized_home_url, '/');
@@ -41,6 +57,12 @@ if ($app->formposted()) {
         $parsed_url = parse_url($home_url);
         $domain = $parsed_url['host'] ?? '';
         $domain = preg_replace('/^www\./', '', $domain);
+        
+        session_tracking('recommend_business_normalized', [
+            'normalized_home' => $normalized_home_url,
+            'normalized_signup' => $normalized_signup_url,
+            'domain' => $domain
+        ]);
         
         try {
             // Begin transaction
@@ -60,11 +82,16 @@ if ($app->formposted()) {
             ]);
             
             if ($existing = $check_stmt->fetch(PDO::FETCH_ASSOC)) {
+                session_tracking('recommend_business_duplicate_found', $existing);
                 $database->rollBack();
                 
                 // Show consistent message for all duplicates
                 $messages[] = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> We already know about this business.</div>';
             } else {
+                session_tracking('recommend_business_inserting', [
+                    'business_name' => $business_name,
+                    'domain' => $domain
+                ]);
                 // Insert new company with 'submitted' status
                 $insert_sql = "INSERT INTO bg_companies 
                                (parent_company_name, company_name, company_display_name, 
@@ -87,6 +114,11 @@ if ($app->formposted()) {
                 
                 $database->query($insert_sql, $insert_params);
                 $company_id = $database->lastInsertId();
+                
+                session_tracking('recommend_business_inserted', [
+                    'company_id' => $company_id,
+                    'business_name' => $business_name
+                ]);
                 
                 // Store submitter information in bg_company_attributes
                 $attr_sql = "INSERT INTO bg_company_attributes 
@@ -175,7 +207,14 @@ if ($app->formposted()) {
             
         } catch (Exception $e) {
             $database->rollBack();
-            error_log("Business recommendation error: " . $e->getMessage());
+            $error_details = [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'business_name' => $business_name,
+                'user_id' => $current_user_data['user_id'] ?? 'not set'
+            ];
+            session_tracking('recommend_business_error', $error_details);
+            error_log("Business recommendation error: " . json_encode($error_details));
             $messages[] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> An error occurred while submitting your recommendation</div>';
         }
     }
