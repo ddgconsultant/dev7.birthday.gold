@@ -210,22 +210,22 @@ include($dir['core_components'] . '/bg_header.inc');
     <ul class="nav nav-tabs-modern" id="allocationTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
-                <i class="bi bi-speedometer2"></i>Overview
+                <i class="bi bi-speedometer2 me-2"></i>Overview
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="allocations-tab" data-bs-toggle="tab" data-bs-target="#allocations" type="button" role="tab">
-                <i class="bi bi-plus-circle"></i>Allocations
+                <i class="bi bi-plus-circle me-2"></i>Allocations
                 <?php if (!empty($user_allocations)): ?>
-                <span class="badge bg-primary ms-1"><?php echo count($user_allocations); ?></span>
+                <span class="badge bg-primary tab-badge"><?php echo count($user_allocations); ?></span>
                 <?php endif; ?>
             </button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="enrollments-tab" data-bs-toggle="tab" data-bs-target="#enrollments" type="button" role="tab">
-                <i class="bi bi-check-circle"></i>Enrollments
+                <i class="bi bi-check-circle me-2"></i>Enrollments
                 <?php if ($total_records > 0): ?>
-                <span class="badge bg-primary ms-1"><?php echo $total_records; ?></span>
+                <span class="badge bg-primary tab-badge"><?php echo $total_records; ?></span>
                 <?php endif; ?>
             </button>
         </li>
