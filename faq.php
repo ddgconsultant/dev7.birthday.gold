@@ -281,20 +281,20 @@ $additionalstyles = '
       // Update existing FAQ
       $faq_id = $_POST['faq_id'];
       $display_name = $_POST['display_name'];
-      $description = $_POST['description'];
+      $content = $_POST['description']; // The answer goes in content field
       $category = $_POST['category'];
       
-      $sql = "UPDATE bg_content SET display_name = :display_name, description = :description, `grouping` = :category, modify_dt = now() WHERE id = :id";
+      $sql = "UPDATE bg_content SET display_name = :display_name, content = :content, `grouping` = :category, modify_dt = now() WHERE id = :id";
       $stmt = $database->prepare($sql);
       $stmt->bindParam(':display_name', $display_name);
-      $stmt->bindParam(':description', $description);
+      $stmt->bindParam(':content', $content);
       $stmt->bindParam(':category', $category);
       $stmt->bindParam(':id', $faq_id);
       $stmt->execute();
     } elseif (isset($_POST['new_faq'])) {
       // Create new FAQ
       $display_name = $_POST['display_name'];
-      $description = $_POST['description'];
+      $content = $_POST['description']; // The answer goes in content field
       $category = $_POST['category'];
       
       // Get the max rank for the category
@@ -305,13 +305,13 @@ $additionalstyles = '
       $result = $stmt->fetch(PDO::FETCH_ASSOC);
       $new_rank = ($result['max_rank'] ?? 0) + 1;
       
-      // Insert new FAQ
-      $sql = "INSERT INTO bg_content (category, `grouping`, display_name, description, `rank`, status, create_dt, modify_dt) 
-              VALUES ('faq', :category, :display_name, :description, :rank, 'active', now(), now())";
+      // Insert new FAQ (using content field for the answer, description can be empty or a short summary)
+      $sql = "INSERT INTO bg_content (category, `grouping`, display_name, description, content, `rank`, status, create_dt, modify_dt) 
+              VALUES ('faq', :category, :display_name, '', :content, :rank, 'active', now(), now())";
       $stmt = $database->prepare($sql);
       $stmt->bindParam(':category', $category);
       $stmt->bindParam(':display_name', $display_name);
-      $stmt->bindParam(':description', $description);
+      $stmt->bindParam(':content', $content);
       $stmt->bindParam(':rank', $new_rank);
       $stmt->execute();
     }
@@ -324,7 +324,7 @@ $additionalstyles = '
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
   // Get all FAQs grouped by category
-  $sql = "SELECT * FROM bg_content WHERE category = 'faq' AND display_name != '' AND description != '' ORDER BY `grouping`, `rank`";
+  $sql = "SELECT * FROM bg_content WHERE category = 'faq' AND display_name != '' AND (content != '' OR description != '') ORDER BY `grouping`, `rank`";
   $stmt = $database->prepare($sql);
   $stmt->execute();
   $all_faqs = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -332,8 +332,9 @@ $additionalstyles = '
   // Organize FAQs by category
   $faqs_by_category = [];
   foreach ($all_faqs as $faq) {
-    // Skip empty FAQs
-    if (empty(trim($faq['display_name'])) || empty(trim($faq['description']))) {
+    // Skip empty FAQs - check both content and description fields
+    $answer_content = !empty($faq['content']) ? $faq['content'] : $faq['description'];
+    if (empty(trim($faq['display_name'])) || empty(trim($answer_content))) {
       continue;
     }
     $category = $faq['grouping'] ?: 'Uncategorized';
@@ -373,11 +374,15 @@ $additionalstyles = '
     
     <!-- Expand/Collapse Controls -->
     <div class="faq-controls">
-      <?php if ($account->isadmin()): ?>
-      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newFaqModal" title="Add new FAQ">
-        <i class="bi bi-plus-circle"></i> New FAQ
-      </button>
-      <?php endif; ?>
+      ';
+      
+      if ($account->isadmin()) {
+        echo '<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newFaqModal" title="Add new FAQ">
+          <i class="bi bi-plus-circle"></i> New FAQ
+        </button>';
+      }
+      
+      echo '
       <button onclick="expandAllFAQs()" title="Expand all questions">
         <i class="bi bi-arrows-expand"></i>Expand All
       </button>
@@ -404,7 +409,9 @@ $additionalstyles = '
         $headingId = "faqHeading" . $faq['id'];
         $collapseId = "faqCollapse" . $faq['id'];
         $question = htmlspecialchars($app->tagreplace($faq['display_name']), ENT_QUOTES, 'UTF-8');
-        $answer = $app->tagreplace($faq['description']);
+        // Use content field if available, otherwise fall back to description
+        $answer_content = !empty($faq['content']) ? $faq['content'] : $faq['description'];
+        $answer = $app->tagreplace($answer_content);
         $faq_id = $faq['id'];
 
         echo '<div class="faq-item" data-question="' . htmlspecialchars($question, ENT_QUOTES, 'UTF-8') . '">';
@@ -465,7 +472,7 @@ $additionalstyles = '
                     </div>
                     <div class="mb-3">
                       <label for="description" class="form-label">Answer</label>
-                      <textarea class="form-control" id="description" name="description" rows="6" style="min-height: 150px;">' . htmlspecialchars($faq['description'], ENT_QUOTES, 'UTF-8') . '</textarea>
+                      <textarea class="form-control" id="description" name="description" rows="6" style="min-height: 150px;">' . htmlspecialchars(!empty($faq['content']) ? $faq['content'] : $faq['description'], ENT_QUOTES, 'UTF-8') . '</textarea>
                     </div>
                     <button type="submit" class="btn btn-primary">Save changes</button>
                   </form>
@@ -492,7 +499,9 @@ $additionalstyles = '
       $headingId = "faqHeadingUncat" . $faq['id'];
       $collapseId = "faqCollapseUncat" . $faq['id'];
       $question = htmlspecialchars($app->tagreplace($faq['display_name']), ENT_QUOTES, 'UTF-8');
-      $answer = $app->tagreplace($faq['description']);
+      // Use content field if available, otherwise fall back to description
+      $answer_content = !empty($faq['content']) ? $faq['content'] : $faq['description'];
+      $answer = $app->tagreplace($answer_content);
       $faq_id = $faq['id'];
 
       echo '<div class="faq-item" data-question="' . htmlspecialchars($question, ENT_QUOTES, 'UTF-8') . '">';
@@ -553,7 +562,7 @@ $additionalstyles = '
                   </div>
                   <div class="mb-3">
                     <label for="description" class="form-label">Answer</label>
-                    <textarea class="form-control" id="description" name="description" rows="6" style="min-height: 150px;">' . htmlspecialchars($faq['description'], ENT_QUOTES, 'UTF-8') . '</textarea>
+                    <textarea class="form-control" id="description" name="description" rows="6" style="min-height: 150px;">' . htmlspecialchars(!empty($faq['content']) ? $faq['content'] : $faq['description'], ENT_QUOTES, 'UTF-8') . '</textarea>
                   </div>
                   <button type="submit" class="btn btn-primary">Save changes</button>
                 </form>

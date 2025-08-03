@@ -13,6 +13,9 @@ if (!$account->isloggedin()) {
     exit;
 }
 
+// Debug CSRF token
+session_tracking('notification_action_csrf_debug', 'POST token: ' . ($_POST['_token'] ?? 'NOT SET') . ', Session token: ' . ($session->get('csrf_token', 'NOT SET')));
+
 // Verify CSRF token
 if (!$app->formposted()) {
     session_tracking('notification_action_csrf_fail', 'CSRF validation failed');
@@ -20,6 +23,7 @@ if (!$app->formposted()) {
     echo json_encode(['error' => 'Invalid request']);
     exit;
 }
+session_tracking('notification_action_csrf_pass', 'CSRF validation passed');
 
 $action = $_POST['action'] ?? '';
 $notification_id = $_POST['notification_id'] ?? '';

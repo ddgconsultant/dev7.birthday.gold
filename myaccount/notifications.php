@@ -1,4 +1,5 @@
 <?php
+$addClasses[] = 'Display';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Notifications";
@@ -388,7 +389,7 @@ foreach ($filters as $filter) {
         formData.append("action", "mark_notification");
         formData.append("notification_id", notificationId);
         formData.append("status", status);
-        formData.append("_token", "<?php echo $display->inputcsrf_token('tokenonly'); ?>");
+        formData.append("_token", "<?php global $csrf_token; echo $csrf_token; ?>");
         
         // Submit via AJAX
         fetch("/myaccount/ajax/notification-actions.php", {
@@ -416,7 +417,7 @@ foreach ($filters as $filter) {
             const formData = new FormData();
             formData.append("action", "delete_notification");
             formData.append("notification_id", notificationId);
-            formData.append("_token", "<?php echo $display->inputcsrf_token('tokenonly'); ?>");
+            formData.append("_token", "<?php global $csrf_token; echo $csrf_token; ?>");
             
             // Submit via AJAX
             fetch("/myaccount/ajax/notification-actions.php", {
