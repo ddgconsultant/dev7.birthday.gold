@@ -2,10 +2,8 @@
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $bodycontentclass='';
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
 
-$additionalstyles .= '
+$additionalstyles = '
     <style>
         .calendar-container {
             flex-grow: 1;
@@ -121,6 +119,26 @@ $additionalstyles .= '
     </style>
 ';
 
+// Add v7 theme CSS
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
+
+?>
+
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-calendar3 me-3"></i>Rewards Calendar</h1>
+            <p class="lead mb-0">View your birthday rewards schedule by month</p>
+        </div>
+    </div>
+</div>
+
+<?php
+
 $calendar = "2024-12";
 if (isset($_GET['date']) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $_GET['date'])) {
     $calendar = $_GET['date'];
@@ -148,10 +166,10 @@ foreach ($results as &$reward) {
 }
 
 ?>
-<div class="container main-content">
+<div class="container my-5 pt-5">
     <div class="calendar-nav">
         <a href="?date=<?php echo $prevMonth; ?>" class="calendar-nav-btn">&larr; Previous Month</a>
-        <h1 class="text-center my-4">Your Reward Calendar: <b><?php echo $monthName . ' ' . $year; ?></b></h1>
+        <h2 class="text-center"><?php echo $monthName . ' ' . $year; ?></h2>
         <a href="?date=<?php echo $nextMonth; ?>" class="calendar-nav-btn">Next Month &rarr;</a>
     </div>
 

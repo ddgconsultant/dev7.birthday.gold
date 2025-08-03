@@ -160,6 +160,7 @@ body {
 .icon-brand { background: #e8eaf6; color: #3f51b5; }
 .icon-help { background: #e1f5fe; color: #0288d1; }
 .icon-tech { background: #f1f8e9; color: #558b2f; }
+.icon-security { background: #ffebee; color: #d32f2f; }
 
 .admin-content {
     flex: 1;
@@ -934,9 +935,9 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
-            <a href="/roadmap" target="_blank" class="admin-card">
+            <a href="/roadmap" class="admin-card">
                 <div class="admin-icon icon-help">
-                    <i class="bi bi-signpost-split"></i>
+                    <i class="bi bi-map"></i>
                 </div>
                 <div class="admin-content">
                     <h3 class="admin-card-title">Roadmap</h3>

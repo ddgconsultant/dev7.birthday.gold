@@ -72,10 +72,25 @@ $additionalstyles .= '
 </style>
 ';
 
+// Add v7 theme CSS
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
+
+?>
+
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-gift me-3"></i>Reward Details</h1>
+            <p class="lead mb-0">View and redeem your birthday reward</p>
+        </div>
+    </div>
+</div>
+
+<?php
 
 // Fetch the reward ID from the URL
 
@@ -100,10 +115,10 @@ if ($reward_id > 0) {
                           $current_user_data['profile_zip_code'];
     
         echo '
-        <div class="col-md-9 col-lg-9">
+        <div class="container my-5 pt-5">
+        <div class="col-lg-10 mx-auto">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 style="font-size: 2.5rem; font-weight: 400;">Reward Details</h1>
-                <a href="/myaccount/redeem" class="btn btn-primary">Back to Rewards</a>
+                <a href="/myaccount/redeem" class="btn btn-secondary">&larr; Back to Rewards</a>
             </div>
 
             <div class="row mt-0">
@@ -179,24 +194,24 @@ if ($reward_id > 0) {
                 </div>
             </div>
         </div>
-        </div> <!-- close col-md-9 -->
-        </div> <!-- close row -->
-        </div> <!-- close container -->
-        </div> <!-- close main-content -->';
+        </div> <!-- close col-lg-10 -->
+        </div> <!-- close container -->';
     
     } else {
         // Reward not found
-        echo '<div class="col-md-9 col-lg-9"><div class="alert alert-danger text-center my-5">Reward not found.</div></div>
-        </div> <!-- close row -->
-        </div> <!-- close container -->
-        </div> <!-- close main-content -->';
+        echo '<div class="container my-5 pt-5">
+                <div class="col-lg-10 mx-auto">
+                    <div class="alert alert-danger text-center my-5">Reward not found.</div>
+                </div>
+              </div>';
     }
 } else {
     // Invalid ID
-    echo '<div class="col-md-9 col-lg-9"><div class="alert alert-danger text-center my-5">Invalid reward ID: '.$reward_id.'</div></div>
-    </div> <!-- close row -->
-    </div> <!-- close container -->
-    </div> <!-- close main-content -->';
+    echo '<div class="container my-5 pt-5">
+            <div class="col-lg-10 mx-auto">
+                <div class="alert alert-danger text-center my-5">Invalid reward ID: '.$reward_id.'</div>
+            </div>
+          </div>';
 }
 ?>
 <script>

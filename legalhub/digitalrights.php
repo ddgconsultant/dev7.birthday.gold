@@ -11,7 +11,7 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
 ### ADMIN PAGE EDITOR: START-body-1 ###
 ?>
 <!--  Start -->
-<div class="container-xxl py-6 flex-grow-1 ">
+<div class="container-xxl py-6 mb-5 flex-grow-1 ">
     <div class="container">
         <div class="row">
             <div class="col">

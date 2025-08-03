@@ -69,7 +69,7 @@ $result=$mail->sendOnlineContactForm($messageinput);
     
 
 echo '
-<div class="container-xl px-4 mt-4 flex-grow-1">
+<div class="container-xl px-4 mt-4 mb-5 flex-grow-1">
 <div class="container px-5 mx-5 ">
 ';
     echo "<h2>DMCA Takedown Request Submitted</h2>";
@@ -111,7 +111,7 @@ $additionalstyles.='
 
 
 echo '
-<div class="container-xl px-4 mt-4 flex-grow-1">
+<div class="container-xl px-4 mt-4 mb-5 flex-grow-1">
 
 <div class="container form-container px-md-5 mx-md-5 ">
 <h2 class="mt-5 text-center">DMCA Takedown Request Form</h2>

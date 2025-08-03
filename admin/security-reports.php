@@ -270,17 +270,15 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<!-- Content Header Dark Section -->
-<div class="content-header-dark">
+<!-- Content Header Admin Section -->
+<div class="content-header-admin">
     <div class="container">
-        <div class="text-center">
-            <h1 class="mb-3"><i class="bi bi-shield-exclamation me-3"></i>Security Reports</h1>
-            <p class="lead mb-0">Review and manage device security reports from users</p>
-        </div>
+        <h1 class="mt-3">Security Reports</h1>
+        <p class="lead mb-4">Review and manage device security reports from users</p>
     </div>
 </div>
 
-<div class="container my-5 pt-5">
+<div class="container mt-4">
     <div class="security-reports-container">
         
         <?php

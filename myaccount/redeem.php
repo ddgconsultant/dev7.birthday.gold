@@ -346,33 +346,150 @@ transform: rotateY(180deg);
 .flip-card:nth-child(5) { animation-delay: 0.5s; }
 .flip-card:nth-child(6) { animation-delay: 0.6s; }
 
+/* Modern tab navigation styles */
+.nav-tabs-modern {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 2rem;
+    gap: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.nav-tab-item {
+    flex: 0 0 auto;
+    padding: 1rem 2rem;
+    text-decoration: none;
+    color: #6c757d;
+    font-weight: 500;
+    margin-bottom: -2px;
+    transition: all 0.2s ease;
+    background: none;
+    border-radius: 0;
+    position: relative;
+    border: none;
+    cursor: pointer;
+}
+
+.nav-tab-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    right: 50%;
+    height: 3px;
+    background: #0d6efd;
+    transition: left 0.3s ease, right 0.3s ease;
+    opacity: 0;
+}
+
+.nav-tab-item:hover {
+    color: #495057;
+    text-decoration: none;
+    background: #f8f9fa;
+}
+
+.nav-tab-item:hover::after {
+    left: 0;
+    right: 0;
+    opacity: 1;
+}
+
+.nav-tab-item.active {
+    color: #0d6efd;
+    background: none;
+}
+
+.nav-tab-item.active::after {
+    left: 0;
+    right: 0;
+    opacity: 1;
+    background: #0d6efd;
+}
+
+/* Settings tab aligned to the right */
+.nav-tab-item.settings-tab {
+    margin-left: auto;
+}
+
+/* Remove Bootstrap default styles that might interfere */
+.nav-tabs {
+    border-bottom: none;
+}
+
+.nav-link {
+    border: none;
+}
+
+@media (max-width: 576px) {
+    .nav-tab-item {
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .nav-tab-item i {
+        display: none;
+    }
+}
+
 </style>
 ";
 
+// Add v7 theme CSS
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
 
+?>
+
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-gift me-3"></i>Birthday Rewards</h1>
+            <p class="lead mb-0">Redeem your birthday rewards and special offers</p>
+        </div>
+    </div>
+</div>
+
+<?php
+// Get results for display
 $results = $account->getbusinesslist_rewards($current_user_data, 'card', '"success", "success-btn"', 10, true);
 if (!empty($results)) {
-$show_rewards = true;
+    $show_rewards = true;
 } else {
-$show_rewards = false;
+    $show_rewards = false;
 }
 
-    echo '
-<div class="col-md-9 col-lg-9">
-    <div class="redeem-header">
-        <div class="redeem-title-wrapper">
-            <h1 class="redeem-title">Your Rewards</h1>
-            '.($show_rewards && count($results) > 0 ? '<span class="reward-count-badge">'.count($results).'</span>' : '').'  
-        </div>
-        <a href="/myaccount/redeem-list" class="btn btn-primary">View All Rewards</a>
-    </div>
+// Determine active tab
+$view = $_GET['view'] ?? 'current';
 
+echo '
+<div class="container my-5 pt-5">
+<div class="col-lg-10 mx-auto">';
 
-';
+// Modern tab navigation
+echo '<nav class="nav-tabs-modern">';
+echo '<a href="/myaccount/redeem" class="nav-tab-item ' . ($view === 'current' ? 'active' : '') . '">
+        <i class="bi bi-gift-fill me-2"></i>Current Rewards
+      </a>';
+echo '<a href="/myaccount/redeem?view=all" class="nav-tab-item ' . ($view === 'all' ? 'active' : '') . '">
+        <i class="bi bi-card-list me-2"></i>All Rewards
+      </a>';
+echo '<a href="/myaccount/rewards-calendar" class="nav-tab-item ' . ($view === 'calendar' ? 'active' : '') . '">
+        <i class="bi bi-calendar3 me-2"></i>Reward Calendar
+      </a>';
+echo '<a href="/myaccount/redeem?view=settings" class="nav-tab-item settings-tab ' . ($view === 'settings' ? 'active' : '') . '">
+        <i class="bi bi-gear"></i>
+      </a>';
+echo '</nav>';
+
+// Main content area
+echo '<div class="mt-4">';
+
+// Current view content
+if ($view === 'current') {
 
     // Show section header and filters if there are rewards
     if ($show_rewards && count($results) > 0) {
@@ -494,17 +611,128 @@ $show_rewards = false;
             
         }
     
-        echo '
-        </div>
-    
-        <div class="text-center mt-5">
-            <a href="/myaccount/redeem-list" class="btn btn-secondary">
-                Back to Dashboard
-            </a>
-        </div>
-        ';
+        echo '</div>';
     }
     
+} elseif ($view === 'all') {
+    // All rewards view
+    echo '<div class="row g-3">';
+    
+    // Get all rewards
+    $all_results = $account->getbusinesslist_rewards($current_user_data, 'card', '"success", "success-btn"', 100, true);
+    
+    if (empty($all_results)) {
+        echo '<div class="col-12">
+                <div class="empty-state">
+                    <div class="empty-icon">🎁</div>
+                    <h3 class="empty-title">No Rewards Yet</h3>
+                    <p class="empty-text">You have no rewards in your history</p>
+                </div>
+              </div>';
+    } else {
+        // Display all rewards (similar structure to current view)
+        foreach ($all_results as $company) {
+            $availability_tag = $app->getAvailabilityTag($company['availability_from_date'], $company['expiration_date']);
+            
+            // Determine availability status
+            $status_class = 'available';
+            $badge_class = 'badge-available';
+            $badge_text = 'Available';
+            
+            if (!empty($availability_tag['availability'])) {
+                if (strpos($availability_tag['availability'], 'Coming Soon') !== false) {
+                    $status_class = 'upcoming';
+                    $badge_class = 'badge-upcoming';
+                    $badge_text = 'Coming Soon';
+                } elseif (strpos($availability_tag['availability'], 'Expiring') !== false) {
+                    $status_class = 'expiring';
+                    $badge_class = 'badge-expiring';
+                    $badge_text = 'Expiring Soon';
+                } elseif (strpos($availability_tag['availability'], 'Expired') !== false) {
+                    $status_class = 'expired';
+                    $badge_class = 'badge-expired';
+                    $badge_text = 'Expired';
+                }
+            }
+            
+            echo '
+            <div class="col-12 col-md-6 col-lg-4" data-status="'.$status_class.'">
+                <div class="flip-card">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <div class="availability-badge '.$badge_class.'">'.$badge_text.'</div>
+                            <div class="flip-indicator">
+                                <i class="fas fa-hand-pointer"></i> Tap
+                            </div>
+                            <div class="card-logo-wrapper">
+                                <img src="' . $display->companyimage($company['company_id'] . '/' . $company['company_logo']) . '" alt="' . htmlspecialchars($company['company_name']) . ' Logo">
+                            </div>
+                            <div class="company-info">
+                                <h5 class="company-name">' . $company['company_name'] . '</h5>
+                                <p class="reward-description">' . ucfirst($company['spinner_description'] ?? 'Birthday ' . $company['category'] . ' reward') . '</p>
+                            </div>
+                        </div>
+                        <div class="flip-card-back">
+                            <div class="redeem-header-back">How to Redeem</div>
+                            <div class="redeem-instructions">' . $company['redeem_instructions'] . '</div>
+                            <div class="redeem-actions">
+                                '.(strpos($app->mapsearchlink($company, $current_user_data), 'href') !== false ? 
+                                    str_replace('class="btn', 'class="btn btn-maps btn-outline-secondary', $app->mapsearchlink($company, $current_user_data)) : '').'
+                                <a href="/myaccount/redeem-details?id=' .$qik->encodeId($company['reward_id']) . '" class="btn btn-redeem btn-success">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>';
+        }
+    }
+    
+    echo '</div>';
+    
+} elseif ($view === 'settings') {
+    // Settings view
+    echo '<div class="card">
+            <div class="card-header">
+                <h4><i class="bi bi-gear me-2"></i>Rewards Settings</h4>
+            </div>
+            <div class="card-body">
+                <h6 class="mb-3">Notification Preferences</h6>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="rewardNotifications" checked>
+                    <label class="form-check-label" for="rewardNotifications">
+                        Email me when new rewards become available
+                    </label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="expirationReminders" checked>
+                    <label class="form-check-label" for="expirationReminders">
+                        Remind me before rewards expire
+                    </label>
+                </div>
+                <hr>
+                <h6 class="mb-3">Display Preferences</h6>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="showExpired">
+                    <label class="form-check-label" for="showExpired">
+                        Show expired rewards in history
+                    </label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="autoRefresh" checked>
+                    <label class="form-check-label" for="autoRefresh">
+                        Auto-refresh rewards list
+                    </label>
+                </div>
+            </div>
+          </div>';
+}
+
+echo '</div>'; // Close mt-4
+echo '</div>'; // Close col-lg-10
+echo '</div>'; // Close container
+
 ?>
 
 <script>
@@ -541,11 +769,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
-</div> <!-- close col-md-9 -->
-</div> <!-- close row -->
-</div> <!-- close container -->
-</div> <!-- close main-content -->
 <?php
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

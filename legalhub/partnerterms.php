@@ -14,40 +14,6 @@ $pagedata['pagetitle'] = 'Partner Terms and Conditions - Birthday Gold';
 $pagedata['metakeywords'] = 'Birthday Gold Partner Terms, Business Partner Agreement, Partner Terms and Conditions';
 $pagedata['metadescriptions'] = 'Read the terms and conditions for becoming a Birthday Gold business partner. Learn about our partnership agreement and requirements.';
 
-// Additional styles
-$additionalstyles = '
-<style>
-.partner-terms-content h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    color: #212529;
-}
-
-.partner-terms-content ul {
-    margin-bottom: 1.5rem;
-}
-
-.partner-terms-content li {
-    margin-bottom: 0.5rem;
-    line-height: 1.6;
-}
-
-.display-1 {
-    font-size: 3rem;
-    font-weight: 700;
-    margin-bottom: 2rem;
-}
-
-@media (max-width: 768px) {
-    .display-1 {
-        font-size: 2.5rem;
-    }
-}
-</style>
-';
-
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
@@ -69,26 +35,41 @@ include($dir['core_components'] . '/bg_header.inc');
                         $header_content= ' <h5 class="mt-5">These are the complete Partner Terms and Conditions that govern your participation as a Birthday Gold business partner.</h5>';
 
                         $query = "SELECT id, content, DATE_FORMAT(publish_dt, '%M %e, %Y') AS effective_date  FROM bg_content WHERE name= 'partner_terms_full' and `status`='active' order by create_dt desc limit 1";
-                        
-                        // Check if content exists in database
-                        $stmt = $database->prepare($query);
-                        $stmt->execute();
-                        
-                        if ($stmt->rowCount() > 0) {
-                            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                            $content = '<!-- '.$result['id']. ' -->'.$result['content'];
-                            $effective_date = $result['effective_date'];
-                            echo '<p class="mb-4">Effective Date: '.$effective_date.'</p>';
-                            echo $header_content;
-                            echo $content;
-                        } else {
-                            // Show full partner terms if not in database
-                            echo '<p class="mb-4">Effective Date: ' . date('F j, Y') . '</p>';
-                            echo $header_content;
+                        $include = '';
+                        break;
+
+                    default:
+                        $header_content= '
+<h5 class="mt-5">As a Birthday Gold partner, it is important to understand our partnership agreement and the mutual expectations for our business relationship.</h5>
+
+<p>At birthday.gold, we want our business partners to be fully informed about our partnership terms without overwhelming you with legal jargon.</p>
+<p>If you need more detailed information or have specific questions, you can always read our <a href="/legalhub/partnerterms?full" class="btn btn-primary btn-sm py-0 my-0">FULL PARTNER TERMS AND CONDITIONS</a> or contact our legal department. 
+The condensed version below covers the key points, but the full terms and conditions contain all legal requirements and supersede this summary.</p>
+';
+                        $query = "SELECT id, content, DATE_FORMAT(publish_dt, '%M %e, %Y') AS effective_date FROM bg_content WHERE name= 'partner_terms' and `status`='active' order by create_dt desc limit 1";
+                        $include = '';
+                }
+
+                $stmt = $database->prepare($query);
+                $stmt->execute();
+
+                if ($stmt->rowCount() > 0) {
+                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $content = '<!-- '.$result['id']. ' -->'.$result['content'];
+                    $effective_date = $result['effective_date'];
+                    echo '<p class="mb-4">Effective Date: '.$effective_date.'</p>';
+                    echo $header_content;
+                    echo $content;
+                } else {
+                    // Show default content based on type
+                    echo '<p class="mb-4">Effective Date: ' . date('F j, Y') . '</p>';
+                    echo $header_content;
+                    
+                    if ($type == 'full') {
                             ?>
                             
                             <!-- Full Partner Terms Content -->
-                            <div class="partner-terms-content mt-5">
+                            <div class="mt-5">
                                 <p>These Partner Terms and Conditions govern your participation in partnering with birthday.gold and you or the entity you represent. These terms take effect once you are approved as a partner with birthday.gold. You represent to us that you are lawfully able to enter into a contract (are not a minor) and that you represent to us that you also have legal authority to bind yourself or the legal entity you represent.</p>
                                 
                                 <h2>1. Partnership Overview</h2>
@@ -229,44 +210,18 @@ include($dir['core_components'] . '/bg_header.inc');
                             </div>
                             
                             <?php
-                        }
-                        break;
-
-                    default:
-                        $header_content= '
-<h5 class="mt-5">As a Birthday Gold partner, it is important to understand our partnership agreement and the mutual expectations for our business relationship.</h5>
-
-<p>At birthday.gold, we want our business partners to be fully informed about our partnership terms without overwhelming you with legal jargon.</p>
-<p>If you need more detailed information or have specific questions, you can always read our <a href="/legalhub/partnerterms?full" class="btn btn-primary btn-sm py-0 my-0">FULL PARTNER TERMS AND CONDITIONS</a> or contact our legal department. 
-The condensed version below covers the key points, but the full terms and conditions contain all legal requirements and supersede this summary.</p>
-';
-                        $query = "SELECT id, content, DATE_FORMAT(publish_dt, '%M %e, %Y') AS effective_date FROM bg_content WHERE name= 'partner_terms' and `status`='active' order by create_dt desc limit 1";
-                        
-                        $stmt = $database->prepare($query);
-                        $stmt->execute();
-
-                        if ($stmt->rowCount() > 0) {
-                            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                            $content = '<!-- '.$result['id']. ' -->'.$result['content'];
-                            $effective_date = $result['effective_date'];
-                            echo '<p class="mb-4">Effective Date: '.$effective_date.'</p>';
-                            echo $header_content;
-                            echo $content;
-                        } else {
-                            // If no content in database, show default partner terms
-                            echo '<p class="mb-4">Effective Date: ' . date('F j, Y') . '</p>';
-                            echo $header_content;
+                    } else {
                             ?>
                     
                     <!-- Default Partner Terms Content -->
-                    <div class="partner-terms-content mt-5">
+                    <div class="mt-5">
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle me-2"></i>
                             <strong>Summary Version:</strong> This is a simplified summary of our Partner Terms for your convenience. The <a href="/legalhub/partnerterms?full">full Partner Terms and Conditions</a> contain all legal requirements and are the binding agreement between you and Birthday Gold.
                         </div>
                         
                         <h2>Quick Overview</h2>
-                        <p>As a Birthday Gold partner, you'll join our platform to offer special birthday rewards to our members. Here's what you need to know:</p>
+                        <p>As a Birthday Gold partner, you will join our platform to offer special birthday rewards to our members. Here is what you need to know:</p>
                         
                         <h2>Your Responsibilities</h2>
                         <ul>
@@ -286,7 +241,7 @@ The condensed version below covers the key points, but the full terms and condit
                         
                         <h2>Key Terms</h2>
                         <ul>
-                            <li><strong>Independent Contractor:</strong> You're a partner, not an employee</li>
+                            <li><strong>Independent Contractor:</strong> You are a partner, not an employee</li>
                             <li><strong>Non-Exclusive:</strong> Both parties can work with others</li>
                             <li><strong>Termination:</strong> Either party can end the partnership with 30 days notice</li>
                             <li><strong>Liability Limited:</strong> Our liability is capped at fees paid in the last 12 months</li>
@@ -324,8 +279,7 @@ The condensed version below covers the key points, but the full terms and condit
                     
                     
                             <?php
-                        }
-                        break;
+                    }
                 }
 
                 if (isset($_REQUEST['partner'])) {

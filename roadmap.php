@@ -201,8 +201,20 @@ $contents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-echo '<div class="container py-2 main-content">
-<h2 class="font-weight-light text-center text-muted py-3">Our Roadmap</h2>';
+?>
+
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-map me-3"></i>Our Roadmap</h1>
+            <p class="lead mb-0">See what's planned for Birthday Gold's future</p>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+<?php
 
 switch($displaymode) {
     case 'details':
@@ -213,11 +225,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/components/roadmap-list.inc');
 break;
 }
 ?>
-
-
-</div>
-</div>
-</div>
 </div>
 
 <script>
