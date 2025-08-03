@@ -165,6 +165,54 @@ $additionalstyles = '
     .list-group-item .fw-bold {
         font-weight: 600 !important; /* Semi-bold for titles */
     }
+    
+    /* Bulk action styles */
+    .bulk-actions-bar {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        display: none;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .bulk-actions-bar.show {
+        display: flex;
+    }
+    
+    .notification-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    
+    .notification-item.has-checkbox {
+        padding-left: 15px;
+    }
+    
+    .notification-item.has-checkbox .notification-icon {
+        margin-left: 0;
+    }
+    
+    .bulk-select-all {
+        font-weight: 500;
+        color: #0d6efd;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .bulk-select-all:hover {
+        text-decoration: underline;
+    }
+    
+    .selected-count {
+        font-weight: 500;
+        color: #6c757d;
+    }
         </style>
 ';
 
@@ -255,6 +303,22 @@ foreach ($filters as $filter) {
                 $active_classes = $is_first ? ' show active' : '';
                 echo '
             <div class="tab-pane fade' . $active_classes . '" id="' . $key . '">
+                <!-- Bulk actions bar -->
+                <div class="bulk-actions-bar" data-tab="' . $key . '">
+                    <span class="bulk-select-all" onclick="toggleSelectAll(\'' . $key . '\')">Select All</span>
+                    <span class="selected-count">0 selected</span>
+                    <div class="ms-auto d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="bulkMarkAs(\'' . $key . '\', \'read\')" title="Mark selected as read">
+                            <i class="bi bi-envelope-open"></i> Mark as Read
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="bulkMarkAs(\'' . $key . '\', \'unread\')" title="Mark selected as unread">
+                            <i class="bi bi-envelope"></i> Mark as Unread
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="bulkDelete(\'' . $key . '\')" title="Delete selected">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
                 ' . $value . '
             </div>';
                 $is_first = false;
@@ -389,7 +453,7 @@ foreach ($filters as $filter) {
         formData.append("action", "mark_notification");
         formData.append("notification_id", notificationId);
         formData.append("status", status);
-        formData.append("_token", "<?php global $csrf_token; echo $csrf_token; ?>");
+        formData.append("_token", "<?php echo $display->input_csrftoken('tokenonly'); ?>");
         
         // Submit via AJAX
         fetch("/myaccount/ajax/notification-actions.php", {
@@ -417,7 +481,7 @@ foreach ($filters as $filter) {
             const formData = new FormData();
             formData.append("action", "delete_notification");
             formData.append("notification_id", notificationId);
-            formData.append("_token", "<?php global $csrf_token; echo $csrf_token; ?>");
+            formData.append("_token", "<?php echo $display->input_csrftoken('tokenonly'); ?>");
             
             // Submit via AJAX
             fetch("/myaccount/ajax/notification-actions.php", {
@@ -504,6 +568,177 @@ foreach ($filters as $filter) {
             const notificationId = e.target.getAttribute('data-notification-id');
             viewFullNotification(notificationId);
         }
+    });
+    
+    // Bulk actions functionality
+    function initializeBulkActions() {
+        // Check each tab for multiple notifications
+        document.querySelectorAll('.tab-pane').forEach(tab => {
+            const tabId = tab.id;
+            if (tabId === 'settings') return;
+            
+            const notifications = tab.querySelectorAll('.notification-item');
+            const bulkBar = tab.querySelector('.bulk-actions-bar');
+            
+            if (notifications.length > 1 && bulkBar) {
+                // Show checkboxes and bulk actions bar
+                notifications.forEach(notif => {
+                    const checkbox = notif.querySelector('.notification-checkbox');
+                    if (checkbox) {
+                        checkbox.style.display = 'block';
+                        notif.classList.add('has-checkbox');
+                    }
+                });
+                bulkBar.classList.add('show');
+            }
+        });
+        
+        // Add checkbox change listeners
+        document.querySelectorAll('.notification-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedCount);
+        });
+    }
+    
+    function updateSelectedCount() {
+        const activeTab = document.querySelector('.tab-pane.active');
+        if (!activeTab) return;
+        
+        const checkboxes = activeTab.querySelectorAll('.notification-checkbox');
+        const checkedBoxes = activeTab.querySelectorAll('.notification-checkbox:checked');
+        const selectedCount = activeTab.querySelector('.selected-count');
+        const selectAllSpan = activeTab.querySelector('.bulk-select-all');
+        
+        if (selectedCount) {
+            selectedCount.textContent = checkedBoxes.length + ' selected';
+        }
+        
+        if (selectAllSpan) {
+            if (checkedBoxes.length === checkboxes.length && checkboxes.length > 0) {
+                selectAllSpan.textContent = 'Deselect All';
+            } else {
+                selectAllSpan.textContent = 'Select All';
+            }
+        }
+    }
+    
+    function toggleSelectAll(tabId) {
+        const tab = document.getElementById(tabId);
+        if (!tab) return;
+        
+        const checkboxes = tab.querySelectorAll('.notification-checkbox');
+        const checkedBoxes = tab.querySelectorAll('.notification-checkbox:checked');
+        const shouldCheck = checkedBoxes.length !== checkboxes.length;
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = shouldCheck;
+        });
+        
+        updateSelectedCount();
+    }
+    
+    function getSelectedNotifications(tabId) {
+        const tab = document.getElementById(tabId);
+        if (!tab) return [];
+        
+        const checkedBoxes = tab.querySelectorAll('.notification-checkbox:checked');
+        return Array.from(checkedBoxes).map(cb => cb.value);
+    }
+    
+    function bulkMarkAs(tabId, status) {
+        const notificationIds = getSelectedNotifications(tabId);
+        if (notificationIds.length === 0) {
+            showAlert('Please select at least one notification', 'warning');
+            return;
+        }
+        
+        // Process each notification
+        let processed = 0;
+        const total = notificationIds.length;
+        
+        notificationIds.forEach(id => {
+            const formData = new FormData();
+            formData.append("action", "mark_notification");
+            formData.append("notification_id", id);
+            formData.append("status", status);
+            formData.append("_token", "<?php echo $display->input_csrftoken('tokenonly'); ?>");
+            
+            fetch("/myaccount/ajax/notification-actions.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                processed++;
+                if (processed === total) {
+                    // All done, reload
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                processed++;
+                if (processed === total) {
+                    showAlert('Some notifications could not be updated', 'warning');
+                    setTimeout(() => window.location.reload(), 2000);
+                }
+            });
+        });
+    }
+    
+    function bulkDelete(tabId) {
+        const notificationIds = getSelectedNotifications(tabId);
+        if (notificationIds.length === 0) {
+            showAlert('Please select at least one notification', 'warning');
+            return;
+        }
+        
+        if (!confirm(`Are you sure you want to delete ${notificationIds.length} notification(s)?`)) {
+            return;
+        }
+        
+        // Process each notification
+        let processed = 0;
+        const total = notificationIds.length;
+        
+        notificationIds.forEach(id => {
+            const formData = new FormData();
+            formData.append("action", "delete_notification");
+            formData.append("notification_id", id);
+            formData.append("_token", "<?php echo $display->input_csrftoken('tokenonly'); ?>");
+            
+            fetch("/myaccount/ajax/notification-actions.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                processed++;
+                if (processed === total) {
+                    // All done, reload
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                processed++;
+                if (processed === total) {
+                    showAlert('Some notifications could not be deleted', 'warning');
+                    setTimeout(() => window.location.reload(), 2000);
+                }
+            });
+        });
+    }
+    
+    // Initialize bulk actions when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeBulkActions();
+    });
+    
+    // Re-initialize when tab changes
+    document.querySelectorAll('.nav-tab-clean a').forEach(function(tab) {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            updateSelectedCount();
+        });
     });
 </script>
 

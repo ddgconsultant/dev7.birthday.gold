@@ -73,6 +73,8 @@ $errormode = 'showerrors'; // Error display (showerrors, hideerrors)
 ## Key Components
 
 ### Authentication & Security
+- **IMPORTANT**: Authentication is ALWAYS handled by `/core/site-controller.php`
+- **NEVER** add authentication checks like `$account->isloggedin()` to individual pages
 - Session-based authentication with comprehensive tracking
 - CSRF protection with tokens
 - IP-based rate limiting and lockout system
@@ -156,6 +158,7 @@ npm test
 
 ## Security Considerations
 
+- **Authentication**: ALWAYS handled by `/core/site-controller.php` - DO NOT add authentication checks to individual pages
 - Rate limiting: 40 requests/second, 150 requests/minute
 - IP-based lockout with exponential backoff
 - CORS restricted to `*.birthday.gold` domains
@@ -299,6 +302,7 @@ $additionalstyles = [];
 $additionalscripts = [];
 
 // Page logic here
+// NO AUTHENTICATION CHECKS - handled by site-controller.php
 
 // Output
 include $installpath . 'core/components/v3/bg_pagestart.inc';
@@ -319,6 +323,7 @@ include $installpath . 'core/components/v3/bg_footer.inc';
 - Return JSON responses: `header('Content-Type: application/json')`
 - Use POST for data modifications, GET for retrievals
 - Include CSRF token validation for POST requests
+- **NO AUTHENTICATION CHECKS** - authentication is already handled by site-controller.php
 
 ### Error Handling
 - Development mode: Errors displayed (`$errormode = 'showerrors'`)
@@ -329,7 +334,7 @@ include $installpath . 'core/components/v3/bg_footer.inc';
 ### Session Management
 - Sessions initialized in site-controller.php
 - Access user data: `$account->getuser()` or `$_SESSION['user']`
-- Check authentication: `if ($account->isloggedin()) { ... }`
+- **DO NOT** check authentication with `$account->isloggedin()` - it's already done
 - Role checking: `if ($account->checkrole('admin')) { ... }`
 
 ### Mobile Responsiveness

@@ -78,7 +78,8 @@ if (count($notifications) > 0) {
         $displayMessage = $hasFullContent ? $snippetContent : $messageContent;
         
         $notifications_output .= '
-        <div class="notification-item">
+        <div class="notification-item" data-notification-id="' . $notification['notification_id'] . '">
+            <input type="checkbox" class="notification-checkbox" value="' . $notification['notification_id'] . '" style="display: none;">
             <div class="notification-icon">
                 <i class="bi bi-' . $iconClass . '"></i>
             </div>
