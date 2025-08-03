@@ -84,11 +84,37 @@ $stats = [
 $pagetitle = 'Allocation History';
 $additionalstyles .= '
 <style>
-.history-header {
-    background: #f8f9fa;
-    padding: 2rem 0;
+/* Modern tab navigation */
+.nav-tabs-modern {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
     margin-bottom: 2rem;
-    border-bottom: 1px solid #dee2e6;
+}
+
+.nav-tabs-modern .nav-link {
+    color: #6c757d;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    padding: 1rem 1.5rem;
+    font-weight: 500;
+    margin-bottom: -2px;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs-modern .nav-link:hover {
+    color: #495057;
+    background-color: transparent;
+}
+
+.nav-tabs-modern .nav-link.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    background-color: transparent;
+}
+
+.nav-tabs-modern .nav-link i {
+    margin-right: 0.5rem;
 }
 
 .stats-card {
@@ -139,22 +165,9 @@ $additionalstyles .= '
     color: #2e7d32;
 }
 
-.filter-tabs {
-    margin-bottom: 2rem;
-}
-
-.filter-tabs .nav-link {
-    color: #6c757d;
-    border: none;
-    border-bottom: 2px solid transparent;
-    border-radius: 0;
-    padding: 0.5rem 1rem;
-}
-
-.filter-tabs .nav-link.active {
-    color: #667eea;
-    border-bottom-color: #667eea;
-    background: none;
+.tab-badge {
+    font-size: 0.75rem;
+    vertical-align: middle;
 }
 
 .empty-state {
@@ -175,55 +188,133 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="history-header">
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-md-6">
-                <h1 class="mb-0">Allocation History</h1>
-                <p class="text-muted mb-0">Track your enrollment allocation earnings and usage</p>
+            <div class="col-md-8 text-center text-md-start">
+                <h1 class="mb-3"><i class="bi bi-coin me-3"></i>Allocation History</h1>
+                <p class="lead mb-0">Track your enrollment allocation earnings and usage</p>
             </div>
-            <div class="col-md-6 text-md-end">
-                <a href="/myaccount/earn-enrollments" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Earn More
+            <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
+                <a href="/myaccount/earn-enrollments" class="btn btn-primary btn-lg" style="border-radius: 25px;">
+                    <i class="bi bi-plus-circle me-2"></i>Earn More Allocations
                 </a>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container main-content">
-    <!-- Summary Stats -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="stats-card">
-                <h3 class="stats-number text-primary"><?php echo $balance['available_allocations']; ?></h3>
-                <p class="stats-label mb-0">Current Balance</p>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stats-card">
-                <h3 class="stats-number text-success"><?php echo $stats['total_earned'] ?? 0; ?></h3>
-                <p class="stats-label mb-0">Total Earned</p>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stats-card">
-                <h3 class="stats-number text-danger"><?php echo $stats['total_used'] ?? 0; ?></h3>
-                <p class="stats-label mb-0">Total Used</p>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stats-card">
-                <h3 class="stats-number text-info"><?php echo $total_records; ?></h3>
-                <p class="stats-label mb-0">Transactions</p>
-            </div>
-        </div>
-    </div>
+<div class="container my-5">
+    <!-- Modern Tab Navigation -->
+    <ul class="nav nav-tabs-modern" id="allocationTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                <i class="bi bi-speedometer2"></i>Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="allocations-tab" data-bs-toggle="tab" data-bs-target="#allocations" type="button" role="tab">
+                <i class="bi bi-plus-circle"></i>Allocations
+                <?php if (!empty($user_allocations)): ?>
+                <span class="badge bg-primary ms-1"><?php echo count($user_allocations); ?></span>
+                <?php endif; ?>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="enrollments-tab" data-bs-toggle="tab" data-bs-target="#enrollments" type="button" role="tab">
+                <i class="bi bi-check-circle"></i>Enrollments
+                <?php if ($total_records > 0): ?>
+                <span class="badge bg-primary ms-1"><?php echo $total_records; ?></span>
+                <?php endif; ?>
+            </button>
+        </li>
+    </ul>
 
-    <!-- Allocations Table -->
-    <?php if (!empty($user_allocations)): ?>
-    <div class="mb-4">
-        <h3>Allocation Transactions</h3>
+    <!-- Tab Content -->
+    <div class="tab-content" id="allocationTabContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <!-- Summary Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="stats-card">
+                        <h3 class="stats-number text-primary"><?php echo $balance['available_allocations']; ?></h3>
+                        <p class="stats-label mb-0">Current Balance</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stats-card">
+                        <h3 class="stats-number text-success"><?php echo $stats['total_earned'] ?? 0; ?></h3>
+                        <p class="stats-label mb-0">Total Earned</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stats-card">
+                        <h3 class="stats-number text-danger"><?php echo $stats['total_used'] ?? 0; ?></h3>
+                        <p class="stats-label mb-0">Total Used</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stats-card">
+                        <h3 class="stats-number text-info"><?php echo $total_records; ?></h3>
+                        <p class="stats-label mb-0">Total Transactions</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <h4 class="mb-3">Recent Activity</h4>
+            <div class="history-table">
+                <?php 
+                // Show last 5 enrollments
+                $recent_enrollments = array_slice($enrollment_history, 0, 5);
+                if (!empty($recent_enrollments)): 
+                ?>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Company</th>
+                                <th>Type</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recent_enrollments as $enrollment): ?>
+                            <tr>
+                                <td><?php echo date('M j, Y', strtotime($enrollment['enrollment_date'])); ?></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <?php if (!empty($enrollment['company_logo'])): ?>
+                                        <img src="<?php echo $display->companyimage($enrollment['company_id'] . '/' . $enrollment['company_logo']); ?>" 
+                                             class="rounded me-2" 
+                                             style="width: 24px; height: 24px; object-fit: cover;"
+                                             alt="">
+                                        <?php endif; ?>
+                                        <strong><?php echo htmlspecialchars($enrollment['company_name']); ?></strong>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-danger">Used</span></td>
+                                <td class="text-end allocation-negative">-1</td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php else: ?>
+                <div class="text-center py-4">
+                    <p class="text-muted">No recent activity</p>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Allocations Tab -->
+        <div class="tab-pane fade" id="allocations" role="tabpanel">
+            <h3 class="mb-3">Allocation Transactions</h3>
+            <?php if (!empty($user_allocations)): ?>
         <div class="history-table">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
@@ -275,11 +366,19 @@ include($dir['core_components'] . '/bg_header.inc');
                 </table>
             </div>
         </div>
-    </div>
-    <?php endif; ?>
+            <?php else: ?>
+            <div class="empty-state">
+                <i class="bi bi-coin"></i>
+                <h3>No Allocations Yet</h3>
+                <p>You haven't earned any allocations yet.</p>
+                <a href="/myaccount/earn-enrollments" class="btn btn-primary mt-3">Start Earning</a>
+            </div>
+            <?php endif; ?>
+        </div>
 
-    <!-- Enrollment History Table -->
-    <h3>Enrollment History</h3>
+        <!-- Enrollments Tab -->
+        <div class="tab-pane fade" id="enrollments" role="tabpanel">
+            <h3 class="mb-3">Enrollment History</h3>
     <div class="history-table">
         <?php if (empty($enrollment_history)): ?>
         <div class="empty-state">
@@ -386,6 +485,8 @@ include($dir['core_components'] . '/bg_header.inc');
         </nav>
         <?php endif; ?>
         <?php endif; ?>
+    </div>
+        </div>
     </div>
 </div>
 
