@@ -276,19 +276,45 @@ $additionalstyles = '
 # PROCESS POST ATTEMPT
 #-------------------------------------------------------------------------------
   // Handle form submission for updating FAQ
-  if ($account->isadmin() && $app->formposted() && isset($_POST['faq_id'])) {
-    $faq_id = $_POST['faq_id'];
-    $display_name = $_POST['display_name'];
-    $description = $_POST['description'];
-    $category = $_POST['category'];
-    
-
-    $sql = "UPDATE bg_content SET display_name = :display_name, description = :description, `grouping` = :category, modify_dt = now() WHERE id = :id";    $stmt = $database->prepare($sql);
-    $stmt->bindParam(':display_name', $display_name);
-    $stmt->bindParam(':description', $description);
-    $stmt->bindParam(':category', $category);
-    $stmt->bindParam(':id', $faq_id);
-    $stmt->execute();
+  if ($account->isadmin() && $app->formposted()) {
+    if (isset($_POST['faq_id'])) {
+      // Update existing FAQ
+      $faq_id = $_POST['faq_id'];
+      $display_name = $_POST['display_name'];
+      $description = $_POST['description'];
+      $category = $_POST['category'];
+      
+      $sql = "UPDATE bg_content SET display_name = :display_name, description = :description, `grouping` = :category, modify_dt = now() WHERE id = :id";
+      $stmt = $database->prepare($sql);
+      $stmt->bindParam(':display_name', $display_name);
+      $stmt->bindParam(':description', $description);
+      $stmt->bindParam(':category', $category);
+      $stmt->bindParam(':id', $faq_id);
+      $stmt->execute();
+    } elseif (isset($_POST['new_faq'])) {
+      // Create new FAQ
+      $display_name = $_POST['display_name'];
+      $description = $_POST['description'];
+      $category = $_POST['category'];
+      
+      // Get the max rank for the category
+      $sql = "SELECT MAX(`rank`) as max_rank FROM bg_content WHERE category = 'faq' AND `grouping` = :category";
+      $stmt = $database->prepare($sql);
+      $stmt->bindParam(':category', $category);
+      $stmt->execute();
+      $result = $stmt->fetch(PDO::FETCH_ASSOC);
+      $new_rank = ($result['max_rank'] ?? 0) + 1;
+      
+      // Insert new FAQ
+      $sql = "INSERT INTO bg_content (category, `grouping`, display_name, description, `rank`, status, create_dt, modify_dt) 
+              VALUES ('faq', :category, :display_name, :description, :rank, 'active', now(), now())";
+      $stmt = $database->prepare($sql);
+      $stmt->bindParam(':category', $category);
+      $stmt->bindParam(':display_name', $display_name);
+      $stmt->bindParam(':description', $description);
+      $stmt->bindParam(':rank', $new_rank);
+      $stmt->execute();
+    }
   }
 
 
@@ -347,6 +373,11 @@ $additionalstyles = '
     
     <!-- Expand/Collapse Controls -->
     <div class="faq-controls">
+      <?php if ($account->isadmin()): ?>
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newFaqModal" title="Add new FAQ">
+        <i class="bi bi-plus-circle"></i> New FAQ
+      </button>
+      <?php endif; ?>
       <button onclick="expandAllFAQs()" title="Expand all questions">
         <i class="bi bi-arrows-expand"></i>Expand All
       </button>
@@ -549,6 +580,54 @@ $additionalstyles = '
   </div><!-- End container -->
 
 <?php
+// Modal for creating new FAQ (admin only)
+if ($account->isadmin()) {
+  echo '
+  <div class="modal modal-lg fade" id="newFaqModal" tabindex="-1" aria-labelledby="newFaqModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="newFaqModalLabel">Create New FAQ</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="min-height: 400px;">
+          <form method="POST" action="/faq">
+            ' . $display->inputcsrf_token() . '
+            <input type="hidden" name="new_faq" value="1">
+            
+            <div class="mb-3">
+              <label for="new_display_name" class="form-label">Question</label>
+              <input type="text" class="form-control" id="new_display_name" name="display_name" required placeholder="Enter the FAQ question">
+            </div>
+            
+            <div class="mb-3">
+              <label for="new_category" class="form-label">Category</label>
+              <select class="form-select" id="new_category" name="category" required>
+                <option value="">Select a category</option>';
+  
+  // Add options for each category
+  foreach ($categories as $cat_option) {
+    echo '<option value="' . htmlspecialchars($cat_option, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($cat_option, ENT_QUOTES, 'UTF-8') . '</option>';
+  }
+  
+  echo '</select>
+            </div>
+            
+            <div class="mb-3">
+              <label for="new_description" class="form-label">Answer</label>
+              <textarea class="form-control" id="new_description" name="description" rows="8" style="min-height: 200px;" required placeholder="Enter the FAQ answer. You can use HTML for formatting."></textarea>
+              <small class="text-muted">You can use HTML tags for formatting (e.g., &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a href=""&gt;)</small>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Create FAQ</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>';
+}
+
 // Add JavaScript for search functionality
 $footerattribute['postfooter'] = '
 <script>

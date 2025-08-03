@@ -94,10 +94,10 @@ if (count($notifications) > 0) {
                         <i class="bi bi-three-dots-vertical"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><button class="dropdown-item" type="button" onclick="markNotification(' . $notification['notification_id'] . ', \'' . ($isRead ? 'unread' : 'read') . '\')">
+                        <li><button class="dropdown-item" type="button" onclick="markNotification(\'' . $notification['notification_id'] . '\', \'' . ($isRead ? 'unread' : 'read') . '\')">
                             <i class="bi bi-check-circle"></i> Mark ' . ($isRead ? 'Unread' : 'Read') . '
                         </button></li>
-                        <li><button class="dropdown-item" type="button" onclick="deleteNotification(' . $notification['notification_id'] . ')">
+                        <li><button class="dropdown-item" type="button" onclick="deleteNotification(\'' . $notification['notification_id'] . '\')">
                             <i class="bi bi-trash"></i> Delete
                         </button></li>
                     </ul>
