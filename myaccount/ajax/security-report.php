@@ -297,6 +297,28 @@ if ($action === 'report_device') {
                 */
             }
             
+            // Create notification entry for the user
+            try {
+                $notification_sql = "INSERT INTO bg_user_notifications 
+                                    (user_id, type, title, message, status, priority, create_dt, modify_dt) 
+                                    VALUES 
+                                    (:user_id, 'security_alert', :title, :message, 'unread', 'high', NOW(), NOW())";
+                
+                $notification_title = 'Device Security Report Submitted';
+                $notification_message = 'You reported a suspicious device (' . htmlspecialchars($device_id) . '). Our security team has been notified and will investigate.';
+                
+                $stmt = $database->prepare($notification_sql);
+                $stmt->execute([
+                    ':user_id' => $user_id,
+                    ':title' => $notification_title,
+                    ':message' => $notification_message
+                ]);
+                
+                session_tracking('AJAX-security_report_notification_created', 'Notification ID: ' . $database->lastInsertId());
+            } catch (Exception $e) {
+                session_tracking('AJAX-security_report_notification_error', 'Failed to create notification: ' . $e->getMessage());
+            }
+            
             // Log successful report
             session_tracking('AJAX-security_report_success', 'Device reported: ' . $device_id);
             

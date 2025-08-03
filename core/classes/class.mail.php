@@ -1324,14 +1324,14 @@ class MailQueue
     
     // Create notification record first
     $notification_sql = "INSERT INTO bg_user_notifications 
-                        (user_id, type, subject, message, status, priority, create_dt, modify_dt) 
+                        (user_id, type, title, message, status, priority, create_dt, modify_dt) 
                         VALUES 
-                        (:user_id, :type, :subject, :message, 'unread', :priority, NOW(), NOW())";
+                        (:user_id, :type, :title, :message, 'unread', :priority, NOW(), NOW())";
     
     $notification_params = [
       ':user_id' => $user['user_id'],
       ':type' => $input['notification_type'],
-      ':subject' => $input['subject'],
+      ':title' => $input['subject'],
       ':message' => $input['content'],
       ':priority' => $input['priority'] ?? 'normal'
     ];
