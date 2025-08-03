@@ -8,6 +8,7 @@ if (!$account->isadmin()) {
 }
 
 $pagetitle = 'AI Dashboard - Ask Goldie Analytics';
+$header_flush = true; // Ensure header content is flush with admin header
 
 // Date range filters
 $dateFrom = $_GET['from'] ?? date('Y-m-d', strtotime('-7 days'));
@@ -574,8 +575,15 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
+<!-- Content Header Admin Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <h1 class="mb-3"><i class="bi bi-robot me-3"></i>AI Dashboard</h1>
+        <p class="lead mb-0">Ask Goldie Analytics and Conversation Tracking</p>
+    </div>
+</div>
+
 <div class="container ai-dashboard">
-    <h1 class="mb-4">AI Dashboard - Ask Goldie Analytics</h1>
     
     <!-- Summary Statistics -->
     <div class="row mb-4">
@@ -675,8 +683,8 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Conversations View -->
     <div id="conversations-view" class="view-section" style="display: block;">
         <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Recent Conversations</h4>
+            <div class="card-header bg-primary">
+                <h4 class="mb-0 text-white">Recent Conversations</h4>
             </div>
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
