@@ -79,7 +79,7 @@ $sql = "SELECT
         ORDER BY create_dt DESC";
 $linkedDevices = $database->getrows($sql, [':user_id' => $user_id]);
 
-// Page setup
+// Page setup - MUST be before includes
 $pagetitle = 'Voice Assistant Setup';
 $additionalstyles = '
 <style>
@@ -165,8 +165,10 @@ function generateNewCode(platform) {
 }
 </script>';
 
-include $installpath . 'core/components/v3/bg_pagestart.inc';
-include $installpath . 'core/components/v3/bg_header.inc';
+// Display page
+$bodycontentclass='';
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <div class="container mt-4">
@@ -178,30 +180,26 @@ include $installpath . 'core/components/v3/bg_header.inc';
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     <?php endif; ?>
-
+    
     <!-- Linked Devices -->
     <?php if (!empty($linkedDevices)): ?>
     <div class="assistant-card">
-        <h3>Linked Devices</h3>
+        <h3 class="mb-3">Linked Devices</h3>
         <?php foreach ($linkedDevices as $device): ?>
         <div class="linked-device">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <strong><?php echo ucfirst($device['platform']); ?></strong>
-                    <?php if ($device['device_id']): ?>
-                        <small class="text-muted">(<?php echo htmlspecialchars($device['device_id']); ?>)</small>
-                    <?php endif; ?>
+                    <strong><?php echo ucfirst($device['platform']); ?> Assistant</strong>
                     <br>
-                    <small class="text-muted">
-                        Linked: <?php echo date('M j, Y', strtotime($device['created_at'])); ?>
-                        <?php if ($device['last_used']): ?>
-                            | Last used: <?php echo date('M j, Y', strtotime($device['last_used'])); ?>
-                        <?php endif; ?>
-                    </small>
+                    <small class="text-muted">Linked on <?php echo date('M j, Y', strtotime($device['created_at'])); ?></small>
+                    <?php if ($device['last_used']): ?>
+                    <br>
+                    <small class="text-muted">Last used: <?php echo date('M j, Y g:i A', strtotime($device['last_used'])); ?></small>
+                    <?php endif; ?>
                 </div>
-                <form method="post" class="d-inline">
+                <form method="POST" class="d-inline">
                     <input type="hidden" name="action" value="unlink">
-                    <input type="hidden" name="platform" value="<?php echo $device['platform']; ?>">
+                    <input type="hidden" name="device_id" value="<?php echo htmlspecialchars($device['device_id']); ?>">
                     <button type="submit" class="btn btn-sm btn-outline-danger">Unlink</button>
                 </form>
             </div>
@@ -209,142 +207,140 @@ include $installpath . 'core/components/v3/bg_header.inc';
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
-
-    <!-- Setup Instructions -->
+    
+    <!-- Link New Device -->
     <div class="assistant-card">
-        <h3>Link a New Voice Assistant</h3>
-        <p class="text-muted">Connect your Google Assistant, Amazon Alexa, or Siri to access your Birthday Gold rewards hands-free.</p>
+        <h3 class="mb-4">Link a New Voice Assistant</h3>
+        <p class="text-muted mb-4">Connect your Google Assistant, Amazon Alexa, or Siri to access your Birthday Gold rewards hands-free.</p>
         
-        <!-- Platform Tabs -->
-        <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#google">
-                    <img src="/public/images/google-assistant-icon.png" alt="Google" class="platform-icon">
-                    Google Assistant
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#alexa">
-                    <img src="/public/images/alexa-icon.png" alt="Alexa" class="platform-icon">
-                    Amazon Alexa
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#siri">
-                    <img src="/public/images/siri-icon.png" alt="Siri" class="platform-icon">
-                    Siri
-                </a>
-            </li>
-        </ul>
-
-        <!-- Tab Content -->
-        <div class="tab-content mt-4">
-            <!-- Google Assistant -->
-            <div id="google" class="tab-pane fade show active">
-                <h4>Setup Google Assistant</h4>
-                <ol class="mt-3">
-                    <li class="mb-3">
-                        <span class="step-number">1</span>
-                        Say <strong>"Hey Google, talk to Birthday Gold"</strong>
-                    </li>
-                    <li class="mb-3">
-                        <span class="step-number">2</span>
-                        Google will ask you to link your account. Say <strong>"Yes"</strong>
-                    </li>
-                    <li class="mb-3">
-                        <span class="step-number">3</span>
-                        Open the Google Home app on your phone and complete the linking
-                    </li>
-                </ol>
-                <hr>
-                <p><strong>Alternative Method:</strong> Enter the code Google gives you:</p>
-                <form method="post" class="mt-3">
-                    <input type="hidden" name="action" value="verify_code">
-                    <input type="hidden" name="platform" value="google">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <input type="text" name="code" id="linkingCode" class="form-control" 
-                                   placeholder="XXXX-XX" maxlength="7" required>
-                        </div>
-                        <div class="col-md-6">
-                            <button type="submit" class="btn btn-primary">Link Device</button>
-                        </div>
-                    </div>
-                </form>
+        <!-- Platform Selection -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <button class="btn btn-outline-primary w-100 p-3" onclick="showInstructions('google')">
+                    <img src="/public/images/google-assistant.png" alt="Google" class="platform-icon">
+                    <br>Google Assistant
+                </button>
             </div>
-
-            <!-- Amazon Alexa -->
-            <div id="alexa" class="tab-pane fade">
-                <h4>Setup Amazon Alexa</h4>
-                <ol class="mt-3">
-                    <li class="mb-3">
-                        <span class="step-number">1</span>
-                        Open the Alexa app and search for <strong>"Birthday Gold"</strong> skill
-                    </li>
-                    <li class="mb-3">
-                        <span class="step-number">2</span>
-                        Enable the skill and tap <strong>"Link Account"</strong>
-                    </li>
-                    <li class="mb-3">
-                        <span class="step-number">3</span>
-                        Log in with your Birthday Gold account
-                    </li>
-                </ol>
-                <hr>
-                <p><strong>Alternative Method:</strong> Say "Alexa, open Birthday Gold" and enter the code:</p>
-                <form method="post" class="mt-3">
-                    <input type="hidden" name="action" value="verify_code">
-                    <input type="hidden" name="platform" value="alexa">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <input type="text" name="code" class="form-control" 
-                                   placeholder="XXXX-XX" maxlength="7" required>
-                        </div>
-                        <div class="col-md-6">
-                            <button type="submit" class="btn btn-primary">Link Device</button>
-                        </div>
-                    </div>
-                </form>
+            <div class="col-md-4 mb-3">
+                <button class="btn btn-outline-primary w-100 p-3" onclick="showInstructions('alexa')">
+                    <img src="/public/images/alexa.png" alt="Alexa" class="platform-icon">
+                    <br>Amazon Alexa
+                </button>
             </div>
-
-            <!-- Siri -->
-            <div id="siri" class="tab-pane fade">
-                <h4>Setup Siri Shortcuts</h4>
-                <ol class="mt-3">
-                    <li class="mb-3">
-                        <span class="step-number">1</span>
-                        Download the Birthday Gold app from the App Store
-                    </li>
-                    <li class="mb-3">
-                        <span class="step-number">2</span>
-                        Open the app and go to Settings > Siri Shortcuts
-                    </li>
-                    <li class="mb-3">
-                        <span class="step-number">3</span>
-                        Add the shortcuts you want to use with Siri
-                    </li>
-                </ol>
-                <div class="alert alert-info mt-3">
-                    <i class="fas fa-info-circle"></i> 
-                    Siri integration requires the Birthday Gold iOS app (coming soon)
-                </div>
+            <div class="col-md-4 mb-3">
+                <button class="btn btn-outline-secondary w-100 p-3" disabled>
+                    <img src="/public/images/siri.png" alt="Siri" class="platform-icon">
+                    <br>Siri<br><small>(Coming Soon)</small>
+                </button>
             </div>
         </div>
+        
+        <!-- Instructions -->
+        <div id="googleInstructions" class="platform-instructions" style="display:none;">
+            <h4>Setup Google Assistant</h4>
+            <ol class="mt-3">
+                <li class="mb-2">
+                    <span class="step-number">1</span>
+                    Say "Hey Google, talk to Birthday Gold"
+                </li>
+                <li class="mb-2">
+                    <span class="step-number">2</span>
+                    Google will ask you to link your account. Say "Yes"
+                </li>
+                <li class="mb-2">
+                    <span class="step-number">3</span>
+                    Open the Google Home app on your phone and complete the linking
+                </li>
+            </ol>
+            
+            <div class="mt-4 p-3 bg-light rounded">
+                <h5>Or use a linking code:</h5>
+                <button class="btn btn-primary mt-2" onclick="generateNewCode('google')">Generate Code</button>
+                <div id="codeDisplay" class="code-display" style="display:none;"></div>
+                <div id="codeExpiry" class="text-muted mt-2"></div>
+            </div>
+        </div>
+        
+        <div id="alexaInstructions" class="platform-instructions" style="display:none;">
+            <h4>Setup Amazon Alexa</h4>
+            <ol class="mt-3">
+                <li class="mb-2">
+                    <span class="step-number">1</span>
+                    Open the Alexa app on your phone
+                </li>
+                <li class="mb-2">
+                    <span class="step-number">2</span>
+                    Go to Skills & Games and search for "Birthday Gold"
+                </li>
+                <li class="mb-2">
+                    <span class="step-number">3</span>
+                    Enable the skill and link your account
+                </li>
+            </ol>
+            
+            <div class="mt-4 p-3 bg-light rounded">
+                <h5>Or use a linking code:</h5>
+                <button class="btn btn-primary mt-2" onclick="generateNewCode('alexa')">Generate Code</button>
+            </div>
+        </div>
+        
+        <!-- Manual Code Entry -->
+        <div class="mt-4 p-3 bg-light rounded">
+            <h5>Have a linking code?</h5>
+            <form method="POST" class="mt-3">
+                <input type="hidden" name="action" value="verify_code">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="platform" class="form-label">Platform</label>
+                        <select name="platform" id="platform" class="form-select" required>
+                            <option value="">Select...</option>
+                            <option value="google">Google Assistant</option>
+                            <option value="alexa">Amazon Alexa</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="linkingCode" class="form-label">Linking Code</label>
+                        <input type="text" class="form-control" id="linkingCode" name="code" 
+                               placeholder="XXXX-XX" maxlength="7" required>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary">Link Device</button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
-
-    <!-- What You Can Ask -->
+    
+    <!-- Usage Examples -->
     <div class="assistant-card">
-        <h3>What You Can Ask</h3>
-        <p>Once linked, try these commands:</p>
-        <ul class="list-unstyled">
-            <li><i class="fas fa-microphone text-primary"></i> "How many enrollments do I have?"</li>
-            <li><i class="fas fa-microphone text-primary"></i> "What rewards am I enrolled in?"</li>
-            <li><i class="fas fa-microphone text-primary"></i> "How many allocations do I have left?"</li>
-            <li><i class="fas fa-microphone text-primary"></i> "What's my account status?"</li>
+        <h3 class="mb-3">What You Can Ask</h3>
+        <p class="text-muted">Once linked, try these voice commands:</p>
+        <ul class="list-unstyled mt-3">
+            <li class="mb-2"><i class="fas fa-microphone text-primary"></i> "Hey Google, ask Birthday Gold how many enrollments I have"</li>
+            <li class="mb-2"><i class="fas fa-microphone text-primary"></i> "Alexa, ask Birthday Gold what rewards I'm enrolled in"</li>
+            <li class="mb-2"><i class="fas fa-microphone text-primary"></i> "How many allocations do I have left?"</li>
+            <li class="mb-2"><i class="fas fa-microphone text-primary"></i> "What's my account status?"</li>
         </ul>
     </div>
 </div>
 
+<script>
+function showInstructions(platform) {
+    // Hide all instructions
+    document.querySelectorAll('.platform-instructions').forEach(el => {
+        el.style.display = 'none';
+    });
+    
+    // Show selected platform
+    const instructionsEl = document.getElementById(platform + 'Instructions');
+    if (instructionsEl) {
+        instructionsEl.style.display = 'block';
+    }
+}
+</script>
+
 <?php
-include $installpath . 'core/components/v3/bg_footer.inc';
+$display_footertype='';
+include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();
 ?>

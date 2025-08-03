@@ -254,6 +254,11 @@ include($dir['core_components'] . '/bg_header.inc');
                                 Friends who use your code will get special benefits when they sign up!
                             </small>
                         </div>
+                        <div class="mt-3">
+                            <a href="/myaccount/referralcode" class="btn btn-sm btn-secondary">
+                                <i class="bi bi-gear me-1"></i>Manage Code
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
