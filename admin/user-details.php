@@ -78,6 +78,17 @@ if (!empty($referer)) {
 #-------------------------------------------------------------------------------
 $additionalstyles .= '
 <style>
+/* Ensure content header is flush with navbar */
+.content-header-admin {
+    margin-top: 0 !important;
+}
+
+/* Main content styling */
+.main-content {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
 .cursor-pointer { cursor: pointer; }
 #avatarModal .modal-backdrop.show { opacity: 0.85; }
 .row-hover:hover { background-color: #f8f9fa; }
@@ -87,7 +98,12 @@ $additionalstyles .= '
     background-color: transparent;
     border: 1px solid currentColor;
 }
+
+/* Add Bootstrap Icons if not already included */
 </style>';
+
+// Add Bootstrap Icons
+$additionalheaders = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">';
 
 
 #-------------------------------------------------------------------------------
@@ -110,20 +126,27 @@ if ($session->get('force_success_message', '') !== '') {
 
 $transferpagedata = $system->startpostpage($transferpagedata);
 
+$header_flush = true; // Ensure header content is flush with admin header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_admin_leftpanel.inc');
 
 echo '
-<section class="container main-content mt-0">
+<!-- Admin Header Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <h1 class="mb-3"><i class="bi bi-person-circle me-3"></i>User Details</h1>
+        <p class="lead mb-4">'.htmlspecialchars($workinguserdata['first_name']).' '.htmlspecialchars($workinguserdata['last_name']).'</p>
+    </div>
+</div>
+
+<section class="container main-content">
     <!-- Display any session messages -->
     ' . (isset($transferpagedata['message']) && !empty($transferpagedata['message']) ? $transferpagedata['message'] : '') . '
     
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0 fw-bold">User Details: '.htmlspecialchars($workinguserdata['first_name']).' '.htmlspecialchars($workinguserdata['last_name']).'</h2>
-        <a href="/admin/user-list" class="btn btn-sm btn-outline-secondary">
-            Back to User List
+    <!-- Back Button -->
+    <div class="mb-4">
+        <a href="/admin/user-list-v2" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to User List
         </a>
     </div>
 

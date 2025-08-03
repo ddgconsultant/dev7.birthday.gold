@@ -563,23 +563,13 @@ $businessHours = $app->bg_businesshours();
         </div>
         
         <div class="admin-grid">
-            <a href="/admin/user-list" class="admin-card">
+            <a href="/admin/user-list-v2" class="admin-card">
                 <div class="admin-icon icon-user">
                     <i class="bi bi-people"></i>
                 </div>
                 <div class="admin-content">
-                    <h3 class="admin-card-title">User List</h3>
+                    <h3 class="admin-card-title">User Management</h3>
                     <p class="admin-card-text">View and manage all platform users</p>
-                </div>
-            </a>
-            
-            <a href="/admin/user-list-v2" class="admin-card">
-                <div class="admin-icon icon-user">
-                    <i class="bi bi-person-lines-fill"></i>
-                </div>
-                <div class="admin-content">
-                    <h3 class="admin-card-title">Enhanced User Management</h3>
-                    <p class="admin-card-text">Advanced user search with real-time filtering</p>
                 </div>
             </a>
             

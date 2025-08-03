@@ -46,10 +46,7 @@ $additionalstyles .= '
     background-color: #f8f9fa;
 }
 
-.container-fluid {
-    max-width: 1400px;
-    margin: 0 auto;
-}
+/* Remove container-fluid override - use standard Bootstrap container */
 
 /* Consistent spacing */
 .mb-4 {
@@ -110,13 +107,8 @@ h1 {
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
 }
 
-/* Stats Cards - Clean and Simple */
+/* Stats Cards - Using Bootstrap utilities */
 .stat-card {
-    background: white;
-    border-radius: 8px;
-    padding: 1.25rem;
-    border: 1px solid #e9ecef;
-    text-align: center;
     transition: border-color 0.2s ease;
 }
 
@@ -125,19 +117,7 @@ h1 {
 }
 
 .stat-value {
-    font-size: 1.75rem;
-    font-weight: 600;
-    color: #0d6efd;
-    margin-bottom: 0.25rem;
     font-variant-numeric: tabular-nums;
-}
-
-.stat-label {
-    font-size: 0.8125rem;
-    color: #6c757d;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
 }
 
 /* Filter Section - Functional */
@@ -167,22 +147,16 @@ h1 {
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
 }
 
-/* User List Container */
+/* User List Container - Using Bootstrap utilities */
 .user-list {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    margin-bottom: 2rem;
 }
 
-/* User List Item - Clean Professional Design */
+/* User List Item - Using Bootstrap card utilities */
 .user-item {
-    background: white;
-    border-radius: 8px;
-    padding: 1rem;
-    border: 1px solid #e9ecef;
     transition: all 0.15s ease;
-    position: relative;
     overflow: visible;
 }
 
@@ -198,45 +172,9 @@ h1 {
     width: 100%;
 }
 
-.user-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 8px;
-    object-fit: cover;
-    flex-shrink: 0;
-    border: 1px solid #e9ecef;
-}
+/* User avatar - styles applied inline with Bootstrap utilities */
 
-.user-info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.user-info-top {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: nowrap;
-}
-
-.user-name {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #212529;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.user-badges {
-    display: flex;
-    gap: 0.25rem;
-    align-items: center;
-    flex-shrink: 0;
-}
+/* User info styles - using Bootstrap utilities instead */
 
 /* Clean Badge Styles */
 .badge {
@@ -614,20 +552,6 @@ h1 {
     z-index: 100;
 }
 
-.back-button .btn {
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    background-color: white;
-    border: 1px solid #dee2e6;
-    color: #495057;
-}
-
-.back-button .btn:hover {
-    background-color: #f8f9fa;
-    border-color: #dee2e6;
-}
-
 /* Smooth transitions for interactive elements */
 a, button, input, select, .btn {
     transition: all 0.15s ease;
@@ -703,9 +627,9 @@ select:focus-visible {
 $additionalheaders = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">';
 
 $bodycontentclass = '';
+$header_flush = true; // Ensure header content is flush with admin header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-#include($dir['core_components'] . '/bg_admin_leftpanel.inc');
 
 // Get initial stats
 $totalUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE type='real'");
@@ -725,51 +649,53 @@ $paidUsers->execute();
 $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
 ?>
 
-<div class="container-fluid main-content">
+<!-- Admin Header Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <h1 class="mb-3"><i class="bi bi-people me-3"></i>User Management</h1>
+        <p class="lead mb-4">Advanced user search with real-time filtering</p>
+    </div>
+</div>
+
+<div class="container main-content py-4">
     <div class="row">
         <div class="col-12">
-            <!-- Page Header with Search in same row -->
-            <div class="row align-items-center mb-4">
-                <div class="col-md-6">
-                    <h1 class="mb-2">Enhanced User Management</h1>
-                    <p class="text-muted mb-0">Advanced user search with real-time filtering</p>
-                </div>
-                <div class="col-md-6">
-                    <div class="search-box ms-auto">
-                        <input 
-                            type="text" 
-                            class="search-input" 
-                            placeholder="Search users by name, email, username..."
-                            id="userSearch"
-                        >
-                    </div>
+            <!-- Search Bar -->
+            <div class="mb-4">
+                <div class="search-box mx-auto" style="max-width: 600px;">
+                    <input 
+                        type="text" 
+                        class="form-control form-control-lg search-input" 
+                        placeholder="Search users by name, email, username..."
+                        id="userSearch"
+                    >
                 </div>
             </div>
             
             <!-- Quick Stats -->
             <div class="row mb-4">
                 <div class="col-md-3 col-6 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-value"><?php echo number_format($totalUsersCount); ?></div>
-                        <div class="stat-label">Total Users</div>
+                    <div class="card text-center p-3 stat-card">
+                        <div class="fs-2 fw-bold text-primary stat-value"><?php echo number_format($totalUsersCount); ?></div>
+                        <div class="text-muted small text-uppercase">Total Users</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-value"><?php echo number_format($activeUsersCount); ?></div>
-                        <div class="stat-label">Active Users</div>
+                    <div class="card text-center p-3 stat-card">
+                        <div class="fs-2 fw-bold text-primary stat-value"><?php echo number_format($activeUsersCount); ?></div>
+                        <div class="text-muted small text-uppercase">Active Users</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-value"><?php echo number_format($newUsersTodayCount); ?></div>
-                        <div class="stat-label">New Today</div>
+                    <div class="card text-center p-3 stat-card">
+                        <div class="fs-2 fw-bold text-primary stat-value"><?php echo number_format($newUsersTodayCount); ?></div>
+                        <div class="text-muted small text-uppercase">New Today</div>
                     </div>
                 </div>
                 <div class="col-md-3 col-6 mb-3">
-                    <div class="stat-card">
-                        <div class="stat-value"><?php echo number_format($paidUsersCount); ?></div>
-                        <div class="stat-label">Paid Users</div>
+                    <div class="card text-center p-3 stat-card">
+                        <div class="fs-2 fw-bold text-primary stat-value"><?php echo number_format($paidUsersCount); ?></div>
+                        <div class="text-muted small text-uppercase">Paid Users</div>
                     </div>
                 </div>
             </div>
@@ -823,8 +749,8 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                 </div>
             </div>
     
-    <!-- User List -->
-    <div class="user-list" id="userList">
+            <!-- User List -->
+            <div class="user-list" id="userList">
         <!-- Users will be loaded here via AJAX -->
         <?php
         // Load initial users for fallback
@@ -883,13 +809,13 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             ];
             $planColor = $planColors[$user['account_plan']] ?? 'secondary';
             ?>
-            <div class="user-item" data-user-id="<?php echo $user['user_id']; ?>">
-                <div class="user-item-content">
-                    <img src="<?php echo htmlspecialchars($avatar); ?>" alt="" class="user-avatar">
-                    <div class="user-info">
-                        <div class="user-info-top">
-                            <div class="user-name"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></div>
-                            <div class="user-badges">
+            <div class="card p-3 mb-2 user-item" data-user-id="<?php echo $user['user_id']; ?>">
+                <div class="d-flex align-items-center gap-3 user-item-content">
+                    <img src="<?php echo htmlspecialchars($avatar); ?>" alt="" class="rounded user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
+                    <div class="flex-grow-1 user-info">
+                        <div class="d-flex align-items-center gap-2 mb-1 user-info-top">
+                            <div class="fw-semibold user-name"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></div>
+                            <div class="d-flex gap-1 user-badges">
                                 <span class="badge text-bg-<?php echo $statusColor; ?>"><?php echo htmlspecialchars($user['status']); ?></span>
                                 <span class="badge text-bg-<?php echo $planColor; ?>"><?php echo htmlspecialchars($user['account_plan'] ?: 'free'); ?></span>
                                 <?php if ($isStaff): ?>
@@ -903,16 +829,16 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <div class="user-details">
-                            <div class="user-detail-item">
+                        <div class="d-flex flex-wrap gap-3 small text-muted user-details">
+                            <div class="d-flex align-items-center gap-1 user-detail-item">
                                 <i class="bi bi-envelope"></i>
                                 <span><?php echo htmlspecialchars($user['email']); ?></span>
                             </div>
-                            <div class="user-detail-item">
+                            <div class="d-flex align-items-center gap-1 user-detail-item">
                                 <i class="bi bi-person"></i>
                                 <span>@<?php echo htmlspecialchars($user['username']); ?></span>
                             </div>
-                            <div class="user-detail-item">
+                            <div class="d-flex align-items-center gap-1 user-detail-item">
                                 <i class="bi bi-geo-alt"></i>
                                 <span><?php echo htmlspecialchars($location); ?></span>
                             </div>
@@ -983,7 +909,7 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
 
 <!-- Back to Admin Button -->
 <div class="back-button">
-    <a href="/admin/" class="btn btn-light">
+    <a href="/admin/" class="btn btn-light shadow-sm">
         <i class="bi bi-arrow-left"></i> Back to Dashboard
     </a>
 </div>
