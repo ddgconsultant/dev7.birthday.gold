@@ -180,10 +180,10 @@ if ($app->formposted()) {
                 
                 // Track the reward in company attributes for future bonus rewards
                 $track_reward_sql = "INSERT INTO bg_company_attributes 
-                                    (company_id, type, name, description, value, status, create_dt)
+                                    (company_id, type, name, description, status, create_dt)
                                     VALUES 
                                     (:company_id, 'recommendation_tracking', 'initial_reward_granted', 
-                                     :user_id, '1', 'active', NOW())";
+                                     :user_id, 'active', NOW())";
                 
                 $database->query($track_reward_sql, [
                     'company_id' => $company_id,
