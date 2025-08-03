@@ -213,6 +213,11 @@ $additionalstyles = '
         font-weight: 500;
         color: #6c757d;
     }
+    
+    .bulk-action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
         </style>
 ';
 
@@ -308,13 +313,13 @@ foreach ($filters as $filter) {
                     <span class="bulk-select-all" onclick="toggleSelectAll(\'' . $key . '\')">Select All</span>
                     <span class="selected-count">0 selected</span>
                     <div class="ms-auto d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-primary" onclick="bulkMarkAs(\'' . $key . '\', \'read\')" title="Mark selected as read">
+                        <button class="btn btn-sm btn-outline-primary bulk-action-btn" onclick="bulkMarkAs(\'' . $key . '\', \'read\')" title="Mark selected as read" disabled>
                             <i class="bi bi-envelope-open"></i> Mark as Read
                         </button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="bulkMarkAs(\'' . $key . '\', \'unread\')" title="Mark selected as unread">
+                        <button class="btn btn-sm btn-outline-primary bulk-action-btn" onclick="bulkMarkAs(\'' . $key . '\', \'unread\')" title="Mark selected as unread" disabled>
                             <i class="bi bi-envelope"></i> Mark as Unread
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="bulkDelete(\'' . $key . '\')" title="Delete selected">
+                        <button class="btn btn-sm btn-outline-danger bulk-action-btn" onclick="bulkDelete(\'' . $key . '\')" title="Delete selected" disabled>
                             <i class="bi bi-trash"></i> Delete
                         </button>
                     </div>
@@ -607,11 +612,14 @@ foreach ($filters as $filter) {
         const checkedBoxes = activeTab.querySelectorAll('.notification-checkbox:checked');
         const selectedCount = activeTab.querySelector('.selected-count');
         const selectAllSpan = activeTab.querySelector('.bulk-select-all');
+        const bulkButtons = activeTab.querySelectorAll('.bulk-action-btn');
         
+        // Update selected count
         if (selectedCount) {
             selectedCount.textContent = checkedBoxes.length + ' selected';
         }
         
+        // Update select all text
         if (selectAllSpan) {
             if (checkedBoxes.length === checkboxes.length && checkboxes.length > 0) {
                 selectAllSpan.textContent = 'Deselect All';
@@ -619,6 +627,11 @@ foreach ($filters as $filter) {
                 selectAllSpan.textContent = 'Select All';
             }
         }
+        
+        // Enable/disable bulk action buttons
+        bulkButtons.forEach(btn => {
+            btn.disabled = checkedBoxes.length === 0;
+        });
     }
     
     function toggleSelectAll(tabId) {

@@ -77,21 +77,23 @@ $codemode = 'web';
 #-------------------------------------------------------------------------------
 # CSS Cache Busting Function
 #-------------------------------------------------------------------------------
-function getCssCacheBuster() {
-    global $mode;
-    
-    if ($mode == 'dev') {
-        // Development: Random token for every request
-        return '?v=' . uniqid();
-    } else {
-        // Production: Day-Hour token (changes every hour)
-        return '?v=' . date('YmdH');
-    }
+function getCssCacheBuster()
+{
+  global $mode;
+
+  if ($mode == 'dev') {
+    // Development: Random token for every request
+    return '?v=' . uniqid();
+  } else {
+    // Production: Day-Hour token (changes every hour)
+    return '?v=' . date('YmdH');
+  }
 }
 
 // Helper function to add cache buster to CSS URL
-function cssUrl($path) {
-    return $path . getCssCacheBuster();
+function cssUrl($path)
+{
+  return $path . getCssCacheBuster();
 }
 
 // Make it available globally
@@ -107,7 +109,7 @@ if ($errormode === 'showerrors') {
   ini_set('display_errors', 1);
   ini_set('display_startup_errors', 1);
   ini_set('log_errors', 1);
-  ini_set('error_log', 'W:/BIRTHDAY_SERVER/_logs_/'.$devversion.'_PHP_errors.log');
+  ini_set('error_log', 'W:/BIRTHDAY_SERVER/_logs_/' . $devversion . '_PHP_errors.log');
   error_reporting(E_ALL);
 } else { // 'prod' mode
   ini_set('display_errors', 0);
@@ -442,10 +444,10 @@ foreach ($classes as $class) {
       case 'mail':
         $usemailconfig = $sitesettings['mail'];    // Use the default mail settings
         if (!empty($usemailsender) && !empty($sitesettings['mailsender_' . $usemailsender])) { // If a specific sender override exists, merge it
-            $usemailconfig = array_merge($usemailconfig, $sitesettings['mailsender_' . $usemailsender]);
+          $usemailconfig = array_merge($usemailconfig, $sitesettings['mailsender_' . $usemailsender]);
         }
         $$className = new $className($usemailconfig);  // Instantiate the class with the resolved config
-     #   print_r($usemailconfig); exit;// Debugging line to check the mail configuration
+        #   print_r($usemailconfig); exit;// Debugging line to check the mail configuration
         break;
       // -----------------------------------------
       case 'telegramsmsservice':
@@ -455,9 +457,9 @@ foreach ($classes as $class) {
         break;
       // -----------------------------------------
       case 'productmanager_promo':
-      $productManager = new ProductManagerPromo($database, $qik);
-      break;
-       // -----------------------------------------
+        $productManager = new ProductManagerPromo($database, $qik);
+        break;
+      // -----------------------------------------
       case 'sms':
         $smsConfig = [
           'server' => $sitesettings['sms']['server'] ?? 'https://sms.bd.gold',
@@ -481,9 +483,13 @@ foreach ($classes as $class) {
         $$className = new $className($system, $database);
         break;
 
-              // -----------------------------------------
+      // -----------------------------------------
       case 'product':
         $$className = new $className($database, $qik, $website['plan_version']);
+        break;
+      // -----------------------------------------
+      case 'allocationmanager':
+        $$className = new $className($database);
         break;
       // -----------------------------------------
       default:
@@ -541,12 +547,12 @@ if ($client_ip == '52.22.66.203') $apibypass = true; // validator.org
 // Claude Code authentication bypass
 $claudebypass = false;
 if (isset($_SERVER['HTTP_X_CLAUDE_CODE_KEY']) && $mode == 'dev') {
-    $claude_key = $_SERVER['HTTP_X_CLAUDE_CODE_KEY'];
-    // Use a development-only key that can be easily configured
-    if (isset($sitesettings['app']['CLAUDE_CODE_AUTH_KEY']) && $claude_key == $sitesettings['app']['CLAUDE_CODE_AUTH_KEY']) {
-        $claudebypass = true;
-        session_tracking('claude_code_access', ['ip' => $client_ip, 'uri' => $_SERVER['REQUEST_URI'], 'time' => date('Y-m-d H:i:s')]);
-    }
+  $claude_key = $_SERVER['HTTP_X_CLAUDE_CODE_KEY'];
+  // Use a development-only key that can be easily configured
+  if (isset($sitesettings['app']['CLAUDE_CODE_AUTH_KEY']) && $claude_key == $sitesettings['app']['CLAUDE_CODE_AUTH_KEY']) {
+    $claudebypass = true;
+    session_tracking('claude_code_access', ['ip' => $client_ip, 'uri' => $_SERVER['REQUEST_URI'], 'time' => date('Y-m-d H:i:s')]);
+  }
 }
 
 // ----

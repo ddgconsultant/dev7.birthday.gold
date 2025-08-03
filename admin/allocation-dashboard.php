@@ -3,16 +3,9 @@
  * Admin Allocation Dashboard
  * Analytics and management for the allocation system
  */
-
+$addClasses[] = 'allocationmanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.allocationmanager.php');
 
-// Admin check
-if (!$admin->isadmin() && !$admin->isstaff()) {
-    die('Admin access required');
-}
-
-$allocationManager = new AllocationManager($database);
 
 // Get date range
 $start_date = $_GET['start'] ?? date('Y-m-01');

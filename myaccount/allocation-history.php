@@ -4,26 +4,17 @@
  * Shows complete history of user's enrollment allocations
  */
 
+ $addClasses[] = 'allocationmanager';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.allocationmanager.php');
-
-// Check if user is active
-$activeuser = $account->isactive();
-if (empty($activeuser)) {
-    header('Location: /login');
-    exit;
-}
 
 // Get user data
 $current_user_data = $session->get('current_user_data');
 $current_user_data = $account->getuserdata($current_user_data['user_id'], 'user_id');
 $user_id = $current_user_data['user_id'];
 
-// Initialize AllocationManager
-$allocationManager = new AllocationManager($database);
 
 // Get user's current allocation balance
-$balance = $allocationManager->getUserBalance($user_id);
+$balance = $allocationmanager->getUserBalance($user_id);
 
 // Pagination
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
