@@ -51,11 +51,16 @@ if (isset($process_handlers) && $process_handlers) {
         if (!$birthdate || $birthdate->format('Y-m-d') !== $birthday_string) {
             $errors['birthday'] = 'Please select a valid date';
         } else {
-            $age = $birthdate->diff(new DateTime())->y;
-            if ($age < 13) {
-                $errors['birthday'] = 'You must be at least 13 years old to create an account';
-            } elseif ($age > 120) {
-                $errors['birthday'] = 'Please enter a valid birth year';
+            $today = new DateTime();
+            if ($birthdate > $today) {
+                $errors['birthday'] = 'Birth date cannot be in the future';
+            } else {
+                $age = $birthdate->diff($today)->y;
+                if ($age < 13) {
+                    $errors['birthday'] = 'You must be at least 13 years old to create an account';
+                } elseif ($age > 120) {
+                    $errors['birthday'] = 'Please enter a valid birth year';
+                }
             }
         }
     }

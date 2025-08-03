@@ -506,7 +506,7 @@ echo '
                 <i class="bi bi-chevron-right"></i>
             </a>
 
-            <a href="/myaccount/notifications#settings" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+            <a href="/myaccount/notifications" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
                 <div><i class="bi bi-bell me-2"></i>Notifications</div>
                 <i class="bi bi-chevron-right"></i>
             </a>

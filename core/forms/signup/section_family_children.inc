@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<\!-- Children Info Modal -->
+<!-- Children Info Modal -->
 <div class="modal fade" id="childrenInfoModal" tabindex="-1" aria-labelledby="childrenInfoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

@@ -48,7 +48,7 @@ $additionalstyles.='
         'links' => [
             ['text' => 'Login History', 'url' => '/myaccount/loginhistory', 'icon' => 'bi bi-clock-history'],
             ['text' => 'Trusted Devices', 'url' => '/myaccount/loginhistory?view=devices', 'icon' => 'bi bi-tablet'],
-            ['text' => 'Notifications', 'url' => '/myaccount/manage-notifications', 'icon' => 'bi bi-bell'],
+            ['text' => 'Notifications', 'url' => '/myaccount/notifications', 'icon' => 'bi bi-bell'],
             [
                 'text' => 'Profile Images',
                 'url' => '/myaccount/profile-images',

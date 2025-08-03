@@ -317,6 +317,23 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
     letter-spacing: 0.5px;
 }
 
+/* Collapsible Danger Zone */
+.security-card-header[data-bs-toggle="collapse"] {
+    transition: background-color 0.3s ease;
+}
+
+.security-card-header[data-bs-toggle="collapse"]:hover {
+    filter: brightness(0.95);
+}
+
+.security-card-header[data-bs-toggle="collapse"] .bi-chevron-down {
+    transition: transform 0.3s ease;
+}
+
+.security-card-header[data-bs-toggle="collapse"][aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .security-hero h1 {
@@ -611,35 +628,40 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
     </div>
 
-    <!-- Account Deletion Card -->
+    <!-- Account Deletion Card - Danger Zone -->
     <div class="security-card">
-        <div class="security-card-header">
+        <div class="security-card-header bg-danger-subtle" data-bs-toggle="collapse" data-bs-target="#deleteAccountCollapse" aria-expanded="false" aria-controls="deleteAccountCollapse" style="cursor: pointer;">
             <div class="security-card-title">
                 <i class="bi bi-trash-fill security-card-icon icon-delete"></i>
-                <h3>Delete Account</h3>
+                <h3>Delete Account - Danger Zone</h3>
+            </div>
+            <div class="security-status">
+                <i class="bi bi-chevron-down"></i>
             </div>
         </div>
-        <div class="security-card-body">
-            <p class="security-description">
-                Permanently delete your Birthday Gold account and all associated data. This action cannot be undone.
-            </p>
-            <div class="alert alert-danger" role="alert">
-                <i class="bi bi-exclamation-octagon-fill me-2"></i>
-                <strong>Warning:</strong> Deleting your account will permanently remove all your data, including:
-                <ul class="mb-0 mt-2">
-                    <li>Your profile information</li>
-                    <li>Birthday reward enrollments</li>
-                    <li>Redemption history</li>
-                    <li>Saved preferences</li>
-                </ul>
-            </div>
-            <div class="security-actions">
-                <button type="button" class="btn btn-security-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
-                    <i class="bi bi-trash me-2"></i>Delete My Account
-                </button>
-                <a href="/myaccount/download-data" class="btn btn-security-secondary">
-                    <i class="bi bi-download me-2"></i>Download My Data
-                </a>
+        <div class="collapse" id="deleteAccountCollapse">
+            <div class="security-card-body">
+                <p class="security-description">
+                    Permanently delete your Birthday Gold account and all associated data. This action cannot be undone.
+                </p>
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                    <strong>Warning:</strong> Deleting your account will permanently remove all your data, including:
+                    <ul class="mb-0 mt-2">
+                        <li>Your profile information</li>
+                        <li>Birthday reward enrollments</li>
+                        <li>Redemption history</li>
+                        <li>Saved preferences</li>
+                    </ul>
+                </div>
+                <div class="security-actions">
+                    <button type="button" class="btn btn-security-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                        <i class="bi bi-trash me-2"></i>Delete My Account
+                    </button>
+                    <a href="/myaccount/download-data" class="btn btn-security-secondary">
+                        <i class="bi bi-download me-2"></i>Download My Data
+                    </a>
+                </div>
             </div>
         </div>
     </div>

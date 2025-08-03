@@ -12,12 +12,23 @@ $additionalstyles = '
         border-bottom: none;
         padding: 0;
         list-style: none;
+        margin: 0;
     }
     
     /* Container for tabs and gear button */
     .tabs-container {
         border-bottom: 1px solid #e0e0e0;
         margin-bottom: 2rem;
+        position: relative;
+    }
+    
+    /* Settings gear positioning */
+    .tabs-container .nav-tabs-clean:last-child {
+        margin-left: auto;
+    }
+    
+    .tabs-container .nav-tabs-clean:last-child .nav-tab-clean {
+        margin-right: 0; /* Remove margin from settings button */
     }
     
     .nav-tab-clean {
@@ -32,7 +43,7 @@ $additionalstyles = '
         color: #666;
         font-weight: 500;
         font-size: 16px;
-        text-transform: uppercase;
+        /* text-transform: uppercase; removed for proper casing */
         letter-spacing: 0.5px;
         transition: color 0.2s ease;
         border: none;
@@ -122,6 +133,37 @@ $additionalstyles = '
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
+    
+    /* Card header styling for settings */
+    #settings .card-header {
+        border-bottom: 2px solid #f0f0f0;
+        padding: 1.5rem;
+    }
+    
+    #settings .card-header h5 {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    #settings .card-body {
+        padding: 2rem;
+    }
+    
+    /* Override any font weight on notification descriptions */
+    .list-group-item p.text-muted {
+        font-weight: 300 !important; /* Light weight */
+    }
+    
+    .list-group-item p.text-muted.small {
+        font-size: 0.875rem !important;
+        line-height: 1.5;
+        font-weight: 300 !important;
+    }
+    
+    /* Ensure the notification item titles are properly weighted */
+    .list-group-item .fw-bold {
+        font-weight: 600 !important; /* Semi-bold for titles */
+    }
         </style>
 ';
 
@@ -165,6 +207,9 @@ foreach ($filters as $filter) {
 <div class="container my-5 pt-5">
     <div class="container">
 
+        <!-- Alert container for error messages -->
+        <div id="alertContainer"></div>
+
         <!-- Clean tab navigation with settings gear -->
         <div class="d-flex justify-content-between align-items-center tabs-container">
             <ul class="nav-tabs-clean mb-0">
@@ -172,7 +217,7 @@ foreach ($filters as $filter) {
                 $tab_labels = array(
                     'unread' => '<i class="bi bi-envelope-exclamation me-2"></i>Unread', 
                     'read' => '<i class="bi bi-envelope-open me-2"></i>Read', 
-                    'all' => '<i class="bi bi-envelope me-2"></i>All'
+                    'all' => '<i class="bi bi-envelope me-2"></i>All Notifications'
                 );
                 $is_first = true;
                 foreach ($tab_labels as $key => $label) {
@@ -216,8 +261,14 @@ foreach ($filters as $filter) {
             ?>
             
             <div class="tab-pane fade" id="settings">
-                <div class="card px-4 mt-0 pt-0">
-                    <?php include($dir['core_components'] . '/user_notification_settings.inc'); ?>
+                <div class="card mt-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Notification Settings</h5>
+                        <p class="text-muted mb-0 small">Select notifications you want to receive</p>
+                    </div>
+                    <div class="card-body">
+                        <?php include($dir['core_components'] . '/user_notification_settings.inc'); ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -225,6 +276,31 @@ foreach ($filters as $filter) {
 </div>
 
 <script>
+    // Function to show Bootstrap alerts
+    function showAlert(message, type = 'danger') {
+        const alertContainer = document.getElementById('alertContainer');
+        const alertId = 'alert-' + Date.now();
+        
+        const alertHtml = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        alertContainer.innerHTML = alertHtml;
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alertElement = document.getElementById(alertId);
+            if (alertElement) {
+                const bsAlert = new bootstrap.Alert(alertElement);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
+
     // Function to activate a tab by its target
     function activateTab(targetHash) {
         // Remove active class from all tabs
@@ -282,6 +358,64 @@ foreach ($filters as $filter) {
             activateTab(window.location.hash);
         }
     });
+    
+    // Notification action functions
+    function markNotification(notificationId, status) {
+        // Create form data
+        const formData = new FormData();
+        formData.append("action", "mark_notification");
+        formData.append("notification_id", notificationId);
+        formData.append("status", status);
+        formData.append("_token", "<?php echo $display->inputcsrf_token('tokenonly'); ?>");
+        
+        // Submit via AJAX
+        fetch("/myaccount/ajax/notification-actions.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Refresh the page to update the notification lists
+                window.location.reload();
+            } else {
+                showAlert("Error: " + (data.error || "Failed to update notification"));
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            showAlert("An error occurred while updating the notification");
+        });
+    }
+    
+    function deleteNotification(notificationId) {
+        if (confirm("Are you sure you want to delete this notification?")) {
+            // Create form data
+            const formData = new FormData();
+            formData.append("action", "delete_notification");
+            formData.append("notification_id", notificationId);
+            formData.append("_token", "<?php echo $display->inputcsrf_token('tokenonly'); ?>");
+            
+            // Submit via AJAX
+            fetch("/myaccount/ajax/notification-actions.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Refresh the page to update the notification lists
+                    window.location.reload();
+                } else {
+                    showAlert("Error: " + (data.error || "Failed to delete notification"));
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                showAlert("An error occurred while deleting the notification");
+            });
+        }
+    }
 </script>
 
 <?php
