@@ -28,6 +28,40 @@ $additionalstyles = '
     margin-top: 0 !important;
 }
 
+/* Ensure main content starts at top */
+.main-content {
+    min-height: auto !important;
+}
+
+/* Remove any vertical centering */
+body {
+    display: block !important;
+}
+
+/* Ensure container doesn't have extra height */
+.container {
+    min-height: auto !important;
+}
+
+/* Remove any flexbox centering from body wrapper */
+#bodyContentWrapper {
+    display: block !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    min-height: auto !important;
+}
+
+/* Ensure content starts at top */
+.row {
+    align-items: flex-start !important;
+}
+
+/* Remove vertical centering from any parent containers */
+main, .main-wrapper, .content-wrapper {
+    display: block !important;
+    min-height: auto !important;
+}
+
 /* Modern Tab Navigation */
 .nav-tabs-modern {
     display: flex;
@@ -109,7 +143,7 @@ function generateStatsCards($stats)
 {
     return '
     <div class="mb-4">
-        <div class="card h-100 border-start-lg border-start-secondary">
+        <div class="card border-start-lg border-start-secondary">
             <div class="card-header border-bottom-0">
                 <div class="text-muted fw-bold">Users Pending</div>
             </div>
@@ -119,7 +153,7 @@ function generateStatsCards($stats)
         </div>
     </div>
     <div class="mb-4">
-        <div class="card h-100 border-start-lg border-start-success">
+        <div class="card border-start-lg border-start-success">
             <div class="card-header border-bottom-0">
                 <div class="text-muted fw-bold">Enrollment Totals: ' . $stats['total'] . '</div>
             </div>
@@ -372,7 +406,7 @@ include($dir['core_components'] . '/bg_header.inc');
 
 <?php
 // Generate the tabbed interface
-echo '    <section class="container mt-5 main-content">';
+echo '    <section class="container mt-3 main-content">';
 
 // Get counts for badges
 $realCount = count($realUsers);
@@ -407,7 +441,7 @@ $realData = generateUserList($realUsers,  $current_user_data);
 echo '<div class="row mt-3">
 <div class="col-lg-3 d-none d-lg-block">' . generateStatsCards($realData['stats']) . '</div>
 <div class="col-lg-9 col-12">
-<div class="card h-100 border-start-lg border-start-success">
+<div class="card border-start-lg border-start-success">
 <div class="card-header border-bottom-0">
 <div class="text-muted fw-bold">Real Users Pending Enrollment</div>
 </div>
@@ -424,7 +458,7 @@ $testData = generateUserList($testUsers,  $current_user_data);
 echo '<div class="row mt-3">
 <div class="col-lg-3 d-none d-lg-block">' . generateStatsCards($testData['stats']) . '</div>
 <div class="col-lg-9 col-12">
-<div class="card h-100 border-start-lg border-start-success">
+<div class="card border-start-lg border-start-success">
 <div class="card-header border-bottom-0">
 <div class="text-muted fw-bold">Test Users Pending Enrollment</div>
 </div>
