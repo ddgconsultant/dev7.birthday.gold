@@ -215,8 +215,26 @@ $additionalstyles = '
     }
     
     .bulk-action-btn:disabled {
-        opacity: 0.5;
+        opacity: 0.6;
         cursor: not-allowed;
+        background-color: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+        color: #6c757d !important;
+    }
+    
+    .bulk-action-btn:disabled:hover {
+        background-color: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+        color: #6c757d !important;
+    }
+    
+    /* When enabled, buttons get their colors */
+    .bulk-action-btn:not(:disabled).btn-outline-primary {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .bulk-action-btn:not(:disabled).btn-outline-danger {
+        transition: all 0.2s ease-in-out;
     }
         </style>
 ';
