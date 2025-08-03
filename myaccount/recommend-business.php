@@ -154,15 +154,41 @@ if ($app->formposted()) {
                 ]);
                 
                 // Award 1 free enrollment allocation to the user using AllocationManager
-                $allocation_result = $allocationmanager->grantBonus(
-                    $current_user_data['user_id'], 
-                    1, 
-                    'Business recommendation reward: ' . $business_name,
-                    'recommendation'
-                );
+                // Using direct SQL to create a pending allocation that shows in history
+                $alloc_sql = "INSERT INTO bg_user_allocations (
+                                user_id, 
+                                allocation_type, 
+                                allocation_year, 
+                                amount, 
+                                allocation_comment,
+                                reference_type,
+                                reference_id,
+                                created_by,
+                                starts_at,
+                                status
+                            ) VALUES (
+                                :user_id,
+                                'bonus',
+                                :year,
+                                1,
+                                :comment,
+                                'recommendation',
+                                :company_id,
+                                :created_by,
+                                NOW(),
+                                'pending'
+                            )";
                 
-                if (!$allocation_result['success']) {
-                    error_log("Failed to grant allocation for recommendation: " . $allocation_result['message']);
+                $allocation_result = $database->query($alloc_sql, [
+                    'user_id' => $current_user_data['user_id'],
+                    'year' => date('Y'),
+                    'comment' => 'Business recommendation reward: ' . $business_name . ' (pending approval)',
+                    'company_id' => $company_id,
+                    'created_by' => $current_user_data['user_id']
+                ]);
+                
+                if (!$allocation_result) {
+                    error_log("Failed to create pending allocation for recommendation");
                 }
                 
                 // Also track in user attributes for historical reference
@@ -198,7 +224,7 @@ if ($app->formposted()) {
                     <h5 class="alert-heading"><i class="bi bi-check-circle"></i> Success!</h5>
                     <p>Thank you for your recommendation! We will review it shortly.</p>
                     <hr>
-                    <p class="mb-0"><i class="bi bi-gift-fill"></i> <strong>You\'ve earned 1 free enrollment!</strong> It has been added to your account.</p>
+                    <p class="mb-0"><i class="bi bi-gift-fill"></i> <strong>You\'ve earned 1 free enrollment!</strong> It\'s pending approval and will be available once your recommendation is verified.</p>
                 </div>';
                 
                 // Clear the form
@@ -421,7 +447,7 @@ if ($show_learn_more) {
                 <h3 class="mb-3"><i class="bi bi-check2-circle me-2"></i>How It Works</h3>
                 <ol class="mb-4">
                     <li class="mb-2"><strong>Submit a Business:</strong> Provide the business name, website, and their birthday rewards signup page</li>
-                    <li class="mb-2"><strong>Get Instant Reward:</strong> Receive 1 free enrollment credit immediately upon submission</li>
+                    <li class="mb-2"><strong>Get Instant Reward:</strong> Receive 1 free enrollment credit upon submission (pending approval)</li>
                     <li class="mb-2"><strong>We Review:</strong> Our team verifies the business offers birthday rewards</li>
                     <li class="mb-2"><strong>Business Goes Live:</strong> Once processed and approved, the business appears in our directory</li>
                     <li class="mb-2"><strong>Earn Bonus Rewards:</strong> When another member enrolls in your recommended business, you get 2 more free enrollments!</li>
@@ -466,7 +492,7 @@ if ($show_learn_more) {
                     </div>
                     <div class="feature-text">
                         <h3>Instant Reward</h3>
-                        <p>Get 1 free enrollment immediately upon submission</p>
+                        <p>Get 1 free enrollment upon approval</p>
                     </div>
                 </div>
                 

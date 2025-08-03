@@ -29,13 +29,14 @@ class AllocationManager {
         $sql = "SELECT 
                     COALESCE(SUM(CASE WHEN status = 'active' AND (expires_at IS NULL OR expires_at > NOW()) THEN (COALESCE(amount, 0) - COALESCE(amount_used, 0)) ELSE 0 END), 0) as total_available,
                     COALESCE(SUM(CASE WHEN allocation_type = 'plan' THEN amount ELSE 0 END), 0) as plan_allocations,
-                    COALESCE(SUM(CASE WHEN allocation_type = 'bonus' THEN amount ELSE 0 END), 0) as bonus_allocations,
-                    COALESCE(SUM(amount), 0) as total_allocated,
-                    COALESCE(SUM(COALESCE(amount_used, 0)), 0) as total_used_from_allocations
+                    COALESCE(SUM(CASE WHEN allocation_type = 'bonus' AND status != 'pending' THEN amount ELSE 0 END), 0) as bonus_allocations,
+                    COALESCE(SUM(CASE WHEN status != 'pending' THEN amount ELSE 0 END), 0) as total_allocated,
+                    COALESCE(SUM(COALESCE(amount_used, 0)), 0) as total_used_from_allocations,
+                    COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_allocations
                 FROM bg_user_allocations
                 WHERE user_id = :user_id
                 AND allocation_year = :year
-                AND status IN ('active', 'depleted')";
+                AND status IN ('active', 'depleted', 'pending')";
         
         $allocation_data = $this->db->getrow($sql, [
             'user_id' => $user_id,
@@ -118,7 +119,7 @@ class AllocationManager {
             'earn_count' => 0, // Can be calculated from allocation records
             'use_count' => $used_count,
             'expiring_soon_count' => $expiring_result['expiring_count'] ?? 0,
-            'pending_allocations' => 0, // Can be implemented later
+            'pending_allocations' => $allocation_data['pending_allocations'] ?? 0
             'plan_allocations' => $plan_allocations,
             'bonus_allocations' => $bonus_allocations
         ];
