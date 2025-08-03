@@ -297,15 +297,18 @@ if ($action === 'report_device') {
                 */
             }
             
-            // Create notification entry for the user
+            // Create notification entry for the user with the same content as the email
             try {
                 $notification_sql = "INSERT INTO bg_user_notifications 
                                     (user_id, type, title, message, status, priority, create_dt, modify_dt) 
                                     VALUES 
                                     (:user_id, 'security_alert', :title, :message, 'unread', 'high', NOW(), NOW())";
                 
-                $notification_title = 'Device Security Report Submitted';
-                $notification_message = 'You reported a suspicious device (' . htmlspecialchars($device_id) . '). Our security team has been notified and will investigate.';
+                $notification_title = 'Device Security Report Confirmation';
+                
+                // Use the same rich HTML content from the email for the notification
+                // Wrap it in the special markers that the notification display looks for
+                $notification_message = '<!-- Message Content start -->' . $user_body . '<!-- Message Content end -->';
                 
                 $stmt = $database->prepare($notification_sql);
                 $stmt->execute([

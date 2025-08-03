@@ -8,10 +8,10 @@ if (!$account->isloggedin()) {
     exit;
 }
 
-// Verify CSRF token
-if (!$app->formposted() || !$display->verifycsrf_token($_POST['_token'] ?? '')) {
+// Verify CSRF token using formposted which checks the token automatically
+if (!$app->formposted()) {
     http_response_code(403);
-    echo json_encode(['error' => 'Invalid security token']);
+    echo json_encode(['error' => 'Invalid request']);
     exit;
 }
 

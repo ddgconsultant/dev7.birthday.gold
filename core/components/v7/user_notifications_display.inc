@@ -55,9 +55,9 @@ if (count($notifications) > 0) {
         $timeElapsed = $qik->timeago($notification['create_dt']);
         $iconClass = isset($typeIcons[$notification['type']]) ? $typeIcons[$notification['type']] : 'bell-fill';
         
-        // Extract message content for email notifications
+        // Extract message content for email notifications and security alerts
         $messageContent = $notification['message'];
-        if ($notification['type'] == 'email_notification') {
+        if ($notification['type'] == 'email_notification' || $notification['type'] == 'security_alert') {
             preg_match('/<!-- Message Content start -->(.*?)<!-- Message Content end -->/s', $messageContent, $matches);
             if (isset($matches[1])) {
                 $messageContent = trim(str_replace('<br><br>', '<br>', $matches[1]));
