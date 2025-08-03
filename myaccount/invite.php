@@ -168,9 +168,16 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Content Header Dark Section -->
 <div class="content-header-dark">
     <div class="container">
-        <div class="text-center">
-            <h1 class="mb-3"><i class="bi bi-envelope-heart me-3"></i>Invite Friends</h1>
-            <p class="lead mb-0">Share the Birthday Love - Help friends discover amazing birthday rewards!</p>
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="mb-3"><i class="bi bi-envelope-heart me-3"></i>Invite Friends</h1>
+                <p class="lead mb-0">Share the Birthday Love - Help friends discover amazing birthday rewards!</p>
+            </div>
+            <div class="col-auto">
+                <a href="/myaccount/friends-list" class="btn btn-outline-light">
+                    <i class="bi bi-people me-2"></i>View Friends List
+                </a>
+            </div>
         </div>
     </div>
 </div>

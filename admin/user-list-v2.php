@@ -11,7 +11,7 @@ $page_description = "Advanced user management with real-time search and filterin
 # PREP VARIABLES
 #-------------------------------------------------------------------------------
 $p_displaylength = 180;
-$searchTerm = '';
+$searchTerm = $_GET['searchTerm'] ?? $_POST['searchTerm'] ?? '';
 $initialLoadCount = 50; // Initial users to load
 $loadMoreCount = 25; // Users to load per scroll
 
@@ -19,8 +19,15 @@ $loadMoreCount = 25; // Users to load per scroll
 # HANDLE THE PROFILE UPDATE ATTEMPT
 #-------------------------------------------------------------------------------
 if ($app->formposted()) {
-    if (isset($_POST['formtype']) && ($_POST['formtype'] == 'changedisplaylength')) {
-        $p_displaylength = $_POST['displaylength'];
+    if (isset($_POST['formtype'])) {
+        switch ($_POST['formtype']) {
+            case 'changedisplaylength':
+                $p_displaylength = $_POST['displaylength'];
+                break;
+            case 'search':
+                $searchTerm = trim($_POST['searchTerm'] ?? '');
+                break;
+        }
     }
 }
 
@@ -89,17 +96,15 @@ h1 {
     background: white;
 }
 
-.search-box::before {
-    content: "\\F52A";
-    font-family: "bootstrap-icons";
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1rem;
-    color: #6c757d;
-    z-index: 10;
+.search-input {
+    color: #6c757d !important;
 }
+
+.search-input::placeholder {
+    color: #adb5bd;
+}
+
+/* Search icon is now an element, not pseudo-element */
 
 .search-input:focus {
     outline: none;
@@ -133,14 +138,7 @@ h1 {
     font-size: 1rem;
 }
 
-.form-select {
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    background: white;
-    transition: border-color 0.2s ease;
-    font-size: 0.875rem;
-}
+/* Remove custom form-select styles - let Bootstrap handle it */
 
 .form-select:focus {
     border-color: #0d6efd;
@@ -171,12 +169,7 @@ h1 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.user-item-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    width: 100%;
-}
+/* Removed user-item-content as we are using Bootstrap grid now */
 
 /* User avatar - styles applied inline with Bootstrap utilities */
 
@@ -469,34 +462,7 @@ h1 {
     font-size: 0.875rem !important;
 }
 
-/* Responsive Design */
-@media (max-width: 1199px) {
-    .user-stats {
-        gap: 1rem;
-    }
-}
-
-@media (max-width: 991px) {
-    .user-item-content {
-        flex-wrap: wrap;
-    }
-    
-    .user-info {
-        width: calc(100% - 58px);
-    }
-    
-    .user-stats {
-        margin-left: 58px;
-        margin-top: 0.75rem;
-        width: calc(100% - 58px);
-    }
-    
-    .user-actions {
-        margin-left: auto;
-        margin-top: 0;
-    }
-}
-
+/* Responsive Design - simplified with Bootstrap grid */
 @media (max-width: 767px) {
     h1 {
         font-size: 1.5rem;
@@ -504,27 +470,6 @@ h1 {
     
     .text-muted {
         font-size: 0.875rem;
-    }
-    
-    .user-details {
-        gap: 0.5rem;
-    }
-    
-    .user-detail-item {
-        font-size: 0.75rem;
-    }
-    
-    .user-stats {
-        margin-left: 0;
-        width: 100%;
-        justify-content: flex-start;
-    }
-    
-    .user-actions {
-        margin-left: 0;
-        margin-top: 0.75rem;
-        width: 100%;
-        justify-content: flex-start;
     }
     
     .user-item {
@@ -665,19 +610,28 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
 
 <!-- Search Bar in header area like help page -->
 <div class="container" style="margin-top: -2rem; margin-bottom: 2rem; position: relative; z-index: 10;">
-    <div class="search-box mx-auto" style="max-width: 600px;">
+    <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" class="search-box mx-auto" style="max-width: 600px; position: relative;">
+        <?php echo $display->inputcsrf_token(); ?>
+        <input type="hidden" name="formtype" value="search">
+        <i class="bi bi-search" style="position: absolute; left: 1.5rem; top: 50%; transform: translateY(-50%); font-size: 1.25rem; color: #6c757d; z-index: 10;"></i>
         <input 
             type="text" 
+            name="searchTerm"
+            id="searchInput"
             class="form-control form-control-lg search-input" 
-            placeholder="Search users by name, email, username..."
-            id="userSearch"
-            style="border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1rem 3rem 1rem 3rem;"
+            placeholder="Search users by name, email, username, location, status..."
+            value="<?php echo htmlspecialchars($searchTerm); ?>"
+            style="border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1rem 3.5rem 1rem 3.5rem;"
         >
-    </div>
+        <?php if (!empty($searchTerm)): ?>
+        <button type="button" class="btn btn-link p-0" onclick="document.getElementById('searchInput').value=''; this.form.submit();" style="position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%); color: #6c757d; text-decoration: none;">
+            <i class="bi bi-x-lg" style="font-size: 1.25rem;"></i>
+        </button>
+        <?php endif; ?>
+    </form>
 </div>
 
-<div class="container main-content py-2">
-    <div class="row">
+<div class="container py-2">
         <div class="col-12">
             
             <!-- Quick Stats -->
@@ -709,59 +663,126 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             </div>
             
             <!-- Filter Section -->
-            <div class="filter-section mb-4">
+            <form method="GET" action="<?php echo $_SERVER['PHP_SELF']; ?>" class="filter-section mb-4">
+                <?php if (!empty($searchTerm)): ?>
+                <input type="hidden" name="searchTerm" value="<?php echo htmlspecialchars($searchTerm); ?>">
+                <?php endif; ?>
                 <div class="row align-items-center">
                     <div class="col-md-2">
-                        <h5 class="mb-0">Quick Filters <i class="bi bi-chevron-down small"></i></h5>
+                        <h5 class="mb-0">Quick Filters</h5>
                     </div>
                     <div class="col-md-10">
                         <div class="row g-2">
                             <div class="col-md-3">
-                                <select class="form-select" id="statusFilter">
+                                <select class="form-select" name="statusFilter" id="statusFilter" onchange="this.form.submit()">
                                     <option value="">All Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="suspended">Suspended</option>
-                                    <option value="validated">Validated</option>
+                                    <option value="active" <?php echo ($_GET['statusFilter'] ?? '') === 'active' ? 'selected' : ''; ?>>Active</option>
+                                    <option value="pending" <?php echo ($_GET['statusFilter'] ?? '') === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                                    <option value="suspended" <?php echo ($_GET['statusFilter'] ?? '') === 'suspended' ? 'selected' : ''; ?>>Suspended</option>
+                                    <option value="validated" <?php echo ($_GET['statusFilter'] ?? '') === 'validated' ? 'selected' : ''; ?>>Validated</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <select class="form-select" id="planFilter">
+                                <select class="form-select" name="planFilter" id="planFilter" onchange="this.form.submit()">
                                     <option value="">All Plans</option>
-                                    <option value="free">Free</option>
-                                    <option value="basic">Basic</option>
-                                    <option value="premium">Premium</option>
-                                    <option value="vip">VIP</option>
+                                    <option value="free" <?php echo ($_GET['planFilter'] ?? '') === 'free' ? 'selected' : ''; ?>>Free</option>
+                                    <option value="basic" <?php echo ($_GET['planFilter'] ?? '') === 'basic' ? 'selected' : ''; ?>>Basic</option>
+                                    <option value="premium" <?php echo ($_GET['planFilter'] ?? '') === 'premium' ? 'selected' : ''; ?>>Premium</option>
+                                    <option value="vip" <?php echo ($_GET['planFilter'] ?? '') === 'vip' ? 'selected' : ''; ?>>VIP</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <select class="form-select" id="typeFilter">
+                                <select class="form-select" name="typeFilter" id="typeFilter" onchange="this.form.submit()">
                                     <option value="">All Types</option>
-                                    <option value="individual">Individual</option>
-                                    <option value="business">Business</option>
-                                    <option value="parental">Parental</option>
+                                    <option value="individual" <?php echo ($_GET['typeFilter'] ?? '') === 'individual' ? 'selected' : ''; ?>>Individual</option>
+                                    <option value="business" <?php echo ($_GET['typeFilter'] ?? '') === 'business' ? 'selected' : ''; ?>>Business</option>
+                                    <option value="parental" <?php echo ($_GET['typeFilter'] ?? '') === 'parental' ? 'selected' : ''; ?>>Parental</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <select class="form-select" id="dayFilter">
-                                    <option value="180">Last 180 Days</option>
-                                    <option value="90">Last 90 Days</option>
-                                    <option value="30">Last 30 Days</option>
-                                    <option value="7">Last 7 Days</option>
-                                    <option value="1">Today</option>
-                                    <option value="all">All Time</option>
+                                <select class="form-select" name="dayFilter" id="dayFilter" onchange="this.form.submit()">
+                                    <option value="180" <?php echo ($_GET['dayFilter'] ?? '180') === '180' ? 'selected' : ''; ?>>Last 180 Days</option>
+                                    <option value="90" <?php echo ($_GET['dayFilter'] ?? '') === '90' ? 'selected' : ''; ?>>Last 90 Days</option>
+                                    <option value="30" <?php echo ($_GET['dayFilter'] ?? '') === '30' ? 'selected' : ''; ?>>Last 30 Days</option>
+                                    <option value="7" <?php echo ($_GET['dayFilter'] ?? '') === '7' ? 'selected' : ''; ?>>Last 7 Days</option>
+                                    <option value="1" <?php echo ($_GET['dayFilter'] ?? '') === '1' ? 'selected' : ''; ?>>Today</option>
+                                    <option value="all" <?php echo ($_GET['dayFilter'] ?? '') === 'all' ? 'selected' : ''; ?>>All Time</option>
                                 </select>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </form>
     
+            <?php if (!empty($searchTerm)): ?>
+            <div class="alert alert-info mb-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-search me-2"></i>
+                    Showing search results for: <strong><?php echo htmlspecialchars($searchTerm); ?></strong>
+                    <span class="text-muted ms-2" id="searchResultCount"></span>
+                </div>
+                <a href="<?php echo $_SERVER['PHP_SELF']; ?>" class="btn btn-sm btn-outline-secondary">Clear Search</a>
+            </div>
+            <?php endif; ?>
+            
             <!-- User List -->
             <div class="user-list" id="userList">
         <!-- Users will be loaded here via AJAX -->
         <?php
         // Load initial users for fallback
+        $searchWhere = '';
+        $searchParams = [];
+        
+        // Get filters from GET/POST
+        $statusFilter = $_GET['statusFilter'] ?? $_POST['statusFilter'] ?? '';
+        $planFilter = $_GET['planFilter'] ?? $_POST['planFilter'] ?? '';
+        $typeFilter = $_GET['typeFilter'] ?? $_POST['typeFilter'] ?? '';
+        $dayFilter = $_GET['dayFilter'] ?? $_POST['dayFilter'] ?? '180';
+        
+        if (!empty($searchTerm)) {
+            $searchLike = '%' . $searchTerm . '%';
+            $searchWhere = " AND (
+                u.first_name LIKE :search1 OR 
+                u.last_name LIKE :search2 OR 
+                u.username LIKE :search3 OR 
+                u.email LIKE :search4 OR 
+                u.city LIKE :search5 OR 
+                u.state LIKE :search6 OR 
+                u.zip_code LIKE :search7 OR 
+                u.status LIKE :search8 OR 
+                u.account_plan LIKE :search9 OR 
+                u.account_type LIKE :search10 OR
+                DATE_FORMAT(u.birthdate, '%M %d') LIKE :search11 OR
+                DATE_FORMAT(u.create_dt, '%M %d') LIKE :search12 OR
+                DATE_FORMAT(u.create_dt, '%Y-%m-%d') LIKE :search13
+            )";
+            
+            // Create search parameters array
+            for ($i = 1; $i <= 13; $i++) {
+                $searchParams[':search' . $i] = $searchLike;
+            }
+        }
+        
+        // Add filter conditions
+        if (!empty($statusFilter)) {
+            $searchWhere .= " AND u.status = :status";
+            $searchParams[':status'] = $statusFilter;
+        }
+        
+        if (!empty($planFilter)) {
+            $searchWhere .= " AND u.account_plan = :plan";
+            $searchParams[':plan'] = $planFilter;
+        }
+        
+        if (!empty($typeFilter)) {
+            $searchWhere .= " AND u.account_type = :type";
+            $searchParams[':type'] = $typeFilter;
+        }
+        
+        if ($dayFilter !== 'all' && is_numeric($dayFilter)) {
+            $searchWhere .= " AND u.create_dt >= DATE_SUB(CURDATE(), INTERVAL " . intval($dayFilter) . " DAY)";
+        }
+        
         $initialUsersSql = "
             SELECT 
                 u.user_id,
@@ -782,15 +803,23 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                 AND a.name = 'avatar' 
                 AND a.category = 'primary' 
                 AND a.status = 'active'
-            WHERE u.type = 'real'
+            WHERE u.type = 'real' $searchWhere
             ORDER BY u.create_dt DESC
-            LIMIT 20
+            LIMIT 50
         ";
         
         $initialStmt = $database->prepare($initialUsersSql);
-        $initialStmt->execute();
+        if (!empty($searchParams)) {
+            $initialStmt->execute($searchParams);
+        } else {
+            $initialStmt->execute();
+        }
         
-        while ($user = $initialStmt->fetch(PDO::FETCH_ASSOC)) {
+        $searchResultCount = 0;
+        
+        if ($initialStmt) {
+            while ($user = $initialStmt->fetch(PDO::FETCH_ASSOC)) {
+                $searchResultCount++;
             $avatar = $user['avatar'] ?: '/public/avatars/problemavatar.png';
             $avatar = str_replace('cdn.birthday.gold', $website['cdnurl'], $avatar);
             $location = trim(($user['city'] ?: '') . ($user['city'] && $user['state'] ? ', ' : '') . ($user['state'] ?: '')) ?: 'Unknown';
@@ -824,29 +853,34 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                           strpos(strtolower($user['first_name']), 'test') !== false ||
                           strpos(strtolower($user['last_name']), 'test') !== false);
             ?>
-            <div class="card p-2 mb-1 user-item<?php echo $isTestUser ? ' test-user' : ''; ?>" data-user-id="<?php echo $user['user_id']; ?>">
-                <div class="d-flex align-items-center gap-3 user-item-content">
-                    <img src="<?php echo htmlspecialchars($avatar); ?>" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
-                    <div class="flex-grow-1 user-info">
-                        <div class="user-info-top">
-                            <div class="fw-semibold user-name"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></div>
-                        </div>
-                        <div class="d-flex flex-wrap gap-3 small text-muted user-details">
-                            <div class="d-flex align-items-center gap-1 user-detail-item">
-                                <i class="bi bi-envelope"></i>
-                                <span><?php echo htmlspecialchars($user['email']); ?></span>
-                            </div>
-                            <div class="d-flex align-items-center gap-1 user-detail-item">
-                                <i class="bi bi-person"></i>
-                                <span>@<?php echo htmlspecialchars($user['username']); ?></span>
-                            </div>
-                            <div class="d-flex align-items-center gap-1 user-detail-item">
-                                <i class="bi bi-geo-alt"></i>
-                                <span><?php echo htmlspecialchars($location); ?></span>
+            <div class="card p-2 px-4 mb-1 user-item<?php echo $isTestUser ? ' test-user' : ''; ?>" data-user-id="<?php echo $user['user_id']; ?>">
+                <div class="row align-items-start g-3">
+                    <!-- Column A: Avatar, name, email, username -->
+                    <div class="col-12 col-md-5">
+                        <div class="d-flex align-items-start gap-3">
+                            <img src="<?php echo htmlspecialchars($avatar); ?>" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold user-name"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></div>
+                                <div class="small text-muted">
+                                    <div>
+                                        <i class="bi bi-envelope me-1"></i><?php echo htmlspecialchars($user['email']); ?>
+                                        <i class="bi bi-person ms-2 me-1"></i>@<?php echo htmlspecialchars($user['username']); ?>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <!-- Badges on third line -->
-                        <div class="d-flex gap-1 mt-1 user-badges">
+                    </div>
+                    
+                    <!-- Column B: Location -->
+                    <div class="col-12 col-md-2">
+                        <div class="text-muted small">
+                            <i class="bi bi-geo-alt me-1"></i><?php echo htmlspecialchars($location); ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Column C: Badges -->
+                    <div class="col-12 col-md-2">
+                        <div class="d-flex flex-wrap gap-1">
                             <span class="badge text-bg-<?php echo $statusColor; ?>"><?php echo htmlspecialchars($user['status']); ?></span>
                             <span class="badge text-bg-<?php echo $planColor; ?>"><?php echo htmlspecialchars($user['account_plan'] ?: 'free'); ?></span>
                             <?php if ($isStaff): ?>
@@ -860,27 +894,53 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                             <?php endif; ?>
                         </div>
                     </div>
-                    <div class="user-stats">
-                        <div class="user-stat">
-                            <div class="user-stat-value"><?php echo date('M d', strtotime($user['create_dt'])); ?></div>
-                            <div class="user-stat-label">Joined</div>
+                    
+                    <!-- Column D: Dates and action button -->
+                    <div class="col-12 col-md-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex gap-4">
+                                <div class="text-center">
+                                    <div class="user-stat-value"><?php echo date('M d', strtotime($user['create_dt'])); ?></div>
+                                    <div class="user-stat-label small text-muted">Joined</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="user-stat-value"><?php echo $user['birthdate'] ? date('M d', strtotime($user['birthdate'])) : '-'; ?></div>
+                                    <div class="user-stat-label small text-muted">Birthday</div>
+                                </div>
+                            </div>
+                            <a href="/admin/user-details?u=<?php echo $qik->encodeId($user['user_id']); ?>" class="btn btn-primary btn-sm">
+                                <i class="bi bi-eye"></i> View Details
+                            </a>
                         </div>
-                        <div class="user-stat">
-                            <div class="user-stat-value"><?php echo $user['birthdate'] ? date('M d', strtotime($user['birthdate'])) : '-'; ?></div>
-                            <div class="user-stat-label">Birthday</div>
-                        </div>
-                    </div>
-                    <div class="user-actions">
-                        <a href="/admin/user-details?u=<?php echo $qik->encodeId($user['user_id']); ?>" class="btn btn-primary btn-sm">
-                            <i class="bi bi-eye"></i> View Details
-                        </a>
                     </div>
                 </div>
             </div>
             <?php
+            }
         }
         ?>
     </div>
+    
+    <?php if (!empty($searchTerm)): ?>
+    <script>
+    // Update search result count
+    document.addEventListener('DOMContentLoaded', function() {
+        const countElement = document.getElementById('searchResultCount');
+        if (countElement) {
+            countElement.textContent = '(<?php echo $searchResultCount; ?> results found)';
+        }
+    });
+    </script>
+    <?php endif; ?>
+    
+    <?php if ($searchResultCount === 0 && (!empty($searchTerm) || !empty($_REQUEST['statusFilter']))): ?>
+    <!-- No Results Message -->
+    <div class="no-results">
+        <i class="bi bi-search"></i>
+        <h4>No users found</h4>
+        <p>Try adjusting your search or filters</p>
+    </div>
+    <?php else: ?>
     
     <!-- Loading Indicator -->
     <div class="loading-spinner" id="loadingSpinner" style="display: none;">
@@ -896,6 +956,7 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
         <h4>No users found</h4>
         <p>Try adjusting your search or filters</p>
     </div>
+    <?php endif; ?>
     
             <!-- Load More Button -->
             <div class="load-more-container" id="loadMoreContainer" style="display: none;">
@@ -905,7 +966,6 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             </div>
         </div>
     </div>
-</div>
 
 <!-- Back to Admin Button -->
 <div class="back-button">
@@ -916,44 +976,53 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
 
 <!-- User Item Template -->
 <template id="userItemTemplate">
-    <div class="card p-2 mb-1 user-item" data-user-id="">
-        <div class="d-flex align-items-center gap-3 user-item-content">
-            <img src="" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
-            <div class="flex-grow-1 user-info">
-                <div class="user-info-top">
-                    <div class="fw-semibold user-name"></div>
-                </div>
-                <div class="d-flex flex-wrap gap-3 small text-muted user-details">
-                    <div class="d-flex align-items-center gap-1 user-detail-item">
-                        <i class="bi bi-envelope"></i>
-                        <span class="email"></span>
+    <div class="card p-2 px-4 mb-1 user-item" data-user-id="">
+        <div class="row align-items-center g-3">
+            <!-- Column A: Avatar, name, email, username -->
+            <div class="col-12 col-md-5">
+                <div class="d-flex align-items-start gap-3">
+                    <img src="" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold user-name"></div>
+                        <div class="small text-muted">
+                            <div>
+                                <i class="bi bi-envelope me-1"></i><span class="email"></span>
+                                <i class="bi bi-person ms-2 me-1"></i><span class="username"></span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="d-flex align-items-center gap-1 user-detail-item">
-                        <i class="bi bi-person"></i>
-                        <span class="username"></span>
-                    </div>
-                    <div class="d-flex align-items-center gap-1 user-detail-item">
-                        <i class="bi bi-geo-alt"></i>
-                        <span class="location"></span>
-                    </div>
-                </div>
-                <!-- Badges on third line -->
-                <div class="d-flex gap-1 mt-1 user-badges"></div>
-            </div>
-            <div class="user-stats">
-                <div class="user-stat">
-                    <div class="user-stat-value joined-date"></div>
-                    <div class="user-stat-label">Joined</div>
-                </div>
-                <div class="user-stat">
-                    <div class="user-stat-value birthday-date"></div>
-                    <div class="user-stat-label">Birthday</div>
                 </div>
             </div>
-            <div class="user-actions">
-                <a href="" class="btn btn-primary btn-sm view-details-btn">
-                    <i class="bi bi-eye"></i> View Details
-                </a>
+            
+            <!-- Column B: Location -->
+            <div class="col-12 col-md-2">
+                <div class="text-muted small">
+                    <i class="bi bi-geo-alt me-1"></i><span class="location"></span>
+                </div>
+            </div>
+            
+            <!-- Column C: Badges -->
+            <div class="col-12 col-md-2">
+                <div class="d-flex flex-wrap gap-1 user-badges"></div>
+            </div>
+            
+            <!-- Column D: Dates and action button -->
+            <div class="col-12 col-md-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex gap-4">
+                        <div class="text-center">
+                            <div class="user-stat-value joined-date"></div>
+                            <div class="user-stat-label small text-muted">Joined</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="user-stat-value birthday-date"></div>
+                            <div class="user-stat-label small text-muted">Birthday</div>
+                        </div>
+                    </div>
+                    <a href="" class="btn btn-primary btn-sm view-details-btn">
+                        <i class="bi bi-eye"></i> View Details
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -987,7 +1056,7 @@ class UserManager {
         this.hasMore = true;
         this.searchTimeout = null;
         this.filters = {
-            search: '',
+            search: '<?php echo addslashes($searchTerm); ?>',
             status: '',
             plan: '',
             type: '',
@@ -1012,14 +1081,8 @@ class UserManager {
     }
     
     bindEvents() {
-        // Search input
-        document.getElementById('userSearch').addEventListener('input', (e) => {
-            clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(() => {
-                this.filters.search = e.target.value;
-                this.resetAndReload();
-            }, 300);
-        });
+        // Search input - disabled for form submission
+        // Search is now handled by form POST submission
         
         // Filter changes
         document.getElementById('statusFilter').addEventListener('change', (e) => {

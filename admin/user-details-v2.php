@@ -55,9 +55,13 @@ $attributes_sql = "SELECT type, COUNT(*) as count
                   GROUP BY type";
 $user_attributes = $database->getrows($attributes_sql, ['user_id' => $workingUser]);
 
-// Get notification preferences
+// Get notification preferences from user attributes
 $notification_prefs = $database->getrow(
-    "SELECT * FROM bg_user_notification_preferences WHERE user_id = :user_id",
+    "SELECT * FROM bg_user_attributes 
+     WHERE user_id = :user_id 
+     AND type = 'notification_preferences' 
+     AND status = 'active' 
+     LIMIT 1",
     ['user_id' => $workingUser]
 );
 
