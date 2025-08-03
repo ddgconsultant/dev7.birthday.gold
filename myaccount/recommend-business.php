@@ -1,6 +1,7 @@
 <?php
 // recommend-business.php - User-facing page to submit business recommendations
 
+$addClasses[] = 'allocationmanager';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 #-------------------------------------------------------------------------------
@@ -120,7 +121,19 @@ if ($app->formposted()) {
                     'email' => $current_user_data['email'] ?? ''
                 ]);
                 
-                // Award 1 free enrollment to the user
+                // Award 1 free enrollment allocation to the user using AllocationManager
+                $allocation_result = $allocationmanager->grantBonus(
+                    $current_user_data['user_id'], 
+                    1, 
+                    'Business recommendation reward: ' . $business_name,
+                    'recommendation'
+                );
+                
+                if (!$allocation_result['success']) {
+                    error_log("Failed to grant allocation for recommendation: " . $allocation_result['message']);
+                }
+                
+                // Also track in user attributes for historical reference
                 $reward_sql = "INSERT INTO bg_user_attributes 
                                (user_id, type, name, description, value, status, create_dt)
                                VALUES 
@@ -131,16 +144,6 @@ if ($app->formposted()) {
                 $database->query($reward_sql, [
                     'user_id' => $current_user_data['user_id'],
                     'company_name' => $business_name
-                ]);
-                
-                // Update user's enrollment allocation count
-                $update_allocations_sql = "UPDATE bg_users 
-                                          SET allocations = allocations + 1,
-                                              modify_dt = NOW()
-                                          WHERE user_id = :user_id";
-                
-                $database->query($update_allocations_sql, [
-                    'user_id' => $current_user_data['user_id']
                 ]);
                 
                 // Track the reward in company attributes for future bonus rewards
