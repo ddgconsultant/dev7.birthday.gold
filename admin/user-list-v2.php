@@ -151,13 +151,19 @@ h1 {
 .user-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.25rem; /* Reduced from 0.5rem */
 }
 
 /* User List Item - Using Bootstrap card utilities */
 .user-item {
     transition: all 0.15s ease;
     overflow: visible;
+}
+
+/* Test user highlighting */
+.user-item.test-user {
+    background-color: #fff3cd !important;
+    border-color: #ffeaa7 !important;
 }
 
 .user-item:hover {
@@ -670,7 +676,7 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
     </div>
 </div>
 
-<div class="container main-content py-4">
+<div class="container main-content py-2">
     <div class="row">
         <div class="col-12">
             
@@ -811,25 +817,19 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             ];
             $planColor = $planColors[$user['account_plan']] ?? 'secondary';
             ?>
-            <div class="card p-3 mb-2 user-item" data-user-id="<?php echo $user['user_id']; ?>">
+            <?php
+            // Check if this is a test user
+            $isTestUser = (strpos(strtolower($user['username']), 'test') !== false || 
+                          strpos(strtolower($user['email']), 'test') !== false ||
+                          strpos(strtolower($user['first_name']), 'test') !== false ||
+                          strpos(strtolower($user['last_name']), 'test') !== false);
+            ?>
+            <div class="card p-2 mb-1 user-item<?php echo $isTestUser ? ' test-user' : ''; ?>" data-user-id="<?php echo $user['user_id']; ?>">
                 <div class="d-flex align-items-center gap-3 user-item-content">
                     <img src="<?php echo htmlspecialchars($avatar); ?>" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
                     <div class="flex-grow-1 user-info">
-                        <div class="d-flex align-items-center gap-2 mb-1 user-info-top">
+                        <div class="user-info-top">
                             <div class="fw-semibold user-name"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></div>
-                            <div class="d-flex gap-1 user-badges">
-                                <span class="badge text-bg-<?php echo $statusColor; ?>"><?php echo htmlspecialchars($user['status']); ?></span>
-                                <span class="badge text-bg-<?php echo $planColor; ?>"><?php echo htmlspecialchars($user['account_plan'] ?: 'free'); ?></span>
-                                <?php if ($isStaff): ?>
-                                    <span class="badge text-bg-danger">staff</span>
-                                <?php endif; ?>
-                                <?php if ($isAdmin): ?>
-                                    <span class="badge text-bg-danger">admin</span>
-                                <?php endif; ?>
-                                <?php if ($isVerified): ?>
-                                    <i class="bi bi-patch-check-fill text-primary" style="font-size: 1rem;"></i>
-                                <?php endif; ?>
-                            </div>
                         </div>
                         <div class="d-flex flex-wrap gap-3 small text-muted user-details">
                             <div class="d-flex align-items-center gap-1 user-detail-item">
@@ -844,6 +844,20 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                                 <i class="bi bi-geo-alt"></i>
                                 <span><?php echo htmlspecialchars($location); ?></span>
                             </div>
+                        </div>
+                        <!-- Badges on third line -->
+                        <div class="d-flex gap-1 mt-1 user-badges">
+                            <span class="badge text-bg-<?php echo $statusColor; ?>"><?php echo htmlspecialchars($user['status']); ?></span>
+                            <span class="badge text-bg-<?php echo $planColor; ?>"><?php echo htmlspecialchars($user['account_plan'] ?: 'free'); ?></span>
+                            <?php if ($isStaff): ?>
+                                <span class="badge text-bg-danger">staff</span>
+                            <?php endif; ?>
+                            <?php if ($isAdmin): ?>
+                                <span class="badge text-bg-danger">admin</span>
+                            <?php endif; ?>
+                            <?php if ($isVerified): ?>
+                                <i class="bi bi-patch-check-fill text-primary" style="font-size: 1rem;"></i>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <div class="user-stats">
@@ -902,13 +916,12 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
 
 <!-- User Item Template -->
 <template id="userItemTemplate">
-    <div class="card p-3 mb-2 user-item" data-user-id="">
+    <div class="card p-2 mb-1 user-item" data-user-id="">
         <div class="d-flex align-items-center gap-3 user-item-content">
             <img src="" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
             <div class="flex-grow-1 user-info">
-                <div class="d-flex align-items-center gap-2 mb-1 user-info-top">
+                <div class="user-info-top">
                     <div class="fw-semibold user-name"></div>
-                    <div class="d-flex gap-1 user-badges"></div>
                 </div>
                 <div class="d-flex flex-wrap gap-3 small text-muted user-details">
                     <div class="d-flex align-items-center gap-1 user-detail-item">
@@ -924,6 +937,8 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                         <span class="location"></span>
                     </div>
                 </div>
+                <!-- Badges on third line -->
+                <div class="d-flex gap-1 mt-1 user-badges"></div>
             </div>
             <div class="user-stats">
                 <div class="user-stat">
@@ -1151,7 +1166,17 @@ class UserManager {
             const item = template.content.cloneNode(true);
             
             // Set user data
-            item.querySelector('.user-item').dataset.userId = user.user_id;
+            const userItem = item.querySelector('.user-item');
+            userItem.dataset.userId = user.user_id;
+            
+            // Check if test user and apply styling
+            const isTestUser = (user.username.toLowerCase().includes('test') || 
+                               user.email.toLowerCase().includes('test') ||
+                               user.first_name.toLowerCase().includes('test') ||
+                               user.last_name.toLowerCase().includes('test'));
+            if (isTestUser) {
+                userItem.classList.add('test-user');
+            }
             item.querySelector('.user-avatar').src = user.avatar || '/public/avatars/problemavatar.png';
             item.querySelector('.user-name').textContent = `${user.first_name} ${user.last_name}`;
             item.querySelector('.username').textContent = `@${user.username}`;

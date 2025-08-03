@@ -40,10 +40,11 @@ $recent_enrollments_sql = "SELECT uc.*, c.company_name, c.company_id
                           LIMIT 5";
 $recent_enrollments = $database->getrows($recent_enrollments_sql, ['user_id' => $workingUser]);
 
-// Get recent logins
-$recent_logins_sql = "SELECT * FROM bg_user_login_history 
+// Get recent logins from sessiontracking
+$recent_logins_sql = "SELECT * FROM bg_sessiontracking 
                      WHERE user_id = :user_id 
-                     ORDER BY login_time DESC 
+                     AND name LIKE '%login%'
+                     ORDER BY create_dt DESC 
                      LIMIT 5";
 $recent_logins = $database->getrows($recent_logins_sql, ['user_id' => $workingUser]);
 
@@ -638,8 +639,8 @@ include($dir['core_components'] . '/bg_header.inc');
                                 foreach ($recent_logins as $login) {
                                     $activities[] = [
                                         'type' => 'login',
-                                        'date' => $login['login_time'],
-                                        'title' => 'Logged in from ' . $login['ip_address'],
+                                        'date' => $login['create_dt'],
+                                        'title' => 'Logged in from ' . $login['ip'],
                                         'status' => 'success',
                                         'icon' => 'bi-box-arrow-in-right'
                                     ];
@@ -989,9 +990,9 @@ include($dir['core_components'] . '/bg_header.inc');
                                     <tbody>
                                         <?php foreach ($recent_logins as $login): ?>
                                         <tr>
-                                            <td><?php echo date('M j, g:i A', strtotime($login['login_time'])); ?></td>
-                                            <td><?php echo htmlspecialchars($login['ip_address']); ?></td>
-                                            <td><?php echo htmlspecialchars($login['user_agent'] ?? 'Unknown'); ?></td>
+                                            <td><?php echo date('M j, g:i A', strtotime($login['create_dt'])); ?></td>
+                                            <td><?php echo htmlspecialchars($login['ip']); ?></td>
+                                            <td><?php echo htmlspecialchars(substr($login['page'] ?? 'Unknown', 0, 50)); ?></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
