@@ -84,37 +84,40 @@ $stats = [
 $pagetitle = 'Allocation History';
 $additionalstyles .= '
 <style>
-/* Modern tab navigation */
+/* Modern tab navigation matching login-history style */
 .nav-tabs-modern {
     display: flex;
     border-bottom: 2px solid #e9ecef;
     margin-bottom: 2rem;
+    gap: 0;
+    overflow: hidden;
+    position: relative;
 }
 
-.nav-tabs-modern .nav-link {
+.nav-tab-item {
+    flex: 0 0 auto;
+    padding: 1rem 2rem;
+    text-decoration: none;
     color: #6c757d;
-    border: none;
-    border-bottom: 3px solid transparent;
-    border-radius: 0;
-    padding: 1rem 1.5rem;
     font-weight: 500;
+    border-bottom: 3px solid transparent;
     margin-bottom: -2px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    background: none;
+    border-radius: 0;
+    position: relative;
 }
 
-.nav-tabs-modern .nav-link:hover {
+.nav-tab-item:hover {
     color: #495057;
-    background-color: transparent;
+    text-decoration: none;
+    background: #f8f9fa;
 }
 
-.nav-tabs-modern .nav-link.active {
+.nav-tab-item.active {
     color: #0d6efd;
-    border-bottom-color: #0d6efd;
-    background-color: transparent;
-}
-
-.nav-tabs-modern .nav-link i {
-    margin-right: 0.5rem;
+    border-bottom-color: #0d6efd !important;
+    background: none;
 }
 
 .stats-card {
@@ -168,6 +171,16 @@ $additionalstyles .= '
 .tab-badge {
     font-size: 0.75rem;
     vertical-align: middle;
+    display: inline-block;
+    min-width: 20px;
+    padding: 2px 6px;
+    margin-left: 8px;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    background-color: #0d6efd;
+    border-radius: 10px;
 }
 
 .empty-state {
@@ -179,6 +192,23 @@ $additionalstyles .= '
 .empty-state i {
     font-size: 3rem;
     margin-bottom: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .nav-tab-item {
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .nav-tab-item i {
+        font-size: 1rem;
+    }
+    
+    .tab-badge {
+        font-size: 0.7rem;
+        padding: 1px 4px;
+    }
 }
 </style>
 ';
@@ -207,29 +237,23 @@ include($dir['core_components'] . '/bg_header.inc');
 
 <div class="container my-5">
     <!-- Modern Tab Navigation -->
-    <ul class="nav nav-tabs-modern" id="allocationTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
-                <i class="bi bi-speedometer2 me-2"></i>Overview
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="allocations-tab" data-bs-toggle="tab" data-bs-target="#allocations" type="button" role="tab">
-                <i class="bi bi-plus-circle me-2"></i>Allocations
-                <?php if (!empty($user_allocations)): ?>
-                <span class="badge bg-primary tab-badge"><?php echo count($user_allocations); ?></span>
-                <?php endif; ?>
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="enrollments-tab" data-bs-toggle="tab" data-bs-target="#enrollments" type="button" role="tab">
-                <i class="bi bi-check-circle me-2"></i>Enrollments
-                <?php if ($total_records > 0): ?>
-                <span class="badge bg-primary tab-badge"><?php echo $total_records; ?></span>
-                <?php endif; ?>
-            </button>
-        </li>
-    </ul>
+    <nav class="nav-tabs-modern">
+        <a href="#overview" class="nav-tab-item active" data-tab="overview">
+            <i class="bi bi-speedometer2 me-2"></i>Overview
+        </a>
+        <a href="#allocations" class="nav-tab-item" data-tab="allocations">
+            <i class="bi bi-plus-circle me-2"></i>Allocations
+            <?php if (!empty($user_allocations)): ?>
+            <span class="tab-badge"><?php echo count($user_allocations); ?></span>
+            <?php endif; ?>
+        </a>
+        <a href="#enrollments" class="nav-tab-item" data-tab="enrollments">
+            <i class="bi bi-check-circle me-2"></i>Enrollments
+            <?php if ($total_records > 0): ?>
+            <span class="tab-badge"><?php echo $total_records; ?></span>
+            <?php endif; ?>
+        </a>
+    </nav>
 
     <!-- Tab Content -->
     <div class="tab-content" id="allocationTabContent">
@@ -489,6 +513,38 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
     </div>
 </div>
+
+<script>
+// Handle tab switching
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.nav-tab-item');
+    const tabContents = document.querySelectorAll('.tab-pane');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all tabs
+            tabs.forEach(t => t.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            this.classList.add('active');
+            
+            // Hide all tab contents
+            tabContents.forEach(content => {
+                content.classList.remove('show', 'active');
+            });
+            
+            // Show selected tab content
+            const targetId = this.getAttribute('data-tab');
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+                targetContent.classList.add('show', 'active');
+            }
+        });
+    });
+});
+</script>
 
 <?php
 include($dir['core_components'] . '/bg_footer.inc');
