@@ -275,6 +275,28 @@ foreach ($filters as $filter) {
     </div>
 </div>
 
+<!-- Modal for full notification content -->
+<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">Notification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="notificationModalBody">
+                <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // Function to show Bootstrap alerts
     function showAlert(message, type = 'danger') {
@@ -416,6 +438,72 @@ foreach ($filters as $filter) {
             });
         }
     }
+    
+    // Function to view full notification
+    function viewFullNotification(notificationId) {
+        // Show modal with loading spinner
+        const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+        modal.show();
+        
+        // Reset modal content
+        document.getElementById('notificationModalLabel').textContent = 'Loading...';
+        document.getElementById('notificationModalBody').innerHTML = `
+            <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+        
+        // Fetch full notification content
+        fetch(`/myaccount/ajax/notification-full.php?id=${notificationId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('notificationModalLabel').textContent = data.title;
+                    document.getElementById('notificationModalBody').innerHTML = `
+                        <div class="notification-full-content">
+                            ${data.content}
+                        </div>
+                        <hr>
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-clock me-1"></i>
+                            Received: ${data.created}
+                        </p>
+                    `;
+                    
+                    // Refresh the page after closing modal to update read status
+                    document.getElementById('notificationModal').addEventListener('hidden.bs.modal', function () {
+                        window.location.reload();
+                    }, { once: true });
+                } else {
+                    document.getElementById('notificationModalBody').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            ${data.error || 'Failed to load notification'}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                document.getElementById('notificationModalBody').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        An error occurred while loading the notification
+                    </div>
+                `;
+            });
+    }
+    
+    // Attach click handlers to "View full message" links when DOM is ready
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('view-full-message')) {
+            e.preventDefault();
+            const notificationId = e.target.getAttribute('data-notification-id');
+            viewFullNotification(notificationId);
+        }
+    });
 </script>
 
 <?php

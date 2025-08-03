@@ -1283,11 +1283,11 @@ if ($account->iscconsultant()) {
                 </div>
                 <div class="security-card-body">
                     <p>You are a listed as one of our Sales Representatives.</p>
-                    <a class="btn btn-success btn-sm me-5" href="/myaccount/cckiosk">Kiosk SignUp</a>
+                    <a class="btn btn-success btn-sm me-5 mb-2" href="/myaccount/cckiosk">Kiosk SignUp</a>
                     ';
 
     echo '
-                    <a class="btn btn-success btn-sm" href="/staff/ccdashboard">View Your Dashboard</a>
+                    <a class="btn btn-success btn-sm mb-2" href="/staff/ccdashboard">View Your Dashboard</a>
                 </div>
             </div>
             </div>

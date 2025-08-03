@@ -57,12 +57,25 @@ if (count($notifications) > 0) {
         
         // Extract message content for email notifications and security alerts
         $messageContent = $notification['message'];
+        $hasFullContent = false;
+        $snippetContent = '';
+        
         if ($notification['type'] == 'email_notification' || $notification['type'] == 'security_alert') {
             preg_match('/<!-- Message Content start -->(.*?)<!-- Message Content end -->/s', $messageContent, $matches);
             if (isset($matches[1])) {
-                $messageContent = trim(str_replace('<br><br>', '<br>', $matches[1]));
+                $hasFullContent = true;
+                // Create a plain text snippet (first 150 chars)
+                $plainText = strip_tags($matches[1]);
+                $plainText = preg_replace('/\s+/', ' ', $plainText); // Replace multiple spaces with single space
+                $snippetContent = trim($plainText);
+                if (strlen($snippetContent) > 150) {
+                    $snippetContent = substr($snippetContent, 0, 150) . '...';
+                }
             }
         }
+        
+        // Use snippet if available, otherwise use original message
+        $displayMessage = $hasFullContent ? $snippetContent : $messageContent;
         
         $notifications_output .= '
         <div class="notification-item">
@@ -71,7 +84,8 @@ if (count($notifications) > 0) {
             </div>
             <div class="notification-content">
                 <div class="notification-title">' . htmlspecialchars($notification['title']) . '</div>
-                <p class="notification-text">' . $messageContent . '</p>
+                <p class="notification-text">' . htmlspecialchars($displayMessage) . '</p>
+                ' . ($hasFullContent ? '<a href="#" class="view-full-message" data-notification-id="' . $notification['notification_id'] . '">View full message</a>' : '') . '
                 <div class="notification-time">' . $timeElapsed['message'] . '</div>
             </div>
             <div class="notification-actions">
