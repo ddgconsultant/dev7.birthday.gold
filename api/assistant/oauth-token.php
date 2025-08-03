@@ -21,31 +21,38 @@ $refresh_token = $_POST['refresh_token'] ?? '';
 $response = [];
 
 if ($grant_type === 'authorization_code' && !empty($code)) {
-    // Exchange authorization code for tokens
-    $sql = "SELECT * FROM bg_oauth_codes 
-            WHERE code = :code 
-            AND client_id = :client_id
-            AND redirect_uri = :redirect_uri
-            AND expires_at > NOW()
-            AND used_at IS NULL
+    // Exchange authorization code for tokens using bg_validations
+    $sql = "SELECT * FROM bg_validations 
+            WHERE validation_code = :code 
+            AND validation_type = 'oauth_code'
+            AND validation_rawdata LIKE :client_pattern
+            AND status = 'pending'
+            AND expire_dt > NOW()
             LIMIT 1";
     
     $result = $database->getrow($sql, [
         ':code' => $code,
-        ':client_id' => $client_id,
-        ':redirect_uri' => $redirect_uri
+        ':client_pattern' => '%client_id:' . $client_id . '%'
     ]);
     
     if ($result) {
+        // Extract platform from rawdata
+        $rawdata = json_decode($result['validation_rawdata'], true);
+        $platform = $rawdata['platform'] ?? 'unknown';
+        
         // Mark code as used
-        $updateSql = "UPDATE bg_oauth_codes SET used_at = NOW() WHERE code_id = :code_id";
-        $database->query($updateSql, [':code_id' => $result['code_id']]);
+        $updateSql = "UPDATE bg_validations 
+                     SET status = 'used', 
+                         validation_dt = NOW(),
+                         modify_dt = NOW()
+                     WHERE validation_id = :validation_id";
+        $database->query($updateSql, [':validation_id' => $result['validation_id']]);
         
         // Create tokens
         $assistant = new Assistant($database, $app, $account, $session);
         $tokens = $assistant->createAssistantTokens(
             $result['user_id'], 
-            $result['platform'], 
+            $platform, 
             $_SERVER['HTTP_USER_AGENT'] ?? null
         );
         
@@ -59,7 +66,7 @@ if ($grant_type === 'authorization_code' && !empty($code)) {
         // Log successful token exchange
         $app->session_tracking('assistant_token_exchanged', [
             'user_id' => $result['user_id'],
-            'platform' => $result['platform']
+            'platform' => $platform
         ]);
     } else {
         http_response_code(400);

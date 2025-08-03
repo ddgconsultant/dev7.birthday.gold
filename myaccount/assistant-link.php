@@ -65,13 +65,19 @@ if (isset($_GET['platform']) && isset($_GET['code'])) {
     }
 }
 
-// Get existing linked devices
-$sql = "SELECT platform, device_id, created_at, last_used 
-        FROM bg_assistant_tokens 
+// Get existing linked devices from bg_validations
+$sql = "SELECT 
+        SUBSTRING_INDEX(validation_rawdata, '|', 1) as platform,
+        device_id,
+        create_dt as created_at,
+        validation_dt as last_used
+        FROM bg_validations 
         WHERE user_id = :user_id 
-        AND expires_at > NOW()
-        ORDER BY created_at DESC";
-$linkedDevices = $database->get_rows($sql, [':user_id' => $user_id]);
+        AND validation_type = 'voice_assistant_link'
+        AND status = 'linked'
+        AND expire_dt > NOW()
+        ORDER BY create_dt DESC";
+$linkedDevices = $database->getrows($sql, [':user_id' => $user_id]);
 
 // Page setup
 $pagetitle = 'Voice Assistant Setup';

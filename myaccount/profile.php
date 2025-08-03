@@ -902,7 +902,7 @@ echo '
        name="inputprofile_middle_name" 
        id="inputprofile_middle_name" 
        placeholder=" " 
-       value="' . htmlspecialchars($current_user_data['profile_middle_name']) . '">
+       value="' . htmlspecialchars($current_user_data['profile_middle_name'] ?? '') . '">
 <label for="inputprofile_middle_name" class="floating-label">Middle</label>
 </div>
 </div>
@@ -971,7 +971,7 @@ echo '
        name="inputprofile_password" 
        id="input_password" 
        placeholder=" " 
-       value="' . htmlspecialchars($current_user_data['profile_password']) . '" 
+       value="' . htmlspecialchars($current_user_data['profile_password'] ?? '') . '" 
        autocomplete="new-password">
 <label for="input_password" class="floating-label">Password</label>
 <button class="password-toggle" id="togglePassword" type="button">

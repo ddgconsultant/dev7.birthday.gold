@@ -53,9 +53,15 @@ $user_id = $current_user_data['user_id'];
 $assistant = new Assistant($database, $app, $account, $session);
 
 // Generate authorization code using validation system
+$oauth_data = json_encode([
+    'client_id' => $client_id,
+    'redirect_uri' => $redirect_uri,
+    'platform' => $platform
+]);
+
 $input = [
-    'rawdata' => $client_id . '|' . $user_id . '|' . time(),
-    'type' => 'oauth_auth_code',
+    'rawdata' => $oauth_data,
+    'type' => 'oauth_code',
     'expireminutes' => 10,
     'user_id' => $user_id,
     'status' => 'pending'
@@ -64,32 +70,8 @@ $input = [
 $validation = $app->getvalidationcodes($input);
 $auth_code = $validation['longcode'];
 
-// Store OAuth details for token exchange
-$sql = "INSERT INTO bg_oauth_codes (
-    code,
-    user_id,
-    client_id,
-    redirect_uri,
-    platform,
-    created_at,
-    expires_at
-) VALUES (
-    :code,
-    :user_id,
-    :client_id,
-    :redirect_uri,
-    :platform,
-    NOW(),
-    DATE_ADD(NOW(), INTERVAL 10 MINUTE)
-)";
-
-$database->query($sql, [
-    ':code' => $auth_code,
-    ':user_id' => $user_id,
-    ':client_id' => $client_id,
-    ':redirect_uri' => $redirect_uri,
-    ':platform' => $platform
-]);
+// The OAuth details are already stored in bg_validations by getvalidationcodes()
+// No need for additional insert
 
 // Log the authorization
 $app->session_tracking('assistant_oauth_authorized', [

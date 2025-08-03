@@ -364,13 +364,6 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h1 class="mb-2">User Details</h1>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="/admin">Admin</a></li>
-                        <li class="breadcrumb-item"><a href="/admin/user-list-v2">Users</a></li>
-                        <li class="breadcrumb-item active"><?php echo htmlspecialchars($workinguserdata['first_name'] . ' ' . $workinguserdata['last_name']); ?></li>
-                    </ol>
-                </nav>
             </div>
             <div>
                 <a href="/admin/user-list-v2" class="btn btn-outline-secondary">
@@ -526,7 +519,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <!-- Personal Information -->
                 <div class="col-lg-6">
                     <div class="info-card">
-                        <div class="card-body">
+                        <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="card-icon bg-primary bg-opacity-10 text-primary">
                                     <i class="bi bi-person"></i>
@@ -565,7 +558,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <!-- Account Summary -->
                 <div class="col-lg-6">
                     <div class="info-card">
-                        <div class="card-body">
+                        <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="card-icon bg-success bg-opacity-10 text-success">
                                     <i class="bi bi-credit-card"></i>

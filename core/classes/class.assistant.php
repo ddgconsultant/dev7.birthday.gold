@@ -100,36 +100,41 @@ class Assistant
     
     /**
      * Create OAuth tokens for voice assistant
+     * Stores tokens in bg_validations table
      */
     public function createAssistantTokens($userId, $platform, $deviceId = null)
     {
         $accessToken = bin2hex(random_bytes(32));
         $refreshToken = bin2hex(random_bytes(32));
         
-        $sql = "INSERT INTO bg_assistant_tokens (
+        // Store access token
+        $sql = "INSERT INTO bg_validations (
                     user_id,
-                    platform,
                     device_id,
-                    access_token,
-                    refresh_token,
-                    expires_at,
-                    created_at
+                    validation_type,
+                    validation_rawdata,
+                    validation_code,
+                    status,
+                    expire_dt,
+                    create_dt,
+                    modify_dt
                 ) VALUES (
                     :user_id,
-                    :platform,
                     :device_id,
+                    'voice_assistant_token',
+                    :rawdata,
                     :access_token,
-                    :refresh_token,
+                    'active',
                     DATE_ADD(NOW(), INTERVAL 30 DAY),
+                    NOW(),
                     NOW()
                 )";
         
         $this->db->query($sql, [
             ':user_id' => $userId,
-            ':platform' => $platform,
             ':device_id' => $deviceId,
-            ':access_token' => $accessToken,
-            ':refresh_token' => $refreshToken
+            ':rawdata' => $platform . '|access|' . $refreshToken,
+            ':access_token' => $accessToken
         ]);
         
         return [
@@ -144,23 +149,26 @@ class Assistant
      */
     public function authenticateToken($token, $platform)
     {
-        $sql = "SELECT user_id FROM bg_assistant_tokens 
-                WHERE access_token = :token 
-                AND platform = :platform
-                AND expires_at > NOW()
+        $sql = "SELECT user_id, validation_id FROM bg_validations 
+                WHERE validation_code = :token 
+                AND validation_type = 'voice_assistant_token'
+                AND validation_rawdata LIKE :platform_pattern
+                AND status = 'active'
+                AND expire_dt > NOW()
                 LIMIT 1";
         
         $result = $this->db->getrow($sql, [
             ':token' => $token,
-            ':platform' => $platform
+            ':platform_pattern' => $platform . '|%'
         ]);
         
         if ($result) {
             // Update last used
-            $updateSql = "UPDATE bg_assistant_tokens 
-                         SET last_used = NOW() 
-                         WHERE access_token = :token";
-            $this->db->query($updateSql, [':token' => $token]);
+            $updateSql = "UPDATE bg_validations 
+                         SET validation_dt = NOW(),
+                             modify_dt = NOW()
+                         WHERE validation_id = :validation_id";
+            $this->db->query($updateSql, [':validation_id' => $result['validation_id']]);
             
             return $result['user_id'];
         }
