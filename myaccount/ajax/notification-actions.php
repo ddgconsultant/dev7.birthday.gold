@@ -5,13 +5,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 session_tracking('notification_action_start', 'Request received v3');
 session_tracking('notification_action_post', json_encode($_POST));
 
-// Check if user is logged in
-if (!$account->isloggedin()) {
-    session_tracking('notification_action_auth_fail', 'User not logged in');
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}
+// User authentication is already handled by site-controller.php
 
 // Debug CSRF token
 session_tracking('notification_action_csrf_debug', 'POST token: ' . ($_POST['_token'] ?? 'NOT SET') . ', Session token: ' . ($session->get('csrf_token', 'NOT SET')));

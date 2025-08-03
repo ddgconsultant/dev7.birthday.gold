@@ -5,13 +5,6 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 session_tracking('notification_full_start', 'Request received');
 session_tracking('notification_full_get', json_encode($_GET));
 
-// Check if user is logged in
-if (!$account->isloggedin()) {
-    session_tracking('notification_full_auth_fail', 'User not logged in');
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}
 
 $notification_id = intval($_GET['id'] ?? 0);
 $user_id = $current_user_data['user_id'];

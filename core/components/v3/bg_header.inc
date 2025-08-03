@@ -108,6 +108,10 @@ echo '
                         <a class="dropdown-item long-text" href="/plans"><i class="bi bi-card-list"></i> Plans & Pricing</a>
                         <a class="dropdown-item short-text" href="/plans"><i class="bi bi-card-list"></i> Plans/Pricing</a>
 ';
+if ($account->isloggedin()) {
+    echo '                        <a class="dropdown-item" href="/recommend-business"><i class="bi bi-building-add"></i> Recommend Business</a>
+';
+}
 if ($account->isadmin()) echo '     <a class="dropdown-item long-text" href="/social/"><i class="bi bi-chat-heart"></i> Social Community</a>
 <a class="dropdown-item short-text" href="/social/"><i class="bi bi-chat-heart"></i> Community</a>
 ';
