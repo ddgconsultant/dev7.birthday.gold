@@ -224,7 +224,7 @@ if ($app->formposted()) {
                     <h5 class="alert-heading"><i class="bi bi-check-circle"></i> Success!</h5>
                     <p>Thank you for your recommendation! We will review it shortly.</p>
                     <hr>
-                    <p class="mb-0"><i class="bi bi-gift-fill"></i> <strong>You\'ve earned 1 free enrollment!</strong> It\'s pending approval and will be available once your recommendation is verified.</p>
+                    <p class="mb-0"><i class="bi bi-gift-fill"></i> <strong>You\'ve earned 1 free enrollment!</strong> It\'s pending approval and will be available once your recommendation is verified. <a href="/myaccount/allocation-history" class="alert-link">View your allocation history</a></p>
                 </div>';
                 
                 // Clear the form
