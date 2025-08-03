@@ -13,11 +13,18 @@ $success_message = '';
 // Retrieve any messages
 $transferpagedata = $system->startpostpage();
 
+// Check if user is logged in for form submission
+$is_logged_in = $account->isloggedin();
+
 #-------------------------------------------------------------------------------
 # HANDLE PAGE ACTIONS
 #-------------------------------------------------------------------------------
 // Handle form submission
 if ($app->formposted()) {
+    // Require login to submit
+    if (!$is_logged_in) {
+        $messages[] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> You must be logged in to submit a business recommendation</div>';
+    } else {
     // Get form data
     $business_name = trim($_POST['business_name'] ?? '');
     $home_url = trim($_POST['home_url'] ?? '');
@@ -176,6 +183,7 @@ if ($app->formposted()) {
             $messages[] = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> An error occurred while submitting your recommendation</div>';
         }
     }
+    } // Close the else block for login check
 }
 
 #-------------------------------------------------------------------------------
@@ -473,7 +481,17 @@ if ($show_learn_more) {
                     <h1>Recommend a Business</h1>
                     <p class="text-muted">Help us grow our directory and earn rewards</p>
                 </div>
-                <div class="px-4 px-md-5 pb-4 pb-md-5">
+                <div class="px-4 px-md-5 pb-4 pb-md-5">';
+                    
+                    if (!$is_logged_in) {
+                        echo '
+                        <div class="text-center py-4">
+                            <p class="mb-3">You need to be logged in to recommend a business.</p>
+                            <a href="/login?redirect=' . urlencode($_SERVER['REQUEST_URI']) . '" class="btn btn-primary">Login to Continue</a>
+                            <p class="mt-3 small text-muted">Don\'t have an account? <a href="/register">Sign up here</a></p>
+                        </div>';
+                    } else {
+                        echo '
                     <form method="post" action="/recommend-business.php">
                         ' . $display->inputcsrf_token() . '
                         
@@ -505,7 +523,9 @@ if ($show_learn_more) {
                         <div class="d-grid">
                             <button type="submit" class="btn btn-success btn-lg" style="border-radius: 50px;">Submit Recommendation</button>
                         </div>
-                    </form>
+                    </form>';
+                    } // End if logged in
+                    echo '
                 </div>
             </div>
             
