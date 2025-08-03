@@ -27,6 +27,11 @@ if (strpos($client_id, 'google') !== false) {
     $platform = 'alexa';
 }
 
+// Include assistant configuration
+if (file_exists($_SERVER['DOCUMENT_ROOT'] . '/core/config/assistant-config.php')) {
+    include_once($_SERVER['DOCUMENT_ROOT'] . '/core/config/assistant-config.php');
+}
+
 // Check if user is logged in
 $activeuser = $account->isactive();
 if (empty($activeuser)) {

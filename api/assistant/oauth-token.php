@@ -7,6 +7,11 @@
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.assistant.php');
 
+// Include assistant configuration
+if (file_exists($_SERVER['DOCUMENT_ROOT'] . '/core/config/assistant-config.php')) {
+    include_once($_SERVER['DOCUMENT_ROOT'] . '/core/config/assistant-config.php');
+}
+
 header('Content-Type: application/json');
 
 // Get POST parameters
