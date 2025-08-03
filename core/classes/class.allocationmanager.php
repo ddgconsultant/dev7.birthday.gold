@@ -36,7 +36,7 @@ class AllocationManager {
                 FROM bg_user_allocations
                 WHERE user_id = :user_id
                 AND allocation_year = :year
-                AND status IN ('active', 'depleted', 'pending')";
+                AND status IN ('active', 'depleted', 'pending', 'expired', 'revoked')";
         
         $allocation_data = $this->db->getrow($sql, [
             'user_id' => $user_id,
@@ -119,7 +119,7 @@ class AllocationManager {
             'earn_count' => 0, // Can be calculated from allocation records
             'use_count' => $used_count,
             'expiring_soon_count' => $expiring_result['expiring_count'] ?? 0,
-            'pending_allocations' => $allocation_data['pending_allocations'] ?? 0
+            'pending_allocations' => $allocation_data['pending_allocations'] ?? 0,
             'plan_allocations' => $plan_allocations,
             'bonus_allocations' => $bonus_allocations
         ];

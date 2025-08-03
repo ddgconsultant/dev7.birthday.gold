@@ -74,12 +74,20 @@ $sql = "SELECT
 $expiration_impact = $database->getrows($sql, ['start' => $start_date, 'end' => $end_date]);
 
 $pagetitle = 'Allocation Dashboard';
+$header_flush = true; // Ensure header content is flush
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="container-fluid my-4">
-    <h1>Allocation Analytics Dashboard</h1>
+<!-- Hero Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <h1 class="mb-2">Allocation Analytics Dashboard</h1>
+        <p class="lead mb-0">Track and analyze enrollment allocation usage across the platform</p>
+    </div>
+</div>
+
+<div class="container my-4">
     
     <!-- Date Range Filter -->
     <form method="GET" class="row g-3 mb-4">
