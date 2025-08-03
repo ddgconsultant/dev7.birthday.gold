@@ -657,20 +657,22 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
     </div>
 </div>
 
+<!-- Search Bar in header area like help page -->
+<div class="container" style="margin-top: -2rem; margin-bottom: 2rem; position: relative; z-index: 10;">
+    <div class="search-box mx-auto" style="max-width: 600px;">
+        <input 
+            type="text" 
+            class="form-control form-control-lg search-input" 
+            placeholder="Search users by name, email, username..."
+            id="userSearch"
+            style="border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1rem 3rem 1rem 3rem;"
+        >
+    </div>
+</div>
+
 <div class="container main-content py-4">
     <div class="row">
         <div class="col-12">
-            <!-- Search Bar -->
-            <div class="mb-4">
-                <div class="search-box mx-auto" style="max-width: 600px;">
-                    <input 
-                        type="text" 
-                        class="form-control form-control-lg search-input" 
-                        placeholder="Search users by name, email, username..."
-                        id="userSearch"
-                    >
-                </div>
-            </div>
             
             <!-- Quick Stats -->
             <div class="row mb-4">
@@ -704,7 +706,7 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             <div class="filter-section mb-4">
                 <div class="row align-items-center">
                     <div class="col-md-2">
-                        <h5 class="mb-0">Quick Filters</h5>
+                        <h5 class="mb-0">Quick Filters <i class="bi bi-chevron-down small"></i></h5>
                     </div>
                     <div class="col-md-10">
                         <div class="row g-2">
@@ -811,7 +813,7 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             ?>
             <div class="card p-3 mb-2 user-item" data-user-id="<?php echo $user['user_id']; ?>">
                 <div class="d-flex align-items-center gap-3 user-item-content">
-                    <img src="<?php echo htmlspecialchars($avatar); ?>" alt="" class="rounded user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
+                    <img src="<?php echo htmlspecialchars($avatar); ?>" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
                     <div class="flex-grow-1 user-info">
                         <div class="d-flex align-items-center gap-2 mb-1 user-info-top">
                             <div class="fw-semibold user-name"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></div>
@@ -856,24 +858,8 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                     </div>
                     <div class="user-actions">
                         <a href="/admin/user-details?u=<?php echo $qik->encodeId($user['user_id']); ?>" class="btn btn-primary btn-sm">
-                            <i class="bi bi-eye"></i> View
+                            <i class="bi bi-eye"></i> View Details
                         </a>
-                        <div class="dropdown">
-                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                                <i class="bi bi-three-dots"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <?php if ($user['status'] !== 'pending'): ?>
-                                <li><a class="dropdown-item" href="/myaccount/myaccount_actions/switch2user?id=<?php echo $qik->encodeId($user['user_id']); ?>&aid=<?php echo $qik->encodeId($current_user_data['user_id']); ?>&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>"><i class="bi bi-person-badge"></i> Impersonate</a></li>
-                                <?php endif; ?>
-                                <li><a class="dropdown-item" href="#"><i class="bi bi-envelope"></i> Send Email</a></li>
-                                <?php if ($user['status'] === 'pending' || $user['status'] === 'validated'): ?>
-                                <li><a class="dropdown-item" href="/validate-account?id=<?php echo $user['user_id']; ?>&adminsendagainrequest=1&aid=<?php echo $current_user_data['user_id']; ?>&act=resend&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>"><i class="bi bi-check-circle"></i> Send Validation</a></li>
-                                <?php endif; ?>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash"></i> Delete User</a></li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -916,24 +902,24 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
 
 <!-- User Item Template -->
 <template id="userItemTemplate">
-    <div class="user-item" data-user-id="">
-        <div class="user-item-content">
-            <img src="" alt="" class="user-avatar">
-            <div class="user-info">
-                <div class="user-info-top">
-                    <div class="user-name"></div>
-                    <div class="user-badges"></div>
+    <div class="card p-3 mb-2 user-item" data-user-id="">
+        <div class="d-flex align-items-center gap-3 user-item-content">
+            <img src="" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
+            <div class="flex-grow-1 user-info">
+                <div class="d-flex align-items-center gap-2 mb-1 user-info-top">
+                    <div class="fw-semibold user-name"></div>
+                    <div class="d-flex gap-1 user-badges"></div>
                 </div>
-                <div class="user-details">
-                    <div class="user-detail-item">
+                <div class="d-flex flex-wrap gap-3 small text-muted user-details">
+                    <div class="d-flex align-items-center gap-1 user-detail-item">
                         <i class="bi bi-envelope"></i>
                         <span class="email"></span>
                     </div>
-                    <div class="user-detail-item">
+                    <div class="d-flex align-items-center gap-1 user-detail-item">
                         <i class="bi bi-person"></i>
                         <span class="username"></span>
                     </div>
-                    <div class="user-detail-item">
+                    <div class="d-flex align-items-center gap-1 user-detail-item">
                         <i class="bi bi-geo-alt"></i>
                         <span class="location"></span>
                     </div>
@@ -951,20 +937,8 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             </div>
             <div class="user-actions">
                 <a href="" class="btn btn-primary btn-sm view-details-btn">
-                    <i class="bi bi-eye"></i> View
+                    <i class="bi bi-eye"></i> View Details
                 </a>
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="bi bi-three-dots"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item impersonate-link" href="#"><i class="bi bi-person-badge"></i> Impersonate</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-envelope"></i> Send Email</a></li>
-                        <li><a class="dropdown-item validate-link" href="#"><i class="bi bi-check-circle"></i> Send Validation</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash"></i> Delete User</a></li>
-                    </ul>
-                </div>
             </div>
         </div>
     </div>
@@ -1224,22 +1198,6 @@ class UserManager {
             // Actions
             const detailsBtn = item.querySelector('.view-details-btn');
             detailsBtn.href = `/admin/user-details?u=${this.encodeId(user.user_id)}`;
-            
-            // Impersonate link
-            if (user.status !== 'pending') {
-                const impersonateLink = item.querySelector('.impersonate-link');
-                impersonateLink.href = `/myaccount/myaccount_actions/switch2user?id=${this.encodeId(user.user_id)}&aid=${this.encodeId(<?php echo $current_user_data['user_id']; ?>)}&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>`;
-            } else {
-                item.querySelector('.impersonate-link').parentElement.style.display = 'none';
-            }
-            
-            // Validation link
-            if (user.status === 'pending' || user.status === 'validated') {
-                const validateLink = item.querySelector('.validate-link');
-                validateLink.href = `/validate-account?id=${user.user_id}&adminsendagainrequest=1&aid=<?php echo $current_user_data['user_id']; ?>&act=resend&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>`;
-            } else {
-                item.querySelector('.validate-link').parentElement.style.display = 'none';
-            }
             
             list.appendChild(item);
         });
