@@ -48,9 +48,6 @@ echo '
                 <nav class="navbar-nav flex-row gap-4">
                     <a href="/how-it-works" class="nav-link">How it Works</a>
                     <a href="/browse-rewards" class="nav-link">Browse Rewards</a>
-                    <a href="/voice" class="nav-link">
-                        <i class="bi bi-mic-fill me-1"></i>Voice
-                    </a>
                     <a href="/help" class="nav-link">Help</a>
                 </nav>
             </div>
