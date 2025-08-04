@@ -170,10 +170,9 @@ if ($account->isadmin()) {
 if ($account->isadmin()) {
 $account_links['brand'] = [
     'link_count' => 20,
-    'title' => 'Brand Management',
+    'title' => ucwords($website['bizname']) . ' Management',
     'links' => [
-        ['text' => 'Brand Editor', 'url' => '/admin/brands', 'icon' => 'bi bi-gear-wide-connected'],
-        ['text' => 'Company Setup', 'url' => $dir['bge_webA'] . '/companysetup.php?filter=finalized', 'icon' => 'bi bi-gear-wide-connected'],
+        ['text' => ucwords($website['bizname']) . ' Editor', 'url' => '/admin/brands', 'icon' => 'bi bi-gear-wide-connected'],
         ['text' => 'Reward Details', 'url' => '/admin_actions/manual_rewards', 'icon' => 'bi bi-gear-wide-connected'],
         ['text' => 'Reward Policies', 'url' => '/admin_actions/manual_policies', 'icon' => 'bi bi-gear-wide-connected'],
         ['text' => 'Reward Processor', 'url' => '/admin_actions/rewardprocessors', 'icon' => 'bi bi-gear-wide-connected']

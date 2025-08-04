@@ -27,7 +27,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="row">
 <div class="col">
 <h1 class="display-1">Your Data Rights</h1>
-<p class="mb-4">Effective Date: October 12, 2023</p>
+<p class="mb-4">Effective Date: January 31, 2025</p>
 
 <p>At birthday.gold, we respect and prioritize your data rights. Here's a quick overview of what you can expect and how you can exercise your rights as a user of our site:</p>
 
@@ -36,10 +36,17 @@ $type='';
 
 if (isset($_REQUEST['manage']) && !empty($current_user_data['user_id'])) $type='manage';
 
-$managetag='
+if (!empty($current_user_data['user_id'])) {
+    $managetag='
 <h5 class="mt-5">Making Requests</h5>
-<p>Use your existing account, and go to your Account page, and click "Data Request".</p>
+<p>To request a comprehensive export of your data, you can use our data export feature. <a href="/myaccount/download-data" class="btn btn-primary btn-sm">Download My Data</a></p>
 ';
+} else {
+    $managetag='
+<h5 class="mt-5">Making Requests</h5>
+<p>To request a comprehensive export of your data, you must be logged in to your account.</p>
+';
+}
 
 $keytag='<h5 class="mt-5">Your Key Rights</h5>';
 
@@ -72,9 +79,13 @@ width:120px;
 </div>
 </li>
 <li class="py-1">
-<a class="btn btn-primary btn-sm mx-3 managebtn" data-bs-toggle="collapse" href="#collapseAccess" role="button" aria-expanded="false" aria-controls="collapseAccess">Access</a> Curious about what data we have on you? Feel free to ask!
+<a class="btn btn-primary btn-sm mx-3 managebtn" data-bs-toggle="collapse" href="#collapseAccess" role="button" aria-expanded="false" aria-controls="collapseAccess">Access</a> Curious about what data we have on you? Feel free to ask! For comprehensive data export, use our Download My Data feature.
 <div class="collapse" id="collapseAccess" data-bs-parent="#manageAccordion">
 <div class="accordion-body">
+<div class="alert alert-info mb-3">
+<i class="bi bi-info-circle me-2"></i>
+<strong>Tip:</strong> For a complete data export, visit our <a href="/myaccount/download-data" class="alert-link">Download My Data</a> page.
+</div>
 <form method="POST">'.$display->inputcsrf_token().'
 <input type="hidden" name="requesttype" value="accessRequest">
 <div class="mb-3">
@@ -119,9 +130,13 @@ width:120px;
 </div>
 </li>
 <li class="py-1">
-<a class="btn btn-primary btn-sm mx-3 managebtn" data-bs-toggle="collapse" href="#collapsePortability" role="button" aria-expanded="false" aria-controls="collapsePortability">Portability</a> Need your data in a user-friendly format? We can do that (once a year).
+<a class="btn btn-primary btn-sm mx-3 managebtn" data-bs-toggle="collapse" href="#collapsePortability" role="button" aria-expanded="false" aria-controls="collapsePortability">Portability</a> Need your data in a user-friendly format? Download your data in JSON, CSV, or ZIP format (limited to once per 12-month period, subject to manual review within 24-48 hours).
 <div class="collapse" id="collapsePortability" data-bs-parent="#manageAccordion">
 <div class="accordion-body">
+<div class="alert alert-info mb-3">
+<i class="bi bi-info-circle me-2"></i>
+<strong>Recommended:</strong> For immediate data export, use our <a href="/myaccount/download-data" class="alert-link">Download My Data</a> feature.
+</div>
 <form method="POST">'.$display->inputcsrf_token().'
 <input type="hidden" name="requesttype" value="portabilityRequest">
 <div class="mb-3">
@@ -132,21 +147,21 @@ width:120px;
 <label class="form-label">Data Format:</label>
 <div class="d-flex flex-wrap">
 <div class="form-check me-3">
-<input class="form-check-input" type="radio" name="dataFormat" id="formatCSV" value="csv/text" required>
+<input class="form-check-input" type="radio" name="dataFormat" id="formatCSV" value="csv" required>
 <label class="form-check-label" for="formatCSV">
-CSV/Text
+CSV (Spreadsheet format)
 </label>
 </div>
 <div class="form-check me-3">
 <input class="form-check-input" type="radio" name="dataFormat" id="formatJSON" value="json" required>
 <label class="form-check-label" for="formatJSON">
-JSON
+JSON (Machine-readable)
 </label>
 </div>
 <div class="form-check me-3">
-<input class="form-check-input" type="radio" name="dataFormat" id="formatXML" value="xml" required>
-<label class="form-check-label" for="formatXML">
-XML
+<input class="form-check-input" type="radio" name="dataFormat" id="formatZIP" value="zip" required>
+<label class="form-check-label" for="formatZIP">
+ZIP Archive (Complete package)
 </label>
 </div>
 </div>
@@ -164,15 +179,26 @@ break;
 
 
 default:
+// Build the Access and Portability list items based on login status
+$accessItem = '<li class="py-1"><strong>Access:</strong> Curious about what data we have on you? Feel free to ask!';
+$portabilityItem = '<li class="py-1"><strong>Portability:</strong> Need your data in a user-friendly format?';
+
+if (!empty($current_user_data['user_id'])) {
+    $accessItem .= ' For comprehensive data export, <a href="/myaccount/download-data">use our Download My Data feature</a>.';
+    $portabilityItem .= ' <a href="/myaccount/download-data">Download your data</a> in JSON, CSV, or ZIP format';
+}
+$accessItem .= '</li>';
+$portabilityItem .= ' (limited to once per 12-month period, subject to manual review within 24-48 hours).</li>';
+
 echo ' 
 '.$managetag.'
 '.$keytag.'
 <ul>
 <li class="py-1"><strong>Opt Out:</strong> Don\'t want your data used for targeted ads or used in significant decisions about you? Just let us know!</li>
-<li class="py-1"><strong>Access:</strong> Curious about what data we have on you? Feel free to ask!</li>
+'.$accessItem.'
 <li class="py-1"><strong>Correction:</strong> Found an error in your data? We\'ll fix it for you.</li>
 <li class="py-1"><strong>Deletion:</strong> If you want us to forget you, just tell us and we\'ll delete your data.</li>
-<li class="py-1"><strong>Portability:</strong> Need your data in a user-friendly format? We can do that (but max once a year).</li>
+'.$portabilityItem.'
 </ul>
 
 ';
@@ -181,7 +207,7 @@ break;
 ?>
 
 <h5 class="mt-5">Response Time</h5>
-<p>After you make a request, we'll respond as soon as we can, usually within 20 days. If it's a bit complicated, we might take a bit longer, but we'll always keep you in the loop, including notifing you if a request is excessive, impossible or involves disproportionate effort to fullfill.</p>
+<p>After you make a data export request, it will be manually reviewed by our privacy team within 24-48 hours to ensure data security and compliance. Once approved, you'll receive your data via your chosen notification method. For other types of requests, we'll respond as soon as we can, usually within 20 days. If it's a bit complicated, we might take a bit longer, but we'll always keep you in the loop, including notifying you if a request is excessive, impossible or involves disproportionate effort to fulfill.</p>
 
 
 <h5 class="mt-5">Appeals</h5>

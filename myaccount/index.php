@@ -285,7 +285,7 @@ echo '
 
 <!-- Collect Block -->
 <div class="col-lg-4 col-md-12 d-flex">
-  <a href="/myaccount/collect" class="content-block flex-fill text-center text-decoration-none d-flex flex-column justify-content-between">
+  <a href="/myaccount/enrollment-picker" class="content-block flex-fill text-center text-decoration-none d-flex flex-column justify-content-between">
     <div>
       <i class="bi bi-list-check icon-small"></i>
       <h2 class="h2-small">PICK</h2>

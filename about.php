@@ -8,35 +8,67 @@ $pagedata['metadescriptions']='Get the best Birthday Freebies Online & Near Me! 
 // About Page Styles
 $additionalstyles = '
 <style>
-
-/* Content Section - Compact */
-.about-content {
-    padding: 2rem 0;
-}
-
-.about-image-wrapper {
+/* Hero Section - Similar to login page */
+.about-hero {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 5rem 0;
+    margin-bottom: 0;
     position: relative;
     overflow: hidden;
-    border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-    height: 100%;
-    max-height: 900px; /* Reduced by 40% from 350px */
 }
 
-.about-image-wrapper img {
+.about-hero::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(13, 110, 253, 0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.3; }
+}
+
+.hero-image-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    height: 400px;
+}
+
+.hero-image-wrapper img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
 }
 
-.about-image-wrapper:hover img {
+.hero-image-wrapper:hover img {
     transform: scale(1.05);
 }
 
+.hero-content h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 1rem;
+}
 
-
-
+.hero-badge {
+    display: inline-block;
+    background: var(--bs-primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 50rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
 
 /* Feature grid - matching login page */
 .feature-grid {
@@ -56,7 +88,7 @@ $additionalstyles = '
     flex-shrink: 0;
     width: 48px;
     height: 48px;
-    background: var(--bs-secondary);
+    background: rgba(13, 110, 253, 0.1);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -79,7 +111,117 @@ $additionalstyles = '
     line-height: 1.4;
 }
 
-/* CTA Button - Matching how-it-works page */
+/* Mission Section */
+.mission-section {
+    background: linear-gradient(135deg, #131c35 0%, #0f0f0f 50%, #1a1a2e 100%);
+    color: white;
+    padding: 6rem 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.mission-section::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
+    animation: pulse 6s ease-in-out infinite;
+}
+
+.mission-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.mission-content h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.mission-content p {
+    font-size: 1.25rem;
+    line-height: 1.8;
+    opacity: 0.9;
+    font-family: Georgia, serif;
+}
+
+/* Other Links Section */
+.links-section {
+    background: #f8f9fa;
+    padding: 4rem 0;
+}
+
+.links-title {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 3rem;
+    color: #212529;
+}
+
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.link-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    text-decoration: none;
+    color: #212529;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.link-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    color: #212529;
+    text-decoration: none;
+}
+
+.link-card i {
+    font-size: 2.5rem;
+    color: var(--bs-primary);
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.link-card h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.link-card p {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* CTA Buttons */
+.hero-cta {
+    margin-top: 2rem;
+}
+
 .btn-get-started {
     background: linear-gradient(135deg, #FFD700, #FFA500);
     color: #1a1a2e;
@@ -100,57 +242,37 @@ $additionalstyles = '
     color: #1a1a2e;
 }
 
-/* Mission Box - Improved readability */
-.mission-box {
-    background: linear-gradient(135deg, var(--bs-primary) 0%, #0b5ed7 100%);
-    padding: 1.5rem;
-    border-radius: 12px;
-    margin-top: 1.5rem;
-}
-
-
 /* Responsive */
 @media (max-width: 768px) {
-    .about-image-wrapper {
-        min-height: 250px;
-        margin-bottom: 1.5rem;
+    .about-hero {
+        padding: 3rem 0;
     }
     
-    /* Single column grid on mobile */
+    .hero-image-wrapper {
+        height: 250px;
+        margin-bottom: 2rem;
+    }
+    
+    .hero-content h1 {
+        font-size: 2rem;
+    }
+    
     .feature-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
     
-    /* Compact features on mobile */
-    .feature-icon {
-        width: 40px;
-        height: 40px;
+    .mission-content h2 {
+        font-size: 2rem;
+    }
+    
+    .mission-content p {
         font-size: 1.1rem;
     }
     
-    .feature-text h3 {
-        font-size: 0.9rem;
-    }
-    
-    .feature-text p {
-        font-size: 0.8rem;
-    }
-    
-    .about-text {
-        padding: 1rem !important;
-    }
-    
-    .mission-box {
-        padding: 1rem;
-    }
-    
-    .mission-box h4 {
-        font-size: 1.1rem;
-    }
-    
-    .mission-box p {
-        font-size: 0.9rem !important;
+    .links-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
 }
 </style>
@@ -161,97 +283,135 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <!-- Hero Section -->
-<div class="content-header-dark">
+<section class="about-hero">
     <div class="container">
-        <h1>About Birthday.Gold</h1>
-        <p class="lead">Making birthdays more special since 2023</p>
+        <div class="row align-items-center g-5">
+            <div class="col-lg-5">
+                <div class="hero-image-wrapper">
+                    <img src="/public/images/IMG_6318.jpg" alt="Birthday celebration">
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="hero-content">
+                    <span class="hero-badge">Our Story</span>
+                    
+                    <?PHP
+                    if (!empty($enableadminpageeditor)) { $admin->admineditor('body-1'); }
+                    ### ADMIN PAGE EDITOR: START-body-1 ###
+                    echo '
+                    <h1>Celebrate Your Birthday with Us!</h1>
+                    <p class="lead text-muted">At Birthday.Gold, our mission is simple: we want everyone to enjoy their birthdays to the fullest. It all started when we saw someone joyfully celebrating with birthday freebies, but they did not share how they got them.</p>
+                    <p class="text-muted">We realized that not everyone knows the ins and outs of signing up for these perks or navigating the process to claim them. That is why we are here to make it easy for you.</p>
+                    ';
+                    ### ADMIN PAGE EDITOR: END-body-1 ###
+                    ?>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-person-plus"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h3>Easy Sign Up</h3>
+                                <p>Quick registration to start collecting birthday rewards</p>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-shop"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h3>Select Businesses</h3>
+                                <p>Choose from <?php echo $website['biznames']; ?>+ birthday reward programs</p>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-bell"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h3>Smart Notifications</h3>
+                                <p>Get reminders and maps to claim your rewards</p>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="bi bi-gift"></i>
+                            </div>
+                            <div class="feature-text">
+                                <h3>Celebrate & Save</h3>
+                                <p>Enjoy free treats and discounts all month long</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <?php if (empty($current_user_data['user_id'])): ?>
+                    <div class="hero-cta">
+                        <a href="/signup" class="btn-get-started">Get Started Free</a>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+</section>
 
-<!-- Main Content -->
-<div class="container about-content">
-    <div class="row align-items-center g-4">
-        <div class="col-lg-5">
-            <div class="about-image-wrapper">
-                <img src="/public/images/IMG_6318.jpg" alt="Birthday celebration">
-            </div>
-        </div>
-        <div class="col-lg-7">
-            <div class="about-text p-4">
-                <span class="badge bg-primary px-3 py-2 mb-3">Our Story</span>
-                
-                <?PHP
-                if (!empty($enableadminpageeditor)) { $admin->admineditor('body-1'); }
-                ### ADMIN PAGE EDITOR: START-body-1 ###
-                echo '
-                <h2 class="h2 fw-bold mb-3">Celebrate Your Birthday with Us!</h2>
-                <p class="fs-5 text-muted lh-base mb-3">At Birthday.Gold, our mission is simple: we want everyone to enjoy their birthdays to the fullest. It all started when we saw someone joyfully celebrating with birthday freebies, but they did not share how they got them. We realized that not everyone knows the ins and outs of signing up for these perks or navigating the process to claim them. It is more than just walking into a business and asking for your birthday treat—it can be a bit complicated.</p>
-                <p class="fs-5 text-muted lh-base mb-4">That is why we are here to make it easy for you. With Birthday.Gold, all you have to do is sign up for our service, select your favorite businesses, and we will handle the rest. You will receive notifications, a handy map of where to go, and all that is left for you to do is celebrate and enjoy!</p>
-                ';
-                ### ADMIN PAGE EDITOR: END-body-1 ###
-                ?>
-                
-                <div class="feature-grid my-lg-5">
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="bi bi-person-plus"></i>
-                        </div>
-                        <div class="feature-text">
-                            <h3>Easy Sign Up</h3>
-                            <p>Quick registration to start collecting birthday rewards</p>
-                        </div>
-                    </div>
-                    
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="bi bi-shop"></i>
-                        </div>
-                        <div class="feature-text">
-                            <h3>Select Businesses</h3>
-                            <p>Choose from <?php echo $website['biznames']; ?>+ birthday reward programs</p>
-                        </div>
-                    </div>
-                    
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="bi bi-bell"></i>
-                        </div>
-                        <div class="feature-text">
-                            <h3>Smart Notifications</h3>
-                            <p>Get reminders and maps to claim your rewards</p>
-                        </div>
-                    </div>
-                    
-                    <div class="feature-item">
-                        <div class="feature-icon">
-                            <i class="bi bi-gift"></i>
-                        </div>
-                        <div class="feature-text">
-                            <h3>Celebrate & Save</h3>
-                            <p>Enjoy free treats and discounts all month long</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Divider -->
-                <hr style="margin: 3rem 0; border: 0; height: 1px; background: linear-gradient(to right, transparent, #dee2e6, transparent);">
-                
-                <!-- Mission Box -->
-                <div class="mission-box text-white my-lg-5">
-                    <h4 class="h4 fw-bold text-white mb-3">Our Mission</h4>
-                    <p class="text-white fs-5 lh-base mb-3 fst-italic" style="font-family: 'Georgia', 'Times New Roman', serif; letter-spacing: 0.5px;">To make every birthday special by connecting people with amazing birthday rewards from their favorite local businesses.</p>
-                </div>
-                
-                <div class="mt-4">
-                    <a href="/signup" class="btn-get-started">Get Started Free</a>
-                    <div class="mt-3">
-                        <a href="/how" class="btn btn-outline-primary btn-lg px-4">Learn More</a>
-                    </div>
-                </div>
-            </div>
+<!-- Mission Section -->
+<section class="mission-section">
+    <div class="container">
+        <div class="mission-content">
+            <h2>Our Mission</h2>
+            <p>To make every birthday special by connecting people with amazing birthday rewards from their favorite local businesses. We believe everyone deserves to feel celebrated on their special day, and we are here to make that happen - one birthday at a time.</p>
         </div>
     </div>
-</div>
+</section>
+
+<!-- Other Links Section -->
+<section class="links-section">
+    <div class="container">
+        <h2 class="links-title">Explore More</h2>
+        <div class="links-grid">
+            <a href="/careers" class="link-card">
+                <i class="bi bi-briefcase"></i>
+                <h3>Careers</h3>
+                <p>Join our team and help us celebrate birthdays everywhere</p>
+            </a>
+            
+            <a href="/blog" class="link-card">
+                <i class="bi bi-journal-text"></i>
+                <h3>Blog</h3>
+                <p>Tips, stories, and birthday celebration ideas</p>
+            </a>
+            
+            <a href="/faq" class="link-card">
+                <i class="bi bi-question-circle"></i>
+                <h3>FAQ</h3>
+                <p>Get answers to common questions about Birthday.Gold</p>
+            </a>
+            
+            <a href="/contact" class="link-card">
+                <i class="bi bi-envelope"></i>
+                <h3>Contact Us</h3>
+                <p>We would love to hear from you</p>
+            </a>
+            
+            <a href="/business/partner" class="link-card">
+                <i class="bi bi-building"></i>
+                <h3>Partner With Us</h3>
+                <p>Add your business to our birthday rewards network</p>
+            </a>
+            
+            <a href="/legalhub" class="link-card">
+                <i class="bi bi-shield-check"></i>
+                <h3>Legal Hub</h3>
+                <p>Privacy, terms, and your data protection</p>
+            </a>
+        </div>
+    </div>
+</section>
 
 <?PHP
 include($dir['core_components'] . '/bg_footer.inc');

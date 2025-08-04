@@ -146,12 +146,9 @@ if ($app->formposted()) {
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 $bodycontentclass = '';
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
-if (!empty($current_user_data['user_id'])) {
-    include($dir['core_components'] . '/bg_user_profileheader.inc');
-    include($dir['core_components'] . '/bg_user_leftpanel.inc');
-}
+
+// Add bg_theme.css for content-header-dark
+$additionalstyles = '<link href="' . cssUrl('/public/css/v7/bg_theme.css') . '" rel="stylesheet">';
 
 $additionalstyles .= '
 <style>
@@ -159,20 +156,38 @@ $additionalstyles .= '
 .application-form { max-width: 600px; }
 .error-message { color: #dc3545; }
 .success-message { color: #28a745; }
+/* Adjust container padding after header */
+.content-after-header {
+    padding-top: 2rem;
+}
 </style>
 ';
 
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
+
+// Content header dark section
+echo '
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <h1>' . htmlspecialchars($job_data['display_name']) . '</h1>
+        <p class="lead">Join our team and help us celebrate life\'s special moments</p>
+    </div>
+</div>';
+
 echo '    
-<div class="container main-content ' . (!empty($current_user_data['user_id']) ? 'mt-0 pt-0' : '') . '">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">' . htmlspecialchars($job_data['display_name']) . '</h2>
+<div class="container content-after-header">
+    <div class="d-flex justify-content-end align-items-center mb-4">
         <div>
             ' . ($account->isadmin() ? '
                 <a href="?i=' . $qik->encodeId($content_id) . '&edit=' . ($editing ? '0' : '1') . '" 
                    class="btn btn-sm btn-' . ($editing ? 'danger' : 'primary') . ' me-2">
                    ' . ($editing ? 'Cancel Edit' : 'Edit Job') . '
                 </a>' : '') . '
-            <a href="/careers" class="btn btn-sm btn-outline-secondary">Back To Careers</a>
+            <a href="/careers" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Careers
+            </a>
         </div>
     </div>';
 
@@ -240,6 +255,9 @@ if ($editing && $account->isadmin()) {
 }
 
 echo '</div></div></div>';
+
+// Add spacing before footer
+echo '<div class="mb-5 pb-5"></div>';
 
 $display_footertype = '';
 include($dir['core_components'] . '/bg_footer.inc');

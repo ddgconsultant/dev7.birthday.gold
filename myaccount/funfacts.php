@@ -4,9 +4,9 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 $addcredjs = false;
 
 
-$businessselectorurl = '/myaccount/select';
-if ($current_user_data['username'] == 'ddgconsultant') $businessselectorurl = '/myaccount/businessselect-list';
-
+#$businessselectorurl = '/myaccount/select';
+#if ($current_user_data['username'] == 'ddgconsultant') $businessselectorurl = '/myaccount/businessselect-list';
+$businessselectorurl = '/myaccount/enrollment-picker';
 $current_user_data = $account->getuserdata($current_user_data['user_id'], 'user_id');
 $transferpagedata = [];
 

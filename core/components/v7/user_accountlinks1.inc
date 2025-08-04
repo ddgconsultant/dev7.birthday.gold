@@ -161,16 +161,13 @@ if ($account->isadmin()) {
     $accountlinks_output .= '
     <div id="brandlinks" class="mb-5">
         <div class="navbar-vertical-label-wrapper ' . $linklistpadding . '">
-            <div class="navbar-vertical-label">Brand Management</div>
+            <div class="navbar-vertical-label">' . ucwords($website['bizname']) . ' Management</div>
             <div class="col ps-0">
                 <hr class="mb-0 navbar-vertical-divider">
             </div>
         </div>
         <a href="/admin/brands" style="text-decoration: none;">
-            <h6 class="fs-9 mb-2"><i class="bi bi-gear-wide-connected me-1"></i>Brand Editor</h6>
-        </a>
-        <a href="' . $dir['bge_webA'] . '/companysetup.php?filter=finalized" style="text-decoration: none;">
-            <h6 class="fs-9 mb-2"><i class="bi bi-gear-wide-connected me-1"></i>Company Setup</h6>
+            <h6 class="fs-9 mb-2"><i class="bi bi-gear-wide-connected me-1"></i>' . ucwords($website['bizname']) . ' Editor</h6>
         </a>
         <a href="/admin_actions/manual_rewards" style="text-decoration: none;">
             <h6 class="fs-9 mb-2"><i class="bi bi-gear-wide-connected me-1"></i>Reward Details</h6>

@@ -726,7 +726,7 @@ $businessHours = $app->bg_businesshours();
         <?php if ($account->isadmin()): ?>
         <!-- Brand Management Section -->
         <div class="section-header" style="margin-top: 3rem;">
-            <h2 class="section-title">Brand Management</h2>
+            <h2 class="section-title"><?php echo ucwords($website['bizname']); ?> Management</h2>
             <p class="section-subtitle">Configure brands and reward programs</p>
         </div>
         
@@ -736,7 +736,7 @@ $businessHours = $app->bg_businesshours();
                     <i class="bi bi-palette"></i>
                 </div>
                 <div class="admin-content">
-                    <h3 class="admin-card-title">Brand Editor</h3>
+                    <h3 class="admin-card-title"><?php echo ucwords($website['bizname']); ?> Editor</h3>
                     <p class="admin-card-text">Manage brand configurations</p>
                 </div>
             </a>
@@ -755,16 +755,6 @@ $businessHours = $app->bg_businesshours();
                         <?php endif; ?>
                     </h3>
                     <p class="admin-card-text">Review user-submitted businesses</p>
-                </div>
-            </a>
-            
-            <a href="<?php echo $dir['bge_webA']; ?>/companysetup.php?filter=finalized" class="admin-card">
-                <div class="admin-icon icon-brand">
-                    <i class="bi bi-building"></i>
-                </div>
-                <div class="admin-content">
-                    <h3 class="admin-card-title">Company Setup</h3>
-                    <p class="admin-card-text">Configure company partnerships</p>
                 </div>
             </a>
             

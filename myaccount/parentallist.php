@@ -118,7 +118,11 @@ case 0: $tag1=' The free plan does not allow you to enroll in any businesses.'; 
        $nextDate = $app->calculateNextOccurrence($current_user_data['birthdate'], $daysout);
       #breakpoint($nextDate);
       # $output['result']
-  $outdays=$app->getTimeTilBirthday( $nextDate['date']);
+      if ($nextDate['result']) {
+          $outdays = $app->getTimeTilBirthday($nextDate['date']);
+      } else {
+          $outdays = array('total_days' => 0, 'months' => 0, 'days' => 0);
+      }
 
        echo '
 

@@ -69,6 +69,9 @@ if (!$staff_data) {
     exit;
 }
 
+// Add bg_theme.css for content-header-dark
+$additionalstyles .= '<link href="' . cssUrl('/public/css/v7/bg_theme.css') . '" rel="stylesheet">';
+
 $additionalstyles .= '
 <style>
 .team-bio {
@@ -85,15 +88,29 @@ $additionalstyles .= '
     object-fit: cover;
     border-radius: 50%;
 }
+/* Adjust padding after dark header */
+.content-after-header {
+    padding-top: 2rem;
+}
 </style>
 ';
 
-echo '    
-<div class="container main-content my-5 py-5">
+// Content header dark section
+echo '
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <h1>Meet Our Team</h1>
+        <p class="lead">Get to know the passionate people behind Birthday Gold</p>
+    </div>
+</div>
 
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Meet Our Team</h2>
-    <a href="/careers" class="btn btn-sm btn-outline-secondary">Back To Careers</a>
+<div class="container content-after-header">
+
+  <div class="d-flex justify-content-end mb-4">
+    <a href="/careers" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Careers
+    </a>
   </div>
 
 
@@ -159,7 +176,10 @@ echo '
             </div>
         </div>
     </div>
-</div>';
+</div>
+
+<!-- Add spacing before footer -->
+<div class="mb-5 pb-5"></div>';
 
 echo '
 <script>

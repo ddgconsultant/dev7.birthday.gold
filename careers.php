@@ -1,13 +1,150 @@
 <?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+// Add bg_theme.css for content-header-dark
+$additionalstyles = '<link href="' . cssUrl('/public/css/v7/bg_theme.css') . '" rel="stylesheet">';
+
+// Add pill button styles
+$additionalstyles .= '
+<style>
+/* Filter Pills Container */
+.filter-pills {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+/* Card header adjustments */
+.card-header .filter-pills {
+    margin-bottom: 0;
+    padding: 0.25rem 0;
+}
+
+.card-header.bg-light {
+    background-color: #f8f9fa !important;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.filter-label {
+    font-weight: 600;
+    color: #6c757d;
+    margin-right: 0.5rem;
+}
+
+/* Pill Buttons */
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    background: #f8f9fa;
+    color: #212529;
+    text-decoration: none;
+    border-radius: 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-pill:hover {
+    background: #e9ecef;
+    color: #212529;
+    text-decoration: none;
+}
+
+.filter-pill.active {
+    background: #0d6efd;
+    color: white;
+}
+
+.filter-pill.active:hover {
+    background: #0b5ed7;
+    color: white;
+}
+
+/* Org Chart Link Styling */
+.org-chart-link {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.org-chart-link:hover {
+    background: #5c636a;
+    color: white;
+    text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .filter-pills {
+        flex-wrap: wrap;
+    }
+    
+    .org-chart-link {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Fix badge hover states with enhanced visual feedback */
+.badge {
+    transition: all 0.2s ease;
+}
+
+.badge.bg-primary:hover {
+    color: white !important;
+    background-color: #0a58ca !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.25);
+}
+
+.badge.bg-success:hover {
+    color: white !important;
+    background-color: #157347 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(25, 135, 84, 0.25);
+}
+
+/* Ensure links within badges keep white text */
+a.badge {
+    text-decoration: none;
+}
+
+a.badge:hover {
+    color: white !important;
+    text-decoration: none;
+}
+</style>';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="container main-content p-5">
-        <h1 class="mb-4">Join Our Team at Birthday Gold</h1>
-        <p>At Birthday Gold, we're more than just a team – we're a crew dedicated to celebrating life's special moments. We're looking for passionate, creative, and driven individuals to join us in making every birthday unforgettable. If you're ready to embark on a rewarding career journey, explore the opportunities with Birthday Gold!</p>
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <h1>Join Our Team at Birthday Gold</h1>
+        <p class="lead">Be part of a crew dedicated to celebrating life's special moments</p>
+    </div>
+</div>
+
+<div class="container py-5">
+        <p class="lead text-center mb-5">We're looking for passionate, creative, and driven individuals to join us in making every birthday unforgettable. If you're ready to embark on a rewarding career journey, explore the opportunities with Birthday Gold!</p>
     <hr class="mt-5">    
         <h3 class="mt-5 mb-3">Why Work With Us?</h3>
         <div class="mb-3">
@@ -38,17 +175,29 @@ include($dir['core_components'] . '/bg_header.inc');
      </ul>
      <hr class="mt-5">
         <h3 class="mt-5 mb-3">Job Descriptions</h3>
-        We like to provide as much transparency as we can in regards to working with our team.  Which is why we list all of our open AND filled positions, so you can get to know our team and what they do as well as learn about the opportunity you are applying for.
+        <p class="mb-4">We like to provide as much transparency as we can in regards to working with our team.  Which is why we list all of our open AND filled positions, so you can get to know our team and what they do as well as learn about the opportunity you are applying for.</p>
 
-        <div class="filter-buttons mt-3 fw-bold">FILTER: 
-    <button class="btn btn-sm btn-primary" onclick="filterJobs('all')">ALL</button>
-    <button class="btn btn-sm btn-primary" onclick="filterJobs('open')">Open</button>
-    <button class="btn btn-sm btn-primary" onclick="filterJobs('filled')">Filled</button>
-    <a class="ms-5 btn btn-sm btn-primary"  target="jobdescription"  href="https://whimsical.com/organization-chart-DLzWNLXvT4wTb8VHD2Q7TH">Our Org Chart</a>
-</div>
-
-<!-- Your job listings here -->
-<div id="job-listings" class="my-5">
+        <div class="card">
+            <div class="card-header bg-light">
+                <div class="filter-pills mb-0">
+                    <span class="filter-label">FILTER:</span>
+                    <button class="filter-pill active" onclick="filterJobs('all')">
+                        <i class="bi bi-grid"></i> All
+                    </button>
+                    <button class="filter-pill" onclick="filterJobs('open')">
+                        <i class="bi bi-briefcase"></i> Open
+                    </button>
+                    <button class="filter-pill" onclick="filterJobs('filled')">
+                        <i class="bi bi-check-circle"></i> Filled
+                    </button>
+                    <a class="org-chart-link" target="jobdescription" href="https://whimsical.com/organization-chart-DLzWNLXvT4wTb8VHD2Q7TH">
+                        <i class="bi bi-diagram-3"></i> Our Org Chart
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Your job listings here -->
+                <div id="job-listings">
 <?PHP
 
 
@@ -102,7 +251,8 @@ foreach ($results as $row) {
     echo '</div>';
 }
 
-echo '</div>';
+echo '</div>'; // Close job-listings div
+echo '</div></div>'; // Close card-body and card
 
 echo '
     <hr class="mt-5">
@@ -140,6 +290,21 @@ function filterJobs(status) {
         } else {
             jobs[i].style.display = 'none';
         }
+    }
+    
+    // Update active state of filter pills
+    var pills = document.querySelectorAll('.filter-pill');
+    pills.forEach(function(pill) {
+        pill.classList.remove('active');
+    });
+    
+    // Add active class to the clicked pill
+    if (status === 'all') {
+        pills[0].classList.add('active');
+    } else if (status === 'open') {
+        pills[1].classList.add('active');
+    } else if (status === 'filled') {
+        pills[2].classList.add('active');
     }
 }
 

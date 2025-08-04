@@ -1,0 +1,613 @@
+# Missing Files Report
+# Generated: 2025-08-04 15:08:07
+
+Total missing files: 152
+
+Missing: /bg_pagestart.inc
+  Referenced in: /webhook-rocketchat.php
+  Original path: /bg_pagestart.inc
+
+Missing: /bg_header.inc
+  Referenced in: /webhook-rocketchat.php
+  Original path: /bg_header.inc
+
+Missing: /bg_footer.inc
+  Referenced in: /webhook-rocketchat.php
+  Original path: /bg_footer.inc
+
+Missing: /admin/accessmanager_dataaction.php
+  Referenced in: /admin/accessmanager/_OLD_/accessmanager.php
+  Original path: /admin/accessmanager_dataaction.php
+
+Missing: /components/action-retrieve.inc
+  Referenced in: /admin/accessmanager/accessmanager_dataaction.php
+  Original path: /components/action-retrieve.inc
+
+Missing: /components/type-username_password.inc
+  Referenced in: /admin/accessmanager/accessmanager_dataaction.php
+  Original path: /components/type-username_password.inc
+
+Missing: /components/type-keyvalue.inc
+  Referenced in: /admin/accessmanager/accessmanager_dataaction.php
+  Original path: /components/type-keyvalue.inc
+
+Missing: /components/type-file.inc
+  Referenced in: /admin/accessmanager/accessmanager_dataaction.php
+  Original path: /components/type-file.inc
+
+Missing: /accessmanager_dataaction.php
+  Referenced in: /myaccount/enrollment-history.php
+  Original path: /accessmanager_dataaction.php
+
+Missing: /components/db_create_value.inc
+  Referenced in: /admin/accessmanager/index.php
+  Original path: /components/db_create_value.inc
+
+Missing: /components/db_update_value.inc
+  Referenced in: /admin/accessmanager/index.php
+  Original path: /components/db_update_value.inc
+
+Missing: /components/re-encyrpt_data.inc
+  Referenced in: /admin/accessmanager/index.php
+  Original path: /components/re-encyrpt_data.inc
+
+Missing: /components/js-scripts.inc
+  Referenced in: /admin/accessmanager/index.php
+  Original path: /components/js-scripts.inc
+
+Missing: /header.php
+  Referenced in: /validate-failed.php
+  Original path: /header.php
+
+Missing: /nav-myaccount.php
+  Referenced in: /staff/unlock_timecards.php
+  Original path: /nav-myaccount.php
+
+Missing: /footer.php
+  Referenced in: /validate-failed.php
+  Original path: /footer.php
+
+Missing: /bg_user_profileheader.inc
+  Referenced in: /staff/timecards.php
+  Original path: /bg_user_profileheader.inc
+
+Missing: /bg_user_leftpanel.inc
+  Referenced in: /test-leftpanel.php
+  Original path: /bg_user_leftpanel.inc
+
+Missing: /manual_policies.php
+  Referenced in: /admin/businesseditor_components/policies.php
+  Original path: manual_policies.php
+
+Missing: /editcompany.php
+  Referenced in: /admin/businesses.php
+  Original path: editcompany.php
+
+Missing: /pageheader.inc
+  Referenced in: /admin/card-view.php
+  Original path: /pageheader.inc
+
+Missing: /pagetitle.inc
+  Referenced in: /staff/index.php
+  Original path: /pagetitle.inc
+
+Missing: /favicons.inc
+  Referenced in: /staff/index.php
+  Original path: /favicons.inc
+
+Missing: /stylesheets.inc
+  Referenced in: /staff/index.php
+  Original path: /stylesheets.inc
+
+Missing: /fluidcontent.inc
+  Referenced in: /staff/index.php
+  Original path: /fluidcontent.inc
+
+Missing: /topnav.inc
+  Referenced in: /signup-route.php
+  Original path: /topnav.inc
+
+Missing: /footer.inc
+  Referenced in: /staff/index.php
+  Original path: /footer.inc
+
+Missing: /customizercontent.inc
+  Referenced in: /staff/index.php
+  Original path: /customizercontent.inc
+
+Missing: /sitecustomizer.inc
+  Referenced in: /staff/index.php
+  Original path: /sitecustomizer.inc
+
+Missing: /app/support-desk/table-view.php
+  Referenced in: /admin/card-view.php
+  Original path: /app/support-desk/table-view.php
+
+Missing: /app/support-desk/card-view.php
+  Referenced in: /admin/card-view.php
+  Original path: /app/support-desk/card-view.php
+
+Missing: /app/support-desk/contact-details.php
+  Referenced in: /admin/card-view.php
+  Original path: /app/support-desk/contact-details.php
+
+Missing: /app/support-desk/tickets-preview.php
+  Referenced in: /admin/card-view.php
+  Original path: /app/support-desk/tickets-preview.php
+
+Missing: /admin_actions/save_field_mappings.php
+  Referenced in: /admin/companyeditor_components/field-mappings.php
+  Original path: /admin_actions/save_field_mappings.php
+
+Missing: /admin/ajax/update_company_status.php
+  Referenced in: /admin/companyeditor_components/general-details-v2.php
+  Original path: /admin/ajax/update_company_status.php
+
+Missing: /admin/ajax/get_abo_progress.php
+  Referenced in: /admin/companyeditor_components/general-details-v2.php
+  Original path: /admin/ajax/get_abo_progress.php
+
+Missing: /admin/ajax/upload_company_logo.php
+  Referenced in: /admin/companyeditor_components/general-details-v2.php
+  Original path: /admin/ajax/upload_company_logo.php
+
+Missing: /admin_actions/add_policy.php
+  Referenced in: /admin/companyeditor_components/policy-manager.php
+  Original path: /admin_actions/add_policy.php
+
+Missing: /admin_actions/save_reward.php
+  Referenced in: /admin/companyeditor_components/reward-editor.php
+  Original path: /admin_actions/save_reward.php
+
+Missing: /admin/ajax/save-location-status.php
+  Referenced in: /admin/locationeditor_components/advanced-settings.php
+  Original path: /admin/ajax/save-location-status.php
+
+Missing: /admin/ajax/save-location-integration.php
+  Referenced in: /admin/locationeditor_components/advanced-settings.php
+  Original path: /admin/ajax/save-location-integration.php
+
+Missing: /admin/ajax/add-location-attribute.php
+  Referenced in: /admin/locationeditor_components/advanced-settings.php
+  Original path: /admin/ajax/add-location-attribute.php
+
+Missing: /admin/ajax/merge-locations.php
+  Referenced in: /admin/locationeditor_components/advanced-settings.php
+  Original path: /admin/ajax/merge-locations.php
+
+Missing: /admin/ajax/delete-location-attribute.php
+  Referenced in: /admin/locationeditor_components/advanced-settings.php
+  Original path: /admin/ajax/delete-location-attribute.php
+
+Missing: /admin/ajax/delete-location.php
+  Referenced in: /admin/locationeditor_components/advanced-settings.php
+  Original path: /admin/ajax/delete-location.php
+
+Missing: /admin/ajax/save-location-details.php
+  Referenced in: /admin/locationeditor_components/basic-details.php
+  Original path: /admin/ajax/save-location-details.php
+
+Missing: /admin/ajax/save-location-hours.php
+  Referenced in: /admin/locationeditor_components/business-hours.php
+  Original path: /admin/ajax/save-location-hours.php
+
+Missing: /admin/ajax/save-location-contact.php
+  Referenced in: /admin/locationeditor_components/contact-info.php
+  Original path: /admin/ajax/save-location-contact.php
+
+Missing: /admin/ajax/save-location-social.php
+  Referenced in: /admin/locationeditor_components/contact-info.php
+  Original path: /admin/ajax/save-location-social.php
+
+Missing: /admin/ajax/add-location-contact.php
+  Referenced in: /admin/locationeditor_components/contact-info.php
+  Original path: /admin/ajax/add-location-contact.php
+
+Missing: /admin/ajax/save-location-enrollment.php
+  Referenced in: /admin/locationeditor_components/enrollment-settings.php
+  Original path: /admin/ajax/save-location-enrollment.php
+
+Missing: /admin/ajax/save-location-policy.php
+  Referenced in: /admin/locationeditor_components/policies.php
+  Original path: /admin/ajax/save-location-policy.php
+
+Missing: /admin/ajax/save-location-reward.php
+  Referenced in: /admin/locationeditor_components/rewards-manager.php
+  Original path: /admin/ajax/save-location-reward.php
+
+Missing: /bg_admin_leftpanel.inc
+  Referenced in: /admin/systemavailability.php
+  Original path: /bg_admin_leftpanel.inc
+
+Missing: /user_components/set_accounttypeplan.php
+  Referenced in: /admin/user_components/user-details_modals.inc
+  Original path: user_components/set_accounttypeplan.php
+
+Missing: /user_components/set_referrer.php
+  Referenced in: /admin/user_components/user-details_modals.inc
+  Original path: user_components/set_referrer.php
+
+Missing: /user_components/set_admin.php
+  Referenced in: /admin/user_components/user-details_modals.inc
+  Original path: user_components/set_admin.php
+
+Missing: /user_components/set_employee.php
+  Referenced in: /admin/user_components/user-details_modals.inc
+  Original path: user_components/set_employee.php
+
+Missing: /must be 18
+  Referenced in: /admin_actions/abo/abo_grabage_airtop.php
+  Original path: must be 18
+
+Missing: /footerjs.inc
+  Referenced in: /hr/policies.php
+  Original path: /footerjs.inc
+
+Missing: /core/site-controller.php
+  Referenced in: /admin_actions/test_1up_rewards.php
+  Original path: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/site-controller.php
+
+Missing: /var/vmail/vendor/autoload.php
+  Referenced in: /api/mailserver/delivery.php
+  Original path: /var/vmail/vendor/autoload.php
+
+Missing: /ENV_CONFIGS/config-database.inc
+  Referenced in: /api/mailserver/delivery.php
+  Original path: /ENV_CONFIGS/config-database.inc
+
+Missing: /claudecode/social_login_handler.php
+  Referenced in: /claudecode/ARCHIVED_social_login_handler.php
+  Original path: /claudecode/social_login_handler.php
+
+Missing: /header3.inc
+  Referenced in: /quick-links.php
+  Original path: /header3.inc
+
+Missing: /enrollment_campaign_edit.php
+  Referenced in: /claudecode/enrollment_bonus/admin/enrollment_admin.php
+  Original path: enrollment_campaign_edit.php
+
+Missing: /claudecode/core/site-controller.php
+  Referenced in: /claudecode/enrollment_bonus/admin/scheduler--process_discontinued_companies.php
+  Original path: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/core/site-controller.php
+
+Missing: /claudecode/enrollment_bonus/classes/class.enrollmentmanager.php
+  Referenced in: /claudecode/enrollment_bonus/admin/scheduler--process_discontinued_companies.php
+  Original path: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/classes/class.enrollmentmanager.php
+
+Missing: /claudecode/test_signup_flow.php
+  Referenced in: /claudecode/index_old.php
+  Original path: /claudecode/test_signup_flow.php
+
+Missing: /claudecode/checkout.php
+  Referenced in: /claudecode/index_old.php
+  Original path: /claudecode/checkout.php
+
+Missing: /claudecode/test_results.php
+  Referenced in: /claudecode/index.php
+  Original path: /claudecode/test_results.php
+
+Missing: /claudecode/data_manager.php
+  Referenced in: /claudecode/index.php
+  Original path: /claudecode/data_manager.php
+
+Missing: /claudecode/checkout_recovery_handler.php
+  Referenced in: /claudecode/scheduler--checkout_recovery.php
+  Original path: /claudecode/checkout_recovery_handler.php
+
+Missing: /claudecode/test_promo_ajax.php
+  Referenced in: /claudecode/session_debug.php
+  Original path: /claudecode/test_promo_ajax.php
+
+Missing: /claudecode/test_promo_web.php
+  Referenced in: /claudecode/session_debug.php
+  Original path: /claudecode/test_promo_web.php
+
+Missing: /admin/manage-v7-products.php
+  Referenced in: /claudecode/verify_v7_data.php
+  Original path: /admin/manage-v7-products.php
+
+Missing: /../ai/ai-metrics.php
+  Referenced in: /core/classes/class.ai.php
+  Original path: /../ai/ai-metrics.php
+
+Missing: /config-database.inc
+  Referenced in: /core/classes/class.api.php
+  Original path: /config-database.inc
+
+Missing: /videorecorder.php
+  Referenced in: /core/classes/class.display.php
+  Original path: videorecorder.php
+
+Missing: /email/email-template_basic.inc
+  Referenced in: /core/classes/class.mail.php
+  Original path: /email/email-template_basic.inc
+
+Missing: /.inc
+  Referenced in: /core/classes/class.mail.php
+  Original path: .inc
+
+Missing: /footer_chatsystem.inc
+  Referenced in: /core/v7/footerjs.inc
+  Original path: /footer_chatsystem.inc
+
+Missing: /bg_bottom_nav.inc
+  Referenced in: /index.php
+  Original path: /bg_bottom_nav.inc
+
+Missing: /v7/bg_bottom_nav.inc
+  Referenced in: /core/components/v7/bg_footerv7.inc
+  Original path: /v7/bg_bottom_nav.inc
+
+Missing: /site-arrays.inc
+  Referenced in: /core/site-controller.php
+  Original path: /site-arrays.inc
+
+Missing: /footerversion.inc
+  Referenced in: /core/site-controller.php
+  Original path: /footerversion.inc
+
+Missing: /app/events/event-detail.php
+  Referenced in: /staff/index.php
+  Original path: /app/events/event-detail.php
+
+Missing: /documentation/customization/configuration.php
+  Referenced in: /core/v7/customizercontent.inc
+  Original path: /documentation/customization/configuration.php
+
+Missing: /modules/components/navs-and-tabs/vertical-navbar.php#navbar-styles
+  Referenced in: /core/v7/customizercontent.inc
+  Original path: modules/components/navs-and-tabs/vertical-navbar.php#navbar-styles
+
+Missing: /footer2.inc
+  Referenced in: /myaccount/funfacts.php
+  Original path: /footer2.inc
+
+Missing: /core/blade/footer_chatsystem.inc
+  Referenced in: /core/v7/footer.php
+  Original path: /core/blade/footer_chatsystem.inc
+
+Missing: //v3/wp-login.php
+  Referenced in: /core/v7/header.inc
+  Original path: //v3/wp-login.php
+
+Missing: /header2.inc
+  Referenced in: /staff/index.php
+  Original path: /header2.inc
+
+Missing: /app/social/notifications.php
+  Referenced in: /core/v7/notificationmenu.inc
+  Original path: /app/social/notifications.php
+
+Missing: /x_pagestart.inc
+  Referenced in: /core/v7/template_admin.php
+  Original path: x_pagestart.inc
+
+Missing: /x_header.inc
+  Referenced in: /core/v7/template_admin.php
+  Original path: x_header.inc
+
+Missing: /x_help.php
+  Referenced in: /core/v7/p1.php
+  Original path: x_help.php
+
+Missing: /x_footer.inc
+  Referenced in: /core/v7/template_admin.php
+  Original path: x_footer.inc
+
+Missing: /x_userprofileheader.inc
+  Referenced in: /core/v7/page.php
+  Original path: x_userprofileheader.inc
+
+Missing: /x_userleftpanel.inc
+  Referenced in: /core/v7/page.php
+  Original path: x_userleftpanel.inc
+
+Missing: /x_usercontent.inc
+  Referenced in: /core/v7/page.php
+  Original path: x_usercontent.inc
+
+Missing: /header2.php
+  Referenced in: /core/v7/topnav.inc
+  Original path: /header2.php
+
+Missing: /notificationmenu.inc
+  Referenced in: /core/v7/topnav.inc
+  Original path: /notificationmenu.inc
+
+Missing: /adminmenu.inc
+  Referenced in: /core/v7/topnav.inc
+  Original path: /adminmenu.inc
+
+Missing: /page.php
+  Referenced in: /gifts/index.php
+  Original path: /page.php
+
+Missing: /templates/bootstrap-5-forms/license-agreement.php
+  Referenced in: /hr/test.php
+  Original path: /templates/bootstrap-5-forms/license-agreement.php
+
+Missing: /user_accountlinks_old.inc
+  Referenced in: /myaccount/index.php
+  Original path: /user_accountlinks_old.inc
+
+Missing: /user_accountlinks1.inc
+  Referenced in: /myaccount/index.php
+  Original path: /user_accountlinks1.inc
+
+Missing: /user_accountlinks.inc
+  Referenced in: /myaccount/index.php
+  Original path: /user_accountlinks.inc
+
+Missing: /nav-mailmenuside.php
+  Referenced in: /myaccount/mail_read.php
+  Original path: /nav-mailmenuside.php
+
+Missing: /nav-mailmenutop.php
+  Referenced in: /myaccount/mail_read.php
+  Original path: /nav-mailmenutop.php
+
+Missing: /nav-mailmenuside.inc
+  Referenced in: /myaccount/mail_read.php
+  Original path: /nav-mailmenuside.inc
+
+Missing: /user_notifications.inc
+  Referenced in: /myaccount/manage-mail.php
+  Original path: /user_notifications.inc
+
+Missing: /user_mail_settings.inc
+  Referenced in: /myaccount/manage-mail.php
+  Original path: /user_mail_settings.inc
+
+Missing: /path-to-verification-form-handler.php
+  Referenced in: /myaccount/manage-verification.php
+  Original path: /path-to-verification-form-handler.php
+
+Missing: /content-giftcertificate.php
+  Referenced in: /setup-giftcertificate.php
+  Original path: /content-giftcertificate.php
+
+Missing: /myaccount-done-giftcertificate.php
+  Referenced in: /myaccount/myaccount_actions/setup-giftcertificate.php
+  Original path: /myaccount-done-giftcertificate.php
+
+Missing: /user_notifications_display.inc
+  Referenced in: /myaccount/notifications.php
+  Original path: /user_notifications_display.inc
+
+Missing: /user_notification_settings.inc
+  Referenced in: /myaccount/notifications.php
+  Original path: /user_notification_settings.inc
+
+Missing: /images_avatars.inc
+  Referenced in: /myaccount/profile-images.php
+  Original path: /images_avatars.inc
+
+Missing: /images_coverbanners.inc
+  Referenced in: /myaccount/profile-images.php
+  Original path: /images_coverbanners.inc
+
+Missing: /images_verificationid.inc
+  Referenced in: /myaccount/profile-images.php
+  Original path: /images_verificationid.inc
+
+Missing: /profile_image_uploadhandler.inc
+  Referenced in: /myaccount/profile-images.php
+  Original path: /profile_image_uploadhandler.inc
+
+Missing: /profile_images_styles.inc
+  Referenced in: /myaccount/profile-images.php
+  Original path: /profile_images_styles.inc
+
+Missing: /myaccount/test-shortener-simple.php
+  Referenced in: /myaccount/shortener-control.php
+  Original path: /myaccount/test-shortener-simple.php
+
+Missing: /myaccount/test-shortener-email.php
+  Referenced in: /myaccount/shortener-control.php
+  Original path: /myaccount/test-shortener-email.php
+
+Missing: /myaccount/test-url-shortener.php
+  Referenced in: /myaccount/shortener-control.php
+  Original path: /myaccount/test-url-shortener.php
+
+Missing: /admin/formbuilder/documentation/help-center.php#php-session-settings-error
+  Referenced in: /public/assets/vendors/phpformbuilder/Form.php
+  Original path: /admin/formbuilder/documentation/help-center.php#php-session-settings-error
+
+Missing: /lib/php_image_magician.php
+  Referenced in: /public/js/plugins/filemanager/include/php_image_magician.php
+  Original path: lib/php_image_magician.php
+
+Missing: /classes/resize_class.php
+  Referenced in: /public/js/plugins/filemanager/include/php_image_magician.php
+  Original path: classes/resize_class.php
+
+Missing: /lang/languages.php
+  Referenced in: /public/js/plugins/filemanager/include/utils.php
+  Original path: lang/languages.php
+
+Missing: /lang/
+  Referenced in: /public/js/plugins/filemanager/include/utils.php
+  Original path: lang/
+
+Missing: /include/FtpClient.php
+  Referenced in: /public/js/plugins/filemanager/include/utils.php
+  Original path: include/FtpClient.php
+
+Missing: /include/FtpException.php
+  Referenced in: /public/js/plugins/filemanager/include/utils.php
+  Original path: include/FtpException.php
+
+Missing: /include/FtpWrapper.php
+  Referenced in: /public/js/plugins/filemanager/include/utils.php
+  Original path: include/FtpWrapper.php
+
+Missing: /../../../src/php/class.fileuploader.php
+  Referenced in: /public/js/fileuploader_ui/examples/default/php/form_upload.php
+  Original path: ../../../src/php/class.fileuploader.php
+
+Missing: /../../src/php/class.fileuploader.php
+  Referenced in: /public/js/_OLD_/fileuploader/examples/preloaded-files/index.php
+  Original path: ../../src/php/class.fileuploader.php
+
+Missing: /../../../../src/php/class.fileuploader.php
+  Referenced in: /public/js/_OLD_/fileuploader/examples/thirdparty/s3/php/index.php
+  Original path: ../../../../src/php/class.fileuploader.php
+
+Missing: /../../../../src/thirdparty/s3/php/vendor/autoload.php
+  Referenced in: /public/js/_OLD_/fileuploader/examples/thirdparty/s3/php/index.php
+  Original path: ../../../../src/thirdparty/s3/php/vendor/autoload.php
+
+Missing: /../../../../src/thirdparty/s3/php/fileuploader.s3.php
+  Referenced in: /public/js/_OLD_/fileuploader/examples/thirdparty/s3/php/index.php
+  Original path: ../../../../src/thirdparty/s3/php/fileuploader.s3.php
+
+Missing: /../../../../../src/thirdparty/s3/php/vendor/autoload.php
+  Referenced in: /public/js/_OLD_/fileuploader/examples/thirdparty/s3/php/php/form_upload.php
+  Original path: ../../../../../src/thirdparty/s3/php/vendor/autoload.php
+
+Missing: /../../../../../src/php/class.fileuploader.php
+  Referenced in: /public/js/_OLD_/fileuploader/examples/thirdparty/s3/php/php/form_upload.php
+  Original path: ../../../../../src/php/class.fileuploader.php
+
+Missing: /../../../../../src/thirdparty/s3/php/fileuploader.s3.php
+  Referenced in: /public/js/_OLD_/fileuploader/examples/thirdparty/s3/php/php/form_upload.php
+  Original path: ../../../../../src/thirdparty/s3/php/fileuploader.s3.php
+
+Missing: /myaccount/myaccount-actions/social-handler-backend.php
+  Referenced in: /social.php
+  Original path: /myaccount/myaccount-actions/social-handler-backend.php
+
+Missing: /myaccount/myaccount-actions/social-handler-like.php
+  Referenced in: /social.php
+  Original path: /myaccount/myaccount-actions/social-handler-like.php
+
+Missing: /post-handler.php
+  Referenced in: /social/create.php
+  Original path: post-handler.php
+
+Missing: /search-results.php
+  Referenced in: /social/search.php
+  Original path: /search-results.php
+
+Missing: /pages/miscellaneous/associations.php
+  Referenced in: /staff/index.php
+  Original path: /pages/miscellaneous/associations.php
+
+Missing: /app/social/activity-log.php
+  Referenced in: /staff/index.php
+  Original path: /app/social/activity-log.php
+
+Missing: /app/events/event-list.php
+  Referenced in: /staff/index.php
+  Original path: /app/events/event-list.php
+
+Missing: /app/social/followers.php
+  Referenced in: /staff/index.php
+  Original path: /app/social/followers.php
+
+Missing: /pages/user/profile.php
+  Referenced in: /staff/index.php
+  Original path: /pages/user/profile.php
+

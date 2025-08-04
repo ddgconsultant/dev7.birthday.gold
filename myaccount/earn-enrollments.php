@@ -181,6 +181,13 @@ $additionalstyles .= '
     margin-bottom: 1rem;
 }
 
+/* Page Content Wrapper */
+.page-content-wrapper {
+    position: relative;
+    overflow: visible;
+    padding-bottom: 2rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .earn-hero {
@@ -197,6 +204,10 @@ $additionalstyles .= '
     
     .reward-amount {
         font-size: 1.5rem;
+    }
+    
+    .page-content-wrapper {
+        min-height: calc(100vh - 400px) !important;
     }
 }
 </style>
@@ -228,7 +239,8 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 </div>
 
-<div class="container my-5 pb-5">
+<div class="page-content-wrapper" style="min-height: calc(100vh - 300px); margin-bottom: 60px;">
+<div class="container my-4">
     <div class="row">
         <div class="col-lg-8">
             <!-- Recommend Businesses Section -->
@@ -434,20 +446,10 @@ include($dir['core_components'] . '/bg_header.inc');
                     </a>
                 </div>
             </div>
-            
-            <!-- Help Card -->
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-question-circle me-2"></i>Need Help?
-                    </h5>
-                    <p class="card-text">Learn more about how allocations work and how to maximize your earnings.</p>
-                    <a href="/help/allocations" class="btn btn-sm btn-outline-primary">Learn More</a>
-                </div>
-            </div>
         </div>
     </div>
 </div>
+</div><!-- end page-content-wrapper -->
 
 
 <script>

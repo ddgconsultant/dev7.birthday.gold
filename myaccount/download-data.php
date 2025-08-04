@@ -9,17 +9,17 @@ $pagedata['metadescriptions'] = 'Download your Birthday Gold account data. Expor
 // Additional styles
 $additionalstyles = '
 <style>
-/* Download Data Styles - Matching Security Settings Pattern */
-.download-hero {
+/* Content Header Dark - From v7 theme */
+.content-header-dark {
     background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
     color: white;
-    padding: 2rem;
-    border-radius: 12px;
+    padding: 60px 0;
     position: relative;
     overflow: hidden;
+    margin-bottom: 30px;
 }
 
-.download-hero::before {
+.content-header-dark::before {
     content: "";
     position: absolute;
     top: -50%;
@@ -35,22 +35,27 @@ $additionalstyles = '
     50% { transform: scale(1.05); opacity: 0.8; }
 }
 
-.download-hero h1 {
-    font-size: 2rem;
+.content-header-dark h1 {
+    font-size: 2.5rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
     position: relative;
     z-index: 1;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
-.download-hero p {
+.content-header-dark p {
     font-size: 1.1rem;
     opacity: 0.9;
     position: relative;
     z-index: 1;
-    margin-bottom: 0;
 }
 
+.text-white-50 {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Download Data Styles */
 /* Data Category Cards */
 .data-card {
     background: white;
@@ -421,15 +426,17 @@ input:checked + .toggle-slider:before {
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
 ?>
 
-<div class="container my-4 pt-5">
-    <!-- Download Hero Section -->
-    <div class="download-hero mb-4">
-        <h1 class="text-white">Download My Data</h1>
-        <p>Export your personal information and account data in your preferred format</p>
+<!-- Dark Header Section -->
+<div class="content-header-dark">
+    <div class="container py-4">
+        <h1 class="mb-0">Download My Data</h1>
+        <p class="mb-0 text-white-50">Export your personal information and account data</p>
     </div>
+</div>
+
+<div class="container my-4">
 
     <!-- Select Controls -->
     <div class="select-controls">
