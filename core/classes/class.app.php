@@ -3183,24 +3183,48 @@ public function statvalue($key, $value = null, $dataType = null, $formatOutput =
   function calculateNextOccurrence($birthday, $days = 60)
   {
     $output = array();
-    $birthdayDT = new DateTime($birthday);
-    #   breakpoint($birthdayDT);
-    if (!$birthdayDT) {
+    
+    // Check if birthday is empty or null
+    if (empty($birthday)) {
       $output['result'] = false;
-      $output['date'] = $birthday;
-      #"Invalid date: $birthday");
+      $output['date'] = '';
+      $output['long_date'] = '';
       return $output;
     }
-    // Set to this year's birthday
-    $birthdayThisYear = $birthdayDT->setDate(date('Y'), $birthdayDT->format('m'), $birthdayDT->format('d'));
+    
+    // Try to create DateTime object with error handling
+    try {
+      $birthdayDT = new DateTime($birthday);
+    } catch (Exception $e) {
+      $output['result'] = false;
+      $output['date'] = $birthday;
+      $output['long_date'] = '';
+      return $output;
+    }
+    
+    // Get current year
+    $currentYear = date('Y');
+    $birthMonth = $birthdayDT->format('m');
+    $birthDay = $birthdayDT->format('d');
+    
+    // Create new DateTime for this year's birthday
+    try {
+      $birthdayThisYear = new DateTime($currentYear . '-' . $birthMonth . '-' . $birthDay);
+    } catch (Exception $e) {
+      $output['result'] = false;
+      $output['date'] = $birthday;
+      $output['long_date'] = '';
+      return $output;
+    }
 
     // If birthday has passed, set to next year
     if ($birthdayThisYear < new DateTime()) {
       $birthdayThisYear->modify('+1 year');
     }
 
-    // Subtract 60 days 
-    $checkoutDT = (clone $birthdayThisYear)->modify('-' . $days . ' days');
+    // Subtract days 
+    $checkoutDT = clone $birthdayThisYear;
+    $checkoutDT->modify('-' . $days . ' days');
 
     $output['long_date'] = $checkoutDT->format('l, F j, Y');
     $output['date'] = $checkoutDT->format('Y-m-d');

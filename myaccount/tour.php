@@ -1557,11 +1557,22 @@ $additionalstyles = '<style>
 // Page setup
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-#include($dir['core_components'] . '/bg_user_leftpanel.inc');
-echo '<div class="container">';
+?>
+
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-geo-alt-fill me-3"></i>Celebration Tour</h1>
+            <p class="lead mb-0">Plan your birthday celebration route and collect all your rewards</p>
+        </div>
+    </div>
+</div>
+
+<?php
+echo '<div class="container my-5">';
 // Start the myaccount layout
-echo '<div class="col-12" style="margin-top: 3rem;">';
+echo '<div class="col-12">';
 ?>
 <style>
 @media (min-width: 992px) {

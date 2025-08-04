@@ -440,9 +440,6 @@ include($dir['core_components'] . '/bg_header.inc');
                 <a href="/myaccount/invite" class="btn btn-primary btn-sm">
                     <i class="bi bi-plus-circle me-1"></i>Send Invite
                 </a>
-                <a href="/myaccount/friends-connect" class="btn btn-primary btn-sm">
-                    <i class="bi bi-phone me-1"></i>Import
-                </a>
                 <a href="/myaccount/invite-history" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-clock-history me-1"></i>History
                 </a>
@@ -453,9 +450,6 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="mobile-action-buttons">
             <a href="/myaccount/invite" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-circle me-1"></i>Invite
-            </a>
-            <a href="/myaccount/friends-connect" class="btn btn-primary btn-sm">
-                <i class="bi bi-phone me-1"></i>Import
             </a>
             <a href="/myaccount/invite-history" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-clock-history me-1"></i>History

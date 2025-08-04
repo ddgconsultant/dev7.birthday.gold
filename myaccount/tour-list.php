@@ -1,86 +1,55 @@
 <?php include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
 
-$additionalstyles .= '
+// Page configuration
+$pagetitle = 'Celebration Tours';
+
+$additionalstyles = '
 <style>
 @media print {
-body * {
-display: none;
+    body * {
+        display: none;
+    }
+
+    #printContainer {
+        display: block;
+    }
 }
 
-#printContainer {
-display: block;
+.tour-container {
+    max-width: 1200px;
+    margin: 0 auto;
 }
+
+.accordion-button {
+    font-weight: 500;
+}
+
+.accordion-button.collapsed {
+    background-color: transparent;
+}
+
+.sortable_item img {
+    border-radius: 4px;
 }
 </style>
 ';
 
-
-echo '
-<div class="container main-content">
-    <!-- Account page navigation-->
-
-
-    <div class="row d-none">
-        <div class="col-lg-4 mb-4  mt-5">
-            <!-- Billing card 1-->
-            <div class="card h-100 border-start-lg border-start-primary">
-                <div class="card-body">
-                    <div class="small text-muted">Number of Tours</div>
-                    <div class="h3">12</div>
-                    <a class="text-arrow-icon small" href="#!">
-                        Switch to yearly billing
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-            <!-- Billing card 2-->
-            <div class="card h-100 border-start-lg border-start-secondary">
-                <div class="card-body">
-                    <div class="small text-muted">Number of '.ucfirst($website['biznames']).' Enrolled</div>
-                    <div class="h3">10</div>
-                    <a class="text-arrow-icon small text-secondary" href="/myccount/enrollment-history">
-                        View enrollment history
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-            <!-- Billing card 3-->
-            <div class="card h-100 border-start-lg border-start-success">
-                <div class="card-body">
-                    <div class="small text-muted">Actions</div>
-                    <div class="h4 d-flex align-items-center">Print Map</div>
-                    <div class="h4 d-flex align-items-center">Print Steps</div>
-                    <a class="text-arrow-icon small text-success" href="#!">
-                        Upgrade plan
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-right">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-';
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 ?>
 
+<!-- Content Header Dark Section -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-map me-3"></i>Your Celebration Tours</h1>
+            <p class="lead mb-0">Plan your birthday celebration route and visit all your enrolled businesses</p>
+        </div>
+    </div>
+</div>
 
-    <!-- Account page navigation ===============================================-->
-    <div class="container  mt-5">
-        <h1 class="mb-4">Your Celebration Tours</h1>
+<div class="container my-5 pt-5">
+    <div class="tour-container">
         
         <div class="row">
             
@@ -137,6 +106,12 @@ echo '
             ?>
             
             <!-- Upcoming Tours -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Tour Management</h5>
+                <a href="/myaccount/tour" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Build A Tour
+                </a>
+            </div>
             <div class="card m-0 p-0 mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">Upcoming Tours <span class="badge bg-primary"><?php echo count($upcoming_dates); ?></span></h5>
@@ -277,3 +252,4 @@ echo '
 <?PHP
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
+?>

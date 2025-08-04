@@ -9,11 +9,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'toggle_shortener') {
         $enabled = $_POST['enabled'] === '1' ? 1 : 0;
         
-        // Store in database or config
-        $sql = "INSERT INTO bg_settings (setting_key, setting_value, modify_dt) VALUES ('shortener_enabled', ?, NOW()) 
-                ON DUPLICATE KEY UPDATE setting_value = ?, modify_dt = NOW()";
+        // Store in session since bg_settings table doesn't exist
+        $_SESSION['shortener_enabled'] = (bool)$enabled;
+        
+        // Also try to store in bg_user_attributes for persistence
+        $sql = "INSERT INTO bg_user_attributes (user_id, type, name, value, status, create_dt, modify_dt) 
+                VALUES (:user_id, 'system_setting', 'shortener_enabled', :value, 'active', NOW(), NOW()) 
+                ON DUPLICATE KEY UPDATE value = :value2, modify_dt = NOW()";
         $stmt = $database->prepare($sql);
-        $stmt->execute([$enabled, $enabled]);
+        $stmt->execute([
+            ':user_id' => 0, // System-wide setting
+            ':value' => $enabled,
+            ':value2' => $enabled
+        ]);
         
         echo "<p style='color: green;'>✓ Shortener " . ($enabled ? 'ENABLED' : 'DISABLED') . "</p>";
     }
@@ -26,12 +34,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Get current status
-$sql = "SELECT setting_value FROM bg_settings WHERE setting_key = 'shortener_enabled'";
-$stmt = $database->prepare($sql);
-$stmt->execute();
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$shortenerEnabled = $result ? ($result['setting_value'] == '1') : true; // Default to enabled
+// Get current status from config or session
+// First check if we have it stored in bg_user_attributes
+$sql = "SELECT value FROM bg_user_attributes 
+        WHERE user_id = 0 AND type = 'system_setting' AND name = 'shortener_enabled' AND status = 'active'
+        LIMIT 1";
+try {
+    $stmt = $database->prepare($sql);
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($result) {
+        $shortenerEnabled = (bool)$result['value'];
+        $_SESSION['shortener_enabled'] = $shortenerEnabled;
+    } else {
+        // Fall back to session or default
+        $shortenerEnabled = $_SESSION['shortener_enabled'] ?? true; // Default to enabled
+    }
+} catch (Exception $e) {
+    // If table doesn't exist or other error, use session
+    $shortenerEnabled = $_SESSION['shortener_enabled'] ?? true; // Default to enabled
+}
 
 // Get stats
 $sql = "SELECT 

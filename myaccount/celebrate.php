@@ -19,8 +19,14 @@ $selectist = $session->get('goldmine_selectionList', '');
 
 // Initialize birthdate for calendar calculations
 $birthdate = new DateTime($userbirthdate);
-$currentYear = (new DateTime())->format('Y');
+$currentDate = new DateTime();
+$currentYear = $currentDate->format('Y');
 $birthdate->setDate($currentYear, $birthdate->format('m'), $birthdate->format('d'));
+
+// If birthday has already passed this year, move to next year
+if ($birthdate < $currentDate) {
+    $birthdate->modify('+1 year');
+}
 
 // Get enrollments data
 $enrollments = $account->getEnrollments($current_user_data['user_id'], 'active');
@@ -40,13 +46,34 @@ $icalendar_end_date->modify('+' . $plandatafeatures['celebration_tour_days_after
 $icalendar_start_date_str = $icalendar_start_date->format('Y-m-d');
 $icalendar_end_date_str = $icalendar_end_date->format('Y-m-d');
 $tourlistdates = [];
+$upcomingTourDates = []; // Separate array for upcoming tours only
+$pastTourDates = []; // Array for past tours
+
+// Get all tours for the user (not just within the birthday window)
+$allToursStmt = $database->prepare("SELECT DISTINCT calendar_dt FROM bg_user_tours WHERE user_id = :user_id AND status='active' ORDER BY calendar_dt");
+$allToursStmt->execute([':user_id' => $user_id]);
+$allTours = $allToursStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Categorize all tours as past or upcoming
+foreach ($allTours as $tour) {
+    if ($tour['calendar_dt'] < $currentDate->format('Y-m-d')) {
+        $pastTourDates[] = $tour['calendar_dt'];
+    }
+}
+
+// Now get tours within the birthday window
 $stmt = $database->prepare("SELECT * FROM bg_user_tours WHERE user_id = :user_id AND calendar_dt BETWEEN :start_date AND :end_date and status='active'");
 $stmt->execute([':user_id' => $user_id, ':start_date' => $icalendar_start_date_str, ':end_date' => $icalendar_end_date_str]);
 $tours = $stmt->fetchAll(PDO::FETCH_ASSOC);
 foreach ($tours as $tour) {
     $tourlistdates[] = $tour['calendar_dt'];
+    // Check if tour date is in the future
+    if ($tour['calendar_dt'] >= $currentDate->format('Y-m-d')) {
+        $upcomingTourDates[] = $tour['calendar_dt'];
+    }
 }
 $tourlistdates = array_unique($tourlistdates);
+$upcomingTourDates = array_unique($upcomingTourDates);
 
 if ($selectist != '') {
     $count = count($selectist);
@@ -416,19 +443,30 @@ $additionalstyles .= '
                     </div></div>
                    
                 </div>
+                
+                <!-- View Tour List Link -->
+                <?php if (count($pastTourDates) > 0) { ?>
+                <div class="login-body pt-0">
+                    <div class="text-end">
+                        <a class="icon-link icon-link-hover" href="/myaccount/tour-list">
+                            View Tour List <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+                <?php } ?>
          <hr>
             
             <!-- Your Tours Card -->
-            <?php if ($birthdates['birthday_in_plan'] && count($tourlistdates) > 0) { ?>
+            <?php if ($birthdates['birthday_in_plan'] && count($upcomingTourDates) > 0) { ?>
         
                     <div class="login-header">
                        
                         <h1>Upcoming Scheduled Tours</h1>
-                        <p class="text-muted mb-3">You have <?php echo count($tourlistdates); ?> tour<?php echo count($tourlistdates) > 1 ? 's' : ''; ?> scheduled</p>
+                        <p class="text-muted mb-3">You have <?php echo count($upcomingTourDates); ?> tour<?php echo count($upcomingTourDates) > 1 ? 's' : ''; ?> scheduled</p>
                         </div>
                     <div class="login-body">
                         <div class="d-flex flex-column align-items-center">
-                            <?php foreach ($tourlistdates as $tourDate) { 
+                            <?php foreach ($upcomingTourDates as $tourDate) { 
                                 $tourDateTime = new DateTime($tourDate);
                                 $displayDate = $tourDateTime->format('l, F j');
                             ?>
@@ -441,10 +479,6 @@ $additionalstyles .= '
                         </div>
                         
                     
-                        <div class="text-end mt-3">
-                        <a class="icon-link icon-link-hover" href="/myaccount/tour-list">
-                            View Tour List <i class="bi bi-chevron-right"></i>
-                        </a>
                     </div>
             <?php } ?>
             
