@@ -126,47 +126,40 @@ $additionalstyles .= '
     margin-left: 0.5rem;
 }
 
-/* Modern tab navigation */
+/* Modern tab navigation - matching loginhistory style */
 .nav-tabs-modern {
     display: flex;
-    border-bottom: none;
-    margin-bottom: 0;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 2rem;
     gap: 0;
-    background: #f8f9fa;
-    border-radius: 0.5rem 0.5rem 0 0;
+    overflow: hidden;
     position: relative;
-    padding: 0.5rem 0.5rem 0 0.5rem;
-    border: 1px solid #dee2e6;
-    border-bottom: none;
 }
 
 .nav-tab-item {
     flex: 0 0 auto;
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 2rem;
     text-decoration: none;
     color: #6c757d;
     font-weight: 500;
-    font-size: 0.95rem;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 0.375rem 0.375rem 0 0;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
     transition: all 0.2s ease;
+    background: none;
+    border-radius: 0;
     position: relative;
-    margin-right: 0.25rem;
 }
 
 .nav-tab-item:hover {
     color: #495057;
     text-decoration: none;
-    background: #e9ecef;
+    background: #f8f9fa;
 }
 
 .nav-tab-item.active {
-    color: #495057;
-    background: white;
-    border-color: #dee2e6;
-    border-bottom-color: white;
-    z-index: 10;
+    color: #0d6efd;
+    border-bottom-color: #0d6efd !important;
+    background: none;
 }
 
 .nav-tab-item .badge {
@@ -216,26 +209,52 @@ $additionalstyles .= '
     border-radius: 0 25px 25px 0;
 }
 
-/* Search in header styling */
+/* Search in header styling - matching help page */
 .search-in-header {
-    margin-bottom: 2rem;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    position: relative;
 }
 
-.search-in-header .form-control {
-    border-left: none;
-    border-right: none;
+.search-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    font-size: 1.1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    background: white;
 }
 
-.search-in-header .input-group-text {
-    border: 1px solid #dee2e6;
+.search-input:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
 }
 
-.search-in-header .input-group-text:first-child {
-    border-right: none;
+.search-icon {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 1.1rem;
+    pointer-events: none;
 }
 
-.search-in-header .input-group-text:last-child {
-    border-left: none;
+.clear-icon {
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+
+.clear-icon:hover {
+    color: #495057;
 }
 
 /* Tab content styling */
@@ -282,14 +301,10 @@ include($dir['core_components'] . '/bg_header.inc');
             <p class="lead mb-4">Track and manage your birthday reward enrollments</p>
         </div>
         <!-- Search Bar in Header -->
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
-                <div class="input-group search-in-header">
-                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                    <input type="text" id="globalSearchBar" class="form-control search-input" placeholder="Search all enrollments...">
-                    <span class="input-group-text bg-white clear-icon" style="cursor: pointer; display: none;" id="globalClearIcon"><i class="bi bi-x-circle-fill"></i></span>
-                </div>
-            </div>
+        <div class="search-in-header">
+            <input type="text" id="globalSearchBar" class="search-input" placeholder="Search all enrollments..." autocomplete="off">
+            <i class="bi bi-search search-icon"></i>
+            <i class="bi bi-x-circle-fill clear-icon" id="globalClearIcon" style="display: none;"></i>
         </div>
     </div>
 </div>
@@ -548,14 +563,7 @@ foreach ($statusCounters as $status => $count) {
         if ($count > 5) {
             $rowpadding = 'py-1';
             $companytextsize = 'h5';
-            if ($statusDetails[$status]['allowsearchbar'] !== false) {
-                echo '<div class="input-group mb-4">';
-                echo '<span class="input-group-text"><i class="bi bi-search"></i></span>';
-                echo '<input type="text" id="searchBar-' . htmlspecialchars($status) . '" class="form-control search-input" data-status="' . htmlspecialchars($status) . '" placeholder="Search ' . htmlspecialchars($statusDetails[$status]['label']) . ' enrollments">';
-                echo '<span class="input-group-text clear-icon" style="cursor: pointer; display: none;" data-status="' . htmlspecialchars($status) . '"><i class="bi bi-x-circle-fill"></i></span>';
-                echo '<span class="input-group-text"><i class="bi bi-sort-alpha-down"></i></span>';
-                echo '</div>';
-            }
+            // Search bar removed - now using global search in header
         } else {
             $rowpadding = 'py-4';
             $companytextsize = 'h4';
