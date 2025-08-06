@@ -140,14 +140,14 @@ opacity: 1; /* Shows overlay when hovered */
         ' . $display->inputcsrf_token() . '
 
    <input class="d-none"  id="profile-image" name="profile-image" type="file"  />
-              <label class="mb-0 overlay-icon" for="profile-image">
+      <!--        <label class="mb-0 overlay-icon" for="profile-image">
                   <span class="bg-holder overlay overlay-0"></span>
                   <span class="z-1 text-white dark__text-white text-center fs-10">
                        <i class="bi bi-camera-fill  fs-7"></i>
                       <span class="d-block">' . $avatarbuttontag . '</span>
                   </span>
               </label>
-
+-->
         </div>
     </form>';
     
