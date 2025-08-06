@@ -138,18 +138,18 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Content Header Dark Section -->
 <div class="content-header-dark">
     <div class="container">
-        <h1>Join Our Team at Birthday Gold</h1>
+        <h1>Join Our Team at Birthday.Gold</h1>
         <p class="lead">Be part of a crew dedicated to celebrating life's special moments</p>
     </div>
 </div>
 
 <div class="container py-5">
-        <p class="lead text-center mb-5">We're looking for passionate, creative, and driven individuals to join us in making every birthday unforgettable. If you're ready to embark on a rewarding career journey, explore the opportunities with Birthday Gold!</p>
+        <p class="lead text-center mb-5">We're looking for passionate, creative, and driven individuals to join us in making every birthday unforgettable. If you're ready to embark on a rewarding career journey, explore the opportunities with Birthday.Gold!</p>
     <hr class="mt-5">    
         <h3 class="mt-5 mb-3">Why Work With Us?</h3>
         <div class="mb-3">
             <h6 class="mb-0">Innovative Culture</h6>
-            <p>At Birthday Gold, innovation is at the heart of everything we do. We encourage our team to think outside the box and bring new ideas to the table.</p>
+            <p>At Birthday.Gold, innovation is at the heart of everything we do. We encourage our team to think outside the box and bring new ideas to the table.</p>
         </div>
         <div class="mb-3">
             <h6 class="mb-0">Diverse Team</h6>
@@ -195,7 +195,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     </a>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="card-body pt-2 px-5">
                 <!-- Your job listings here -->
                 <div id="job-listings">
 <?PHP
@@ -268,7 +268,7 @@ echo '
       <hr class="mt-5">
         <h3 class="mt-5 mb-3">Apply Online</h3>
         <p>Ready to make a difference in how people celebrate their special day?</p>
-        <p>Log into your Birthday.Gold account and view the job listing to submit your application today and join us at Birthday Gold. We are excited to see what you bring to our team!</p>
+        <p>Log into your Birthday.Gold account and view the job listing to submit your application today and join us at Birthday.Gold. We are excited to see what you bring to our team!</p>
     </div>
 ';
 
