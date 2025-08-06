@@ -218,6 +218,11 @@ $additionalstyles .= "
     padding: 1rem !important; /* Reduced from 2rem */
     min-height: auto !important;
 }
+/* Disable hover transform on mobile */
+.content-block:hover {
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
 /* Make the block height smaller */
 .content-block p { 
     font-size: 0.85rem; 
