@@ -455,7 +455,7 @@ endif; ?>
     position: fixed;
     bottom: 2rem;
     right: 2rem;
-    background: var(--bs-primary);
+    background: var(--bs-success); /* Green to encourage clicking */
     color: white;
     width: 60px;
     height: 60px;
@@ -465,7 +465,7 @@ endif; ?>
     justify-content: center;
     font-size: 1.2rem;
     font-weight: bold;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4); /* Green shadow */
     cursor: pointer;
     z-index: 1040;
     transition: all 0.3s ease;
@@ -473,7 +473,7 @@ endif; ?>
 
 .selection-counter:hover {
     transform: scale(1.1);
-    background: var(--bs-primary);
+    background: var(--bs-success);
     filter: brightness(0.9);
 }
 

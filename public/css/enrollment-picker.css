@@ -1,7 +1,7 @@
 /* Mobile-First Enrollment Picker Styles */
 
 :root {
-    --primary-color: #6c63ff;
+    --primary-color: var(--bs-primary); /* Use Bootstrap primary color */
     --success-color: #28a745;
     --warning-color: #ffc107;
     --danger-color: #dc3545;
@@ -495,7 +495,8 @@ body {
 }
 
 .action-btn.enroll:hover {
-    background: #5a52d5;
+    background: var(--bs-primary);
+    filter: brightness(0.9);
 }
 
 .action-btn.enrolled {
