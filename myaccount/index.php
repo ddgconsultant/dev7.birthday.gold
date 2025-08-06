@@ -580,8 +580,18 @@ echo '
             <a href="/myaccount/recommend-business" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
                 <div><i class="bi bi-building-add me-2"></i>Recommend Business</div>
                 <i class="bi bi-chevron-right"></i>
-            </a>
-        </div>
+            </a>';
+
+// Show Claim Business link for business accounts
+if ($current_user_data['account_type'] == 'business') {
+    echo '
+            <a href="/myaccount/claim-business" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                <div><i class="bi bi-building-check me-2"></i>Claim a Business</div>
+                <i class="bi bi-chevron-right"></i>
+            </a>';
+}
+
+echo '        </div>
     </div>
 </div>';
 
