@@ -594,15 +594,18 @@ body {
 }
 
 .first-picker-popover .popover-body {
-    background: #667eea;
+    background: #212529; /* Black background for better visibility */
+    /* Alternative: background: var(--bs-primary); */ /* Easy switch to Bootstrap primary */
     color: white;
     font-weight: 500;
     padding: 12px 16px;
     border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Added shadow for more prominence */
 }
 
 .first-picker-popover .popover-arrow::after {
-    border-left-color: #667eea;
+    border-left-color: #212529; /* Match the black background */
+    /* Alternative: border-left-color: var(--bs-primary); */
 }
 
 /* Smooth transitions for header elements */
