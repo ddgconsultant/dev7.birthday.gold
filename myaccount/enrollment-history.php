@@ -911,7 +911,15 @@ $csrfToken = $display->inputcsrf_token('tokenonly');
             </div>
             <p class="p-4">Scan this QR code with your phone to download from the App Store.</p>
             <div class="modal-body text-center mb-5">
-                <img id="qrCodeImage" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' style='margin:auto;background:none;display:block'%3E%3Ccircle cx='50' cy='50' r='40' stroke='%23000000' stroke-width='10' fill='none' stroke-linecap='round'/%3E%3CanimateTransform attributeName='transform' type='rotate' repeatCount='indefinite' dur='1s' values='0 50 50;360 50 50'%3E%3C/animateTransform%3E%3C/svg%3E" alt="Loading QR Code" style="width: 200px; height: 200px;" loading="lazy">
+                <!-- Loading spinner -->
+                <div id="qrCodeLoader" class="py-4">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading QR Code...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Loading QR Code...</p>
+                </div>
+                <!-- QR Code image (hidden initially) -->
+                <img id="qrCodeImage" src="" alt="QR Code" style="width: 200px; height: 200px; display: none;" loading="lazy">
             </div>
         </div>
     </div>
@@ -925,6 +933,17 @@ $csrfToken = $display->inputcsrf_token('tokenonly');
         var button = event.relatedTarget;
         var qrLink = button.getAttribute('data-qr');
         var modalImage = qrCodeModal.querySelector('#qrCodeImage');
+        var loader = qrCodeModal.querySelector('#qrCodeLoader');
+        
+        // Show loader, hide image
+        loader.style.display = 'block';
+        modalImage.style.display = 'none';
+        
+        // Load image
+        modalImage.onload = function() {
+            loader.style.display = 'none';
+            modalImage.style.display = 'block';
+        };
         modalImage.src = qrLink;
     });
 
