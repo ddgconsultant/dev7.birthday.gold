@@ -588,6 +588,23 @@ body {
     }
 }
 
+/* First-time picker help popover styling */
+.first-picker-popover {
+    z-index: 9999;
+}
+
+.first-picker-popover .popover-body {
+    background: #667eea;
+    color: white;
+    font-weight: 500;
+    padding: 12px 16px;
+    border-radius: 8px;
+}
+
+.first-picker-popover .popover-arrow::after {
+    border-left-color: #667eea;
+}
+
 /* Smooth transitions for header elements */
 .search-bar, .category-filter {
     transition: all 0.3s ease-in-out;

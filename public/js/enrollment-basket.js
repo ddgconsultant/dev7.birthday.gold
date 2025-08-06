@@ -228,6 +228,11 @@ function updateBasketUI() {
         basketCount.textContent = selectionBasket.length;
         modalBasketCount.textContent = selectionBasket.length;
         
+        // Show first-time picker help popover (only for the very first item)
+        if (selectionBasket.length === 1 && !sessionStorage.getItem('pickerHelpShown')) {
+            showFirstPickerHelp();
+        }
+        
         // Build items HTML with more details
         basketItems.innerHTML = selectionBasket.map(item => `
             <div class="basket-item">
@@ -356,5 +361,45 @@ async function confirmEnrollments() {
 // Redirect to my account page
 function redirectToMyAccount() {
     window.location.href = '/myaccount';
+}
+
+// Show first-time picker help popover
+function showFirstPickerHelp() {
+    const counter = document.getElementById('selectionCounter');
+    if (!counter) return;
+    
+    // Mark as shown in session storage
+    sessionStorage.setItem('pickerHelpShown', 'true');
+    
+    // Initialize Bootstrap popover
+    const popover = new bootstrap.Popover(counter, {
+        content: 'Great choice! Click here to review and confirm your selections.',
+        placement: 'left',
+        trigger: 'manual',
+        customClass: 'first-picker-popover',
+        html: true,
+        animation: true
+    });
+    
+    // Show the popover
+    popover.show();
+    
+    // Auto-hide after 10 seconds
+    setTimeout(() => {
+        popover.hide();
+        // Clean up after hiding
+        setTimeout(() => {
+            popover.dispose();
+        }, 500);
+    }, 10000);
+    
+    // Also hide when user clicks the cart
+    counter.addEventListener('click', function hidePopoverOnClick() {
+        popover.hide();
+        setTimeout(() => {
+            popover.dispose();
+        }, 500);
+        counter.removeEventListener('click', hidePopoverOnClick);
+    }, { once: true });
 }
 
