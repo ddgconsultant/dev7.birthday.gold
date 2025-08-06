@@ -207,9 +207,14 @@ $additionalstyles .= "
 @media (max-width:767.98px) {
 /* Reduce icon size */
 .icon-small { font-size: 2.5rem !important; margin-right: 0.5rem; vertical-align: baseline; }
+/* Specific adjustment for list-check icon */
+.bi-list-check.icon-small { 
+    position: relative;
+    top: -2px; /* Slight adjustment to align with other icons */
+}
 .negative-margin-top { margin-top: -40px !important;         /* Adjust the value as needed */ }
 /* Reduce heading size and move it to the right of the icon */
-.h2-small { font-size: 1.1rem; display: inline-block; margin-left: 0.5rem; vertical-align: baseline; }
+.h2-small { font-size: 1.3rem; display: inline-block; margin-left: 0.5rem; vertical-align: baseline; }
 /* Container for icon + label to ensure alignment */
 .content-block > div:first-child {
     width: 250px !important; /* Fixed width for icon + CELEBRATE */
