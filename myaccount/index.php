@@ -192,6 +192,12 @@ $additionalstyles .= "
 /* General styling for large screens */
 .icon-small { font-size: 2rem; }
 .h2-small { font-size: 1.5rem; }
+/* Hide left panel on screens 991px and below (below lg breakpoint) */
+@media (max-width: 991.98px) {
+    .border-right.d-none.d-md-block {
+        display: none !important;
+    }
+}
 /* White background for action buttons */
 .content-block {
     background: white;
