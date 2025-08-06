@@ -455,7 +455,7 @@ endif; ?>
     position: fixed;
     bottom: 2rem;
     right: 2rem;
-    background: #667eea;
+    background: var(--bs-primary);
     color: white;
     width: 60px;
     height: 60px;
@@ -465,7 +465,7 @@ endif; ?>
     justify-content: center;
     font-size: 1.2rem;
     font-weight: bold;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
     cursor: pointer;
     z-index: 1040;
     transition: all 0.3s ease;
@@ -473,7 +473,8 @@ endif; ?>
 
 .selection-counter:hover {
     transform: scale(1.1);
-    background: #5a52d5;
+    background: var(--bs-primary);
+    filter: brightness(0.9);
 }
 
 .selection-counter i {
@@ -594,8 +595,7 @@ body {
 }
 
 .first-picker-popover .popover-body {
-    background: #212529; /* Black background for better visibility */
-    /* Alternative: background: var(--bs-primary); */ /* Easy switch to Bootstrap primary */
+    background: var(--bs-primary); /* Using Bootstrap primary color */
     color: white;
     font-weight: 500;
     padding: 12px 16px;
@@ -603,9 +603,29 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Added shadow for more prominence */
 }
 
-.first-picker-popover .popover-arrow::after {
-    border-left-color: #212529; /* Match the black background */
-    /* Alternative: border-left-color: var(--bs-primary); */
+/* Fix popover arrow for different placements */
+.first-picker-popover .popover-arrow::before {
+    border-left-color: var(--bs-primary) !important;
+}
+
+.first-picker-popover.bs-popover-start .popover-arrow::after,
+.first-picker-popover.bs-popover-auto[data-popper-placement^="left"] .popover-arrow::after {
+    border-left-color: var(--bs-primary) !important;
+}
+
+.first-picker-popover.bs-popover-end .popover-arrow::after,
+.first-picker-popover.bs-popover-auto[data-popper-placement^="right"] .popover-arrow::after {
+    border-right-color: var(--bs-primary) !important;
+}
+
+.first-picker-popover.bs-popover-top .popover-arrow::after,
+.first-picker-popover.bs-popover-auto[data-popper-placement^="top"] .popover-arrow::after {
+    border-top-color: var(--bs-primary) !important;
+}
+
+.first-picker-popover.bs-popover-bottom .popover-arrow::after,
+.first-picker-popover.bs-popover-auto[data-popper-placement^="bottom"] .popover-arrow::after {
+    border-bottom-color: var(--bs-primary) !important;
 }
 
 /* Smooth transitions for header elements */
