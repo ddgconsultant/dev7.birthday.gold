@@ -212,7 +212,7 @@ $additionalstyles .= "
 .h2-small { font-size: 1.1rem; display: inline-block; margin-left: 0.5rem; vertical-align: middle; }
 /* Container for icon + label to ensure alignment */
 .content-block > div:first-child {
-    width: 160px !important; /* Fixed width for icon + CELEBRATE */
+    width: 200px !important; /* Fixed width for icon + CELEBRATE */
     margin-left: 10px !important; /* Same left margin for all */
     text-align: left !important;
 }
