@@ -202,8 +202,6 @@ function updateBasketUI() {
     const basketItems = document.getElementById('basketItems');
     const selectedInfo = document.getElementById('selectedInfo');
     const selectedCount = document.getElementById('selectedCount');
-    const confirmButtonCount = document.getElementById('confirmButtonCount');
-    const confirmButton = document.getElementById('confirmButton');
     
     // Update the purple header selected count
     if (selectedInfo && selectedCount) {
@@ -215,16 +213,8 @@ function updateBasketUI() {
         }
     }
     
-    // Update confirm button count
-    if (confirmButtonCount) {
-        confirmButtonCount.textContent = selectionBasket.length;
-    }
-    
-    // Update confirm button text based on count
-    if (confirmButton && window.userData && window.userData.labels) {
-        const btnHtml = `<i class="bi bi-check-circle"></i> Confirm ${selectionBasket.length} ${selectionBasket.length === 1 ? window.userData.labels.token : window.userData.labels.token + 's'}`;
-        confirmButton.innerHTML = btnHtml;
-    }
+    // Update confirm button count (removed - no longer needed)
+    // Button now just says "Confirm" without count
     
     if (selectionBasket.length > 0) {
         counter.style.display = 'flex';

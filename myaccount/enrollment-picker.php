@@ -429,7 +429,7 @@ endif; ?>
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-basket"></i> <?php echo $label_tokened; ?> Companies (<span id="modalBasketCount">0</span>)
+                    Businesses Picked (<span id="modalBasketCount">0</span>)
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -440,8 +440,8 @@ endif; ?>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="clearBasket()">Clear All</button>
-                <button type="button" class="btn btn-primary" onclick="confirmEnrollments()" id="confirmButton">
-                    <i class="bi bi-check-circle"></i> Confirm <span id="confirmButtonCount">0</span> <?php echo $qik->plural2(0, $label_token); ?>
+                <button type="button" class="btn btn-success" onclick="confirmEnrollments()" id="confirmButton">
+                    <i class="bi bi-check-circle"></i> Confirm
                 </button>
             </div>
         </div>
