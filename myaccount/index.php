@@ -214,7 +214,13 @@ $additionalstyles .= "
 }
 .negative-margin-top { margin-top: -40px !important;         /* Adjust the value as needed */ }
 /* Reduce heading size and move it to the right of the icon */
-.h2-small { font-size: 1.3rem; display: inline-block; margin-left: 0.5rem; vertical-align: baseline; }
+.h2-small { 
+    font-size: 1.3rem; 
+    display: inline-block; 
+    margin-left: 0.5rem; 
+    vertical-align: baseline;
+    margin-bottom: -0.25rem !important; /* Pull label down closer to caption */
+}
 /* Container for icon + label to ensure alignment */
 .content-block > div:first-child {
     width: 250px !important; /* Fixed width for icon + CELEBRATE */
@@ -310,7 +316,7 @@ $additionalstyles.='
 /* Mobile adjustments for phrase-center */
 @media (max-width:767.98px) {
   .phrase-center {
-    margin-top: 2px !important;
+    margin-top: -2px !important; /* Reduced gap from label */
     margin-bottom: 2px !important;
     font-size: 1.2rem !important; /* Increased from 0.8rem */
   }
