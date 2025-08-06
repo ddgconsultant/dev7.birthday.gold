@@ -232,7 +232,7 @@ $additionalstyles .= "
     text-align: left; 
     display: flex; 
     align-items: center; 
-    padding: 0.5rem 1rem !important; /* Further reduced vertical padding */
+    padding: 1rem 1rem 0.5rem 1rem !important; /* More top padding, less bottom */
     min-height: auto !important;
 }
 /* Disable hover transform on mobile */
