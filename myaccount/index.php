@@ -210,6 +210,12 @@ $additionalstyles .= "
 .negative-margin-top { margin-top: -40px !important;         /* Adjust the value as needed */ }
 /* Reduce heading size and move it to the right of the icon */
 .h2-small { font-size: 1.1rem; display: inline-block; margin-left: 0.5rem; vertical-align: middle; }
+/* Container for icon + label to ensure alignment */
+.content-block > div:first-child {
+    width: 160px !important; /* Fixed width for icon + CELEBRATE */
+    margin-left: 10px !important; /* Same left margin for all */
+    text-align: left !important;
+}
 /* Adjust the flex container and reduce padding/height */
 .content-block { 
     text-align: left; 
