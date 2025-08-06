@@ -1,7 +1,7 @@
 <?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-$pagedata['pagetitle']='Birthday Freebies Service Online - Birthday Gold';
+$pagedata['pagetitle']='Birthday Freebies Service Online - Birthday.Gold';
 $pagedata['metakeywords']='Birthday Freebies, Birthday Freebies Online, Birthday Freebies Near Me, Birthday Freebies Service, Freebies on Birthday';
 $pagedata['metadescriptions']='Get the best Birthday Freebies Online & Near Me! Enjoy exclusive Freebies on Birthday with our top Birthday Freebies Service. Sign up now!';
 
@@ -220,6 +220,7 @@ $additionalstyles = '
 /* CTA Buttons */
 .hero-cta {
     margin-top: 2rem;
+    text-align: center;
 }
 
 .btn-get-started {
@@ -232,6 +233,8 @@ $additionalstyles = '
     font-weight: 600;
     text-decoration: none;
     display: inline-block;
+    width: 100%;
+    max-width: 400px;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 }
@@ -300,8 +303,8 @@ include($dir['core_components'] . '/bg_header.inc');
                     ### ADMIN PAGE EDITOR: START-body-1 ###
                     echo '
                     <h1>Celebrate Your Birthday with Us!</h1>
-                    <p class="lead text-muted">At Birthday.Gold, our mission is simple: we want everyone to enjoy their birthdays to the fullest. It all started when we saw someone joyfully celebrating with birthday freebies, but they did not share how they got them.</p>
-                    <p class="text-muted">We realized that not everyone knows the ins and outs of signing up for these perks or navigating the process to claim them. That is why we are here to make it easy for you.</p>
+                    <p class="lead text-muted">At Birthday.Gold, our mission is simple: we want everyone to enjoy their birthdays to the fullest. It all started when we saw someone joyfully celebrating with birthday freebies, but they didn\'t share how they got them. We realized that not everyone knows the ins and outs of signing up for these perks or navigating the process to claim them. It\'s more than just walking into a business and asking for your birthday treat—it can be a bit complicated.</p>
+                    <p class="text-muted">That\'s why we\'re here to make it easy for you. With Birthday.Gold, all you have to do is sign up for our service, select your favorite businesses, and we\'ll handle the rest. You\'ll receive notifications, a handy map of where to go, and all that\'s left for you to do is celebrate and enjoy!</p>
                     ';
                     ### ADMIN PAGE EDITOR: END-body-1 ###
                     ?>

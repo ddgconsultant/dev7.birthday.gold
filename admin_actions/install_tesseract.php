@@ -240,7 +240,7 @@ function testTesseract($tesseractPath) {
     $img = imagecreate(200, 50);
     $bg = imagecolorallocate($img, 255, 255, 255);
     $textColor = imagecolorallocate($img, 0, 0, 0);
-    imagestring($img, 5, 10, 15, "Birthday Gold", $textColor);
+    imagestring($img, 5, 10, 15, "Birthday.Gold", $textColor);
     imagepng($img, $testImage);
     imagedestroy($img);
     

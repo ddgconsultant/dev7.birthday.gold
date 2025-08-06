@@ -4,8 +4,14 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 #-------------------------------------------------------------------------------
 # PREP VARIABLES PAGE
 #-------------------------------------------------------------------------------
+// Get current user data
+$current_user_data = $session->get('current_user_data');
+if (empty($current_user_data) && $account->isactive()) {
+    $current_user_data = $account->getuser();
+}
+
 $staffid = isset($_GET['i']) ? $qik->decodeId($_GET['i']) : 0;
-$is_owner = ($staffid == $current_user_data['user_id']);
+$is_owner = (!empty($current_user_data['user_id']) && $staffid == $current_user_data['user_id']);
 $edit_mode = isset($_GET['edit']) && $is_owner; // This allows edit mode only if it's the owner
 
 
@@ -101,7 +107,7 @@ echo '
 <div class="content-header-dark">
     <div class="container">
         <h1>Meet Our Team</h1>
-        <p class="lead">Get to know the passionate people behind Birthday Gold</p>
+        <p class="lead">Get to know the passionate people behind Birthday.Gold</p>
     </div>
 </div>
 

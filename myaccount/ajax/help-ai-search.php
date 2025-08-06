@@ -61,7 +61,7 @@ try {
         [
             'title' => 'Business Partnership',
             'url' => '/business/partner',
-            'description' => 'Learn how businesses can partner with Birthday Gold',
+            'description' => 'Learn how businesses can partner with Birthday.Gold',
             'keywords' => ['business', 'partner', 'merchant', 'restaurant', 'store', 'partnership']
         ],
         [
@@ -85,7 +85,7 @@ try {
         );
     }, $helpTopics);
     
-    $aiPrompt = "You are a help search assistant for Birthday Gold. A user is searching for: \"$query\"
+    $aiPrompt = "You are a help search assistant for Birthday.Gold. A user is searching for: \"$query\"
 
 Available help topics:
 " . implode("\n", $topicsContext) . "

@@ -1,6 +1,15 @@
-<?php include ($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php'); 
+<?php 
+/**
+ * ChatGPT Integration for Company Description Rewriting
+ * 
+ * SECURITY NOTE: This file previously contained a hardcoded API key which has been removed.
+ * API keys should NEVER be committed to version control.
+ * The OpenAI API key should be configured in your config-ai.inc file.
+ */
 
-require_once('vendor/autoload.php');
+include ($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php'); 
+
+require_once($_SERVER['DOCUMENT_ROOT'] . '/vendor/autoload.php');
 
 use GuzzleHttp\Client;
 
@@ -54,22 +63,39 @@ INSTRUCTIONS:
 - and make it only one sentence.";
 
 
-    // Make request to GPT API
+    // Make request to GPT API using modern endpoint
     try {
-        $response = $client->post('v1/engines/davinci-instruct-beta/completions', [
+        // Get API key from config - NEVER hardcode API keys!
+        // Using the existing openai_goldie configuration
+        if (!isset($sitesettings_ai['ai']['openai_goldie']['api_key']) || empty($sitesettings_ai['ai']['openai_goldie']['api_key'])) {
+            throw new Exception('OpenAI API key not configured. Please check your AI configuration file.');
+        }
+        $apiKey = $sitesettings_ai['ai']['openai_goldie']['api_key'];
+        
+        $response = $client->post('v1/chat/completions', [
             'headers' => [
-                'Authorization' => 'Bearer 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', // Replace with your OpenAI API key bg_datarewriter
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type' => 'application/json',
             ],
             'json' => [
-                #'model' => "text-babbage-001",
-                'prompt' => $prompt,
-                'max_tokens' => 1000, // Limit tokens (words) returned by the API
-                'temperature' => 0.1,  // Adjust as needed
+                'model' => 'gpt-3.5-turbo', // Using current model
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are a helpful assistant that rewrites business descriptions.'
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt
+                    ]
+                ],
+                'max_tokens' => 1000,
+                'temperature' => 0.1,
             ],
         ]);
 
         $result = json_decode($response->getBody()->getContents(), true);
-        $rewrittenPhrase = $result['choices'][0]['text'] ?? '';
+        $rewrittenPhrase = $result['choices'][0]['message']['content'] ?? '';
 #$search=array($company.':', $company);
 $search='';
 
@@ -101,8 +127,32 @@ flush();
 
           # sleep(20);
 
+    } catch (GuzzleHttp\Exception\ClientException $e) {
+        $response = $e->getResponse();
+        $responseBody = $response->getBody()->getContents();
+        $errorData = json_decode($responseBody, true);
+        
+        echo '<div style="color: red; border: 1px solid red; padding: 10px; margin: 10px 0;">';
+        echo '<strong>OpenAI API Error:</strong><br>';
+        echo 'Status: ' . $response->getStatusCode() . '<br>';
+        echo 'Message: ' . ($errorData['error']['message'] ?? 'Unknown error') . '<br>';
+        
+        if (strpos($errorData['error']['message'] ?? '', 'deprecated') !== false) {
+            echo '<br><strong>Note:</strong> The model being used is deprecated. Please update to use gpt-3.5-turbo or gpt-4.<br>';
+        }
+        if (strpos($errorData['error']['message'] ?? '', 'API key') !== false || $response->getStatusCode() == 401) {
+            echo '<br><strong>Note:</strong> There appears to be an issue with the API key. Please check your OpenAI API key configuration.<br>';
+        }
+        
+        echo '</div>';
+        
+        if ($this->debug ?? false) {
+            echo '<pre>Full Response: ' . htmlspecialchars($responseBody) . '</pre>';
+        }
     } catch (Exception $e) {
-        echo 'API or Database error: ' . $e->getMessage();
+        echo '<div style="color: red; border: 1px solid red; padding: 10px; margin: 10px 0;">';
+        echo '<strong>Error:</strong> ' . htmlspecialchars($e->getMessage());
+        echo '</div>';
     }
 }
 

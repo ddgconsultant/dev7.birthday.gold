@@ -70,7 +70,7 @@ if (!empty($_SESSION['mail_box_state'])) {
     }
 }
 
-$pagetitle = "Message - " . ($message['subject'] ?? 'Birthday Gold Mail');
+$pagetitle = "Message - " . ($message['subject'] ?? 'Birthday.Gold Mail');
 
 // Add v7 theme CSS and custom styles
 $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">

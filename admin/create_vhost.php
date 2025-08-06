@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Build Directory for vHost
         "mkdir -p /var/www/BIRTHDAY_SERVER/{$subdomain}.{$domain}",
         "chown -R www-data:www-data /var/www/BIRTHDAY_SERVER/{$subdomain}.{$domain}",
-        "echo \"<?php echo 'Hello Birthday Gold World - '. date('r'); ?>\" > /var/www/BIRTHDAY_SERVER/{$subdomain}.{$domain}/index.php",
+        "echo \"<?php echo 'Hello Birthday.Gold World - '. date('r'); ?>\" > /var/www/BIRTHDAY_SERVER/{$subdomain}.{$domain}/index.php",
         "echo \"subdomain={$subdomain}\" >  /var/www/BIRTHDAY_SERVER/{$subdomain}.{$domain}/subdomain.id",
         "chmod 444  /var/www/BIRTHDAY_SERVER/{$subdomain}.{$domain}/subdomain.id",
         "sudo chown -R www-data:www-data /var/www/BIRTHDAY_SERVER/{$subdomain}.{$domain}",

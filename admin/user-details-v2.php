@@ -366,7 +366,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <h1 class="mb-2">User Details</h1>
             </div>
             <div>
-                <a href="/admin/user-list-v2" class="btn btn-outline-secondary">
+                <a href="/admin/user-list" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>Back to Users
                 </a>
             </div>

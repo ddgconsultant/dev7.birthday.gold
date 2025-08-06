@@ -348,7 +348,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     </div>
                     <div>
                         <h2 class="h3 mb-0">Refer Friends</h2>
-                        <p class="text-muted mb-0">Share Birthday Gold with friends and earn rewards</p>
+                        <p class="text-muted mb-0">Share Birthday.Gold with friends and earn rewards</p>
                     </div>
                 </div>
                 

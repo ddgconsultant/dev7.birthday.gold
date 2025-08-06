@@ -129,7 +129,7 @@ function geocodeAddress($address, $city, $state, $zip_code, $system) {
     ]);
     
     $headers = [
-        'User-Agent: Birthday Gold Location Geocoder/1.0'
+        'User-Agent: Birthday.Gold Location Geocoder/1.0'
     ];
     
     try {

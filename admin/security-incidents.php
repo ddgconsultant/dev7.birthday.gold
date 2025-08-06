@@ -148,7 +148,7 @@ $additionalstyles .= '
 </style>';
 
 echo '    
-<div class="container main-content mt-0 pt-0">
+<div class="container content-header-admin mt-0 pt-0">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">Security Incident History</h2>
         <a href="/security/report" class="btn btn-sm btn-primary">Report New Incident</a>

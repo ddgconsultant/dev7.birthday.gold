@@ -407,7 +407,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="container">
         <div class="text-center">
             <h1 class="mb-3"><i class="bi bi-people-fill me-3"></i>My Friends & Invites</h1>
-            <p class="lead mb-0">Track your invitations and see which friends have joined Birthday Gold</p>
+            <p class="lead mb-0">Track your invitations and see which friends have joined Birthday.Gold</p>
             <?php if ($totalInvites > 3): ?>
             <div class="search-box mt-4">
                 <div class="input-group">
@@ -581,7 +581,7 @@ include($dir['core_components'] . '/bg_header.inc');
                             <i class="bi bi-people"></i>
                         </div>
                         <h4>No invites sent yet</h4>
-                        <p class="text-muted mb-4">Start building your Birthday Gold community by inviting friends and family!</p>
+                        <p class="text-muted mb-4">Start building your Birthday.Gold community by inviting friends and family!</p>
                         <a href="/myaccount/invite" class="btn btn-primary">
                             <i class="bi bi-plus-circle me-2"></i>Send Your First Invite
                         </a>

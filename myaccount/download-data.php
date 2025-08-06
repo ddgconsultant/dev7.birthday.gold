@@ -2,9 +2,9 @@
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Page metadata
-$pagedata['pagetitle'] = 'Download My Data - Birthday Gold';
-$pagedata['metakeywords'] = 'Birthday Gold Data Export, Download Personal Data, GDPR, Privacy';
-$pagedata['metadescriptions'] = 'Download your Birthday Gold account data. Export your personal information, activity history, and preferences in various formats.';
+$pagedata['pagetitle'] = 'Download My Data - Birthday.Gold';
+$pagedata['metakeywords'] = 'Birthday.Gold Data Export, Download Personal Data, GDPR, Privacy';
+$pagedata['metadescriptions'] = 'Download your Birthday.Gold account data. Export your personal information, activity history, and preferences in various formats.';
 
 // Additional styles
 $additionalstyles = '
@@ -652,7 +652,7 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         <div class="data-card-body">
             <p class="data-description">
-                Technical information about your devices and how you access Birthday Gold.
+                Technical information about your devices and how you access Birthday.Gold.
             </p>
             <div class="data-items">
                 <div class="data-item">

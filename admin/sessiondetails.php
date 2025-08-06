@@ -26,7 +26,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- ===============================================-->
 <!--    Main Content-->
 <!-- ===============================================-->
-<div class="container main-content">
+<div class="container content-header-admin mt-4">
 
 
   <?PHP
@@ -52,8 +52,21 @@ FROM   bg_sessiontracking WHERE   id = " . $p_sessionid . "";
   $stmt->execute();
 
   $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-  $row = $result[0];
+  $row = isset($result[0]) ? $result[0] : null;
   
+  // Check if we have a valid session record
+  if (!$row) {
+    echo '<div class="container content-header-admin mt-4">
+            <div class="alert alert-warning">
+              <h4>Session Not Found</h4>
+              <p>The requested session record could not be found.</p>
+              <a href="/admin/user-list" class="btn btn-primary">Return to User List</a>
+            </div>
+          </div>';
+    include($dir['core_components'] . '/bg_footer.inc');
+    $app->outputpage();
+    exit;
+  }
 
   $additionalstyles .= '
 <style>
@@ -70,9 +83,14 @@ color: #343a40; /* Optional: even darker text color for better contrast on hover
 ';
 
 
+  // Determine the return URL
+  $returnUrl = isset($_SERVER['HTTP_REFERER']) && !empty($_SERVER['HTTP_REFERER']) 
+    ? $_SERVER['HTTP_REFERER'] 
+    : '/admin/user-list';
+  
   echo '
 <div class="d-flex justify-content-end mb-3">
-<a href="' . $_SERVER['HTTP_REFERER'] . '" class="btn btn-primary">Return to User Details</a>
+<a href="' . htmlspecialchars($returnUrl) . '" class="btn btn-primary">Return to User Details</a>
 </div>
 <div class="card">
 <div class="card-body">
@@ -83,39 +101,39 @@ color: #343a40; /* Optional: even darker text color for better contrast on hover
 <tbody>
 <tr>
 <td class="bg-100 fw-bold h5" style="width: 30%;">id:</td>
-<td>' . $row['id'] . '</td>
+<td>' . htmlspecialchars($row['id']) . '</td>
 </tr>
 <tr>
 <td class="bg-100 fw-bold h5" style="width: 30%;">create_dt:</td>
-<td>' . $row['create_dt'] . '</td>
+<td>' . htmlspecialchars($row['create_dt']) . '</td>
 </tr>
 <tr>
 <td class="bg-100 fw-bold h5" style="width: 30%;">ip:</td>
-<td>' . $row['ip'] . '</td>
+<td>' . htmlspecialchars($row['ip']) . '</td>
 </tr>
 <tr>
 <td class="bg-100 fw-bold h5" style="width: 30%;">user_id:</td>
-<td>' . $row['user_id'] . '</td>
+<td>' . htmlspecialchars($row['user_id']) . '</td>
 </tr>
 <tr>
 <td class="bg-100 fw-bold h5" style="width: 30%;">username:</td>
-<td>' . $row['username'] . '</td>
+<td>' . htmlspecialchars($row['username']) . '</td>
 </tr>
 <tr>
 <td class="bg-100 fw-bold h5" style="width: 30%;">name:</td>
-<td>' . $row['name'] . '</td>
+<td>' . htmlspecialchars($row['name']) . '</td>
 </tr>
 <tr>
 <td class="bg-100 fw-bold h5" style="width: 30%;">sessionid:</td>
-<td>' . $row['sessionid'] . '</td>
+<td>' . htmlspecialchars($row['sessionid']) . '</td>
 </tr>
 <tr>
 <td class="bg-100 fw-bold h5" style="width: 30%;">page:</td>
-<td>' . $row['page'] . '</td>
+<td>' . htmlspecialchars($row['page']) . '</td>
 </tr>
 <tr>
 <td class="bg-100 fw-bold h5" style="width: 30%;">site:</td>
-<td>' . $row['site'] . '</td>
+<td>' . htmlspecialchars($row['site']) . '</td>
 </tr>
 </tbody>
 </table>
@@ -144,33 +162,33 @@ color: #343a40; /* Optional: even darker text color for better contrast on hover
 <div class="tab-content fs-4" id="myTabContent">
 <div class="tab-pane fade show active" id="tab-request" role="tabpanel" aria-labelledby="request-tab">
 <div class="mt-3 px-2">
-<code>' . $row['request_data'] . '</code>
+<code>' . htmlspecialchars($row['request_data']) . '</code>
 </div>
 </div>
 <div class="tab-pane fade" id="tab-specifications" role="tabpanel" aria-labelledby="specifications-tab">
 <div class="mt-3 px-2">
-<code>' . $row['tracking_data'] . '</code>
+<code>' . htmlspecialchars($row['tracking_data']) . '</code>
 </div>
 </div>
 <div class="tab-pane fade" id="tab-reviews" role="tabpanel" aria-labelledby="reviews-tab">
 <div class=" mt-3 px-2">
-<code>' . $row['session_data'] . '</code>
+<code>' . htmlspecialchars($row['session_data']) . '</code>
 </div>
 </div>
 <div class="tab-pane fade" id="tab-server" role="tabpanel" aria-labelledby="server-tab">
 <div class="mt-3 px-2">
-<code>' . $row['server_data'] . '</code>
+<code>' . htmlspecialchars($row['server_data']) . '</code>
 </div>
 </div>
 
 <div class="tab-pane fade" id="tab-reviewsf" role="tabpanel" aria-labelledby="reviewsf-tab">
 <div class=" mt-3 px-2">
-<pre>' . $row['session_data'] . '</pre>
+<pre>' . htmlspecialchars($row['session_data']) . '</pre>
 </div>
 </div>
 <div class="tab-pane fade" id="tab-serverf" role="tabpanel" aria-labelledby="serverf-tab">
 <div class=" mt-3 px-2">
-<pre>' . $row['server_data'] . '</pre>
+<pre>' . htmlspecialchars($row['server_data']) . '</pre>
 </div>
 </div>
 </div>

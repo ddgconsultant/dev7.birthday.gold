@@ -103,7 +103,7 @@ exit;
 if (empty($business_id) && empty($company_id)) {
     $business_id = $company_id = $qik->decodeId($_REQUEST['bid'] ?? $_REQUEST['cid'] ?? null);
     if (empty($company_id)) {
-        header('location: /admin/businesses');
+        header('location: /admin/brands');
         exit;
     }
 }

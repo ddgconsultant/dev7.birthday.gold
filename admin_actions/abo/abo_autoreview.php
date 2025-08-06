@@ -7,7 +7,7 @@
  * to allow remaining ABO tasks to proceed.
  * 
  * @package ABO
- * @author Birthday Gold
+ * @author Birthday.Gold
  * @date 2025-08-04
  */
 

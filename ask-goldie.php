@@ -175,7 +175,7 @@ if (($formdata = $app->formposted())) {
                 }
                 
                 if ($blocked) {
-                    $errorMessage = 'Your question contains restricted topics. Please ask about Birthday Gold features, enrollment, rewards, or general service questions.';
+                    $errorMessage = 'Your question contains restricted topics. Please ask about Birthday.Gold features, enrollment, rewards, or general service questions.';
                 }
             } else {
                 $blocked = false; // Staff can ask any question
@@ -213,7 +213,7 @@ if (($formdata = $app->formposted())) {
                     
                     // Different prompt for staff vs regular users
                     if ($isStaff) {
-                        $systemPrompt = "You are Goldie, the AI assistant for Birthday Gold. You are speaking to a STAFF MEMBER who has elevated access.
+                        $systemPrompt = "You are Goldie, the AI assistant for Birthday.Gold. You are speaking to a STAFF MEMBER who has elevated access.
 " . (!empty($firstName) ? "\nThe staff member's name is $firstName.\n" : '') . "
 STAFF MODE RULES:
 1. You CAN discuss technical details, infrastructure, databases, APIs, and implementation details
@@ -226,12 +226,12 @@ STAFF MODE RULES:
 8. At the end of your response, add a line break and then provide exactly 4 follow-up questions in this exact JSON format:
 QUESTIONS_JSON: [\"Question 1?\", \"Question 2?\", \"Question 3?\", \"Question 4?\"]
 
-Birthday Gold is a SaaS platform that automates enrollment in birthday reward programs. The codebase uses PHP with a custom MVC framework, MySQL database, and various integrations including Stripe, PHPMailer, and Telegram.";
+Birthday.Gold is a SaaS platform that automates enrollment in birthday reward programs. The codebase uses PHP with a custom MVC framework, MySQL database, and various integrations including Stripe, PHPMailer, and Telegram.";
                     } else {
-                        $systemPrompt = "You are Goldie, the friendly AI assistant for Birthday Gold. You help users understand how Birthday Gold works, answer questions about enrollment, rewards, features, and general service inquiries.
+                        $systemPrompt = "You are Goldie, the friendly AI assistant for Birthday.Gold. You help users understand how Birthday.Gold works, answer questions about enrollment, rewards, features, and general service inquiries.
 " . (!empty($firstName) ? "\nThe user name is $firstName. Address them by name occasionally to make the conversation more personal.\n" : '') . "
 IMPORTANT RULES:
-1. Only answer questions about Birthday Gold services, features, enrollment, rewards, pricing, and general help
+1. Only answer questions about Birthday.Gold services, features, enrollment, rewards, pricing, and general help
 2. Do NOT provide any technical details about infrastructure, databases, APIs, or implementation
 3. Do NOT discuss security details, passwords, or authentication methods
 4. Keep responses concise (under 200 words)
@@ -243,7 +243,7 @@ IMPORTANT RULES:
 10. At the end of your response, add a line break and then provide exactly 4 follow-up questions in this exact JSON format:
 QUESTIONS_JSON: [\"Question 1?\", \"Question 2?\", \"Question 3?\", \"Question 4?\"]
 
-Birthday Gold is a service that automatically enrolls users in birthday reward programs from various businesses.";
+Birthday.Gold is a service that automatically enrolls users in birthday reward programs from various businesses.";
                     }
 
                     $userPrompt = "User Question: " . $question;
@@ -404,7 +404,7 @@ if (!empty($conversationHistory)) {
     // Context-based question generation
     if (strpos($lastAnswer, 'enroll') !== false || strpos($lastQuestion, 'enroll') !== false) {
         $quickQuestions[] = "How do I manage my current enrollments and see which businesses I'm enrolled in?";
-        $quickQuestions[] = "Can I enroll family members in Birthday Gold programs?";
+        $quickQuestions[] = "Can I enroll family members in Birthday.Gold programs?";
         $quickQuestions[] = "What happens if enrollment fails for a specific business?";
         $quickQuestions[] = "How many businesses can I enroll in with my current plan?";
     } elseif (strpos($lastAnswer, 'reward') !== false || strpos($lastQuestion, 'reward') !== false) {
@@ -413,7 +413,7 @@ if (!empty($conversationHistory)) {
         $quickQuestions[] = "Can I save my rewards to use after my birthday month?";
         $quickQuestions[] = "How far in advance do birthday rewards typically arrive?";
     } elseif (strpos($lastAnswer, 'cost') !== false || strpos($lastAnswer, 'price') !== false || strpos($lastAnswer, 'plan') !== false) {
-        $quickQuestions[] = "What is included in the different Birthday Gold subscription plans?";
+        $quickQuestions[] = "What is included in the different Birthday.Gold subscription plans?";
         $quickQuestions[] = "Can I upgrade or downgrade my plan at any time?";
         $quickQuestions[] = "Are there any discounts for annual subscriptions?";
         $quickQuestions[] = "Is there a free trial period before I'm charged?";
@@ -423,21 +423,21 @@ if (!empty($conversationHistory)) {
         $quickQuestions[] = "Can I update my birthday or other profile details later?";
         $quickQuestions[] = "Why do some businesses require additional information?";
     } elseif (strpos($lastAnswer, 'business') !== false || strpos($lastAnswer, 'partner') !== false) {
-        $quickQuestions[] = "Which popular businesses and restaurants participate in Birthday Gold?";
+        $quickQuestions[] = "Which popular businesses and restaurants participate in Birthday.Gold?";
         $quickQuestions[] = "How often are new partner businesses added to the platform?";
-        $quickQuestions[] = "Can I suggest a business to be added to Birthday Gold?";
+        $quickQuestions[] = "Can I suggest a business to be added to Birthday.Gold?";
         $quickQuestions[] = "Are partner businesses available in my local area?";
     } else {
         // Contextual follow-ups based on conversation length
         if (count($conversationHistory) > 2) {
             $quickQuestions[] = "Can you show me a summary of everything we have discussed?";
             $quickQuestions[] = "I would like to know more about the specific features you mentioned";
-            $quickQuestions[] = "What should I do next to get the most from Birthday Gold?";
+            $quickQuestions[] = "What should I do next to get the most from Birthday.Gold?";
             $quickQuestions[] = "Are there any tips for maximizing my birthday rewards?";
         } else {
             // Early conversation follow-ups
             $quickQuestions[] = "Tell me more about how the enrollment process works";
-            $quickQuestions[] = "What makes Birthday Gold different from signing up myself?";
+            $quickQuestions[] = "What makes Birthday.Gold different from signing up myself?";
             $quickQuestions[] = "How quickly can I start receiving birthday rewards?";
             $quickQuestions[] = "What if I have questions about a specific enrollment?";
         }
@@ -446,13 +446,13 @@ if (!empty($conversationHistory)) {
 } else {
     // Default questions for new conversations
     $quickQuestions = [
-        "How does Birthday Gold work and what are the main benefits?",
+        "How does Birthday.Gold work and what are the main benefits?",
         "What birthday rewards and perks can I expect to receive?",
-        "How much does Birthday Gold cost and what plans are available?",
-        "How do I get started with Birthday Gold today?",
-        "What businesses and restaurants participate in Birthday Gold?",
-        "Is my personal information safe and secure with Birthday Gold?",
-        "Can I add my family members to my Birthday Gold account?",
+        "How much does Birthday.Gold cost and what plans are available?",
+        "How do I get started with Birthday.Gold today?",
+        "What businesses and restaurants participate in Birthday.Gold?",
+        "Is my personal information safe and secure with Birthday.Gold?",
+        "Can I add my family members to my Birthday.Gold account?",
         "How do I track and redeem my birthday rewards?"
     ];
 }
@@ -460,10 +460,10 @@ if (!empty($conversationHistory)) {
 // Ensure we have at least 4 questions, add defaults if needed
 if (count($quickQuestions) < 4) {
     $defaultQuestions = [
-        "What else can Birthday Gold help me with?",
-        "Tell me more about the benefits of Birthday Gold",
+        "What else can Birthday.Gold help me with?",
+        "Tell me more about the benefits of Birthday.Gold",
         "How can I get the most value from my membership?",
-        "What should I know about Birthday Gold?"
+        "What should I know about Birthday.Gold?"
     ];
     
     $needed = 4 - count($quickQuestions);

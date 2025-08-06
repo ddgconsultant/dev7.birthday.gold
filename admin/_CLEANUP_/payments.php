@@ -5,7 +5,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 
 
-$timeclock->get_payroll_total(20);
+$payroll_data = $timeclock->get_payroll(20);
 
 $query = "SELECT u.user_id, u.name, a.value AS hourly_rate, tc.clock_in, tc.clock_out 
           FROM bg_users AS u 

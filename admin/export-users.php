@@ -58,38 +58,77 @@ $orderBy = match($sortBy) {
     default => 'u.create_dt DESC'
 };
 
+// Check if bg_referrals table exists
+$checkTable = $database->prepare("SHOW TABLES LIKE 'bg_referrals'");
+$checkTable->execute();
+$referralsTableExists = $checkTable->rowCount() > 0;
+
 // Get all users matching criteria
-$sql = "
-    SELECT 
-        u.user_id,
-        u.first_name,
-        u.last_name,
-        u.username,
-        u.email,
-        u.phone_number as phone,
-        u.birthdate,
-        TIMESTAMPDIFF(YEAR, u.birthdate, CURDATE()) as age,
-        u.city,
-        u.state,
-        u.country,
-        u.zip_code as postal_code,
-        u.status,
-        u.account_plan,
-        u.account_type,
-        u.create_dt,
-        lt.last_login_dt,
-        (SELECT COUNT(*) FROM bg_user_enrollments WHERE user_id = u.user_id) as enrollments,
-        (SELECT COUNT(*) FROM bg_referrals WHERE user_id = u.user_id) as referrals
-    FROM bg_users u
-    LEFT JOIN (
-        SELECT user_id, MAX(modify_dt) as last_login_dt 
-        FROM bg_logintracking 
-        WHERE status = 'A' 
-        GROUP BY user_id
-    ) lt ON u.user_id = lt.user_id
-    WHERE $whereClause
-    ORDER BY $orderBy
-";
+if ($referralsTableExists) {
+    $sql = "
+        SELECT 
+            u.user_id,
+            u.first_name,
+            u.last_name,
+            u.username,
+            u.email,
+            u.phone_number as phone,
+            u.birthdate,
+            TIMESTAMPDIFF(YEAR, u.birthdate, CURDATE()) as age,
+            u.city,
+            u.state,
+            u.country,
+            u.zip_code as postal_code,
+            u.status,
+            u.account_plan,
+            u.account_type,
+            u.create_dt,
+            lt.last_login_dt,
+            (SELECT COUNT(*) FROM bg_user_enrollments WHERE user_id = u.user_id) as enrollments,
+            (SELECT COUNT(*) FROM bg_referrals WHERE user_id = u.user_id) as referrals
+        FROM bg_users u
+        LEFT JOIN (
+            SELECT user_id, MAX(modify_dt) as last_login_dt 
+            FROM bg_logintracking 
+            WHERE status = 'A' 
+            GROUP BY user_id
+        ) lt ON u.user_id = lt.user_id
+        WHERE $whereClause
+        ORDER BY $orderBy
+    ";
+} else {
+    $sql = "
+        SELECT 
+            u.user_id,
+            u.first_name,
+            u.last_name,
+            u.username,
+            u.email,
+            u.phone_number as phone,
+            u.birthdate,
+            TIMESTAMPDIFF(YEAR, u.birthdate, CURDATE()) as age,
+            u.city,
+            u.state,
+            u.country,
+            u.zip_code as postal_code,
+            u.status,
+            u.account_plan,
+            u.account_type,
+            u.create_dt,
+            lt.last_login_dt,
+            (SELECT COUNT(*) FROM bg_user_enrollments WHERE user_id = u.user_id) as enrollments,
+            0 as referrals
+        FROM bg_users u
+        LEFT JOIN (
+            SELECT user_id, MAX(modify_dt) as last_login_dt 
+            FROM bg_logintracking 
+            WHERE status = 'A' 
+            GROUP BY user_id
+        ) lt ON u.user_id = lt.user_id
+        WHERE $whereClause
+        ORDER BY $orderBy
+    ";
+}
 
 $stmt = $database->prepare($sql);
 $stmt->execute($params);

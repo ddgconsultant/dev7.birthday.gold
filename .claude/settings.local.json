@@ -55,7 +55,8 @@
       "Bash(git restore:*)",
       "Bash(chmod:*)",
       "Bash(open https://dev7.birthday.gold/blog/)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(git grep:*)"
     ],
     "deny": []
   }

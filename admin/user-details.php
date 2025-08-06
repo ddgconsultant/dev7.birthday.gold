@@ -151,7 +151,7 @@ echo '
     
     <!-- Back Button -->
     <div class="mb-4">
-        <a href="/admin/user-list-v2" class="btn btn-sm btn-outline-secondary">
+        <a href="/admin/user-list" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left me-2"></i>Back to User List
         </a>
     </div>

@@ -8,7 +8,7 @@ $company_id = $cid = isset($_GET['cid']) ? $qik->decodeId($_GET['cid']) : null;
 
 // Redirect if no company ID is provided
 if (empty($company_id)) {
-    header('Location: /admin/businesses');
+    header('Location: /admin/brands');
     exit;
 }
 

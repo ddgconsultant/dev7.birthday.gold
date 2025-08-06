@@ -41,7 +41,7 @@ if ($app->formposted()) {
         $img = imagecreate(400, 100);
         $bg = imagecolorallocate($img, 255, 255, 255);
         $textColor = imagecolorallocate($img, 0, 0, 0);
-        imagestring($img, 5, 50, 40, "Hello Birthday Gold OCR Test!", $textColor);
+        imagestring($img, 5, 50, 40, "Hello Birthday.Gold OCR Test!", $textColor);
         imagepng($img, $testImagePath);
         imagedestroy($img);
         

@@ -3,13 +3,15 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $sql = "SELECT 
 bg_sessiontracking.page, 
-bg_sessiontracking.site 
+bg_sessiontracking.site,
+bg_sessiontracking.ip,
+bg_sessiontracking.create_dt 
 FROM bg_sessiontracking WHERE user_id = " . $workinguserdata['user_id'] . " ";
 
 if ($mode != 'dev') {
      $sql .=  " and bg_sessiontracking.site ='www' "; 
 } else {
-     $sql .= " and `type`='user' ";}
+     $sql .= " and bg_sessiontracking.type ='user' ";}
 
 $sql .= " ORDER BY create_dt DESC LIMIT 0, 100";
 // Prepare the statement

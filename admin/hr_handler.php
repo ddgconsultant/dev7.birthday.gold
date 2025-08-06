@@ -8,7 +8,7 @@ if ($current_user_data['username'] != 'ddgconsultant') {
 }
 
 // Page setup
-$page_title = "Payroll Management - Birthday Gold";
+$page_title = "Payroll Management - Birthday.Gold";
 $page_description = "Process monthly payroll for contractors and team members";
 
 // Custom styles for payroll page

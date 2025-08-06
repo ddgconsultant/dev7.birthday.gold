@@ -199,7 +199,7 @@ body {
     <div class="container">
         <div class="text-center">
             <h1 class="mb-3"><i class="bi bi-newspaper me-3"></i>Blog Content Management</h1>
-            <p class="lead mb-0">Create and manage blog posts for the Birthday Gold platform</p>
+            <p class="lead mb-0">Create and manage blog posts for the Birthday.Gold platform</p>
         </div>
     </div>
 </div>

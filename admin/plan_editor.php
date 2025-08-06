@@ -412,7 +412,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="container">
         <div class="text-center">
             <h1 class="mb-3"><i class="bi bi-list-ul me-3"></i>Plan Editor</h1>
-            <p class="lead mb-0">Manage signup plans and pricing for Birthday Gold</p>
+            <p class="lead mb-0">Manage signup plans and pricing for Birthday.Gold</p>
         </div>
     </div>
 </div>

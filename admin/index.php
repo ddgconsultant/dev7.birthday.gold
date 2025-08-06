@@ -4,8 +4,8 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 #-------------------------------------------------------------------------------
 # PAGE SETUP
 #-------------------------------------------------------------------------------
-$page_title = "Admin Dashboard - Birthday Gold";
-$page_description = "Birthday Gold administrative dashboard and management tools";
+$page_title = "Admin Dashboard - Birthday.Gold";
+$page_description = "Birthday.Gold administrative dashboard and management tools";
 
 // Modern Admin Dashboard CSS inspired by help page design
 $additionalstyles .= '
@@ -218,19 +218,7 @@ body {
     color: #6c757d;
 }
 
-/* Main content styling to match help page */
-.main-content {
-    background-color: #f8f9fa;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-    min-height: calc(100vh - 200px);
-}
-
-/* Remove main-content background and padding since header handles it */
-.main-content {
-    background-color: transparent !important;
-    padding-top: 0 !important;
-}
+/* Removed main-content styling - using content-header-admin instead */
 
 /* Mobile adjustments */
 @media (max-width: 767px) {
@@ -292,11 +280,7 @@ body {
         box-shadow: 0 4px 20px rgba(0,0,0,0.15);
     }
     
-    /* Compact main content padding */
-    .main-content {
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
-    }
+    /* Removed main-content padding rules */
     
     /* Hide stats grid on mobile - too much space */
     .stats-grid {
@@ -388,10 +372,6 @@ body {
 }
 
 @media (min-width: 768px) {
-    .main-content {
-        padding: 3rem 2rem;
-    }
-    
     .admin-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -428,7 +408,7 @@ $businessHours = $app->bg_businesshours();
 <div class="content-header-admin no-rounded-corners">
     <div class="container">
         <h1 class="mt-3">Admin Dashboard</h1>
-        <p class="lead mb-4">Manage the Birthday Gold platform with powerful administrative tools</p>
+        <p class="lead mb-4">Manage the Birthday.Gold platform with powerful administrative tools</p>
     </div>
 </div>
 
@@ -448,7 +428,7 @@ $businessHours = $app->bg_businesshours();
     </div>
 </div>
 
-<div class="main-content py-4 py-md-5 bg-light">
+<div class="py-4 py-md-5 bg-light">
     <div class="container" style="max-width: 1400px;">
         
         <!-- Mobile Quick Access (only shown on mobile) -->
@@ -462,7 +442,7 @@ $businessHours = $app->bg_businesshours();
                             <span class="badge bg-danger"><?php echo $enrollmentCount; ?></span>
                             <?php endif; ?>
                         </a>
-                        <a href="/admin/user-list-v2" class="btn btn-sm btn-outline-primary m-1">
+                        <a href="/admin/user-list" class="btn btn-sm btn-outline-primary m-1">
                             <i class="bi bi-people"></i> Users
                         </a>
                         <a href="/admin/business-submissions" class="btn btn-sm btn-outline-primary m-1">
@@ -563,7 +543,7 @@ $businessHours = $app->bg_businesshours();
         </div>
         
         <div class="admin-grid">
-            <a href="/admin/user-list-v2" class="admin-card">
+            <a href="/admin/user-list" class="admin-card">
                 <div class="admin-icon icon-user">
                     <i class="bi bi-people"></i>
                 </div>
