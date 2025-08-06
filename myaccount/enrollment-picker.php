@@ -429,7 +429,7 @@ endif; ?>
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    Businesses Picked (<span id="modalBasketCount">0</span>)
+                    <?php echo ucwords($website['biznames']); ?> Picked (<span id="modalBasketCount">0</span>)
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -595,7 +595,7 @@ body {
 }
 
 .first-picker-popover .popover-body {
-    background: var(--bs-primary); /* Using Bootstrap primary color */
+    background: #212529; /* Black background */
     color: white;
     font-weight: 500;
     padding: 12px 16px;
@@ -605,27 +605,27 @@ body {
 
 /* Fix popover arrow for different placements */
 .first-picker-popover .popover-arrow::before {
-    border-left-color: var(--bs-primary) !important;
+    border-left-color: #212529 !important;
 }
 
 .first-picker-popover.bs-popover-start .popover-arrow::after,
 .first-picker-popover.bs-popover-auto[data-popper-placement^="left"] .popover-arrow::after {
-    border-left-color: var(--bs-primary) !important;
+    border-left-color: #212529 !important;
 }
 
 .first-picker-popover.bs-popover-end .popover-arrow::after,
 .first-picker-popover.bs-popover-auto[data-popper-placement^="right"] .popover-arrow::after {
-    border-right-color: var(--bs-primary) !important;
+    border-right-color: #212529 !important;
 }
 
 .first-picker-popover.bs-popover-top .popover-arrow::after,
 .first-picker-popover.bs-popover-auto[data-popper-placement^="top"] .popover-arrow::after {
-    border-top-color: var(--bs-primary) !important;
+    border-top-color: #212529 !important;
 }
 
 .first-picker-popover.bs-popover-bottom .popover-arrow::after,
 .first-picker-popover.bs-popover-auto[data-popper-placement^="bottom"] .popover-arrow::after {
-    border-bottom-color: var(--bs-primary) !important;
+    border-bottom-color: #212529 !important;
 }
 
 /* Smooth transitions for header elements */
