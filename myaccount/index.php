@@ -206,15 +206,30 @@ $additionalstyles .= "
 }
 @media (max-width:767.98px) {
 /* Reduce icon size */
-.icon-small { font-size: 4rem !important; margin-right: 0.5rem; vertical-align: middle; }
+.icon-small { font-size: 2.5rem !important; margin-right: 0.5rem; vertical-align: middle; }
 .negative-margin-top { margin-top: -40px !important;         /* Adjust the value as needed */ }
 /* Reduce heading size and move it to the right of the icon */
-.h2-small { font-size: 1.25rem; display: inline-block; margin-left: 0.5rem; vertical-align: middle; }
-/* Adjust the flex container */
-.content-block { text-align: left; display: flex; align-items: center; }
+.h2-small { font-size: 1.1rem; display: inline-block; margin-left: 0.5rem; vertical-align: middle; }
+/* Adjust the flex container and reduce padding/height */
+.content-block { 
+    text-align: left; 
+    display: flex; 
+    align-items: center; 
+    padding: 1rem !important; /* Reduced from 2rem */
+    min-height: auto !important;
+}
 /* Make the block height smaller */
-.content-block p { font-size: 0.9rem; margin-top: 0.5rem; }
-.content-block span.more-link { font-size: 0.9rem; }
+.content-block p { 
+    font-size: 0.85rem; 
+    margin-top: 0.25rem; 
+    margin-bottom: 0.25rem !important;
+    line-height: 1.2;
+}
+.content-block span.more-link { font-size: 0.85rem; }
+/* Reduce spacing between blocks on mobile */
+.col-lg-4.col-md-12 {
+    margin-bottom: 0.5rem;
+}
 }
 
 
@@ -275,6 +290,14 @@ $additionalstyles.='
 .more-link {
   margin-left: auto; /* Ensures it is aligned to the bottom-right */
   text-decoration: underline;
+}
+/* Mobile adjustments for phrase-center */
+@media (max-width:767.98px) {
+  .phrase-center {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+    font-size: 0.8rem;
+  }
 }
 </style>
 ';
