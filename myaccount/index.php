@@ -210,7 +210,7 @@ $additionalstyles .= "
 /* Specific adjustment for list-check icon */
 .bi-list-check.icon-small { 
     position: relative;
-    top: -2px; /* Slight adjustment to align with other icons */
+    top: 3px; /* Slight adjustment to align with other icons */
 }
 .negative-margin-top { margin-top: -40px !important;         /* Adjust the value as needed */ }
 /* Reduce heading size and move it to the right of the icon */
@@ -312,7 +312,7 @@ $additionalstyles.='
   .phrase-center {
     margin-top: 2px !important;
     margin-bottom: 2px !important;
-    font-size: 0.8rem;
+    font-size: 1rem !important; /* Increased from 0.8rem */
   }
 }
 </style>
