@@ -206,7 +206,7 @@ $additionalstyles .= "
 }
 @media (max-width:767.98px) {
 /* Reduce icon size */
-.icon-small { font-size: 2.5rem !important; margin-right: 0.5rem; vertical-align: baseline; }
+.icon-small { font-size: 2rem !important; margin-right: 0.5rem; vertical-align: baseline; }
 /* Specific adjustment for list-check icon */
 .bi-list-check.icon-small { 
     position: relative;
@@ -226,7 +226,7 @@ $additionalstyles .= "
     text-align: left; 
     display: flex; 
     align-items: center; 
-    padding: 1rem !important; /* Reduced from 2rem */
+    padding: 0.5rem 1rem !important; /* Further reduced vertical padding */
     min-height: auto !important;
 }
 /* Disable hover transform on mobile */
@@ -244,7 +244,7 @@ $additionalstyles .= "
 .content-block span.more-link { font-size: 0.85rem; }
 /* Reduce spacing between blocks on mobile */
 .col-lg-4.col-md-12 {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 }
 
@@ -312,7 +312,7 @@ $additionalstyles.='
   .phrase-center {
     margin-top: 2px !important;
     margin-bottom: 2px !important;
-    font-size: 1rem !important; /* Increased from 0.8rem */
+    font-size: 1.2rem !important; /* Increased from 0.8rem */
   }
 }
 </style>
