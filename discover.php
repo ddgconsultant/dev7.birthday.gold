@@ -32,7 +32,7 @@ echo '
 
     // Conditionally display signup button only if user is not logged in
     if (!$account->isactive()) {
-        echo '<a href="/signup" class="btn btn-warning btn-lg mt-3" style="position: relative; z-index: 10;">Sign Up to See Them All!</a>';
+        echo '<a href="/signup" class="btn btn-warning btn-lg mt-3" style="position: relative; z-index: 10; border-radius: 50px; padding: 12px 32px;">Sign Up to See Them All!</a>';
     }
 
 echo '
@@ -86,7 +86,7 @@ echo $output['content'];
 if (!$showmore) 
 echo '       <div class="container">
         <div class="text-center mx-auto mb-5">
-           <a href="'.$_SERVER['PHP_SELF'].'?more" class="btn btn-primary btn-lg">Load More!</a>
+           <a href="'.$_SERVER['PHP_SELF'].'?more" class="btn btn-primary btn-lg" style="border-radius: 50px; padding: 12px 32px;">Load More!</a>
            </div>
 </div>
   ';
