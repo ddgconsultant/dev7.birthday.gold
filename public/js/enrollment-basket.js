@@ -191,6 +191,9 @@ function clearBasket() {
     }
 }
 
+// Track active popover instance globally
+let activePopover = null;
+
 // Update basket UI
 function updateBasketUI() {
     const counter = document.getElementById('selectionCounter');
@@ -257,6 +260,17 @@ function updateBasketUI() {
         const modal = bootstrap.Modal.getInstance(document.getElementById('basketModal'));
         if (modal) {
             modal.hide();
+        }
+        
+        // Hide active popover if basket is empty
+        if (activePopover) {
+            activePopover.hide();
+            setTimeout(() => {
+                if (activePopover) {
+                    activePopover.dispose();
+                    activePopover = null;
+                }
+            }, 200);
         }
     }
 }
@@ -380,8 +394,8 @@ function showFirstPickerHelp() {
     
     // Small delay to ensure cart animation completes and is visible
     setTimeout(() => {
-        // Initialize Bootstrap popover
-        const popover = new bootstrap.Popover(counter, {
+        // Initialize Bootstrap popover and store globally
+        activePopover = new bootstrap.Popover(counter, {
             content: 'Great choice! Click here to review and confirm your selections.',
             placement: 'left',
             trigger: 'manual',
@@ -391,23 +405,34 @@ function showFirstPickerHelp() {
         });
         
         // Show the popover
-        popover.show();
+        activePopover.show();
         
         // Auto-hide after 10 seconds
-        setTimeout(() => {
-            popover.hide();
-            // Clean up after hiding
-            setTimeout(() => {
-                popover.dispose();
-            }, 500);
+        const autoHideTimer = setTimeout(() => {
+            if (activePopover) {
+                activePopover.hide();
+                // Clean up after hiding
+                setTimeout(() => {
+                    if (activePopover) {
+                        activePopover.dispose();
+                        activePopover = null;
+                    }
+                }, 500);
+            }
         }, 10000);
         
         // Also hide when user clicks the cart
         counter.addEventListener('click', function hidePopoverOnClick() {
-            popover.hide();
-            setTimeout(() => {
-                popover.dispose();
-            }, 500);
+            clearTimeout(autoHideTimer); // Clear auto-hide timer
+            if (activePopover) {
+                activePopover.hide();
+                setTimeout(() => {
+                    if (activePopover) {
+                        activePopover.dispose();
+                        activePopover = null;
+                    }
+                }, 500);
+            }
             counter.removeEventListener('click', hidePopoverOnClick);
         }, { once: true });
     }, 300); // 300ms delay for cart animation
