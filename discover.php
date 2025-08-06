@@ -28,7 +28,7 @@ echo '
 <div class="content-header-dark">
     <div class="container">
         <h1>Discover <span class="highlight">'.$website['numberofbiz'].'+ '.ucfirst($website['biznames']).'</span></h1>
-        <p class="lead">Take a Look at Some of Our Favorites!</p>';
+        <p class="lead">Pick Your Favorites and We\'ll Handle the Enrollment!</p>';
 
     // Conditionally display signup button only if user is not logged in
     if (!$account->isactive()) {
