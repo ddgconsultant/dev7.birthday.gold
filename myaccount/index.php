@@ -192,8 +192,8 @@ $additionalstyles .= "
 /* General styling for large screens */
 .icon-small { font-size: 2rem; }
 .h2-small { font-size: 1.5rem; }
-/* Hide left panel on screens 991px and below (below lg breakpoint) */
-@media (max-width: 991.98px) {
+/* Hide left panel on screens 1199px and below (below xl breakpoint) */
+@media (max-width: 1199.98px) {
     .border-right.d-none.d-md-block {
         display: none !important;
     }
