@@ -682,7 +682,9 @@ window.userData = {
     labels: {
         token: '<?php echo $label_token; ?>',
         tokened: '<?php echo $label_tokened; ?>'
-    }
+    },
+    hasEnrollments: <?php echo (($accountstats['business_success'] ?? 0) + ($accountstats['business_pending'] ?? 0)) > 0 ? 'true' : 'false'; ?>,
+    forceShowHelp: <?php echo isset($_GET['showhelp']) ? 'true' : 'false'; ?>
 };
 
 // Smart header scroll behavior

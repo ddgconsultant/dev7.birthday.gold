@@ -228,9 +228,14 @@ function updateBasketUI() {
         basketCount.textContent = selectionBasket.length;
         modalBasketCount.textContent = selectionBasket.length;
         
-        // Show first-time picker help popover (only for the very first item)
-        if (selectionBasket.length === 1 && !sessionStorage.getItem('pickerHelpShown')) {
-            showFirstPickerHelp();
+        // Show first-time picker help popover
+        // Shows for new users (no enrollments) or when forced via URL parameter
+        if (selectionBasket.length === 1) {
+            const shouldShow = window.userData.forceShowHelp || 
+                              (!window.userData.hasEnrollments && !sessionStorage.getItem('pickerHelpShown'));
+            if (shouldShow) {
+                showFirstPickerHelp();
+            }
         }
         
         // Build items HTML with more details
@@ -368,38 +373,43 @@ function showFirstPickerHelp() {
     const counter = document.getElementById('selectionCounter');
     if (!counter) return;
     
-    // Mark as shown in session storage
-    sessionStorage.setItem('pickerHelpShown', 'true');
+    // Mark as shown in session storage (unless forced via URL)
+    if (!window.userData.forceShowHelp) {
+        sessionStorage.setItem('pickerHelpShown', 'true');
+    }
     
-    // Initialize Bootstrap popover
-    const popover = new bootstrap.Popover(counter, {
-        content: 'Great choice! Click here to review and confirm your selections.',
-        placement: 'left',
-        trigger: 'manual',
-        customClass: 'first-picker-popover',
-        html: true,
-        animation: true
-    });
-    
-    // Show the popover
-    popover.show();
-    
-    // Auto-hide after 10 seconds
+    // Small delay to ensure cart animation completes and is visible
     setTimeout(() => {
-        popover.hide();
-        // Clean up after hiding
+        // Initialize Bootstrap popover
+        const popover = new bootstrap.Popover(counter, {
+            content: 'Great choice! Click here to review and confirm your selections.',
+            placement: 'left',
+            trigger: 'manual',
+            customClass: 'first-picker-popover',
+            html: true,
+            animation: true
+        });
+        
+        // Show the popover
+        popover.show();
+        
+        // Auto-hide after 10 seconds
         setTimeout(() => {
-            popover.dispose();
-        }, 500);
-    }, 10000);
-    
-    // Also hide when user clicks the cart
-    counter.addEventListener('click', function hidePopoverOnClick() {
-        popover.hide();
-        setTimeout(() => {
-            popover.dispose();
-        }, 500);
-        counter.removeEventListener('click', hidePopoverOnClick);
-    }, { once: true });
+            popover.hide();
+            // Clean up after hiding
+            setTimeout(() => {
+                popover.dispose();
+            }, 500);
+        }, 10000);
+        
+        // Also hide when user clicks the cart
+        counter.addEventListener('click', function hidePopoverOnClick() {
+            popover.hide();
+            setTimeout(() => {
+                popover.dispose();
+            }, 500);
+            counter.removeEventListener('click', hidePopoverOnClick);
+        }, { once: true });
+    }, 300); // 300ms delay for cart animation
 }
 
