@@ -267,11 +267,15 @@ $additionalstyles .= '
     border: 1px solid #dee2e6;
     border-top: none;
     border-radius: 0 0 0.5rem 0.5rem;
-    padding: 2rem;
+    padding: 0 2rem 2rem 2rem;
     margin-top: -1px;
 }
 
 /* List styling */
+.list-group {
+    margin-top: 0 !important;
+    margin-bottom: 0;
+}
 .form-control::placeholder { color: #b0b0b0; opacity: 1; }
 .row-hover:hover { background-color: #f8f9fa; transition: background-color 0.2s; }
 .muted-company { opacity: 0.8; color: #6c757d; }
