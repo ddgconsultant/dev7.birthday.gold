@@ -163,16 +163,18 @@ $additionalstyles .= '
 }
 
 .nav-tab-item .badge {
-    background-color: #6c757d;
-    color: white;
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 10px;
-    margin-left: 0.5rem;
+    background-color: transparent;
+    color: #6c757d;
+    font-size: 0.875rem;
+    padding: 0;
+    border-radius: 0;
+    margin-left: 0.25rem;
+    font-weight: normal;
 }
 
 .nav-tab-item.active .badge {
-    background-color: #0d6efd;
+    background-color: transparent;
+    color: #0d6efd;
 }
 
 /* Settings tab aligned to the right */
@@ -533,24 +535,28 @@ $statusDetails = [
 
 
 
-echo '<div class="nav-tabs-modern" id="statusTabs" role="tablist">';
+echo '<nav class="nav-tabs-modern">';
 foreach ($statusCounters as $status => $count) {
     if ($status != 'total' && $count > 0) {
         $details = $statusDetails[$status];
-        echo '<button class="nav-tab-item ' . ($firstPanel ? 'active' : '') . '" id="tab-' . htmlspecialchars($status) . '" data-bs-toggle="tab" data-bs-target="#section-' . htmlspecialchars($status) . '" type="button" role="tab" aria-controls="section-' . htmlspecialchars($status) . '" aria-selected="' . ($firstPanel ? 'true' : 'false') . '">';
-        echo '<i class="bi bi-info-circle-fill me-2" data-bs-toggle="modal" data-bs-target="#infoModal" data-status="' . htmlspecialchars($status) . '" style="cursor: pointer;"></i>';
-        echo htmlspecialchars($details['label']) . '<span class="badge">' . $count . '</span>';
-        echo '</button>';
+        $isActive = $firstPanel ? 'active' : '';
+        echo '<a href="#section-' . htmlspecialchars($status) . '" class="nav-tab-item ' . $isActive . '" data-bs-toggle="tab" role="tab">';
+        echo '<i class="' . $details['icon'] . ' me-2"></i>';
+        echo htmlspecialchars($details['label']);
+        if ($count > 0) {
+            echo ' <span class="badge">(' . $count . ')</span>';
+        }
+        echo '</a>';
         $firstPanel = false;
     }
 }
 
 // settings tab
 // -----------------------------------------------------
-echo '<button class="nav-tab-item settings-tab" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab" aria-controls="settings" aria-selected="false">
+echo '<a href="#settings" class="nav-tab-item settings-tab" data-bs-toggle="tab" role="tab">
         <i class="bi bi-gear"></i>
-      </button>';
-echo '</div>';
+      </a>';
+echo '</nav>';
 
 echo '<div class="tab-content" id="statusTabsContent">';
 $firstPanel = true;
@@ -877,20 +883,7 @@ echo '<!-- Modal Structure -->
 </div>
 
 
-<!-- Modal Structure for Status Info -->
-<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
-<div class="modal-dialog">
-<div class="modal-content">
-<div class="modal-header">
-<h5 class="modal-title" id="infoModalLabel">Status Information</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
-<div class="modal-body p-4 py-5" id="infoModalContent">
-<!-- Content will be loaded dynamically -->
-</div>
-</div>
-</div>
-</div>
+<!-- Info Modal removed - no longer needed -->
 
 ';
 
@@ -935,39 +928,36 @@ $csrfToken = $display->inputcsrf_token('tokenonly');
         var modalImage = qrCodeModal.querySelector('#qrCodeImage');
         var loader = qrCodeModal.querySelector('#qrCodeLoader');
         
-        // Show loader, hide image
-        loader.style.display = 'block';
-        modalImage.style.display = 'none';
-        
-        // Load image
-        modalImage.onload = function() {
-            loader.style.display = 'none';
-            modalImage.style.display = 'block';
-        };
-        modalImage.src = qrLink;
+        // Reset state - show loader, hide image
+        if (loader) loader.style.display = 'block';
+        if (modalImage) {
+            modalImage.style.display = 'none';
+            modalImage.src = ''; // Clear previous src
+            
+            // Create new image to properly handle load event
+            var tempImg = new Image();
+            tempImg.onload = function() {
+                // Hide loader and show image once loaded
+                if (loader) loader.style.display = 'none';
+                modalImage.src = this.src;
+                modalImage.style.display = 'block';
+            };
+            tempImg.onerror = function() {
+                // Handle error case
+                if (loader) loader.style.display = 'none';
+                modalImage.alt = 'Failed to load QR code';
+                modalImage.style.display = 'block';
+            };
+            // Start loading
+            tempImg.src = qrLink;
+        }
     });
 
     </script>
 
 <script>
 
-    var infoModal = document.getElementById('infoModal');
-    infoModal.addEventListener('show.bs.modal', function(event) {
-        var button = event.relatedTarget;
-        var status = button.getAttribute('data-status');
-        var modalContent = infoModal.querySelector('#infoModalContent');
-        // Make an AJAX request to get the content
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'enrollment-history?getcontent=' + status, true);
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                modalContent.innerHTML = xhr.responseText;
-            } else {
-                modalContent.innerHTML = 'Unable to retrieve details.';
-            }
-        };
-        xhr.send();
-    });
+    // Info modal removed - no longer needed
 
     </script>
 
