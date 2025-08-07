@@ -918,7 +918,7 @@ $csrfToken = $display->inputcsrf_token('tokenonly');
                     <p class="mt-3 text-muted">Loading QR Code...</p>
                 </div>
                 <!-- QR Code image (hidden initially) -->
-                <img id="qrCodeImage" src="" alt="QR Code" style="width: 200px; height: 200px; display: none;" loading="lazy">
+                <img id="qrCodeImage" src="" alt="QR Code" class="mx-auto d-block" style="width: 200px; height: 200px; display: none;" loading="lazy">
             </div>
         </div>
     </div>
@@ -946,13 +946,15 @@ $csrfToken = $display->inputcsrf_token('tokenonly');
                 // Hide loader and show image once loaded
                 if (loader) loader.style.display = 'none';
                 modalImage.src = this.src;
-                modalImage.style.display = 'block';
+                modalImage.style.display = ''; // Remove inline display to let Bootstrap classes work
+                modalImage.classList.add('d-block'); // Ensure it's visible
             };
             tempImg.onerror = function() {
                 // Handle error case
                 if (loader) loader.style.display = 'none';
                 modalImage.alt = 'Failed to load QR code';
-                modalImage.style.display = 'block';
+                modalImage.style.display = ''; // Remove inline display to let Bootstrap classes work
+                modalImage.classList.add('d-block'); // Ensure it's visible
             };
             // Start loading
             tempImg.src = qrLink;
