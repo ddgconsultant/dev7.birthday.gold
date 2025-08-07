@@ -541,12 +541,12 @@ $statusDetails = [
 
 
 
-echo '<nav class="nav-tabs-modern">';
+echo '<nav class="nav-tabs-modern" role="tablist">';
 foreach ($statusCounters as $status => $count) {
     if ($status != 'total' && $count > 0) {
         $details = $statusDetails[$status];
         $isActive = $firstPanel ? 'active' : '';
-        echo '<a href="#section-' . htmlspecialchars($status) . '" class="nav-tab-item ' . $isActive . '" data-bs-toggle="tab" role="tab">';
+        echo '<a href="#section-' . htmlspecialchars($status) . '" class="nav-tab-item ' . $isActive . '" id="tab-' . htmlspecialchars($status) . '" data-bs-toggle="tab" data-bs-target="#section-' . htmlspecialchars($status) . '" role="tab" aria-controls="section-' . htmlspecialchars($status) . '" aria-selected="' . ($firstPanel ? 'true' : 'false') . '">';
         echo '<i class="' . $details['icon'] . ' me-2"></i>';
         echo htmlspecialchars($details['label']);
         if ($count > 0) {
@@ -559,7 +559,7 @@ foreach ($statusCounters as $status => $count) {
 
 // settings tab
 // -----------------------------------------------------
-echo '<a href="#settings" class="nav-tab-item settings-tab" data-bs-toggle="tab" role="tab">
+echo '<a href="#settings" class="nav-tab-item settings-tab" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" role="tab" aria-controls="settings" aria-selected="false">
         <i class="bi bi-gear"></i>
       </a>';
 echo '</nav>';
