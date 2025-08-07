@@ -214,24 +214,26 @@ $additionalstyles .= '
 /* Search in header styling - matching help page */
 .search-in-header {
     max-width: 600px;
-    margin: 0 auto 2rem;
+    margin: -2rem auto 3rem;
     position: relative;
+    z-index: 10;
 }
 
 .search-input {
     width: 100%;
-    padding: 1rem 1rem 1rem 3rem;
-    font-size: 1.1rem;
-    border: 2px solid #e9ecef;
+    padding: 1rem 3rem 1rem 3rem;
+    font-size: 1.125rem;
+    border: 1px solid #dee2e6;
     border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
     background: white;
 }
 
 .search-input:focus {
     outline: none;
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    border-color: #667eea;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
 }
 
 .search-icon {
