@@ -138,21 +138,6 @@ if (isset($_REQUEST['ajax_action'])) {
                 echo json_encode(['error' => 'Invalid product']);
             }
             exit;
-            
-        case 'get_account_info':
-            $accountType = $_REQUEST['account_type'] ?? '';
-            
-            if ($accountType) {
-                $config = $productManager->getAccountTypeConfig($accountType);
-                echo json_encode([
-                    'success' => true,
-                    'context_text' => $config['context_text'] ?? '',
-                    'description' => $config['description'] ?? ''
-                ]);
-            } else {
-                echo json_encode(['success' => false, 'error' => 'Invalid account type']);
-            }
-            exit;
     }
 }
 
@@ -245,16 +230,7 @@ if ($app->formposted() && !empty($signup_process['account_plan'])) {
 # GET DYNAMIC DATA
 #-------------------------------------------------------------------------------
 $accountTypes = $productManager->getAvailableAccountTypes($selectedVersion);
-
-// Load ALL plans for ALL account types upfront to eliminate AJAX delays
-$allPlansByType = [];
-foreach ($accountTypes as $accountType) {
-    $typePlans = $productManager->getProductsWithFeatures($accountType['account_type'], $selectedVersion);
-    $allPlansByType[$accountType['account_type']] = $typePlans;
-}
-
-// Get plans for the currently selected account type
-$availablePlans = $allPlansByType[$selectedAccountType] ?? [];
+$availablePlans = $productManager->getProductsWithFeatures($selectedAccountType, $selectedVersion);
 $accountTypeConfig = $productManager->getAccountTypeConfig($selectedAccountType);
 $planCount = count($availablePlans);
 
@@ -373,155 +349,16 @@ $additionalstyles .= '
 /* Ensure Bootstrap grid works properly */
 .plan-card-wrapper {
     height: 100%;
-    position: relative;
 }
 
 .plan-card {
     height: 100%;
     display: flex;
     flex-direction: column;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.plan-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .plan-features {
     flex-grow: 1;
-}
-
-/* Checkmark badge styles */
-.plan-checkmark-badge {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 30px;
-    height: 30px;
-    background: #28a745;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    font-weight: bold;
-    z-index: 10;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-/* Modern Tab Interface with Radio Buttons */
-.nav-tabs-modern {
-    display: flex;
-    border-bottom: 2px solid #e9ecef;
-    margin-bottom: 1.5rem;
-    gap: 0;
-    overflow: hidden;
-    position: relative;
-}
-
-.nav-tab-item {
-    flex: 0 0 auto;
-    padding: 1rem 2rem;
-    text-decoration: none;
-    color: #6c757d;
-    font-weight: 500;
-    border: none;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -2px;
-    transition: all 0.2s ease;
-    background: none;
-    border-radius: 0;
-    position: relative;
-    cursor: pointer;
-    white-space: nowrap;
-    display: inline-block;
-}
-
-.nav-tab-item:hover {
-    color: #495057;
-    text-decoration: none;
-    background: #f8f9fa;
-}
-
-/* Active state when radio button is checked - need to target the label differently */
-#tab-user:checked ~ .nav-tabs-modern label[for="tab-user"],
-#tab-parental:checked ~ .nav-tabs-modern label[for="tab-parental"],
-#tab-business:checked ~ .nav-tabs-modern label[for="tab-business"],
-#tab-family:checked ~ .nav-tabs-modern label[for="tab-family"],
-#tab-personal:checked ~ .nav-tabs-modern label[for="tab-personal"] {
-    color: #0d6efd;
-    border-bottom-color: #0d6efd !important;
-    background: none;
-}
-
-.nav-tab-item i {
-    font-size: 1.1rem;
-}
-
-/* Settings tab (if needed) */
-.nav-tab-item.settings-tab {
-    margin-left: auto;
-}
-
-/* Mobile responsive tabs */
-@media (max-width: 767px) {
-    .nav-tab-item {
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
-    }
-    
-    .nav-tab-item span {
-        /* Keep text visible on mobile for better UX */
-    }
-    
-    .nav-tab-item i {
-        margin-right: 0.5rem;
-    }
-}
-
-/* Tab content with radio button control */
-.tab-content {
-    margin-top: 1rem;
-}
-
-.tab-content .tab-pane {
-    display: none;
-}
-
-/* Show tab pane when corresponding tab radio is checked */
-#tab-user:checked ~ .tab-content .tab-pane[data-account-type="user"],
-#tab-parental:checked ~ .tab-content .tab-pane[data-account-type="parental"],
-#tab-business:checked ~ .tab-content .tab-pane[data-account-type="business"],
-#tab-family:checked ~ .tab-content .tab-pane[data-account-type="family"],
-#tab-personal:checked ~ .tab-content .tab-pane[data-account-type="personal"] {
-    display: block !important;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-/* Plan selection with radio buttons */
-.plan-radio:checked + .plan-card {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
-}
-
-.plan-card {
-    display: block;
-    width: 100%;
-    text-align: left;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 </style>
@@ -572,73 +409,52 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
 
             <h3 class="pt-0 mt-0">Pick who this is for:</h3>
             
-            <!-- Single Form wrapping everything -->
-            <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" id="signupForm">
-                <?php echo $display->inputcsrf_token(); ?>
-                <input type="hidden" name="selector" value="mobile">
-                <?php 
-                // Include URL parameters as hidden fields
-                foreach ($urlParams as $key => $value) {
-                    echo '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($value) . '">';
-                }
-                ?>
-                
-                <!-- Tab Radio Buttons (hidden) placed first -->
+            <!-- Dynamic Account Type Selector -->
+            <div class="account-type-selector" id="accountTypeSelector">
                 <?php
-                $isFirst = true;
+                $displayedTypes = 0;
                 foreach ($accountTypes as $accountType) {
-                    $isChecked = ($accountType['account_type'] == $selectedAccountType) ? ' checked' : '';
+                    $config = $productManager->getAccountTypeConfig($accountType['account_type']);
+                    $isActive = ($accountType['account_type'] == $selectedAccountType) ? 'active' : '';
                     
-                    // For first tab, if nothing is selected, make it active
-                    if ($isFirst && empty($selectedAccountType)) {
-                        $isChecked = ' checked';
-                        $selectedAccountType = $accountType['account_type'];
+                    // Only show first 3 types directly, rest go in "Other" modal
+                    if ($displayedTypes < 3) {
+                        echo '<button class="account-type-btn ' . $isActive . '" data-account-type="' . $accountType['account_type'] . '">
+                                <i class="bi ' . $config['icon'] . '"></i><span>' . $config['short_label'] . '</span>
+                              </button>';
+                        $displayedTypes++;
                     }
-                    
-                    echo '<input type="radio" name="account_type_tab" id="tab-' . $accountType['account_type'] . '" 
-                            value="' . $accountType['account_type'] . '"' . $isChecked . ' 
-                            class="tab-radio" style="display: none;">';
-                    $isFirst = false;
+                }
+                
+                // Add "Other" button if there are more account types
+                if (count($accountTypes) > 3) {
+                    echo '<button class="account-type-btn" data-modal-trigger="otherAccountsModal">
+                            <i class="bi bi-plus-circle"></i><span>Other</span>
+                          </button>';
                 }
                 ?>
-                
-                <!-- Tab Labels -->
-                <div class="nav-tabs-modern" id="accountTypeTabs">
-                    <?php
-                    foreach ($accountTypes as $accountType) {
-                        $config = $productManager->getAccountTypeConfig($accountType['account_type']);
-                        echo '<label for="tab-' . $accountType['account_type'] . '" class="nav-tab-item">
-                                <i class="bi ' . $config['icon'] . ' me-2"></i>' . $config['short_label'] . '
-                              </label>';
-                    }
-                    ?>
-                </div>
+            </div>
 
-                <!-- Context Info with Learn More button -->
-                <div class="context-info" id="contextInfo">
-                    <div class="info-text">
-                        <i class="bi bi-info-circle info-icon"></i>
-                        <span id="contextText"><?php echo $accountTypeConfig['context_text']; ?></span>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#accountTypeInfoModal" title="Learn more">
-                        <i class="bi bi-info-circle learn-more-icon d-inline d-md-none"></i>
-                        <span class="learn-more-text d-none d-md-inline">Learn More</span>
-                    </button>
+            <!-- Context Info with Learn More button -->
+            <div class="context-info" id="contextInfo">
+                <div class="info-text">
+                    <i class="bi bi-info-circle info-icon"></i>
+                    <span id="contextText"><?php echo $accountTypeConfig['context_text']; ?></span>
                 </div>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#accountTypeInfoModal" title="Learn more">
+                    <i class="bi bi-info-circle learn-more-icon d-inline d-md-none"></i>
+                    <span class="learn-more-text d-none d-md-inline">Learn More</span>
+                </button>
+            </div>
 
-                <!-- Tab Content Panels with Plans -->
-                <div class="tab-content" id="accountTypeTabContent">
+<!-- Choose your plan Section -->
+<h3 class="mt-5 pt-md-5 pt-sm-2">Pick the plan:</h3>
+
+<!-- Dynamic Plan Grid Container using Bootstrap 5 -->
+<div id="planGrid">
     <?php 
-    $isFirstTab = true;
-    foreach ($accountTypes as $accountType): 
-        $accountTypePlans = $allPlansByType[$accountType['account_type']] ?? [];
-    ?>
-    <div class="tab-pane" 
-         data-account-type="<?php echo $accountType['account_type']; ?>">
-        
-        <h3 class="mt-4 mb-3">Choose your plan:</h3>
-        
-        <?php if (count($accountTypePlans) == 1): 
+    // Determine container structure based on plan count
+    if ($planCount == 1): 
     ?>
         <!-- 1 Card: Centered with ~70% width on desktop -->
         <div class="container">
@@ -646,7 +462,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                 <div class="col-12 col-md-8">
                     <?php
                     // Single plan - render without additional column wrapper
-                    $plan = $accountTypePlans[0]; // Get the single plan
+                    $plan = $availablePlans[0]; // Get the single plan
                     $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
                     
                     // Check if this plan was previously selected
@@ -658,18 +474,10 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                     }
                     ?>
                     <div class="plan-card-wrapper<?php echo $isSelected ? ' selected' : ''; ?>">
-                        <input type="radio" 
-                               name="account_plan_selection" 
-                               id="plan-<?php echo $accountType['account_type'] . '-' . $plan['encoded_id']; ?>" 
-                               value="<?php echo $accountType['account_type'] . ':' . $plan['encoded_id']; ?>"
-                               <?php echo $isSelected ? 'checked' : ''; ?>
-                               class="plan-radio" 
-                               style="display: none;">
-                        <label for="plan-<?php echo $accountType['account_type'] . '-' . $plan['encoded_id']; ?>" 
-                               class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?><?php echo $isSelected ? ' selected' : ''; ?>" 
-                               data-plan="<?php echo $plan['account_plan']; ?>" 
-                               data-plan-id="<?php echo $plan['encoded_id']; ?>"
-                               data-price="<?php echo $plan['price']; ?>">
+                        <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?><?php echo $isSelected ? ' selected' : ''; ?>" 
+                             data-plan="<?php echo $plan['account_plan']; ?>" 
+                             data-plan-id="<?php echo $plan['encoded_id']; ?>"
+                             data-price="<?php echo $plan['price']; ?>">
                             
                             <?php if ($isRecommended): ?>
                                 <div class="recommended-badge">POPULAR</div>
@@ -717,7 +525,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                                     <?php endforeach; ?>
                                 </ul>
                             <?php endif; ?>
-                        </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -739,7 +547,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                     $colClasses = 'col-12 col-md-6';
                 }
                 
-                foreach ($accountTypePlans as $plan):
+                foreach ($availablePlans as $plan):
                     $isRecommended = (strpos(strtolower($plan['account_plan']), 'gold') !== false);
                     
                     // Check if this plan was previously selected
@@ -752,18 +560,10 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                 ?>
                     <div class="<?php echo $colClasses; ?>">
                         <div class="plan-card-wrapper h-100<?php echo $isSelected ? ' selected' : ''; ?>">
-                            <input type="radio" 
-                                   name="account_plan_selection" 
-                                   id="plan-<?php echo $accountType['account_type'] . '-' . $plan['encoded_id']; ?>" 
-                                   value="<?php echo $accountType['account_type'] . ':' . $plan['encoded_id']; ?>"
-                                   <?php echo $isSelected ? 'checked' : ''; ?>
-                                   class="plan-radio" 
-                                   style="display: none;">
-                            <label for="plan-<?php echo $accountType['account_type'] . '-' . $plan['encoded_id']; ?>" 
-                                   class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?><?php echo $isSelected ? ' selected' : ''; ?>" 
-                                   data-plan="<?php echo $plan['account_plan']; ?>" 
-                                   data-plan-id="<?php echo $plan['encoded_id']; ?>"
-                                   data-price="<?php echo $plan['price']; ?>">
+                            <div class="plan-card h-100<?php echo $isRecommended ? ' recommended' : ''; ?><?php echo $isSelected ? ' selected' : ''; ?>" 
+                                 data-plan="<?php echo $plan['account_plan']; ?>" 
+                                 data-plan-id="<?php echo $plan['encoded_id']; ?>"
+                                 data-price="<?php echo $plan['price']; ?>">
                                 
                                 <?php if ($isRecommended): ?>
                                     <div class="recommended-badge">POPULAR</div>
@@ -811,24 +611,33 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                                         <?php endforeach; ?>
                                     </ul>
                                 <?php endif; ?>
-                            </label>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
             </div>
         </div>
     <?php endif; ?>
-    </div>
-    <?php 
-    $isFirstTab = false;
-    endforeach; 
-    ?>
 </div>
 
+
+            <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" id="signupForm">
+                <?php echo $display->inputcsrf_token(); ?>
+                <input type="hidden" name="account_plan" id="hiddenPlan" value="">
+                <input type="hidden" name="account_type" id="hiddenAccountType" value="">
+                <input type="hidden" name="selector" value="mobile">
+                
+                <?php 
+                // Include URL parameters as hidden fields
+                foreach ($urlParams as $key => $value) {
+                    echo '<input type="hidden" name="' . htmlspecialchars($key) . '" value="' . htmlspecialchars($value) . '">';
+                }
+                ?>
+                
                 <div class="row justify-content-center mt-4">
                     <div class="col-12 col-md-6 col-lg-5">
-                        <button type="submit" class="btn-primary-custom w-100" id="continueBtn" style="border-radius: 25px;">
-                            Continue to Account Details
+                        <button type="submit" class="btn-primary-custom w-100" id="continueBtn" style="border-radius: 25px;" disabled>
+                            Select a Plan to Continue
                         </button>
                     </div>
                 </div>
@@ -946,6 +755,33 @@ const pageData = {
     preselectedPlanId: '<?php echo isset($selectedPlanId) ? $selectedPlanId : ''; ?>'
 };
 
+// Handle preselection on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // If we have a preselected plan, update the form
+    if (pageData.preselectedPlanId) {
+        const selectedPlanCard = document.querySelector('.plan-card.selected');
+        if (selectedPlanCard) {
+            const planId = selectedPlanCard.getAttribute('data-plan-id');
+            const accountType = pageData.preselectedAccountType;
+            
+            // Update hidden form fields
+            document.getElementById('hiddenPlan').value = planId;
+            document.getElementById('hiddenAccountType').value = accountType;
+            
+            // Update continue button
+            const continueBtn = document.getElementById('continueBtn');
+            if (continueBtn) {
+                continueBtn.disabled = false;
+                continueBtn.textContent = 'Continue to Account Details';
+            }
+        }
+    }
+});
+
+
+// Add this JavaScript after your existing JavaScript in the page
+// It should be placed right after the pageData declaration and DOMContentLoaded handler
+
 // Checkmark badge management
 const CheckmarkManager = {
     // Add checkmark to a plan card wrapper
@@ -978,98 +814,58 @@ const CheckmarkManager = {
     }
 };
 
-// Simple form handler for radio button approach
+// Enhanced plan selection handler
 document.addEventListener('DOMContentLoaded', function() {
-    // Fallback JavaScript to show/hide tabs if CSS doesn't work
-    const tabRadios = document.querySelectorAll('input[name="account_type_tab"]');
-    const tabPanes = document.querySelectorAll('.tab-pane');
+    // Initialize checkmark for preselected plan
+    CheckmarkManager.initializePreselected();
     
-    function showTabPane(accountType) {
-        // Hide all panes
-        tabPanes.forEach(pane => {
-            pane.style.display = 'none';
+    // Handle plan card clicks - using event delegation for dynamic content
+    document.getElementById('planGrid').addEventListener('click', function(e) {
+        const card = e.target.closest('.plan-card');
+        if (!card) return;
+        
+        e.preventDefault();
+        
+        // Get the wrapper element
+        const wrapper = card.closest('.plan-card-wrapper');
+        
+        // Remove selected class from all elements
+        document.querySelectorAll('.plan-card-wrapper').forEach(w => {
+            w.classList.remove('selected');
+        });
+        document.querySelectorAll('.plan-card').forEach(c => {
+            c.classList.remove('selected');
         });
         
-        // Show the selected pane
-        const selectedPane = document.querySelector('.tab-pane[data-account-type="' + accountType + '"]');
-        if (selectedPane) {
-            selectedPane.style.display = 'block';
-        }
-    }
-    
-    // Initialize - show the checked tab
-    const checkedTab = document.querySelector('input[name="account_type_tab"]:checked');
-    if (checkedTab) {
-        showTabPane(checkedTab.value);
-    }
-    
-    // Handle tab changes
-    tabRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            const accountType = this.value;
-            
-            // Show the corresponding tab pane
-            showTabPane(accountType);
-            
-            // Update context info
-            const contextText = document.getElementById('contextText');
-            if (contextText) {
-                fetch('<?php echo $_SERVER['PHP_SELF']; ?>?ajax=1&action=get_account_info&account_type=' + accountType)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.context_text) {
-                            contextText.textContent = data.context_text;
-                        }
-                    })
-                    .catch(error => console.error('Error fetching account info:', error));
-            }
-        });
+        // Add selected class to clicked elements
+        wrapper.classList.add('selected');
+        card.classList.add('selected');
+        
+        // Add checkmark badge
+        CheckmarkManager.addCheckmark(wrapper);
+        
+        // Update form values
+        const planId = card.getAttribute('data-plan-id');
+        const accountType = document.querySelector('.account-type-btn.active')?.getAttribute('data-account-type') || 'user';
+        
+        document.getElementById('hiddenPlan').value = planId;
+        document.getElementById('hiddenAccountType').value = accountType;
+        
+        // Enable and update continue button
+        const continueBtn = document.getElementById('continueBtn');
+        continueBtn.disabled = false;
+        continueBtn.textContent = 'Continue to Account Details';
     });
-    
-    // Handle form submission to parse the combined value
-    const form = document.getElementById('signupForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            // Get the selected plan radio button
-            const selectedPlan = document.querySelector('input[name="account_plan_selection"]:checked');
-            
-            if (!selectedPlan) {
-                e.preventDefault();
-                alert('Please select a plan to continue.');
-                return false;
-            }
-            
-            // Parse the combined value (account_type:plan_id)
-            const [accountType, planId] = selectedPlan.value.split(':');
-            
-            // Create hidden inputs for the parsed values
-            let accountTypeInput = document.getElementById('hiddenAccountType');
-            if (!accountTypeInput) {
-                accountTypeInput = document.createElement('input');
-                accountTypeInput.type = 'hidden';
-                accountTypeInput.id = 'hiddenAccountType';
-                accountTypeInput.name = 'account_type';
-                form.appendChild(accountTypeInput);
-            }
-            accountTypeInput.value = accountType;
-            
-            let planInput = document.getElementById('hiddenPlan');
-            if (!planInput) {
-                planInput = document.createElement('input');
-                planInput.type = 'hidden';
-                planInput.id = 'hiddenPlan';
-                planInput.name = 'account_plan';
-                form.appendChild(planInput);
-            }
-            planInput.value = planId;
-        });
-    }
 });
 
-// Clean up any old references to SignupFlow since we're not using AJAX anymore
-// All plans are loaded upfront in tabs
-if (window.SignupFlow) {
-    delete window.SignupFlow;
+// Override the loadPlans function to maintain checkmarks after AJAX updates
+const originalSignupFlow = window.SignupFlow || {};
+if (originalSignupFlow.loadPlans) {
+    const originalLoadPlans = originalSignupFlow.loadPlans;
+    originalSignupFlow.loadPlans = function(accountType) {
+        return originalLoadPlans.call(this, accountType).then(result => {
+            // After plans are loaded, check if we need to restore checkmark
+            setTimeout(() => {
                 CheckmarkManager.initializePreselected();
             }, 100);
             return result;
