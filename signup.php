@@ -69,20 +69,10 @@ if (!empty($existingSignupData) && empty($_REQUEST['account_type']) && empty($_R
     }
 }
 
-// Check for direct plan selection via URL parameter
+// Store URL plan_id for later processing after plans are loaded
+$urlPlanId = null;
 if (isset($_GET['plan_id']) && !empty($_GET['plan_id'])) {
     $urlPlanId = $_GET['plan_id'];
-    
-    // Find which account type this plan belongs to
-    foreach ($allPlansByType as $type => $plans) {
-        foreach ($plans as $plan) {
-            if ($plan['encoded_id'] == $urlPlanId) {
-                $selectedAccountType = $type;
-                $selectedPlanId = $urlPlanId;
-                break 2;
-            }
-        }
-    }
 }
 
 // Capture URL parameters to carry forward
@@ -269,6 +259,19 @@ foreach ($accountTypes as $accountType) {
     $allPlansByType[$accountType['account_type']] = $typePlans;
 }
 
+// Now process URL plan_id if provided (after plans are loaded)
+if ($urlPlanId) {
+    foreach ($allPlansByType as $type => $plans) {
+        foreach ($plans as $plan) {
+            if ($plan['encoded_id'] == $urlPlanId) {
+                $selectedAccountType = $type;
+                $selectedPlanId = $urlPlanId;
+                break 2;
+            }
+        }
+    }
+}
+
 // Get plans for the currently selected account type
 $availablePlans = $allPlansByType[$selectedAccountType] ?? [];
 $accountTypeConfig = $productManager->getAccountTypeConfig($selectedAccountType);
@@ -453,7 +456,7 @@ $additionalstyles .= '
     background: #198754;
     color: white;
     border-radius: 50%;
-    display: flex;
+    display: none; /* Start with display none instead of opacity */
     align-items: center;
     justify-content: center;
     font-size: 18px;
@@ -462,14 +465,14 @@ $additionalstyles .= '
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     opacity: 0;
     transform: scale(0);
-    transition: all 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 /* Show checkmark when plan is selected - sibling selector */
 .plan-radio:checked ~ .plan-checkmark-badge {
+    display: flex !important;
     opacity: 1 !important;
     transform: scale(1) !important;
-    display: flex !important;
 }
 
 /* Position checkmark relative to wrapper */
@@ -615,14 +618,15 @@ $additionalstyles .= '
     transition: all 0.3s ease;
 }
 
-/* Lighten the border for popular/recommended plans */
+/* Subtle green tint for popular/recommended plans */
 .plan-card.recommended {
-    border-color: #e9ecef; /* Even lighter gray for popular plans */
-    background: rgba(248, 249, 250, 0.2); /* Slightly more transparent background */
+    border-color: #c3e6cb; /* Very light green-gray for popular plans */
+    background: linear-gradient(135deg, rgba(248, 249, 250, 0.3) 0%, rgba(199, 230, 203, 0.1) 100%); /* Subtle green gradient */
 }
 
-/* Green selection when radio button is checked - with checkmark */
-.plan-radio:checked + .plan-card {
+/* Green selection when radio button is checked OR has selected class - with checkmark */
+.plan-radio:checked + .plan-card,
+.plan-card.selected {
     border-color: #198754 !important; /* Dark green border */
     border-width: 3px !important;
     box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.15);
@@ -1164,6 +1168,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 planRadio.checked = false;
             });
             
+            // Instantly hide ALL checkmarks when switching tabs
+            const allCheckmarks = document.querySelectorAll('.plan-checkmark-badge');
+            allCheckmarks.forEach(badge => {
+                badge.style.display = 'none';
+                badge.style.opacity = '0';
+                badge.style.transform = 'scale(0)';
+            });
+            
+            // Remove selected class from all cards
+            const allPlanCards = document.querySelectorAll('.plan-card');
+            allPlanCards.forEach(card => {
+                card.classList.remove('selected');
+            });
+            
             // Update context info
             const contextText = document.getElementById('contextText');
             if (contextText) {
@@ -1189,6 +1207,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 continueBtn.disabled = false;
                 continueBtn.textContent = 'Continue';
             }
+            
+            // Force update all checkmarks visibility
+            const allCheckmarks = document.querySelectorAll('.plan-checkmark-badge');
+            const allPlanCards = document.querySelectorAll('.plan-card');
+            
+            // Remove all active states first (instantly)
+            allCheckmarks.forEach(badge => {
+                badge.style.display = 'none';
+                badge.style.opacity = '0';
+                badge.style.transform = 'scale(0)';
+            });
+            
+            // Remove green styling from all cards
+            allPlanCards.forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add active state to the selected plan's checkmark (with animation)
+            const selectedRadio = e.target;
+            const selectedWrapper = selectedRadio.closest('.plan-card-wrapper');
+            if (selectedWrapper) {
+                const checkmark = selectedWrapper.querySelector('.plan-checkmark-badge');
+                if (checkmark) {
+                    // Show checkmark with animation
+                    checkmark.style.display = 'flex';
+                    setTimeout(() => {
+                        checkmark.style.opacity = '1';
+                        checkmark.style.transform = 'scale(1)';
+                    }, 10);
+                }
+                const card = selectedWrapper.querySelector('.plan-card');
+                if (card) {
+                    card.classList.add('selected');
+                }
+            }
         }
     });
     
@@ -1198,6 +1251,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectedPlan && continueBtn) {
             continueBtn.disabled = false;
             continueBtn.textContent = 'Continue';
+            
+            // Ensure visual state is correct for pre-selected plan
+            const selectedWrapper = selectedPlan.closest('.plan-card-wrapper');
+            if (selectedWrapper) {
+                const checkmark = selectedWrapper.querySelector('.plan-checkmark-badge');
+                if (checkmark) {
+                    checkmark.style.display = 'flex';
+                    checkmark.style.opacity = '1';
+                    checkmark.style.transform = 'scale(1)';
+                }
+                const card = selectedWrapper.querySelector('.plan-card');
+                if (card) {
+                    card.classList.add('selected');
+                }
+            }
         }
     }, 100);
     

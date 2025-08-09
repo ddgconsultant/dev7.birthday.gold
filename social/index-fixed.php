@@ -11,9 +11,16 @@ $additionalstyles = '
 <style>
 /* Social Module Specific Styles */
 .social-main-content {
-    margin-top: 60px; /* Account for header */
-    margin-bottom: 80px; /* Account for bottom nav on mobile */
-    min-height: calc(100vh - 140px);
+    margin-top: 0 !important; /* No margin - flush with header */
+    padding-top: 0; /* No padding - content starts right after header */
+    padding-bottom: 80px; /* Account for bottom nav on mobile */
+    min-height: 100vh;
+}
+
+/* Override any default spacing from framework */
+body .main-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
 
 /* Mobile First - Full width on mobile */
@@ -76,10 +83,11 @@ $additionalstyles = '
 /* Desktop Layout - Split Panel */
 @media (min-width: 992px) {
     .social-main-content {
-        margin-top: 60px;
-        margin-bottom: 0;
+        margin-top: 0 !important;
+        padding-top: 0;
+        padding-bottom: 0;
         display: flex;
-        height: calc(100vh - 60px);
+        height: 100vh;
     }
     
     /* Left Panel - Comments on Desktop */
@@ -402,14 +410,28 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Keyboard navigation
+// Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
+    // Escape closes comments
     if (e.key === 'Escape') {
         const panel = document.getElementById('mobileCommentsPanel');
         if (panel) panel.classList.remove('active');
     }
+    
+    // C for comments
+    if (e.key === 'c' || e.key === 'C') {
+        if (!e.target.matches('input, textarea')) {
+            e.preventDefault();
+            toggleMobileComments();
+        }
+    }
 });
 </script>
+
+<?php
+// Include improved scrolling/navigation script
+include($_SERVER['DOCUMENT_ROOT'] . '/social/components/js-scrolling-improved.inc');
+?>
 
 <?php
 // Use social-specific footer with social navigation
