@@ -59,7 +59,7 @@ if (!$showBottomNav || $currentPage === 'help' || $currentPage === 'terms' || $c
                         <ul class="footer-links">
                             <li><a href="/how-it-works">How it Works</a></li>
                             <li><a href="/browse-rewards">Browse Rewards</a></li>
-                            <li><a href="/pricing">Pricing</a></li>';
+                            <li><a href="/pricing">Plans / Pricing</a></li>';
     
     if (!$isLoggedIn) {
         echo '
@@ -126,10 +126,10 @@ if (!$showBottomNav || $currentPage === 'help' || $currentPage === 'terms' || $c
             <!-- Bottom Bar -->
             <div class="footer-bottom">
                 <div class="row align-items-center">
-                    <div class="col-12 col-md-6">
-                        <p class="copyright mb-0">© ' . date('Y') . ' Birthday.Gold. All rights reserved.</p>
+                    <div class="col-12 col-md-6 text-center text-md-start">
+                        <p class="copyright mb-0">© ' . date('Y') . ' birthday.gold. All rights reserved.</p>
                     </div>
-                    <div class="col-12 col-md-6">
+                    <div class="col-12 col-md-6 text-center text-md-end">
                         <div class="footer-meta">
                             <span class="text-muted small">v7.0 Mobile-First</span>';
     

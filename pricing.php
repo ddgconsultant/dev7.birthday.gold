@@ -4,7 +4,7 @@ $addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Page metadata
-$pagedata['pagetitle'] = 'Pricing Plans - Birthday Gold';
+$pagedata['pagetitle'] = 'Plans, Pricing, and Other Details - Birthday Gold';
 $pagedata['metakeywords'] = 'Birthday Gold Pricing, Birthday Rewards Plans, Birthday Deals Pricing';
 $pagedata['metadescriptions'] = 'Choose the perfect Birthday Gold plan for you. Free, Gold, and Lifetime options available. Start collecting birthday rewards from 500+ businesses!';
 
@@ -408,7 +408,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Hero Section -->
 <div class="content-header-dark pricing-header">
     <div class="container">
-        <h1>Pricing, Plans, and Other Details</h1>
+        <h1>Plans, Pricing, and Other Details</h1>
         <p class="lead">Choose the perfect plan for your birthday rewards journey</p>
     </div>
 </div>

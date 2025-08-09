@@ -35,9 +35,11 @@ $message = str_replace("\n", '<br>', $message);
 $validatedata['rawdata'] = $to_email;
 $validatedata['user_id'] = $notify_user_data['user_id'];
 $validatedata['sendcount'] = 0;
+$validatedata['action'] = 'getlatest'; // Get existing validation code, don't create a new one
 $validationcodes = $app->getvalidationcodes($validatedata);
 
-$link = $website_full_url.'/validate-account?t='.$validationcodes['long'];
+// Remove trailing slash from URL if present to avoid double slash
+$link = rtrim($website_full_url, '/') . '/validate-account?t=' . $validationcodes['long'];
 
 $buttonlink=$mail->emailbutton('Validate Birthday.Gold Account', $link);
 

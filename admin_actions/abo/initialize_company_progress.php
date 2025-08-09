@@ -50,7 +50,7 @@ try {
     $processors_sql = "SELECT config_key, config_value, config_data 
                        FROM bg_config 
                        WHERE config_type = 'automation_processor' 
-                       AND is_active = 1
+                       AND `status` = 'active'
                        ORDER BY display_order";
     
     $processors_stmt = $database->query($processors_sql);

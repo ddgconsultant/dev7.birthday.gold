@@ -1,240 +1,241 @@
 <?php
+$addClasses[] = 'Social';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-// Page and header includes
-$bodycontentclass = '';
+// Check authentication
+if (empty($current_user_data['user_id'])) {
+    header('Location: /login.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
+    exit;
+}
+
+$user_id = $current_user_data['user_id'];
+
+// Get search query if provided
+$search_query = $_GET['q'] ?? '';
+$search_type = $_GET['type'] ?? 'posts'; // posts or users
+
+// Perform search if query exists
+$search_results = [];
+$user_results = [];
+if (!empty($search_query)) {
+    if ($search_type == 'users') {
+        $user_results = $social->searchUsers($search_query, 20, 0);
+    } else {
+        $search_results = $social->searchPosts($search_query, 20, 0);
+    }
+}
+
+// Page setup
+$pagetitle = 'Search - Birthday Gold Social';
+$bodycontentclass = 'social-search-page';
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 include($_SERVER['DOCUMENT_ROOT'] . '/social/components/header-nav.inc');
-
-$additionalstyles .='
-<style > .main-content { overflow: hidden }
-.left-panel { display: flex; flex-direction: column; height: calc(100vh - 75px); border-right: 1px solid #dee2e6;  overflow: hidden }
-.comments-list { overflow-y: auto; flex-grow: 1; padding: 1rem; visibility: visible  }
-.comment-item { display: flex; align-items: start; margin-bottom: 1rem }
-.comment-item img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px }
-.comment-body { flex-grow: 1 }
-.comment-header { display: flex; justify-content: space-between }
-.comment-text { font-size: 0.9rem; margin-bottom: 0.5rem }
-.reply-link, .like-info { font-size: 0.8rem }
-.comments-list::-webkit-scrollbar { width: 8px }
-.comments-list::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 4px }
-.comments-list::-webkit-scrollbar-track { background-color: #f1f1f1 }
- .left-panel .action-bar { display: flex; justify-content: center; padding: 10px 0; background-color: #f8f9fa }
-.left-panel .action-bar a { color: #000; font-size: 1.5rem }
-.left-panel .icon-container { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1000px }
-.left-panel .icon-container a { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: inherit; font-size: 1.5rem }
-.left-panel .icon-title { font-size: 0.7rem; margin-top: 2px; color: #666 }
-.monotypenumbers { font-family: "Roboto Mono" }
-.left-panel .comments-list { display: block; overflow-y: auto }
-#large-comments-panel .comments-list { height: calc(100vh - 260px); overflow-y: auto }
-.right-panel .chrome-bottom-padding-1{        bottom: 20px;    }
-.right-panel .chrome-bottom-padding-2{        bottom: 20px;    }
-.right-panel .chrome-bottom-padding-4{        bottom: 70px;    }
-
-@media (max-width:991.98px) {
-.left-panel { display: none }
-.comment-overlay.active { display: block !important }
-.right-panel .chrome-bottom-padding-1{        bottom: 30px;    }
-.right-panel .chrome-bottom-padding-2{        bottom: 50px;    }
-.right-panel .chrome-bottom-padding-4{        bottom: 90px;    }
-.right-panel .post-header img { width: 40px !important; height: 40px !important; border-radius: 50% }
-.right-panel .soundtrack-avatar-icon{width:40px  !important;height:40px  !important;}
-}
-.comment-overlay { display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: calc(50vh - 0px); background-color: rgba(255, 255, 255, 0.98); z-index: 1050; overflow-y: hidden; padding: 1rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) }
-.comment-overlay .close-btn { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; color: #333; cursor: pointer }
-.write-comment { background-color: #fff; width: 100%; position: relative; padding: 1rem; border-bottom: 1px solid #dee2e6; flex-shrink: 0 }
-.comment-overlay .write-comment { left: 0; width: calc(100% - 20px); padding: 1rem; background-color: #fff; border-bottom: 1px solid #dee2e6 }
-#large-comments-panel .comments-list { height: calc(100vh - 260px); overflow-y: auto }
-#small-comments-panel .comments-list { height: calc(45vh); overflow-y: auto }
-#small-comments-panel .comments-list { overflow: auto !important }
-.right-panel h1 { margin-top: 150px }
-.right-panel .container, .left-panel .container { margin: 50px auto; max-width: 960px; display: flex; justify-content: space-between }
-.column { width: 40%; padding: 40px; color: #fff; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.11) 0px, rgba(0, 0, 0, 0.11) 12px, rgba(1, 1, 1, 0.16) 12px, rgba(1, 1, 1, 0.16) 24px, rgba(0, 0, 0, 0.14) 24px, rgba(0, 0, 0, 0.14) 36px, rgba(0, 0, 0, 0.23) 36px, rgba(0, 0, 0, 0.23) 48px, rgba(0, 0, 0, 0.12) 48px, rgba(0, 0, 0, 0.12) 60px, rgba(1, 1, 1, 0.07) 60px, rgba(1, 1, 1, 0.07) 72px, rgba(0, 0, 0, 0.21) 72px, rgba(0, 0, 0, 0.21) 84px, rgba(0, 0, 0, 0.24) 84px, rgba(0, 0, 0, 0.24) 96px, rgba(1, 1, 1, 0.23) 96px, rgba(1, 1, 1, 0.23) 108px, rgba(1, 1, 1, 0.07) 108px, rgba(1, 1, 1, 0.07) 120px, rgba(0, 0, 0, 0.01) 120px, rgba(0, 0, 0, 0.01) 132px, rgba(1, 1, 1, 0.22) 132px, rgba(1, 1, 1, 0.22) 144px, rgba(1, 1, 1, 0.24) 144px, rgba(1, 1, 1, 0.24) 156px, rgba(0, 0, 0, 0) 156px, rgba(0, 0, 0, 0) 168px, rgba(0, 0, 0, 0.12) 168px, rgba(0, 0, 0, 0.12) 180px), repeating-linear-gradient(90deg, rgba(1, 1, 1, 0.01) 0px, rgba(1, 1, 1, 0.01) 12px, rgba(1, 1, 1, 0.15) 12px, rgba(1, 1, 1, 0.15) 24px, rgba(0, 0, 0, 0.09) 24px, rgba(0, 0, 0, 0.09) 36px, rgba(0, 0, 0, 0.02) 36px, rgba(0, 0, 0, 0.02) 48px, rgba(0, 0, 0, 0.1) 48px, rgba(0, 0, 0, 0.1) 60px, rgba(1, 1, 1, 0.07) 60px, rgba(1, 1, 1, 0.07) 72px, rgba(1, 1, 1, 0.15) 72px, rgba(1, 1, 1, 0.15) 84px, rgba(0, 0, 0, 0.18) 84px, rgba(0, 0, 0, 0.18) 96px, rgba(1, 1, 1, 0.15) 96px, rgba(1, 1, 1, 0.15) 108px, rgba(1, 1, 1, 0.09) 108px, rgba(1, 1, 1, 0.09) 120px, rgba(1, 1, 1, 0.07) 120px, rgba(1, 1, 1, 0.07) 132px, rgba(1, 1, 1, 0.05) 132px, rgba(1, 1, 1, 0.05) 144px, rgba(0, 0, 0, 0.1) 144px, rgba(0, 0, 0, 0.1) 156px, rgba(1, 1, 1, 0.18) 156px, rgba(1, 1, 1, 0.18) 168px), repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.24) 0px, rgba(0, 0, 0, 0.24) 16px, rgba(1, 1, 1, 0.06) 16px, rgba(1, 1, 1, 0.06) 32px, rgba(0, 0, 0, 0.16) 32px, rgba(0, 0, 0, 0.16) 48px, rgba(1, 1, 1, 0) 48px, rgba(1, 1, 1, 0) 64px, rgba(1, 1, 1, 0.12) 64px, rgba(1, 1, 1, 0.12) 80px, rgba(1, 1, 1, 0.22) 80px, rgba(1, 1, 1, 0.22) 96px, rgba(0, 0, 0, 0.24) 96px, rgba(0, 0, 0, 0.24) 112px, rgba(0, 0, 0, 0.25) 112px, rgba(0, 0, 0, 0.25) 128px, rgba(1, 1, 1, 0.12) 128px, rgba(1, 1, 1, 0.12) 144px, rgba(0, 0, 0, 0.18) 144px, rgba(0, 0, 0, 0.18) 160px, rgba(1, 1, 1, 0.03) 160px, rgba(1, 1, 1, 0.03) 176px, rgba(1, 1, 1, 0.1) 176px, rgba(1, 1, 1, 0.1) 192px), repeating-linear-gradient(135deg, rgba(1, 1, 1, 0.18) 0px, rgba(1, 1, 1, 0.18) 3px, rgba(0, 0, 0, 0.09) 3px, rgba(0, 0, 0, 0.09) 6px, rgba(0, 0, 0, 0.08) 6px, rgba(0, 0, 0, 0.08) 9px, rgba(1, 1, 1, 0.05) 9px, rgba(1, 1, 1, 0.05) 12px, rgba(0, 0, 0, 0.01) 12px, rgba(0, 0, 0, 0.01) 15px, rgba(1, 1, 1, 0.12) 15px, rgba(1, 1, 1, 0.12) 18px, rgba(0, 0, 0, 0.05) 18px, rgba(0, 0, 0, 0.05) 21px, rgba(1, 1, 1, 0.16) 21px, rgba(1, 1, 1, 0.16) 24px, rgba(1, 1, 1, 0.07) 24px, rgba(1, 1, 1, 0.07) 27px, rgba(1, 1, 1, 0.23) 27px, rgba(1, 1, 1, 0.23) 30px, rgba(0, 0, 0, 0.2) 30px, rgba(0, 0, 0, 0.2) 33px, rgba(0, 0, 0, 0.18) 33px, rgba(0, 0, 0, 0.18) 36px, rgba(1, 1, 1, 0.12) 36px, rgba(1, 1, 1, 0.12) 39px, rgba(1, 1, 1, 0.13) 39px, rgba(1, 1, 1, 0.13) 42px, rgba(1, 1, 1, 0.2) 42px, rgba(1, 1, 1, 0.2) 45px, rgba(1, 1, 1, 0.18) 45px, rgba(1, 1, 1, 0.18) 48px, rgba(0, 0, 0, 0.2) 48px, rgba(0, 0, 0, 0.2) 51px, rgba(1, 1, 1, 0) 51px, rgba(1, 1, 1, 0) 54px, rgba(0, 0, 0, 0.03) 54px, rgba(0, 0, 0, 0.03) 57px, rgba(1, 1, 1, 0.06) 57px, rgba(1, 1, 1, 0.06) 60px, rgba(1, 1, 1, 0) 60px, rgba(1, 1, 1, 0) 63px, rgba(0, 0, 0, 0.1) 63px, rgba(0, 0, 0, 0.1) 66px, rgba(1, 1, 1, 0.19) 66px, rgba(1, 1, 1, 0.19) 69px), linear-gradient(90deg, rgb(239, 53, 115), rgb(79, 2, 93)) }
-.hookto { overflow-y: auto; visibility: visible; height: calc(100vh - 260px); overflow-y: auto }
-.icon-container{font-size:1rem; color:#666;}
-
-/* Hover effect for search result cards */
-.right-panel .card:hover {
-    background-color: rgba(211, 211, 211, 0.5) !important; /* Light grey */
-    transition: background-color 0.3s ease;
-}
-
-</style > ';
-
-// Set the number of results to generate
-$numResults = rand(3, 20);
-
-// Available usernames and avatars
-$usernames = ['User1', 'User2', 'User3', 'User4', 'User5', 'User6', 'User7', 'User8', 'User9', 'User10'];
-
 ?>
 
-<div class="container my-5">
+<style>
+.search-container { max-width: 800px; margin: 0 auto; padding: 20px; }
+.search-tabs { margin-bottom: 20px; }
+.search-result { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s; }
+.search-result:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+.user-result { display: flex; align-items: center; }
+.user-avatar { width: 60px; height: 60px; border-radius: 50%; margin-right: 15px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+.user-info { flex: 1; }
+.user-stats { display: flex; gap: 20px; margin-top: 5px; }
+.user-stat { font-size: 0.9rem; color: #666; }
+.post-result { border-left: 4px solid #007bff; }
+.post-meta { display: flex; align-items: center; margin-bottom: 10px; }
+.post-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; background: #f0f0f0; }
+.post-author { font-weight: bold; }
+.post-time { color: #666; font-size: 0.9rem; margin-left: auto; }
+.post-content { margin: 10px 0; }
+.post-actions { display: flex; gap: 15px; margin-top: 10px; }
+.post-action { color: #666; font-size: 0.9rem; }
+.no-results { text-align: center; padding: 50px; color: #666; }
+.search-filters { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+</style>
+
+<div class="search-container">
+    <h1 class="mb-4"><i class="bi bi-search"></i> Search</h1>
+    
     <!-- Search Form -->
-    <div class="row mb-4">
-    <h1>Search Posts</h1>
     <div class="card mb-4">
-    <div class="card-body">
-        <div class="col-lg-8 col-md-10 mx-auto">
-            <form class="d-flex" action="/search-results.php" method="GET">
-                <input class="form-control me-2" type="search" name="q" placeholder="Search posts..." aria-label="Search" required>
-                <button class="btn btn-primary" type="submit">
-                    <i class="bi bi-search"></i> Search
-                </button>
+        <div class="card-body">
+            <form method="GET" action="">
+                <div class="input-group">
+                    <input type="text" 
+                           class="form-control form-control-lg" 
+                           name="q" 
+                           placeholder="Search for posts or users..." 
+                           value="<?= htmlspecialchars($search_query) ?>"
+                           autofocus>
+                    <select name="type" class="form-select" style="max-width: 150px;">
+                        <option value="posts" <?= $search_type == 'posts' ? 'selected' : '' ?>>Posts</option>
+                        <option value="users" <?= $search_type == 'users' ? 'selected' : '' ?>>Users</option>
+                    </select>
+                    <button class="btn btn-primary btn-lg" type="submit">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
             </form>
         </div>
     </div>
     
-    <!-- Content Type Filters (Checkboxes) -->
-    <div class="row mb-4">
-        <div class="col-lg-8 col-md-10 mx-auto">
-            <div class="d-flex justify-content-between">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="filter[]" value="users" id="users" checked>
-                    <label class="form-check-label" for="users">Users</label>
+    <?php if (!empty($search_query)): ?>
+    <!-- Search Results -->
+    <div class="search-results">
+        <h4 class="mb-3">
+            <?php if ($search_type == 'users'): ?>
+                Users matching "<?= htmlspecialchars($search_query) ?>"
+            <?php else: ?>
+                Posts matching "<?= htmlspecialchars($search_query) ?>"
+            <?php endif; ?>
+        </h4>
+        
+        <?php if ($search_type == 'users' && !empty($user_results)): ?>
+            <!-- User Results -->
+            <?php foreach ($user_results as $user): ?>
+            <div class="search-result user-result">
+                <div class="user-avatar">
+                    <?php if (!empty($user['avatar_url'])): ?>
+                        <img src="<?= htmlspecialchars($user['avatar_url']) ?>" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    <?php else: ?>
+                        <i class="bi bi-person-circle" style="font-size: 30px; color: #999;"></i>
+                    <?php endif; ?>
                 </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="filter[]" value="videos" id="videos" checked>
-                    <label class="form-check-label" for="videos">Videos</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="filter[]" value="images" id="images" checked>
-                    <label class="form-check-label" for="images">Images</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="filter[]" value="soundtracks" id="soundtracks" checked>
-                    <label class="form-check-label" for="soundtracks">SoundTracks</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="filter[]" value="places" id="places" checked>
-                    <label class="form-check-label" for="places">Places</label>
+                <div class="user-info">
+                    <div>
+                        <a href="/social/user-profile.php?id=<?= $user['user_id'] ?>" class="text-decoration-none">
+                            <strong><?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></strong>
+                        </a>
+                        <?php if (!empty($user['username'])): ?>
+                            <span class="text-muted">@<?= htmlspecialchars($user['username']) ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="user-stats">
+                        <span class="user-stat">
+                            <i class="bi bi-file-post"></i> <?= $user['post_count'] ?> posts
+                        </span>
+                        <span class="user-stat">
+                            <i class="bi bi-people"></i> <?= $user['follower_count'] ?> followers
+                        </span>
+                    </div>
+                    <?php if ($user['user_id'] != $user_id): ?>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="followUser(<?= $user['user_id'] ?>)">
+                        <i class="bi bi-person-plus"></i> Follow
+                    </button>
+                    <?php endif; ?>
                 </div>
             </div>
-        </div>
+            <?php endforeach; ?>
+            
+        <?php elseif ($search_type == 'posts' && !empty($search_results)): ?>
+            <!-- Post Results -->
+            <?php foreach ($search_results as $post): ?>
+            <div class="search-result post-result">
+                <div class="post-meta">
+                    <div class="post-avatar">
+                        <?php if (!empty($post['avatar_url'])): ?>
+                            <img src="<?= htmlspecialchars($post['avatar_url']) ?>" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        <?php else: ?>
+                            <i class="bi bi-person-circle" style="font-size: 25px; color: #999;"></i>
+                        <?php endif; ?>
+                    </div>
+                    <div>
+                        <div class="post-author"><?= htmlspecialchars($post['first_name'] . ' ' . $post['last_name']) ?></div>
+                        <?php if (!empty($post['username'])): ?>
+                            <small class="text-muted">@<?= htmlspecialchars($post['username']) ?></small>
+                        <?php endif; ?>
+                    </div>
+                    <div class="post-time">
+                        <?= $social->formatTimeAgo($post['created_at']) ?>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <?= nl2br(htmlspecialchars($post['content'])) ?>
+                </div>
+                <div class="post-actions">
+                    <span class="post-action">
+                        <i class="bi bi-heart"></i> <?= $post['like_count'] ?> likes
+                    </span>
+                    <span class="post-action">
+                        <i class="bi bi-chat"></i> <?= $post['comment_count'] ?> comments
+                    </span>
+                    <a href="/social/post.php?id=<?= $post['post_id'] ?>" class="post-action text-decoration-none">
+                        <i class="bi bi-arrow-right-circle"></i> View Post
+                    </a>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            
+        <?php else: ?>
+            <!-- No Results -->
+            <div class="no-results">
+                <i class="bi bi-search display-1 text-muted"></i>
+                <p class="mt-3">No <?= $search_type ?> found matching your search.</p>
+                <p class="text-muted">Try different keywords or check your spelling.</p>
+            </div>
+        <?php endif; ?>
     </div>
-
-    </div>
-    </div>
-
-
-    <!-- Main Row (Filters + Results) -->
+    
+    <?php else: ?>
+    <!-- Popular/Trending Section (shown when no search) -->
     <div class="row">
-        <!-- Filters Panel -->
-        <div class="col-lg-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Filters</h5>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-fire"></i> Trending Posts</h5>
                 </div>
                 <div class="card-body">
-                    <!-- Sort By -->
-                    <h6>Sort By</h6>
-                    <select class="form-select mb-3" name="sort_by">
-                        <option value="recent">Most Recent</option>
-                        <option value="popular">Most Popular</option>
-                    </select>
-
-                    <!-- Date Range Filter -->
-                    <h6>Date Range</h6>
-                    <input type="date" class="form-control mb-3" name="start_date" placeholder="Start Date">
-                    <input type="date" class="form-control mb-3" name="end_date" placeholder="End Date">
-
-                    <!-- Viewable Categories -->
-                    <h6>Viewable Categories</h6>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="category[]" value="friends" id="friends">
-                        <label class="form-check-label" for="friends">Friends</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="category[]" value="public" id="public">
-                        <label class="form-check-label" for="public">Public</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="category[]" value="groups" id="groups">
-                        <label class="form-check-label" for="groups">Groups</label>
+                    <?php 
+                    $trending = $social->getTrendingPosts(24, 5);
+                    if (!empty($trending)):
+                        foreach ($trending as $post): ?>
+                        <div class="mb-3 pb-3 border-bottom">
+                            <small class="text-muted">
+                                By <?= htmlspecialchars($post['first_name']) ?>
+                            </small>
+                            <div class="text-truncate">
+                                <?= htmlspecialchars(substr($post['content'], 0, 100)) ?>...
+                            </div>
+                            <a href="/social/post.php?id=<?= $post['post_id'] ?>" class="small">View →</a>
+                        </div>
+                        <?php endforeach; 
+                    else: ?>
+                        <p class="text-muted">No trending posts yet.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-hash"></i> Popular Topics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="?q=%23BirthdayRewards&type=posts" class="btn btn-sm btn-outline-primary">#BirthdayRewards</a>
+                        <a href="?q=%23FreeBirthday&type=posts" class="btn btn-sm btn-outline-primary">#FreeBirthday</a>
+                        <a href="?q=%23BirthdayGold&type=posts" class="btn btn-sm btn-outline-primary">#BirthdayGold</a>
+                        <a href="?q=%23BirthdayMonth&type=posts" class="btn btn-sm btn-outline-primary">#BirthdayMonth</a>
+                        <a href="?q=%23BirthdayFreebies&type=posts" class="btn btn-sm btn-outline-primary">#BirthdayFreebies</a>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Search Results Panel -->
-        <div class="col-lg-8 right-panel">
-            <div id="search-results">
-                <?php
-                // Loop to dynamically generate search results
-                for ($i = 0; $i < $numResults; $i++) {
-                    // Generate random avatar, username, text, and likes
-                    $avatarNumber = rand(1, 10);
-                    $avatarSrc = "/public/avatars/sample_users/placeholder_$avatarNumber.png";
-                    $postText = $qik->generateLoremIpsum(rand(10, 50), 'words');
-                    $timeAgo = $qik->generateRandomDate();
-                    $likeCount = rand(2, 10000);
-                    $username = $usernames[array_rand($usernames)];
-                    $timeAgomessage = $qik->timeago($timeAgo, 90, 'm/d/y', 'm-d');
-
-                    // Output search result structure
-                    echo '
-                    <div class="card mb-2">
-                        <div class="card-body p-2">
-                            <div class="d-flex align-items-center mb-2">
-                                <img src="' . $avatarSrc . '" class="rounded-circle me-2" style="height:40px; width:40px;" alt="User Avatar">
-                                <div>
-                                    <h5 class="mb-0 fw-bold">' . $username . ' </h5>
-                                    <small class="text-muted">' . $timeAgomessage['shortmessagevalue'] . '</small>
-                                </div>
-                            </div>
-                            <p class="small mb-2">
-                                ' . $postText . '
-                            </p>
-                            <!-- Actions -->
-                            <div class="d-flex justify-content-between align-items-center">
-
-<div class="g-5">
-   <span class="icon-container pe-5">
-                        <i class="bi bi-hand-thumbs-up-fill icon"></i>
-                        <span class="interaction-count">'.$qik->formatShortNumber(rand(1,10000)).'</span>
-                    </span>
-                       <span class="icon-container pe-5">
-                        <i class="bi bi-bookmark-fill icon"></i>
-                        <span class="interaction-count">'.$qik->formatShortNumber(rand(1,10000)).'</span>
-                    </span>
-
-                       <span class="icon-container pe-5">
-                        <i class="bi bi-share-fill icon"></i>
-                        <span class="interaction-count">'.$qik->formatShortNumber(rand(1,10000)).'</span>
-                    </span>
-  </div>
-
-                                <button class="btn btn-sm btn-link text-muted">View Post</button>
-                            </div>
-                        </div>
-                    </div>';
-                }
-                ?>
-            </div>
-
-            <!-- Pagination -->
-            <nav aria-label="Search Results Pagination">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
-                    </li>
-                    <li class="page-item active">
-                        <a class="page-link" href="#">1</a>
-                    </li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Next</a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
     </div>
+    <?php endif; ?>
 </div>
 
+<script>
+function followUser(userId) {
+    // TODO: Implement follow functionality via AJAX
+    alert('Follow functionality coming soon!');
+}
+</script>
+
 <?php
-// Footer includes
 $display_footertype = 'none';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

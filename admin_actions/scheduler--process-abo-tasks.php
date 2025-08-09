@@ -54,7 +54,7 @@ try {
     $processors_sql = "SELECT config_key, config_value, config_data, display_order 
                        FROM bg_config 
                        WHERE config_type = 'automation_processor' 
-                       AND is_active = 1 
+                       AND `status` = 'active' 
                        ORDER BY display_order";
     $processors_stmt = $database->query($processors_sql);
     $processors = $processors_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -75,7 +75,7 @@ try {
         CROSS JOIN (
             SELECT * FROM bg_config 
             WHERE config_type = 'automation_processor' 
-            AND is_active = 1
+            AND `status` = 'active'
         ) p
         LEFT JOIN bg_company_attributes ca ON 
             c.company_id = ca.company_id 
@@ -143,9 +143,9 @@ try {
     ];
     
     $update_tracking_sql = "INSERT INTO bg_config 
-                            (config_type, config_key, config_value, config_data, is_active)
+                            (config_type, config_key, config_value, config_data, `status`)
                             VALUES 
-                            ('abo_tracking', 'last_processed', :value, :data, 1)
+                            ('abo_tracking', 'last_processed', :value, :data, 'active')
                             ON DUPLICATE KEY UPDATE
                             config_value = VALUES(config_value),
                             config_data = VALUES(config_data),

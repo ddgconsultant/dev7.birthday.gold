@@ -264,6 +264,47 @@ $additionalstyles .= '
     .form-floating > label {
         padding: 0.5rem 0.75rem;
         font-size: 0.85rem;
+        background-color: transparent !important;
+    }
+    
+    /* Remove white background from floating labels in all states */
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label,
+    .form-floating > .form-select ~ label,
+    .form-floating > label::after,
+    .form-floating > label::before {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+    
+    /* Override Bootstrap default white background on floating state */
+    .form-floating > .form-control:focus ~ label::after,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label::after {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+    
+    /* Force remove ALL backgrounds from floating labels */
+    .form-floating label,
+    .form-floating > label,
+    .form-floating > .form-control ~ label,
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label,
+    .form-floating > .form-select ~ label,
+    .form-floating > textarea ~ label {
+        background-color: transparent !important;
+        background-image: none !important;
+        background: transparent !important;
+    }
+    
+    /* Target the specific floating state with maximum specificity */
+    body .contact-content .form-floating > .form-control:focus ~ label,
+    body .contact-content .form-floating > .form-control:not(:placeholder-shown) ~ label,
+    body .contact-content .form-floating > .form-select ~ label,
+    body .contact-content .form-floating > textarea:focus ~ label,
+    body .contact-content .form-floating > textarea:not(:placeholder-shown) ~ label {
+        background: transparent !important;
+        background-color: transparent !important;
     }
     
     .form-floating > .form-control {

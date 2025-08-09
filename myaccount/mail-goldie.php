@@ -21,75 +21,15 @@ $days_back = min(max($days_back, 7), 30); // Between 7 and 30 days
 // Add v7 theme CSS and custom styles
 $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
 <style>
-/* Goldie Avatar Animation */
-.floating-icon {
-    animation: float 6s ease-in-out infinite;
-}
-
+/* Animation keyframes - Cannot be replaced with Bootstrap */
 @keyframes float {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-10px); }
 }
 
-.shadow-icon {
-    opacity: 0.3;
-    animation: shadow 6s ease-in-out infinite;
-}
-
 @keyframes shadow {
     0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.3; }
     50% { transform: translateX(-50%) scale(0.9); opacity: 0.2; }
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .floating-icon, .shadow-icon {
-        width: 80px !important;
-    }
-    
-    .content-header-dark .position-relative {
-        height: 96px !important;
-    }
-}
-.progress-container {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 2rem;
-    margin: 2rem 0;
-    text-align: center;
-}
-
-.progress-message {
-    font-size: 1.1rem;
-    color: #495057;
-    margin-bottom: 1rem;
-}
-
-.progress-bar-container {
-    background: #e9ecef;
-    border-radius: 10px;
-    height: 10px;
-    overflow: hidden;
-    margin: 1rem 0;
-}
-
-.progress-bar-fill {
-    background: #0d6efd;
-    height: 100%;
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-.summary-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    transition: all 0.3s ease;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: fadeInUp 0.5s forwards;
 }
 
 @keyframes fadeInUp {
@@ -99,124 +39,53 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
     }
 }
 
-.summary-card:hover {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-}
-
-.summary-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
-
-.summary-date {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.summary-meta {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
-}
-
-.company-badges {
-    display: flex;
-    gap: 0.5rem;
-    margin: 1rem 0;
-    flex-wrap: wrap;
-}
-
-.company-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.75rem;
-    background: #f0f0f0;
-    border-radius: 20px;
-    font-size: 0.875rem;
-}
-
-.company-logo-tiny {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    object-fit: cover;
-}
-
-.summary-content {
-    color: #555;
-    line-height: 1.6;
-    margin: 1rem 0;
-}
-
-.offer-list {
-    margin-top: 1rem;
-    padding-left: 0;
-    list-style: none;
-}
-
-.offer-item {
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.offer-item:last-child {
-    border-bottom: none;
-}
-
-.offer-company {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 0.25rem;
-}
-
-.offer-detail {
-    color: #666;
-    font-size: 0.9rem;
-}
-
-.offer-action {
-    color: #0d6efd;
-    font-size: 0.85rem;
-    font-style: italic;
-}
-
-.date-selector {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.loading-spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #0d6efd;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-left: 0.5rem;
-}
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
-.status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
+/* Avatar animations - Custom animations cannot be replaced */
+.floating-icon {
+    animation: float 6s ease-in-out infinite;
 }
 
+.shadow-icon {
+    opacity: 0.3;
+    animation: shadow 6s ease-in-out infinite;
+}
+
+/* Responsive avatar sizing */
+@media (max-width: 768px) {
+    .floating-icon, .shadow-icon {
+        width: 80px !important;
+    }
+    
+    .content-header-dark .position-relative {
+        height: 96px !important;
+    }
+}
+
+/* Custom animations and transitions that cannot be replaced */
+.summary-card {
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s forwards;
+}
+
+.summary-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+}
+
+.progress-bar-fill {
+    transition: width 0.3s ease;
+}
+
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Status badges - Custom color combinations */
 .status-cached {
     background: #d4edda;
     color: #155724;
@@ -227,30 +96,9 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
     color: #004085;
 }
 
-.empty-state {
-    text-align: center;
-    padding: 3rem;
-    color: #6c757d;
-}
-
-.empty-state i {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.btn-icon {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
+/* Offer item border handling */
+.offer-item:last-child {
+    border-bottom: none !important;
 }
 </style>';
 
@@ -289,7 +137,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Date range selector -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="date-selector">
+            <div class="d-flex align-items-center gap-3">
                 <label class="form-label mb-0">Show summaries for:</label>
                 <select class="form-select" style="width: auto;" id="daysSelector">
                     <option value="7" <?php echo $days_back == 7 ? 'selected' : ''; ?>>Last 7 days</option>
@@ -299,7 +147,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
         </div>
         <div class="col-md-6 text-end">
-            <button class="btn btn-primary btn-icon" id="refreshBtn" onclick="forceRefresh()">
+            <button class="btn btn-primary rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2" id="refreshBtn" onclick="forceRefresh()" style="font-size: 0.875rem;">
                 <i class="bi bi-arrow-clockwise"></i>
                 Refresh Summaries
             </button>
@@ -307,14 +155,14 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 
     <!-- Progress Container (hidden initially) -->
-    <div id="progressContainer" class="progress-container" style="display: none;">
-        <div class="progress-message" id="progressMessage">
+    <div id="progressContainer" class="bg-light rounded p-4 my-4 text-center" style="display: none;">
+        <div class="fs-5 text-primary mb-3" id="progressMessage">
             <i class="bi bi-hourglass-split me-2"></i>
             <span id="progressText">Initializing Goldie...</span>
-            <span class="loading-spinner"></span>
+            <span class="loading-spinner d-inline-block ms-2 border border-3 border-light border-top-primary rounded-circle" style="width: 20px; height: 20px;"></span>
         </div>
-        <div class="progress-bar-container">
-            <div class="progress-bar-fill" id="progressBar"></div>
+        <div class="bg-gray rounded overflow-hidden my-3" style="height: 10px;">
+            <div class="progress-bar-fill bg-primary h-100" id="progressBar" style="width: 0%;"></div>
         </div>
         <small class="text-muted" id="progressDetail"></small>
     </div>
@@ -325,9 +173,9 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 
     <!-- Empty State (shown when no messages) -->
-    <div id="emptyState" class="empty-state" style="display: none;">
-        <i class="bi bi-inbox"></i>
-        <h3>No messages found</h3>
+    <div id="emptyState" class="text-center py-5 text-muted" style="display: none;">
+        <i class="bi bi-inbox" style="font-size: 4rem; opacity: 0.5;"></i>
+        <h3 class="mt-3">No messages found</h3>
         <p>You don't have any birthday reward messages in the selected time period.</p>
         <a href="/myaccount/mail-box" class="btn btn-primary" style="border-radius: 25px;">
             Go to Regular Inbox
@@ -588,13 +436,13 @@ function addSummaryCard(summary) {
     // Build offers HTML
     let offersHtml = '';
     if (summary.offers && summary.offers.length > 0) {
-        offersHtml = '<ul class="offer-list">';
+        offersHtml = '<ul class="list-unstyled mt-3">';
         summary.offers.forEach(offer => {
             offersHtml += `
-                <li class="offer-item">
-                    <div class="offer-company">${offer.company}</div>
-                    <div class="offer-detail">${offer.offer}</div>
-                    ${offer.action ? '<div class="offer-action">' + offer.action + '</div>' : ''}
+                <li class="offer-item py-3 border-bottom">
+                    <div class="fw-semibold text-dark mb-1">${offer.company}</div>
+                    <div class="text-muted small">${offer.offer}</div>
+                    ${offer.action ? '<div class="text-primary small fst-italic">' + offer.action + '</div>' : ''}
                 </li>
             `;
         });
@@ -604,28 +452,28 @@ function addSummaryCard(summary) {
     // Build company badges
     let companiesHtml = '';
     if (summary.companies && summary.companies.length > 0) {
-        companiesHtml = '<div class="company-badges">';
+        companiesHtml = '<div class="d-flex flex-wrap gap-2 my-3">';
         summary.companies.forEach(company => {
-            companiesHtml += `<span class="company-badge">${company}</span>`;
+            companiesHtml += `<span class="d-inline-flex align-items-center gap-1 px-3 py-1 bg-light rounded-pill small">${company}</span>`;
         });
         companiesHtml += '</div>';
     }
     
     const cardHtml = `
-        <div class="summary-card" style="animation-delay: ${container.children.length * 0.1}s">
-            <div class="summary-header">
+        <div class="summary-card bg-white rounded p-4 mb-3 shadow-sm" style="animation-delay: ${container.children.length * 0.1}s">
+            <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                    <div class="summary-date">${summary.displayDate}</div>
-                    <div class="summary-meta">
+                    <div class="fs-5 fw-semibold text-dark">${summary.displayDate}</div>
+                    <div class="d-flex gap-3 small text-muted mt-1">
                         <span><i class="bi bi-envelope me-1"></i>${summary.messageCount} messages</span>
                         ${summary.companyCount ? '<span><i class="bi bi-building me-1"></i>' + summary.companyCount + ' companies</span>' : ''}
-                        <span class="status-badge ${summary.cached ? 'status-cached' : 'status-fresh'}">
+                        <span class="d-inline-block px-3 py-1 rounded-pill small fw-semibold text-uppercase ${summary.cached ? 'status-cached' : 'status-fresh'}">
                             ${summary.cached ? 'Cached' : 'Fresh'}
                         </span>
                     </div>
                 </div>
-                <div class="action-buttons">
-                    <a href="/myaccount/mail-box?date=${summary.date}" class="btn btn-sm btn-outline-primary btn-icon">
+                <div class="d-flex gap-2">
+                    <a href="/myaccount/mail-box?date=${summary.date}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2" style="font-size: 0.875rem;">
                         <i class="bi bi-envelope-open"></i>
                         View Messages
                     </a>
@@ -634,7 +482,7 @@ function addSummaryCard(summary) {
             
             ${companiesHtml}
             
-            <div class="summary-content">
+            <div class="text-black lh-base my-3">
                 ${summary.summary}
             </div>
             

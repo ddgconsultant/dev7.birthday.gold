@@ -456,6 +456,10 @@ foreach ($classes as $class) {
         $telegramsmsservice = new TelegramSMSService($telegramToken, $telegramAPI, $database);
         break;
       // -----------------------------------------
+      case 'productmanager':
+        $productmanager = new ProductManager($database, $qik);
+        break;
+      // -----------------------------------------
       case 'productmanager_promo':
         $productManager = new ProductManagerPromo($database, $qik);
         break;
@@ -490,6 +494,10 @@ foreach ($classes as $class) {
       // -----------------------------------------
       case 'allocationmanager':
         $$className = new $className($database);
+        break;
+      // -----------------------------------------
+      case 'social':
+        $$className = new $className($database, $app, $account, $system);
         break;
       // -----------------------------------------
       default:

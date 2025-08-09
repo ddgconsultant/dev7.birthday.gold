@@ -1224,14 +1224,25 @@ body {
     color: #6b7280;
     font-size: 0.75rem;
     margin: 0;
+    text-align: left;
 }
 
 .footer-meta {
     display: flex;
     align-items: center;
-    justify-content: end;
+    justify-content: flex-end;
     gap: 1rem;
     font-size: 0.75rem;
+}
+
+/* Ensure proper alignment on large screens */
+@media (min-width: 768px) {
+    .footer-bottom .col-md-6:first-child {
+        text-align: left;
+    }
+    .footer-bottom .col-md-6:last-child {
+        text-align: right;
+    }
 }
 
 .minimal-footer {

@@ -11,14 +11,14 @@ if ($result) {
     echo "AIRTOP processor already exists in bg_config:\n";
     echo "Key: " . $result['config_key'] . "\n";
     echo "Value: " . $result['config_value'] . "\n";
-    echo "Active: " . ($result['is_active'] ? 'Yes' : 'No') . "\n";
+    echo "Status: " . $result['status'] . "\n";
 } else {
     // Insert AIRTOP processor
     $insert_sql = "INSERT INTO bg_config 
-                   (config_type, config_key, config_value, config_data, display_order, is_active)
+                   (config_type, config_key, config_value, config_data, display_order, `status`)
                    VALUES 
                    ('automation_processor', 'abo_mapformfields_airtop', 'Map Form Fields (AIRTOP AI)', 
-                    :config_data, 25, 1)";
+                    :config_data, 25, 'active')";
     
     $config_data = json_encode([
         'description' => 'Uses AIRTOP AI browser automation to intelligently map form fields when HTML scraping finds insufficient fields',

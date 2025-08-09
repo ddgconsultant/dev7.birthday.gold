@@ -171,6 +171,7 @@ $additionalstyles .= "
 .copyright {
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.85rem;
+    text-align: left !important;
 }
 
 .footer-meta {
@@ -178,6 +179,27 @@ $additionalstyles .= "
     justify-content: flex-end;
     align-items: center;
     color: rgba(255, 255, 255, 0.5);
+}
+
+/* Ensure proper alignment on desktop */
+@media (min-width: 768px) {
+    .footer-bottom .col-md-6:first-child {
+        text-align: left !important;
+        padding-left: 0 !important;
+    }
+    .footer-bottom .col-md-6:last-child {
+        text-align: right !important;
+        padding-right: 0 !important;
+    }
+    .footer-bottom .copyright {
+        text-align: left !important;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    .footer-bottom .footer-meta {
+        margin-right: 0 !important;
+        padding-right: 0 !important;
+    }
 }
 
 /* Minimal Footer for Mobile */
@@ -550,12 +572,12 @@ switch ($display_footertype ?? 'default') {
             <div class="container-fluid">
                 <div class="container">
                     <div class="row pt-2 pb-2">
-                        <div class="col-12 text-center text-md-start">
-                            <!-- Mobile Layout - Single Line -->
+                        <div class="col-12">
+                            <!-- Mobile Layout - Single Line with copyright on right -->
                             <div class="d-block d-md-none">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <a href="/" class="text-white text-decoration-none fs-5 fw-bold">birthday.gold</a>
-                                    <span style="color: #aaa; font-size: 0.85rem;">
+                                    <span style="color: #aaa; font-size: 0.85rem; text-align: right;">
                                         <a href="/help" class="text-secondary text-decoration-none">HELP</a>
                                         <span class="mx-2">|</span>
                                         <span>&copy;' . date('Y') . '</span>
@@ -563,8 +585,8 @@ switch ($display_footertype ?? 'default') {
                                 </div>
                             </div>
                             
-                            <!-- Desktop Layout -->
-                            <div class="d-none d-md-block">
+                            <!-- Desktop Layout - Everything left aligned -->
+                            <div class="d-none d-md-block text-start">
                                 <h5 class="text-white fs-3 mb-0">
                                     birthday.gold
                                     <span style="font-size: 0.85rem; color: #aaa;">
@@ -673,7 +695,7 @@ switch ($display_footertype ?? 'default') {
                                 <ul class="footer-links">
                                     <li><a href="/how-it-works">How it Works</a></li>
                                     <li><a href="/discover">Browse Rewards</a></li>
-                                    <li><a href="/pricing">Pricing</a></li>';
+                                    <li><a href="/pricing">Plans / Pricing</a></li>';
 
         // Show different links based on login status
         if (!$isLoggedIn) {
@@ -770,16 +792,19 @@ switch ($display_footertype ?? 'default') {
         echo '
                         </div>
                     </div>
-                    
-                    <!-- Bottom Bar -->
-                    <div class="footer-bottom">
-                        <div class="row align-items-center">
-                            <div class="col-12 col-md-6">
-                                <p class="copyright mb-0">© ' . date('Y') . ' birthday.gold. All rights reserved.</p>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="footer-meta">
-                                    <span class="text-muted small">v7.0 Mobile-First</span>';
+                </div>
+            </div>
+            
+            <!-- Bottom Bar -->
+            <div class="footer-bottom">
+                <div class="container">
+                    <div class="row align-items-center">
+                        <div class="col-12 col-md-6 text-center text-md-start ps-0">
+                            <p class="copyright mb-0 text-start">© ' . date('Y') . ' birthday.gold. All rights reserved.</p>
+                        </div>
+                        <div class="col-12 col-md-6 text-center text-md-end pe-0">
+                            <div class="footer-meta">
+                                <span class="text-muted small">v7.0 Mobile-First</span>';
 
         // Show user status in footer for logged in users
         if ($isLoggedIn) {

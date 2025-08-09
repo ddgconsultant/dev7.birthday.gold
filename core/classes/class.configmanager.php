@@ -36,7 +36,7 @@ class ConfigManager {
             // Get all configs of this type
             $sql = "SELECT * FROM bg_config 
                     WHERE config_type = :type 
-                    AND is_active = 1 
+                    AND `status` = 'active' 
                     ORDER BY display_order, config_key";
             
             $result = $this->db->getrows($sql, ['type' => $type]);
@@ -48,7 +48,7 @@ class ConfigManager {
                     FROM bg_config 
                     WHERE config_type = :type 
                     AND config_key = :key 
-                    AND is_active = 1";
+                    AND `status` = 'active'";
             
             $result = $this->db->getrow($sql, [
                 'type' => $type,
@@ -134,10 +134,10 @@ class ConfigManager {
                     JSON_UNQUOTE(JSON_EXTRACT(config_data, '$.icon')) as category_icon,
                     JSON_UNQUOTE(JSON_EXTRACT(config_data, '$.description')) as category_description,
                     display_order,
-                    is_active
+                    `status`
                 FROM bg_config
                 WHERE config_type = 'company_category'
-                AND is_active = 1
+                AND `status` = 'active'
                 ORDER BY display_order";
         
         return $this->db->getrows($sql);
@@ -211,7 +211,7 @@ class ConfigManager {
     public function delete($type, $key) {
         try {
             $sql = "UPDATE bg_config 
-                    SET is_active = 0 
+                    SET `status` = 'inactive' 
                     WHERE config_type = :type 
                     AND config_key = :key";
             

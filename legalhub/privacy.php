@@ -60,7 +60,7 @@ We provide the condensed version of our full privacy policy and nothing substitu
                 if (isset($_REQUEST['register'])) {
                     echo '                <a class="btn btn-primary py-3 px-5 no-print" href="' . htmlspecialchars($_SERVER['HTTP_REFERER'] ?? '/signup') . '">Go Back</a>';
                 } else {
-                    echo '                <a class="btn btn-primary py-3 px-5 no-print" href="/">Go Back To Home</a>';
+                    echo '                <a class="btn btn-primary py-3 px-5 no-print" href="'. htmlspecialchars($_SERVER['HTTP_REFERER'] ?? '/').'">Go Back</a>';
                 }
                 ?>
             </div>

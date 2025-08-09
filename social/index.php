@@ -1,338 +1,509 @@
 <?php
+$addClasses[] = 'Social';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-$pagelang = 'zxx';
-$bodycontentclass = '';
+// Site-controller handles authentication and provides $current_user_data
+// If not logged in, $current_user_data will be empty
+if (empty($current_user_data['user_id'])) {
+    header('Location: /login.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
+    exit;
+}
+
+$user_id = $current_user_data['user_id'];
+
+// Get feed type from URL parameter
+$feed_type = $_GET['feed'] ?? 'all';
+$current_page = intval($_GET['page'] ?? 1);
+$posts_per_page = 20;
+$offset = ($current_page - 1) * $posts_per_page;
+
+// Fetch posts from API
+$posts = $social->getFeed($user_id, $posts_per_page, $offset, $feed_type);
+
+// Get user stats for sidebar
+$user_stats = $social->getUserStats($user_id);
+
+// Get notifications count
+$sql = "SELECT COUNT(*) as unread_count FROM bg_social_notifications WHERE user_id = :user_id AND is_read = 0";
+$result = $database->getrow($sql, ['user_id' => $user_id]);
+$unread_notifications = $result['unread_count'] ?? 0;
+
+$pagetitle = 'Social Feed - Birthday Gold';
+$bodycontentclass = 'social-feed-page';
+
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-
-$postId = 123;
-
-
-$additionalstyles .= '
-<style > .main-content { overflow: hidden }
-.left-panel { display: flex; flex-direction: column; height: calc(100vh - 75px); border-right: 1px solid #dee2e6;  overflow: hidden }
-.comments-list { overflow-y: auto; flex-grow: 1; padding: 1rem; visibility: visible  }
-.comment-item { display: flex; align-items: start; margin-bottom: 1rem }
-.comment-item img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px }
-.comment-body { flex-grow: 1 }
-.comment-header { display: flex; justify-content: space-between }
-.comment-text { font-size: 0.9rem; margin-bottom: 0.5rem }
-.reply-link, .like-info { font-size: 0.8rem }
-.comments-list::-webkit-scrollbar { width: 8px }
-.comments-list::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 4px }
-.comments-list::-webkit-scrollbar-track { background-color: #f1f1f1 }
-.left-panel .action-bar { display: flex; justify-content: center; padding: 10px 0; background-color: #f8f9fa }
-.left-panel .action-bar a { color: #000; font-size: 1.5rem }
-.left-panel .icon-container { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 1000px }
-.left-panel .icon-container a { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: inherit; font-size: 1.5rem }
-.left-panel .icon-title { font-size: 0.7rem; margin-top: 2px; color: #666 }
-.monotypenumbers { font-family: "Roboto Mono" }
-.error-message { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background-color: #dc3545; color: white; padding: 10px 20px; border-radius: 5px; z-index: 9999; display: none }
-
-.left-panel .comments-list { display: block; overflow-y: auto }
-#large-comments-panel .comments-list { height: calc(100vh - 260px); overflow-y: auto }
-.right-panel .chrome-bottom-padding-1{        bottom: 20px;    }
-.right-panel .chrome-bottom-padding-2{        bottom: 20px;    }
-.right-panel .chrome-bottom-padding-3{        bottom: 50px;    }
-.right-panel .chrome-bottom-padding-4{        bottom: 70px;    }
-.right-panel .chrome-bottom-padding-seekbar{        bottom: 34px;    }
-.right-panel .chrome-bottom-padding-carousel{        bottom: 30px;    }
-.right-panel .chrome-bottom-padding-carousel-audio{        bottom: 65px;    }
-@media (max-width:991.98px) {
-.left-panel { display: none }
-.comment-overlay.active { display: block !important }
-.right-panel .chrome-bottom-padding-1{        bottom: 30px;    }
-.right-panel .chrome-bottom-padding-2{        bottom: 50px;    }
-.right-panel .chrome-bottom-padding-3{        bottom: 70px;    }
-.right-panel .chrome-bottom-padding-4{        bottom: 90px;    }
-.right-panel .chrome-bottom-padding-seekbar{        bottom: 65px;    }
-.right-panel .chrome-bottom-padding-carousel{        bottom: 145px;    }
-.right-panel .chrome-bottom-padding-carousel-audio{        bottom: 145px;    }
-.right-panel .post-header img { width: 40px !important; height: 40px !important; border-radius: 50% }
-.right-panel .soundtrack-avatar-icon{width:40px !important; height:40px  !important;}
-}
-.comment-overlay { display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: calc(50vh - 0px); background-color: rgba(255, 255, 255, 0.98); z-index: 1050; overflow-y: hidden; padding: 1rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1) }
-.comment-overlay .close-btn { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; color: #333; cursor: pointer }
-.write-comment { background-color: #fff; width: 100%; position: relative; padding: 1rem; border-bottom: 1px solid #dee2e6; flex-shrink: 0 }
-.comment-overlay .write-comment { left: 0; width: calc(100% - 20px); padding: 1rem; background-color: #fff; border-bottom: 1px solid #dee2e6 }
-#large-comments-panel .comments-list { height: calc(100vh - 260px); overflow-y: auto }
-#small-comments-panel .comments-list { height: calc(45vh); overflow-y: auto }
-#small-comments-panel .comments-list { overflow: auto !important }
-.right-panel h1 { margin-top: 150px }
-.right-panel .container, .left-panel .container { margin: 50px auto; max-width: 960px; display: flex; justify-content: space-between }
-.column { width: 40%; padding: 40px; color: #fff; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.11) 0px, rgba(0, 0, 0, 0.11) 12px, rgba(1, 1, 1, 0.16) 12px, rgba(1, 1, 1, 0.16) 24px, rgba(0, 0, 0, 0.14) 24px, rgba(0, 0, 0, 0.14) 36px, rgba(0, 0, 0, 0.23) 36px, rgba(0, 0, 0, 0.23) 48px, rgba(0, 0, 0, 0.12) 48px, rgba(0, 0, 0, 0.12) 60px, rgba(1, 1, 1, 0.07) 60px, rgba(1, 1, 1, 0.07) 72px, rgba(0, 0, 0, 0.21) 72px, rgba(0, 0, 0, 0.21) 84px, rgba(0, 0, 0, 0.24) 84px, rgba(0, 0, 0, 0.24) 96px, rgba(1, 1, 1, 0.23) 96px, rgba(1, 1, 1, 0.23) 108px, rgba(1, 1, 1, 0.07) 108px, rgba(1, 1, 1, 0.07) 120px, rgba(0, 0, 0, 0.01) 120px, rgba(0, 0, 0, 0.01) 132px, rgba(1, 1, 1, 0.22) 132px, rgba(1, 1, 1, 0.22) 144px, rgba(1, 1, 1, 0.24) 144px, rgba(1, 1, 1, 0.24) 156px, rgba(0, 0, 0, 0) 156px, rgba(0, 0, 0, 0) 168px, rgba(0, 0, 0, 0.12) 168px, rgba(0, 0, 0, 0.12) 180px), repeating-linear-gradient(90deg, rgba(1, 1, 1, 0.01) 0px, rgba(1, 1, 1, 0.01) 12px, rgba(1, 1, 1, 0.15) 12px, rgba(1, 1, 1, 0.15) 24px, rgba(0, 0, 0, 0.09) 24px, rgba(0, 0, 0, 0.09) 36px, rgba(0, 0, 0, 0.02) 36px, rgba(0, 0, 0, 0.02) 48px, rgba(0, 0, 0, 0.1) 48px, rgba(0, 0, 0, 0.1) 60px, rgba(1, 1, 1, 0.07) 60px, rgba(1, 1, 1, 0.07) 72px, rgba(1, 1, 1, 0.15) 72px, rgba(1, 1, 1, 0.15) 84px, rgba(0, 0, 0, 0.18) 84px, rgba(0, 0, 0, 0.18) 96px, rgba(1, 1, 1, 0.15) 96px, rgba(1, 1, 1, 0.15) 108px, rgba(1, 1, 1, 0.09) 108px, rgba(1, 1, 1, 0.09) 120px, rgba(1, 1, 1, 0.07) 120px, rgba(1, 1, 1, 0.07) 132px, rgba(1, 1, 1, 0.05) 132px, rgba(1, 1, 1, 0.05) 144px, rgba(0, 0, 0, 0.1) 144px, rgba(0, 0, 0, 0.1) 156px, rgba(1, 1, 1, 0.18) 156px, rgba(1, 1, 1, 0.18) 168px), repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.24) 0px, rgba(0, 0, 0, 0.24) 16px, rgba(1, 1, 1, 0.06) 16px, rgba(1, 1, 1, 0.06) 32px, rgba(0, 0, 0, 0.16) 32px, rgba(0, 0, 0, 0.16) 48px, rgba(1, 1, 1, 0) 48px, rgba(1, 1, 1, 0) 64px, rgba(1, 1, 1, 0.12) 64px, rgba(1, 1, 1, 0.12) 80px, rgba(1, 1, 1, 0.22) 80px, rgba(1, 1, 1, 0.22) 96px, rgba(0, 0, 0, 0.24) 96px, rgba(0, 0, 0, 0.24) 112px, rgba(0, 0, 0, 0.25) 112px, rgba(0, 0, 0, 0.25) 128px, rgba(1, 1, 1, 0.12) 128px, rgba(1, 1, 1, 0.12) 144px, rgba(0, 0, 0, 0.18) 144px, rgba(0, 0, 0, 0.18) 160px, rgba(1, 1, 1, 0.03) 160px, rgba(1, 1, 1, 0.03) 176px, rgba(1, 1, 1, 0.1) 176px, rgba(1, 1, 1, 0.1) 192px), repeating-linear-gradient(135deg, rgba(1, 1, 1, 0.18) 0px, rgba(1, 1, 1, 0.18) 3px, rgba(0, 0, 0, 0.09) 3px, rgba(0, 0, 0, 0.09) 6px, rgba(0, 0, 0, 0.08) 6px, rgba(0, 0, 0, 0.08) 9px, rgba(1, 1, 1, 0.05) 9px, rgba(1, 1, 1, 0.05) 12px, rgba(0, 0, 0, 0.01) 12px, rgba(0, 0, 0, 0.01) 15px, rgba(1, 1, 1, 0.12) 15px, rgba(1, 1, 1, 0.12) 18px, rgba(0, 0, 0, 0.05) 18px, rgba(0, 0, 0, 0.05) 21px, rgba(1, 1, 1, 0.16) 21px, rgba(1, 1, 1, 0.16) 24px, rgba(1, 1, 1, 0.07) 24px, rgba(1, 1, 1, 0.07) 27px, rgba(1, 1, 1, 0.23) 27px, rgba(1, 1, 1, 0.23) 30px, rgba(0, 0, 0, 0.2) 30px, rgba(0, 0, 0, 0.2) 33px, rgba(0, 0, 0, 0.18) 33px, rgba(0, 0, 0, 0.18) 36px, rgba(1, 1, 1, 0.12) 36px, rgba(1, 1, 1, 0.12) 39px, rgba(1, 1, 1, 0.13) 39px, rgba(1, 1, 1, 0.13) 42px, rgba(1, 1, 1, 0.2) 42px, rgba(1, 1, 1, 0.2) 45px, rgba(1, 1, 1, 0.18) 45px, rgba(1, 1, 1, 0.18) 48px, rgba(0, 0, 0, 0.2) 48px, rgba(0, 0, 0, 0.2) 51px, rgba(1, 1, 1, 0) 51px, rgba(1, 1, 1, 0) 54px, rgba(0, 0, 0, 0.03) 54px, rgba(0, 0, 0, 0.03) 57px, rgba(1, 1, 1, 0.06) 57px, rgba(1, 1, 1, 0.06) 60px, rgba(1, 1, 1, 0) 60px, rgba(1, 1, 1, 0) 63px, rgba(0, 0, 0, 0.1) 63px, rgba(0, 0, 0, 0.1) 66px, rgba(1, 1, 1, 0.19) 66px, rgba(1, 1, 1, 0.19) 69px), linear-gradient(90deg, rgb(239, 53, 115), rgb(79, 2, 93)) }
-.hookto { overflow-y: auto; visibility: visible; height: calc(100vh - 260px); overflow-y: auto }
-
-</style > ';
-
-
-echo '
-<div class="container-fluid main-content p-0 pt-0 mb-0 pt-lg-3">
-<div class="row my-0 py-0">
-';
-
-
-echo '
-<div class="comment-overlay  d-lg-none"> 
-<span class="close-btn">&times;</span>
-<div id="small-comments-panel" class="comments-container">
-';
-echo '
-<div 
-class="hookto comments-list"
-data-hook-to-mobile-first="true"
-data-hook-to="#hookto-large"
-data-hook-to-position="after"
-data-hook-to-return="991.98">
-';
-include($_SERVER['DOCUMENT_ROOT'] . '/social/components/write-comment.inc');
-
-
-
-// Determine the number of comments to generate (random between 3 and 15)
-$numComments = rand(0, 35);
-
-
-if ($numComments ==0) {
-    echo '<div class="text-center text-muted mt-5">No comments yet</div>
-    <div class="text-center my-4">
-'.$icons_writecomment[array_rand($icons_writecomment)].'
-</div>
-<div class="text-center text-muted">
-    Start the conversation!
-    </div>';
-} else {
-// Loop to generate the comments
-for ($i = 0; $i < $numComments; $i++) {
-    $avatarNumber = rand(1, 10);
-    $avatarSrc = "/public/avatars/sample_users/placeholder_$avatarNumber.png";
-    $commentText = $qik->generateLoremIpsum((rand(3, 30)), 'words');
-    $timeAgo = $qik->generateRandomDate();
-    $likeCount = rand(2, 1000000);
-    $usernames = ['User1', 'User2', 'User3', 'User4', 'User5'];
-    $username = $usernames[array_rand($usernames)];
-
-    $timeAgomessage = $qik->timeago($timeAgo, 90, 'm/d/y', 'm-d');
-
-
-    // Output comment structure
-    echo '
-<div class="comment-item">
-<a href="/social/user-profile?">  <img src="' . $avatarSrc . '" alt="User Avatar">  </a>
-<div class="comment-body">
-<div class="comment-header">
-<a href="/social/user-profile?">  <strong>' . $username . '</strong>   </a>
-</div>
-<div class="comment-text">
-' . $commentText . '... <span class="toggle-text text-muted" style="cursor: pointer;">more <i class="bi bi-caret-down-fill"></i></span>
-</div>
-<div class="d-flex justify-content-between align-items-center">
-<div>
-<span class="text-muted small me-2">' . $timeAgomessage['shortmessagevalue'] . '</span>
-<a href="#" class="reply-link">Reply</a>
-</div>
-<span class="like-info icon-container-action text-muted" data-action="post-comment-like">
-<i class="bi bi-hand-thumbs-up-fill icon"></i> ' . $qik->formatShortNumber($likeCount) . '
-</span>
-</div>
-
-</div>
-</div>
-';
-}
-}
 ?>
-</div> <!-- END OF hookto -->
-</div> <!-- END OF comments-container -->
-</div> <!-- END OF comment-overlay -->
 
-<?PHP
+<style>
+.social-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.feed-nav { background: white; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.feed-nav-tabs { display: flex; gap: 10px; }
+.feed-nav-tab { padding: 8px 16px; border-radius: 20px; text-decoration: none; color: #666; transition: all 0.3s; }
+.feed-nav-tab:hover { background: #f0f0f0; }
+.feed-nav-tab.active { background: #007bff; color: white; }
 
+.social-layout { display: flex; gap: 20px; }
+.social-sidebar { flex: 0 0 280px; }
+.social-feed { flex: 1; min-width: 0; }
 
-/// LEFT PANEL ===============================================================================
-echo '
-<!-- Left Panel: 1/3 width for large screens -->
-<div class="col-lg-4 left-panel p-0 m-0">
-';
+.user-card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.user-card-avatar { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 15px; display: block; }
+.user-card-name { text-align: center; font-size: 1.2em; font-weight: bold; margin-bottom: 5px; }
+.user-card-username { text-align: center; color: #666; margin-bottom: 15px; }
+.user-card-stats { display: flex; justify-content: space-around; padding-top: 15px; border-top: 1px solid #eee; }
+.stat-item { text-align: center; }
+.stat-value { font-size: 1.2em; font-weight: bold; display: block; }
+.stat-label { font-size: 0.9em; color: #666; }
 
-echo '
-<!-- Action Icon Bar -->
-<div class="action-bar m-0 bg-secondary-subtle px-5 py-3 ">
-<div class="icon-container">
-<a href="/social/" title="Home">
-<i class="bi bi-house-door-fill text-dark"></i>
-<div class="icon-title">Home</div>
-</a>
-<a href="/social/search" title="Search">
-<i class="bi bi-search text-dark"></i>
-<div class="icon-title">Search</div>
-</a>
-<a href="/social/create" title="Create Post">
-<i class="bi bi-plus-circle-fill text-dark"></i>
-<div class="icon-title">Create</div>
-</a>
-<a href="/social/activity" title="Bookmarks & Activity">
-<i class="bi bi-bookmark-fill text-dark"></i>
-<div class="icon-title">Activity</div>
-</a>
-<a href="/social/settings" title="Settings">
-<i class="bi bi-gear-fill text-dark"></i>
-<div class="icon-title">Settings</div>
-</a>
-</div>
-</div>
-';
+.create-post-box { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.create-post-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 25px; resize: none; }
+.create-post-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+.post-options { display: flex; gap: 15px; }
+.post-option-btn { background: none; border: none; color: #666; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.post-option-btn:hover { color: #007bff; }
 
-echo '
-<hr class="mt-0 pt-0">  
-';
+.post-card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.post-header { display: flex; align-items: center; margin-bottom: 15px; }
+.post-avatar { width: 48px; height: 48px; border-radius: 50%; margin-right: 12px; }
+.post-user-info { flex: 1; }
+.post-username { font-weight: bold; color: #333; text-decoration: none; }
+.post-username:hover { text-decoration: underline; }
+.post-time { font-size: 0.9em; color: #666; }
+.post-menu { position: relative; }
+.post-menu-btn { background: none; border: none; color: #666; cursor: pointer; padding: 5px; }
 
+.post-content { margin-bottom: 15px; line-height: 1.5; }
+.post-media { margin: 15px -20px; }
+.post-media img { width: 100%; height: auto; }
+.post-media video { width: 100%; height: auto; }
 
-echo '
-<!-- Comments List -->
-<div id="large-comments-panel" class="comments-container ps-2">
-<!-- Write Comment Section -->
-';
+.post-actions { display: flex; gap: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+.post-action-btn { background: none; border: none; color: #666; cursor: pointer; display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 5px; transition: all 0.3s; }
+.post-action-btn:hover { background: #f0f0f0; }
+.post-action-btn.liked { color: #e74c3c; }
+.post-action-btn.bookmarked { color: #f39c12; }
 
+.comments-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+.comment { display: flex; margin-bottom: 15px; }
+.comment-avatar { width: 36px; height: 36px; border-radius: 50%; margin-right: 10px; }
+.comment-content { flex: 1; background: #f8f9fa; padding: 10px; border-radius: 10px; }
+.comment-username { font-weight: bold; margin-bottom: 5px; }
+.comment-text { font-size: 0.95em; }
+.comment-actions { margin-top: 5px; font-size: 0.85em; }
+.comment-action { color: #666; margin-right: 15px; cursor: pointer; }
+.comment-action:hover { text-decoration: underline; }
 
-echo '
-<div  id="hookto-large" class="px-1">
-<!-- Comments List dyamically placed by HOOKTO -->
-</div>
+.write-comment { display: flex; align-items: center; margin-top: 15px; }
+.write-comment input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px; margin-left: 10px; }
 
-</div>  <!-- END OF comments-container -->
-';
+.empty-state { text-align: center; padding: 60px 20px; color: #666; }
+.empty-state i { font-size: 4em; margin-bottom: 20px; color: #ddd; }
 
-echo '
-</div> <!-- END OF Left Panel -->';
-
-
-echo '
-<!-- Right Panel: 2/3 width -->
-<div class="col-lg-8 pe-lg-4">
-';
-
-$postTypes = ['images', 'images_audio', 'video', 'video', 'text', 'text_audio', 'video', 'video'];
-$post['type'] = $postTypes[array_rand($postTypes)];
-
-switch ($post['type']) {
-    case 'images':
-        include($_SERVER['DOCUMENT_ROOT'] . '/social/components/postcontent-images.inc');
-        break;
-    case 'images_audio':
-        include($_SERVER['DOCUMENT_ROOT'] . '/social/components/postcontent-images_audio.inc');
-        break;
-    case 'video':
-        include($_SERVER['DOCUMENT_ROOT'] . '/social/components/postcontent-video.inc');
-        break;
-    case 'text':
-        include($_SERVER['DOCUMENT_ROOT'] . '/social/components/postcontent-text.inc');
-        break;
-    case 'text_audio':
-        include($_SERVER['DOCUMENT_ROOT'] . '/social/components/postcontent-text_audio.inc');
-        break;
-    default:
-        // Optionally handle the case where $post['type'] is not recognized
-        echo 'Invalid post type';
-        break;
+@media (max-width: 768px) {
+    .social-layout { flex-direction: column; }
+    .social-sidebar { flex: 1; }
+    .user-card { display: none; }
+    .trending-card { display: none; }
 }
+</style>
 
+<div class="social-container">
+    <!-- Feed Navigation -->
+    <div class="feed-nav">
+        <div class="feed-nav-tabs">
+            <a href="?feed=all" class="feed-nav-tab <?php echo $feed_type === 'all' ? 'active' : ''; ?>">
+                <i class="bi bi-house"></i> All Posts
+            </a>
+            <a href="?feed=following" class="feed-nav-tab <?php echo $feed_type === 'following' ? 'active' : ''; ?>">
+                <i class="bi bi-people"></i> Following
+            </a>
+            <a href="?feed=trending" class="feed-nav-tab <?php echo $feed_type === 'trending' ? 'active' : ''; ?>">
+                <i class="bi bi-fire"></i> Trending
+            </a>
+        </div>
+    </div>
 
-
-
-// Navigation Shortcut menu
-echo '<div class="modal fade" id="keyboardShortcutsModal" tabindex="-1" aria-labelledby="keyboardShortcutsLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="keyboardShortcutsLabel">Introducing keyboard shortcuts!</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="social-layout">
+        <!-- Left Sidebar -->
+        <div class="social-sidebar">
+            <!-- User Card -->
+            <div class="user-card">
+                <?php
+                $user_avatar = $database->getrow("SELECT description FROM bg_user_attributes WHERE user_id = :user_id AND type = 'profile_image' AND name = 'avatar' AND status = 'active' AND category = 'primary' LIMIT 1", ['user_id' => $user_id]);
+                $avatar_url = $user_avatar['description'] ?? '/avatars/' . $user_id . '.png';
+                ?>
+                <img src="<?php echo htmlspecialchars($avatar_url); ?>" alt="Avatar" class="user-card-avatar">
+                <div class="user-card-name"><?php echo htmlspecialchars($current_user_data['first_name'] . ' ' . $current_user_data['last_name']); ?></div>
+                <div class="user-card-username">@<?php echo htmlspecialchars($current_user_data['username']); ?></div>
+                
+                <div class="user-card-stats">
+                    <div class="stat-item">
+                        <span class="stat-value"><?php echo number_format($user_stats['post_count']); ?></span>
+                        <span class="stat-label">Posts</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value"><?php echo number_format($user_stats['follower_count']); ?></span>
+                        <span class="stat-label">Followers</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value"><?php echo number_format($user_stats['following_count']); ?></span>
+                        <span class="stat-label">Following</span>
+                    </div>
+                </div>
             </div>
-            <div class="modal-body">
-                <ul class="list-unstyled">
-                    <li class="d-flex justify-content-between align-items-center mb-3">
-                        <span>Go to previous post</span>
-                        <kbd>▲</kbd>
-                    </li>
-                    <li class="d-flex justify-content-between align-items-center mb-3">
-                        <span>Go to next post</span>
-                        <kbd>▼</kbd>
-                    </li>
-                    <li class="d-flex justify-content-between align-items-center mb-3">
-                        <span>Like post</span>
-                        <kbd>L</kbd>
-                    </li>
-                    <li class="d-flex justify-content-between align-items-center mb-3">
-                        <span>Mute / unmute sound</span>
-                        <kbd>M</kbd>
-                    </li>
-                </ul>
+
+            <!-- Quick Links -->
+            <div class="user-card">
+                <h5 style="margin-bottom: 15px;">Quick Links</h5>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <a href="/social/create.php" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Create Post
+                    </a>
+                    <a href="/social/activity.php" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-activity"></i> Your Activity
+                    </a>
+                    <a href="/social/bookmarks.php" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-bookmark"></i> Bookmarks
+                    </a>
+                    <a href="/social/notifications.php" class="btn btn-outline-secondary btn-sm position-relative">
+                        <i class="bi bi-bell"></i> Notifications
+                        <?php if ($unread_notifications > 0): ?>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <?php echo $unread_notifications; ?>
+                        </span>
+                        <?php endif; ?>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Feed -->
+        <div class="social-feed">
+            <!-- Create Post Box -->
+            <div class="create-post-box">
+                <form id="quickPostForm">
+                    <textarea class="create-post-input" placeholder="Share your birthday celebration or tips..." rows="3"></textarea>
+                    <div class="create-post-actions">
+                        <div class="post-options">
+                            <button type="button" class="post-option-btn" onclick="document.getElementById('mediaInput').click()">
+                                <i class="bi bi-image"></i> Photo
+                            </button>
+                            <button type="button" class="post-option-btn">
+                                <i class="bi bi-play-circle"></i> Video
+                            </button>
+                            <button type="button" class="post-option-btn">
+                                <i class="bi bi-emoji-smile"></i> Emoji
+                            </button>
+                            <input type="file" id="mediaInput" hidden accept="image/*,video/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Post</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Posts Feed -->
+            <div id="postsFeed">
+                <?php if (empty($posts)): ?>
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h3>No posts yet</h3>
+                    <p>Be the first to share something!</p>
+                    <a href="/social/create.php" class="btn btn-primary mt-3">Create First Post</a>
+                </div>
+                <?php else: ?>
+                    <?php foreach ($posts as $post): ?>
+                    <div class="post-card" data-post-id="<?php echo $post['post_id']; ?>">
+                        <!-- Post Header -->
+                        <div class="post-header">
+                            <img src="<?php echo htmlspecialchars($post['avatar_url'] ?? '/avatars/default.png'); ?>" alt="Avatar" class="post-avatar">
+                            <div class="post-user-info">
+                                <a href="/social/user-profile.php?id=<?php echo $post['user_id']; ?>" class="post-username">
+                                    <?php echo htmlspecialchars($post['first_name'] . ' ' . $post['last_name']); ?>
+                                </a>
+                                <div class="post-time">
+                                    <?php echo $social->formatTimeAgo($post['created_at']); ?>
+                                    <?php if ($post['visibility'] !== 'public'): ?>
+                                    · <i class="bi bi-<?php echo $post['visibility'] === 'friends' ? 'people' : 'lock'; ?>"></i>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php if ($post['user_id'] == $user_id): ?>
+                            <div class="post-menu">
+                                <button class="post-menu-btn" onclick="togglePostMenu(<?php echo $post['post_id']; ?>)">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Post Content -->
+                        <div class="post-content">
+                            <?php echo nl2br(htmlspecialchars($post['content'])); ?>
+                            
+                            <?php if (!empty($post['hashtags'])): ?>
+                            <div class="post-hashtags mt-2">
+                                <?php 
+                                $hashtags = json_decode($post['hashtags'], true);
+                                if ($hashtags):
+                                    foreach ($hashtags as $hashtag): ?>
+                                    <a href="/social/search.php?q=<?php echo urlencode($hashtag); ?>" class="text-primary">
+                                        #<?php echo htmlspecialchars($hashtag); ?>
+                                    </a>
+                                    <?php endforeach;
+                                endif; ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Post Media -->
+                        <?php if (!empty($post['media_urls'])): ?>
+                        <div class="post-media">
+                            <?php 
+                            $media = json_decode($post['media_urls'], true);
+                            if ($media && is_array($media)):
+                                foreach ($media as $item): ?>
+                                <?php if (strpos($item['type'] ?? '', 'image') !== false): ?>
+                                    <img src="<?php echo htmlspecialchars($item['url']); ?>" alt="Post media">
+                                <?php elseif (strpos($item['type'] ?? '', 'video') !== false): ?>
+                                    <video controls>
+                                        <source src="<?php echo htmlspecialchars($item['url']); ?>" type="<?php echo htmlspecialchars($item['type']); ?>">
+                                    </video>
+                                <?php endif; ?>
+                                <?php endforeach;
+                            endif; ?>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Post Actions -->
+                        <div class="post-actions">
+                            <button class="post-action-btn like-btn <?php echo $post['user_liked'] ? 'liked' : ''; ?>" 
+                                    onclick="toggleLike(<?php echo $post['post_id']; ?>)">
+                                <i class="bi bi-heart<?php echo $post['user_liked'] ? '-fill' : ''; ?>"></i>
+                                <span class="like-count"><?php echo $post['like_count']; ?></span>
+                            </button>
+                            
+                            <button class="post-action-btn" onclick="toggleComments(<?php echo $post['post_id']; ?>)">
+                                <i class="bi bi-chat"></i>
+                                <span><?php echo $post['comment_count']; ?></span>
+                            </button>
+                            
+                            <button class="post-action-btn" onclick="sharePost(<?php echo $post['post_id']; ?>)">
+                                <i class="bi bi-share"></i>
+                                <span><?php echo $post['share_count']; ?></span>
+                            </button>
+                            
+                            <button class="post-action-btn bookmark-btn <?php echo $post['user_bookmarked'] ? 'bookmarked' : ''; ?>" 
+                                    onclick="toggleBookmark(<?php echo $post['post_id']; ?>)">
+                                <i class="bi bi-bookmark<?php echo $post['user_bookmarked'] ? '-fill' : ''; ?>"></i>
+                            </button>
+                        </div>
+
+                        <!-- Comments Section (Hidden by default) -->
+                        <div class="comments-section" id="comments-<?php echo $post['post_id']; ?>" style="display: none;">
+                            <div class="comments-list"></div>
+                            <div class="write-comment">
+                                <img src="<?php echo htmlspecialchars($avatar_url); ?>" alt="Your avatar" class="comment-avatar">
+                                <input type="text" placeholder="Write a comment..." 
+                                       onkeypress="if(event.key==='Enter') postComment(<?php echo $post['post_id']; ?>, this.value, this)">
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+
+                    <!-- Pagination -->
+                    <?php if (count($posts) >= $posts_per_page): ?>
+                    <div class="text-center my-4">
+                        <button class="btn btn-outline-primary" onclick="loadMorePosts()">
+                            Load More Posts
+                        </button>
+                    </div>
+                    <?php endif; ?>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Trigger button for the modal (you can adjust placement or trigger behavior) -->
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#keyboardShortcutsModal">
-    Keyboard Shortcuts
-</button>
-';
-$additionalstyles.='
-<style>
-.modal-dialog-centered {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-kbd {
-    padding: 5px 10px;
-    background-color: #f7f7f7;
-    border-radius: 3px;
-    font-size: 1rem;
-}
-    </style>
-';
-
-?>
-
-
-
-
-
-
-
-</div>
-</div>
-</div>
-
-
 <script>
-    document.querySelectorAll('.toggle-text').forEach(item => {
-        item.addEventListener('click', function() {
-            let text = this.innerHTML;
-            if (text.includes('more')) {
-                this.innerHTML = 'less <i class="bi bi-caret-up-fill"></i>';
-                this.previousElementSibling.textContent = 'This is the full comment that shows after clicking show more.';
-            } else {
-                this.innerHTML = 'more <i class="bi bi-caret-down-fill"></i>';
-                this.previousElementSibling.textContent = 'This is a sample comment, showing the first 100 characters...';
-            }
+// Post interactions
+async function toggleLike(postId) {
+    try {
+        const response = await fetch('/api/social/like.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `type=post&id=${postId}`
         });
-    });
+        
+        const data = await response.json();
+        if (data.success) {
+            const btn = document.querySelector(`[data-post-id="${postId}"] .like-btn`);
+            const icon = btn.querySelector('i');
+            const count = btn.querySelector('.like-count');
+            
+            if (data.data.liked) {
+                btn.classList.add('liked');
+                icon.className = 'bi bi-heart-fill';
+            } else {
+                btn.classList.remove('liked');
+                icon.className = 'bi bi-heart';
+            }
+            count.textContent = data.data.like_count;
+        }
+    } catch (error) {
+        console.error('Error liking post:', error);
+    }
+}
+
+async function toggleBookmark(postId) {
+    try {
+        const response = await fetch('/api/social/bookmark.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `post_id=${postId}`
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            const btn = document.querySelector(`[data-post-id="${postId}"] .bookmark-btn`);
+            const icon = btn.querySelector('i');
+            
+            if (data.data.bookmarked) {
+                btn.classList.add('bookmarked');
+                icon.className = 'bi bi-bookmark-fill';
+            } else {
+                btn.classList.remove('bookmarked');
+                icon.className = 'bi bi-bookmark';
+            }
+        }
+    } catch (error) {
+        console.error('Error bookmarking post:', error);
+    }
+}
+
+async function toggleComments(postId) {
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    
+    if (commentsSection.style.display === 'none') {
+        commentsSection.style.display = 'block';
+        
+        // Load comments if not already loaded
+        if (!commentsSection.dataset.loaded) {
+            await loadComments(postId);
+            commentsSection.dataset.loaded = 'true';
+        }
+    } else {
+        commentsSection.style.display = 'none';
+    }
+}
+
+async function loadComments(postId) {
+    try {
+        const response = await fetch(`/api/social/comment.php?post_id=${postId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            const commentsList = document.querySelector(`#comments-${postId} .comments-list`);
+            commentsList.innerHTML = '';
+            
+            data.data.comments.forEach(comment => {
+                const commentHtml = `
+                    <div class="comment">
+                        <img src="${comment.avatar_url || '/avatars/default.png'}" alt="Avatar" class="comment-avatar">
+                        <div class="comment-content">
+                            <div class="comment-username">${comment.first_name} ${comment.last_name}</div>
+                            <div class="comment-text">${comment.comment_text}</div>
+                            <div class="comment-actions">
+                                <span class="comment-action" onclick="likeComment(${comment.comment_id})">
+                                    Like (${comment.like_count || 0})
+                                </span>
+                                <span class="comment-action" onclick="replyToComment(${comment.comment_id})">
+                                    Reply
+                                </span>
+                                <span class="text-muted">${formatTimeAgo(comment.created_at)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                commentsList.innerHTML += commentHtml;
+            });
+        }
+    } catch (error) {
+        console.error('Error loading comments:', error);
+    }
+}
+
+async function postComment(postId, text, input) {
+    if (!text.trim()) return;
+    
+    try {
+        const response = await fetch('/api/social/comment.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `post_id=${postId}&comment_text=${encodeURIComponent(text)}`
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            input.value = '';
+            await loadComments(postId);
+            
+            // Update comment count
+            const commentBtn = document.querySelector(`[data-post-id="${postId}"] .post-actions button:nth-child(2) span`);
+            commentBtn.textContent = parseInt(commentBtn.textContent) + 1;
+        }
+    } catch (error) {
+        console.error('Error posting comment:', error);
+    }
+}
+
+// Quick post form
+document.getElementById('quickPostForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const content = e.target.querySelector('textarea').value;
+    if (!content.trim()) return;
+    
+    try {
+        const response = await fetch('/api/social/post.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `action=create&content=${encodeURIComponent(content)}&visibility=public`
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Reload page to show new post
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('Error creating post:', error);
+        alert('Failed to create post. Please try again.');
+    }
+});
+
+// Helper function to format time ago
+function formatTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+    if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+    if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+    
+    return date.toLocaleDateString();
+}
+
+// Load more posts
+let currentPage = <?php echo $current_page; ?>;
+async function loadMorePosts() {
+    currentPage++;
+    window.location.href = `?feed=<?php echo $feed_type; ?>&page=${currentPage}`;
+}
 </script>
 
 <?php
-
-include($_SERVER['DOCUMENT_ROOT'] . '/social/components/js-scrolling.inc');
-
-$footerattribute['bottomfooter'] = '
-<script src="/public/js/jquery.hookto.js"></script>' .
-    "<script>
-
-</script>
-";
-$display_footertype = 'none';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

@@ -293,7 +293,7 @@ $today = new DateTime();
 if ($config['testmail']) {
     $website_full_url = $website['fullurl'];
 } else {
-    $website_full_url = 'https://birthday.gold/';
+    $website_full_url = 'https://birthday.gold'; // No trailing slash to avoid double slashes in URLs
 }
 
 if ($process_shards !== false) {

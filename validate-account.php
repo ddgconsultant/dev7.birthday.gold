@@ -200,7 +200,17 @@ if (!empty($_REQUEST['act']) && $_REQUEST['act'] == 'resend' && isset($_REQUEST[
 #-------------------------------------------------------------------------------
 $userregistrationdata = $session->get('userregistrationdata', '');
 $sentagainmessage = '';
+
+// Only require session data if we're not attempting to validate via token
+// If we have a token and reached this point, it means validation failed
 if (empty($userregistrationdata['email'])) {
+  // If we had a validation token attempt that failed, show appropriate error
+  if (isset($_GET['t']) && !empty($_GET['t'])) {
+    $session->set('force_error_message', 'Validation link has expired or is invalid. Please request a new validation email.');
+    header('location: /signup');
+    exit;
+  }
+  // Otherwise, no session data and no token - can't proceed
   $session->set('force_error_message', 'No registration data found. Please sign up again.');
   header('location: /signup');
   exit;

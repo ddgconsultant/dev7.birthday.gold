@@ -51,7 +51,7 @@ echo '
 <div class="container-xxl py-6  flex-grow-1" data-wow-delay="0.1s">
 <div class="container text-center">
 <div class="row justify-content-center">
-<div class="col-lg-12">
+<div class="col-lg-12 my-5">
 ' . $content . ' <a class="btn btn-primary py-3 px-5" href="/">Go Back To Home</a>
 </div>
 </div>

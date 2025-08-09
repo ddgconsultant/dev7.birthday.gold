@@ -208,14 +208,14 @@ try {
     
     foreach ($processors as $processor) {
         $sql = "INSERT INTO bg_config 
-                (config_type, config_key, config_value, config_data, display_order, is_active)
+                (config_type, config_key, config_value, config_data, display_order, `status`)
                 VALUES 
-                ('automation_processor', :key, :value, :data, :order, 1)
+                ('automation_processor', :key, :value, :data, :order, 'active')
                 ON DUPLICATE KEY UPDATE
                 config_value = VALUES(config_value),
                 config_data = VALUES(config_data),
                 display_order = VALUES(display_order),
-                is_active = VALUES(is_active),
+                `status` = VALUES(`status`),
                 updated_at = CURRENT_TIMESTAMP";
         
         $database->query($sql, [
@@ -242,9 +242,9 @@ try {
     $order = 501;
     foreach ($statuses as $status) {
         $sql = "INSERT INTO bg_config 
-                (config_type, config_key, config_value, config_data, display_order, is_active)
+                (config_type, config_key, config_value, config_data, display_order, `status`)
                 VALUES 
-                ('automation_status', :key, :value, :data, :order, 1)
+                ('automation_status', :key, :value, :data, :order, 'active')
                 ON DUPLICATE KEY UPDATE
                 config_value = VALUES(config_value),
                 config_data = VALUES(config_data),
@@ -279,9 +279,9 @@ try {
     $order = 601;
     foreach ($categories as $category) {
         $sql = "INSERT INTO bg_config 
-                (config_type, config_key, config_value, config_data, display_order, is_active)
+                (config_type, config_key, config_value, config_data, display_order, `status`)
                 VALUES 
-                ('automation_category', :key, :value, :data, :order, 1)
+                ('automation_category', :key, :value, :data, :order, 'active')
                 ON DUPLICATE KEY UPDATE
                 config_value = VALUES(config_value),
                 config_data = VALUES(config_data),
@@ -316,9 +316,9 @@ try {
     $order = 701;
     foreach ($settings as $setting) {
         $sql = "INSERT INTO bg_config 
-                (config_type, config_key, config_value, config_data, display_order, is_active)
+                (config_type, config_key, config_value, config_data, display_order, `status`)
                 VALUES 
-                ('automation_settings', :key, :value, :data, :order, 1)
+                ('automation_settings', :key, :value, :data, :order, 'active')
                 ON DUPLICATE KEY UPDATE
                 config_value = VALUES(config_value),
                 config_data = VALUES(config_data),
