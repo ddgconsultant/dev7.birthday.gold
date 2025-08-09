@@ -1,0 +1,10 @@
+# MySQL Read-Only Credentials for Claude
+# These credentials provide read-only access to the production database
+
+export MYSQL_HOST="71.33.250.235"
+export MYSQL_USER="claudecode"
+export MYSQL_DATABASE="birthday_gold_www"
+export MYSQL_PWD="XqC2NVlbjw3trP"
+
+# Usage example:
+# MYSQL_PWD="$MYSQL_PWD" mysql -h "$MYSQL_HOST" -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "SELECT * FROM bg_users LIMIT 1;"

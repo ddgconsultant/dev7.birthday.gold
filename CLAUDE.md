@@ -70,6 +70,13 @@ $errormode = 'showerrors'; // Error display (showerrors, hideerrors)
 - Main tables: users, enrollments, session tracking, payments
 - Comprehensive error logging and rate limiting
 
+### MySQL Read-Only Credentials (for Claude)
+- **HOST:** 71.33.250.235
+- **USER:** claudecode
+- **DATABASE:** birthday_gold_www
+- **PASSWORD:** XqC2NVlbjw3trP
+- **ACCESS:** Read-only access for analysis and debugging
+
 ## Key Components
 
 ### Authentication & Security
