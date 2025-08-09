@@ -374,6 +374,9 @@ $additionalstyles .= '
 .plan-card-wrapper {
     height: 100%;
     position: relative;
+    padding: 10px;
+    overflow: visible; /* Allow checkmark to extend outside */
+    z-index: 1;
 }
 
 .plan-card {
@@ -382,6 +385,8 @@ $additionalstyles .= '
     flex-direction: column;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative; /* For absolute positioning of checkmark */
+    overflow: visible; /* Allow checkmark to extend outside */
 }
 
 .plan-card:hover {
@@ -393,14 +398,14 @@ $additionalstyles .= '
     flex-grow: 1;
 }
 
-/* Checkmark badge styles */
+/* Checkmark badge for selected plans */
 .plan-checkmark-badge {
     position: absolute;
     top: -10px;
     right: -10px;
     width: 30px;
     height: 30px;
-    background: #28a745;
+    background: #198754;
     color: white;
     border-radius: 50%;
     display: flex;
@@ -408,9 +413,44 @@ $additionalstyles .= '
     justify-content: center;
     font-size: 18px;
     font-weight: bold;
-    z-index: 10;
+    z-index: 1000;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s ease;
 }
+
+/* Show checkmark when plan is selected - sibling selector */
+.plan-radio:checked ~ .plan-checkmark-badge {
+    opacity: 1 !important;
+    transform: scale(1) !important;
+    display: flex !important;
+}
+
+/* Position checkmark relative to wrapper */
+.plan-card-wrapper {
+    position: relative;
+}
+
+.plan-card-wrapper .plan-checkmark-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 9999 !important;
+    pointer-events: none; /* Prevent blocking clicks */
+}
+
+/* Override Bootstrap column overflow */
+.row, .col, [class*="col-"] {
+    overflow: visible !important;
+}
+
+/* Ensure containers allow overflow */
+.container, .container-fluid {
+    overflow: visible !important;
+}
+
+/* Radio button visibility */
 
 /* Modern Tab Interface with Radio Buttons */
 .nav-tabs-modern {
@@ -418,7 +458,7 @@ $additionalstyles .= '
     border-bottom: 2px solid #e9ecef;
     margin-bottom: 1.5rem;
     gap: 0;
-    overflow: hidden;
+    overflow: visible; /* Changed from hidden to visible */
     position: relative;
 }
 
@@ -444,17 +484,31 @@ $additionalstyles .= '
     color: #495057;
     text-decoration: none;
     background: #f8f9fa;
+    border-bottom-color: #adb5bd;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-/* Active state when radio button is checked - need to target the label differently */
-#tab-user:checked ~ .nav-tabs-modern label[for="tab-user"],
-#tab-parental:checked ~ .nav-tabs-modern label[for="tab-parental"],
-#tab-business:checked ~ .nav-tabs-modern label[for="tab-business"],
-#tab-family:checked ~ .nav-tabs-modern label[for="tab-family"],
-#tab-personal:checked ~ .nav-tabs-modern label[for="tab-personal"] {
-    color: #0d6efd;
-    border-bottom-color: #0d6efd !important;
+.nav-tab-item:hover:not(.active) {
+    border-bottom-color: #adb5bd;
+}
+
+/* Active tab styling using class */
+.nav-tab-item.active {
+    color: #198754 !important;
+    border-bottom: 3px solid #198754 !important;
+    margin-bottom: -2px !important; /* Ensure it overlaps the container border */
     background: none;
+    z-index: 1; /* Bring it forward */
+    position: relative;
+}
+
+/* Do not move active tab on hover */
+.nav-tab-item.active:hover {
+    transform: none;
+    box-shadow: none;
+    background: none;
+    border-bottom-color: #198754 !important;
 }
 
 .nav-tab-item i {
@@ -485,10 +539,12 @@ $additionalstyles .= '
 /* Tab content with radio button control */
 .tab-content {
     margin-top: 1rem;
+    overflow: visible; /* Allow checkmarks to extend outside */
 }
 
 .tab-content .tab-pane {
     display: none;
+    overflow: visible; /* Allow checkmarks to extend outside */
 }
 
 /* Show tab pane when corresponding tab radio is checked */
@@ -496,21 +552,43 @@ $additionalstyles .= '
 #tab-parental:checked ~ .tab-content .tab-pane[data-account-type="parental"],
 #tab-business:checked ~ .tab-content .tab-pane[data-account-type="business"],
 #tab-family:checked ~ .tab-content .tab-pane[data-account-type="family"],
-#tab-personal:checked ~ .tab-content .tab-pane[data-account-type="personal"] {
+#tab-personal:checked ~ .tab-content .tab-pane[data-account-type="personal"],
+#tab-giftcertificate:checked ~ .tab-content .tab-pane[data-account-type="giftcertificate"],
+#tab-gift:checked ~ .tab-content .tab-pane[data-account-type="gift"] {
     display: block !important;
     animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Plan selection with radio buttons */
-.plan-radio:checked + .plan-card {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
-}
-
+/* All plan cards have light gray border and background by default */
 .plan-card {
     display: block;
     width: 100%;
     text-align: left;
+    border: 2px solid #dee2e6; /* Light gray border for all plans */
+    background: rgba(248, 249, 250, 0.3); /* Very light gray background */
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Lighten the border for popular/recommended plans */
+.plan-card.recommended {
+    border-color: #e9ecef; /* Even lighter gray for popular plans */
+    background: rgba(248, 249, 250, 0.2); /* Slightly more transparent background */
+}
+
+/* Green selection when radio button is checked - with checkmark */
+.plan-radio:checked + .plan-card {
+    border-color: #198754 !important; /* Dark green border */
+    border-width: 3px !important;
+    box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.15);
+    background: linear-gradient(135deg, rgba(25, 135, 84, 0.08) 0%, rgba(25, 135, 84, 0.15) 100%) !important;
+}
+
+/* Hover effect for plan cards */
+.plan-card:hover {
+    border-color: #adb5bd;
+    background: rgba(248, 249, 250, 0.5);
+    cursor: pointer;
 }
 
 @keyframes fadeIn {
@@ -718,6 +796,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                                 </ul>
                             <?php endif; ?>
                         </label>
+                        <div class="plan-checkmark-badge">✓</div>
                     </div>
                 </div>
             </div>
@@ -812,6 +891,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                                     </ul>
                                 <?php endif; ?>
                             </label>
+                            <div class="plan-checkmark-badge">✓</div>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -827,8 +907,8 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
 
                 <div class="row justify-content-center mt-4">
                     <div class="col-12 col-md-6 col-lg-5">
-                        <button type="submit" class="btn-primary-custom w-100" id="continueBtn" style="border-radius: 25px;">
-                            Continue to Account Details
+                        <button type="submit" class="btn-primary-custom w-100" id="continueBtn" style="border-radius: 25px;" disabled>
+                            Select a Plan to Continue
                         </button>
                     </div>
                 </div>
@@ -1001,6 +1081,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const checkedTab = document.querySelector('input[name="account_type_tab"]:checked');
     if (checkedTab) {
         showTabPane(checkedTab.value);
+        // Set initial active tab styling
+        const activeLabel = document.querySelector('label[for="tab-' + checkedTab.value + '"]');
+        if (activeLabel) {
+            activeLabel.classList.add('active');
+        }
     }
     
     // Handle tab changes
@@ -1010,6 +1095,29 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show the corresponding tab pane
             showTabPane(accountType);
+            
+            // Update active tab styling
+            const allTabLabels = document.querySelectorAll('.nav-tab-item');
+            allTabLabels.forEach(label => {
+                label.classList.remove('active');
+            });
+            const activeLabel = document.querySelector('label[for="tab-' + accountType + '"]');
+            if (activeLabel) {
+                activeLabel.classList.add('active');
+            }
+            
+            // Disable Continue button when switching tabs
+            const continueBtn = document.getElementById('continueBtn');
+            if (continueBtn) {
+                continueBtn.disabled = true;
+                continueBtn.textContent = 'Select a Plan to Continue';
+            }
+            
+            // Uncheck any previously selected plans in other tabs
+            const allPlanRadios = document.querySelectorAll('input[name="account_plan_selection"]');
+            allPlanRadios.forEach(planRadio => {
+                planRadio.checked = false;
+            });
             
             // Update context info
             const contextText = document.getElementById('contextText');
@@ -1025,6 +1133,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Handle plan selection to enable/disable continue button using event delegation
+    const continueBtn = document.getElementById('continueBtn');
+    
+    // Use event delegation to catch dynamically loaded radio buttons
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.name === 'account_plan_selection') {
+            if (e.target.checked && continueBtn) {
+                continueBtn.disabled = false;
+                continueBtn.textContent = 'Continue';
+            }
+        }
+    });
+    
+    // Check if a plan is already selected on page load
+    setTimeout(function() {
+        const selectedPlan = document.querySelector('input[name="account_plan_selection"]:checked');
+        if (selectedPlan && continueBtn) {
+            continueBtn.disabled = false;
+            continueBtn.textContent = 'Continue';
+        }
+    }, 100);
     
     // Handle form submission to parse the combined value
     const form = document.getElementById('signupForm');
@@ -1070,16 +1200,12 @@ document.addEventListener('DOMContentLoaded', function() {
 // All plans are loaded upfront in tabs
 if (window.SignupFlow) {
     delete window.SignupFlow;
-                CheckmarkManager.initializePreselected();
-            }, 100);
-            return result;
-        });
-    };
 }
 
 // Include the enhanced JavaScript
 </script>
-<script src="/public/js/signup_flow_dynamic.js"></script>
+<!-- Commenting out signup_flow_dynamic.js as it conflicts with our new radio button approach -->
+<!-- <script src="/public/js/signup_flow_dynamic.js"></script> -->
 <script>
     // Add this AFTER loading signup_flow_dynamic.js
 // This will override any checkmark creation from that file
