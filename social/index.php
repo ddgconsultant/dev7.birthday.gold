@@ -23,10 +23,9 @@ if ($user_id) {
 
 
 $additionalstyles .= '
-<style>
-.main-content { overflow: hidden; min-height: calc(100vh - 75px); }
-.left-panel { display: flex; flex-direction: column; height: calc(100vh - 75px); border-right: 1px solid #dee2e6; overflow: hidden; background-color: #fff; }
-.comments-list { overflow-y: auto; flex-grow: 1; padding: 1rem; min-height: 200px; }
+<style > .main-content { overflow: hidden }
+.left-panel { display: flex; flex-direction: column; height: calc(100vh - 75px); border-right: 1px solid #dee2e6;  overflow: hidden }
+.comments-list { overflow-y: auto; flex-grow: 1; padding: 1rem; visibility: visible  }
 .comment-item { display: flex; align-items: start; margin-bottom: 1rem }
 .comment-item img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px }
 .comment-body { flex-grow: 1 }
@@ -44,9 +43,8 @@ $additionalstyles .= '
 .monotypenumbers { font-family: "Roboto Mono" }
 .error-message { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background-color: #dc3545; color: white; padding: 10px 20px; border-radius: 5px; z-index: 9999; display: none }
 
-.comments-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.comments-list { flex: 1; overflow-y: auto !important; min-height: 200px; }
-#large-comments-panel { height: calc(100vh - 200px); display: flex; flex-direction: column; }
+.left-panel .comments-list { display: block; overflow-y: auto }
+#large-comments-panel .comments-list { height: calc(100vh - 260px); overflow-y: auto }
 .right-panel .chrome-bottom-padding-1{        bottom: 20px;    }
 .right-panel .chrome-bottom-padding-2{        bottom: 20px;    }
 .right-panel .chrome-bottom-padding-3{        bottom: 50px;    }
@@ -77,7 +75,7 @@ $additionalstyles .= '
 .right-panel h1 { margin-top: 150px }
 .right-panel .container, .left-panel .container { margin: 50px auto; max-width: 960px; display: flex; justify-content: space-between }
 .column { width: 40%; padding: 40px; color: #fff; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.11) 0px, rgba(0, 0, 0, 0.11) 12px, rgba(1, 1, 1, 0.16) 12px, rgba(1, 1, 1, 0.16) 24px, rgba(0, 0, 0, 0.14) 24px, rgba(0, 0, 0, 0.14) 36px, rgba(0, 0, 0, 0.23) 36px, rgba(0, 0, 0, 0.23) 48px, rgba(0, 0, 0, 0.12) 48px, rgba(0, 0, 0, 0.12) 60px, rgba(1, 1, 1, 0.07) 60px, rgba(1, 1, 1, 0.07) 72px, rgba(0, 0, 0, 0.21) 72px, rgba(0, 0, 0, 0.21) 84px, rgba(0, 0, 0, 0.24) 84px, rgba(0, 0, 0, 0.24) 96px, rgba(1, 1, 1, 0.23) 96px, rgba(1, 1, 1, 0.23) 108px, rgba(1, 1, 1, 0.07) 108px, rgba(1, 1, 1, 0.07) 120px, rgba(0, 0, 0, 0.01) 120px, rgba(0, 0, 0, 0.01) 132px, rgba(1, 1, 1, 0.22) 132px, rgba(1, 1, 1, 0.22) 144px, rgba(1, 1, 1, 0.24) 144px, rgba(1, 1, 1, 0.24) 156px, rgba(0, 0, 0, 0) 156px, rgba(0, 0, 0, 0) 168px, rgba(0, 0, 0, 0.12) 168px, rgba(0, 0, 0, 0.12) 180px), repeating-linear-gradient(90deg, rgba(1, 1, 1, 0.01) 0px, rgba(1, 1, 1, 0.01) 12px, rgba(1, 1, 1, 0.15) 12px, rgba(1, 1, 1, 0.15) 24px, rgba(0, 0, 0, 0.09) 24px, rgba(0, 0, 0, 0.09) 36px, rgba(0, 0, 0, 0.02) 36px, rgba(0, 0, 0, 0.02) 48px, rgba(0, 0, 0, 0.1) 48px, rgba(0, 0, 0, 0.1) 60px, rgba(1, 1, 1, 0.07) 60px, rgba(1, 1, 1, 0.07) 72px, rgba(1, 1, 1, 0.15) 72px, rgba(1, 1, 1, 0.15) 84px, rgba(0, 0, 0, 0.18) 84px, rgba(0, 0, 0, 0.18) 96px, rgba(1, 1, 1, 0.15) 96px, rgba(1, 1, 1, 0.15) 108px, rgba(1, 1, 1, 0.09) 108px, rgba(1, 1, 1, 0.09) 120px, rgba(1, 1, 1, 0.07) 120px, rgba(1, 1, 1, 0.07) 132px, rgba(1, 1, 1, 0.05) 132px, rgba(1, 1, 1, 0.05) 144px, rgba(0, 0, 0, 0.1) 144px, rgba(0, 0, 0, 0.1) 156px, rgba(1, 1, 1, 0.18) 156px, rgba(1, 1, 1, 0.18) 168px), repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.24) 0px, rgba(0, 0, 0, 0.24) 16px, rgba(1, 1, 1, 0.06) 16px, rgba(1, 1, 1, 0.06) 32px, rgba(0, 0, 0, 0.16) 32px, rgba(0, 0, 0, 0.16) 48px, rgba(1, 1, 1, 0) 48px, rgba(1, 1, 1, 0) 64px, rgba(1, 1, 1, 0.12) 64px, rgba(1, 1, 1, 0.12) 80px, rgba(1, 1, 1, 0.22) 80px, rgba(1, 1, 1, 0.22) 96px, rgba(0, 0, 0, 0.24) 96px, rgba(0, 0, 0, 0.24) 112px, rgba(0, 0, 0, 0.25) 112px, rgba(0, 0, 0, 0.25) 128px, rgba(1, 1, 1, 0.12) 128px, rgba(1, 1, 1, 0.12) 144px, rgba(0, 0, 0, 0.18) 144px, rgba(0, 0, 0, 0.18) 160px, rgba(1, 1, 1, 0.03) 160px, rgba(1, 1, 1, 0.03) 176px, rgba(1, 1, 1, 0.1) 176px, rgba(1, 1, 1, 0.1) 192px), repeating-linear-gradient(135deg, rgba(1, 1, 1, 0.18) 0px, rgba(1, 1, 1, 0.18) 3px, rgba(0, 0, 0, 0.09) 3px, rgba(0, 0, 0, 0.09) 6px, rgba(0, 0, 0, 0.08) 6px, rgba(0, 0, 0, 0.08) 9px, rgba(1, 1, 1, 0.05) 9px, rgba(1, 1, 1, 0.05) 12px, rgba(0, 0, 0, 0.01) 12px, rgba(0, 0, 0, 0.01) 15px, rgba(1, 1, 1, 0.12) 15px, rgba(1, 1, 1, 0.12) 18px, rgba(0, 0, 0, 0.05) 18px, rgba(0, 0, 0, 0.05) 21px, rgba(1, 1, 1, 0.16) 21px, rgba(1, 1, 1, 0.16) 24px, rgba(1, 1, 1, 0.07) 24px, rgba(1, 1, 1, 0.07) 27px, rgba(1, 1, 1, 0.23) 27px, rgba(1, 1, 1, 0.23) 30px, rgba(0, 0, 0, 0.2) 30px, rgba(0, 0, 0, 0.2) 33px, rgba(0, 0, 0, 0.18) 33px, rgba(0, 0, 0, 0.18) 36px, rgba(1, 1, 1, 0.12) 36px, rgba(1, 1, 1, 0.12) 39px, rgba(1, 1, 1, 0.13) 39px, rgba(1, 1, 1, 0.13) 42px, rgba(1, 1, 1, 0.2) 42px, rgba(1, 1, 1, 0.2) 45px, rgba(1, 1, 1, 0.18) 45px, rgba(1, 1, 1, 0.18) 48px, rgba(0, 0, 0, 0.2) 48px, rgba(0, 0, 0, 0.2) 51px, rgba(1, 1, 1, 0) 51px, rgba(1, 1, 1, 0) 54px, rgba(0, 0, 0, 0.03) 54px, rgba(0, 0, 0, 0.03) 57px, rgba(1, 1, 1, 0.06) 57px, rgba(1, 1, 1, 0.06) 60px, rgba(1, 1, 1, 0) 60px, rgba(1, 1, 1, 0) 63px, rgba(0, 0, 0, 0.1) 63px, rgba(0, 0, 0, 0.1) 66px, rgba(1, 1, 1, 0.19) 66px, rgba(1, 1, 1, 0.19) 69px), linear-gradient(90deg, rgb(239, 53, 115), rgb(79, 2, 93)) }
-.no-comments-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; padding: 2rem; }
+.hookto { overflow-y: auto; visibility: visible; height: calc(100vh - 260px); overflow-y: auto }
 
 </style > ';
 
@@ -93,9 +91,14 @@ echo '
 <span class="close-btn">&times;</span>
 <div id="small-comments-panel" class="comments-container">
 ';
-echo '<div class="comments-list" id="mobile-comments-list">';
-
-// Include write comment for mobile
+echo '
+<div 
+class="hookto comments-list"
+data-hook-to-mobile-first="true"
+data-hook-to="#hookto-large"
+data-hook-to-position="after"
+data-hook-to-return="991.98">
+';
 include($_SERVER['DOCUMENT_ROOT'] . '/social/components/write-comment.inc');
 
 
@@ -153,7 +156,7 @@ foreach ($comments as $comment) {
 }
 }
 ?>
-</div> <!-- END OF mobile-comments-list -->
+</div> <!-- END OF hookto -->
 </div> <!-- END OF comments-container -->
 </div> <!-- END OF comment-overlay -->
 
@@ -202,54 +205,17 @@ echo '
 echo '
 <!-- Comments List -->
 <div id="large-comments-panel" class="comments-container ps-2">
+<!-- Write Comment Section -->
 ';
 
-// Include write comment section for desktop
-include($_SERVER['DOCUMENT_ROOT'] . '/social/components/write-comment.inc');
 
-echo '<div class="comments-list" id="desktop-comments-list">';
+echo '
+<div  id="hookto-large" class="px-1">
+<!-- Comments List dyamically placed by HOOKTO -->
+</div>
 
-// Display comments for desktop
-if ($numComments == 0) {
-    echo '<div class="no-comments-state">
-        <div class="text-center text-muted">
-            ' . $icons_writecomment[array_rand($icons_writecomment)] . '
-            <div class="mt-3">No comments yet</div>
-            <div class="small">Start the conversation!</div>
-        </div>
-    </div>';
-} else {
-    foreach ($comments as $comment) {
-        $avatarSrc = !empty($comment['avatar_url']) ? $comment['avatar_url'] : "/public/avatars/sample_users/placeholder_1.png";
-        $commentText = $comment['content'];
-        $likeCount = $comment['like_count'] ?? 0;
-        $username = $comment['first_name'] . ' ' . $comment['last_name'];
-        $timeAgo = $social->formatTimeAgo($comment['created_at']);
-        
-        echo '
-        <div class="comment-item">
-            <a href="/social/user-profile?"><img src="' . $avatarSrc . '" alt="User Avatar"></a>
-            <div class="comment-body">
-                <div class="comment-header">
-                    <a href="/social/user-profile?"><strong>' . htmlspecialchars($username) . '</strong></a>
-                </div>
-                <div class="comment-text">' . htmlspecialchars($commentText) . '</div>
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <span class="text-muted small me-2">' . $timeAgo . '</span>
-                        <a href="#" class="reply-link">Reply</a>
-                    </div>
-                    <span class="like-info text-muted">
-                        <i class="bi bi-hand-thumbs-up"></i> ' . $likeCount . '
-                    </span>
-                </div>
-            </div>
-        </div>';
-    }
-}
-
-echo '</div>'; // End desktop-comments-list
-echo '</div>';  // END OF comments-container
+</div>  <!-- END OF comments-container -->
+';
 
 echo '
 </div> <!-- END OF Left Panel -->';
@@ -257,7 +223,7 @@ echo '
 
 echo '
 <!-- Right Panel: 2/3 width -->
-<div class="col-lg-8 pe-lg-4 position-relative">
+<div class="col-lg-8 pe-lg-4">
 ';
 
 $postTypes = ['images', 'images_audio', 'video', 'video', 'text', 'text_audio', 'video', 'video'];
@@ -287,14 +253,6 @@ switch ($post['type']) {
 
 
 
-
-// Mobile Comments Button
-echo '
-<button class="btn btn-primary d-lg-none position-fixed" 
-        style="bottom: 20px; right: 20px; z-index: 1000; border-radius: 50px;"
-        onclick="toggleMobileComments()">
-    <i class="bi bi-chat-dots"></i> Comments (' . $numComments . ')
-</button>';
 
 // Navigation Shortcut menu
 echo '<div class="modal fade" id="keyboardShortcutsModal" tabindex="-1" aria-labelledby="keyboardShortcutsLabel" aria-hidden="true">
@@ -364,56 +322,18 @@ kbd {
 
 
 <script>
-// Sync comments between mobile and desktop views
-function syncComments() {
-    const desktopComments = document.getElementById('desktop-comments-list');
-    const mobileComments = document.getElementById('mobile-comments-list');
-    
-    if (desktopComments && mobileComments) {
-        // Clone desktop comments to mobile (keep write-comment at top)
-        const writeComment = mobileComments.querySelector('.write-comment');
-        const desktopContent = desktopComments.innerHTML;
-        
-        if (writeComment) {
-            mobileComments.innerHTML = writeComment.outerHTML + desktopContent;
-        } else {
-            mobileComments.innerHTML = desktopContent;
-        }
-    }
-}
-
-// Toggle mobile comments overlay
-function toggleMobileComments() {
-    const overlay = document.querySelector('.comment-overlay');
-    if (overlay) {
-        overlay.classList.toggle('active');
-        if (overlay.classList.contains('active')) {
-            syncComments();
-        }
-    }
-}
-
-// Close button handler
-document.addEventListener('DOMContentLoaded', function() {
-    const closeBtn = document.querySelector('.comment-overlay .close-btn');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', toggleMobileComments);
-    }
-    
-    // Text toggle handlers
     document.querySelectorAll('.toggle-text').forEach(item => {
         item.addEventListener('click', function() {
             let text = this.innerHTML;
             if (text.includes('more')) {
                 this.innerHTML = 'less <i class="bi bi-caret-up-fill"></i>';
-                // In real implementation, show full text
+                this.previousElementSibling.textContent = 'This is the full comment that shows after clicking show more.';
             } else {
                 this.innerHTML = 'more <i class="bi bi-caret-down-fill"></i>';
-                // In real implementation, truncate text
+                this.previousElementSibling.textContent = 'This is a sample comment, showing the first 100 characters...';
             }
         });
     });
-});
 </script>
 
 <?php

@@ -69,6 +69,22 @@ if (!empty($existingSignupData) && empty($_REQUEST['account_type']) && empty($_R
     }
 }
 
+// Check for direct plan selection via URL parameter
+if (isset($_GET['plan_id']) && !empty($_GET['plan_id'])) {
+    $urlPlanId = $_GET['plan_id'];
+    
+    // Find which account type this plan belongs to
+    foreach ($allPlansByType as $type => $plans) {
+        foreach ($plans as $plan) {
+            if ($plan['encoded_id'] == $urlPlanId) {
+                $selectedAccountType = $type;
+                $selectedPlanId = $urlPlanId;
+                break 2;
+            }
+        }
+    }
+}
+
 // Capture URL parameters to carry forward
 $urlParams = [];
 if (isset($_REQUEST['promo'])) $urlParams['promo'] = $_REQUEST['promo'];
@@ -311,6 +327,35 @@ $page_description = "Sign up for Birthday Gold and start receiving birthday rewa
 $additionalstyles .= '
 <link href="/public/css/signup_styles.css" rel="stylesheet">
 <style>
+/* Hide skip to main content link */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0,0,0,0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.sr-only-focusable:focus {
+    position: absolute !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0.5rem 1rem !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+    z-index: 9999 !important;
+    background: #000 !important;
+    color: #fff !important;
+    text-decoration: none !important;
+    top: 0 !important;
+    left: 0 !important;
+}
 /* Responsive headline sizing */
 .header h1 {
     font-size: 1.75rem !important; /* Default for mobile - keep readable */
@@ -1147,7 +1192,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Check if a plan is already selected on page load
+    // Check if a plan is already selected on page load (including URL pre-selection)
     setTimeout(function() {
         const selectedPlan = document.querySelector('input[name="account_plan_selection"]:checked');
         if (selectedPlan && continueBtn) {
