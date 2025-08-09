@@ -18,14 +18,14 @@ class Social {
     // ============================================
     
     public function createPost($user_id, $content, $media_type = null, $media_data = null, $visibility = 'public', $parent_post_id = null, $hashtags = null) {
-        $sql = "INSERT INTO bg_social_posts (user_id, content, post_type, media_type, media_urls, hashtags, visibility, parent_post_id, `status`, created_at) 
-                VALUES (:user_id, :content, :post_type, :media_type, :media_urls, :hashtags, :visibility, :parent_post_id, 'active', NOW())";
+        // Insert without media_type column for now
+        $sql = "INSERT INTO bg_social_posts (user_id, content, post_type, media_urls, hashtags, visibility, parent_post_id, `status`, created_at) 
+                VALUES (:user_id, :content, :post_type, :media_urls, :hashtags, :visibility, :parent_post_id, 'active', NOW())";
         
         $params = [
             'user_id' => $user_id,
             'content' => $content,
             'post_type' => $parent_post_id ? 'reply' : 'post',
-            'media_type' => $media_type,
             'media_urls' => $media_data ? json_encode($media_data) : null,
             'hashtags' => $hashtags ? json_encode($hashtags) : null,
             'visibility' => $visibility,

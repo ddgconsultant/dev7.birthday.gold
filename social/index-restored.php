@@ -390,7 +390,7 @@ $additionalstyles .= '
                 <?php 
                 // Determine post display type based on media
                 $media_urls = !empty($currentPost['media_urls']) ? json_decode($currentPost['media_urls'], true) : [];
-                $media_type = $currentPost['media_type'] ?? null;
+                $media_type = $currentPost['media_type'];
                 
                 if ($media_type == 'image' && !empty($media_urls)): ?>
                     <!-- Image Post -->
