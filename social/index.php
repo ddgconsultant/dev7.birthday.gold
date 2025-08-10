@@ -183,10 +183,6 @@ body .main-content {
     .comments-panel-mobile {
         display: none !important;
     }
-    
-    .mobile-comments-button {
-        display: none !important;
-    }
 }
 
 /* Hide desktop panel on mobile */
@@ -197,6 +193,35 @@ body .main-content {
     
     .social-nav-desktop {
         display: none !important;
+    }
+    
+    /* Adjust bottom elements on mobile to account for bottom nav (60px height) */
+    .right-panel .chrome-bottom-padding-1 {
+        bottom: 80px !important; /* 20px + 60px nav */
+    }
+    
+    .right-panel .chrome-bottom-padding-2 {
+        bottom: 80px !important; /* 20px + 60px nav */
+    }
+    
+    .right-panel .chrome-bottom-padding-3 {
+        bottom: 110px !important; /* 50px + 60px nav */
+    }
+    
+    .right-panel .chrome-bottom-padding-4 {
+        bottom: 130px !important; /* 70px + 60px nav */
+    }
+    
+    .right-panel .chrome-bottom-padding-seekbar {
+        bottom: 94px !important; /* 34px + 60px nav */
+    }
+    
+    .right-panel .chrome-bottom-padding-carousel {
+        bottom: 90px !important; /* 30px + 60px nav */
+    }
+    
+    .right-panel .post-actions {
+        bottom: 80px !important; /* 20px + 60px nav */
     }
 }
 
@@ -321,23 +346,6 @@ body .main-content {
 
 .social-nav-mobile-item span {
     font-size: 0.65rem;
-}
-
-/* Mobile Comments Button */
-.mobile-comments-button {
-    position: fixed;
-    bottom: 90px;
-    right: 20px;
-    z-index: 1030;
-    background: var(--primary, #007bff);
-    color: white;
-    border: none;
-    border-radius: 50px;
-    padding: 12px 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
 }
 
 /* Loading Placeholder */
@@ -674,12 +682,6 @@ if (!isset($icons_writecomment)) {
         </div>
     </div>
     
-    <!-- Mobile Comments Button -->
-    <button class="btn mobile-comments-button" onclick="toggleMobileComments()">
-        <i class="bi bi-chat-dots"></i>
-        <span><?php echo $numComments; ?></span>
-    </button>
-    
     <!-- Mobile Bottom Navigation -->
     <nav class="social-nav-mobile">
         <a href="/social/" class="social-nav-mobile-item<?php echo (basename($_SERVER['PHP_SELF']) === 'index.php' ? ' active' : ''); ?>">
@@ -758,7 +760,7 @@ function toggleMobileComments() {
 document.addEventListener('click', function(e) {
     const panel = document.getElementById('mobileCommentsPanel');
     if (panel && panel.classList.contains('active')) {
-        if (!panel.contains(e.target) && !e.target.closest('.mobile-comments-button')) {
+        if (!panel.contains(e.target) && !e.target.closest('.comment-toggle-icon')) {
             panel.classList.remove('active');
         }
     }

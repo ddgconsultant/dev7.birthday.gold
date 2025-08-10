@@ -18,7 +18,10 @@ $isKioskMode = in_array($signupMode, ['tabletkiosk', 'upgrade']);
 // Determine if we should show bottom navigation
 // Bottom nav should always show on mobile screens (handled by CSS)
 // Only hide in kiosk/iframe modes
-$showBottomNav = !$isKioskMode;
+// Also hide on social pages as they have their own navigation
+$currentPath = $_SERVER['REQUEST_URI'];
+$isSocialPage = strpos($currentPath, '/social') !== false;
+$showBottomNav = !$isKioskMode && !$isSocialPage;
 
 // Footer styling - combine original and enhanced styles
 $additionalstyles .= "

@@ -31,7 +31,7 @@ $bodycontentclass = 'social-search-page';
 $header_flush = true; // Flush content with header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($_SERVER['DOCUMENT_ROOT'] . '/social/components/header-nav.inc');
+// Removed old header-nav.inc - using mobile nav at bottom instead
 ?>
 
 <style>
@@ -247,6 +247,9 @@ function followUser(userId) {
 </script>
 
 <?php
+// Include social mobile navigation
+include($_SERVER['DOCUMENT_ROOT'] . '/social/components/social-nav-mobile.inc');
+
 $display_footertype = 'none';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

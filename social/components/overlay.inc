@@ -130,6 +130,28 @@ text-underline-offset: 2px;
 ';
 
 echo '
+    <!-- Add Category Modal -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCategoryModalLabel">Add New Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newCategoryName" class="form-label">Category Name</label>
+                        <input type="text" class="form-control" id="newCategoryName" placeholder="Enter category name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveNewCategory()">Add Category</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Post Content Overlay Wrapper -->
     <div class="post-overlay-wrapper ">
         <div class="post-overlay"> <!-- Keep the overlay intact -->
@@ -215,6 +237,48 @@ if ($hasbookmarkcategories) {
 
 
     $bookmarkiconcontent_JS = '
+// Function to open add category modal
+function addBookmarkCategory() {
+    // Show the Bootstrap modal
+    $("#addCategoryModal").modal("show");
+    // Clear any previous input
+    $("#newCategoryName").val("");
+    // Focus on input when modal opens
+    setTimeout(function() {
+        $("#newCategoryName").focus();
+    }, 500);
+}
+
+// Function to save the new category from modal
+function saveNewCategory() {
+    var categoryName = $("#newCategoryName").val().trim();
+    
+    if (categoryName !== "") {
+        // Add the new category to the list
+        var newCategoryHtml = \'<li class="category-item" data-category="\' + categoryName + \'" onclick="saveToUniqueCategory(\\\'\' + categoryName + \'\\\', this)"><i class="bi bi-journal-bookmark-fill me-2"></i>\' + categoryName + \'</li>\';
+        $(".category-list").append(newCategoryHtml);
+        
+        // Close the modal
+        $("#addCategoryModal").modal("hide");
+        
+        // Optionally save to database via AJAX
+        $.post("/social/components/post-bookmark.php", {
+            action: "add_category",
+            category_name: categoryName,
+            csrf_token: "' . $display->inputcsrf_token("tokenonly") . '"
+        })
+        .done(function(response) {
+            console.log("Category added successfully");
+        })
+        .fail(function(error) {
+            console.error("Error adding category:", error);
+        });
+    } else {
+        // Show error or highlight the input field
+        $("#newCategoryName").addClass("is-invalid");
+    }
+}
+
 $(document).ready(function() {
     // Toggle visibility of the bookmark menu
     function uniqueToggleBookmarkMenu() {
@@ -339,7 +403,12 @@ $(document).ready(function() {
     // Toggle visibility of the comment overlay on icon click
     $('.comment-toggle-icon').on('click', function() {
         console.log('Comment toggle icon clicked');
-        $('.comment-overlay').toggleClass('active'); // Toggle the active class to show/hide overlay
+        // Use the new mobile comments panel
+        if (typeof toggleMobileComments === 'function') {
+            toggleMobileComments();
+        } else {
+            $('#mobileCommentsPanel').toggleClass('active');
+        }
         console.log('Comment overlay toggle triggered');
     });
 

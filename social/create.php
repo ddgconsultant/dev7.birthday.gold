@@ -75,12 +75,13 @@ $sql = "SELECT p.post_id, p.media_type, p.media_urls, p.created_at
 $recent_media = $database->getrows($sql, ['user_id' => $user_id]);
 
 // Get user's recent hashtags
-$sql = "SELECT DISTINCT JSON_UNQUOTE(JSON_EXTRACT(hashtags, '$[*]')) as hashtag
+$sql = "SELECT JSON_UNQUOTE(JSON_EXTRACT(hashtags, '$[*]')) as hashtag, MAX(created_at) as latest_use
         FROM bg_social_posts
         WHERE user_id = :user_id 
         AND hashtags IS NOT NULL
         AND status = 'active'
-        ORDER BY created_at DESC
+        GROUP BY hashtag
+        ORDER BY latest_use DESC
         LIMIT 20";
 $recent_hashtags = $database->getrows($sql, ['user_id' => $user_id]);
 
@@ -89,7 +90,7 @@ $bodycontentclass = 'social-create-page';
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($_SERVER['DOCUMENT_ROOT'] . '/social/components/header-nav.inc');
+// Removed old header-nav.inc - using mobile nav at bottom instead
 ?>
 
 <style>
@@ -217,23 +218,23 @@ include($_SERVER['DOCUMENT_ROOT'] . '/social/components/header-nav.inc');
                     <div class="mb-4">
                         <h6 class="mb-3">Who can see this?</h6>
                         <div class="visibility-options">
-                            <div class="visibility-option selected" data-value="public">
-                                <i class="bi bi-globe fs-4 d-block mb-2"></i>
-                                <strong>Public</strong>
-                                <small class="d-block text-muted">Anyone can see</small>
+                            <div class="visibility-option selected" data-value="private">
+                                <i class="bi bi-lock fs-4 d-block mb-2"></i>
+                                <strong>Private</strong>
+                                <small class="d-block text-muted">Only you</small>
                             </div>
                             <div class="visibility-option" data-value="friends">
                                 <i class="bi bi-people fs-4 d-block mb-2"></i>
                                 <strong>Friends</strong>
                                 <small class="d-block text-muted">Only followers</small>
                             </div>
-                            <div class="visibility-option" data-value="private">
-                                <i class="bi bi-lock fs-4 d-block mb-2"></i>
-                                <strong>Private</strong>
-                                <small class="d-block text-muted">Only you</small>
+                            <div class="visibility-option" data-value="public">
+                                <i class="bi bi-globe fs-4 d-block mb-2"></i>
+                                <strong>Public</strong>
+                                <small class="d-block text-muted">Anyone can see</small>
                             </div>
                         </div>
-                        <input type="hidden" name="visibility" value="public">
+                        <input type="hidden" name="visibility" value="private">
                     </div>
                     
                     <!-- Submit Buttons -->
@@ -337,5 +338,10 @@ textarea.addEventListener('input', function() {
 </script>
 
 <?php
+// Include social mobile navigation
+include($_SERVER['DOCUMENT_ROOT'] . '/social/components/social-nav-mobile.inc');
+
+$display_footertype = 'none';
 include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();
 ?>

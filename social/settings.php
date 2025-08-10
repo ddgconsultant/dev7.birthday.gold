@@ -6,8 +6,6 @@ $bodycontentclass = '';
 $header_flush = true; // Flush content with header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-
-include($_SERVER['DOCUMENT_ROOT'] . '/social/components/header-nav.inc');
 ?>
 
 <style>
@@ -186,6 +184,9 @@ body .main-content {
 </div>
 
 <?php
+// Include social mobile navigation
+include($_SERVER['DOCUMENT_ROOT'] . '/social/components/social-nav-mobile.inc');
+
 // Footer includes
 $display_footertype = 'none';
 include($dir['core_components'] . '/bg_footer.inc');
