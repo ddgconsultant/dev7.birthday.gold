@@ -3,13 +3,26 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Page and header includes
 $bodycontentclass = '';
+$header_flush = true; // Flush content with header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
 include($_SERVER['DOCUMENT_ROOT'] . '/social/components/header-nav.inc');
 ?>
 
-<div class="container my-5">
+<style>
+/* Remove top margin/padding - flush with header */
+.main-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+body .main-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+</style>
+
+<div class="container py-3">
     <div class="row">
         <h1>Settings</h1>
         <!-- Left Panel: Navigation -->

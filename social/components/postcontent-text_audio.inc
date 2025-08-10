@@ -75,8 +75,6 @@ echo '
 include($_SERVER['DOCUMENT_ROOT'] . '/social/components/overlay.inc');
 ?>
 
-
-</div>
 </div>
 
 <?PHP 

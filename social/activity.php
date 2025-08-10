@@ -30,6 +30,7 @@ $activity_types = [
 // Page and header includes
 $pagetitle = 'Activity - Birthday Gold Social';
 $bodycontentclass = 'social-activity-page';
+$header_flush = true; // Flush content with header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
@@ -37,6 +38,16 @@ include($_SERVER['DOCUMENT_ROOT'] . '/social/components/header-nav.inc');
 ?>
 
 <style>
+/* Remove top margin/padding - flush with header */
+.main-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+body .main-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
 .activity-item {
     display: flex;
     align-items: start;

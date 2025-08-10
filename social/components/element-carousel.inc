@@ -5,7 +5,14 @@
 $additionalstyles .= '
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap " rel="stylesheet">
 <style >
-.right-panel { position: relative; height: calc(100vh - 75px); overflow: hidden; background-color: #757575 }
+.right-panel { 
+    position: relative; 
+    height: calc(100vh - 75px);
+    width: 100%;
+    min-width: 100%;
+    overflow: hidden; 
+    background-color: #757575;
+}
 .right-panel .post-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 20px; box-sizing: border-box; color: white; background: rgba(0, 0, 0, 0.5); z-index: 1; pointer-events: none }
 .carousel-control-prev, .carousel-control-next { z-index: 3 }
 .carousel-control-prev, .carousel-control-next { height: 50%; top: 25%; bottom: auto; z-index: 3 }
@@ -13,7 +20,19 @@ $additionalstyles .= '
 .right-panel .post-actions { z-index: 4 !important; pointer-events: auto; position: relative }
 .right-panel .post-actions .icon-container { z-index: 5 !important; pointer-events: auto; cursor: pointer }
 .right-panel .post-header, .right-panel .post-description, .right-panel .post-tags, .right-panel .post-actions .icon-container { pointer-events: auto }
-.carousel-item img { width: 100%; height: 100%; object-fit: contain }
+.carousel-item { 
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.carousel-item img { 
+    max-width: 100%; 
+    max-height: 100%; 
+    object-fit: contain;
+}
 .right-panel .post-header { display: flex; align-items: center; gap: 10px }
 .right-panel .post-header img { width: 50px; height: 50px; border-radius: 50% }
 .right-panel .post-header .username { font-weight: bold; font-size: 1.2rem }
@@ -30,6 +49,8 @@ $additionalstyles .= '
 .right-panel .post-actions .icon { font-size: 1.5rem }
 .right-panel .post-actions .interaction-count { font-size: 0.7rem; color: white; margin-top: 2px; z-index: 5 }
 .error-message { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background-color: #dc3545; color: white; padding: 10px 20px; border-radius: 5px; z-index: 9999; display: none }
+#postCarousel { width: 100%; height: 100%; display: block; position: absolute; top: 0; left: 0; }
+.carousel-inner { width: 100%; height: 100%; position: relative; overflow: hidden; }
 .carousel-dot-indicator { position: absolute;  width: 100%; display: flex; justify-content: center; gap: 10px }
 .carousel-dot-indicator .dot { width: 12px; height: 12px; background-color: #fff; border-radius: 50%; opacity: 0.5; cursor: pointer; }
 .carousel-dot-indicator .dot.active { opacity: 1; width: 16px; height: 16px;   transform: translateY(-2px); }
@@ -37,9 +58,6 @@ $additionalstyles .= '
 .text-shadow { text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7) }
 
 .image-count-badge{position:absolute;right:20px;background-color:rgba(0,0,0,0.7);color:white;border-radius:5px;font-size:1rem;z-index:10;padding:5px 10px}
-.carousel-item {
-transition: transform 0.6s ease-in-out;
-}
 </style > ';
 
 

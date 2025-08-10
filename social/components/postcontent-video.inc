@@ -28,12 +28,7 @@ $random_video = $videos[array_rand($videos)];
 
 echo '
 <div class="right-panel p-0 m-0">
-
-
-
-
-<div class="right-panel p-0 m-0">
-    <div style="position: relative; height: 100%;"> <!-- Ensure elements are positioned relative to this container -->
+    <div style="position: relative; height: 100%; width: 100%; min-width: 100%;"> <!-- Ensure elements are positioned relative to this container -->
         <video src="https://cdn.birthday.gold/public/videos/'.$random_video .'"  class="video-player"
             style="width: 100% !important; height: 100% !important; object-fit: contain !important;" 
             id="bg_multimediacomponent"   preload="auto" muted autoplay loop playsinline></video>
@@ -48,9 +43,8 @@ echo '
 ';
 
 
-// Close the postCarousel and right-panel containers
+// Close the inner container and right-panel
 echo '
-    </div>
     </div>
 ';
 

@@ -28,12 +28,23 @@ if (!empty($search_query)) {
 // Page setup
 $pagetitle = 'Search - Birthday Gold Social';
 $bodycontentclass = 'social-search-page';
+$header_flush = true; // Flush content with header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 include($_SERVER['DOCUMENT_ROOT'] . '/social/components/header-nav.inc');
 ?>
 
 <style>
+/* Remove top margin/padding - flush with header */
+.main-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+body .main-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
 .search-container { max-width: 800px; margin: 0 auto; padding: 20px; }
 .search-tabs { margin-bottom: 20px; }
 .search-result { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s; }

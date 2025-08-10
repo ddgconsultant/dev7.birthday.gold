@@ -413,8 +413,10 @@ echo '
         });
 
         // Modal for sharing
-        $('[data-action="post-share"]').on('click', function() {
-            alert('Share options modal goes here');
+        $('[data-action="post-share"]').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $('#shareModal').modal('show');
         });
 
     });

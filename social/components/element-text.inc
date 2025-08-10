@@ -3,7 +3,7 @@
 $additionalstyles .= '
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap " rel="stylesheet">
 <style >
-.right-panel { position: relative; height: calc(100vh - 75px); overflow: hidden; background-color: #757575 }
+.right-panel { position: relative; height: calc(100vh - 75px); width: 100%; min-width: 100%; overflow: hidden; background-color: #757575 }
 .right-panel .post-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 20px; box-sizing: border-box; color: white; background: rgba(0, 0, 0, 0.2); z-index: 1; pointer-events: none }
 .carousel-control-prev, .carousel-control-next { z-index: 3 }
 .carousel-control-prev, .carousel-control-next { height: 50%; top: 25%; bottom: auto; z-index: 3 }
