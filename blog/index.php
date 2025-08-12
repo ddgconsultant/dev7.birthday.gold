@@ -259,7 +259,7 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="row justify-content-center">
             <div class="col-lg-8 text-center">
                 <h1 class="display-4 mb-3 fw-bold">Birthday Gold Blog</h1>
-                <p class="lead mb-4">Discover the best birthday rewards, freebies, and celebration tips to make your special day unforgettable</p>
+                <p class="lead mb-4">Expert guides to maximize birthday rewards and freebies</p>
             </div>
         </div>
     </div>
@@ -478,8 +478,8 @@ if ($total_pages > 1) {
         <div class="card-body text-center py-5 text-white">
           <h3 class="mb-3">🎉 Never Miss a Birthday Deal!</h3>
           <p class="mb-4 lead">Join thousands of birthday celebrants getting exclusive deals, freebies, and celebration tips delivered to their inbox.</p>
-          <a href="/signup" class="btn btn-light btn-lg px-4">
-            Start Your Free Enrollment
+          <a href="/signup" class="btn btn-warning btn-lg px-5 py-3 fw-bold text-dark mb-4">
+            <i class="fas fa-gift me-2"></i>Start Your Free Enrollment<i class="fas fa-arrow-right ms-2"></i>
           </a>
           <div class="mt-3">
             <small class="text-dark">✨ Free forever • ⚡ Instant access • 🎁 Exclusive deals</small>
