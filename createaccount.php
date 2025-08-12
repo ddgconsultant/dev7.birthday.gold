@@ -1024,6 +1024,43 @@ small.text-muted,
     to { transform: rotate(360deg); }
 }
 
+/* Accessibility helper for screen readers */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* Dynamic date toggle link styling */
+#date-validation-toggle {
+    color: #6c757d;
+    transition: color 0.2s ease;
+}
+
+#date-validation-toggle:hover {
+    color: #0d6efd;
+}
+
+#date-validation-toggle i {
+    margin-right: 0.25rem;
+}
+
+/* Date adjustment message */
+#date-adjustment-message {
+    transition: opacity 0.15s ease-in-out;
+}
+
+#date-adjustment-message.alert-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
 </style>
 ';
 
@@ -1406,6 +1443,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<!-- Dynamic Date Validation -->
+<script>
+// Feature toggle configuration
+// Can be controlled via: URL params (?dynamic_dates=on/off), this variable, or user preference cookie
+window.DYNAMIC_DATE_VALIDATION = <?php 
+    // Check for URL parameter override
+    $dynamic_dates = $_GET['dynamic_dates'] ?? null;
+    if ($dynamic_dates === 'off' || $dynamic_dates === 'false') {
+        echo 'false';
+    } elseif ($dynamic_dates === 'on' || $dynamic_dates === 'true') {
+        echo 'true';
+    } else {
+        // Default to enabled, but can be configured in site settings
+        echo isset($features['dynamic_date_dropdowns']) ? ($features['dynamic_date_dropdowns'] ? 'true' : 'false') : 'true';
+    }
+?>;
+</script>
+<script src="/public/js/dynamic-date-validation.js?v=<?php echo time(); ?>"></script>
 
 <!-- Load embedded promo validation to avoid 403 errors -->
 <script src="/promo_validate_embedded.php"></script>

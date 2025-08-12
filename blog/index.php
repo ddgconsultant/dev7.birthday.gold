@@ -260,12 +260,6 @@ include($dir['core_components'] . '/bg_header.inc');
             <div class="col-lg-8 text-center">
                 <h1 class="display-4 mb-3 fw-bold">Birthday Gold Blog</h1>
                 <p class="lead mb-4">Discover the best birthday rewards, freebies, and celebration tips to make your special day unforgettable</p>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb justify-content-center">
-                        <li class="breadcrumb-item"><a href="/" class="text-white-50">Home</a></li>
-                        <li class="breadcrumb-item active text-white" aria-current="page">Blog</li>
-                    </ol>
-                </nav>
             </div>
         </div>
     </div>
@@ -295,27 +289,6 @@ $stats = [
 ];
 
 ?>
-  <!-- Blog Stats -->
-  <div class="row justify-content-center mb-5">
-    <div class="col-lg-10">
-      <div class="blog-stats text-center">
-        <div class="row">
-          <div class="col-md-4">
-            <h3 class="mb-1"><?php echo $stats['total_posts']; ?></h3>
-            <p class="mb-0">Birthday Guides</p>
-          </div>
-          <div class="col-md-4">
-            <h3 class="mb-1"><?php echo $stats['deal_posts']; ?></h3>
-            <p class="mb-0">Deal Collections</p>
-          </div>
-          <div class="col-md-4">
-            <h3 class="mb-1">100%</h3>
-            <p class="mb-0">Free Resources</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
 <?php
 
@@ -509,7 +482,7 @@ if ($total_pages > 1) {
             Start Your Free Enrollment
           </a>
           <div class="mt-3">
-            <small class="text-white-50">✨ Free forever • ⚡ Instant access • 🎁 Exclusive deals</small>
+            <small class="text-dark">✨ Free forever • ⚡ Instant access • 🎁 Exclusive deals</small>
           </div>
         </div>
       </div>
