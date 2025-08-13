@@ -22,10 +22,14 @@ $stats = [];
 // Total users managed (if applicable)
 if ($is_manager) {
     $sql = "SELECT COUNT(*) as total FROM bg_users WHERE status = 'active'";
-    $stats['total_users'] = $database->get_row($sql)['total'];
+    $stmt = $database->prepare($sql);
+    $stmt->execute();
+    $stats['total_users'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
     
     $sql = "SELECT COUNT(*) as total FROM bg_users WHERE DATE(create_dt) = CURDATE()";
-    $stats['new_users_today'] = $database->get_row($sql)['total'];
+    $stmt = $database->prepare($sql);
+    $stmt->execute();
+    $stats['new_users_today'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 }
 
 // Get staff member's recent activity
@@ -33,7 +37,9 @@ $sql = "SELECT * FROM bg_timeclock
         WHERE user_id = :user_id 
         ORDER BY clock_in DESC 
         LIMIT 5";
-$recent_timeclock = $database->get_rows($sql, ['user_id' => $staff_user['user_id']]);
+$stmt = $database->prepare($sql);
+$stmt->execute(['user_id' => $staff_user['user_id']]);
+$recent_timeclock = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get current clock status
 $sql = "SELECT * FROM bg_timeclock 
@@ -41,7 +47,9 @@ $sql = "SELECT * FROM bg_timeclock
         AND clock_out IS NULL 
         ORDER BY clock_in DESC 
         LIMIT 1";
-$current_clock = $database->get_row($sql, ['user_id' => $staff_user['user_id']]);
+$stmt = $database->prepare($sql);
+$stmt->execute(['user_id' => $staff_user['user_id']]);
+$current_clock = $stmt->fetch(PDO::FETCH_ASSOC);
 $is_clocked_in = !empty($current_clock);
 
 #-------------------------------------------------------------------------------
@@ -250,13 +258,29 @@ if ($is_manager) {
         </div>
         <div class="col-md-3 mb-3">
             <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                <div class="stat-number">' . number_format($database->count('bg_companies', 'status="active"')) . '</div>
+                <div class="stat-number">';
+                
+    $sql = "SELECT COUNT(*) as total FROM bg_companies WHERE status = 'active'";
+    $stmt = $database->prepare($sql);
+    $stmt->execute();
+    $companies_count = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    echo number_format($companies_count);
+    
+    echo '</div>
                 <div>Active Companies</div>
             </div>
         </div>
         <div class="col-md-3 mb-3">
             <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                <div class="stat-number">' . number_format($database->count('bg_user_enrollments', 'status="success"')) . '</div>
+                <div class="stat-number">';
+                
+    $sql = "SELECT COUNT(*) as total FROM bg_user_enrollments WHERE status = 'success'";
+    $stmt = $database->prepare($sql);
+    $stmt->execute();
+    $enrollments_count = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    echo number_format($enrollments_count);
+    
+    echo '</div>
                 <div>Enrollments</div>
             </div>
         </div>
