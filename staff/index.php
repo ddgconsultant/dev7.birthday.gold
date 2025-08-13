@@ -1,529 +1,411 @@
-<?PHP
-include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
+<?php
+# Staff Portal - Main Dashboard
+include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+// Staff-only access is already handled by site-controller.php
+// Only staff and admin users can access /staff/ pages
 
+#-------------------------------------------------------------------------------
+# PREP VARIABLES PAGE
+#-------------------------------------------------------------------------------
+$pagetitle = 'Staff Dashboard';
+$staff_user = $current_user_data;
 
+// Get staff member's role and permissions
+$staff_role = $staff_user['user_role'] ?? 'staff';
+$is_admin = $account->isadmin();
+$is_manager = in_array($staff_role, ['manager', 'admin', 'supervisor']);
 
-?>
+// Get staff statistics
+$stats = [];
 
+// Total users managed (if applicable)
+if ($is_manager) {
+    $sql = "SELECT COUNT(*) as total FROM bg_users WHERE status = 'active'";
+    $stats['total_users'] = $database->get_row($sql)['total'];
+    
+    $sql = "SELECT COUNT(*) as total FROM bg_users WHERE DATE(create_dt) = CURDATE()";
+    $stats['new_users_today'] = $database->get_row($sql)['total'];
+}
 
+// Get staff member's recent activity
+$sql = "SELECT * FROM bg_timeclock 
+        WHERE user_id = :user_id 
+        ORDER BY clock_in DESC 
+        LIMIT 5";
+$recent_timeclock = $database->get_rows($sql, ['user_id' => $staff_user['user_id']]);
 
+// Get current clock status
+$sql = "SELECT * FROM bg_timeclock 
+        WHERE user_id = :user_id 
+        AND clock_out IS NULL 
+        ORDER BY clock_in DESC 
+        LIMIT 1";
+$current_clock = $database->get_row($sql, ['user_id' => $staff_user['user_id']]);
+$is_clocked_in = !empty($current_clock);
 
+#-------------------------------------------------------------------------------
+# HANDLE PAGE ACTIONS
+#-------------------------------------------------------------------------------
+if ($app->formposted()) {
+    $action = $_POST['action'] ?? '';
+    
+    switch($action) {
+        case 'clock_in':
+            if (!$is_clocked_in) {
+                $sql = "INSERT INTO bg_timeclock (user_id, clock_in, create_dt) 
+                        VALUES (:user_id, NOW(), NOW())";
+                $database->query($sql, ['user_id' => $staff_user['user_id']]);
+                $system->addmessage('success', 'Successfully clocked in');
+                header('Location: /staff/');
+                exit;
+            }
+            break;
+            
+        case 'clock_out':
+            if ($is_clocked_in) {
+                $sql = "UPDATE bg_timeclock 
+                        SET clock_out = NOW(), modify_dt = NOW() 
+                        WHERE timeclock_id = :id";
+                $database->query($sql, ['id' => $current_clock['timeclock_id']]);
+                $system->addmessage('success', 'Successfully clocked out');
+                header('Location: /staff/');
+                exit;
+            }
+            break;
+    }
+}
 
-<?PHP
-include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/pagetitle.inc');
-?>
+#-------------------------------------------------------------------------------
+# DISPLAY PAGE
+#-------------------------------------------------------------------------------
+$bodycontentclass = '';
+$additionalstyles = [
+    '<style>
+    .staff-card {
+        border-left: 4px solid var(--bs-primary);
+        transition: transform 0.2s;
+    }
+    .staff-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .clock-status {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    .clock-in { color: var(--bs-success); }
+    .clock-out { color: var(--bs-danger); }
+    .stat-card {
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    .quick-link {
+        padding: 1rem;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+    }
+    .quick-link:hover {
+        background: var(--bs-primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+    </style>'
+];
 
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 
-<?PHP
-include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/favicons.inc');
-?>
-    <!-- ===============================================-->
-    <!--    Header JS & Components-->
-    <!-- ===============================================-->
-    <meta name="theme-color" content="#ffffff">
-    <script src="/public/assets/js/config.js"></script>
-    <script src="/public/assets/vendors/simplebar/simplebar.min.js"></script>
+echo '
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">Staff Dashboard</h1>
+            <p class="text-muted">Welcome back, ' . htmlspecialchars($staff_user['user_firstname'] ?? $staff_user['user_username']) . '</p>
+        </div>
+    </div>';
 
+// Clock In/Out Section
+echo '
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="card staff-card">
+                <div class="card-body">
+                    <h5 class="card-title">Time Clock</h5>';
+                    
+if ($is_clocked_in) {
+    $clock_time = new DateTime($current_clock['clock_in']);
+    $now = new DateTime();
+    $interval = $clock_time->diff($now);
+    
+    echo '
+                    <p class="clock-status clock-in">Currently Clocked In</p>
+                    <p class="text-muted">Since: ' . $clock_time->format('g:i A') . '</p>
+                    <p class="text-muted">Duration: ' . $interval->format('%h hours %i minutes') . '</p>
+                    <form method="POST">
+                        ' . $display->input_csrftoken() . '
+                        <input type="hidden" name="action" value="clock_out">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-stop-circle"></i> Clock Out
+                        </button>
+                    </form>';
+} else {
+    echo '
+                    <p class="clock-status clock-out">Not Clocked In</p>
+                    <form method="POST">
+                        ' . $display->input_csrftoken() . '
+                        <input type="hidden" name="action" value="clock_in">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-play-circle"></i> Clock In
+                        </button>
+                    </form>';
+}
 
-<?PHP
-include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/stylesheets.inc');
+echo '
+                </div>
+            </div>
+        </div>';
 
-include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/header2.inc');
-?>
+// Staff Profile Card
+echo '
+        <div class="col-lg-4">
+            <div class="card staff-card">
+                <div class="card-body">
+                    <h5 class="card-title">My Profile</h5>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Employee ID:</dt>
+                        <dd class="col-sm-7">' . htmlspecialchars($staff_user['user_id']) . '</dd>
+                        
+                        <dt class="col-sm-5">Department:</dt>
+                        <dd class="col-sm-7">' . htmlspecialchars($staff_user['user_department'] ?? 'General') . '</dd>
+                        
+                        <dt class="col-sm-5">Role:</dt>
+                        <dd class="col-sm-7">' . htmlspecialchars(ucfirst($staff_role)) . '</dd>
+                        
+                        <dt class="col-sm-5">Email:</dt>
+                        <dd class="col-sm-7">' . htmlspecialchars($staff_user['user_email']) . '</dd>
+                    </dl>
+                    <a href="/myaccount/profile" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>';
 
-  </head>
+// HR Information Card
+echo '
+        <div class="col-lg-4">
+            <div class="card staff-card">
+                <div class="card-body">
+                    <h5 class="card-title">HR Information</h5>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Start Date:</dt>
+                        <dd class="col-sm-7">' . date('M d, Y', strtotime($staff_user['user_created'] ?? 'now')) . '</dd>
+                        
+                        <dt class="col-sm-5">Status:</dt>
+                        <dd class="col-sm-7"><span class="badge bg-success">Active</span></dd>
+                        
+                        <dt class="col-sm-5">Vacation Days:</dt>
+                        <dd class="col-sm-7">' . ($staff_user['vacation_days'] ?? '10') . ' remaining</dd>
+                        
+                        <dt class="col-sm-5">Next Review:</dt>
+                        <dd class="col-sm-7">' . date('M Y', strtotime('+6 months')) . '</dd>
+                    </dl>
+                    <a href="/staff/hr-details" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-file-earmark-text"></i> View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>';
 
+// Statistics Section (for managers)
+if ($is_manager) {
+    echo '
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">Management Overview</h4>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-number">' . number_format($stats['total_users']) . '</div>
+                <div>Total Users</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="stat-number">' . number_format($stats['new_users_today']) . '</div>
+                <div>New Today</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stat-number">' . number_format($database->count('bg_companies', 'status="active"')) . '</div>
+                <div>Active Companies</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="stat-number">' . number_format($database->count('bg_user_enrollments', 'status="success"')) . '</div>
+                <div>Enrollments</div>
+            </div>
+        </div>
+    </div>';
+}
 
-  <body>
+// Quick Links Section
+echo '
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4 class="mb-3">Quick Links</h4>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/timecards" class="quick-link d-block">
+                <i class="bi bi-clock-history fs-3 mb-2"></i>
+                <h6>Timecards</h6>
+                <small class="text-muted">View time history</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/training_sales" class="quick-link d-block">
+                <i class="bi bi-mortarboard fs-3 mb-2"></i>
+                <h6>Training</h6>
+                <small class="text-muted">Sales training</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/ccdashboard" class="quick-link d-block">
+                <i class="bi bi-headset fs-3 mb-2"></i>
+                <h6>Call Center</h6>
+                <small class="text-muted">Dashboard</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/admin/" class="quick-link d-block">
+                <i class="bi bi-gear fs-3 mb-2"></i>
+                <h6>Admin Panel</h6>
+                <small class="text-muted">System settings</small>
+            </a>
+        </div>
+    </div>';
 
-    <!-- ===============================================-->
-    <!--    Main Content-->
-    <!-- ===============================================-->
-    <main class="main" id="top">
-      <div class="container" data-layout="container">
-
-<?PHP
-include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/fluidcontent.inc');
-?>
-
+// Recent Activity Section
+if (!empty($recent_timeclock)) {
+    echo '
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Time Clock Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Clock In</th>
+                                    <th>Clock Out</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>';
+    
+    foreach ($recent_timeclock as $entry) {
+        $clock_in = new DateTime($entry['clock_in']);
+        $clock_out = $entry['clock_out'] ? new DateTime($entry['clock_out']) : null;
+        $duration = $clock_out ? $clock_in->diff($clock_out)->format('%h hrs %i min') : 'In Progress';
+        $status = $clock_out ? '<span class="badge bg-success">Complete</span>' : '<span class="badge bg-warning">Active</span>';
         
-
-        <div class="content mt-5">
-          
-
-          <div class="card mb-3">
-            <div class="card-header position-relative min-vh-25 mb-7">
-              <div class="bg-holder rounded-3 rounded-bottom-0" style="background-image:url(../../assets/img/generic/4.jpg);">
-              </div>
-              <!--/.bg-holder-->
-
-              <div class="avatar avatar-5xl avatar-profile"><img class="rounded-circle img-thumbnail shadow-sm" src="/public/assets/img/team/2.jpg" width="200" alt="" /></div>
+        echo '
+                                <tr>
+                                    <td>' . $clock_in->format('M d, Y') . '</td>
+                                    <td>' . $clock_in->format('g:i A') . '</td>
+                                    <td>' . ($clock_out ? $clock_out->format('g:i A') : '-') . '</td>
+                                    <td>' . $duration . '</td>
+                                    <td>' . $status . '</td>
+                                </tr>';
+    }
+    
+    echo '
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="/staff/timecards" class="btn btn-sm btn-outline-primary">View All Timecards</a>
+                </div>
             </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-lg-8">
-                  <h4 class="mb-1"> Anthony Hopkins<span data-bs-toggle="tooltip" data-bs-placement="right" title="Verified"><small class="fa fa-check-circle text-primary" data-fa-transform="shrink-4 down-2"></small></span>
-                  </h4>
-                  <h5 class="fs-9 fw-normal">Senior Software Engineer at Technext Limited</h5>
-                  <p class="text-500">New York, USA</p>
-                  <button class="btn btn-falcon-primary btn-sm px-3" type="button">Following</button>
-                  <button class="btn btn-falcon-default btn-sm px-3 ms-2" type="button">Message</button>
-                  <div class="border-bottom border-dashed my-4 d-lg-none"></div>
-                </div>
-                <div class="col ps-2 ps-lg-3"><a class="d-flex align-items-center mb-2" href="#"><span class="fas fa-user-circle fs-6 me-2 text-700" data-fa-transform="grow-2"></span>
-                    <div class="flex-1">
-                      <h6 class="mb-0">See followers (330)</h6>
-                    </div>
-                  </a><a class="d-flex align-items-center mb-2" href="#"><img class="align-self-center me-2" src="/public/assets/img/logos/g.png" alt="Generic placeholder image" width="30" />
-                    <div class="flex-1">
-                      <h6 class="mb-0">Google</h6>
-                    </div>
-                  </a><a class="d-flex align-items-center mb-2" href="#"><img class="align-self-center me-2" src="/public/assets/img/logos/apple.png" alt="Generic placeholder image" width="30" />
-                    <div class="flex-1">
-                      <h6 class="mb-0">Apple</h6>
-                    </div>
-                  </a><a class="d-flex align-items-center mb-2" href="#"><img class="align-self-center me-2" src="/public/assets/img/logos/hp.png" alt="Generic placeholder image" width="30" />
-                    <div class="flex-1">
-                      <h6 class="mb-0">Hewlett Packard</h6>
-                    </div>
-                  </a></div>
-              </div>
-            </div>
-          </div>
-          <div class="row g-0">
-            <div class="col-lg-8 pe-lg-2">
-              <div class="card mb-3">
-                <div class="card-header bg-body-tertiary">
-                  <h5 class="mb-0">Intro</h5>
-                </div>
-                <div class="card-body text-justify">
-                  <p class="mb-0 text-1000">Dedicated, passionate, and accomplished Full Stack Developer with 9+ years of progressive experience working as an Independent Contractor for Google and developing and growing my educational social network that helps others learn programming, web design, game development, networking.</p>
-                  <div class="collapse show" id="profile-intro">
-                    <p class="mt-3 text-1000">I’ve acquired a wide depth of knowledge and expertise in using my technical skills in programming, computer science, software development, and mobile app development to developing solutions to help organizations increase productivity, and accelerate business performance. </p>
-                    <p class="text-1000">It’s great that we live in an age where we can share so much with technology but I’m but I’m ready for the next phase of my career, with a healthy balance between the virtual world and a workplace where I help others face-to-face.</p>
-                    <p class="text-1000 mb-0">There’s always something new to learn, especially in IT-related fields. People like working with me because I can explain technology to everyone, from staff to executives who need me to tie together the details and the big picture. I can also implement the technologies that successful projects need.</p>
-                  </div>
-                </div>
-                <div class="card-footer bg-body-tertiary p-0 border-top">
-                  <button class="btn btn-link d-block w-100 btn-intro-collapse" type="button" data-bs-toggle="collapse" data-bs-target="#profile-intro" aria-expanded="true" aria-controls="profile-intro">Show <span class="less">less<span class="bi bi-chevron-up ms-2 fs-11"></span></span><span class="full">full<span class="fas fa-chevron-down ms-2 fs-11"></span></span></button>
-                </div>
-              </div>
-              <div class="card mb-3">
-                <div class="card-header bg-body-tertiary d-flex justify-content-between">
-                  <h5 class="mb-0">Associations</h5><a class="font-sans-serif" href="/pages/miscellaneous/associations.php">All Associations</a>
-                </div>
-                <div class="card-body fs-10 pb-0">
-                  <div class="row">
-                    <div class="col-sm-6 mb-3">
-                      <div class="d-flex position-relative align-items-center mb-2"><img class="d-flex align-self-center me-2 rounded-3" src="/public/assets/img/logos/apple.png" alt="" width="50" />
-                        <div class="flex-1">
-                          <h6 class="fs-9 mb-0"><a class="stretched-link" href="#!">Apple</a></h6>
-                          <p class="mb-1">3243 associates</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                      <div class="d-flex position-relative align-items-center mb-2"><img class="d-flex align-self-center me-2 rounded-3" src="/public/assets/img/logos/g.png" alt="" width="50" />
-                        <div class="flex-1">
-                          <h6 class="fs-9 mb-0"><a class="stretched-link" href="#!">Google</a></h6>
-                          <p class="mb-1">34598 associates</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                      <div class="d-flex position-relative align-items-center mb-2"><img class="d-flex align-self-center me-2 rounded-3" src="/public/assets/img/logos/intel-2.png" alt="" width="50" />
-                        <div class="flex-1">
-                          <h6 class="fs-9 mb-0"><a class="stretched-link" href="#!">Intel</a></h6>
-                          <p class="mb-1">7652 associates</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-sm-6 mb-3">
-                      <div class="d-flex position-relative align-items-center mb-2"><img class="d-flex align-self-center me-2 rounded-3" src="/public/assets/img/logos/facebook.png" alt="" width="50" />
-                        <div class="flex-1">
-                          <h6 class="fs-9 mb-0"><a class="stretched-link" href="#!">Facebook</a></h6>
-                          <p class="mb-1">765 associates</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="card mb-3">
-                <div class="card-header bg-body-tertiary d-flex justify-content-between">
-                  <h5 class="mb-0">Activity log</h5><a class="font-sans-serif" href="/app/social/activity-log.php">All logs</a>
-                </div>
-                <div class="card-body fs-10 p-0">
-                  <a class="border-bottom-0 notification rounded-0 border-x-0 border border-300" href="#!">
-                    <div class="notification-avatar">
-                      <div class="avatar avatar-xl me-3">
-                        <div class="avatar-emoji rounded-circle "><span role="img" aria-label="Emoji">🎁</span></div>
-                      </div>
-                    </div>
-                    <div class="notification-body">
-                      <p class="mb-1"><strong>Jennifer Kent</strong> Congratulated <strong>Anthony Hopkins</strong></p>
-                      <span class="notification-time">November 13, 5:00 Am</span>
-
-                    </div>
-                  </a>
-
-                  <a class="border-bottom-0 notification rounded-0 border-x-0 border border-300" href="#!">
-                    <div class="notification-avatar">
-                      <div class="avatar avatar-xl me-3">
-                        <div class="avatar-emoji rounded-circle "><span role="img" aria-label="Emoji">🏷️</span></div>
-                      </div>
-                    </div>
-                    <div class="notification-body">
-                      <p class="mb-1"><strong>California Institute of Technology</strong> tagged <strong>Anthony Hopkins</strong> in a post.</p>
-                      <span class="notification-time">November 8, 5:00 PM</span>
-
-                    </div>
-                  </a>
-
-                  <a class="border-bottom-0 notification rounded-0 border-x-0 border border-300" href="#!">
-                    <div class="notification-avatar">
-                      <div class="avatar avatar-xl me-3">
-                        <div class="avatar-emoji rounded-circle "><span role="img" aria-label="Emoji">📋️</span></div>
-                      </div>
-                    </div>
-                    <div class="notification-body">
-                      <p class="mb-1"><strong>Anthony Hopkins</strong> joined <strong>Victory day cultural Program</strong> with <strong>Tony Stark</strong></p>
-                      <span class="notification-time">November 01, 11:30 AM</span>
-
-                    </div>
-                  </a>
-
-                  <a class="notification border-x-0 border-bottom-0 border-300 rounded-top-0" href="#!">
-                    <div class="notification-avatar">
-                      <div class="avatar avatar-xl me-3">
-                        <div class="avatar-emoji rounded-circle "><span role="img" aria-label="Emoji">📅️</span></div>
-                      </div>
-                    </div>
-                    <div class="notification-body">
-                      <p class="mb-1"><strong>Massachusetts Institute of Technology</strong> invited <strong>Anthony Hopkin</strong> to an event</p>
-                      <span class="notification-time">October 28, 12:00 PM</span>
-
-                    </div>
-                  </a>
-
-                </div>
-              </div>
-              <div class="card mb-3 mb-lg-0">
-                <div class="card-header bg-body-tertiary">
-                  <h5 class="mb-0">Photos</h5>
-                </div>
-                <div class="card-body overflow-hidden">
-                  <div class="row g-0">
-                    <div class="col-6 p-1"><a class="glightbox" href="/public/assets/img/generic/4.jpg" data-gallery="gallery1" data-glightbox="data-glightbox"><img class="img-fluid rounded" src="/public/assets/img/generic/4.jpg" alt="..." /></a></div>
-                    <div class="col-6 p-1"><a class="glightbox" href="/public/assets/img/generic/5.jpg" data-gallery="gallery1" data-glightbox="data-glightbox"><img class="img-fluid rounded" src="/public/assets/img/generic/5.jpg" alt="..." /></a></div>
-                    <div class="col-4 p-1"><a class="glightbox" href="/public/assets/img/gallery/4.jpg" data-gallery="gallery1" data-glightbox="data-glightbox"><img class="img-fluid rounded" src="/public/assets/img/gallery/4.jpg" alt="..." /></a></div>
-                    <div class="col-4 p-1"><a class="glightbox" href="/public/assets/img/gallery/5.jpg" data-gallery="gallery1" data-glightbox="data-glightbox"><img class="img-fluid rounded" src="/public/assets/img/gallery/5.jpg" alt="..." /></a></div>
-                    <div class="col-4 p-1"><a class="glightbox" href="/public/assets/img/gallery/3.jpg" data-gallery="gallery1" data-glightbox="data-glightbox"><img class="img-fluid rounded" src="/public/assets/img/gallery/3.jpg" alt="..." /></a></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-lg-4 ps-lg-2">
-              <div class="sticky-sidebar">
-                <div class="card mb-3">
-                  <div class="card-header bg-body-tertiary">
-                    <h5 class="mb-0">Experience</h5>
-                  </div>
-                  <div class="card-body fs-10">
-                    <div class="d-flex"><a href="#!"> <img class="img-fluid" src="/public/assets/img/logos/g.png" alt="" width="56" /></a>
-                      <div class="flex-1 position-relative ps-3">
-                        <h6 class="fs-9 mb-0">Big Data Engineer<span data-bs-toggle="tooltip" data-bs-placement="top" title="Verified"><small class="fa fa-check-circle text-primary" data-fa-transform="shrink-4 down-2"></small></span>
-                        </h6>
-                        <p class="mb-1"> <a href="#!">Google</a></p>
-                        <p class="text-1000 mb-0">Apr 2012 - Present &bull; 6 yrs 9 mos</p>
-                        <p class="text-1000 mb-0">California, USA</p>
-                        <div class="border-bottom border-dashed my-3"></div>
-                      </div>
-                    </div>
-                    <div class="d-flex"><a href="#!"> <img class="img-fluid" src="/public/assets/img/logos/apple.png" alt="" width="56" /></a>
-                      <div class="flex-1 position-relative ps-3">
-                        <h6 class="fs-9 mb-0">Software Engineer<span data-bs-toggle="tooltip" data-bs-placement="top" title="Verified"><small class="fa fa-check-circle text-primary" data-fa-transform="shrink-4 down-2"></small></span>
-                        </h6>
-                        <p class="mb-1"> <a href="#!">Apple</a></p>
-                        <p class="text-1000 mb-0">Jan 2012 - Apr 2012 &bull; 4 mos</p>
-                        <p class="text-1000 mb-0">California, USA</p>
-                        <div class="border-bottom border-dashed my-3"></div>
-                      </div>
-                    </div>
-                    <div class="d-flex"><a href="#!"> <img class="img-fluid" src="/public/assets/img/logos/nike.png" alt="" width="56" /></a>
-                      <div class="flex-1 position-relative ps-3">
-                        <h6 class="fs-9 mb-0">Mobile App Developer<span data-bs-toggle="tooltip" data-bs-placement="top" title="Verified"><small class="fa fa-check-circle text-primary" data-fa-transform="shrink-4 down-2"></small></span>
-                        </h6>
-                        <p class="mb-1"> <a href="#!">Nike</a></p>
-                        <p class="text-1000 mb-0">Jan 2011 - Apr 2012 &bull; 1 yr 4 mos</p>
-                        <p class="text-1000 mb-0">Beaverton, USA</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="card mb-3">
-                  <div class="card-header bg-body-tertiary">
-                    <h5 class="mb-0">Education</h5>
-                  </div>
-                  <div class="card-body fs-10">
-                    <div class="d-flex"><a href="#!">
-                        <div class="avatar avatar-3xl">
-                          <div class="avatar-name rounded-circle"><span>SU</span></div>
-                        </div>
-                      </a>
-                      <div class="flex-1 position-relative ps-3">
-                        <h6 class="fs-9 mb-0"> <a href="#!">Stanford University<span data-bs-toggle="tooltip" data-bs-placement="top" title="Verified"><small class="fa fa-check-circle text-primary" data-fa-transform="shrink-4 down-2"></small></span></a></h6>
-                        <p class="mb-1">Computer Science and Engineering</p>
-                        <p class="text-1000 mb-0">2010 - 2014 • 4 yrs</p>
-                        <p class="text-1000 mb-0">California, USA</p>
-                        <div class="border-bottom border-dashed my-3"></div>
-                      </div>
-                    </div>
-                    <div class="d-flex"><a href="#!"> <img class="img-fluid" src="/public/assets/img/logos/staten.png" alt="" width="56" /></a>
-                      <div class="flex-1 position-relative ps-3">
-                        <h6 class="fs-9 mb-0"> <a href="#!">Staten Island Technical High School<span data-bs-toggle="tooltip" data-bs-placement="top" title="Verified"><small class="fa fa-check-circle text-primary" data-fa-transform="shrink-4 down-2"></small></span></a></h6>
-                        <p class="mb-1">Higher Secondary School Certificate, Science</p>
-                        <p class="text-1000 mb-0">2008 - 2010 &bull; 2 yrs</p>
-                        <p class="text-1000 mb-0">New York, USA</p>
-                        <div class="border-bottom border-dashed my-3"></div>
-                      </div>
-                    </div>
-                    <div class="d-flex"><a href="#!"> <img class="img-fluid" src="/public/assets/img/logos/tj-heigh-school.png" alt="" width="56" /></a>
-                      <div class="flex-1 position-relative ps-3">
-                        <h6 class="fs-9 mb-0"> <a href="#!">Thomas Jefferson High School for Science and Technology<span data-bs-toggle="tooltip" data-bs-placement="top" title="Verified"><small class="fa fa-check-circle text-primary" data-fa-transform="shrink-4 down-2"></small></span></a></h6>
-                        <p class="mb-1">Secondary School Certificate, Science</p>
-                        <p class="text-1000 mb-0">2003 - 2008 &bull; 5 yrs</p>
-                        <p class="text-1000 mb-0">Alexandria, USA</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="card mb-3 mb-lg-0">
-                  <div class="card-header bg-body-tertiary">
-                    <h5 class="mb-0">Events</h5>
-                  </div>
-                  <div class="card-body fs-10">
-                    <div class="d-flex btn-reveal-trigger">
-                      <div class="calendar"><span class="calendar-month">Feb</span><span class="calendar-day">21</span></div>
-                      <div class="flex-1 position-relative ps-3">
-                        <h6 class="fs-9 mb-0"><a href="/app/events/event-detail.php">Newmarket Nights</a></h6>
-                        <p class="mb-1">Organized by <a href="#!" class="text-700">University of Oxford</a></p>
-                        <p class="text-1000 mb-0">Time: 6:00AM</p>
-                        <p class="text-1000 mb-0">Duration: 6:00AM - 5:00PM</p>Place: Cambridge Boat Club, Cambridge
-                        <div class="border-bottom border-dashed my-3"></div>
-                      </div>
-                    </div>
-                    <div class="d-flex btn-reveal-trigger">
-                      <div class="calendar"><span class="calendar-month">Dec</span><span class="calendar-day">31</span></div>
-                      <div class="flex-1 position-relative ps-3">
-                        <h6 class="fs-9 mb-0"><a href="/app/events/event-detail.php">31st Night Celebration</a></h6>
-                        <p class="mb-1">Organized by <a href="#!" class="text-700">Chamber Music Society</a></p>
-                        <p class="text-1000 mb-0">Time: 11:00PM</p>
-                        <p class="text-1000 mb-0">280 people interested</p>Place: Tavern on the Greend, New York
-                        <div class="border-bottom border-dashed my-3"></div>
-                      </div>
-                    </div>
-                    <div class="d-flex btn-reveal-trigger">
-                      <div class="calendar"><span class="calendar-month">Dec</span><span class="calendar-day">16</span></div>
-                      <div class="flex-1 position-relative ps-3">
-                        <h6 class="fs-9 mb-0"><a href="/app/events/event-detail.php">Folk Festival</a></h6>
-                        <p class="mb-1">Organized by <a href="#!" class="text-700">Harvard University</a></p>
-                        <p class="text-1000 mb-0">Time: 9:00AM</p>
-                        <p class="text-1000 mb-0">Location: Cambridge Masonic Hall Association</p>Place: Porter Square, North Cambridge
-                      </div>
-                    </div>
-                  </div>
-                  <div class="card-footer bg-body-tertiary p-0 border-top"><a class="btn btn-link d-block w-100" href="/app/events/event-list.php">All Events<span class="fas fa-chevron-right ms-1 fs-11"></span></a></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="card mt-3">
-            <div class="card-header bg-body-tertiary">
-              <div class="row align-items-center">
-                <div class="col">
-                  <h5 class="mb-0" id="followers">Followers <span class="d-none d-sm-inline-block">(233)</span></h5>
-                </div>
-                <div class="col text-end"><a class="font-sans-serif" href="/app/social/followers.php">All Members</a>
-                </div>
-              </div>
-            </div>
-            <div class="card-body bg-body-tertiary px-1 py-0">
-              <div class="row g-0 text-center fs-10">
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/1.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Emilia Clarke</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Technext limited</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/2.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Kit Harington</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Harvard Korea Society</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/3.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Sophie Turner</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Graduate Student Council</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/4.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Peter Dinklage</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Art Club, MIT</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/5.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Nikolaj Coster</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Archery Club, MIT</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/6.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Isaac Hempstead</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Asymptones</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/7.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Alfie Allen</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Brain Trust</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/8.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Iain Glen</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">GSAS Action Coalition</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/9.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Liam Cunningham</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Caving Club, MIT</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/10.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">John Bradley</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Chess Club</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/11.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Rory McCann</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Chamber Music Society</a></p>
-                  </div>
-                </div>
-                <div class="col-6 col-md-4 col-lg-3 col-xxl-2 mb-1">
-                  <div class="bg-white dark__bg-1100 p-3 h-100"><a href="/pages/user/profile.php"><img class="img-thumbnail img-fluid rounded-circle mb-3 shadow-sm" src="/public/assets/img/team/12.jpg" alt="" width="100" /></a>
-                    <h6 class="mb-1"><a href="/pages/user/profile.php">Joe Dempsie</a>
-                    </h6>
-                    <p class="fs-11 mb-1"><a class="text-700" href="#!">Clubchem</a></p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-<?PHP
-include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/footer.inc');
-?>
-
         </div>
-        <div class="modal fade" id="authentication-modal" tabindex="-1" role="dialog" aria-labelledby="authentication-modal-label" aria-hidden="true">
-          <div class="modal-dialog mt-6" role="document">
-            <div class="modal-content border-0">
-              <div class="modal-header px-5 position-relative modal-shape-header bg-shape">
-                <div class="position-relative z-1">
-                  <h4 class="mb-0 text-white" id="authentication-modal-label">Register</h4>
-                  <p class="fs-10 mb-0 text-white">Please create your free Falcon account</p>
+    </div>';
+}
+
+// Tools and Resources Section
+echo '
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Staff Tools</h5>
                 </div>
-                <button class="btn-close position-absolute top-0 end-0 mt-2 me-2" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body py-4 px-5">
-                <form>
-                  <div class="mb-3">
-                    <label class="form-label" for="modal-auth-name">Name</label>
-                    <input class="form-control" type="text" autocomplete="on" id="modal-auth-name" />
-                  </div>
-                  <div class="mb-3">
-                    <label class="form-label" for="modal-auth-email">Email address</label>
-                    <input class="form-control" type="email" autocomplete="on" id="modal-auth-email" />
-                  </div>
-                  <div class="row gx-2">
-                    <div class="mb-3 col-sm-6">
-                      <label class="form-label" for="modal-auth-password">Password</label>
-                      <input class="form-control" type="password" autocomplete="on" id="modal-auth-password" />
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="/staff/companylogos" class="list-group-item list-group-item-action">
+                            <i class="bi bi-image me-2"></i> Company Logos Management
+                        </a>
+                        <a href="/staff/systemlinks" class="list-group-item list-group-item-action">
+                            <i class="bi bi-link-45deg me-2"></i> System Links
+                        </a>
+                        <a href="/admin/bgreb_v3/enrollment-listv2" class="list-group-item list-group-item-action">
+                            <i class="bi bi-people me-2"></i> Enrollment Management
+                        </a>
+                        <a href="/admin/business-submissions" class="list-group-item list-group-item-action">
+                            <i class="bi bi-building me-2"></i> Business Submissions
+                        </a>
                     </div>
-                    <div class="mb-3 col-sm-6">
-                      <label class="form-label" for="modal-auth-confirm-password">Confirm Password</label>
-                      <input class="form-control" type="password" autocomplete="on" id="modal-auth-confirm-password" />
-                    </div>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="modal-auth-register-checkbox" />
-                    <label class="form-label" for="modal-auth-register-checkbox">I accept the <a href="#!">terms </a>and <a class="white-space-nowrap" href="#!">privacy policy</a></label>
-                  </div>
-                  <div class="mb-3">
-                    <button class="btn btn-primary d-block w-100 mt-3" type="submit" name="submit">Register</button>
-                  </div>
-                </form>
-                <div class="position-relative mt-5">
-                  <hr />
-                  <div class="divider-content-center">or register with</div>
                 </div>
-                <div class="row g-2 mt-2">
-                  <div class="col-sm-6"><a class="btn btn-outline-google-plus btn-sm d-block w-100" href="#"><span class="fab fa-google-plus-g me-2" data-fa-transform="grow-8"></span> google</a></div>
-                  <div class="col-sm-6"><a class="btn btn-outline-facebook btn-sm d-block w-100" href="#"><span class="fab fa-facebook-square me-2" data-fa-transform="grow-8"></span> facebook</a></div>
-                </div>
-              </div>
             </div>
-          </div>
         </div>
-      </div>
-    </main>
-    <!-- ===============================================-->
-    <!--    End of Main Content-->
-    <!-- ===============================================-->
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Resources</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="https://docs.birthdaygold.cloud" class="list-group-item list-group-item-action" target="_blank">
+                            <i class="bi bi-book me-2"></i> Documentation
+                            <i class="bi bi-box-arrow-up-right float-end"></i>
+                        </a>
+                        <a href="/staff/training_sales" class="list-group-item list-group-item-action">
+                            <i class="bi bi-play-circle me-2"></i> Training Videos
+                        </a>
+                        <a href="https://chat.birthday.gold" class="list-group-item list-group-item-action" target="_blank">
+                            <i class="bi bi-chat-dots me-2"></i> Team Chat
+                            <i class="bi bi-box-arrow-up-right float-end"></i>
+                        </a>
+                        <a href="/myaccount/support" class="list-group-item list-group-item-action">
+                            <i class="bi bi-question-circle me-2"></i> IT Support
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>';
 
+echo '</div>'; // End container
 
-<?PHP
-include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/customizercontent.inc');
+$display_footertype = '';
+include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();
 ?>
-<?PHP
-include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/sitecustomizer.inc');
-?>
-
-
-
-    <!-- ===============================================-->
-    <!--    JavaScripts-->
-    <!-- ===============================================-->
-    <script src="/public/assets/vendors/popper/popper.min.js"></script>
-    <script src="/public/assets/vendors/bootstrap/bootstrap.min.js"></script>
-    <script src="/public/assets/vendors/anchorjs/anchor.min.js"></script>
-    <script src="/public/assets/vendors/is/is.min.js"></script>
-    <script src="/public/assets/vendors/glightbox/glightbox.min.js"></script>
-    <script src="/public/assets/vendors/fontawesome/all.min.js"></script>
-    <script src="/public/assets/vendors/lodash/lodash.min.js"></script>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=window.scroll"></script>
-    <script src="/public/assets/vendors/list.js/list.min.js"></script>
-    <script src="/public/assets/js/theme.js"></script>
-
-  </body>
-
-</html>
