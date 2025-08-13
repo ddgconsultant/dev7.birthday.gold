@@ -83,6 +83,7 @@ function fetchUptimeStatus($baseUrl, $cacheFile = null, $cacheTime = 60) {
         $anyDown = false;
         $serviceCount = 0;
         $operationalCount = 0;
+        $responseTimes = [];
         
         foreach ($data['heartbeatList'] as $monitorId => $heartbeats) {
             $serviceCount++;
@@ -91,6 +92,10 @@ function fetchUptimeStatus($baseUrl, $cacheFile = null, $cacheTime = 60) {
                 $latestHeartbeat = $heartbeats[count($heartbeats) - 1];
                 if ($latestHeartbeat['status'] == 1) {
                     $operationalCount++;
+                    // Collect response time if available
+                    if (isset($latestHeartbeat['ping'])) {
+                        $responseTimes[] = $latestHeartbeat['ping'];
+                    }
                 } elseif ($latestHeartbeat['status'] == 0) {
                     $anyDown = true;
                     $allOperational = false;
@@ -98,6 +103,14 @@ function fetchUptimeStatus($baseUrl, $cacheFile = null, $cacheTime = 60) {
                     $allOperational = false;
                 }
             }
+        }
+        
+        // Calculate average response time
+        if (!empty($responseTimes)) {
+            $avgResponseTime = array_sum($responseTimes) / count($responseTimes);
+            $status['avg_response_time'] = round($avgResponseTime, 0);
+        } else {
+            $status['avg_response_time'] = null;
         }
         
         // Calculate overall uptime from uptimeList
@@ -427,7 +440,17 @@ include($dir['core_components'] . '/bg_header.inc');
                         <?php echo htmlspecialchars($statusData['overall_status']); ?>
                     </div>
                     <div class="small opacity-75">
-                        Last checked <?php echo date('g:i A', strtotime($statusData['last_checked'])); ?>
+                        Last checked <?php 
+                        $checkTime = strtotime($statusData['last_checked']);
+                        $timezone = date_default_timezone_get();
+                        // If today, show time only with timezone
+                        if (date('Y-m-d', $checkTime) == date('Y-m-d')) {
+                            echo date('g:i A', $checkTime) . ' ' . date('T');
+                        } else {
+                            // If not today, show day, date and time with timezone
+                            echo date('D, M j g:i A T', $checkTime);
+                        }
+                        ?>
                     </div>
                 </div>
                 
@@ -442,7 +465,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     </div>
                     <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                         <span class="small text-muted fw-medium">Response Time</span>
-                        <span class="fw-semibold">< 200ms</span>
+                        <span class="fw-semibold">< 50ms</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                         <span class="small text-muted fw-medium">Auto-Refresh</span>
@@ -509,7 +532,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <?php endif; ?>
     
     <!-- Bottom Section - What We Monitor (Always shown) -->
-    <div class="card shadow mt-4 p-4">
+    <div class="card shadow mt-4 mb-5 p-4">
         <h2 class="d-flex align-items-center mb-4"><i class="bi bi-shield-check-fill text-success me-3"></i>What We Monitor</h2>
         
         <p class="mb-4">Our comprehensive monitoring system tracks all critical Birthday Gold services to ensure optimal performance and availability:</p>
