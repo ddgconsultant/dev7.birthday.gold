@@ -1,4 +1,8 @@
 <?php
+include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+
+$pagetitle = 'Sales Training - Birthday.Gold';
+
 $slides = [
     1 => [
         'title' => 'Welcome to Birthday.Gold Sales Training',
@@ -115,15 +119,226 @@ if ($page < 1) {
     $page = max(array_keys($slides));
 }
 
-echo "<h1>{$slides[$page]['title']}</h1>";
-echo "<p>{$slides[$page]['content']}</p>";
-echo "<script>var msg = new SpeechSynthesisUtterance('{$slides[$page]['notes']}'); window.speechSynthesis.speak(msg);</script>";
+// Calculate progress
+$total_slides = count($slides);
+$progress_percentage = ($page / $total_slides) * 100;
+
+// Include page structure
+$additionalstyles = '
+<style>
+    .presentation-container {
+        min-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        margin: 2rem auto;
+        max-width: 1200px;
+    }
+    .slide-content {
+        text-align: center;
+        max-width: 900px;
+    }
+    .slide-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 2rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .slide-body {
+        font-size: 1.25rem;
+        line-height: 1.8;
+        text-align: left;
+        background: rgba(255,255,255,0.1);
+        padding: 2rem;
+        border-radius: 0.5rem;
+        backdrop-filter: blur(10px);
+    }
+    .slide-navigation {
+        margin-top: 3rem;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 600px;
+    }
+    .nav-button {
+        padding: 0.75rem 2rem;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        transition: all 0.3s;
+        border: 2px solid white;
+        font-weight: 600;
+    }
+    .nav-button:hover {
+        background: white;
+        color: #764ba2;
+        transform: translateY(-2px);
+    }
+    .nav-button.disabled {
+        opacity: 0.3;
+        pointer-events: none;
+    }
+    .slide-counter {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    .progress-bar-container {
+        width: 100%;
+        max-width: 600px;
+        height: 8px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 4px;
+        margin: 2rem auto;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        background: white;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+    .speaker-notes {
+        margin-top: 2rem;
+        padding: 1rem;
+        background: rgba(0,0,0,0.2);
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        font-style: italic;
+        max-width: 900px;
+    }
+    .controls {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    .control-button {
+        padding: 0.5rem 1rem;
+        background: rgba(0,0,0,0.5);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+    .control-button:hover {
+        background: rgba(0,0,0,0.7);
+    }
+</style>';
+
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
+
+echo '
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/staff/">Staff Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Sales Training</li>
+        </ol>
+    </nav>
+    
+    <div class="presentation-container">
+        <div class="slide-content">
+            <h1 class="slide-title">' . htmlspecialchars($slides[$page]['title']) . '</h1>
+            <div class="slide-body">' . nl2br(htmlspecialchars_decode($slides[$page]['content'])) . '</div>
+            
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: ' . $progress_percentage . '%"></div>
+            </div>
+            
+            <div class="slide-navigation">';
 
 if ($page > min(array_keys($slides))) {
-    echo '<a href="?page=' . ($page - 1) . '">Previous</a> ';
+    echo '<a href="?page=' . ($page - 1) . '" class="nav-button">
+            <i class="bi bi-chevron-left"></i> Previous
+          </a>';
+} else {
+    echo '<span class="nav-button disabled">
+            <i class="bi bi-chevron-left"></i> Previous
+          </span>';
 }
 
+echo '<span class="slide-counter">Slide ' . $page . ' of ' . $total_slides . '</span>';
+
 if ($page < max(array_keys($slides))) {
-    echo '<a href="?page=' . ($page + 1) . '">Next</a>';
+    echo '<a href="?page=' . ($page + 1) . '" class="nav-button">
+            Next <i class="bi bi-chevron-right"></i>
+          </a>';
+} else {
+    echo '<span class="nav-button disabled">
+            Next <i class="bi bi-chevron-right"></i>
+          </span>';
 }
+
+echo '
+            </div>
+            
+            <details class="speaker-notes">
+                <summary style="cursor: pointer; font-weight: bold;">Speaker Notes</summary>
+                <p class="mt-2">' . htmlspecialchars($slides[$page]['notes']) . '</p>
+            </details>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button class="control-button" onclick="toggleSpeech()">
+            <i class="bi bi-volume-up"></i> Read Aloud
+        </button>
+        <button class="control-button" onclick="toggleFullscreen()">
+            <i class="bi bi-fullscreen"></i> Fullscreen
+        </button>
+    </div>
+</div>
+
+<script>
+let speechUtterance = null;
+let isSpeaking = false;
+
+function toggleSpeech() {
+    if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+    } else {
+        const notes = ' . json_encode($slides[$page]['notes']) . ';
+        speechUtterance = new SpeechSynthesisUtterance(notes);
+        speechUtterance.rate = 0.9;
+        speechUtterance.pitch = 1;
+        window.speechSynthesis.speak(speechUtterance);
+        isSpeaking = true;
+    }
+}
+
+function toggleFullscreen() {
+    const elem = document.querySelector(".presentation-container");
+    if (!document.fullscreenElement) {
+        elem.requestFullscreen().catch(err => {
+            console.log("Error attempting to enable fullscreen:", err);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// Keyboard navigation
+document.addEventListener("keydown", function(e) {
+    if (e.key === "ArrowLeft" && ' . $page . ' > 1) {
+        window.location.href = "?page=' . ($page - 1) . '";
+    } else if (e.key === "ArrowRight" && ' . $page . ' < ' . $total_slides . ') {
+        window.location.href = "?page=' . ($page + 1) . '";
+    }
+});
+</script>';
+
+include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();
 ?>
