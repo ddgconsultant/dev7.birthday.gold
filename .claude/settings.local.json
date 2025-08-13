@@ -65,7 +65,11 @@
       "Bash(/tmp/remove_social_instantiation.sh:*)",
       "Bash(/tmp/fix_api_auth.sh:*)",
       "Bash(/tmp/fix_database_methods.sh:*)",
-      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT url, page_type, page_title FROM bg_company_pages WHERE company_id = 6271 AND page_type IN (''locations'', ''phone'', ''contact'', ''about'') ORDER BY page_type;\")"
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT url, page_type, page_title FROM bg_company_pages WHERE company_id = 6271 AND page_type IN (''locations'', ''phone'', ''contact'', ''about'') ORDER BY page_type;\")",
+      "Bash(tree:*)",
+      "Bash(./cypress/test-runner.sh:*)",
+      "Bash(./cypress/quick-test.sh:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

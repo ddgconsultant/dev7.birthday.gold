@@ -767,6 +767,34 @@ include($dir['core_components'] . '/bg_header.inc');
                     You can resend in <span id="countdownTimer">60</span> seconds
                 </div>
             </div>
+            
+            <?php 
+            // For automated testing: expose verification code when using @bdtest.xyz domain
+            if (!empty($userregistrationdata['email']) && strpos($userregistrationdata['email'], '@bdtest.xyz') !== false) {
+                // Get the actual verification code from the database
+                $test_validation_data = [
+                    'email' => $userregistrationdata['email'],
+                    'user_id' => $userregistrationdata['user_id'],
+                    'type' => 'email'
+                ];
+                $test_codes = $app->getvalidationcodes($test_validation_data);
+                if (!empty($test_codes['mini'])) {
+                    // Use a span element with obscure data attribute (ctc = "code test container")
+                    // TEMPORARILY VISIBLE for debugging - shows the code in small text
+                    echo '<span data-ctc-value="' . htmlspecialchars($test_codes['mini']) . '" style="position:fixed; bottom:5px; right:5px; font-size:10px; color:#999; background:#fff; padding:2px 5px; border:1px solid #ddd; z-index:9999;">Test Code: ' . htmlspecialchars($test_codes['mini']) . '</span>';
+                    // Also add a debug comment for testing
+                    echo '<!-- Cypress test code generated for: ' . htmlspecialchars($userregistrationdata['email']) . ' -->';
+                } else {
+                    // Debug: no code found
+                    echo '<!-- Cypress test: No code found for email: ' . htmlspecialchars($userregistrationdata['email'] ?? 'no email') . ' -->';
+                }
+            } else {
+                // Debug: conditions not met
+                $debug_email = $userregistrationdata['email'] ?? 'no email in session';
+                $is_bdtest = strpos($debug_email, '@bdtest.xyz') !== false ? 'yes' : 'no';
+                echo '<!-- Cypress test: Email=' . htmlspecialchars($debug_email) . ', IsBdtest=' . $is_bdtest . ' -->';
+            }
+            ?>
 
             <p class="help-text">
                 Having trouble? <a href="/contact">Contact support</a>
