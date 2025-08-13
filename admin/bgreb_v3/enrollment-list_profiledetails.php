@@ -10,9 +10,6 @@ if (!empty( $userId)) {
     $userId = intval($_GET['userId']  );
     $local_profilemode='modal';
 }
-
-// Set default layout (can be overridden by GET parameter if needed)
-$local_list_profiledetailslayout = $_GET['layout'] ?? '1';
 // Get user details
 $userDetails = $account->getuserdata($userId, 'user_id');
 
@@ -238,15 +235,22 @@ switch($local_list_profiledetailslayout) {
         echo $dietaryPrefsCard;
         echo $specialStatusCard;
         echo '</div>';
+        break;
+}
 
-        if ($local_profilemode=='modal') {
-            echo '
-            <!-- Status Update Form -->
-            <div class="card mb-2 mt-5">
+echo '</div>'; // End Row
+
+// Force Update Status Form - Full Width
+if ($local_profilemode=='modal') {
+    echo '
+    <!-- Status Update Form -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card mb-2">
                <div class="card-header py-1 bg-danger">
                    <h6 class="mb-0 small fw-bold text-white">Force Update Status for user: '.$userId.'</h6>
                </div>
-               <div class="card-body p-4">
+               <div class="card-body p-3">
                    <form action="https://dev.birthday.gold/admin/bgreb_v3/bgr_actions.php">
                     '.$display->input_csrftoken().'
                        <!-- Hidden fields -->
@@ -255,53 +259,51 @@ switch($local_list_profiledetailslayout) {
                        <input type="hidden" name="message" value="done">
                        <input type="hidden" name="version" value="3.9999.99.999990">
                        
-                       <div class="mb-2">
-                           <label for="company_select" class="form-label small">Select Company</label>
-                           <select class="form-select form-select-sm" id="company_select" name="company_select"  required>
-                               <option value="">Choose Company...</option>';
-                              
-                               // Fetch and display enrollments
-                               $sql = "SELECT ue.user_company_id, ue.company_id, c.company_display_name as company_name 
-                                       FROM bg_user_enrollments ue 
-                                       JOIN bg_companies c ON ue.company_id = c.company_id 
-                                       WHERE ue.user_id = ? and ue.status='selected'
-                                       ORDER BY c.company_display_name ASC";
-                               $stmt = $database->prepare($sql);
-                               $stmt->execute([$userId]);
-                               
-                               while($enrollmentlist = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                   echo '<option value="'.$enrollmentlist['user_company_id'].'|'.$enrollmentlist['company_id'].'">
-                                           '.htmlspecialchars($enrollmentlist['company_name']).' 
-                                           (CID: '.$enrollmentlist['company_id'].')
-                                       </option>';
-                               }
-                                       
-            echo '          </select>
+                       <div class="row">
+                           <div class="col-lg-6 mb-2">
+                               <label for="company_select" class="form-label small">Select Company</label>
+                               <select class="form-select form-select-sm" id="company_select" name="company_select"  required>
+                                   <option value="">Choose Company...</option>';
+                                  
+                                   // Fetch and display enrollments
+                                   $sql = "SELECT ue.user_company_id, ue.company_id, c.company_display_name as company_name 
+                                           FROM bg_user_enrollments ue 
+                                           JOIN bg_companies c ON ue.company_id = c.company_id 
+                                           WHERE ue.user_id = ? and ue.status='selected'
+                                           ORDER BY c.company_display_name ASC";
+                                   $stmt = $database->prepare($sql);
+                                   $stmt->execute([$userId]);
+                                   
+                                   while($enrollmentlist = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                       echo '<option value="'.$enrollmentlist['user_company_id'].'|'.$enrollmentlist['company_id'].'">
+                                               '.htmlspecialchars($enrollmentlist['company_name']).' 
+                                               (CID: '.$enrollmentlist['company_id'].')
+                                           </option>';
+                                   }
+                                           
+    echo '              </select>
+                           </div>
+                           
+                           <div class="col-lg-6 mb-2">
+                               <label for="act" class="form-label small">Status</label>
+                               <select class="form-select form-select-sm" id="act" name="act" required>
+                                   <option value="">Select Status</option>
+                                   <option value="success-btn">Success</option>
+                                   <option disabled>─────────────</option>
+                                   <option value="failed-exists">Failed: Account Already Exists</option>
+                                   <option value="failed-form">Failed: Form Failure</option>
+                                   <option value="failed-password">Failed: Password Failure</option>
+                                   <option value="failed-missing">Failed: Missing Data Element</option>
+                               </select>
+                           </div>
                        </div>
                        
-                       <div class="mb-2">
-                           <label for="act" class="form-label small">Status</label>
-                           <select class="form-select form-select-sm" id="act" name="act" required>
-                               <option value="">Select Status</option>
-                               <option value="success-btn">Success</option>
-                               <option disabled>─────────────</option>
-                               <option value="failed-exists">Failed: Account Already Exists</option>
-                               <option value="failed-form">Failed: Form Failure</option>
-                               <option value="failed-password">Failed: Password Failure</option>
-                               <option value="failed-missing">Failed: Missing Data Element</option>
-                           </select>
-                       </div>
-                       
-                       <button type="submit" class="btn btn-primary mt-5 btn-sm">Update Status</button>
+                       <button type="submit" class="btn btn-primary mt-3 btn-sm">Update Status</button>
                    </form>
                </div>
             </div>
-            
-            ';
-            
-                            }
-        break;
+        </div>
+    </div>';
 }
 
-echo '</div>'; // End Row
 echo '</div>'; // End Container

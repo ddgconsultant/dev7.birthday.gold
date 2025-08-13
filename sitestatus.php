@@ -140,6 +140,11 @@ function fetchUptimeStatus($baseUrl, $cacheFile = null, $cacheTime = 60) {
             $status['overall_status'] = 'Partial Outage';
             $status['status_color'] = 'warning';
             $status['status_icon'] = 'exclamation-triangle-fill';
+        } else {
+            // Default to success if no clear status (e.g., no monitors found)
+            $status['overall_status'] = 'All Systems Operational';
+            $status['status_color'] = 'success';
+            $status['status_icon'] = 'check-circle-fill';
         }
         
         $status['services'] = [
@@ -464,8 +469,16 @@ include($dir['core_components'] . '/bg_header.inc');
                         <span class="fw-semibold"><?php echo htmlspecialchars($statusData['uptime'] ?? 'N/A'); ?></span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                        <span class="small text-muted fw-medium">Response Time</span>
-                        <span class="fw-semibold">< 50ms</span>
+                        <span class="small text-muted fw-medium">Avg Response Time</span>
+                        <span class="fw-semibold">
+                            <?php 
+                            if (isset($statusData['avg_response_time']) && $statusData['avg_response_time'] !== null) {
+                                echo htmlspecialchars($statusData['avg_response_time']) . 'ms';
+                            } else {
+                                echo '< 50ms';
+                            }
+                            ?>
+                        </span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                         <span class="small text-muted fw-medium">Auto-Refresh</span>
