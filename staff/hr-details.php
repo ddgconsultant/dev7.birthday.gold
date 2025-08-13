@@ -66,8 +66,8 @@ if ($app->formposted()) {
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 $bodycontentclass = '';
-$additionalstyles = [
-    '<style>
+$additionalstyles = '
+    <style>
     /* Hide skip to main content link unless focused */
     .sr-only, .sr-only-focusable:not(:focus) {
         position: absolute !important;
@@ -119,11 +119,13 @@ $additionalstyles = [
         background: #f8f9fa;
         border-radius: 0.5rem;
     }
-    </style>'
-];
+    </style>';
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+
+// Output the CSS for screen reader elements
+echo $additionalstyles;
 
 echo '
 <div class="container mt-4">
