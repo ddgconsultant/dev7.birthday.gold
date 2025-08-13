@@ -497,9 +497,9 @@ echo $chartJS; */
 
 
 $sql = "SELECT
-            t.`status`, 
+            t.`transaction_status` AS status, 
             COUNT(*) AS count, 
-            SUM(t.revenue) AS total_revenue
+            SUM(t.amount) AS total_revenue
         FROM
             bg_transactions AS t
         INNER JOIN (
@@ -510,7 +510,7 @@ $sql = "SELECT
         ON 
             t.user_id = ua.name
         GROUP BY
-            t.`status`";
+            t.`transaction_status`";
 
 $stmt = $database->prepare($sql);
 $stmt->execute(['salesrep_userid' =>$current_user_data['user_id']]);
