@@ -11,55 +11,17 @@ $header_flush = true; // Ensure header content is flush with admin header
 // Admin header styles
 $additionalstyles = '
 <style>
-/* Ensure content header is flush with navbar */
+/* Custom styles that cannot be replaced with Bootstrap utilities */
 .content-header-admin {
     margin-top: 0 !important;
 }
 
-/* Remove the row div spacing after navbar */
 .navbar + .row {
-    margin: 0 !important;
-    padding: 0 !important;
     height: 0 !important;
 }
 
-/* Force admin header to be flush */
 .navbar + .row + .content-header-admin {
     margin-top: 0 !important;
-}
-
-/* Ensure main content starts at top */
-.main-content {
-    min-height: auto !important;
-}
-
-/* Remove any vertical centering */
-body {
-    display: block !important;
-}
-
-/* Ensure container doesn't have extra height */
-.container {
-    min-height: auto !important;
-}
-
-/* Remove any flexbox centering from body wrapper */
-#bodyContentWrapper {
-    display: block !important;
-    align-items: flex-start !important;
-    justify-content: flex-start !important;
-    min-height: auto !important;
-}
-
-/* Ensure content starts at top */
-.row {
-    align-items: flex-start !important;
-}
-
-/* Remove vertical centering from any parent containers */
-main, .main-wrapper, .content-wrapper {
-    display: block !important;
-    min-height: auto !important;
 }
 
 /* Modern Tab Navigation */
@@ -142,27 +104,52 @@ main, .main-wrapper, .content-wrapper {
 function generateStatsCards($stats)
 {
     return '
-    <div class="mb-4">
-        <div class="card border-start-lg border-start-secondary">
-            <div class="card-header border-bottom-0">
-                <div class="text-muted fw-bold">Users Pending</div>
-            </div>
-            <div class="card-body">
-                <div class="h5">' . $stats['count'] . '</div>
+    <div class="mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body px-3 py-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-uppercase text-muted small fw-semibold">Pending Users</span>
+                </div>
+                <div class="display-6 fw-bold">' . $stats['count'] . '</div>
+                <div class="text-muted small">Awaiting enrollment</div>
             </div>
         </div>
     </div>
-    <div class="mb-4">
-        <div class="card border-start-lg border-start-success">
-            <div class="card-header border-bottom-0">
-                <div class="text-muted fw-bold">Enrollment Totals: ' . $stats['total'] . '</div>
-            </div>
-            <div class="card-body h5">
-                <div>Pending: ' . $stats['pending'] . '</div>
-                <div>Success: ' . $stats['success'] . '</div>
-                <div class="text-danger">Failure: ' . $stats['failure'] . '</div>
-                <div class="text-danger">Removed: ' . $stats['removed'] . '</div>
-                <div class="text-success">App Only: ' . $stats['app_only'] . '</div>
+    
+    <div class="mb-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body px-3 py-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-uppercase text-muted small fw-semibold">Statistics</span>
+                    <span class="badge bg-secondary">' . $stats['total'] . ' Total</span>
+                </div>
+                
+                <div class="vstack gap-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">Pending</span>
+                        <span class="fw-semibold">' . $stats['pending'] . '</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">Success</span>
+                        <span class="fw-semibold text-success">' . $stats['success'] . '</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">Failed</span>
+                        <span class="fw-semibold text-danger">' . $stats['failure'] . '</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted">Removed</span>
+                        <span class="fw-semibold text-warning">' . $stats['removed'] . '</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="small text-muted">App Only</span>
+                        <span class="fw-semibold text-info">' . $stats['app_only'] . '</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>';
@@ -229,7 +216,7 @@ $buttonContainerClass = $scheduleresult['allow_enrollment'] ?
             $user_removed = $user['removed_count'];
             $user_app_only = $user['selected_app_only_count'];
 
-            $userlistoutput .= '<article class="row my-2">';
+            $userlistoutput .= '<article class="row my-2 align-items-start">';
             $userlistoutput .= '<div class="col-md-6"><span class="fw-bold">
             ' . $user['first_name'] . ' ' . $user['last_name'] . '</span><br>
             <small>' . $user['email'] . '<br>uid=' . $user['user_id'] . '</small><br>
@@ -359,7 +346,7 @@ WHERE
 c.`status` IN ('finalized') 
 AND u.create_dt >= '2023-08-01'
 AND uc.create_dt >= '2023-08-01'
-AND NOT (uc.`status` LIKE '%failed%' AND lower(uc.`reason`) = '%account%exists%')
+AND NOT (uc.`status` LIKE '%failed%' AND lower(uc.`reason`) LIKE '%account%exists%')
 AND u.type = ?
 GROUP BY 
 u.user_id
@@ -406,11 +393,15 @@ include($dir['core_components'] . '/bg_header.inc');
 
 <?php
 // Generate the tabbed interface
-echo '    <section class="container mt-3 main-content">';
+echo '    <section class="container mt-3 min-vh-0">';
 
-// Get counts for badges
-$realCount = count($realUsers);
-$testCount = count($testUsers);
+// Process data and get accurate counts
+$realData = generateUserList($realUsers, $current_user_data);
+$testData = generateUserList($testUsers, $current_user_data);
+
+// Use the actual count of users with pending enrollments
+$realCount = $realData['stats']['count'];
+$testCount = $testData['stats']['count'];
 
 echo '
 <div class="container">
@@ -436,9 +427,8 @@ Test Users
 ';
 
 echo '
-<div class="tab-pane fade show active" id="real" role="tabpanel">';
-$realData = generateUserList($realUsers,  $current_user_data);
-echo '<div class="row mt-3">
+<div class="tab-pane fade show active" id="real" role="tabpanel">
+<div class="row mt-3 align-items-start">
 <div class="col-lg-3 d-none d-lg-block">' . generateStatsCards($realData['stats']) . '</div>
 <div class="col-lg-9 col-12">
 <div class="card border-start-lg border-start-success">
@@ -453,9 +443,8 @@ echo '<div class="row mt-3">
 ';
 
 echo '
-<div class="tab-pane fade" id="test" role="tabpanel">';
-$testData = generateUserList($testUsers,  $current_user_data);
-echo '<div class="row mt-3">
+<div class="tab-pane fade" id="test" role="tabpanel">
+<div class="row mt-3 align-items-start">
 <div class="col-lg-3 d-none d-lg-block">' . generateStatsCards($testData['stats']) . '</div>
 <div class="col-lg-9 col-12">
 <div class="card border-start-lg border-start-success">

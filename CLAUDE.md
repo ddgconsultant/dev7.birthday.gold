@@ -116,13 +116,54 @@ $errormode = 'showerrors'; // Error display (showerrors, hideerrors)
 
 ## Testing
 
+### Cypress E2E Testing (/claudecode/cypress/)
+
+**IMPORTANT CONTEXT**: Cypress tests validate Birthday Gold's core business functionality - ensuring users can successfully sign up to receive automated birthday rewards from businesses. Always keep Birthday Gold's purpose at the forefront when working with tests.
+
+#### Birthday Gold Testing Context
+- **Primary Goal**: Verify users can create accounts to receive birthday rewards
+- **Test Domain**: `@bdtest.xyz` emails trigger test mode in Birthday Gold
+- **Verification System**: `/verify.php` handles email verification for new Birthday Gold users
+- **User Journey**: Homepage → Plan Selection → Account Creation → Email Verification → Welcome/Payment
+- **Business Value**: Each successful signup represents a user who will receive automated birthday rewards
+
+#### Test Suite Structure
+```
+/claudecode/cypress/
+├── e2e/                     # Test files for Birthday Gold features
+│   ├── cta-signup.cy.js    # Tests homepage Sign Up CTA through plan selection
+│   ├── fill-createaccount-form.cy.js  # Tests Birthday Gold account creation
+│   └── verify-and-welcome.cy.js       # Tests email verification and welcome flow
+├── support/
+│   ├── session-commands.js # Preserves user session through Birthday Gold signup flow
+│   └── e2e.js              # Global test configuration
+└── suites.json             # Defines Birthday Gold test workflows
+```
+
+#### Key Birthday Gold Test Flows
+- **signup-flow**: Complete user registration for Birthday Gold
+  - Navigate from homepage to signup
+  - Select a Birthday Gold plan (Free, Plus, Premium)
+  - Create account with birthday information
+  - Verify email to activate Birthday Gold account
+  - Reach welcome page or payment (for paid plans)
+
+#### Session Persistence
+- Tests maintain session state to simulate real Birthday Gold user behavior
+- Custom commands save/restore cookies and localStorage between tests
+- Ensures continuous user journey through multi-page signup process
+
 ### Available Test Suites
-- Cypress tests in `/admin/cypress/` for user flows
+- Cypress tests in `/claudecode/cypress/` for Birthday Gold user flows
 - WebSlides has npm-based testing (`npm test`)
 - No comprehensive PHP test suite currently
 
 ### Testing Commands
 ```bash
+# Run Birthday Gold Cypress tests
+cd /claudecode/cypress/
+./test-runner.sh signup-flow  # Test complete signup journey
+
 # Presentation/WebSlides testing
 cd presentation/
 npm install

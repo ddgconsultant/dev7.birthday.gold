@@ -151,22 +151,251 @@ if ($app->formposted()) {
     $action = $_REQUEST['action'] ?? null;
     $post_bid = isset($_REQUEST['bid']) ? $qik->decodeId($_REQUEST['bid']) : null;
     
+    // Define actions that don't require a business ID
+    $email_actions = ['sendmessage_starting', 'sendmessage_queuing', 'sendmessage_completed'];
+    
     // Process form actions only with valid parameters
-    if (empty($post_bid) || empty($action)) {
+    if (empty($action)) {
         $errormessage = '<div class="alert alert-danger alert-dismissible fade show" id="autoCloseAlert" role="alert">
-            <strong>Error:</strong> Missing or invalid parameters for the requested action.
+            <strong>Error:</strong> No action specified.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>';
+    } elseif (empty($post_bid) && !in_array($action, $email_actions)) {
+        $errormessage = '<div class="alert alert-danger alert-dismissible fade show" id="autoCloseAlert" role="alert">
+            <strong>Error:</strong> Missing business ID for the requested action.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>';
     } else {
-        $business = $app->getcompanydetails($post_bid);
-        
-        if (!$business || !is_array($business)) {
-            $errormessage = '<div class="alert alert-danger alert-dismissible fade show" id="autoCloseAlert" role="alert">
-                <strong>Error:</strong> The specified business could not be found.
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>';
-        } else {
+        // Handle email actions that don't require a business
+        if (in_array($action, $email_actions)) {
             switch ($action) {
+                case 'sendmessage_starting':
+                    // Send starting enrollment email
+                    global $sitesettings;
+                    
+                    // Instantiate Mail class with proper config
+                    require_once $dir['core'] . '/classes/class.mail.php';
+                    $mailConfig = $sitesettings['mail'] ?? [];
+                    $mail = new Mail($mailConfig);
+                    
+                    $emailDetails = [
+                        'to' => [$working_user_data['email'], $working_user_data['first_name'] . ' ' . $working_user_data['last_name']],
+                        'from' => ['support@birthday.gold', 'Birthday Gold Support'],
+                        'subject' => 'We\'re Starting Your Birthday Gold Enrollments!',
+                        'body' => '
+                            <html>
+                            <head>
+                                <style>
+                                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                                    .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+                                    .content { padding: 20px; background-color: #f4f4f4; }
+                                    .footer { text-align: center; padding: 10px; color: #666; font-size: 12px; }
+                                </style>
+                            </head>
+                            <body>
+                                <div class="container">
+                                    <div class="header">
+                                        <h1>Birthday Gold Enrollment Update</h1>
+                                    </div>
+                                    <div class="content">
+                                        <p>Dear ' . safe_echo($working_user_data['first_name']) . ',</p>
+                                        <p>Great news! We\'re beginning to process your birthday reward enrollments.</p>
+                                        <p>Our team is working on getting you signed up for all the amazing birthday rewards you\'ve selected. We\'ll keep you updated on our progress.</p>
+                                        <p><strong>What happens next:</strong></p>
+                                        <ul>
+                                            <li>We\'ll carefully process each enrollment</li>
+                                            <li>You\'ll receive confirmation as each one is completed</li>
+                                            <li>Any special instructions will be sent to you</li>
+                                        </ul>
+                                        <p>If you have any questions, feel free to reach out to our support team.</p>
+                                        <p>Best regards,<br>The Birthday Gold Team</p>
+                                    </div>
+                                    <div class="footer">
+                                        <p>&copy; ' . date('Y') . ' Birthday Gold. All rights reserved.</p>
+                                    </div>
+                                </div>
+                            </body>
+                            </html>
+                        ',
+                        'donottrack' => true
+                    ];
+                    
+                    $emailResult = $mail->sendmail($emailDetails);
+                    
+                    if (!empty($emailResult['mail_sent'])) {
+                        $errormessage = '<div class="alert alert-success alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Success:</strong> Starting enrollment email sent to ' . safe_echo($working_user_data['email']) . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                        
+                        // Log the email send
+                        session_tracking('email_sent', 'sendmessage_starting to ' . $working_user_data['email']);
+                    } else {
+                        $error_detail = isset($emailResult['processingerror']) ? ' Error: ' . $emailResult['processingerror'] : '';
+                        $errormessage = '<div class="alert alert-danger alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Error:</strong> Failed to send email.' . $error_detail . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                    }
+                    break;
+                    
+                case 'sendmessage_queuing':
+                    // Send queuing enrollment email
+                    global $sitesettings;
+                    
+                    // Instantiate Mail class with proper config
+                    require_once $dir['core'] . '/classes/class.mail.php';
+                    $mailConfig = $sitesettings['mail'] ?? [];
+                    $mail = new Mail($mailConfig);
+                    
+                    $emailDetails = [
+                        'to' => [$working_user_data['email'], $working_user_data['first_name'] . ' ' . $working_user_data['last_name']],
+                        'from' => ['support@birthday.gold', 'Birthday Gold Support'],
+                        'subject' => 'Your Birthday Gold Enrollments Are In Queue',
+                        'body' => '
+                            <html>
+                            <head>
+                                <style>
+                                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                                    .header { background-color: #17a2b8; color: white; padding: 20px; text-align: center; }
+                                    .content { padding: 20px; background-color: #f4f4f4; }
+                                    .footer { text-align: center; padding: 10px; color: #666; font-size: 12px; }
+                                </style>
+                            </head>
+                            <body>
+                                <div class="container">
+                                    <div class="header">
+                                        <h1>Enrollments In Queue</h1>
+                                    </div>
+                                    <div class="content">
+                                        <p>Dear ' . safe_echo($working_user_data['first_name']) . ',</p>
+                                        <p>Your birthday reward enrollments are now in our processing queue!</p>
+                                        <p>We process enrollments in the order they were received. Based on current volume, we estimate your enrollments will be completed within:</p>
+                                        <ul>
+                                            <li><strong>24-48 hours</strong> for most enrollments</li>
+                                            <li><strong>Up to 72 hours</strong> during peak times</li>
+                                        </ul>
+                                        <p>You\'ll receive an email confirmation as soon as your enrollments are complete.</p>
+                                        <p>Thank you for your patience!</p>
+                                        <p>Best regards,<br>The Birthday Gold Team</p>
+                                    </div>
+                                    <div class="footer">
+                                        <p>&copy; ' . date('Y') . ' Birthday Gold. All rights reserved.</p>
+                                    </div>
+                                </div>
+                            </body>
+                            </html>
+                        ',
+                        'donottrack' => true
+                    ];
+                    
+                    $emailResult = $mail->sendmail($emailDetails);
+                    
+                    if (!empty($emailResult['mail_sent'])) {
+                        $errormessage = '<div class="alert alert-success alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Success:</strong> Queuing enrollment email sent to ' . safe_echo($working_user_data['email']) . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                        
+                        // Log the email send
+                        session_tracking('email_sent', 'sendmessage_queuing to ' . $working_user_data['email']);
+                    } else {
+                        $error_detail = isset($emailResult['processingerror']) ? ' Error: ' . $emailResult['processingerror'] : '';
+                        $errormessage = '<div class="alert alert-danger alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Error:</strong> Failed to send email.' . $error_detail . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                    }
+                    break;
+                    
+                case 'sendmessage_completed':
+                    // Send completed enrollment email
+                    global $sitesettings;
+                    
+                    // Instantiate Mail class with proper config
+                    require_once $dir['core'] . '/classes/class.mail.php';
+                    $mailConfig = $sitesettings['mail'] ?? [];
+                    $mail = new Mail($mailConfig);
+                    
+                    $emailDetails = [
+                        'to' => [$working_user_data['email'], $working_user_data['first_name'] . ' ' . $working_user_data['last_name']],
+                        'from' => ['support@birthday.gold', 'Birthday Gold Support'],
+                        'subject' => 'Your Birthday Gold Enrollments Are Complete!',
+                        'body' => '
+                            <html>
+                            <head>
+                                <style>
+                                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                                    .header { background-color: #28a745; color: white; padding: 20px; text-align: center; }
+                                    .content { padding: 20px; background-color: #f4f4f4; }
+                                    .footer { text-align: center; padding: 10px; color: #666; font-size: 12px; }
+                                    .success-box { background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 15px 0; }
+                                </style>
+                            </head>
+                            <body>
+                                <div class="container">
+                                    <div class="header">
+                                        <h1>🎉 Enrollments Complete!</h1>
+                                    </div>
+                                    <div class="content">
+                                        <p>Dear ' . safe_echo($working_user_data['first_name']) . ',</p>
+                                        <div class="success-box">
+                                            <strong>Congratulations!</strong> Your birthday reward enrollments have been successfully completed.
+                                        </div>
+                                        <p>You\'re all set to receive amazing birthday rewards throughout the year!</p>
+                                        <p><strong>What\'s Next:</strong></p>
+                                        <ul>
+                                            <li>Check your email for confirmation messages from each rewards program</li>
+                                            <li>Some programs may require email verification - please check your inbox</li>
+                                            <li>Visit your Birthday Gold dashboard to see all your active enrollments</li>
+                                            <li>Get ready to enjoy your birthday rewards!</li>
+                                        </ul>
+                                        <p>If you have any questions or need assistance, our support team is here to help.</p>
+                                        <p>Happy Birthday (in advance)!<br>The Birthday Gold Team</p>
+                                    </div>
+                                    <div class="footer">
+                                        <p>&copy; ' . date('Y') . ' Birthday Gold. All rights reserved.</p>
+                                    </div>
+                                </div>
+                            </body>
+                            </html>
+                        ',
+                        'donottrack' => true
+                    ];
+                    
+                    $emailResult = $mail->sendmail($emailDetails);
+                    
+                    if (!empty($emailResult['mail_sent'])) {
+                        $errormessage = '<div class="alert alert-success alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Success:</strong> Enrollment completed email sent to ' . safe_echo($working_user_data['email']) . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                        
+                        // Log the email send
+                        session_tracking('email_sent', 'sendmessage_completed to ' . $working_user_data['email']);
+                    } else {
+                        $error_detail = isset($emailResult['processingerror']) ? ' Error: ' . $emailResult['processingerror'] : '';
+                        $errormessage = '<div class="alert alert-danger alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Error:</strong> Failed to send email.' . $error_detail . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                    }
+                    break;
+            }
+        } else {
+            // Actions that require a business
+            $business = $app->getcompanydetails($post_bid);
+            
+            if (!$business || !is_array($business)) {
+                $errormessage = '<div class="alert alert-danger alert-dismissible fade show" id="autoCloseAlert" role="alert">
+                    <strong>Error:</strong> The specified business could not be found.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>';
+            } else {
+                switch ($action) {
                 case 'add_hint':
                     session_tracking('submitting add-hint', $post_bid . '/' . $aid);
                     
@@ -247,6 +476,7 @@ if ($app->formposted()) {
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>';
                     break;
+                }
             }
         }
     }
@@ -561,7 +791,7 @@ if (empty($bid)) {
                 <form method="post" action="' . $_SERVER["PHP_SELF"] . '">
                     ' . $display->input_csrftoken() . '
                     <input type="hidden" name="action" value="' . $config['action'] . '">
-                    <input type="hidden" name="bid" value="' . $qik->encodeId($bid) . '">
+                    <input type="hidden" name="bid" value="' . (!empty($bid) ? $qik->encodeId($bid) : '') . '">
                     <input type="hidden" name="uid" value="' . $qik->encodeId($userId) . '">
                     <input type="hidden" name="aid" value="' . $qik->encodeId($aid) . '">
                     
