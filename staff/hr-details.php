@@ -14,10 +14,10 @@ $staff_role = $staff_user['user_role'] ?? 'staff';
 // Get detailed HR information (mock data for now - would come from HR tables)
 $hr_data = [
     'employee_id' => str_pad($staff_user['user_id'], 6, '0', STR_PAD_LEFT),
-    'department' => $staff_user['user_department'] ?? 'Customer Service',
-    'position' => $staff_user['user_position'] ?? 'Staff Member',
+    'department' => $staff_user['profile_department'] ?? 'Customer Service',
+    'position' => $staff_user['profile_position'] ?? 'Staff Member',
     'employment_type' => 'Full-Time',
-    'hire_date' => $staff_user['user_created'] ?? date('Y-m-d'),
+    'hire_date' => $staff_user['create_dt'] ?? date('Y-m-d'),
     'manager' => 'John Smith',
     'location' => 'Remote',
     'salary_grade' => 'Level 3',
@@ -28,8 +28,8 @@ $hr_data = [
     'personal_days' => 3,
     'next_review' => date('Y-m-d', strtotime('+6 months')),
     'last_review' => date('Y-m-d', strtotime('-6 months')),
-    'emergency_contact' => $staff_user['emergency_contact'] ?? 'Not provided',
-    'emergency_phone' => $staff_user['emergency_phone'] ?? 'Not provided'
+    'emergency_contact' => $staff_user['profile_emergency_contact'] ?? 'Not provided',
+    'emergency_phone' => $staff_user['profile_emergency_phone'] ?? 'Not provided'
 ];
 
 // Calculate time with company
@@ -68,6 +68,18 @@ if ($app->formposted()) {
 $bodycontentclass = '';
 $additionalstyles = [
     '<style>
+    /* Hide skip to main content link unless focused */
+    .sr-only, .sr-only-focusable:not(:focus) {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0,0,0,0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+    }
     .hr-card {
         border: none;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -124,7 +136,7 @@ echo '
                 </ol>
             </nav>
             <h1 class="h2">HR Details</h1>
-            <p class="text-muted">Employee Information for ' . htmlspecialchars($staff_user['user_firstname'] . ' ' . $staff_user['user_lastname']) . '</p>
+            <p class="text-muted">Employee Information for ' . htmlspecialchars(($staff_user['profile_first_name'] ?? '') . ' ' . ($staff_user['profile_last_name'] ?? '')) . '</p>
         </div>
     </div>';
 

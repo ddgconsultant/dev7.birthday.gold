@@ -90,6 +90,18 @@ if ($app->formposted()) {
 $bodycontentclass = '';
 $additionalstyles = [
     '<style>
+    /* Hide skip to main content link unless focused */
+    .sr-only, .sr-only-focusable:not(:focus) {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0,0,0,0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+    }
     .staff-card {
         border-left: 4px solid var(--bs-primary);
         transition: transform 0.2s;
@@ -139,7 +151,7 @@ echo '
     <div class="row mb-4">
         <div class="col">
             <h1 class="h2">Staff Dashboard</h1>
-            <p class="text-muted">Welcome back, ' . htmlspecialchars($staff_user['user_firstname'] ?? $staff_user['user_username']) . '</p>
+            <p class="text-muted">Welcome back, ' . htmlspecialchars($staff_user['profile_first_name'] ?? $staff_user['profile_username'] ?? 'Staff Member') . '</p>
         </div>
     </div>';
 
@@ -201,7 +213,7 @@ echo '
                         <dd class="col-sm-7">' . htmlspecialchars(ucfirst($staff_role)) . '</dd>
                         
                         <dt class="col-sm-5">Email:</dt>
-                        <dd class="col-sm-7">' . htmlspecialchars($staff_user['user_email']) . '</dd>
+                        <dd class="col-sm-7">' . htmlspecialchars($staff_user['profile_email'] ?? 'Not provided') . '</dd>
                     </dl>
                     <a href="/myaccount/profile" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-pencil"></i> Edit Profile
@@ -218,7 +230,7 @@ echo '
                     <h5 class="card-title">HR Information</h5>
                     <dl class="row mb-0">
                         <dt class="col-sm-5">Start Date:</dt>
-                        <dd class="col-sm-7">' . date('M d, Y', strtotime($staff_user['user_created'] ?? 'now')) . '</dd>
+                        <dd class="col-sm-7">' . date('M d, Y', strtotime($staff_user['create_dt'] ?? 'now')) . '</dd>
                         
                         <dt class="col-sm-5">Status:</dt>
                         <dd class="col-sm-7"><span class="badge bg-success">Active</span></dd>
