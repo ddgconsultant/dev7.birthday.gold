@@ -74,8 +74,8 @@ if ($app->formposted()) {
             if ($is_clocked_in) {
                 $sql = "UPDATE bg_timeclock 
                         SET clock_out = NOW(), modify_dt = NOW() 
-                        WHERE timeclock_id = :id";
-                $database->query($sql, ['id' => $current_clock['timeclock_id']]);
+                        WHERE entry_id = :id";
+                $database->query($sql, ['id' => $current_clock['entry_id']]);
                 $system->addmessage('success', 'Successfully clocked out');
                 header('Location: /staff/');
                 exit;
@@ -335,6 +335,38 @@ echo '
                 <small class="text-muted">System settings</small>
             </a>
         </div>
+    </div>
+    
+    <!-- Additional Staff Tools -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/legal-policy-editor" class="quick-link d-block">
+                <i class="bi bi-file-text fs-3 mb-2"></i>
+                <h6>Legal Policies</h6>
+                <small class="text-muted">Review & update policies</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/it-support" class="quick-link d-block">
+                <i class="bi bi-headset fs-3 mb-2"></i>
+                <h6>IT Support</h6>
+                <small class="text-muted">Help & documentation</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/ticket-manager" class="quick-link d-block">
+                <i class="bi bi-list-check fs-3 mb-2"></i>
+                <h6>Ticket Manager</h6>
+                <small class="text-muted">View all tickets</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/birthday-viewer" class="quick-link d-block">
+                <i class="bi bi-cake fs-3 mb-2"></i>
+                <h6>Birthday Viewer</h6>
+                <small class="text-muted">Staff birthdays</small>
+            </a>
+        </div>
     </div>';
 
 // Recent Activity Section
@@ -432,7 +464,7 @@ echo '
                             <i class="bi bi-chat-dots me-2"></i> Team Chat
                             <i class="bi bi-box-arrow-up-right float-end"></i>
                         </a>
-                        <a href="/myaccount/support" class="list-group-item list-group-item-action">
+                        <a href="/staff/it-support" class="list-group-item list-group-item-action">
                             <i class="bi bi-question-circle me-2"></i> IT Support
                         </a>
                     </div>

@@ -67,8 +67,8 @@ body { padding-bottom: 0; }
 .btn-hero { padding: 1rem 2.5rem; border-radius: 50px; font-weight: 600; font-size: 1.1rem; min-width: 200px; position: relative; overflow: hidden; transition: all 0.3s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
 .btn-hero-primary { background: linear-gradient(135deg, var(--primary-gold), var(--primary-orange)); color: var(--primary-dark); }
 .btn-hero-primary:hover { transform: translateY(-2px); color: var(--primary-dark); }
-.btn-hero-secondary { background: transparent; color: #fff; border: 2px solid rgba(255, 255, 255, 0.3); }
-.btn-hero-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.5); color: #fff; }
+.btn-hero-secondary { background: rgba(10, 10, 10, 0.8); color: #fff; border: 2px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.btn-hero-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.5); color: #fff; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 /* Stats */
 .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 600px; margin: 0 auto; }
 .stat-item { text-align: center; }

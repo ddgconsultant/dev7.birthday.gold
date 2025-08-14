@@ -9,22 +9,90 @@ include ($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 $additionalstyles.='<link rel="stylesheet" href="/public/css/myaccount.css">
 <style>
 .feature {
-width: 90px;  /* Set width */
-height: 90px;  /* Set height */
-display: flex;
-align-items: center;
-justify-content: center;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .feature i {
-font-size: 48px;  /* Increase icon size */
+    font-size: 48px;
 }
 
 .tooltip {
-  z-index: 1039 !important;  /* Assuming the modal z-index is 1040 */
+    z-index: 1039 !important;
 }
 
+/* Improved dashboard layout */
+.main-content {
+    padding: 2rem 0;
+}
 
+.card {
+    margin-bottom: 1.5rem;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    border: none;
+}
+
+.bg-transparent-50 {
+    background-color: rgba(255,255,255,0.95) !important;
+}
+
+/* Stats styling */
+.text-primary {
+    color: #667eea !important;
+}
+
+h3.text-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Table improvements */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* Badge improvements */
+.badge {
+    padding: 0.5em 1em;
+    font-weight: 500;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 1rem 0;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+}
 </style>
 ';
 
@@ -63,6 +131,32 @@ $session->unset('force_error_message');
 $referralstats=$referral->stats();
 $userlist=$referral->user_list();
 
+// Ensure referralstats is an array with default values
+if (!is_array($referralstats)) {
+    $referralstats = [];
+}
+
+// Set default values for missing keys
+$default_stats = [
+    'grand_total' => 0,
+    'distinct_user_count_total' => 0,
+    'last_30_days_total' => 0,
+    'distinct_user_count_last_30_days' => 0,
+    'confirmed_total' => 0,
+    'today_total' => 0
+];
+
+foreach ($default_stats as $key => $default_value) {
+    if (!isset($referralstats[$key])) {
+        $referralstats[$key] = $default_value;
+    }
+}
+
+// Ensure userlist is an array
+if (!is_array($userlist)) {
+    $userlist = [];
+}
+
 
 #breakpoint($referralstats);
 /*
@@ -84,7 +178,10 @@ Array
 
 $totalpayouttoday=0;
 foreach($userlist as $userrow){
-  if (isset($userrow['today_flag']) && $userrow['today_flag']==1) $totalpayouttoday=$totalpayouttoday+$userrow['referral_payout'];
+  // Ensure $userrow is an array before accessing it
+  if (is_array($userrow) && isset($userrow['today_flag']) && $userrow['today_flag']==1) {
+    $totalpayouttoday = $totalpayouttoday + ($userrow['referral_payout'] ?? 0);
+  }
 }
 $avatar='/public/images/defaultavatar.png';
 $avatarbuttontag='Upload';
@@ -94,38 +191,39 @@ if (is_array($current_user_data) && !empty($current_user_data['avatar'])) {
 } else {
 
 }
-echo '      
-      <div class="row g-3 mt-3 mb-3">
-<div class="col-xxl-12 col-xl-12">
-  <div class="row g-3">
-  <div class="col-12">
-  <div class="card bg-transparent-50 overflow-hidden">
-      <div class="card-header position-relative">
-          <div class="position-relative z-2">
-              <div class="row align-items-center">
-                  <div class="col-md-8">
-                      <h3 class="text-primary mb-1">' . $app->time_based_greeting(null, ',') . $current_user_data['first_name'] . '!</h3>
-                      <p>Here’s what happening with your sales today </p>
-                      <div class="d-flex py-3">
-                          <div class="pe-3">
-                              <p class="text-600 fs-10 fw-medium">Today\'s sales numbers</p>
-                              <h4 class="text-800 mb-0">' . $referralstats['today_total'] . '</h4>
-                          </div>
-                          <div class="ps-3">
-                              <p class="text-600 fs-10">Today’s total sales commissions*</p>
-                              <h4 class="text-800 mb-0">$' . number_format($totalpayouttoday, 2) . ' </h4>
-                          </div>
-                      </div>
-                  </div>
-                  <div class="col-md-4 d-flex justify-content-end">
-                      <img class="img-fluid rounded-circle" src="' . $avatar . '" alt="" width="180" />
-                  </div>
-              </div>
-          </div>
-      </div>
-      </div>
-      </div>
-        ';
+echo '
+<div class="container-fluid">
+    <div class="row g-3 mt-2">
+        <div class="col-12">
+            <div class="card bg-transparent-50 overflow-hidden shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3 class="text-primary mb-2">' . $app->time_based_greeting(null, ', ') . $current_user_data['first_name'] . '!</h3>
+                            <p class="text-muted mb-3">Here\'s what\'s happening with your sales today</p>
+                            <div class="row">
+                                <div class="col-sm-6 col-lg-4 mb-3">
+                                    <div class="d-flex flex-column">
+                                        <small class="text-muted fw-medium">Today\'s Sales</small>
+                                        <h4 class="mb-0 text-dark">' . $referralstats['today_total'] . '</h4>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6 col-lg-4 mb-3">
+                                    <div class="d-flex flex-column">
+                                        <small class="text-muted fw-medium">Today\'s Commissions</small>
+                                        <h4 class="mb-0 text-success">$' . number_format($totalpayouttoday, 2) . '</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center text-md-end">
+                            <img class="rounded-circle shadow" src="' . $avatar . '" alt="Profile" width="150" height="150" style="object-fit: cover;" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    ';
 
     
         if ($account->isdeveloper(20)) {
@@ -425,32 +523,22 @@ echo $chartJS; */
 
 // YOUR STATS
     echo '
-      <div class="row  mt-3">
-  <div class="col-xl d-flex">
-  <div class="card radius-10 w-100">
-    <div class="card-body">
-      <div class="d-flex align-items-center">
-        <div>
-        <h5 class="mb-1">Your Stats</h5>
-            <p class="mb-0 font-13 text-secondary"><i class="bi bi-calendar3"></i> in last 30 days revenue</p>
-          </div>
-          <div class="dropdown ms-auto d-none">
-            <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">	<i class="bi bi-three-dots font-22  text-option"></i>
-            </a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="javascript:;">Action</a>
-              </li>
-              <li><a class="dropdown-item" href="javascript:;">Another action</a>
-              </li>
-              <li>
-                 <hr class="dropdown-divider">
-              </li>
-              <li><a class="dropdown-item" href="javascript:;">Something else here</a>
-              </li>
-            </ul>
-          </div>
-        </div>
-        ';
+    </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-0">Your Sales Statistics</h5>
+                            <small class="text-white-50"><i class="bi bi-calendar3 me-1"></i>Last 30 days revenue</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    ';
 
 
     
@@ -464,34 +552,42 @@ echo $chartJS; */
 */
 
         echo '
-        <div class="row row-cols-1 row-cols-sm-3 mt-4">
-          <div class="col">
-            <div>
-              <p class="mb-0 text-secondary">Registered Revenue</p>
-              <h4 class="my-1">$'.number_format($referralstats['grand_total'], 2).'</h4>
-              <p class="mb-0 font-13 text-success"><i class="bi bi-caret-up-fill align-middle"></i>$'.number_format($referralstats['last_30_days_total'], 2).' Since last month</p>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="border-start border-4 border-primary ps-3">
+                                <small class="text-muted d-block">Registered Revenue</small>
+                                <h4 class="mb-1">$'.number_format($referralstats['grand_total'], 2).'</h4>
+                                <span class="badge bg-success-subtle text-success">
+                                    <i class="bi bi-arrow-up me-1"></i>$'.number_format($referralstats['last_30_days_total'], 2).'
+                                </span>
+                                <small class="text-muted ms-2">vs last month</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="border-start border-4 border-warning ps-3">
+                                <small class="text-muted d-block">Confirmed Revenue</small>
+                                <h4 class="mb-1">$'.number_format($referralstats['confirmed_total'], 2).'</h4>
+                                <span class="badge bg-success-subtle text-success">
+                                    <i class="bi bi-arrow-up me-1"></i>12.3%
+                                </span>
+                                <small class="text-muted ms-2">vs last month</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="border-start border-4 border-info ps-3">
+                                <small class="text-muted d-block">Total Customers</small>
+                                <h4 class="mb-1">'.number_format($referralstats['distinct_user_count_total'], 0).'</h4>
+                                <span class="badge bg-danger-subtle text-danger">
+                                    <i class="bi bi-arrow-down me-1"></i>2.4%
+                                </span>
+                                <small class="text-muted ms-2">vs last month</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="col">
-            <div>
-              <p class="mb-0 text-secondary">Confirmed Revenue</p>
-              <h4 class="my-1">$'.number_format($referralstats['confirmed_total'], 2).'</h4>
-              <p class="mb-0 font-13 text-success"><i class="bi bi-caret-up-fill align-middle"></i>12.3% Since last month</p>
-            </div>
-          </div>
-          <div class="col">
-            <div>
-              <p class="mb-0 text-secondary">Total Customers</p>
-              <h4 class="my-1">'.number_format($referralstats['distinct_user_count_total'], 0).'</h4>
-              <p class="mb-0 font-13 text-danger"><i class="bi bi-caret-down-fill align-middle"></i>2.4% Since last month</p>
-            </div>
-          </div>
         </div>
-        <div id="chart4"></div>
-      </div>
     </div>
-  </div>
-  </div>
 ';
 
 
@@ -516,21 +612,37 @@ $stmt = $database->prepare($sql);
 $stmt->execute(['salesrep_userid' =>$current_user_data['user_id']]);
 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
- $status_revenue_sums = $bg_sales_trackingstatus ;
+// Initialize status tracking arrays with default values
+$status_counts = [
+    'Active' => 0,
+    'Pending' => 0,
+    'Paid' => 0,
+    'Reviewing' => 0
+];
 
+$status_revenue_sums = [
+    'Active' => 0,
+    'Pending' => 0,
+    'Paid' => 0,
+    'Reviewing' => 0
+];
 
 // Initialize variables for display
-#$payout_total = array_sum(array_column($results, 'total_revenue'));
-#$payout_total = array_sum($status_revenue_sums);
 $payout_total = array_sum(array_column($results, 'total_revenue'));
-
 $payout_so_far = 0;  // Calculate based on status conditions below
- $status_counts = $bg_sales_trackingstatus ;
 
  
 foreach ($results as $row) {
-    $status_counts[$row['status']] = $row['count'];
-    if (in_array($row['status'], ['Active', 'Pending', 'Paid'])) {
+    // Map the status to our expected values
+    $status = ucfirst(strtolower($row['status'] ?? ''));
+    
+    // Only update if it's a recognized status
+    if (isset($status_counts[$status])) {
+        $status_counts[$status] = $row['count'];
+        $status_revenue_sums[$status] = $row['total_revenue'];
+    }
+    
+    if (in_array($status, ['Active', 'Pending', 'Paid'])) {
         $payout_so_far += $row['total_revenue'];
     }
 }
@@ -541,11 +653,18 @@ $progress_percentages = array_map(function ($status) use ($payout_total) {
 }, $status_counts); */
 
 // Prepare percentages for the progress bar based on revenue
-$progress_percentages = array_map(function ($count) use ($payout_total) {
-  // Define the factor to multiply the percentages by to increase visibility
-  $factor = 100;
-  return $payout_total > 0 ? round(($count / $payout_total) * 100 * $factor, 2) : 0;
-}, $status_counts);
+$progress_percentages = [];
+foreach ($status_counts as $status => $count) {
+    $progress_percentages[$status] = $payout_total > 0 ? round(($count / $payout_total) * 100, 2) : 0;
+}
+
+// Ensure all required statuses have a percentage
+$required_statuses = ['Active', 'Pending', 'Paid', 'Reviewing'];
+foreach ($required_statuses as $status) {
+    if (!isset($progress_percentages[$status])) {
+        $progress_percentages[$status] = 0;
+    }
+}
 
 echo '
 <div class="row mt-3">
@@ -652,45 +771,37 @@ echo '
 
 // TRANSACTION HISTORY
 echo '
-  <div class="row mt-3">
-  <div class="col-xl d-flex">
-  <div class="card radius-10 w-100">
-    <div class="card-body">
-      <div class="d-flex align-items-center">
-        <div>
-          <h5 class="mb-1">Transaction History</h5>
-          <p class="mb-0 font-13 text-secondary"><i class="bi bi-calendar3"></i> in last 30 days revenue</p>
-        </div>
-        <div class="dropdown ms-auto d-none">
-          <a class="dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">	<i class="bx bx-dots-horizontal-rounded font-22 text-option"></i>
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="javascript:;">Action</a>
-            </li>
-            <li><a class="dropdown-item" href="javascript:;">Another action</a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-            <li><a class="dropdown-item" href="javascript:;">Something else here</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div class="table-responsive mt-4">
-        <table class="table align-middle mb-0 table-hover" id="Transaction-History">
-          <thead class="table-light">
-            <tr>
-              <th>Customer Name</th>
-              <th>Date & Time</th>
-              <th>Amount</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>';
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-0">Transaction History</h5>
+                            <small class="text-white-50"><i class="bi bi-clock-history me-1"></i>Recent referral transactions</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="Transaction-History">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Customer</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>';
 
 #breakpoint($userlist);
           foreach($userlist as $userrow){
+            // Skip if $userrow is not an array
+            if (!is_array($userrow)) {
+                continue;
+            }
+            
             $statuscolor='secondary';
             if (isset($userrow['referral_status'])) {
     switch($userrow['referral_status']) {
@@ -705,242 +816,40 @@ $avatar='/public/images/defaultavatar.png';
   if (!empty($userrow['avatar'])) { $avatar='/'.$userrow['avatar']; }
 
   echo '
-  <tr>
-      <td>
-          <div class="d-flex align-items-center">
-              <div class="">
-                  <img src="'.$avatar.'" class="rounded-circle" width="46" height="46" alt="" />
-              </div>
-              <div class="ms-2">
-                  <h6 class="mb-1 font-14">'.($userrow['first_name']??'').' '.($userrow['last_name']??'').'</h6>
-                  <p class="mb-0 font-13 text-secondary">Id #'.($userrow['user_id']??'').'</p>
-              </div>
-          </div>
-      </td>
-      <td>'.($userrow['create_dt']??'').'</td>
-      <td>$'.number_format(($userrow['referral_payout']??0), 2).'</td>
-      <td>
-          <div class="badge rounded-pill bg-'.$statuscolor.' w-50 p-2">'.(($userrow['referral_status']??'') ? ucwords(($userrow['referral_status']??'')) : '').'</div>
-      </td>
-  </tr>
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <img src="'.$avatar.'" class="rounded-circle me-3" width="40" height="40" alt="Avatar" style="object-fit: cover;" />
+                                            <div>
+                                                <h6 class="mb-0">'.($userrow['first_name']??'').' '.($userrow['last_name']??'').'</h6>
+                                                <small class="text-muted">ID: #'.($userrow['user_id']??'').'</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-nowrap">'.($userrow['create_dt'] ? date('M d, Y', strtotime($userrow['create_dt'])) : '-').'</span>
+                                    </td>
+                                    <td>
+                                        <strong>$'.number_format(($userrow['referral_payout']??0), 2).'</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-'.$statuscolor.'">'.(($userrow['referral_status']??'') ? ucwords(($userrow['referral_status']??'')) : 'Unknown').'</span>
+                                    </td>
+                                </tr>
 ';
 
           }
-          /*
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-2.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from Pauline Bird</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #9653248</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 12, 2021</td>
-              <td>+566.00</td>
-              <td>
-                <div class="badge rounded-pill bg-info text-dark w-100">In Progress</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-3.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from Ralph Alva</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #7689524</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 14, 2021</td>
-              <td>+636.00</td>
-              <td>
-                <div class="badge rounded-pill bg-danger w-100">Declined</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-4.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from John Roman</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #8335884</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 15, 2021</td>
-              <td>+246.00</td>
-              <td>
-                <div class="badge rounded-pill bg-success w-100">Completed</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-7.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from David Buckley</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #7865986</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 16, 2021</td>
-              <td>+876.00</td>
-              <td>
-                <div class="badge rounded-pill bg-info text-dark w-100">In Progress</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-8.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from Lewis Cruz</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #8576420</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 18, 2021</td>
-              <td>+536.00</td>
-              <td>
-                <div class="badge rounded-pill bg-success w-100">Completed</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-9.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from James Caviness</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #3775420</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 18, 2021</td>
-              <td>+536.00</td>
-              <td>
-                <div class="badge rounded-pill bg-success w-100">Completed</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-10.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from Peter Costanzo</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #3768920</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 19, 2021</td>
-              <td>+536.00</td>
-              <td>
-                <div class="badge rounded-pill bg-success w-100">Completed</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-11.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from Johnny Seitz</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #9673520</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 20, 2021</td>
-              <td>+86.00</td>
-              <td>
-                <div class="badge rounded-pill bg-danger w-100">Declined</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-12.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from Lewis Cruz</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #8576420</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 18, 2021</td>
-              <td>+536.00</td>
-              <td>
-                <div class="badge rounded-pill bg-success w-100">Completed</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-13.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from David Buckley</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #8576420</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 22, 2021</td>
-              <td>+854.00</td>
-              <td>
-                <div class="badge rounded-pill bg-info text-dark w-100">In Progress</div>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="">
-                    <img src="assets/images/avatars/avatar-14.png" class="rounded-circle" width="46" height="46" alt="" />
-                  </div>
-                  <div class="ms-2">
-                    <h6 class="mb-1 font-14">Payment from Thomas Wheeler</h6>
-                    <p class="mb-0 font-13 text-secondary">Refrence Id #4278620</p>
-                  </div>
-                </div>
-              </td>
-              <td>Jan 18, 2021</td>
-              <td>+536.00</td>
-              <td>
-                <div class="badge rounded-pill bg-success w-100">Completed</div>
-              </td>
-            </tr>
-            */
 
             echo '
-          </tbody>
-        </table>
-      </div>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
+</div> <!-- End container-fluid -->
 
-</div>
-
-
-</div>
-
-</div>
 <div class="my-5 py-5"></div>
 
 ';

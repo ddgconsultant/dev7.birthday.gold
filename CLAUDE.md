@@ -173,10 +173,13 @@ npm test
 
 ## Maintenance
 
-### Regular Tasks
+### Regular Tasks  
 - Database backups via `/admin_actions/scheduler--backup_database.sh`
 - CDN file cleanup via `/admin_actions/scheduler--deleteoldcdnfiles.php`
 - Statistics updates via `/admin_actions/scheduler--updatestats.php`
+- Legal policy review reminders via `/admin_actions/scheduler--legalhubreview_reminder.php`
+
+**Note:** The `/admin_actions/` directory is protected by host configuration. Schedulers do NOT require authentication keys.
 
 ### Monitoring
 - Session tracking in `bg_sessiontracking` table
