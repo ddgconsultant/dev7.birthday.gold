@@ -216,51 +216,91 @@ echo '
         </div>
         ';
         ?>
-        <!-- Phone Demo -->
-        <div class="phone-demo" id="demo">
-            <div class="phone-frame">
-                <div class="phone-screen">
-                    <div class="demo-content">
-                        <div class="demo-header">
-                            <div class="demo-logo">Birthday.Gold</div>
-                            <p class="demo-subtitle">Your Birthday Month Rewards</p>
-                        </div>
-                        
-                        <div class="demo-rewards">
-                            <div class="demo-reward-card">
-                                <div class="demo-reward-logo">☕</div>
-                                <div class="demo-reward-info">
-                                    <h6>Starbucks</h6>
-                                    <p>Free Birthday Drink</p>
-                                </div>
+        <!-- Animated Demo Carousel -->
+        <div class="demo-carousel-container" id="demo">
+            <!-- Phone Frame -->
+            <div class="demo-phone-frame">
+                <!-- Phone Notch/Speaker -->
+                <div class="phone-notch"></div>
+                
+                <!-- Phone Screen -->
+                <div class="demo-carousel">
+                    <!-- Screen 1: Sign Up -->
+                <div class="demo-screen active">
+                    <div class="demo-device">
+                        <div class="demo-device-content">
+                            <div class="demo-step-indicator">Step 1 of 3</div>
+                            <div class="demo-icon">👤</div>
+                            <h3>Quick Sign Up</h3>
+                            <div class="demo-form-preview">
+                                <div class="form-field">Name: John Smith</div>
+                                <div class="form-field">Birthday: March 15</div>
+                                <div class="form-field">Email: john@email.com</div>
                             </div>
-                            
-                            <div class="demo-reward-card">
-                                <div class="demo-reward-logo">🌯</div>
-                                <div class="demo-reward-info">
-                                    <h6>Chipotle</h6>
-                                    <p>Free Burrito</p>
-                                </div>
-                            </div>
-                            
-                            <div class="demo-reward-card">
-                                <div class="demo-reward-logo">💄</div>
-                                <div class="demo-reward-info">
-                                    <h6>Sephora</h6>
-                                    <p>Birthday Gift Set</p>
-                                </div>
-                            </div>
-                            
-                            <div class="demo-reward-card">
-                                <div class="demo-reward-logo">🎬</div>
-                                <div class="demo-reward-info">
-                                    <h6>AMC Theatres</h6>
-                                    <p>Free Large Popcorn</p>
-                                </div>
-                            </div>
+                            <p class="demo-description">One-time registration.<br>Takes less than 60 seconds!</p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Screen 2: Select Rewards -->
+                <div class="demo-screen">
+                    <div class="demo-device">
+                        <div class="demo-device-content">
+                            <div class="demo-step-indicator">Step 2 of 3</div>
+                            <div class="demo-icon">✨</div>
+                            <h3>Choose Your Rewards</h3>
+                            <div class="demo-brand-grid">
+                                <div class="brand-tile selected">Starbucks ☕</div>
+                                <div class="brand-tile selected">Chipotle 🌯</div>
+                                <div class="brand-tile selected">Target 🎯</div>
+                                <div class="brand-tile">Sephora 💄</div>
+                                <div class="brand-tile">Nike 👟</div>
+                                <div class="brand-tile">Amazon 📦</div>
+                            </div>
+                            <p class="demo-description">Pick from <?php echo $website['numberofbiz']; ?>+ brands.<br>We handle all enrollments!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 3: Enjoy Rewards -->
+                <div class="demo-screen">
+                    <div class="demo-device">
+                        <div class="demo-device-content">
+                            <div class="demo-step-indicator">Step 3 of 3</div>
+                            <div class="demo-icon">🎉</div>
+                            <h3>Birthday Month Arrives!</h3>
+                            <div class="demo-notifications">
+                                <div class="notification-card">
+                                    <span class="notif-icon">🎂</span>
+                                    <div class="notif-text">
+                                        <strong>Happy Birthday Month!</strong>
+                                        <small>15 rewards are ready</small>
+                                    </div>
+                                </div>
+                                <div class="reward-preview">
+                                    <div class="reward-item">☕ Starbucks - Free Drink</div>
+                                    <div class="reward-item">🌯 Chipotle - Free Burrito</div>
+                                    <div class="reward-item">🎬 AMC - Free Popcorn</div>
+                                    <div class="reward-item">+ 12 more rewards...</div>
+                                </div>
+                            </div>
+                            <p class="demo-description">Average member saves $300+<br>in birthday rewards!</p>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                
+                <!-- Progress Bar (inside phone) -->
+                <div class="demo-progress">
+                    <div class="demo-progress-bar"></div>
+                </div>
+            </div>
+            
+            <!-- Navigation Dots (outside phone) -->
+            <div class="demo-nav">
+                <span class="demo-dot active" data-slide="0"></span>
+                <span class="demo-dot" data-slide="1"></span>
+                <span class="demo-dot" data-slide="2"></span>
             </div>
         </div>
     </div>
@@ -297,7 +337,10 @@ $footerattribute['postfooter'] = '
 <script>
 // Defer floating elements animation
 window.addEventListener("load", () => {
-    document.getElementById("floatingElements").classList.add("loaded");
+    const floatingEl = document.getElementById("floatingElements");
+    if (floatingEl) {
+        floatingEl.classList.add("loaded");
+    }
 });
 
 // Simple fade-in for hero elements
@@ -312,10 +355,87 @@ fadeElements.forEach((el, index) => {
     }, 100 * index);
 });
 
-// Lazy load phone demo
-const phoneDemo = document.getElementById("demo");
-if (phoneDemo) {
-    phoneDemo.style.opacity = "0";
+// Demo Carousel Animation
+const demoCarousel = document.querySelector(".demo-carousel");
+if (demoCarousel) {
+    const screens = document.querySelectorAll(".demo-screen");
+    const dots = document.querySelectorAll(".demo-dot");
+    const progressBar = document.querySelector(".demo-progress-bar");
+    let currentSlide = 0;
+    let autoPlayInterval;
+    let progressInterval;
+
+    function showSlide(index) {
+        // Reset all screens
+        screens.forEach((screen, i) => {
+            screen.classList.remove("active", "prev");
+            if (i < index) {
+                screen.classList.add("prev");
+            }
+        });
+        
+        // Set active screen
+        screens[index].classList.add("active");
+        
+        // Update dots
+        dots.forEach((dot, i) => {
+            dot.classList.toggle("active", i === index);
+        });
+        
+        // Reset progress bar
+        if (progressBar) {
+            progressBar.style.animation = "none";
+            setTimeout(() => {
+                progressBar.style.animation = "progress 6s linear infinite";
+            }, 10);
+        }
+    }
+
+    function nextSlide() {
+        currentSlide = (currentSlide + 1) % screens.length;
+        showSlide(currentSlide);
+    }
+
+    // Auto-play carousel
+    function startAutoPlay() {
+        autoPlayInterval = setInterval(nextSlide, 6000);
+    }
+
+    function stopAutoPlay() {
+        clearInterval(autoPlayInterval);
+    }
+
+    // Click on dots to navigate
+    dots.forEach((dot, index) => {
+        dot.addEventListener("click", () => {
+            currentSlide = index;
+            showSlide(currentSlide);
+            stopAutoPlay();
+            startAutoPlay(); // Restart auto-play
+        });
+    });
+
+    // Pause on hover
+    demoCarousel.addEventListener("mouseenter", stopAutoPlay);
+    demoCarousel.addEventListener("mouseleave", startAutoPlay);
+
+    // Start when demo is visible
+    const demoObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                startAutoPlay();
+                demoObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.3 });
+    
+    demoObserver.observe(demoCarousel);
+}
+
+// Lazy load demo section
+const demoSection = document.getElementById("demo");
+if (demoSection) {
+    demoSection.style.opacity = "0";
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -325,7 +445,7 @@ if (phoneDemo) {
             }
         });
     }, { threshold: 0.1 });
-    observer.observe(phoneDemo);
+    observer.observe(demoSection);
 }
 </script>
 ';
