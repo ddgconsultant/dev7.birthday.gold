@@ -354,6 +354,14 @@ if ($app->formposted()) {
                 'avatar_file' => ''
             ];
             
+            // Generate default avatar based on user initials
+            if (!empty($values['firstnamefield']) && !empty($values['lastnamefield'])) {
+                $initials = strtoupper(substr($values['firstnamefield'], 0, 1) . substr($values['lastnamefield'], 0, 1));
+                $hash = md5($initials . $values['emailfield']); // Create unique hash
+                $avatar_url = "https://files.birthday.gold/public/defaultavatars/{$hash}.svg";
+                $input['avatar_file'] = $avatar_url;
+            }
+            
             // Add business fields if business account
             if ($account_type === 'business') {
                 $input['business_name'] = $values['businessnamefield'] ?? '';
