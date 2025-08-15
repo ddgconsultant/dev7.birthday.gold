@@ -513,15 +513,15 @@ $businessHours = $app->bg_businesshours();
                     </div>
                     <div class="mt-2 pt-2 border-top">
                         <div class="row g-2 small">
-                            <div class="col-4">
+                            <div class="col-4 text-center">
                                 <div class="fw-bold" style="font-size: 0.9rem; color: #212529;"><?php echo number_format($activeUsers); ?></div>
                                 <div class="text-muted" style="font-size: 0.7rem;">Active</div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-4 text-center">
                                 <div class="fw-bold" style="font-size: 0.9rem; color: #212529;"><?php echo number_format($userStats['paid']); ?></div>
                                 <div class="text-muted" style="font-size: 0.7rem;">Paid</div>
                             </div>
-                            <div class="col-4">
+                            <div class="col-4 text-center">
                                 <div class="fw-bold" style="font-size: 0.9rem; color: #212529;"><?php echo number_format($pendingUsers); ?></div>
                                 <div class="text-muted" style="font-size: 0.7rem;">Pending</div>
                             </div>
