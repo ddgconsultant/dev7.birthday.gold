@@ -125,28 +125,55 @@ $additionalstyles .= '
 .nav-tabs-custom {
     border-bottom: 2px solid #e9ecef;
     margin-bottom: 2rem;
+    display: flex;
+    gap: 0;  /* Remove default gap */
+    padding-left: 0;  /* Reset padding to align with other containers */
+    margin-left: 0;  /* Reset margin for proper alignment */
+}
+
+.nav-tabs-custom .nav-item {
+    flex: 0 0 auto;  /* Do not grow or shrink */
+    margin-right: 2rem;  /* Space between tab items */
+    list-style: none;  /* Remove list dots */
+}
+
+.nav-tabs-custom .nav-item:first-child {
+    margin-left: 0;  /* Ensure first tab aligns with content */
+}
+
+.nav-tabs-custom .nav-item:last-child {
+    margin-right: 0;  /* No margin on last item */
 }
 
 .nav-tabs-custom .nav-link {
     color: #6c757d;
     border: none;
     border-bottom: 3px solid transparent;
-    padding: 1rem 2.5rem;  /* Further increased padding for wider tabs */
+    padding: 1rem 2rem;  /* Consistent padding */
     font-weight: 500;
     white-space: nowrap;  /* Prevent text wrapping */
-    margin-right: 2rem;  /* More space between tabs */
     border-radius: 0;
+    min-width: 120px;  /* Minimum width for each tab */
+    text-align: center;  /* Center the text */
+    display: block;  /* Changed to block for proper hover background */
+    position: relative;  /* For proper positioning */
+    transition: all 0.2s ease;  /* Smooth transitions */
 }
 
 .nav-tabs-custom .nav-link:hover {
     color: #495057;
-    border-color: transparent;
+    background-color: #f8f9fa;  /* Light gray background on hover */
+    border-radius: 4px 4px 0 0;  /* Rounded top corners */
 }
 
 .nav-tabs-custom .nav-link.active {
     color: #0d6efd;
     border-bottom-color: #0d6efd;
     background: none;
+}
+
+.nav-tabs-custom .nav-link.active:hover {
+    background-color: transparent;  /* No hover background on active tab */
 }
 
 /* Cards */
@@ -336,16 +363,20 @@ $additionalstyles .= '
         font-size: 1.5rem;
     }
     
-    .nav-tabs-custom .nav-link {
-        padding: 0.75rem 1.25rem;  /* Adjusted for mobile */
-        font-size: 0.9rem;
-        margin-right: 0.5rem;  /* Smaller margin on mobile */
-    }
-    
-    /* Make tabs scrollable on mobile if needed */
     .nav-tabs-custom {
         overflow-x: auto;
         flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;  /* Smooth scrolling on iOS */
+    }
+    
+    .nav-tabs-custom .nav-item {
+        margin-right: 1.5rem;  /* Smaller gap on mobile */
+    }
+    
+    .nav-tabs-custom .nav-link {
+        padding: 0.75rem 1.5rem;  /* Adjusted for mobile */
+        font-size: 0.9rem;
+        min-width: 100px;  /* Smaller minimum width on mobile */
     }
     
     .user-avatar-large {
@@ -372,20 +403,17 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Admin Header Section -->
 <div class="content-header-admin">
     <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="mb-2">User Details</h1>
-            </div>
-            <div>
-                <a href="/admin/user-list" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-2"></i>Back to Users
-                </a>
-            </div>
-        </div>
+        <h1 class="mb-2">User Details</h1>
     </div>
 </div>
 
 <div class="container my-4">
+    <!-- Back to Users Link -->
+    <div class="text-end mb-3">
+        <a href="/admin/user-list" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Users
+        </a>
+    </div>
     <!-- User Header Card -->
     <div class="user-header-card">
         <div class="row align-items-center">
@@ -491,32 +519,32 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Tab Navigation -->
     <ul class="nav nav-tabs nav-tabs-custom" role="tablist">
         <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#overview">
+            <a class="nav-link active px-3" data-bs-toggle="tab" href="#overview">
                 <i class="bi bi-speedometer2 me-2"></i>Overview
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#account">
+            <a class="nav-link px-3" data-bs-toggle="tab" href="#account">
                 <i class="bi bi-person-vcard me-2"></i>Account
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#enrollments">
+            <a class="nav-link px-3" data-bs-toggle="tab" href="#enrollments">
                 <i class="bi bi-gift me-2"></i>Enrollments
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#activity">
+            <a class="nav-link px-3" data-bs-toggle="tab" href="#activity">
                 <i class="bi bi-activity me-2"></i>Activity
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#security">
+            <a class="nav-link px-3" data-bs-toggle="tab" href="#security">
                 <i class="bi bi-shield-lock me-2"></i>Security
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#attributes">
+            <a class="nav-link px-3" data-bs-toggle="tab" href="#attributes">
                 <i class="bi bi-tags me-2"></i>Attributes
             </a>
         </li>
@@ -532,7 +560,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <div class="info-card">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
-                                <div class="card-icon bg-primary bg-opacity-10 text-primary">
+                                <div class="card-icon bg-primary-subtle text-primary">
                                     <i class="bi bi-person"></i>
                                 </div>
                                 <h5 class="mb-0 ms-3">Personal Information</h5>

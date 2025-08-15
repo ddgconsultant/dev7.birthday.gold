@@ -196,7 +196,7 @@ function smoothScrollToTop(duration) {
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   function generateAvatarUrl($fileuploader, $input = [], $style = 'fun')
   {
-    ## global $fileuploader;
+    global $fileuploader;
     global $database;
 
     switch ($style) {

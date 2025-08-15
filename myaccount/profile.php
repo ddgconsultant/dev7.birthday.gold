@@ -1480,30 +1480,50 @@ $("#uploadForm").submit();
 
 
 <script>
-// Get the parent div of the button which has the tooltip
-const tooltipDiv = document.getElementById("tooltipDiv1");
-
-// Initialize the tooltip
-new bootstrap.Tooltip(tooltipDiv, {});
-const tooltipInstance = bootstrap.Tooltip.getInstance(tooltipDiv);
-const radios = document.querySelectorAll(\'input[type=radio][name="account_plan"]\');
-const submitBtn = document.getElementById("usersubmitBtn");
-console.log(submitBtn);
-// Add event listener for each radio button
-radios.forEach(function(radio) {
-radio.addEventListener("change", function() {
-if (this.checked) {
-submitBtn.removeAttribute("disabled");
-console.log("plan selected");
-if (tooltipInstance) {
-try {
-tooltipInstance.dispose();
-} catch (error) {
-}
-} else {
-}
-}
-});
+// Wait for DOM to be ready
+document.addEventListener("DOMContentLoaded", function() {
+    // Get the parent div of the button which has the tooltip
+    const tooltipDiv = document.getElementById("tooltipDiv1");
+    
+    // Initialize the tooltip only if Bootstrap is available
+    let tooltipInstance = null;
+    
+    // Try to initialize tooltip - Bootstrap might load after this script
+    function initTooltip() {
+        if (typeof bootstrap !== \'undefined\' && bootstrap.Tooltip && tooltipDiv && !tooltipInstance) {
+            new bootstrap.Tooltip(tooltipDiv, {});
+            tooltipInstance = bootstrap.Tooltip.getInstance(tooltipDiv);
+            return true;
+        }
+        return false;
+    }
+    
+    // Try immediately
+    if (!initTooltip()) {
+        // If Bootstrap not ready, try again after a short delay
+        setTimeout(initTooltip, 1000);
+    }
+    
+    const radios = document.querySelectorAll(\'input[type=radio][name="account_plan"]\');
+    const submitBtn = document.getElementById("usersubmitBtn");
+    console.log(submitBtn);
+    
+    // Add event listener for each radio button
+    radios.forEach(function(radio) {
+        radio.addEventListener("change", function() {
+            if (this.checked) {
+                submitBtn.removeAttribute("disabled");
+                console.log("plan selected");
+                if (tooltipInstance) {
+                    try {
+                        tooltipInstance.dispose();
+                    } catch (error) {
+                        // Ignore errors
+                    }
+                }
+            }
+        });
+    });
 });
 </script>';
 

@@ -284,7 +284,7 @@ $i = 0;
            # ':modify_dt' => 'now()'
         ];
 
-        $sql = "INSERT INTO bg_user_attributes (user_id, type, name, string_value, status, create_dt, modify_dt)
+        $sql = "INSERT INTO bg_user_attributes (user_id, `type`, `name`, string_value, `status`, create_dt, modify_dt)
                 VALUES (:user_id, :type, :name, :string_value, :status, now(), now())";
         $stmt = $this->db->query($sql, $attributeParams);
         $i++;
