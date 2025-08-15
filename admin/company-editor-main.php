@@ -276,8 +276,55 @@ document.addEventListener('DOMContentLoaded', function() {
             tab.show();
         }
     }
+    
+    // Check for location extraction completion message
+    var message = urlParams.get('message');
+    if (message === 'location_extracted') {
+        var locationModal = new bootstrap.Modal(document.getElementById('locationExtractionModal'));
+        locationModal.show();
+        
+        // Switch to locations tab after modal is closed
+        document.getElementById('locationExtractionModal').addEventListener('hidden.bs.modal', function () {
+            var locationsTab = document.querySelector('#locations-tab');
+            if (locationsTab) {
+                var tab = new bootstrap.Tab(locationsTab);
+                tab.show();
+            }
+        });
+    }
 });
 </script>
+
+<!-- Location Extraction Completion Modal -->
+<div class="modal fade" id="locationExtractionModal" tabindex="-1" aria-labelledby="locationExtractionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="locationExtractionModalLabel">
+                    <i class="bi bi-check-circle-fill me-2"></i>Location Extraction Complete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <i class="bi bi-geo-alt-fill text-success" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">Location extraction completed successfully!</h4>
+                    <p class="text-muted">The store locations for <?php echo htmlspecialchars($company_name); ?> have been extracted and saved.</p>
+                    <hr>
+                    <p class="mb-0">
+                        <small class="text-muted">Click below to view the extracted locations or close this dialog to continue.</small>
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="document.querySelector('#locations-tab').click();">
+                    <i class="bi bi-geo-alt me-1"></i>View Locations
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <?php
 $display_footertype = 'min';
