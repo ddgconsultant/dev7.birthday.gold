@@ -93,7 +93,7 @@ try {
                       LEFT JOIN bg_company_attributes ca ON 
                         ca.company_id = :company_id 
                         AND ca.type = 'onboarding_progress'
-                        AND ca.name = c.config_key
+                        AND ca.name COLLATE utf8mb4_unicode_ci = c.config_key COLLATE utf8mb4_unicode_ci
                       WHERE c.config_type = 'automation_processor'
                       AND c.status = 'active'
                       AND c.config_key != 'abo_finalize'";
