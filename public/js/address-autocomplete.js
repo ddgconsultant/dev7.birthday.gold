@@ -48,46 +48,23 @@ class AddressAutocomplete {
             return false;
         }
 
-        // Check if we should use the new PlaceAutocompleteElement (available for new customers)
-        // or fall back to the legacy Autocomplete
-        if (google.maps.places.PlaceAutocompleteElement) {
-            // Use the new PlaceAutocompleteElement
-            this.initPlaceAutocompleteElement(addressField);
-        } else {
-            // Fall back to legacy Autocomplete
-            this.initLegacyAutocomplete(addressField);
-        }
+        // For now, always use the legacy Autocomplete API which is stable
+        // The new PlaceAutocompleteElement is still being rolled out and has compatibility issues
+        // We'll migrate when Google provides better documentation and the API is more stable
+        this.initLegacyAutocomplete(addressField);
 
         return true;
     }
 
     /**
-     * Initialize using the new PlaceAutocompleteElement (recommended)
+     * Initialize using the new PlaceAutocompleteElement (future implementation)
+     * Currently disabled due to API compatibility issues
+     * TODO: Implement when Google provides stable API and better documentation
      */
     initPlaceAutocompleteElement(addressField) {
-        // Create the new autocomplete element
-        const placeAutocomplete = document.createElement('gmp-place-autocomplete');
-        placeAutocomplete.setAttribute('for-input', this.addressFieldId);
-        placeAutocomplete.setAttribute('types', '["address"]');
-        placeAutocomplete.setAttribute('country', this.countryRestriction);
-        
-        // Hide the native element and show the input field
-        placeAutocomplete.style.display = 'none';
-        
-        // Insert the element after the input field (required for it to work)
-        addressField.parentNode.insertBefore(placeAutocomplete, addressField.nextSibling);
-
-        // Listen for place selection
-        placeAutocomplete.addEventListener('gmp-placeselect', (event) => {
-            const place = event.detail.place;
-            if (place && place.addressComponents) {
-                this.processPlaceDetails(place);
-            }
-        });
-
-        // Store reference
-        this.autocomplete = placeAutocomplete;
-        this.isNewAPI = true;
+        // PlaceAutocompleteElement implementation will go here when ready
+        // For now, we use the legacy API
+        this.initLegacyAutocomplete(addressField);
     }
 
     /**
