@@ -511,9 +511,10 @@ $businessHours = $app->bg_businesshours();
                     <div class="d-flex justify-content-between align-items-start mb-1">
                         <div>
                             <div class="stat-value text-white" style="font-size: 1.75rem;"><?php echo number_format($totalUsers); ?></div>
+                        </div>
+                        <div class="text-end">
                             <div class="stat-label text-white-50" style="font-size: 0.75rem;">Total Users</div>
                         </div>
-                        <i class="bi bi-people-fill fs-3 text-white-50"></i>
                     </div>
                     <div class="mt-2 pt-2 border-top border-white-50">
                         <div class="row g-2 small">
