@@ -204,6 +204,25 @@ body {
     padding: 1.5rem;
     border: 1px solid #e9ecef;
     text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* User Matrix Card - Special Styling */
+.stat-card:first-child {
+    text-align: left;
+}
+
+.text-white-50 {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.border-white-50 {
+    border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
 .stat-value {
@@ -458,10 +477,60 @@ $businessHours = $app->bg_businesshours();
         
         <!-- Quick Stats -->
         <?php if ($account->isadmin()): ?>
+        <?php
+        // Get user statistics
+        $userStats = [];
+        
+        // Get counts by status
+        $statusQuery = "SELECT status, COUNT(*) as count FROM bg_users GROUP BY status";
+        $statusResults = $database->query($statusQuery);
+        while ($row = $statusResults->fetch()) {
+            $userStats['status'][$row['status']] = $row['count'];
+        }
+        
+        // Get paid users (non-free plans among active users)
+        $paidQuery = "SELECT COUNT(*) as count FROM bg_users WHERE status='active' AND account_plan NOT IN ('free', 'user_free', '')";
+        $paidResult = $database->get_row($paidQuery);
+        $userStats['paid'] = $paidResult['count'] ?? 0;
+        
+        // Get free users
+        $freeQuery = "SELECT COUNT(*) as count FROM bg_users WHERE status='active' AND (account_plan IN ('free', 'user_free') OR account_plan = '' OR account_plan IS NULL)";
+        $freeResult = $database->get_row($freeQuery);
+        $userStats['free'] = $freeResult['count'] ?? 0;
+        
+        // Calculate totals
+        $activeUsers = $userStats['status']['active'] ?? 0;
+        $pendingUsers = $userStats['status']['pending'] ?? 0;
+        $validatedUsers = $userStats['status']['validated'] ?? 0;
+        $totalUsers = $activeUsers + $pendingUsers + $validatedUsers;
+        ?>
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value"><?php echo isset($database) && method_exists($database, 'bg_activeusers') ? number_format($database->bg_activeusers()) : '0'; ?></div>
-                <div class="stat-label">Active Users</div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="text-white">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <div class="stat-value text-white"><?php echo number_format($totalUsers); ?></div>
+                            <div class="stat-label text-white-50">Total Users</div>
+                        </div>
+                        <i class="bi bi-people-fill fs-2 text-white-50"></i>
+                    </div>
+                    <div class="mt-3 pt-3 border-top border-white-50">
+                        <div class="row g-2 small">
+                            <div class="col-4">
+                                <div class="text-white-50">Active</div>
+                                <div class="fw-bold text-white"><?php echo number_format($activeUsers); ?></div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-white-50">Paid</div>
+                                <div class="fw-bold text-white"><?php echo number_format($userStats['paid']); ?></div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-white-50">Pending</div>
+                                <div class="fw-bold text-white"><?php echo number_format($pendingUsers); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="stat-card">
                 <div class="stat-value"><?php echo $enrollmentCount; ?></div>
