@@ -279,9 +279,6 @@ $create_dt = new DateTime($current_user_data['create_dt']);
 $now = new DateTime();
 $interval = $now->diff($create_dt);
 
-if ($interval->days <= 30) {
-  echo '<h1 class="d-none d-lg-block">Your Account Home</h1>';
-}
 
 echo '
 <div class="row pt-lg-3 my-0">
@@ -289,6 +286,9 @@ echo '
 ';
 
 
+if ($interval->days <= 30) {
+  echo '<h1 class="d-none d-lg-block mb-4 mt-0 pt-0">Your Account Home</h1>';
+}
 /*================================================================================================
 ==================================================================================================*/
 

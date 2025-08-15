@@ -90,6 +90,47 @@ window.onload = function() {
         }
     });
     
+    // Sticky help panel implementation
+    if (window.innerWidth >= 992) {
+        const helpPanel = document.querySelector('.help-panel');
+        const helpContainer = document.querySelector('.help-panel-container');
+        
+        if (helpPanel && helpContainer) {
+            let containerTop = helpContainer.offsetTop;
+            const panelWidth = helpPanel.offsetWidth;
+            
+            function checkSticky() {
+                const scrollY = window.scrollY;
+                const shouldStick = scrollY > (containerTop - 80);
+                
+                if (shouldStick && !helpPanel.classList.contains('stuck')) {
+                    helpPanel.style.width = panelWidth + 'px';
+                    helpPanel.classList.add('stuck');
+                } else if (!shouldStick && helpPanel.classList.contains('stuck')) {
+                    helpPanel.style.width = '';
+                    helpPanel.classList.remove('stuck');
+                }
+            }
+            
+            // Check on scroll
+            window.addEventListener('scroll', checkSticky);
+            
+            // Recalculate position on resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 992) {
+                    containerTop = helpContainer.offsetTop;
+                    checkSticky();
+                } else {
+                    helpPanel.classList.remove('stuck');
+                    helpPanel.style.width = '';
+                }
+            });
+            
+            // Initial check
+            checkSticky();
+        }
+    }
+    
     // Don't auto-focus on load to prevent help panel from showing immediately
     // User will click/tab into fields when ready
 };

@@ -70,7 +70,8 @@
       "Bash(./cypress/test-runner.sh:*)",
       "Bash(./cypress/quick-test.sh:*)",
       "Bash(cat:*)",
-      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_company_attributes;\")"
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_company_attributes;\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT status, COUNT(*) as count FROM bg_users GROUP BY status ORDER BY count DESC LIMIT 10;\")"
     ],
     "deny": []
   }

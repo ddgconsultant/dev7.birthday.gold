@@ -400,16 +400,15 @@ $additionalstyles .= '
     }
 }
 
-/* JavaScript-powered Floating Panel - custom floating behavior */
+/* Help Panel Styling */
 @media (min-width: 992px) {
-    .help-panel-wrapper.is-floating {
-        position: fixed;
-        z-index: 1000;
+    .help-panel-container {
+        position: relative;
     }
     
     .help-panel {
         max-height: calc(100vh - 120px);
-        transition: box-shadow 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+        transition: box-shadow 0.3s ease, border-color 0.3s ease, opacity 0.3s ease, transform 0.2s ease;
         opacity: 0;
         visibility: hidden;
     }
@@ -424,15 +423,11 @@ $additionalstyles .= '
         border-color: var(--bs-primary);
     }
     
-    /* Placeholder to maintain layout when floating */
-    .help-panel-placeholder {
-        display: none;
-        visibility: hidden;
-    }
-    
-    .help-panel-placeholder.active {
-        display: block;
-        visibility: visible;
+    .help-panel.stuck {
+        position: fixed;
+        top: 80px;
+        width: inherit;
+        z-index: 100;
     }
 }
 
@@ -577,14 +572,10 @@ echo '
 </div>
 </div>
 </div>
-';
-
-// PROFILE FIELD INSTRUCTION ACCORDIAN BOX
-echo '
 </div>
 
 <!-- Desktop Help Panel -->
-<div class="help-panel-wrapper d-none d-lg-block">
+<div class="help-panel-container d-none d-lg-block">
 <div class="help-panel card shadow-sm mb-3 bg-light border rounded-3">
 <div class="card-body">
 <div class="help-header mb-3 d-flex align-items-center">
@@ -1109,148 +1100,23 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 
-<!-- Expert Floating Panel JavaScript Solution -->
+<!-- Simplified Panel Visibility Handler -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     // Only run on desktop
     if (window.innerWidth < 992) return;
     
-    // Get the desktop panel wrapper specifically
-    const helpPanelWrapper = document.querySelector(".col-lg-4 .help-panel-wrapper");
-    if (!helpPanelWrapper) {
-        console.log("Help panel wrapper not found");
+    // Get the help panel
+    const helpPanel = document.querySelector(".help-panel");
+    if (!helpPanel) {
+        console.log("Help panel not found");
         return;
     }
     
-    // Create placeholder element to maintain layout
-    const placeholder = document.createElement("div");
-    placeholder.className = "help-panel-placeholder";
-    helpPanelWrapper.parentNode.insertBefore(placeholder, helpPanelWrapper.nextSibling);
-    
-    // Get important elements
-    const header = document.querySelector("header") || document.querySelector(".navbar");
-    const leftCol = document.querySelector(".col-lg-4");
-    const rightCol = document.querySelector(".col-lg-8");
-    
-    // Calculate header height
-    const headerHeight = header ? header.offsetHeight : 80;
-    const topOffset = headerHeight + 20; // 20px gap below header
-    
-    let ticking = false;
-    let panelHeight = 0;
-    let isFloating = false;
-    let panelShown = false;
-    let hasScrolled = false;
-    
-    function updateFloatingPanel() {
-        // Only update if panel is shown
-        const helpPanel = helpPanelWrapper.querySelector(".help-panel");
-        if (!helpPanel || !helpPanel.classList.contains("show")) {
-            ticking = false;
-            return;
-        }
-        
-        // On first show, set initial state
-        if (!panelShown) {
-            panelShown = true;
-            panelHeight = helpPanelWrapper.offsetHeight;
-            placeholder.style.height = panelHeight + "px";
-            // Do not process positioning on first show - let it stay in natural position
-            ticking = false;
-            return;
-        }
-        
-        // Do not float until user has actually scrolled
-        if (!hasScrolled) {
-            ticking = false;
-            return;
-        }
-        
-        const scrollY = window.pageYOffset;
-        const leftColRect = leftCol.getBoundingClientRect();
-        const rightColRect = rightCol.getBoundingClientRect();
-        
-        // Get original position from placeholder
-        const originalTop = placeholder.offsetTop;
-        
-        // Calculate when to start floating
-        const startFloat = originalTop - topOffset;
-        
-        // Calculate when to stop floating (bottom of right column)
-        const rightColBottom = rightColRect.bottom + scrollY;
-        const stopFloat = rightColBottom - panelHeight - topOffset;
-        
-        // Only update if state changes to prevent jumping
-        if (scrollY >= startFloat && scrollY <= stopFloat && !isFloating) {
-            // Start floating
-            isFloating = true;
-            helpPanelWrapper.classList.add("is-floating");
-            helpPanelWrapper.style.position = "fixed";
-            helpPanelWrapper.style.top = topOffset + "px";
-            helpPanelWrapper.style.left = leftColRect.left + "px";
-            helpPanelWrapper.style.width = leftColRect.width + "px";
-            placeholder.classList.add("active");
-        } else if (scrollY < startFloat && isFloating) {
-            // Stop floating - return to normal
-            isFloating = false;
-            helpPanelWrapper.classList.remove("is-floating");
-            helpPanelWrapper.style.position = "";
-            helpPanelWrapper.style.top = "";
-            helpPanelWrapper.style.left = "";
-            helpPanelWrapper.style.width = "";
-            placeholder.classList.remove("active");
-        } else if (scrollY > stopFloat && isFloating) {
-            // Update position when scrolled past bottom
-            const newTop = topOffset - (scrollY - stopFloat);
-            helpPanelWrapper.style.top = newTop + "px";
-        }
-        
-        // Update dimensions if floating
-        if (isFloating) {
-            helpPanelWrapper.style.left = leftColRect.left + "px";
-            helpPanelWrapper.style.width = leftColRect.width + "px";
-        }
-        
-        ticking = false;
-    }
-    
-    function requestTick() {
-        if (!ticking) {
-            requestAnimationFrame(updateFloatingPanel);
-            ticking = true;
-        }
-    }
-    
-    // Event listeners
-    window.addEventListener("scroll", () => {
-        hasScrolled = true;
-        requestTick();
-    });
-    window.addEventListener("resize", () => {
-        requestTick();
-    });
-    
-    // Watch for panel visibility changes
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-            if (mutation.type === "attributes" && mutation.attributeName === "class") {
-                const helpPanel = helpPanelWrapper.querySelector(".help-panel");
-                if (helpPanel && helpPanel.classList.contains("show") && !panelShown) {
-                    // Panel just became visible - just measure it, do not position
-                    setTimeout(() => {
-                        panelHeight = helpPanelWrapper.offsetHeight;
-                        placeholder.style.height = panelHeight + "px";
-                        panelShown = true;
-                    }, 350); // Wait for fade-in transition
-                }
-            }
-        });
-    });
-    
-    observer.observe(helpPanelWrapper.querySelector(".help-panel"), {
-        attributes: true,
-        attributeFilter: ["class"]
-    });
+    // Simply make the panel visible - CSS sticky handles positioning
+    setTimeout(() => {
+        helpPanel.classList.add("show");
+    }, 100);
 });
 </script>
 <script>
