@@ -490,12 +490,12 @@ $businessHours = $app->bg_businesshours();
         
         // Get paid users (non-free plans among active users)
         $paidQuery = "SELECT COUNT(*) as count FROM bg_users WHERE status='active' AND account_plan NOT IN ('free', 'user_free', '')";
-        $paidResult = $database->get_row($paidQuery);
+        $paidResult = $database->getrow($paidQuery);
         $userStats['paid'] = $paidResult['count'] ?? 0;
         
         // Get free users
         $freeQuery = "SELECT COUNT(*) as count FROM bg_users WHERE status='active' AND (account_plan IN ('free', 'user_free') OR account_plan = '' OR account_plan IS NULL)";
-        $freeResult = $database->get_row($freeQuery);
+        $freeResult = $database->getrow($freeQuery);
         $userStats['free'] = $freeResult['count'] ?? 0;
         
         // Calculate totals
