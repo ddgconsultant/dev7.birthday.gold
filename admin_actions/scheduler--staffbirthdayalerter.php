@@ -492,9 +492,11 @@ if ($current_day == '01' || ($debug_mode && isset($_GET['monthly']))) {
 echo date('Y-m-d H:i:s') . " - Staff Birthday Alerter executed successfully\n";
 echo "Notification recipient: " . $notification_recipient . " (Rocket.Chat)\n";
 echo "Staff members checked: " . count($staff_members) . "\n";
-echo "Birthday alerts sent: " . count($birthday_alerts) . "\n";
+echo "Birthday alerts sent: " . count($birthday_alerts);
 if (count($birthday_alerts) > 0) {
-    echo "  → Alerts sent to: " . $notification_recipient . " via Rocket.Chat\n";
+    echo " → sent to " . $notification_recipient . "\n";
+} else {
+    echo "\n";
 }
 echo "Today's birthdays: " . count($birthdays_today) . "\n";
 echo "Upcoming birthdays tracked: " . (count($birthday_alerts) - count($birthdays_today)) . "\n";

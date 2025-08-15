@@ -59,15 +59,15 @@ $("#' . $button . '").click(function(){
 var username = $("#' . $input . '").val();
 $.post(\'/helper_checkavailability\', {username: username, _token: "' . $this->inputcsrf_token('tokenonly') . '"}, function(data){
 if(data == "1"){
-$("#availability").html("Available").css("color", "green");
+$("#availability").html("Available").removeClass("text-danger text-warning").addClass("text-success");
 }
 else if(data == "2"){
-$("#availability").html("Belongs to you").css("color", "orange");
+$("#availability").html("Belongs to you").removeClass("text-danger text-warning").addClass("text-success");
 }
 else if (data == "0"){
-$("#availability").html("Not Available").css("color", "red");
+$("#availability").html("Not Available").removeClass("text-success text-warning").addClass("text-danger");
 } else {
-$("#availability").html("Error").css("color", "red");
+$("#availability").html("Error").removeClass("text-success text-warning").addClass("text-danger");
 }
 });
 });

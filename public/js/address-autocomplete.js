@@ -48,7 +48,53 @@ class AddressAutocomplete {
             return false;
         }
 
-        // Create autocomplete instance
+        // Check if we should use the new PlaceAutocompleteElement (available for new customers)
+        // or fall back to the legacy Autocomplete
+        if (google.maps.places.PlaceAutocompleteElement) {
+            // Use the new PlaceAutocompleteElement
+            this.initPlaceAutocompleteElement(addressField);
+        } else {
+            // Fall back to legacy Autocomplete
+            this.initLegacyAutocomplete(addressField);
+        }
+
+        return true;
+    }
+
+    /**
+     * Initialize using the new PlaceAutocompleteElement (recommended)
+     */
+    initPlaceAutocompleteElement(addressField) {
+        // Create the new autocomplete element
+        const placeAutocomplete = document.createElement('gmp-place-autocomplete');
+        placeAutocomplete.setAttribute('for-input', this.addressFieldId);
+        placeAutocomplete.setAttribute('types', '["address"]');
+        placeAutocomplete.setAttribute('country', this.countryRestriction);
+        
+        // Hide the native element and show the input field
+        placeAutocomplete.style.display = 'none';
+        
+        // Insert the element after the input field (required for it to work)
+        addressField.parentNode.insertBefore(placeAutocomplete, addressField.nextSibling);
+
+        // Listen for place selection
+        placeAutocomplete.addEventListener('gmp-placeselect', (event) => {
+            const place = event.detail.place;
+            if (place && place.addressComponents) {
+                this.processPlaceDetails(place);
+            }
+        });
+
+        // Store reference
+        this.autocomplete = placeAutocomplete;
+        this.isNewAPI = true;
+    }
+
+    /**
+     * Initialize using legacy Autocomplete (for backwards compatibility)
+     */
+    initLegacyAutocomplete(addressField) {
+        // Create autocomplete instance (legacy API)
         this.autocomplete = new google.maps.places.Autocomplete(addressField, {
             types: ['address'],
             componentRestrictions: { country: this.countryRestriction },
@@ -60,6 +106,14 @@ class AddressAutocomplete {
             this.fillInAddress();
         });
         
+        this.setupFieldBehavior(addressField);
+        this.isNewAPI = false;
+    }
+
+    /**
+     * Setup common field behavior for both APIs
+     */
+    setupFieldBehavior(addressField) {
         // Store original value to prevent unwanted changes
         let originalValue = '';
         addressField.addEventListener('focus', () => {
@@ -95,11 +149,49 @@ class AddressAutocomplete {
         this.addAutocompleteFix();
 
         this.isInitialized = true;
-        return true;
     }
 
     /**
-     * Fill in the address fields when a place is selected
+     * Process place details from the new API
+     */
+    processPlaceDetails(place) {
+        if (!place || !place.addressComponents) {
+            console.warn('No details available for the selected place');
+            return;
+        }
+
+        // Clear existing values first
+        this.clearAddressFields();
+
+        // Extract address components
+        let streetNumber = '';
+        let route = '';
+        let city = '';
+        let state = '';
+        let zipCode = '';
+
+        for (const component of place.addressComponents) {
+            const types = component.types;
+            
+            if (types.includes('street_number')) {
+                streetNumber = component.shortText || component.short_name;
+            } else if (types.includes('route')) {
+                route = component.longText || component.long_name;
+            } else if (types.includes('locality')) {
+                city = component.longText || component.long_name;
+            } else if (types.includes('administrative_area_level_1')) {
+                state = component.shortText || component.short_name;
+            } else if (types.includes('postal_code')) {
+                zipCode = component.shortText || component.short_name;
+            }
+        }
+
+        // Populate the fields
+        this.populateFields(streetNumber, route, city, state, zipCode);
+    }
+
+    /**
+     * Fill in the address fields when a place is selected (legacy API)
      */
     fillInAddress() {
         const place = this.autocomplete.getPlace();
@@ -171,11 +263,17 @@ class AddressAutocomplete {
             }
         }
 
-        console.log('Extracted values:', { streetNumber, route, city, state, zipCode });
-        console.log('Full place name:', place.name);
-        console.log('Formatted address:', place.formatted_address);
+        // Populate the fields
+        this.populateFields(streetNumber, route, city, state, zipCode);
+    }
 
-        // Populate fields - try ID first, then name
+    /**
+     * Common method to populate address fields
+     */
+    populateFields(streetNumber, route, city, state, zipCode) {
+        console.log('Populating fields:', { streetNumber, route, city, state, zipCode });
+
+        // Get field references - try ID first, then name
         const addressField = document.getElementById(this.addressFieldId) || 
                            document.querySelector(`input[name="${this.addressFieldId}"]`);
         const cityField = document.getElementById(this.cityFieldId) || 
@@ -267,9 +365,6 @@ class AddressAutocomplete {
 
         // Trigger change events for any form validation
         this.triggerChangeEvents();
-
-        // Restore scroll position to prevent page jump
-        window.scrollTo(scrollX, scrollY);
     }
 
     /**
@@ -387,7 +482,15 @@ class AddressAutocomplete {
      */
     destroy() {
         if (this.autocomplete) {
-            google.maps.event.clearInstanceListeners(this.autocomplete);
+            if (this.isNewAPI) {
+                // Remove the PlaceAutocompleteElement
+                if (this.autocomplete.parentNode) {
+                    this.autocomplete.parentNode.removeChild(this.autocomplete);
+                }
+            } else {
+                // Clear legacy autocomplete listeners
+                google.maps.event.clearInstanceListeners(this.autocomplete);
+            }
             this.autocomplete = null;
         }
         this.isInitialized = false;
