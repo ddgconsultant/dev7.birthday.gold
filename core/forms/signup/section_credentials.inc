@@ -130,7 +130,7 @@ $contact_method = $values['contact_method'] ?? 'phone';
                        required>
                 <label for="password">Create Password <span class="text-danger">*</span></label>
             </div>
-            <button type="button" class="btn btn-outline-secondary toggle-password" tabindex="-1">
+            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password" tabindex="-1">
                 <i class="bi bi-eye"></i>
             </button>
         </div>

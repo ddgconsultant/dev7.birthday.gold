@@ -3,20 +3,82 @@
 
 $additionalstyles.='<link rel="stylesheet" href="/public/css/myaccount.css">
 <style>
-.feature {
-width: 100px;  /* Set width */
-height: 100px;  /* Set height */
-display: flex;
-align-items: center;
-justify-content: center;
+/* Minimal custom styles - using Bootstrap 5 utilities where possible */
+
+/* Transparent containers */
+.main-content, .container {
+    background-color: transparent !important;
 }
 
-.feature i {
-font-size: 48px;  /* Increase icon size */
+/* Confetti Animation */
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #f0f;
+    animation: confetti-fall linear forwards;
+}
+
+@keyframes confetti-fall {
+    to {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Step number circle */
+.step-number {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    margin-top: 0.6rem;
+}
+
+/* Get Started Button gradient */
+.btn-get-started {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50px;
+    animation: pulse 2s infinite;
+    font-size:1.8rem
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+    50% { box-shadow: 0 4px 25px rgba(102, 126, 234, 0.6); }
+}
+
+.btn-get-started:hover {
+    background: linear-gradient(135deg, #764ba2, #667eea);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 30px rgba(102, 126, 234, 0.7);
+}
+
+/* Steps card glass effect */
+.steps-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+}
+
+/* Feature icons for account types */
+.feature {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
 }
 </style>
 ';
-
+$header_flush=true;
 #include ($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/header.php'); 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
@@ -40,15 +102,15 @@ $titletag='Happy Birthday!';
   echo '
   <!-- Welcome Start -->
   <div class="container main-content">
-      <div class="container text-center">
-          <div class="row justify-content-center">
+      <div class="text-center">
+          <div class="justify-content-center" style="background-color:transparent !important;">
               <div class="col-12">
               <picture>
               <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f973/512.webp" type="image/webp">
               <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f973/512.gif" alt="🥳" width="128" height="128">
             </picture>
                   <h1 class="display-1">'.$titletag.'</h1>
-                  <h3 class="mb-4">'.$current_user_data['first_name'].', we are excited to have you be a part of birthday.gold.</h3>
+         
                   ';
 
                   $plan=$current_user_data['account_plan'];
@@ -313,76 +375,106 @@ case 'life':
 break;
 
 case 'gold':
-                    echo '
-                    <h6 class="mb-5">You are a now one of our great Gold Plan members.</h6>
-                    <section class="pt-4">                
-                    <div class="container px-lg-5">
-                            <!-- Single Account Card -->
-                        <div class="row gx-lg-5  justify-content-center"">
-                            <div class="col-lg-8  mb-5 account-type-card" data-target="#individual">
-                                <div class="card bg-light border-0 h-100">
-                                    <div class="card-body text-center p-4 p-lg-5 pt-0 pt-lg-0">
-                                        <div class="feature bg-dark bg-gradient text-white rounded-3 mb-4 mt-n4"><i class="bi bi-person"></i></div>
-                                        <h2 class="fs-4 fw-bold">Individual Gold Account</h2>
-                                        <p class="mb-0">We will now walk you through the easy three step enrollment process.</p>
-                                        <div class="d-none">
-                                        --------------------------------------------------
-                                        <p class="mb-0">
-                                       Here\'s what you need to know about upgrading to Lifetime Plan in the future:
-                                      </p>
-                                      <ul class="mt-3" style="text-align: left;">
-                                        <li><strong>Upgrading is Possible:</strong> You can upgrade to the Lifetime Plan later, but there are some things to consider.</li>
-                                        <li><strong>Email Accounts:</strong> 
-                                          <ul>
-                                            <li>If you proceed with the Gold Plan, you\'ll use your personal email for enrollments.</li>
-                                            <li>Upgrading to the Lifetime Plan offers a special birthday.gold email address.</li>
-                                          </ul>
-                                        </li>
-                                        <li><strong>Email Management:</strong> With the Lifetime Plan, marketing emails from businesses are organized automatically on a user-friendly page.</li>
-                                        <li><strong>Limitation:</strong> This email management feature is only available for new enrollments under the Lifetime Plan. It won\'t apply to any enrollments made under the Gold Plan.</li>
-                                      </ul>
-                                      </div>
-                                         </div>
-                                    <div class="card-footer bg-light pb-3">
-                                    <a class="btn btn-primary py-3 px-5 mt-5 fw-bold" href="/myaccount/enrollment">Sweet. Get me started!</a>
-                                </div>
-                                </div>
-                            </div>
-                                           '.$birthdayprioritytag.'
-                   
-                  
-              </div>
-          </div>
-      </div>
-      </div>           </div>
-      </div>
-      <!-- Welcome End -->
-  ';
+echo '
+<div class="min-vh-75 py-5 d-flex align-items-center">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <!-- Left Section - Welcome Message -->
+            <div class="col-lg-8">
+                <div class="mb-4">
+                    <picture>
+                        <source srcset="https://fonts.gstatic.com/s/e/notoemoji/latest/1f3c6/512.webp" type="image/webp">
+                        <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f3c6/512.gif" alt="🏆" width="128" height="128">
+                    </picture>
+                </div>
+                <h1 class="display-4 fw-bold text-dark mb-3">'.$titletag.' '.$current_user_data['first_name'].'!</h1>
+                <p class="fs-4 text-secondary mb-4">Welcome to Gold Membership</p>
+                '.$birthdayprioritytag.'
+                <a class="btn btn-get-started btn-lg text-white fw-bold py-3 px-5 mt-4 w-75" href="/myaccount/enrollment">Let\'s Get Started</a>
+            </div>
+            
+            <!-- Right Section - Steps Card -->
+            <div class="col-lg-4">
+                <div class="steps-card rounded-3 shadow p-4 text-start">
+                    <h3 class="text-uppercase fw-semibold text-secondary small mb-4">Gold Benefits</h3>
+                    
+                    <div class="d-flex mb-3">
+                        <div class="step-number rounded-circle text-white d-flex align-items-center justify-content-center fw-bold me-3 flex-shrink-0">1</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold fs-5 text-dark mb-1">Complete Your Profile</div>
+                            <div class="text-muted small">Premium preferences</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex mb-3">
+                        <div class="step-number rounded-circle text-white d-flex align-items-center justify-content-center fw-bold me-3 flex-shrink-0">2</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold fs-5 text-dark mb-1">Pick Your Rewards</div>
+                            <div class="text-muted small">Exclusive offers</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex">
+                        <div class="step-number rounded-circle text-white d-flex align-items-center justify-content-center fw-bold me-3 flex-shrink-0">3</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold fs-5 text-dark mb-1">Sit Back & Relax</div>
+                            <div class="text-muted small">Priority enrollment</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+';
 break;
 default:
 echo '
-<section class="pt-4">                
-<div class="container px-lg-5">
-        <!-- Single Account Card -->
-    <div class="row gx-lg-5  justify-content-center"">
-        <div class="col-lg-8  mb-5 account-type-card" data-target="#individual">
-            <div class="card bg-light border-0 h-100">
-                <div class="card-body text-center p-4 p-lg-5 pt-0 pt-lg-0">
-                    <div class="feature bg-dark bg-gradient text-white rounded-3 mb-4 mt-n4"><i class="bi bi-person"></i></div>
-                    <h2 class="fs-4 fw-bold">Free Plan Account</h2>
-                   
-                     </div>
-                <div class="card-footer bg-light pb-3">
-                <a class="btn btn-primary py-3 px-5 mt-5 fw-bold" href="/myaccount/">Sweet. Get me started!</a>
+<div class="min-vh-75 py-5 d-flex align-items-center">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <!-- Left Section - Welcome Message -->
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold text-dark mb-4">'.$current_user_data['first_name'].', we\'re excited <br>
+                that you\'re part of birthday.gold!</h1>
+                '.$birthdayprioritytag.'
+                <a class="btn btn-get-started btn-lg text-white fw-bold py-3 px-5 mt-4 w-75 f-2" href="/myaccount/">Let\'s Get Started</a>
             </div>
+            
+            <!-- Right Section - Steps Card -->
+            <div class="col-lg-4">
+                <div class="steps-card rounded-3 shadow p-4 text-start">
+                    <h3 class="text-uppercase fw-semibold text-secondary small mb-4 tracking-wide">What Is Next</h3>
+                    
+                    <div class="d-flex mb-3">
+                        <div class="step-number rounded-circle text-white d-flex align-items-center justify-content-center fw-bold me-3 flex-shrink-0">1</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold fs-5 text-dark mb-1">Complete Your Enrollment Profile</div>
+                            <div class="text-muted small">Tell us your preferences</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex mb-3">
+                        <div class="step-number rounded-circle text-white d-flex align-items-center justify-content-center fw-bold me-3 flex-shrink-0">2</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold fs-5 text-dark mb-1">Pick Your Rewards</div>
+                            <div class="text-muted small">Choose birthday offers from our list of businesses</div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex">
+                        <div class="step-number rounded-circle text-white d-flex align-items-center justify-content-center fw-bold me-3 flex-shrink-0">3</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold fs-5 text-dark mb-1">Sit Back & Relax</div>
+                            <div class="text-muted small">We\'ll enroll you automatically</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-                       '.$birthdayprioritytag.'
-
-
+    </div>
 </div>
-</div>';
-echo ' </div>  </div> </div></div> </div>';
+';
 break;
 }
 
@@ -390,6 +482,35 @@ break;
 $footerattribute['postfooter'] = '
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="/public/js/myaccount.js" language="javascript"></script>
+<script>
+// Confetti Animation
+function createConfetti() {
+    const container = document.createElement("div");
+    container.className = "confetti-container";
+    document.body.appendChild(container);
+    
+    const colors = ["#667eea", "#764ba2", "#f093fb", "#f5576c", "#4facfe", "#00f2fe", "#ffd700", "#ff6b6b"];
+    const confettiCount = 150;
+    
+    for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement("div");
+        confetti.className = "confetti";
+        confetti.style.left = Math.random() * 100 + "%";
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + "s";
+        confetti.style.animationDelay = Math.random() * 2 + "s";
+        container.appendChild(confetti);
+    }
+    
+    // Remove confetti after animation
+    setTimeout(() => {
+        container.remove();
+    }, 5000);
+}
+
+// Trigger confetti on page load
+document.addEventListener("DOMContentLoaded", createConfetti);
+</script>
 ';
 
 

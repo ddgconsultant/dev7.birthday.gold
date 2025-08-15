@@ -250,12 +250,30 @@ echo '
                             <div class="demo-icon">✨</div>
                             <h3>Choose Your Rewards</h3>
                             <div class="demo-brand-grid">
-                                <div class="brand-tile selected">Starbucks ☕</div>
-                                <div class="brand-tile selected">Chipotle 🌯</div>
-                                <div class="brand-tile selected">Target 🎯</div>
-                                <div class="brand-tile">Sephora 💄</div>
-                                <div class="brand-tile">Nike 👟</div>
-                                <div class="brand-tile">Amazon 📦</div>
+                                <div class="brand-tile selected">
+                                    <span class="brand-name">Starbucks</span>
+                                    <span class="brand-icon">☕</span>
+                                </div>
+                                <div class="brand-tile selected">
+                                    <span class="brand-name">Chipotle</span>
+                                    <span class="brand-icon">🌯</span>
+                                </div>
+                                <div class="brand-tile selected">
+                                    <span class="brand-name">Target</span>
+                                    <span class="brand-icon">🎯</span>
+                                </div>
+                                <div class="brand-tile">
+                                    <span class="brand-name">Sephora</span>
+                                    <span class="brand-icon">💄</span>
+                                </div>
+                                <div class="brand-tile">
+                                    <span class="brand-name">Nike</span>
+                                    <span class="brand-icon">👟</span>
+                                </div>
+                                <div class="brand-tile">
+                                    <span class="brand-name">Amazon</span>
+                                    <span class="brand-icon">📦</span>
+                                </div>
                             </div>
                             <p class="demo-description">Pick from <?php echo $website['numberofbiz']; ?>+ brands.<br>We handle all enrollments!</p>
                         </div>

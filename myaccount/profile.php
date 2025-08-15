@@ -728,8 +728,6 @@ select.form-control:focus,
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
-
-
 ### nav-myaccount.php  DISPLAYS THE WIZARD WHEN $wizardmode = true
 #include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/nav-myaccount.php');
 ?>

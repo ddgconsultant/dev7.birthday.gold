@@ -34,7 +34,13 @@ $till=$app->getTimeTilBirthday($component_user_data['birthdate']);
 $born_birthdate = new DateTime($component_user_data['birthdate']);;
 
 $logincount=$account->getLoginCount($component_user_data['user_id']);
-$userplanname=$bg_users_accountplans[$component_user_data['account_plan']];
+
+// Ensure bg_users_accountplans is available
+global $bg_users_accountplans;
+if (!isset($bg_users_accountplans)) {
+    include_once($dir['core'] . '/site-arrays.inc');
+}
+$userplanname=$bg_users_accountplans[$component_user_data['account_plan']] ?? 'Unknown Plan';
 $user_planddetails=$app->plandetail('details_id', $component_user_data['account_product_id']);
 
 $enabledHonorFlags = $account->getEnabledFlags();

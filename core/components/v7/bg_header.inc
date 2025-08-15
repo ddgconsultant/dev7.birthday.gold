@@ -187,14 +187,21 @@ if ($isHomePage) {
                         <li class="m-0 p-0">
                             <div class="dropdown-item p-0">
                                 <div class="stats-menu-container my-0 p-0">
-                                    <div class="stats-menu">
+                                    <div class="stats-menu">';
+                                        
+                                        // Only show Mail icon if user has feature_email
+                                        if (!empty($current_user_data['feature_email'])) {
+                                            echo '
                                         <a href="/myaccount/mail" class="stats-menu-item">
                                             <div class="stats-menu-icon">
                                                 <i class="bi bi-envelope"></i>
                                             </div>
                                             <div class="stats-menu-value">'.number_format($tmpheadervar_unreadMailCount).'</div>
                                             <div class="stats-menu-label">Mail</div>
-                                        </a>
+                                        </a>';
+                                        }
+                                        
+                                        echo '
                                         <a href="/myaccount/redeem" class="stats-menu-item">
                                             <div class="stats-menu-icon">
                                                 <i class="bi bi-trophy"></i>
@@ -306,14 +313,21 @@ if ($isHomePage) {
                         <li class="m-0 p-0">
                             <div class="dropdown-item p-0">
                                 <div class="stats-menu-container my-0 p-0">
-                                    <div class="stats-menu">
+                                    <div class="stats-menu">';
+                                        
+                                        // Only show Mail icon if user has feature_email
+                                        if (!empty($current_user_data['feature_email'])) {
+                                            echo '
                                         <a href="/myaccount/mail" class="stats-menu-item">
                                             <div class="stats-menu-icon">
                                                 <i class="bi bi-envelope"></i>
                                             </div>
                                             <div class="stats-menu-value">'.number_format($tmpheadervar_unreadMailCount).'</div>
                                             <div class="stats-menu-label">Mail</div>
-                                        </a>
+                                        </a>';
+                                        }
+                                        
+                                        echo '
                                         <a href="/myaccount/redeem" class="stats-menu-item">
                                             <div class="stats-menu-icon">
                                                 <i class="bi bi-trophy"></i>

@@ -106,8 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 }
                 
                 // Clear signup session data
-                $session->delete('signup_process_data');
-                $session->delete('userregistrationdata');
+                $session->unset('signup_process_data');
+                $session->unset('userregistrationdata');
                 
                 // Determine redirect based on account type
                 $user_sql = "SELECT account_type FROM bg_users WHERE user_id = :user_id";
@@ -263,6 +263,36 @@ if ($user_data && !empty($user_data['account_product_id'])) {
 } else {
     $amount = 2900; // Default $29
     $promo_message = '';
+}
+
+#-------------------------------------------------------------------------------
+# HANDLE FREE ACCOUNTS - No payment needed
+#-------------------------------------------------------------------------------
+// Check if this is a free account (amount is 0 or account_plan is 'free')
+$is_free_account = false;
+if ($amount == 0 || $amount === 0 || $user_data['account_plan'] == 'free') {
+    $is_free_account = true;
+    error_log('[CHECKOUT_API] Free account detected - amount: ' . $amount . ', plan: ' . $user_data['account_plan']);
+}
+
+if ($is_free_account) {
+    error_log('[CHECKOUT_API] Processing free account activation for user: ' . $user_id);
+    
+    // Update user to active status
+    $sql = "UPDATE bg_users SET status = 'active', modify_dt = NOW() WHERE user_id = :user_id";
+    $database->query($sql, ['user_id' => $user_id]);
+    
+    // Log user in
+    $account->login($user_id, $sitesettings['app']['APP_AUTOLOGIN'], 'user_id');
+    
+    // Clear signup session data
+    $session->unset('signup_process_data');
+    $session->unset('userregistrationdata');
+    
+    // Redirect to welcome page
+    error_log('[CHECKOUT_API] Free account activated, redirecting to welcome');
+    header('Location: /myaccount/welcome');
+    exit();
 }
 
 #-------------------------------------------------------------------------------

@@ -748,121 +748,282 @@ GROUP BY
       return strtr($code, $collisionMap);
   }
 
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function getvalidationcodes($input = '')
-{
-    // Register new user
-    $rawdata = $input['rawdata'] ?? null;
-
-    // Ensure rawdata is not null
-    if ($rawdata === null) return false;
-
-    global $database, $qik;
-    $output = array();
-
-    // Default values
-    $type = $input['type'] ?? 'email';
-    $expireminutes = $input['expireminutes'] ?? 120;
-    $sendcount = $input['sendcount'] ?? 1;
-    $status = $input['status'] ?? 'pending';
-    $userid = $input['user_id'] ?? $input['userid'] ?? null;
-    $companyid = $input['companyid'] ?? null;
-    $locationid = $input['locationid'] ?? null;
-    $device_id = $input['device_id'] ?? null;
-    $numeric_only = $input['numeric_only'] ?? false;
-
-    $output['expiremessagetag'] = $qik->convertMinutes($expireminutes);
-    $expiredt = (new DateTime())->add(new DateInterval('PT' . $expireminutes . 'M'))->format('Y-m-d H:i:s');
-    $extendedrawdata = $rawdata . '|' . $expiredt . '|' . rand(1, 999);
-    
-    // Generate minicode based on numeric_only flag
-    if ($numeric_only) {
-        // Generate a 6-digit numeric code
-        $minicode = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
-    } else {
-        // Original alphanumeric code generation
-        $code1 = md5($extendedrawdata);
-        $minicode = substr($code1, 0, 1) . substr($code1, -5);
-        // Convert to uppercase and prevent visual collisions
-        $minicode = strtoupper($minicode);
-        $minicode = $this->preventCodeCollisions($minicode);
-    }
-    
-    $longcode = sha1($extendedrawdata);
-
-    $extendedrawdata = $input['validation_rawdata'] ?? $extendedrawdata;
-    $longcode = $input['validation_code'] ?? $longcode;
-
- $params = array(
-  ':user_id' => $userid,
-  ':company_id' => $companyid,
-  ':location_id' => $locationid,
-  ':device_id' => $device_id,
-  ':sendcount' => $sendcount,
-  ':validation_type' => $type,
-  ':validation_rawdata' => $extendedrawdata,
-  ':validation_minicode' => $minicode,
-  ':validation_code' => $longcode,
-  ':expire_dt' => $expiredt,
-  ':status' => $status
-);
-
-
-    // If action is 'getlatest', fetch the latest unexpired code
-    if (isset($input['action']) && $input['action'] == 'getlatest') {
-        $queryParams = [
-            ':user_id' => $userid,
-            ':validation_type' => $type,
-        #    ':current_time' => (new DateTime())->format('Y-m-d H:i:s')
-        ];
+  {
+      // Register new user
+      $rawdata = $input['rawdata'] ?? null;
+      
+      // Check if rawdata is not set but email is provided (backwards compatibility)
+      if ($rawdata === null && isset($input['email'])) {
+          $rawdata = $input['email'];
+          if (isset($input['debug']) && $input['debug']) {
+              echo "<pre>Note: Using 'email' field as rawdata for backwards compatibility\n</pre>";
+          }
+      }
+      
+      // Check if debug mode is enabled
+      $debug = $input['debug'] ?? false;
+      
+      if ($debug) {
+          echo "<pre>";
+          echo "=== GETVALIDATIONCODES DEBUG START ===\n";
+          echo "Input parameters: " . print_r($input, true);
+          echo "Raw data: " . $rawdata . "\n";
+          echo "Timestamp: " . date('Y-m-d H:i:s') . "\n\n";
+      }
   
-        $sql = "SELECT validation_minicode, validation_code, validation_rawdata, validation_id 
-                FROM bg_validations
-                WHERE user_id = :user_id             
-                  and validation_type = :validation_type
-                  AND expire_dt >= now()
-                  AND validation_dt IS NULL
-                ORDER BY create_dt DESC
-                LIMIT 1";
-         $stmt = $database->prepare($sql);
-        $stmt->execute($queryParams);
-    
-        if ($stmt->rowCount() > 0) {
-          $existingCode = $stmt->fetch(PDO::FETCH_ASSOC);
-        // If a valid unexpired code exists, return it
-        if ($existingCode) {
-            // Return existing code as-is (it should already be uppercase with collisions prevented)
-            $minicode = $existingCode['validation_minicode'];
-            
-            $output = [
-                'mini' => $minicode,
-                'long' => $existingCode['validation_code'],
-                'code' => $existingCode['validation_code'],
-                'validation_id' => $existingCode['validation_id'],
-                'rawdata' => $existingCode['validation_rawdata']
-            ];
-            $output = array_merge($output, $params);
-            return $output;
-         
-        }
-    }
+      // For getlatest action, rawdata is not required
+      $isGetLatest = isset($input['action']) && $input['action'] == 'getlatest';
+      
+      if ($debug) {
+          echo "Action detected: " . ($isGetLatest ? "GETLATEST" : "CREATE NEW") . "\n\n";
+      }
+      
+      // Ensure rawdata is not null ONLY if we're not doing getlatest
+      if (!$isGetLatest && $rawdata === null) {
+          if ($debug) {
+              echo "ERROR: rawdata is null and action is not 'getlatest', returning false\n";
+              echo "</pre>";
+          }
+          return false;
+      }
+  
+      global $database, $qik;
+      $output = array();
+  
+      // Default values
+      $type = $input['type'] ?? 'email';
+      $expireminutes = $input['expireminutes'] ?? 120;
+      $sendcount = $input['sendcount'] ?? 1;
+      $status = $input['status'] ?? 'pending';
+      $userid = $input['user_id'] ?? $input['userid'] ?? null;
+      $companyid = $input['companyid'] ?? null;
+      $locationid = $input['locationid'] ?? null;
+      $device_id = $input['device_id'] ?? null;
+      $numeric_only = $input['numeric_only'] ?? false;
+      
+      if ($debug) {
+          echo "--- Parsed Values ---\n";
+          echo "Type: $type\n";
+          echo "Expire Minutes: $expireminutes\n";
+          echo "Send Count: $sendcount\n";
+          echo "Status: $status\n";
+          echo "User ID: " . var_export($userid, true) . "\n";
+          echo "Company ID: " . var_export($companyid, true) . "\n";
+          echo "Location ID: " . var_export($locationid, true) . "\n";
+          echo "Device ID: " . var_export($device_id, true) . "\n";
+          echo "Numeric Only: " . var_export($numeric_only, true) . "\n\n";
+      }
+  
+      // Only generate codes if we're not doing getlatest or if we need them later
+      $minicode = null;
+      $longcode = null;
+      $extendedrawdata = null;
+      $expiredt = null;
+      
+      // We'll generate these values later if needed
+      $output['expiremessagetag'] = $qik->convertMinutes($expireminutes);
+  
+      // Initialize params without code-related values for now
+      $params = array(
+          ':user_id' => $userid,
+          ':company_id' => $companyid,
+          ':location_id' => $locationid,
+          ':device_id' => $device_id,
+          ':sendcount' => $sendcount,
+          ':validation_type' => $type,
+          ':status' => $status
+      );
+      
+      if ($debug) {
+          echo "--- Initial Database Parameters ---\n";
+          echo print_r($params, true) . "\n";
+      }
+  
+      // If action is 'getlatest', fetch the latest unexpired code
+      if ($isGetLatest) {
+          if ($debug) {
+              echo "--- Action: GETLATEST ---\n";
+              echo "Looking for existing unexpired codes for user_id: $userid, type: $type\n";
+              echo "Current time for comparison: " . date('Y-m-d H:i:s') . "\n";
+          }
+          
+          $queryParams = [
+              ':user_id' => $userid,
+              ':validation_type' => $type,
+          ];
+          
+          $sql = "SELECT validation_minicode, validation_code, validation_rawdata, validation_id 
+                  FROM bg_validations
+                  WHERE user_id = :user_id             
+                    and validation_type = :validation_type
+                    AND expire_dt >= now()
+                    AND validation_dt IS NULL
+                  ORDER BY create_dt DESC
+                  LIMIT 1";
+          
+          if ($debug) {
+              echo "SQL Query: " . $sql . "\n";
+              echo "Query Parameters: " . print_r($queryParams, true);
+          }
+          
+          $stmt = $database->prepare($sql);
+          $stmt->execute($queryParams);
+          
+          if ($debug) {
+              echo "Query executed. Row count: " . $stmt->rowCount() . "\n";
+          }
+          
+          if ($stmt->rowCount() > 0) {
+              $existingCode = $stmt->fetch(PDO::FETCH_ASSOC);
+              
+              if ($debug) {
+                  echo "Found existing code: " . print_r($existingCode, true);
+              }
+              
+              // If a valid unexpired code exists, return it
+              if ($existingCode) {
+                  // Return existing code as-is (it should already be uppercase with collisions prevented)
+                  $minicode = $existingCode['validation_minicode'];
+                  
+                  $output = [
+                      'mini' => $minicode,
+                      'long' => $existingCode['validation_code'],
+                      'code' => $existingCode['validation_code'],
+                      'validation_id' => $existingCode['validation_id'],
+                      'rawdata' => $existingCode['validation_rawdata'],
+                      'expiremessagetag' => $output['expiremessagetag']
+                  ];
+                  
+                  if ($debug) {
+                      echo "--- Returning existing code ---\n";
+                      echo "Output: " . print_r($output, true);
+                      echo "=== GETVALIDATIONCODES DEBUG END ===\n";
+                      echo "</pre>";
+                  }
+                  
+                  return $output;
+              }
+          } else {
+              if ($debug) {
+                  echo "No existing unexpired code found (0 rows returned)\n";
+                  echo "Will proceed to generate a new code\n\n";
+              }
+          }
+      } else {
+          if ($debug) {
+              echo "--- Action is not 'getlatest' - will generate new code ---\n\n";
+          }
+      }
+     
+      // Generate codes only when we need to insert a new record
+      if ($debug) {
+          echo "--- Generating new validation codes ---\n";
+          echo "Reason: " . ($isGetLatest ? "No existing unexpired code found" : "CREATE NEW action requested") . "\n";
+      }
+      
+      // Ensure we have rawdata for new code generation
+      if ($rawdata === null) {
+          if ($debug) {
+              echo "ERROR: Cannot generate new code - rawdata is null\n";
+              echo "</pre>";
+          }
+          return false;
+      }
+      
+      $expiredt = (new DateTime())->add(new DateInterval('PT' . $expireminutes . 'M'))->format('Y-m-d H:i:s');
+      $extendedrawdata = $rawdata . '|' . $expiredt . '|' . rand(1, 999);
+      
+      if ($debug) {
+          echo "--- Code Generation ---\n";
+          echo "Expire DateTime: $expiredt\n";
+          echo "Extended Raw Data: $extendedrawdata\n";
+      }
+      
+      // Generate minicode based on numeric_only flag
+      if ($numeric_only) {
+          // Generate a 6-digit numeric code
+          $minicode = str_pad(rand(100000, 999999), 6, '0', STR_PAD_LEFT);
+          if ($debug) {
+              echo "Generated NUMERIC minicode: $minicode\n";
+          }
+      } else {
+          // Original alphanumeric code generation
+          $code1 = md5($extendedrawdata);
+          $minicode = substr($code1, 0, 1) . substr($code1, -5);
+          // Convert to uppercase and prevent visual collisions
+          $minicode = strtoupper($minicode);
+          $minicode = $this->preventCodeCollisions($minicode);
+          if ($debug) {
+              echo "MD5 hash: $code1\n";
+              echo "Generated ALPHANUMERIC minicode: $minicode\n";
+          }
+      }
+      
+      $longcode = sha1($extendedrawdata);
+      
+      if ($debug) {
+          echo "Generated longcode (SHA1): $longcode\n\n";
+      }
+  
+      $extendedrawdata = $input['validation_rawdata'] ?? $extendedrawdata;
+      $longcode = $input['validation_code'] ?? $longcode;
+      
+      // Update params with generated values
+      $params[':validation_rawdata'] = $extendedrawdata;
+      $params[':validation_minicode'] = $minicode;
+      $params[':validation_code'] = $longcode;
+      $params[':expire_dt'] = $expiredt;
+      
+      if ($debug) {
+          echo "--- Updated Database Parameters for Insert ---\n";
+          echo print_r($params, true) . "\n";
+      }
+      
+      // Insert new validation code if no valid unexpired code exists
+      $sql = "INSERT INTO bg_validations (user_id, company_id, location_id, device_id, sendcount, validation_type, validation_rawdata, validation_minicode, validation_code, expire_dt, create_dt, modify_dt, `status`)
+              VALUES (:user_id, :company_id, :location_id, :device_id, :sendcount, :validation_type, :validation_rawdata, :validation_minicode, :validation_code, :expire_dt, now(), now(), :status)";
+      
+      if ($debug) {
+          echo "--- Inserting new validation code ---\n";
+          echo "Insert SQL: " . $sql . "\n";
+      }
+      
+      $database->query($sql, $params);
+      $lastId = $database->lastInsertId();
+      
+      if ($debug) {
+          echo "Inserted with ID: $lastId\n\n";
+      }
+  
+      // Prepare output with clean keys (no colons)
+      $output['mini'] = $minicode;
+      $output['long'] = $longcode;
+      $output['code'] = $longcode;
+      $output['validation_id'] = $lastId;
+      $output['user_id'] = $userid;
+      $output['company_id'] = $companyid;
+      $output['location_id'] = $locationid;
+      $output['device_id'] = $device_id;
+      $output['sendcount'] = $sendcount;
+      $output['validation_type'] = $type;
+      $output['validation_rawdata'] = $extendedrawdata;
+      $output['validation_minicode'] = $minicode;
+      $output['validation_code'] = $longcode;
+      $output['expire_dt'] = $expiredt;
+      $output['status'] = $status;
+      
+      if ($debug) {
+          echo "--- Final Output ---\n";
+          echo print_r($output, true);
+          echo "=== GETVALIDATIONCODES DEBUG END ===\n";
+          echo "</pre>";
+      }
+  
+      return $output;
   }
-   
- // Insert new validation code if no valid unexpired code exists
-    $sql = "INSERT INTO bg_validations (user_id, company_id, location_id, device_id, sendcount, validation_type, validation_rawdata, validation_minicode, validation_code, expire_dt, create_dt, modify_dt, `status`)
-            VALUES (:user_id, :company_id, :location_id, :device_id, :sendcount, :validation_type, :validation_rawdata, :validation_minicode, :validation_code, :expire_dt, now(), now(), :status)";
-    
-    $database->query($sql, $params);
-    $lastId = $database->lastInsertId();
-
-    // Prepare output
-    $output['mini'] = $minicode;
-    $output['long'] = $longcode;
-    $output['code'] = $longcode;
-    $output['validation_id'] = $lastId;
-    $output = array_merge($output, $params);
-
-    return $output;
-}
 
 
 

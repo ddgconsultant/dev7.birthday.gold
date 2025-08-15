@@ -131,8 +131,10 @@ $additionalstyles .= '
     color: #6c757d;
     border: none;
     border-bottom: 3px solid transparent;
-    padding: 1rem 1.5rem;
+    padding: 1rem 2.5rem;  /* Further increased padding for wider tabs */
     font-weight: 500;
+    white-space: nowrap;  /* Prevent text wrapping */
+    margin-right: 2rem;  /* More space between tabs */
     border-radius: 0;
 }
 
@@ -173,15 +175,16 @@ $additionalstyles .= '
 /* Timeline */
 .timeline {
     position: relative;
-    padding-left: 2rem;
+    padding: 2rem;  /* Add padding all around */
+    margin: 1rem;  /* Add margin for extra spacing */
 }
 
 .timeline::before {
     content: "";
     position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
+    left: 2rem;  /* Adjust for new padding */
+    top: 2rem;
+    bottom: 2rem;
     width: 2px;
     background: #e9ecef;
 }
@@ -189,12 +192,13 @@ $additionalstyles .= '
 .timeline-item {
     position: relative;
     padding-bottom: 1.5rem;
+    padding-left: 2rem;  /* Add left padding to items */
 }
 
 .timeline-item::before {
     content: "";
     position: absolute;
-    left: -2rem;
+    left: 1.75rem;  /* Adjusted for new padding structure */
     top: 0;
     width: 8px;
     height: 8px;
@@ -333,8 +337,15 @@ $additionalstyles .= '
     }
     
     .nav-tabs-custom .nav-link {
-        padding: 0.75rem 1rem;
+        padding: 0.75rem 1.25rem;  /* Adjusted for mobile */
         font-size: 0.9rem;
+        margin-right: 0.5rem;  /* Smaller margin on mobile */
+    }
+    
+    /* Make tabs scrollable on mobile if needed */
+    .nav-tabs-custom {
+        overflow-x: auto;
+        flex-wrap: nowrap;
     }
     
     .user-avatar-large {
@@ -609,7 +620,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <!-- Recent Activity Timeline -->
                 <div class="col-12 mt-4">
                     <div class="info-card">
-                        <div class="card-body">
+                        <div class="card-body p-4">  <!-- Added p-4 for padding -->
                             <div class="d-flex align-items-center mb-4">
                                 <div class="card-icon bg-info bg-opacity-10 text-info">
                                     <i class="bi bi-clock-history"></i>

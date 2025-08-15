@@ -160,9 +160,13 @@ $errormode = 'showerrors'; // Error display (showerrors, hideerrors)
 
 ### Testing Commands
 ```bash
-# Run Birthday Gold Cypress tests
-cd /claudecode/cypress/
-./test-runner.sh signup-flow  # Test complete signup journey
+# Cypress tests are located in /claudecode/cypress/
+# Tests must be run from a machine with a display (not available in Claude Code)
+# To run tests locally:
+# cd /claudecode/cypress/
+# npm install
+# npx cypress open  # Opens Cypress Test Runner UI
+# npx cypress run   # Runs tests headlessly
 
 # Presentation/WebSlides testing
 cd presentation/

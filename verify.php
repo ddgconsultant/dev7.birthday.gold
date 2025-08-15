@@ -775,9 +775,12 @@ include($dir['core_components'] . '/bg_header.inc');
                 $test_validation_data = [
                     'email' => $userregistrationdata['email'],
                     'user_id' => $userregistrationdata['user_id'],
-                    'type' => 'email'
+                    'type' => 'email',
+               #     'debug' => true,
+                    'action' => 'getlatest'  // This tells getvalidationcodes to retrieve existing code
                 ];
                 $test_codes = $app->getvalidationcodes($test_validation_data);
+             #   breakpoint($test_codes); // Debugging point
                 if (!empty($test_codes['mini'])) {
                     // Use a span element with obscure data attribute (ctc = "code test container")
                     // TEMPORARILY VISIBLE for debugging - shows the code in small text
