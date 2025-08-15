@@ -939,7 +939,7 @@ echo '
 
 $passgenerator = '';
 if ($current_user_data['profile_password'] == '') {
-  $passgenerator = '<button id="generatePassword" type="button" class="btn btn-sm btn-outline-success position-absolute" style="right: 10px; top: 8px;">Generate</button>';
+  $passgenerator = '<div class="text-end" style="margin-top: -28px;"><a href="#" id="generatePassword" class="small text-decoration-none text-success">Generate</a></div>';
 }
 
 echo '
@@ -975,8 +975,8 @@ echo '
 <button class="password-toggle" id="togglePassword" type="button">
 <i class="field-icon toggle-password bi bi-eye-fill"></i>
 </button>
-' . $passgenerator . '
 </div>
+' . $passgenerator . '
 </div>
 </div>
 ';
@@ -1297,20 +1297,27 @@ echo '
 
 
 $footerattribute['postfooter'] = '
+<!-- Address Autocomplete Script (load first) -->
+<script src="/public/js/address-autocomplete.js?' . date('YmdHis') . '"></script>
+
 <!-- Google Maps API for Address Autocomplete -->
 <script>
+// Define global callback before loading Google Maps
+window.initAddressAutocomplete = function() {
+    if (typeof initProfileAddressAutocomplete !== "undefined") {
+        initProfileAddressAutocomplete();
+    }
+};
+
 // Load Google Maps API with Places library
-(function() {
+document.addEventListener("DOMContentLoaded", function() {
     var script = document.createElement("script");
-    script.src = "https://maps.googleapis.com/maps/api/js?key=' . ($sitesettings['GOOGLEAPI']['mainkey'] ?? '') . '&libraries=places&callback=initAddressAutocomplete";
+    script.src = "https://maps.googleapis.com/maps/api/js?key=' . ($sitesettings['GOOGLEAPI']['mainkey'] ?? '') . '&libraries=places&callback=initAddressAutocomplete&loading=async";
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
-})();
+});
 </script>
-
-<!-- Address Autocomplete Script -->
-<script src="/public/js/address-autocomplete.js?' . date('YmdHis') . '"></script>
 
 <!-- Expert Floating Panel JavaScript Solution -->
 <script>

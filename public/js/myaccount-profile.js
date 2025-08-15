@@ -166,7 +166,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Only add the event listener if the generatePasswordButton exists
     if (generatePasswordButton) {
-        generatePasswordButton.addEventListener("click", function() {
+        generatePasswordButton.addEventListener("click", function(e) {
+            e.preventDefault(); // Prevent link default behavior
             const generatedPassword = generatePassword(12); // Change 12 to the desired password length
             passwordField.value = generatedPassword;
             // Show the generated password by toggling visibility
