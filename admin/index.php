@@ -195,7 +195,8 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1rem;
-    margin-bottom: 3rem;
+    margin-top: -1rem;
+    margin-bottom: 2rem;
 }
 
 .stat-card {
@@ -505,28 +506,28 @@ $businessHours = $app->bg_businesshours();
         $totalUsers = $activeUsers + $pendingUsers + $validatedUsers;
         ?>
         <div class="stats-grid">
-            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1rem;">
                 <div class="text-white">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
                         <div>
-                            <div class="stat-value text-white"><?php echo number_format($totalUsers); ?></div>
-                            <div class="stat-label text-white-50">Total Users</div>
+                            <div class="stat-value text-white" style="font-size: 1.75rem;"><?php echo number_format($totalUsers); ?></div>
+                            <div class="stat-label text-white-50" style="font-size: 0.75rem;">Total Users</div>
                         </div>
-                        <i class="bi bi-people-fill fs-2 text-white-50"></i>
+                        <i class="bi bi-people-fill fs-3 text-white-50"></i>
                     </div>
-                    <div class="mt-3 pt-3 border-top border-white-50">
+                    <div class="mt-2 pt-2 border-top border-white-50">
                         <div class="row g-2 small">
                             <div class="col-4">
-                                <div class="text-white-50">Active</div>
-                                <div class="fw-bold text-white"><?php echo number_format($activeUsers); ?></div>
+                                <div class="text-white-50" style="font-size: 0.7rem;">Active</div>
+                                <div class="fw-bold text-white" style="font-size: 0.9rem;"><?php echo number_format($activeUsers); ?></div>
                             </div>
                             <div class="col-4">
-                                <div class="text-white-50">Paid</div>
-                                <div class="fw-bold text-white"><?php echo number_format($userStats['paid']); ?></div>
+                                <div class="text-white-50" style="font-size: 0.7rem;">Paid</div>
+                                <div class="fw-bold text-white" style="font-size: 0.9rem;"><?php echo number_format($userStats['paid']); ?></div>
                             </div>
                             <div class="col-4">
-                                <div class="text-white-50">Pending</div>
-                                <div class="fw-bold text-white"><?php echo number_format($pendingUsers); ?></div>
+                                <div class="text-white-50" style="font-size: 0.7rem;">Pending</div>
+                                <div class="fw-bold text-white" style="font-size: 0.9rem;"><?php echo number_format($pendingUsers); ?></div>
                             </div>
                         </div>
                     </div>
