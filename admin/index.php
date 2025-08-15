@@ -498,8 +498,8 @@ $businessHours = $app->bg_businesshours();
         $totalUsers = $activeUsers + $pendingUsers + $validatedUsers;
         ?>
         <div class="stats-grid">
-            <div class="stat-card" style="padding: 1rem;">
-                <div class="d-flex align-items-center">
+            <div class="stat-card d-flex align-items-center" style="padding: 1rem; min-height: 120px;">
+                <div class="d-flex align-items-center w-100">
                     <div class="flex-grow-1 text-center border-end pe-3">
                         <div class="stat-value" style="font-size: 2rem;">
                             <?php echo number_format($totalUsers); ?>
