@@ -95,7 +95,7 @@ try {
                         AND ca.type = 'onboarding_progress'
                         AND ca.name = c.config_key
                       WHERE c.config_type = 'automation_processor'
-                      AND c.status = '1'
+                      AND c.status = 'active'
                       AND c.config_key != 'abo_finalize'";
         $stmt = $database->query($tasks_sql, ['company_id' => $company_id]);
         $task_status = $stmt->fetch(PDO::FETCH_ASSOC);
