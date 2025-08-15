@@ -1,12 +1,9 @@
 <?php 
+$addClasses[] = 'createaccount';
+$addClasses[] = 'productmanager';
+$addClasses[] = 'productmanager_promo';
+$addClasses[] = 'fileuploader';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.createaccount.php');
-include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
-
-// Initialize ProductManager with promo support
-$productManager = new ProductManagerPromo($database, $qik);
-$createaccount = new createaccount($database, $session);
 
 #-------------------------------------------------------------------------------
 # GET SIGNUP DATA FROM SESSION
@@ -354,10 +351,16 @@ if ($app->formposted()) {
                 'avatar_file' => ''
             ];
             
-            // Generate default avatar using DiceBear API
-            $avatar_url = $display->generateAvatarUrl($fileuploader);
-            if (is_string($avatar_url)) {
-                $input['avatar_file'] = $avatar_url;
+            // Try to generate default avatar using DiceBear API
+            try {
+                $avatar_url = $display->generateAvatarUrl($fileuploader);
+                if (is_string($avatar_url)) {
+                    $input['avatar_file'] = $avatar_url;
+                }
+            } catch (Exception $e) {
+                // If avatar generation fails, continue with empty avatar
+                // It can be generated later when user logs in
+                session_tracking('avatar_generation_error', $e->getMessage());
             }
             
             // Add business fields if business account
