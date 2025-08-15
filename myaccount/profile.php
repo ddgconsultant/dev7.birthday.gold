@@ -257,26 +257,7 @@ $bodycontentclass = '';
 $additionalstyles .= '
 <link rel="stylesheet" href="/public/css/floating-labels.css?v=' . date('YmdHis') . '">
 <style>
-/* Profile page specific styles */
-.profile-container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-/* Positioning context for floating panel */
-@media (min-width: 992px) {
-    .col-lg-4 {
-        position: relative; /* Positioning context for absolute positioning */
-    }
-}
-
-/* Ensure proper row alignment for sticky */
-.row {
-    align-items: flex-start !important;
-    display: flex;
-    flex-wrap: wrap;
-}
-
+/* Sticky accordion - Bootstrap does not have sticky utilities for specific top values */
 #infoAccordion {
     position: -webkit-sticky;
     position: sticky;
@@ -284,43 +265,22 @@ $additionalstyles .= '
     z-index: 100;
 }
 
-/* Profile section headers */
+/* Profile section headers - custom styling beyond Bootstrap */
 .profile-section-header {
     border-bottom: 2px solid #e9ecef;
-    margin-bottom: 2rem;
-    padding-bottom: 0.5rem;
-    font-size: 1.25rem;
-    color: #212529;
 }
 
-/* Make section headers more prominent on mobile */
+/* Mobile enhanced section headers */
 @media (max-width: 576px) {
     .profile-section-header {
-        font-size: 1.375rem;
-        font-weight: 700;
-        color: var(--bs-primary);
         border-bottom: 3px solid var(--bs-primary);
-        padding-bottom: 0.75rem;
-        margin-bottom: 1.5rem;
     }
 }
 
-/* Enhanced card styles */
-.card {
-    border: none;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    transition: box-shadow 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-}
-
-/* Better checkbox/switch groups */
+/* Preference grid - Bootstrap does not have grid utilities for this pattern */
 .preference-grid {
     display: grid;
     gap: 1rem;
-    margin-top: 1rem;
 }
 
 @media (min-width: 768px) {
@@ -332,15 +292,23 @@ $additionalstyles .= '
     }
 }
 
-/* Modern switch styles - enhance Bootstrap defaults */
-.form-switch {
-    padding-left: 2.5em; /* Bootstrap default */
+@media (max-width: 767px) {
+    .preference-grid.grid-3 {
+        grid-template-columns: 1fr;
+    }
 }
 
+/* Enhanced switch styles - customization beyond Bootstrap defaults */
 .form-switch .form-check-input {
     width: 3em;
     height: 1.5em;
-    margin-right: 0.5rem; /* Add more space after switch */
+    margin-right: 0.5rem;
+    margin-top: 0.1em;
+}
+
+.form-check .form-check-input {
+    margin-right: 0.5rem;
+    margin-top: 0.25em;
 }
 
 .form-switch .form-check-input:checked {
@@ -348,28 +316,19 @@ $additionalstyles .= '
     border-color: #198754;
 }
 
-/* Add spacing between checkbox/switch items */
-.preference-grid .form-check {
-    margin-bottom: 1rem;
-}
-
-/* Ensure proper label spacing */
+/* Smaller labels for switches and checkboxes */
 .form-check-label {
-    margin-left: 0.25rem;
+    font-size: 0.95rem;
 }
 
-/* Give switches more room on small screens */
-@media (max-width: 767px) {
-    .preference-grid.grid-3 {
-        grid-template-columns: 1fr;
-    }
+/* Better alignment for switches and checkboxes */
+.form-check.form-switch {
+    display: flex;
+    align-items: center;
+    min-height: 1.5rem;
 }
 
-/* Locked email field styling */
-.locked-email {
-    position: relative;
-}
-
+/* Locked email field - requires absolute positioning for icon */
 .locked-email .lock-icon {
     position: absolute;
     right: 1rem;
@@ -378,154 +337,78 @@ $additionalstyles .= '
     z-index: 10;
 }
 
-/* Adjust padding for locked email input */
 .locked-email .floating-input {
     padding-right: 3rem;
 }
 
-/* Style dropdowns to match floating inputs */
-select.form-control,
+/* Custom select styling to match floating inputs - Bootstrap does not offer this */
 .floating-select {
     border: none;
     border-bottom: 2px solid #e9ecef;
     border-radius: 0;
     padding: 1rem 0 0.5rem 0;
     background: transparent;
-    transition: all 0.3s ease;
-    width: 100%;
     min-height: 44px;
-    font-size: 1rem;
-    line-height: 1.5;
-    color: #495057;
 }
 
-/* Style placeholder option */
-select.floating-select option[disabled] {
-    color: #6c757d;
-    font-style: italic;
-}
-
-/* When select has no value (showing placeholder) */
-select.floating-select:has(option:disabled:checked) {
-    color: #6c757d;
-}
-
-select.form-control:focus,
 .floating-select:focus {
     outline: none;
     border-bottom-color: var(--bs-primary);
     box-shadow: none;
-    background: transparent;
 }
 
-/* Desktop specific dropdown styling to match floating inputs */
+/* Desktop floating select */
 @media (min-width: 992px) {
-    select.form-control,
     .floating-select {
         border: 1px solid #dee2e6;
         border-radius: 8px;
         padding: 2rem 1rem 0.375rem 1rem;
         background: white !important;
-        transition: all 0.2s ease;
-        height: auto;
         min-height: calc(3.5rem + 2px);
     }
     
-    select.form-control:focus,
     .floating-select:focus {
         border-color: var(--bs-primary);
         box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
     }
 }
 
-/* Form Labels (for non-floating fields) */
-.form-label {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.5rem;
-    display: block;
-}
-
-/* Select field labels - always visible */
+/* Select field labels for floating pattern */
 .select-label {
     position: absolute;
     left: 0;
     top: 0;
     font-size: 0.85rem;
-    color: #6c757d;
-    background: transparent;
-    padding: 0;
     pointer-events: none;
     transform: translateY(-0.25rem);
     transition: all 0.3s ease;
 }
 
-/* Style select label on focus */
 .floating-select:focus ~ .select-label {
     color: var(--bs-primary);
 }
 
-/* Style the chevron icon in select labels */
-.select-label i {
-    font-size: 0.75rem;
-    margin-left: 0.25rem;
-    opacity: 0.6;
-}
-
-/* Desktop adjustments for select labels to match floating labels */
+/* Desktop select labels */
 @media (min-width: 992px) {
     .select-label {
-        left: 0.75rem; /* Moved slightly left to better align */
+        left: 0.75rem;
         top: 1.125rem;
-        background: transparent;
         transform: translateY(-1.1rem) scale(0.85);
         transform-origin: left top;
         font-size: 1rem;
         color: var(--bs-primary);
     }
-    
-    .floating-select:focus ~ .select-label {
-        color: var(--bs-primary);
-    }
-    
-    .select-label i {
-        font-size: 0.65rem;
-    }
 }
 
-/* Better spacing for form sections */
-.form-section {
-    margin-bottom: 3rem;
-}
-
-/* Save button spacing */
-.save-button-container {
-    margin-top: 4rem;
-    margin-bottom: 3rem;
-    padding-top: 2rem;
-    border-top: 1px solid #e9ecef;
-}
-
-/* JavaScript-powered Floating Panel */
+/* JavaScript-powered Floating Panel - custom floating behavior */
 @media (min-width: 992px) {
-    .help-panel-wrapper {
-        position: relative;
-        width: 100%;
-        transition: none;
-    }
-    
     .help-panel-wrapper.is-floating {
         position: fixed;
         z-index: 1000;
     }
     
     .help-panel {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 0.5rem;
         max-height: calc(100vh - 120px);
-        overflow-y: auto;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         transition: box-shadow 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
         opacity: 0;
         visibility: hidden;
@@ -553,12 +436,6 @@ select.form-control:focus,
     }
 }
 
-.help-panel .help-header {
-    display: flex;
-    align-items: center;
-    color: #495057;
-}
-
 .help-content {
     min-height: 60px;
     max-height: 400px;
@@ -566,53 +443,19 @@ select.form-control:focus,
     transition: all 0.3s ease;
 }
 
-/* Animate help content changes */
 .help-content.updating {
     opacity: 0.3;
 }
 
-/* Style help content based on type */
-.help-content h4 {
-    font-size: 1rem;
-    color: #212529;
-    margin-bottom: 0.5rem;
-}
-
-.help-content ul {
-    margin-bottom: 0;
-    padding-left: 1.25rem;
-}
-
-.help-content ul li {
-    margin-bottom: 0.25rem;
-    font-size: 0.875rem;
-}
-
-/* Add a subtle highlight when help is active */
-.help-panel.active {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
-}
-
-/* Mobile Help Button and Panel */
+/* Mobile Help Button and Panel - custom mobile UI pattern */
 @media (max-width: 991px) {
-    .help-panel-wrapper {
-        display: none !important;
-    }
-    
-    /* Floating help button */
     .floating-help-button {
         position: fixed;
-        bottom: calc(80px + env(safe-area-inset-bottom, 0px)); /* Above bottom nav + safe area */
+        bottom: calc(80px + env(safe-area-inset-bottom, 0px));
         right: 20px;
         width: 56px;
         height: 56px;
-        border-radius: 50%;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         transition: transform 0.2s ease;
     }
     
@@ -620,11 +463,6 @@ select.form-control:focus,
         transform: scale(1.1);
     }
     
-    .floating-help-button i {
-        font-size: 1.5rem;
-    }
-    
-    /* Help overlay */
     .mobile-help-overlay {
         position: fixed;
         top: 0;
@@ -643,17 +481,12 @@ select.form-control:focus,
         opacity: 1;
     }
     
-    /* Help panel */
     .mobile-help-panel {
         position: absolute;
-        bottom: 60px; /* Above bottom nav */
+        bottom: 60px;
         left: 10px;
         right: 10px;
-        background: white;
-        border-radius: 1rem;
-        max-height: 50vh; /* Reduced height */
-        display: flex;
-        flex-direction: column;
+        max-height: 50vh;
         transform: translateY(calc(100% + 60px));
         transition: transform 0.3s ease;
         box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
@@ -663,31 +496,10 @@ select.form-control:focus,
         transform: translateY(0);
     }
     
-    .mobile-help-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid #dee2e6;
-        flex-shrink: 0;
-    }
-    
     .mobile-help-content {
-        padding: 1.25rem;
         overflow-y: auto;
         flex: 1;
         padding-bottom: calc(2rem + env(safe-area-inset-bottom, 20px));
-    }
-    
-    .mobile-help-content h4 {
-        font-size: 1rem;
-        color: #212529;
-        margin-bottom: 0.5rem;
-    }
-    
-    .mobile-help-content ul {
-        margin-bottom: 0;
-        padding-left: 1.25rem;
     }
     
     /* Pulse animation for button when content updates */
@@ -699,28 +511,6 @@ select.form-control:focus,
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.15); }
     }
-}
-
-/* Improve mobile responsiveness */
-@media (max-width: 576px) {
-    .preference-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .row.gx-3 > * {
-        padding-right: 0.5rem;
-        padding-left: 0.5rem;
-    }
-    
-    .save-button-container {
-        margin-top: 3rem;
-        margin-bottom: 2rem;
-    }
-}
-
-/* Debug styles - remove after testing */
-.help-panel-wrapper {
-    /* border: 3px solid red; */ /* Uncomment to visualize floating element */
 }
 </style>
 ';
@@ -764,17 +554,17 @@ if ($locked) {
 }
 
 echo '
-<div class="container profile-container my-5">
+<div class="container my-5">
 ' . $showtip . '
 <section id="body" class="mt-1 pt-1">
-<div class="row">
+<div class="row gx-3">
 ';
 
 
 // PROFILE COMPLETION ACCORDIAN BOX
 echo '
 <div class="col-lg-4">
-<div class="accordion text-left mb-3" id="infoAccordion">
+<div class="accordion text-left mb-3 mb-lg-3 mb-2" id="infoAccordion">
 <div class="accordion-item">
 <h2 class="accordion-header" id="headingOne">
 <button class="accordion-button fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
@@ -795,13 +585,13 @@ echo '
 
 <!-- Desktop Help Panel -->
 <div class="help-panel-wrapper d-none d-lg-block">
-<div class="help-panel card shadow-sm mb-3">
+<div class="help-panel card shadow-sm mb-3 bg-light border rounded-3">
 <div class="card-body">
-<div class="help-header mb-3">
-<i class="bi bi-lightbulb text-warning fs-4"></i>
-<h6 class="mb-0 ms-2">Quick Help</h6>
+<div class="help-header mb-3 d-flex align-items-center">
+<i class="bi bi-lightbulb-fill text-warning fs-4 me-2"></i>
+<h6 class="mb-0">Quick Help</h6>
 </div>
-<div id="guidancecard" class="help-content">
+<div id="guidancecard" class="help-content small">
 <p class="text-muted mb-0">Click on any field to see helpful tips</p>
 </div>
 </div>
@@ -827,12 +617,12 @@ echo '
 
 <!-- Mobile Help Panel Overlay -->
 <div class="mobile-help-overlay" id="mobileHelpOverlay">
-<div class="mobile-help-panel">
-<div class="mobile-help-header">
+<div class="mobile-help-panel bg-white rounded-4">
+<div class="mobile-help-header d-flex justify-content-between align-items-center p-3 border-bottom">
 <h6 class="mb-0">Quick Help</h6>
 <button class="btn-close" id="mobileHelpClose" aria-label="Close"></button>
 </div>
-<div class="mobile-help-content" id="guidancecard-mobile">
+<div class="mobile-help-content p-3 small" id="guidancecard-mobile">
 <p class="text-muted">Tap any field to see helpful tips here</p>
 </div>
 </div>
@@ -840,9 +630,9 @@ echo '
 </div>
 ';
 
-echo '<div class="mb-4">
-<h2 class="fw-bold mb-1">Your Enrollment Profile</h2>
-<p class="text-muted">Complete your profile to maximize birthday rewards</p>
+echo '<div class="mb-2 d-lg-none">
+<h2 class="fw-bold mb-0 fs-5">Your Enrollment Profile</h2>
+<p class="text-muted small mb-0">Complete your profile to maximize birthday rewards</p>
 </div>
 ';
 
@@ -864,8 +654,8 @@ echo '
 <input name="profileupdate" type="hidden" value="1">
 
 <!-- Personal Details Section -->
-<div class="form-section">
-<h4 class="profile-section-header">Personal Details</h4>
+<div class="mb-5">
+<h4 class="profile-section-header mb-4 pb-2 fs-5 text-dark">Personal Details</h4>
 
 <div class="row gx-3">
 <!-- Title dropdown with floating-style label -->
@@ -944,8 +734,8 @@ if ($current_user_data['profile_password'] == '') {
 
 echo '
 <!-- Enrollment Credentials Section -->
-<div class="form-section">
-<h4 class="profile-section-header">Enrollment Credential Details</h4>
+<div class="mb-5">
+<h4 class="profile-section-header mb-4 pb-2 fs-5 text-dark">Enrollment Credential Details</h4>
 
 <div class="row gx-3">
 <!-- Username with floating label -->
@@ -1065,8 +855,8 @@ echo '
 
 
 <!-- Mailing Address Section -->
-<div class="form-section">
-<h4 class="profile-section-header">Enrollment Mailing Address</h4>
+<div class="mb-5">
+<h4 class="profile-section-header mb-4 pb-2 fs-5 text-dark">Enrollment Mailing Address</h4>
 <p class="text-muted small mb-3">Some businesses may mail you things on your birthday.</p>
 
 <div class="row gx-3">
@@ -1163,12 +953,12 @@ $sections = array(
 foreach ($sections as $section => $sectionData) {
 
   if ($current_user_data['account_type'] == 'minor' &&  $section == 'honor') {
-    echo '<div class="form-section d-none">';
+    echo '<div class="mb-5 d-none">';
   } else {
-    echo '<div class="form-section">';
+    echo '<div class="mb-5">';
   }
 
-  echo '<h4 class="profile-section-header">' . $sectionData['title'] . '</h4>';
+  echo '<h4 class="profile-section-header mb-4 pb-2 fs-5 text-dark">' . $sectionData['title'] . '</h4>';
   echo '<div class="preference-grid ' . $sectionData['grid'] . '">';
   
   $nametag = $sectionData['tag'];
@@ -1198,7 +988,7 @@ foreach ($sections as $section => $sectionData) {
 
 
 echo '</div>
-<div class="save-button-container text-center">
+<div class="text-center mt-5 mb-4 pt-4 border-top">
 <!-- Save changes button-->
 <button class="btn btn-success btn-lg px-5" ' . $locktag . ' type="submit">
 <i class="bi bi-check-circle me-2"></i>Save Changes
