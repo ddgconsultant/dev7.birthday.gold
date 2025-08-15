@@ -472,8 +472,42 @@ $businessHours = $app->bg_businesshours();
                 <div class="stat-label">Active Sessions</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value"><?php echo $businessHours['display']['displaystatus'] ?? 'Open'; ?></div>
+                <div class="stat-value">
+                    <?php 
+                    $status = $businessHours['status'] ?? 'unknown';
+                    $statusDisplay = ucfirst($status);
+                    $statusClass = '';
+                    
+                    switch($status) {
+                        case 'open':
+                            $statusClass = 'text-success';
+                            $statusIcon = '<i class="bi bi-check-circle-fill me-1"></i>';
+                            break;
+                        case 'closed':
+                            $statusClass = 'text-danger';
+                            $statusIcon = '<i class="bi bi-x-circle-fill me-1"></i>';
+                            break;
+                        case 'holiday':
+                            $statusClass = 'text-warning';
+                            $statusIcon = '<i class="bi bi-calendar-x-fill me-1"></i>';
+                            $statusDisplay = 'Holiday';
+                            break;
+                        default:
+                            $statusClass = 'text-muted';
+                            $statusIcon = '<i class="bi bi-question-circle-fill me-1"></i>';
+                            break;
+                    }
+                    ?>
+                    <span class="<?php echo $statusClass; ?>">
+                        <?php echo $statusIcon . $statusDisplay; ?>
+                    </span>
+                </div>
                 <div class="stat-label">Business Status</div>
+                <?php if ($businessHours['isHoliday'] && !empty($businessHours['holidayName'])): ?>
+                    <div class="text-muted small mt-1"><?php echo htmlspecialchars($businessHours['holidayName']); ?></div>
+                <?php elseif (!empty($businessHours['display']['workingHoursString'])): ?>
+                    <div class="text-muted small mt-1"><?php echo $businessHours['display']['workingHoursString']; ?></div>
+                <?php endif; ?>
             </div>
         </div>
         <?php endif; ?>
