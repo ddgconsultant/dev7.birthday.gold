@@ -26,7 +26,13 @@ $alive = $app->calculateage($component_user_data['birthdate']);
 
 $accountanniversary= $app->calculateage($component_user_data['create_dt']);
 
-$tillanniversary=$app->getTimeTilBirthday($component_user_data['create_dt']);
+// Get plan start date from user attributes, fallback to create_dt if not set
+$plan_start_date_attr = $account->getUserAttribute($component_user_data['user_id'], 'plan_start_date');
+$plan_start_date = $plan_start_date_attr ? $plan_start_date_attr['description'] : $component_user_data['create_dt'];
+
+// For monthly plans, allocations reset monthly from plan start date
+// Using getTimeTilBirthday function which calculates days until next anniversary of the date
+$tillanniversary=$app->getTimeTilBirthday($plan_start_date);
 
 
 $till=$app->getTimeTilBirthday($component_user_data['birthdate']);
