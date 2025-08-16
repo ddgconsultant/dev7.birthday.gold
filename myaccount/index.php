@@ -573,7 +573,7 @@ echo '
                             <h5 class="card-title text-primary mb-1">
                                 <i class="bi bi-wallet2 me-2"></i>Allocations
                             </h5>
-                            <p class="text-muted small mb-0">Monthly enrollment credits</p>
+                            <p class="text-muted small mb-0">Enrollment Picks</p>
                         </div>
                         <span class="badge bg-primary fs-6">' . $businessoutput['counts']['remaining'] . '</span>
                     </div>
