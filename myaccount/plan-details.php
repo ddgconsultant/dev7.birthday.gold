@@ -344,8 +344,43 @@ $planPriceDesc = isset($plandatafeatures['plan_pricedescription']['value']) ? $p
 $maxBrands = isset($plandatafeatures['max_business_select_tag']['value']) ? $plandatafeatures['max_business_select_tag']['value'] : 'Unlimited';
 $maxBrandsDesc = isset($plandatafeatures['max_business_select_description']['value']) ? $plandatafeatures['max_business_select_description']['value'] : '';
 
+// Helper function for time ago display
+if (!function_exists('human_time_diff')) {
+    function human_time_diff($timestamp) {
+        $diff = time() - $timestamp;
+        if ($diff < 60) return 'just now';
+        if ($diff < 3600) return floor($diff / 60) . ' min ago';
+        if ($diff < 86400) return floor($diff / 3600) . ' hr ago';
+        return floor($diff / 86400) . ' day ago';
+    }
+}
+
 // Admin controls and debug info
 if ($account->isadmin()) {
+    // Track recently viewed plans in session
+    if (!isset($_SESSION['admin_viewed_plans'])) {
+        $_SESSION['admin_viewed_plans'] = [];
+    }
+    
+    // Add current viewed plan to recent history
+    if (isset($_GET['product_id'])) {
+        $viewed_id = intval($_GET['product_id']);
+        $viewed_time = time();
+        
+        // Update or add to recently viewed
+        $_SESSION['admin_viewed_plans'][$viewed_id] = $viewed_time;
+        
+        // Clean up old entries (older than 24 hours)
+        $cutoff_time = time() - (24 * 60 * 60);
+        $_SESSION['admin_viewed_plans'] = array_filter($_SESSION['admin_viewed_plans'], function($time) use ($cutoff_time) {
+            return $time > $cutoff_time;
+        });
+        
+        // Keep only last 10 viewed
+        arsort($_SESSION['admin_viewed_plans']);
+        $_SESSION['admin_viewed_plans'] = array_slice($_SESSION['admin_viewed_plans'], 0, 10, true);
+    }
+    
     // Get all available plans for the selector
     $sql = "SELECT DISTINCT id as product_id, account_plan, account_name, account_type, billing_cycle, price, status 
             FROM bg_products 
@@ -353,91 +388,164 @@ if ($account->isadmin()) {
             ORDER BY account_type, billing_cycle, price";
     $available_plans = $database->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     
-    // Group plans by type
+    // Group plans by account type
     $grouped_plans = [];
+    $type_order = ['individual', 'family', 'gift', 'business', 'parental']; // Define order
+    
     foreach ($available_plans as $plan) {
-        $group_key = ucfirst($plan['account_type']) . ' - ' . ucfirst($plan['billing_cycle']);
-        if (!isset($grouped_plans[$group_key])) {
-            $grouped_plans[$group_key] = [];
+        $type_key = strtolower($plan['account_type']);
+        if (!isset($grouped_plans[$type_key])) {
+            $grouped_plans[$type_key] = [];
         }
-        $grouped_plans[$group_key][] = $plan;
+        $grouped_plans[$type_key][] = $plan;
     }
     
-    echo '<div class="alert alert-warning mb-3">
-        <h5><i class="bi bi-shield-lock"></i> Admin Plan Viewer</h5>
-        <div class="row">
-            <div class="col-md-8">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <label class="fw-bold">Select Plan:</label>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="planDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-list"></i> ';
+    // Sort groups by defined order
+    $sorted_groups = [];
+    foreach ($type_order as $type) {
+        if (isset($grouped_plans[$type])) {
+            $sorted_groups[$type] = $grouped_plans[$type];
+        }
+    }
+    // Add any remaining types not in our order
+    foreach ($grouped_plans as $type => $plans) {
+        if (!isset($sorted_groups[$type])) {
+            $sorted_groups[$type] = $plans;
+        }
+    }
+    $grouped_plans = $sorted_groups;
     
-    // Show current plan name in dropdown button
+    // Determine active tab
+    $active_tab = 'individual'; // default
     if (isset($_GET['product_id'])) {
         foreach ($available_plans as $plan) {
             if ($plan['product_id'] == $user_product_id) {
-                echo htmlspecialchars($plan['account_name'] ?? $plan['account_plan']) . ' (ID: ' . $plan['product_id'] . ')';
+                $active_tab = strtolower($plan['account_type']);
                 break;
             }
         }
-    } else {
-        echo 'Choose a Plan';
     }
     
-    echo '
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="planDropdown" style="max-height: 400px; overflow-y: auto;">';
+    echo '<div class="alert alert-warning mb-3" style="background: linear-gradient(135deg, #fff9e6 0%, #fff5d6 100%); border-color: #ffc107;">
+        <h5 class="mb-3"><i class="bi bi-shield-lock"></i> Admin Plan Viewer</h5>';
     
-    // Generate grouped dropdown items
-    foreach ($grouped_plans as $group_name => $plans) {
-        echo '<li><h6 class="dropdown-header">' . htmlspecialchars($group_name) . '</h6></li>';
+    // Recently viewed plans
+    if (!empty($_SESSION['admin_viewed_plans'])) {
+        echo '<div class="mb-3">
+            <small class="text-muted d-block mb-1">Recently Viewed:</small>
+            <div class="d-flex flex-wrap gap-1">';
+        
+        foreach ($_SESSION['admin_viewed_plans'] as $recent_id => $recent_time) {
+            // Find plan details
+            $recent_plan = null;
+            foreach ($available_plans as $plan) {
+                if ($plan['product_id'] == $recent_id) {
+                    $recent_plan = $plan;
+                    break;
+                }
+            }
+            if ($recent_plan) {
+                $plan_name = $recent_plan['account_name'] ?? $recent_plan['account_plan'];
+                $is_current = ($user_product_id == $recent_id);
+                $btn_class = $is_current ? 'btn-info' : 'btn-outline-info';
+                $time_ago = human_time_diff($recent_time);
+                echo '<a href="?product_id=' . $recent_id . '" class="btn btn-sm ' . $btn_class . '" 
+                        title="Viewed ' . $time_ago . '">' . 
+                     '<i class="bi bi-clock-history"></i> ' . htmlspecialchars($plan_name) . '</a>';
+            }
+        }
+        
+        echo '</div>
+        </div>
+        <hr class="my-2">';
+    }
+    
+    // Tabs for plan categories
+    echo '<ul class="nav nav-tabs mb-3" role="tablist">';
+    
+    foreach ($grouped_plans as $type => $plans) {
+        $tab_active = ($type == $active_tab) ? ' active' : '';
+        $aria_selected = ($type == $active_tab) ? 'true' : 'false';
+        $type_display = ucfirst($type);
+        $count = count($plans);
+        
+        // Icon for each type
+        $icons = [
+            'individual' => 'bi-person',
+            'family' => 'bi-people',
+            'gift' => 'bi-gift',
+            'business' => 'bi-building',
+            'parental' => 'bi-person-hearts'
+        ];
+        $icon = $icons[$type] ?? 'bi-box';
+        
+        echo '<li class="nav-item" role="presentation">
+            <button class="nav-link' . $tab_active . '" id="' . $type . '-tab" data-bs-toggle="tab" 
+                    data-bs-target="#' . $type . '-panel" type="button" role="tab" 
+                    aria-controls="' . $type . '-panel" aria-selected="' . $aria_selected . '">
+                <i class="' . $icon . '"></i> ' . $type_display . ' <span class="badge bg-secondary">' . $count . '</span>
+            </button>
+        </li>';
+    }
+    
+    echo '</ul>';
+    
+    // Tab content with pill buttons
+    echo '<div class="tab-content">';
+    
+    foreach ($grouped_plans as $type => $plans) {
+        $pane_active = ($type == $active_tab) ? ' show active' : '';
+        
+        echo '<div class="tab-pane fade' . $pane_active . '" id="' . $type . '-panel" role="tabpanel" 
+                  aria-labelledby="' . $type . '-tab">
+            <div class="d-flex flex-wrap gap-2">';
+        
         foreach ($plans as $plan) {
             $plan_display_name = $plan['account_name'] ?? $plan['account_plan'];
-            $price_display = $plan['price'] > 0 ? ' ($' . number_format($plan['price'] / 100, 2) . ')' : ' (Free)';
-            $active_class = ($user_product_id == $plan['product_id']) ? ' active' : '';
-            echo '<li><a class="dropdown-item' . $active_class . '" href="?product_id=' . $plan['product_id'] . '">' . 
-                 '<span class="badge bg-secondary me-2">' . $plan['product_id'] . '</span>' .
-                 htmlspecialchars($plan_display_name) . $price_display . '</a></li>';
-        }
-        echo '<li><hr class="dropdown-divider"></li>';
-    }
-    
-    echo '
-                        </ul>
-                    </div>
-                    
-                    <!-- Quick access buttons for common plans -->
-                    <div class="btn-group btn-group-sm ms-3" role="group">
-                        <a href="?product_id=1" class="btn btn-outline-success" title="Free Plan">Free</a>
-                        <a href="?product_id=2" class="btn btn-outline-primary" title="Plus Plan">Plus</a>
-                        <a href="?product_id=3" class="btn btn-outline-warning" title="Premium Plan">Premium</a>
-                    </div>
+            $price_display = $plan['price'] > 0 ? '$' . number_format($plan['price'] / 100, 2) : 'Free';
+            $billing_display = str_replace('-', ' ', $plan['billing_cycle']);
+            $is_active = ($user_product_id == $plan['product_id']);
+            
+            // Button styling
+            if ($is_active) {
+                $btn_class = 'btn-primary';
+                $badge_class = 'bg-white text-primary';
+            } elseif (isset($_SESSION['admin_viewed_plans'][$plan['product_id']])) {
+                $btn_class = 'btn-outline-primary';
+                $badge_class = 'bg-primary';
+            } else {
+                $btn_class = 'btn-outline-secondary';
+                $badge_class = 'bg-secondary';
+            }
+            
+            echo '<a href="?product_id=' . $plan['product_id'] . '" class="btn ' . $btn_class . ' position-relative">
+                <span class="badge ' . $badge_class . ' position-absolute top-0 start-0 translate-middle rounded-pill">' . 
+                $plan['product_id'] . '</span>
+                <div class="pt-1">
+                    <strong>' . htmlspecialchars($plan_display_name) . '</strong><br>
+                    <small>' . $price_display . ' / ' . ucfirst($billing_display) . '</small>
                 </div>
-                
-                <!-- Compact view of all plans -->
-                <details class="mt-2">
-                    <summary class="text-muted small" style="cursor: pointer;">
-                        <i class="bi bi-eye"></i> View all ' . count($available_plans) . ' plans
-                    </summary>
-                    <div class="mt-2" style="max-height: 200px; overflow-y: auto; font-size: 0.85rem;">';
-    
-    foreach ($grouped_plans as $group_name => $plans) {
-        echo '<div class="mb-2"><strong>' . htmlspecialchars($group_name) . ':</strong><br>';
-        foreach ($plans as $plan) {
-            $plan_display_name = $plan['account_name'] ?? $plan['account_plan'];
-            $active = ($user_product_id == $plan['product_id']) ? 'text-primary fw-bold' : '';
-            echo '<a href="?product_id=' . $plan['product_id'] . '" class="me-2 ' . $active . '">' . 
-                 '[' . $plan['product_id'] . '] ' . htmlspecialchars($plan_display_name) . '</a>';
+            </a>';
         }
-        echo '</div>';
+        
+        echo '</div>
+        </div>';
     }
     
-    echo '
-                    </div>
-                </details>
-            </div>
-            <div class="col-md-4 text-end">
+    echo '</div>'; // End tab content
+    
+    // Bottom controls
+    echo '<hr class="mt-3 mb-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>';
+    
+    if (isset($_GET['product_id']) || isset($_GET['plan'])) {
+        echo '<span class="text-info"><i class="bi bi-info-circle"></i> Viewing: <strong>' . 
+             htmlspecialchars($userplanname) . '</strong> (ID: ' . htmlspecialchars($user_product_id ?? 'N/A') . ')</span>';
+    }
+    
+    echo '</div>
+            <div>
                 <a href="?" class="btn btn-sm btn-secondary">View My Plan</a>';
     
     if (isset($_GET['debug'])) {

@@ -658,7 +658,7 @@ echo '
                         <p class="text-muted small mb-0">
                             <span data-bs-toggle="tooltip" data-bs-placement="top" 
                                   title="Resets on ' . $reset_date_formatted . '"
-                                  style="cursor: help; border-bottom: 1px dotted #6c757d;">
+                                  style="border-bottom: 1px dotted #6c757d;">
                                 Resets in ' . $qik->plural2($tillanniversary['days'], 'day') . '
                             </span>
                         </p>
