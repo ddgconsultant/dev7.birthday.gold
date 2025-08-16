@@ -577,17 +577,61 @@ echo '
                         </div>
                         <span class="badge bg-primary fs-6">' . $businessoutput['counts']['remaining'] . '</span>
                     </div>
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between text-muted small mb-2">
-                            <span>Available</span>
-                            <span class="fw-bold">' . $businessoutput['counts']['remaining'] . ' of ' . $businessoutput['counts']['plan_total'] . '</span>
+                    <div class="flex-grow-1">';
+
+// Get more detailed allocation information
+$plandatafeatures = $app->plandetail('details_id', $current_user_data['account_product_id']);
+$plan_allocations = $businessoutput['counts']['plan_total'] ?? $plandatafeatures['max_business_select'] ?? 0;
+$used_allocations = ($plan_allocations - $businessoutput['counts']['remaining']);
+
+// Try to get bonus allocations from AllocationManager if available
+$bonus_allocations = 0;
+$allocation_details = null;
+if (class_exists('AllocationManager')) {
+    include_once($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.allocationmanager.php');
+    $allocationManager = new AllocationManager($database);
+    $allocation_details = $allocationManager->getUserBalance($current_user_data['user_id']);
+    $bonus_allocations = $allocation_details['bonus_allocations'] ?? 0;
+}
+
+// Calculate totals
+$total_allocations = $plan_allocations + $bonus_allocations;
+$remaining_allocations = $businessoutput['counts']['remaining'];
+
+echo '
+                        <!-- Allocation Breakdown -->
+                        <div class="small">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Plan Allocations:</span>
+                                <span class="fw-semibold">' . $plan_allocations . '</span>
+                            </div>';
+
+if ($bonus_allocations > 0) {
+    echo '
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Bonus/Earned:</span>
+                                <span class="fw-semibold text-success">+' . $bonus_allocations . '</span>
+                            </div>';
+}
+
+echo '
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Used:</span>
+                                <span class="fw-semibold text-danger">-' . $used_allocations . '</span>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted fw-bold">Available Now:</span>
+                                <span class="fw-bold text-primary">' . $remaining_allocations . '</span>
+                            </div>
                         </div>
-                        <div class="progress mb-2" style="height: 8px;">
+                        
+                        <div class="progress mt-2 mb-2" style="height: 8px;">
                             <div class="progress-bar bg-primary" role="progressbar" 
-                                style="width: ' . (($businessoutput['counts']['plan_total'] > 0) ? round(($businessoutput['counts']['remaining'] / $businessoutput['counts']['plan_total']) * 100) : 0) . '%"
-                                aria-valuenow="' . $businessoutput['counts']['remaining'] . '" 
+                                style="width: ' . (($total_allocations > 0) ? round(($remaining_allocations / $total_allocations) * 100) : 0) . '%"
+                                aria-valuenow="' . $remaining_allocations . '" 
                                 aria-valuemin="0" 
-                                aria-valuemax="' . $businessoutput['counts']['plan_total'] . '">
+                                aria-valuemax="' . $total_allocations . '">
                             </div>
                         </div>
                         <p class="text-muted small mb-0">Resets in ' . $qik->plural2($tillanniversary['days'], 'day') . '</p>
@@ -595,8 +639,7 @@ echo '
                     <div class="mt-3">';
 
 // Check if user has free plan and add upgrade link
-$plandatafeatures = $app->plandetail('details_id', $current_user_data['account_product_id']);
-$is_free_plan = ($current_user_data['account_plan'] == 'free' || $current_user_data['account_product_id'] == 1 || $businessoutput['counts']['plan_total'] <= 5);
+$is_free_plan = ($current_user_data['account_plan'] == 'free' || $current_user_data['account_product_id'] == 1 || $plan_allocations <= 5);
 
 if ($is_free_plan) {
     echo '

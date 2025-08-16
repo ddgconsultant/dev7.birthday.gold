@@ -1,11 +1,7 @@
 <?php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-// Check if user is logged in
-if (!$account->isactive()) {
-    header('Location: /login?redirect=' . urlencode($_SERVER['REQUEST_URI']));
-    exit();
-}
+
 
 #-------------------------------------------------------------------------------
 # PREP VARIABLES
@@ -14,9 +10,19 @@ if (!$account->isactive()) {
 // Include user account details to get proper plan information
 include_once($dir['core_components'] . '/user_getaccountdetails.inc');
 
+// Check for URL parameter to view a specific plan (admin feature)
+$view_product_id = null;
+$view_plan = null;
+if (isset($_GET['product_id']) && $account->isadmin()) {
+    $view_product_id = intval($_GET['product_id']);
+    // Also allow plan parameter for convenience
+} elseif (isset($_GET['plan']) && $account->isadmin()) {
+    $view_plan = $_GET['plan'];
+}
+
 // Get user actual plan from their account data
-$user_plan = $current_user_data['account_plan'] ?? 'free';
-$user_product_id = $current_user_data['account_product_id'] ?? null;
+$user_plan = $view_plan ?? $current_user_data['account_plan'] ?? 'free';
+$user_product_id = $view_product_id ?? $current_user_data['account_product_id'] ?? null;
 
 $outputm='';
 
@@ -251,6 +257,25 @@ if (empty($plandatafeatures)) {
         'max_business_select_description' => ['value' => 'Limited brand selections available']
     ];
 }
+
+// Get the correct plan name when viewing different plans
+if (isset($_GET['product_id']) && $account->isadmin()) {
+    // Get plan name from the database for the viewed product
+    $sql = "SELECT plan_name FROM bg_products WHERE product_id = :product_id";
+    $stmt = $database->prepare($sql);
+    $stmt->execute(['product_id' => $user_product_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($result) {
+        $userplanname = $result['plan_name'];
+    }
+} elseif (!isset($userplanname) || empty($userplanname)) {
+    // Set from plan data features if available
+    if (isset($plandatafeatures['plan_name'])) {
+        $userplanname = $plandatafeatures['plan_name']['value'] ?? ucfirst($user_plan);
+    } else {
+        $userplanname = ucfirst($user_plan);
+    }
+}
 #breakpoint($plandatafeatures);
 function editbuttons($front=[], $back=[]) {
     global $account , $outputm;
@@ -319,21 +344,60 @@ $planPriceDesc = isset($plandatafeatures['plan_pricedescription']['value']) ? $p
 $maxBrands = isset($plandatafeatures['max_business_select_tag']['value']) ? $plandatafeatures['max_business_select_tag']['value'] : 'Unlimited';
 $maxBrandsDesc = isset($plandatafeatures['max_business_select_description']['value']) ? $plandatafeatures['max_business_select_description']['value'] : '';
 
-// Ensure userplanname is set
-if (empty($userplanname)) {
-    $userplanname = ucfirst($user_plan);
-}
-
-// Debug info for admins
-if ($account->isadmin() && isset($_GET['debug'])) {
-    echo '<div class="alert alert-info mb-3">
-        <h5>Debug Info:</h5>
-        <p>User ID: ' . htmlspecialchars($current_user_data['user_id'] ?? 'Not set') . '</p>
-        <p>Account Plan: ' . htmlspecialchars($user_plan) . '</p>
-        <p>Product ID: ' . htmlspecialchars($user_product_id ?? 'Not set') . '</p>
-        <p>Plan Name: ' . htmlspecialchars($userplanname) . '</p>
-        <p>Plan Features Loaded: ' . (empty($plandatafeatures) ? 'No' : 'Yes (' . count($plandatafeatures) . ' features)') . '</p>
-    </div>';
+// Admin controls and debug info
+if ($account->isadmin()) {
+    // Get all available plans for the selector
+    $sql = "SELECT DISTINCT product_id, plan_name, status FROM bg_products WHERE status = 'active' ORDER BY product_id";
+    $available_plans = $database->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo '<div class="alert alert-warning mb-3">
+        <h5><i class="bi bi-shield-lock"></i> Admin Plan Viewer</h5>
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <p class="mb-2"><strong>View Different Plans:</strong></p>
+                <div class="btn-group" role="group">';
+    
+    foreach ($available_plans as $plan) {
+        $active = ($user_product_id == $plan['product_id']) ? 'btn-primary' : 'btn-outline-primary';
+        echo '<a href="?product_id=' . $plan['product_id'] . '" class="btn btn-sm ' . $active . '">' . 
+             htmlspecialchars($plan['plan_name']) . ' (ID: ' . $plan['product_id'] . ')</a>';
+    }
+    
+    echo '
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="?" class="btn btn-sm btn-secondary">View My Plan</a>';
+    
+    if (isset($_GET['debug'])) {
+        echo ' <a href="?" class="btn btn-sm btn-outline-secondary">Hide Debug</a>';
+    } else {
+        echo ' <a href="?debug=1' . (isset($_GET['product_id']) ? '&product_id=' . $_GET['product_id'] : '') . '" class="btn btn-sm btn-outline-secondary">Show Debug</a>';
+    }
+    
+    echo '
+            </div>
+        </div>';
+    
+    if (isset($_GET['product_id']) || isset($_GET['plan'])) {
+        echo '<hr>
+        <p class="mb-0 text-info"><i class="bi bi-info-circle"></i> Currently viewing: <strong>' . htmlspecialchars($userplanname) . '</strong> plan (Product ID: ' . htmlspecialchars($user_product_id ?? 'N/A') . ')</p>';
+    }
+    
+    if (isset($_GET['debug'])) {
+        echo '<hr>
+        <h6>Debug Information:</h6>
+        <small>
+        <p class="mb-1">User ID: ' . htmlspecialchars($current_user_data['user_id'] ?? 'Not set') . '</p>
+        <p class="mb-1">User Actual Plan: ' . htmlspecialchars($current_user_data['account_plan'] ?? 'Not set') . '</p>
+        <p class="mb-1">User Product ID: ' . htmlspecialchars($current_user_data['account_product_id'] ?? 'Not set') . '</p>
+        <p class="mb-1">Viewing Plan: ' . htmlspecialchars($user_plan) . '</p>
+        <p class="mb-1">Viewing Product ID: ' . htmlspecialchars($user_product_id ?? 'Not set') . '</p>
+        <p class="mb-0">Plan Features Loaded: ' . (empty($plandatafeatures) ? 'No' : 'Yes (' . count($plandatafeatures) . ' features)') . '</p>
+        </small>';
+    }
+    
+    echo '</div>';
 }
 
 echo '
@@ -418,25 +482,27 @@ echo '
                 <p class="feature-description">Connect with other birthday celebrants! Share your experiences and celebrate together in our upcoming social features.</p>
             </div>
         </div>
-    </div>
+    </div>';
 
-    <!-- Upgrade Section for Free Users -->
-    <?php if ($user_plan === 'free'): ?>
-    <div class="upgrade-section">
-        <h3 class="mb-3">Ready to unlock more birthday rewards?</h3>
-        <p class="mb-4">Upgrade to Gold and get access to unlimited brands, priority support, and exclusive features!</p>
-        <a href="/myaccount/upgrade-plan" class="btn btn-primary btn-lg">Upgrade to Gold</a>
-    </div>
-    <?php elseif ($user_plan === 'gold'): ?>
-    <div class="upgrade-section">
-        <h3 class="mb-3">Want lifetime access?</h3>
-        <p class="mb-4">Upgrade to our Lifetime plan and never worry about renewals again!</p>
-        <a href="/myaccount/upgrade-plan" class="btn btn-primary btn-lg">Get Lifetime Access</a>
-    </div>
-    <?php endif; ?>
+    // Upgrade Section for Free Users
+    if ($user_plan === 'free') {
+        echo '
+        <div class="upgrade-section">
+            <h3 class="mb-3">Ready to unlock more birthday rewards?</h3>
+            <p class="mb-4">Upgrade to Gold and get access to unlimited brands, priority support, and exclusive features!</p>
+            <a href="/myaccount/upgrade-plan" class="btn btn-primary btn-lg">Upgrade to Gold</a>
+        </div>';
+    } elseif ($user_plan === 'gold') {
+        echo '
+        <div class="upgrade-section">
+            <h3 class="mb-3">Want lifetime access?</h3>
+            <p class="mb-4">Upgrade to our Lifetime plan and never worry about renewals again!</p>
+            <a href="/myaccount/upgrade-plan" class="btn btn-primary btn-lg">Get Lifetime Access</a>
+        </div>';
+    }
 
-</div>
-';
+echo '
+</div>';
 echo $outputm;
 
 $display_footertype='';
