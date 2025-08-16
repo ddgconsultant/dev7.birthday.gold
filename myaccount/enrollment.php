@@ -158,18 +158,24 @@ echo '<div class="row">
 ### ------------------------------------------------------------------------------
 
 echo '<div class="col-12 mb-4">
-    <!-- Brand Enrollment Card -->
-    <div class="card h-100 border-start-lg border-start-secondary">
+    <!-- Enrollments Card -->
+    <div class="card h-100 border-start-lg border-start-success">
         <div class="card-body">
-            <div class="h4 text-muted">Number of Enrollments</div>
+            <div class="h4 text-muted">Enrollments</div>
             <div class="progress mb-3">
-                <div class="progress-bar bg-warning" role="progressbar" style="width: ' . $pending_percentage . '%;" aria-valuenow="' . $pending_percentage . '" aria-valuemin="0" aria-valuemax="100"></div>
                 <div class="progress-bar bg-success" role="progressbar" style="width: ' . $completed_percentage . '%;" aria-valuenow="' . $completed_percentage . '" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar bg-warning" role="progressbar" style="width: ' . (($total_enrollments > 0) ? ($accountstats['business_pending'] / $total_enrollments * 100) : 0) . '%;" aria-valuenow="' . $accountstats['business_pending'] . '" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
-            <div class="text-center my-4">' . $selectsused . ' Pending / ' . $accountstats['business_success'] . ' Completed</div>
+            <div class="text-center my-4">
+                <div class="d-flex justify-content-around">
+                    <div><span class="text-success fw-bold">' . $accountstats['business_success'] . '</span> Active</div>
+                    <div><span class="text-warning fw-bold">' . $accountstats['business_pending'] . '</span> Pending</div>
+                    <div><span class="text-danger fw-bold">' . ($accountstats['business_removed'] ?? 0) . '</span> Failed</div>
+                </div>
+            </div>
             <div class="mt-3 text-center">
-                <a class="btn btn-outline-primary btn-sm" href="/myaccount/enrollment-history">
-                    View enrollment history
+                <a class="btn btn-outline-success btn-sm" href="/myaccount/enrollment-history">
+                    View Enrollment History
                 </a>
             </div>
         </div>
@@ -179,24 +185,24 @@ echo '<div class="col-12 mb-4">
 ### ------------------------------------------------------------------------------
 
 echo '<div class="col-12 mb-4">
-    <!-- Available Enrollments Card -->
-    <div class="card h-100 border-start-lg border-start-success">
+    <!-- Allocations Card -->
+    <div class="card h-100 border-start-lg border-start-primary">
         <div class="card-body">
-            <div class="h4 text-muted" title="Used: ' . $selectsused . ' / Left: ' . $selectsleft . ' / Total:' . $selectstotal . '">Enrollments Available</div>
+            <div class="h4 text-muted" title="Used: ' . $selectsused . ' / Left: ' . $selectsleft . ' / Total:' . $selectstotal . '">Allocations</div>
             <div class="progress mb-3">
-                <div class="progress-bar bg-success" role="progressbar" style="width: ' . $percentage_remaining . '%;" aria-valuenow="' . $percentage_remaining . '" aria-valuemin="0" aria-valuemax="100"></div>
+                <div class="progress-bar bg-primary" role="progressbar" style="width: ' . $percentage_remaining . '%;" aria-valuenow="' . $percentage_remaining . '" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
-            <div class="text-center my-4">' . ($selectsleft < 0 ? 0 : $selectsleft) . ' Remaining in your plan</div>';
+            <div class="text-center my-4">' . ($selectsleft < 0 ? 0 : $selectsleft) . ' of ' . $selectstotal . ' Available</div>';
 
 if ($plandatafeatures['upgradeable'] == 1 || $plandatafeatures['upgradeable'] == 'Y') {
     echo '<div class="text-center mt-3">
-                    <a class="btn btn-outline-success btn-sm" href="/myaccount/upgrade">
+                    <a class="btn btn-outline-primary btn-sm" href="/myaccount/upgrade">
                         Upgrade plan
                     </a>
                 </div>';
 } else {
     echo '<div class="text-center mt-3">
-                    <a class="btn button btn-primary" href="/myaccount/select">Select more '.$website['biznames'].' for enrollment</a>
+                    <a class="btn btn-outline-primary btn-sm" href="/myaccount/allocation-history">View Allocation History</a>
                 </div>';
 }
 

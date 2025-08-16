@@ -101,6 +101,11 @@ $additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
 $additionalstyles .= '
 <style>
 /* Enrollment history page styles */
+.content-header-dark {
+    padding-bottom: 3rem;
+    margin-bottom: 2rem;
+}
+
 .enrollment-header {
     display: flex;
     justify-content: space-between;
@@ -211,8 +216,8 @@ $additionalstyles .= '
     border-radius: 0 25px 25px 0;
 }
 
-/* Search in header styling - matching help page */
-.search-in-header {
+/* Search box - matching help page */
+.enrollment-search {
     max-width: 600px;
     margin: -2rem auto 3rem;
     position: relative;
@@ -302,14 +307,19 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <!-- Content Header Dark Section -->
-<div class="content-header-dark">
+<div class="content-header-dark no-rounded-corners">
     <div class="container">
         <div class="text-center">
             <h1 class="mb-3"><i class="bi bi-clock-history me-3"></i>Enrollment History</h1>
             <p class="lead mb-4">Track and manage your birthday reward enrollments</p>
         </div>
-        <!-- Search Bar in Header -->
-        <div class="search-in-header">
+    </div>
+</div>
+
+<div class="container">
+    <!-- Search Bar -->
+    <div class="enrollment-search">
+        <div class="position-relative">
             <input type="text" id="globalSearchBar" class="search-input" placeholder="Search all enrollments..." autocomplete="off">
             <i class="bi bi-search search-icon"></i>
             <i class="bi bi-x-circle-fill clear-icon" id="globalClearIcon" style="display: none;"></i>

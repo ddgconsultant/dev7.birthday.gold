@@ -3,10 +3,16 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // initialize variables here
 $bodycontentclass = '';
+
+// Add v7 theme CSS that includes content-header-dark
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
 $additionalstyles .= '
 <style>
 .table-responsive { margin-top: 1rem; }
 .table th, .table td { vertical-align: middle; }
+.main-content {
+    padding-top: 2rem;
+}
 </style>
 ';
 
@@ -23,8 +29,6 @@ if ($app->formposted()) {
 #-------------------------------------------------------------------------------
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-include($dir['core_components'] . '/bg_user_profileheader.inc');
-include($dir['core_components'] . '/bg_user_leftpanel.inc');
 
 // Fetch invite history
 $sql = '
@@ -54,16 +58,27 @@ if ($results === false) {
     $results = []; // Ensure $invites is always an array
 }
 
-echo '    
-<div class="container main-content mt-0 pt-0">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0">Invite History</h2>
-    <a href="/myaccount" class="btn btn-sm btn-outline-secondary">Back to My Account</a>
-  </div>
+echo '
+<!-- Content Header Dark -->
+<div class="content-header-dark">
+    <div class="container">
+        <div class="text-center">
+            <h1 class="mb-3"><i class="bi bi-envelope-heart me-3"></i>Invite History</h1>
+            <p class="lead mb-0">Track the friends you\'ve invited to join Birthday Gold</p>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="container main-content">
 ';
 
 if (empty($results)) {
     echo '
+    <div class="text-center mb-4">
+        <a href="/myaccount/invite" class="btn btn-primary me-2">Send New Invite</a>
+        <a href="/myaccount" class="btn btn-outline-secondary">Back to My Account</a>
+    </div>
     <div class="alert alert-info">
         You haven\'t sent any invites yet.
     </div>
@@ -71,6 +86,13 @@ if (empty($results)) {
 } else {
     echo '
     <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-bold">Invitation History</span>
+            <div>
+                <a href="/myaccount/invite" class="btn btn-primary btn-sm me-2">Send New Invite</a>
+                <a href="/myaccount" class="btn btn-outline-secondary btn-sm">Back to My Account</a>
+            </div>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped">
@@ -122,9 +144,7 @@ if (empty($results)) {
     ';
 }
 
-echo '</div>            </div>
-        </div>
-    </div>'; // Close main container
+echo '</div>'; // Close main container
 
 $display_footertype = '';
 include($dir['core_components'] . '/bg_footer.inc');

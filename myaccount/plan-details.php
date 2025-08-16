@@ -14,7 +14,7 @@ if (!$account->isactive()) {
 // Include user account details to get proper plan information
 include_once($dir['core_components'] . '/user_getaccountdetails.inc');
 
-// Get user's actual plan from their account data
+// Get user actual plan from their account data
 $user_plan = $current_user_data['account_plan'] ?? 'free';
 $user_product_id = $current_user_data['account_product_id'] ?? null;
 
@@ -48,7 +48,7 @@ if ($app->formposted()) {
 #-------------------------------------------------------------------------------
 
 // Add v7 theme CSS for content-header-dark class
-$additionalstyles .= '<link href="/public/css/v7/bg_theme.css" rel="stylesheet">';
+$additionalstyles = '<link href="/public/css/v7/bg_theme.css" rel="stylesheet">';
 
 $additionalstyles .= '
 <style>
@@ -233,7 +233,7 @@ echo '
 <div class="plan-details-container">
         ';
      
-// Get plan details based on user's actual product ID
+// Get plan details based on user actual product ID
 if ($user_product_id) {
     $plandatafeatures = $app->plandetail('detailsfull_id', $user_product_id);
 } else {
@@ -367,7 +367,7 @@ echo '
                 </div>
                 <h3 class="feature-title">Birthday Reminders</h3>
                 <div class="feature-value">Automated</div>
-                <p class="feature-description">Never miss out on your birthday rewards! We\'ll send you timely reminders throughout your birthday month so you can claim every reward.</p>
+                <p class="feature-description">Never miss out on your birthday rewards! We will send you timely reminders throughout your birthday month so you can claim every reward.</p>
             </div>
         </div>
 
@@ -403,7 +403,7 @@ echo '
                 </div>
                 <h3 class="feature-title">Reward Tracking</h3>
                 <div class="feature-value">Dashboard</div>
-                <p class="feature-description">Keep track of all your birthday rewards in one place. See what\'s available, what you\'ve claimed, and what\'s coming up.</p>
+                <p class="feature-description">Keep track of all your birthday rewards in one place. See what is available, what you have claimed, and what is coming up.</p>
             </div>
         </div>
 

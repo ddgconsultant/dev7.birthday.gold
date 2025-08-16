@@ -562,8 +562,8 @@ include($dir['core_components'] . '/bg_header.inc');
                         <i class="bi bi-chat-dots"></i>
                     </div>
                     <div class="help-content">
-                        <h3 class="help-card-title">Chat with an Agent</h3>
-                        <p class="text-muted small mb-0 lh-base">Get online help fast with co-browsing available</p>
+                        <h3 class="help-card-title">Chat with Member Support</h3>
+                        <p class="text-muted small mb-0 lh-base">Talk to a real person who can help with your account</p>
                     </div>
                 </a>
             </div>

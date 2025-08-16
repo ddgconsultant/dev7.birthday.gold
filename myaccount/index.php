@@ -12,6 +12,13 @@ $businessselectorurl = '/myaccount/businessselect';
 $current_user_data = $account->getuserdata($current_user_data['user_id'], 'user_id');
 $transferpagedata = [];
 
+// Get account statistics for consistent dashboard display
+$accountstats = $account->account_getstats();
+
+// Feature flags for showing/hiding panels
+$show_enrollment_summary = false;  // Set to true to show the Enrollment Summary panel
+$show_profile_completion = false;  // Set to true to show the Profile Completion panel
+
 $uploadTmpDir = $_SERVER['DOCUMENT_ROOT'] . '/public/uploads/';
 
 // Create directory if it doesn't exist
@@ -483,16 +490,17 @@ foreach ($replacements as $key => $value) {
   $content_profilecompletion = str_replace($key, $value, $content_profilecompletion);
 }
 
-// Output the notice
-if ($replacements['profilestatus']!=='success')
-echo $content_profilecompletion;
+// Output the profile completion notice (hidden by feature flag)
+if ($show_profile_completion && $replacements['profilestatus']!=='success') {
+    echo $content_profilecompletion;
+}
 
 
 // -------------------------------------------------------
 // obtained funfacts from user_getaccountdetails.inc
 echo '
 <!-- Fun Facts Block -->
-<div class="content-panel mb-1 pb-1">
+<div class="content-panel mb-4 pb-1">
 <h3 class="text-info fw-bold">Fun Facts</h3>
 <div class="row p-0 m-0">
 ' . $funfact_content . '
@@ -504,6 +512,111 @@ echo '
 ';
 
 
+// Dashboard Panel with Enrollments and Allocations (Enrollments first for importance)
+echo '
+<!-- Dashboard Panel -->
+<div class="content-panel mb-2">
+    <h3 class="text-primary fw-bold mb-3">Quick Dashboard</h3>
+    <div class="row g-3">
+        <!-- Enrollments Card (moved to first position - most important) -->
+        <div class="col-md-6">
+            <div class="card h-100 border-success">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="card-title text-success mb-1">
+                                <i class="bi bi-check-circle me-2"></i>Enrollments
+                            </h5>
+                            <p class="text-muted small mb-0">Active birthday rewards</p>
+                        </div>
+                        <span class="badge bg-success fs-6">' . ($accountstats['business_success'] ?? 0) . '</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="text-muted small mb-2">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Active</span>
+                                <span class="fw-bold text-success">' . ($accountstats['business_success'] ?? 0) . '</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Pending</span>
+                                <span class="fw-bold text-warning">' . ($accountstats['business_pending'] ?? 0) . '</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Failed</span>
+                                <span class="fw-bold text-danger">' . ($accountstats['business_removed'] ?? 0) . '</span>
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <div class="text-center">
+                            <small>
+                                <a href="/myaccount/enrollment" class="text-muted">Dashboard</a>
+                                <span class="text-muted mx-2">•</span>
+                                <a href="/myaccount/profile" class="text-muted">Edit Profile</a>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/myaccount/enrollment-history" class="btn btn-sm btn-outline-success w-100">
+                            View Enrollment History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Allocations Card (second position - supporting information) -->
+        <div class="col-md-6">
+            <div class="card h-100 border-primary">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="card-title text-primary mb-1">
+                                <i class="bi bi-wallet2 me-2"></i>Allocations
+                            </h5>
+                            <p class="text-muted small mb-0">Monthly enrollment credits</p>
+                        </div>
+                        <span class="badge bg-primary fs-6">' . $businessoutput['counts']['remaining'] . '</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between text-muted small mb-2">
+                            <span>Available</span>
+                            <span class="fw-bold">' . $businessoutput['counts']['remaining'] . ' of ' . $businessoutput['counts']['plan_total'] . '</span>
+                        </div>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                style="width: ' . (($businessoutput['counts']['plan_total'] > 0) ? round(($businessoutput['counts']['remaining'] / $businessoutput['counts']['plan_total']) * 100) : 0) . '%"
+                                aria-valuenow="' . $businessoutput['counts']['remaining'] . '" 
+                                aria-valuemin="0" 
+                                aria-valuemax="' . $businessoutput['counts']['plan_total'] . '">
+                            </div>
+                        </div>
+                        <p class="text-muted small mb-0">Resets in ' . $qik->plural2($tillanniversary['days'], 'day') . '</p>
+                    </div>
+                    <div class="mt-3">';
+
+// Check if user has free plan and add upgrade link
+$plandatafeatures = $app->plandetail('details_id', $current_user_data['account_product_id']);
+$is_free_plan = ($current_user_data['account_plan'] == 'free' || $current_user_data['account_product_id'] == 1 || $businessoutput['counts']['plan_total'] <= 5);
+
+if ($is_free_plan) {
+    echo '
+                        <a href="/plans" class="btn btn-sm btn-success w-100 mb-2">
+                            <i class="bi bi-arrow-up-circle me-1"></i>Upgrade for More Allocations
+                        </a>';
+}
+
+echo '
+                        <a href="/myaccount/allocation-history" class="btn btn-sm btn-outline-primary w-100">
+                            View Allocation History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+';
+
 echo '
 <div class="row mx-0 px-0 g-0 g-md-4 mt-0  mb-1 pb-1">
 <div class="col-md-8 ms-0 ps-0">
@@ -511,30 +624,33 @@ echo '
 
 
 // -------------------------------------------------------
-echo '
-<!-- Enrollments Summary Block -->
-<div class="content-panel">
-<div class="d-flex justify-content-between align-items-baseline">
-<h3 class="text-success fw-bold mb-0" style="border-bottom: none;">Enrollment Summary</h3>
-<a href="/myaccount/enrollment" class="btn btn-sm btn-outline-secondary ms-auto">Dashboard</a>
-</div>
-<hr class="mt-2 mb-3">
-<p class="summary mt-3">';
-if ($businessoutput['counts']['remaining'] == 0) {
-  echo '
-<i class="bi bi-cart-x-fill text-danger me-2"></i>You ran out of enrollments. You\'ll receive ' . $businessoutput['counts']['plan_total'] . ' more in ' . $qik->plural2($tillanniversary['days'], 'day') . '.';
-} else {
-  echo '<i class="bi bi-cart-plus-fill text-success me-2"></i>You have ' . $qik->plural2($businessoutput['counts']['remaining'], 'enrollment') . ' remaining. ';
+// Enrollment Summary Block (hidden by feature flag)
+if ($show_enrollment_summary) {
+    echo '
+    <!-- Enrollments Summary Block -->
+    <div class="content-panel">
+    <div class="d-flex justify-content-between align-items-baseline">
+    <h3 class="text-success fw-bold mb-0" style="border-bottom: none;">Enrollment Summary</h3>
+    <a href="/myaccount/enrollment" class="btn btn-sm btn-outline-secondary ms-auto">Dashboard</a>
+    </div>
+    <hr class="mt-2 mb-3">
+    <p class="summary mt-3">';
+    if ($businessoutput['counts']['remaining'] == 0) {
+      echo '
+    <i class="bi bi-cart-x-fill text-danger me-2"></i>You ran out of enrollments. You\'ll receive ' . $businessoutput['counts']['plan_total'] . ' more in ' . $qik->plural2($tillanniversary['days'], 'day') . '.';
+    } else {
+      echo '<i class="bi bi-cart-plus-fill text-success me-2"></i>You have ' . $qik->plural2($businessoutput['counts']['remaining'], 'enrollment') . ' remaining. ';
+    }
+    
+    echo '</p>
+    <a href="/myaccount/enrollment-history" class="btn btn-sm btn-primary text-decoration-none">View enrollment history</a>
+    </div>
+    ';
 }
 
-echo '</p>
-<a href="/myaccount/enrollment-history" class="btn btn-sm btn-primary text-decoration-none">View enrollments</a>
-</div>
-';
-
-
- if ($replacements['profilestatus']=='success') {
-  echo $content_profilecompletion;
+// Profile Completion panel (shown when status is success, hidden by feature flag)
+if ($show_profile_completion && $replacements['profilestatus']=='success') {
+    echo $content_profilecompletion;
 }
 echo '
 </div>
