@@ -71,7 +71,12 @@
       "Bash(./cypress/quick-test.sh:*)",
       "Bash(cat:*)",
       "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_company_attributes;\")",
-      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT status, COUNT(*) as count FROM bg_users GROUP BY status ORDER BY count DESC LIMIT 10;\")"
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT status, COUNT(*) as count FROM bg_users GROUP BY status ORDER BY count DESC LIMIT 10;\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SHOW TABLES LIKE ''''bg_user%'''';\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SHOW TABLES;\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = ''birthday_gold_www'' AND table_name LIKE ''bg_user%'' LIMIT 20;\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = ''birthday_gold_www'' AND table_name IN (''bg_users'', ''bg_companies'', ''bg_media'');\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_user_feedback;\")"
     ],
     "deny": []
   }

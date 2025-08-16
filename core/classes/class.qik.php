@@ -1513,6 +1513,34 @@ Your session expired.  Login required.
 
 
     # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    public function getOrdinalSuffix($number)
+    {
+        // Returns the ordinal suffix for a number (st, nd, rd, th)
+        // Examples: 1st, 2nd, 3rd, 4th, 11th, 21st, 22nd, 23rd, etc.
+        
+        $number = abs($number); // Handle negative numbers
+        
+        // Special case for 11-13 which always use "th"
+        if ($number % 100 >= 11 && $number % 100 <= 13) {
+            return 'th';
+        }
+        
+        // Check the last digit
+        switch ($number % 10) {
+            case 1:
+                return 'st';
+            case 2:
+                return 'nd';
+            case 3:
+                return 'rd';
+            default:
+                return 'th';
+        }
+    }
+
+
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
     public function endpostpage($input = '', $id = '')
     {
         global $session;
