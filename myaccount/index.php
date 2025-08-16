@@ -612,11 +612,10 @@ echo '
                         <!-- Allocation Breakdown -->
                         <div class="small">
                             <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Current Plan:</span>
-                                <span class="fw-semibold text-uppercase">' . $plan_name . '</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Plan Allocations:</span>
+                                <span class="text-muted">
+                                    Plan Allocations 
+                                    <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">' . strtoupper($plan_name) . '</span>
+                                </span>
                                 <span class="fw-semibold">' . $plan_allocations . '</span>
                             </div>';
 
