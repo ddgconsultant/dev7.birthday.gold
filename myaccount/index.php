@@ -584,6 +584,16 @@ $plandatafeatures = $app->plandetail('details_id', $current_user_data['account_p
 $plan_allocations = $businessoutput['counts']['plan_total'] ?? $plandatafeatures['max_business_select'] ?? 0;
 $used_allocations = ($plan_allocations - $businessoutput['counts']['remaining']);
 
+// Get user's plan name - use the global array for consistency
+global $bg_users_accountplans;
+$plan_key = $current_user_data['account_plan'] ?? 'free';
+$plan_name = $bg_users_accountplans[$plan_key] ?? ucfirst($plan_key);
+
+// For newer plans, try to get from product features
+if ($plandatafeatures && isset($plandatafeatures['plan']['value']) && !empty($plandatafeatures['plan']['value'])) {
+    $plan_name = ucfirst($plandatafeatures['plan']['value']);
+}
+
 // Try to get bonus allocations from AllocationManager if available
 $bonus_allocations = 0;
 $allocation_details = null;
@@ -601,6 +611,10 @@ $remaining_allocations = $businessoutput['counts']['remaining'];
 echo '
                         <!-- Allocation Breakdown -->
                         <div class="small">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Current Plan:</span>
+                                <span class="fw-semibold text-uppercase">' . $plan_name . '</span>
+                            </div>
                             <div class="d-flex justify-content-between mb-1">
                                 <span class="text-muted">Plan Allocations:</span>
                                 <span class="fw-semibold">' . $plan_allocations . '</span>
@@ -633,8 +647,21 @@ echo '
                                 aria-valuemin="0" 
                                 aria-valuemax="' . $total_allocations . '">
                             </div>
-                        </div>
-                        <p class="text-muted small mb-0">Resets in ' . $qik->plural2($tillanniversary['days'], 'day') . '</p>
+                        </div>';
+
+// Calculate the actual reset date
+$reset_date = new DateTime();
+$reset_date->add(new DateInterval('P' . $tillanniversary['days'] . 'D'));
+$reset_date_formatted = $reset_date->format('F j, Y');
+
+echo '
+                        <p class="text-muted small mb-0">
+                            <span data-bs-toggle="tooltip" data-bs-placement="top" 
+                                  title="Resets on ' . $reset_date_formatted . '"
+                                  style="cursor: help; border-bottom: 1px dotted #6c757d;">
+                                Resets in ' . $qik->plural2($tillanniversary['days'], 'day') . '
+                            </span>
+                        </p>
                     </div>
                     <div class="mt-3">';
 

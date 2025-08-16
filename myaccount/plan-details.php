@@ -261,12 +261,12 @@ if (empty($plandatafeatures)) {
 // Get the correct plan name when viewing different plans
 if (isset($_GET['product_id']) && $account->isadmin()) {
     // Get plan name from the database for the viewed product
-    $sql = "SELECT plan_name FROM bg_products WHERE product_id = :product_id";
+    $sql = "SELECT account_name, account_plan FROM bg_products WHERE id = :product_id";
     $stmt = $database->prepare($sql);
     $stmt->execute(['product_id' => $user_product_id]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($result) {
-        $userplanname = $result['plan_name'];
+        $userplanname = $result['account_name'] ?? $result['account_plan'];
     }
 } elseif (!isset($userplanname) || empty($userplanname)) {
     // Set from plan data features if available
@@ -347,24 +347,95 @@ $maxBrandsDesc = isset($plandatafeatures['max_business_select_description']['val
 // Admin controls and debug info
 if ($account->isadmin()) {
     // Get all available plans for the selector
-    $sql = "SELECT DISTINCT product_id, plan_name, status FROM bg_products WHERE status = 'active' ORDER BY product_id";
+    $sql = "SELECT DISTINCT id as product_id, account_plan, account_name, account_type, billing_cycle, price, status 
+            FROM bg_products 
+            WHERE status = 'active' 
+            ORDER BY account_type, billing_cycle, price";
     $available_plans = $database->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Group plans by type
+    $grouped_plans = [];
+    foreach ($available_plans as $plan) {
+        $group_key = ucfirst($plan['account_type']) . ' - ' . ucfirst($plan['billing_cycle']);
+        if (!isset($grouped_plans[$group_key])) {
+            $grouped_plans[$group_key] = [];
+        }
+        $grouped_plans[$group_key][] = $plan;
+    }
     
     echo '<div class="alert alert-warning mb-3">
         <h5><i class="bi bi-shield-lock"></i> Admin Plan Viewer</h5>
-        <div class="row align-items-center">
+        <div class="row">
             <div class="col-md-8">
-                <p class="mb-2"><strong>View Different Plans:</strong></p>
-                <div class="btn-group" role="group">';
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <label class="fw-bold">Select Plan:</label>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="planDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-list"></i> ';
     
-    foreach ($available_plans as $plan) {
-        $active = ($user_product_id == $plan['product_id']) ? 'btn-primary' : 'btn-outline-primary';
-        echo '<a href="?product_id=' . $plan['product_id'] . '" class="btn btn-sm ' . $active . '">' . 
-             htmlspecialchars($plan['plan_name']) . ' (ID: ' . $plan['product_id'] . ')</a>';
+    // Show current plan name in dropdown button
+    if (isset($_GET['product_id'])) {
+        foreach ($available_plans as $plan) {
+            if ($plan['product_id'] == $user_product_id) {
+                echo htmlspecialchars($plan['account_name'] ?? $plan['account_plan']) . ' (ID: ' . $plan['product_id'] . ')';
+                break;
+            }
+        }
+    } else {
+        echo 'Choose a Plan';
     }
     
     echo '
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="planDropdown" style="max-height: 400px; overflow-y: auto;">';
+    
+    // Generate grouped dropdown items
+    foreach ($grouped_plans as $group_name => $plans) {
+        echo '<li><h6 class="dropdown-header">' . htmlspecialchars($group_name) . '</h6></li>';
+        foreach ($plans as $plan) {
+            $plan_display_name = $plan['account_name'] ?? $plan['account_plan'];
+            $price_display = $plan['price'] > 0 ? ' ($' . number_format($plan['price'] / 100, 2) . ')' : ' (Free)';
+            $active_class = ($user_product_id == $plan['product_id']) ? ' active' : '';
+            echo '<li><a class="dropdown-item' . $active_class . '" href="?product_id=' . $plan['product_id'] . '">' . 
+                 '<span class="badge bg-secondary me-2">' . $plan['product_id'] . '</span>' .
+                 htmlspecialchars($plan_display_name) . $price_display . '</a></li>';
+        }
+        echo '<li><hr class="dropdown-divider"></li>';
+    }
+    
+    echo '
+                        </ul>
+                    </div>
+                    
+                    <!-- Quick access buttons for common plans -->
+                    <div class="btn-group btn-group-sm ms-3" role="group">
+                        <a href="?product_id=1" class="btn btn-outline-success" title="Free Plan">Free</a>
+                        <a href="?product_id=2" class="btn btn-outline-primary" title="Plus Plan">Plus</a>
+                        <a href="?product_id=3" class="btn btn-outline-warning" title="Premium Plan">Premium</a>
+                    </div>
                 </div>
+                
+                <!-- Compact view of all plans -->
+                <details class="mt-2">
+                    <summary class="text-muted small" style="cursor: pointer;">
+                        <i class="bi bi-eye"></i> View all ' . count($available_plans) . ' plans
+                    </summary>
+                    <div class="mt-2" style="max-height: 200px; overflow-y: auto; font-size: 0.85rem;">';
+    
+    foreach ($grouped_plans as $group_name => $plans) {
+        echo '<div class="mb-2"><strong>' . htmlspecialchars($group_name) . ':</strong><br>';
+        foreach ($plans as $plan) {
+            $plan_display_name = $plan['account_name'] ?? $plan['account_plan'];
+            $active = ($user_product_id == $plan['product_id']) ? 'text-primary fw-bold' : '';
+            echo '<a href="?product_id=' . $plan['product_id'] . '" class="me-2 ' . $active . '">' . 
+                 '[' . $plan['product_id'] . '] ' . htmlspecialchars($plan_display_name) . '</a>';
+        }
+        echo '</div>';
+    }
+    
+    echo '
+                    </div>
+                </details>
             </div>
             <div class="col-md-4 text-end">
                 <a href="?" class="btn btn-sm btn-secondary">View My Plan</a>';
