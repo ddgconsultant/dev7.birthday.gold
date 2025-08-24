@@ -1,10 +1,8 @@
 <?php
-/**
- * My Rewards Dashboard
- * Shows enrollment allocation counts, plan info, and links to key features
- */
+$addClasses[]='allocationmanager';
 
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+/*
 include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.allocationmanager.php');
 
 // Check if user is active
@@ -13,17 +11,20 @@ if (empty($activeuser)) {
     header('Location: /login');
     exit;
 }
+    
 
 // Get user data
 $current_user_data = $session->get('current_user_data');
 $current_user_data = $account->getuserdata($current_user_data['user_id'], 'user_id');
+
+// Initialize allocationmanager
+$allocationmanager = new allocationmanager($database);
+*/
+
 $user_id = $current_user_data['user_id'];
 
-// Initialize AllocationManager
-$allocationManager = new AllocationManager($database);
-
 // Get user's allocation balance
-$balance = $allocationManager->getUserBalance($user_id);
+$balance = $allocationmanager->getUserBalance($user_id);
 
 // Get user's plan details
 $plandetails = $app->plandetail('details_id', $current_user_data['account_product_id']);
@@ -60,18 +61,6 @@ $additionalstyles = '<script src="/public/assets/js/config.js"></script>';
 $additionalstyles .= '<script src="/public/assets/vendors/simplebar/simplebar.min.js"></script>';
 $additionalstyles .= '<link href="/public/assets/vendors/swiper/swiper-bundle.min.css" rel="stylesheet">';
 
-// Add script to initialize Bootstrap tooltips
-$additionalscripts = '
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Initialize Bootstrap tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll(\'[data-bs-toggle="tooltip"]\'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-</script>
-';
 
 $additionalstyles .= '
 <style>

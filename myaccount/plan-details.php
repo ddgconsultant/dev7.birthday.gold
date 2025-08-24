@@ -33,19 +33,70 @@ $outputm='';
 #-------------------------------------------------------------------------------
 
 if ($app->formposted()) {
-   if (isset($_POST['feature_id'])) {
-    $feature_id = $_POST['feature_id'];
-    $feature_value = $_POST['feature_value'];
+    // Handle card override updates
+    if (isset($_POST['action']) && $_POST['action'] == 'update_card_override') {
+        $card_key = $_POST['card_key'] ?? '';
+        $product_id = intval($_POST['product_id'] ?? 0);
+        
+        if ($card_key && $product_id && $account->isadmin()) {
+            // Process each override field
+            $fields = ['title', 'value', 'description', 'icon', 'icon_color', 'excluded'];
+            
+            foreach ($fields as $field) {
+                $override_value = $_POST['override_' . $field] ?? '';
+                $feature_name = 'card_' . $card_key . '_' . $field;
+                
+                if ($override_value !== '') {
+                    // Check if override exists
+                    $sql = "SELECT id FROM bg_product_features WHERE product_id = :product_id AND name = :name";
+                    $stmt = $database->prepare($sql);
+                    $stmt->execute(['product_id' => $product_id, 'name' => $feature_name]);
+                    $existing = $stmt->fetch();
+                    
+                    if ($existing) {
+                        // Update existing
+                        $sql = "UPDATE bg_product_features SET value = :value, modify_dt = NOW() WHERE id = :id";
+                        $stmt = $database->prepare($sql);
+                        $stmt->execute(['value' => $override_value, 'id' => $existing['id']]);
+                    } else {
+                        // Insert new
+                        $sql = "INSERT INTO bg_product_features (product_id, name, value, status, create_dt) 
+                                VALUES (:product_id, :name, :value, 'active', NOW())";
+                        $stmt = $database->prepare($sql);
+                        $stmt->execute(['product_id' => $product_id, 'name' => $feature_name, 'value' => $override_value]);
+                    }
+                } else {
+                    // Remove override if empty
+                    $sql = "DELETE FROM bg_product_features WHERE product_id = :product_id AND name = :name";
+                    $stmt = $database->prepare($sql);
+                    $stmt->execute(['product_id' => $product_id, 'name' => $feature_name]);
+                }
+            }
+            
+            // Redirect back with success message
+            $redirect_url = $_SERVER['PHP_SELF'];
+            if (isset($_GET['product_id'])) {
+                $redirect_url .= '?product_id=' . $_GET['product_id'];
+            }
+            header('Location: ' . $redirect_url);
+            exit;
+        }
+    }
     
-    // Update the database with the new value
-    $sql = 'UPDATE bg_product_features SET value = :value WHERE id = :id';
-    $stmt = $database->prepare($sql);
-    $stmt->execute(['value' => $feature_value, 'id' => $feature_id]);
-    
-    // Optionally, reload the page to reflect changes or handle success messages
-    header('Location: '.$_SERVER['PHP_SELF']);
-    exit;
-}
+    // Handle legacy feature updates
+    if (isset($_POST['feature_id'])) {
+        $feature_id = $_POST['feature_id'];
+        $feature_value = $_POST['feature_value'];
+        
+        // Update the database with the new value
+        $sql = 'UPDATE bg_product_features SET value = :value WHERE id = :id';
+        $stmt = $database->prepare($sql);
+        $stmt->execute(['value' => $feature_value, 'id' => $feature_id]);
+        
+        // Optionally, reload the page to reflect changes or handle success messages
+        header('Location: '.$_SERVER['PHP_SELF']);
+        exit;
+    }
 }
 
 
@@ -58,6 +109,52 @@ $additionalstyles = '<link href="/public/css/v7/bg_theme.css" rel="stylesheet">'
 
 $additionalstyles .= '
 <style>
+/* Modern tab navigation */
+.nav-tabs-modern {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #dee2e6;
+    gap: 0;
+    flex-wrap: wrap;
+    position: relative;
+}
+
+.nav-tab-item {
+    flex: 0 0 auto;
+    padding: 1rem 1.25rem;
+    text-decoration: none;
+    color: #6c757d;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    background: transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+    border-radius: 0;
+    position: relative;
+}
+
+.nav-tab-item:hover {
+    color: #495057;
+    text-decoration: none;
+    background: #f8f9fa;
+}
+
+.nav-tab-item.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd !important;
+    background: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .nav-tab-item {
+        padding: 0.75rem 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
 /* Enhanced Plan Details Styles */
 .plan-details-container {
     max-width: 1200px;
@@ -234,10 +331,7 @@ include($dir['core_components'] . '/bg_header.inc');
 </div>
 
 <?php
-// Remove left panel and use full width
-echo '    
-<div class="plan-details-container">
-        ';
+
      
 // Get plan details based on user actual product ID
 if ($user_product_id) {
@@ -258,15 +352,42 @@ if (empty($plandatafeatures)) {
     ];
 }
 
-// Get the correct plan name when viewing different plans
+// Get the correct plan name and price when viewing different plans
 if (isset($_GET['product_id']) && $account->isadmin()) {
-    // Get plan name from the database for the viewed product
-    $sql = "SELECT account_name, account_plan FROM bg_products WHERE id = :product_id";
+    // Get plan details from the database for the viewed product
+    $sql = "SELECT account_name, account_plan, price, billing_cycle, description FROM bg_products WHERE id = :product_id";
     $stmt = $database->prepare($sql);
     $stmt->execute(['product_id' => $user_product_id]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($result) {
         $userplanname = $result['account_name'] ?? $result['account_plan'];
+        // Override price if we got it from database
+        if ($result['price'] !== null) {
+            $db_price = $result['price'] / 100; // Convert from cents to dollars
+            $plandatafeatures['plan_pricetag']['value'] = '$' . number_format($db_price, 2);
+            
+            // Set price description based on billing cycle
+            $billing_text = '';
+            switch($result['billing_cycle']) {
+                case 'monthly':
+                    $billing_text = 'per month';
+                    break;
+                case 'annual':
+                case 'yearly':
+                    $billing_text = 'per year';
+                    break;
+                case 'one-time':
+                    $billing_text = 'one-time payment';
+                    break;
+                default:
+                    $billing_text = $result['billing_cycle'];
+            }
+            $plandatafeatures['plan_pricedescription']['value'] = $billing_text;
+        }
+        // Get plan description
+        if (!empty($result['description'])) {
+            $plandatafeatures['plan_fulldescription']['value'] = $result['description'];
+        }
     }
 } elseif (!isset($userplanname) || empty($userplanname)) {
     // Set from plan data features if available
@@ -339,8 +460,44 @@ function generateModal($item) {
 
 
 // Get plan price for display
-$planPrice = isset($plandatafeatures['plan_pricetag']['value']) ? $plandatafeatures['plan_pricetag']['value'] : '$0';
-$planPriceDesc = isset($plandatafeatures['plan_pricedescription']['value']) ? $plandatafeatures['plan_pricedescription']['value'] : '';
+// If price is still not set or is $0, try to get it from the database
+if (!isset($plandatafeatures['plan_pricetag']['value']) || $plandatafeatures['plan_pricetag']['value'] == '$0' || $plandatafeatures['plan_pricetag']['value'] == 'Free') {
+    if ($user_product_id) {
+        $sql = "SELECT price, billing_cycle FROM bg_products WHERE id = :product_id";
+        $stmt = $database->prepare($sql);
+        $stmt->execute(['product_id' => $user_product_id]);
+        $price_result = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($price_result && $price_result['price'] > 0) {
+            $db_price = $price_result['price'] / 100;
+            $planPrice = '$' . number_format($db_price, 2);
+            
+            switch($price_result['billing_cycle']) {
+                case 'monthly':
+                    $planPriceDesc = 'per month';
+                    break;
+                case 'annual':
+                case 'yearly':
+                    $planPriceDesc = 'per year';
+                    break;
+                case 'one-time':
+                    $planPriceDesc = 'one-time payment';
+                    break;
+                default:
+                    $planPriceDesc = $price_result['billing_cycle'];
+            }
+        } else {
+            $planPrice = 'Free';
+            $planPriceDesc = 'No charge';
+        }
+    } else {
+        $planPrice = isset($plandatafeatures['plan_pricetag']['value']) ? $plandatafeatures['plan_pricetag']['value'] : 'Free';
+        $planPriceDesc = isset($plandatafeatures['plan_pricedescription']['value']) ? $plandatafeatures['plan_pricedescription']['value'] : 'No charge';
+    }
+} else {
+    $planPrice = $plandatafeatures['plan_pricetag']['value'];
+    $planPriceDesc = isset($plandatafeatures['plan_pricedescription']['value']) ? $plandatafeatures['plan_pricedescription']['value'] : '';
+}
+
 $maxBrands = isset($plandatafeatures['max_business_select_tag']['value']) ? $plandatafeatures['max_business_select_tag']['value'] : 'Unlimited';
 $maxBrandsDesc = isset($plandatafeatures['max_business_select_description']['value']) ? $plandatafeatures['max_business_select_description']['value'] : '';
 
@@ -426,46 +583,36 @@ if ($account->isadmin()) {
         }
     }
     
-    echo '<div class="alert alert-warning mb-3" style="background: linear-gradient(135deg, #fff9e6 0%, #fff5d6 100%); border-color: #ffc107;">
-        <h5 class="mb-3"><i class="bi bi-shield-lock"></i> Admin Plan Viewer</h5>';
-    
-    // Recently viewed plans
-    if (!empty($_SESSION['admin_viewed_plans'])) {
-        echo '<div class="mb-3">
-            <small class="text-muted d-block mb-1">Recently Viewed:</small>
-            <div class="d-flex flex-wrap gap-1">';
-        
-        foreach ($_SESSION['admin_viewed_plans'] as $recent_id => $recent_time) {
-            // Find plan details
-            $recent_plan = null;
-            foreach ($available_plans as $plan) {
-                if ($plan['product_id'] == $recent_id) {
-                    $recent_plan = $plan;
-                    break;
-                }
-            }
-            if ($recent_plan) {
-                $plan_name = $recent_plan['account_name'] ?? $recent_plan['account_plan'];
-                $is_current = ($user_product_id == $recent_id);
-                $btn_class = $is_current ? 'btn-info' : 'btn-outline-info';
-                $time_ago = human_time_diff($recent_time);
-                echo '<a href="?product_id=' . $recent_id . '" class="btn btn-sm ' . $btn_class . '" 
-                        title="Viewed ' . $time_ago . '">' . 
-                     '<i class="bi bi-clock-history"></i> ' . htmlspecialchars($plan_name) . '</a>';
-            }
-        }
-        
-        echo '</div>
-        </div>
-        <hr class="my-2">';
+    // Get version info for the current plan if viewing
+    $version_info = '';
+    if ($user_product_id) {
+        $sql = "SELECT version FROM bg_product_features WHERE product_id = :product_id LIMIT 1";
+        $stmt = $database->prepare($sql);
+        $stmt->execute(['product_id' => $user_product_id]);
+        $version_result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $version_info = $version_result['version'] ?? 'v3';
     }
     
-    // Tabs for plan categories
-    echo '<ul class="nav nav-tabs mb-3" role="tablist">';
+    echo '<div class="alert alert-warning mb-3 container-fluid" >
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h5 class="mb-2"><i class="bi bi-shield-lock"></i> Admin Plan Viewer</h5>';
+    
+    if ($user_product_id) {
+        echo '<div class="mb-2">
+                <span class="badge bg-dark me-2">Plan ID: ' . $user_product_id . '</span>
+                <span class="badge bg-secondary">Version: ' . htmlspecialchars($version_info) . '</span>
+              </div>';
+    }
+    
+    echo '</div>
+        </div>';
+    
+    // Modern tabs for plan categories
+    echo '<nav class="nav-tabs-modern mb-3">';
     
     foreach ($grouped_plans as $type => $plans) {
         $tab_active = ($type == $active_tab) ? ' active' : '';
-        $aria_selected = ($type == $active_tab) ? 'true' : 'false';
         $type_display = ucfirst($type);
         $count = count($plans);
         
@@ -479,26 +626,22 @@ if ($account->isadmin()) {
         ];
         $icon = $icons[$type] ?? 'bi-box';
         
-        echo '<li class="nav-item" role="presentation">
-            <button class="nav-link' . $tab_active . '" id="' . $type . '-tab" data-bs-toggle="tab" 
-                    data-bs-target="#' . $type . '-panel" type="button" role="tab" 
-                    aria-controls="' . $type . '-panel" aria-selected="' . $aria_selected . '">
-                <i class="' . $icon . '"></i> ' . $type_display . ' <span class="badge bg-secondary">' . $count . '</span>
-            </button>
-        </li>';
+        echo '<a href="#" class="nav-tab-item' . $tab_active . '" data-tab-target="' . $type . '-panel">
+                <i class="' . $icon . ' me-2"></i>' . $type_display . ' 
+                <span class="badge bg-secondary ms-1">' . $count . '</span>
+            </a>';
     }
     
-    echo '</ul>';
+    echo '</nav>';
     
     // Tab content with pill buttons
     echo '<div class="tab-content">';
     
     foreach ($grouped_plans as $type => $plans) {
-        $pane_active = ($type == $active_tab) ? ' show active' : '';
+        $pane_active = ($type == $active_tab) ? ' active' : ' d-none';
         
-        echo '<div class="tab-pane fade' . $pane_active . '" id="' . $type . '-panel" role="tabpanel" 
-                  aria-labelledby="' . $type . '-tab">
-            <div class="d-flex flex-wrap gap-2">';
+        echo '<div class="tab-pane' . $pane_active . '" id="' . $type . '-panel">
+            <div class="d-flex flex-wrap gap-3">';
         
         foreach ($plans as $plan) {
             $plan_display_name = $plan['account_name'] ?? $plan['account_plan'];
@@ -506,24 +649,39 @@ if ($account->isadmin()) {
             $billing_display = str_replace('-', ' ', $plan['billing_cycle']);
             $is_active = ($user_product_id == $plan['product_id']);
             
+            // Get version for this plan
+            $sql_version = "SELECT version FROM bg_product_features WHERE product_id = :product_id LIMIT 1";
+            $stmt_version = $database->prepare($sql_version);
+            $stmt_version->execute(['product_id' => $plan['product_id']]);
+            $plan_version = $stmt_version->fetch(PDO::FETCH_ASSOC);
+            $version_display = $plan_version['version'] ?? 'v3';
+            
+            // Check if this version matches the website plan version
+            $is_current_version = ($version_display === ($website['plan_version'] ?? 'v3'));
+            $version_class = $is_current_version ? 'fw-bold badge bg-success text-white' : '';
+            
             // Button styling
             if ($is_active) {
                 $btn_class = 'btn-primary';
                 $badge_class = 'bg-white text-primary';
+                $text_class = 'text-white';
             } elseif (isset($_SESSION['admin_viewed_plans'][$plan['product_id']])) {
                 $btn_class = 'btn-outline-primary';
                 $badge_class = 'bg-primary';
+                $text_class = 'text-muted';
             } else {
                 $btn_class = 'btn-outline-secondary';
                 $badge_class = 'bg-secondary';
+                $text_class = 'text-muted';
             }
             
-            echo '<a href="?product_id=' . $plan['product_id'] . '" class="btn ' . $btn_class . ' position-relative">
-                <span class="badge ' . $badge_class . ' position-absolute top-0 start-0 translate-middle rounded-pill">' . 
-                $plan['product_id'] . '</span>
-                <div class="pt-1">
-                    <strong>' . htmlspecialchars($plan_display_name) . '</strong><br>
-                    <small>' . $price_display . ' / ' . ucfirst($billing_display) . '</small>
+            echo '<a href="?product_id=' . $plan['product_id'] . '" class="btn ' . $btn_class . ' position-relative px-3 py-2">
+                <div>
+                    <strong class="d-block mb-1">' . htmlspecialchars($plan_display_name) . '</strong>
+                    <small class="text-nowrap">' . $price_display . ' / ' . ucfirst($billing_display) . '</small>
+                    <div class="mt-1">
+                        <small class="' . $text_class . '">ID: ' . $plan['product_id'] . ' <span class="mx-4">•</span> <span class="' . $version_class . '">' . htmlspecialchars($version_display) . '</span></small>
+                    </div>
                 </div>
             </a>';
         }
@@ -578,90 +736,321 @@ if ($account->isadmin()) {
     
     echo '</div>';
 }
+// Remove left panel and use full width
+echo '    
+<div class="plan-details-container">
+        ';
+// Get ALL plan features from bg_product_features
+$planDescription = '';
+$plan_highlights = [];
+$feature_cards = [];
+
+// STEP 1: Load default feature cards from bg_config
+$sql = "SELECT config_key, config_data, display_order 
+        FROM bg_config 
+        WHERE config_type = 'plan_feature_card' 
+        AND status = 'active' 
+        ORDER BY display_order, config_key";
+$default_cards_result = $database->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+
+$default_cards = [];
+foreach ($default_cards_result as $card) {
+    $card_data = json_decode($card['config_data'], true);
+    if ($card_data) {
+        $card_data['card_key'] = $card['config_key']; // Store the key for override matching
+        $default_cards[$card['config_key']] = $card_data;
+    }
+}
+
+// STEP 2: Fetch plan-specific overrides if we have a product ID
+$features_by_name = [];
+if ($user_product_id) {
+    $sql = "SELECT name, value FROM bg_product_features 
+            WHERE product_id = :product_id 
+            AND status = 'active' 
+            ORDER BY name";
+    $stmt = $database->prepare($sql);
+    $stmt->execute(['product_id' => $user_product_id]);
+    $features = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Organize features by name
+    foreach ($features as $feature) {
+        $features_by_name[$feature['name']] = $feature['value'];
+    }
+    
+    // Extract plan description
+    if (isset($features_by_name['plan_description'])) {
+        $planDescription = $features_by_name['plan_description'];
+    }
+    
+    // Extract plan highlights
+    for ($i = 1; $i <= 6; $i++) {
+        if (isset($features_by_name['plan_highlight_' . $i])) {
+            $plan_highlights[] = $features_by_name['plan_highlight_' . $i];
+        }
+    }
+}
+
+// STEP 3: Build feature cards by merging defaults with overrides
+if (!empty($default_cards)) {
+    // Get the account type for this plan to filter cards
+    $account_type = 'individual'; // default
+    if ($user_product_id) {
+        $sql = "SELECT account_type FROM bg_products WHERE id = :product_id";
+        $stmt = $database->prepare($sql);
+        $stmt->execute(['product_id' => $user_product_id]);
+        $product_info = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($product_info) {
+            $account_type = strtolower($product_info['account_type']);
+        }
+    }
+    
+    // Use default cards from bg_config
+    foreach ($default_cards as $card_key => $card_data) {
+        // Check if this card is excluded for this specific plan
+        // Look for card_{key}_excluded override
+        if (isset($features_by_name['card_' . $card_key . '_excluded']) && 
+            $features_by_name['card_' . $card_key . '_excluded'] === 'true') {
+            continue; // Skip this card - it's explicitly excluded
+        }
+        
+        // Check if this card is restricted to certain plans
+        if (isset($card_data['plans']) && is_array($card_data['plans'])) {
+            // This card is plan-specific, check if current plan is in the list
+            $allowed = false;
+            foreach ($card_data['plans'] as $allowed_plan) {
+                if (stripos($allowed_plan, $account_type) !== false || 
+                    stripos($user_plan, $allowed_plan) !== false) {
+                    $allowed = true;
+                    break;
+                }
+            }
+            if (!$allowed) {
+                continue; // Skip this card for this plan
+            }
+        }
+        
+        $card = [
+            'title' => $card_data['title'] ?? '',
+            'value' => $card_data['value'] ?? '',
+            'description' => $card_data['description'] ?? '',
+            'icon' => $card_data['icon'] ?? 'bi-star',
+            'icon_color' => $card_data['icon_color'] ?? 'primary',
+            'card_key' => $card_key // Store key for editing
+        ];
+        
+        // Apply plan-specific overrides from bg_product_features
+        // Format: card_{card_key}_{property}
+        // Example: card_brands_value, card_brands_description
+        $override_prefix = 'card_' . $card_key . '_';
+        
+        if (isset($features_by_name[$override_prefix . 'title'])) {
+            $card['title'] = $features_by_name[$override_prefix . 'title'];
+        }
+        if (isset($features_by_name[$override_prefix . 'value'])) {
+            $card['value'] = $features_by_name[$override_prefix . 'value'];
+        }
+        if (isset($features_by_name[$override_prefix . 'description'])) {
+            $card['description'] = $features_by_name[$override_prefix . 'description'];
+        }
+        if (isset($features_by_name[$override_prefix . 'icon'])) {
+            $card['icon'] = $features_by_name[$override_prefix . 'icon'];
+        }
+        if (isset($features_by_name[$override_prefix . 'icon_color'])) {
+            $card['icon_color'] = $features_by_name[$override_prefix . 'icon_color'];
+        }
+        
+        $feature_cards[] = $card;
+    }
+} else {
+    // Fallback to legacy format if no bg_config cards defined
+    for ($i = 1; $i <= 6; $i++) {
+        if (isset($features_by_name['feature_' . $i . '_title'])) {
+            $feature_cards[] = [
+                'title' => $features_by_name['feature_' . $i . '_title'] ?? '',
+                'value' => $features_by_name['feature_' . $i . '_value'] ?? '',
+                'description' => $features_by_name['feature_' . $i . '_description'] ?? '',
+                'icon' => $features_by_name['feature_' . $i . '_icon'] ?? 'bi-star',
+                'icon_color' => $features_by_name['feature_' . $i . '_icon_color'] ?? 'primary'
+            ];
+        }
+    }
+}
+
+// Fallback descriptions if not in database
+if (empty($planDescription)) {
+    $plan_descriptions = [
+        'Free' => 'Get started with Birthday Gold at no cost. Perfect for trying out our service with limited features.',
+        'Plus' => 'Our most popular plan for individuals who want to maximize their birthday rewards with full access to all features.',
+        'Premium' => 'The ultimate birthday experience with VIP support and exclusive perks.',
+        'Life' => 'You pay a one-time $40. One and Done and you get lifelong access to all the features we provide and will get any new features we add to the service automatically with no other charges/fees ever.',
+        'Business Gold' => 'Professional plan for businesses to manage employee birthday programs and customer engagement.',
+        'Individual Gold' => 'Enhanced individual plan with premium features and priority support.',
+        'Family Gold' => 'Perfect for families to manage multiple birthday celebrations with shared features and family-friendly rewards.'
+    ];
+    
+    if (isset($plan_descriptions[$userplanname])) {
+        $planDescription = $plan_descriptions[$userplanname];
+    }
+}
+
+// Fallback highlights if not in database
+if (empty($plan_highlights)) {
+    if ($planPrice == 'Free' || $planPrice == '$0.00') {
+        $plan_highlights = [
+            'Basic enrollment features',
+            'Limited brand selections',
+            'Email reminders',
+            'Community support'
+        ];
+    } elseif (stripos($userplanname, 'business') !== false) {
+        $plan_highlights = [
+            'Unlimited employee accounts',
+            'Bulk enrollment management',
+            'Analytics dashboard',
+            'Priority business support',
+            'Custom branding options'
+        ];
+    } elseif (stripos($userplanname, 'life') !== false) {
+        $plan_highlights = [
+            'Lifetime access - never pay again',
+            'All current and future features',
+            'Unlimited brand enrollments',
+            'Priority support forever',
+            'Early access to new features'
+        ];
+    } else {
+        $plan_highlights = [
+            'Unlimited brand enrollments',
+            'Advanced reminder system',
+            'Birthday tour planner',
+            'Priority email support',
+            'Exclusive partner offers'
+        ];
+    }
+}
 
 echo '
     <!-- Plan Summary Card -->
     <div class="plan-summary">
-        <h2>' . htmlspecialchars($userplanname) . ' Plan</h2>
+        <h2>' . htmlspecialchars($userplanname) . '</h2>
         <div class="price">' . htmlspecialchars($planPrice) . '</div>
-        <div class="billing-cycle">' . htmlspecialchars($planPriceDesc) . '</div>
+        <div class="billing-cycle mb-3">' . htmlspecialchars($planPriceDesc) . '</div>';
+
+if (!empty($planDescription)) {
+    echo '<div class="plan-description mb-3" style="max-width: 600px; margin: 0 auto; font-size: 1.1rem; line-height: 1.6; opacity: 0.95;">
+            ' . htmlspecialchars($planDescription) . '
+          </div>';
+}
+
+if (!empty($plan_highlights)) {
+    echo '<div class="plan-highlights mt-4" style="max-width: 500px; margin: 0 auto;">
+            <div class="row g-2">';
+    foreach ($plan_highlights as $highlight) {
+        echo '<div class="col-12">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi bi-check-circle-fill text-warning me-2"></i>
+                    <span style="opacity: 0.9;">' . htmlspecialchars($highlight) . '</span>
+                </div>
+              </div>';
+    }
+    echo '</div>
+          </div>';
+}
+
+echo '
     </div>
 
     <!-- Features Grid -->
-    <div class="row g-4">
-        <!-- Brands Registered -->
-        <div class="col-lg-4 col-md-6">
-            <div class="feature-card">
-                <div class="feature-icon success">
-                    <i class="bi bi-building-check"></i>
-                </div>
-                <h3 class="feature-title">Brands You Can Register</h3>
-                <div class="feature-value">' . htmlspecialchars($maxBrands) . '</div>
-                <p class="feature-description">' . htmlspecialchars($maxBrandsDesc) . '</p>
-                '.editbuttons($plandatafeatures['max_business_select_tag'] ?? [], $plandatafeatures['max_business_select_description'] ?? []).'
-            </div>
-        </div>
+    <div class="row g-4">';
 
-        <!-- Birthday Reminders -->
-        <div class="col-lg-4 col-md-6">
-            <div class="feature-card">
-                <div class="feature-icon warning">
-                    <i class="bi bi-bell-fill"></i>
-                </div>
-                <h3 class="feature-title">Birthday Reminders</h3>
-                <div class="feature-value">Automated</div>
-                <p class="feature-description">Never miss out on your birthday rewards! We will send you timely reminders throughout your birthday month so you can claim every reward.</p>
-            </div>
-        </div>
+// If no feature cards found in database, use defaults based on plan
+if (empty($feature_cards)) {
+    // Default feature cards for backward compatibility
+    $feature_cards = [
+        [
+            'title' => 'Brands You Can Register',
+            'value' => $maxBrands,
+            'description' => $maxBrandsDesc,
+            'icon' => 'bi-building-check',
+            'icon_color' => 'success',
+            'card_key' => 'brands'
+        ],
+        [
+            'title' => 'Birthday Reminders',
+            'value' => 'Automated',
+            'description' => 'Never miss out on your birthday rewards! We will send you timely reminders throughout your birthday month so you can claim every reward.',
+            'icon' => 'bi-bell-fill',
+            'icon_color' => 'warning',
+            'card_key' => 'reminders'
+        ],
+        [
+            'title' => 'Celebration Planner',
+            'value' => 'Tour Maps',
+            'description' => 'Plan your perfect birthday celebration! Generate custom tour schedules and maps to maximize your birthday rewards collection.',
+            'icon' => 'bi-calendar-event',
+            'icon_color' => 'info',
+            'card_key' => 'planner'
+        ],
+        [
+            'title' => 'Priority Support',
+            'value' => 'Email',
+            'description' => 'Get help when you need it. Our support team is ready to assist you with any questions about your birthday rewards.',
+            'icon' => 'bi-headset',
+            'icon_color' => 'primary',
+            'card_key' => 'support'
+        ],
+        [
+            'title' => 'Reward Tracking',
+            'value' => 'Dashboard',
+            'description' => 'Keep track of all your birthday rewards in one place. See what is available, what you have claimed, and what is coming up.',
+            'icon' => 'bi-gift-fill',
+            'icon_color' => 'danger',
+            'card_key' => 'tracking'
+        ],
+        [
+            'title' => 'Social Celebrations',
+            'value' => 'Coming Soon',
+            'description' => 'Connect with other birthday celebrants! Share your experiences and celebrate together in our upcoming social features.',
+            'icon' => 'bi-people-fill',
+            'icon_color' => 'dark',
+            'card_key' => 'social'
+        ]
+    ];
+}
 
-        <!-- Celebration Planning -->
+// Display feature cards
+foreach ($feature_cards as $index => $card) {
+    echo '
         <div class="col-lg-4 col-md-6">
-            <div class="feature-card">
-                <div class="feature-icon info">
-                    <i class="bi bi-calendar-event"></i>
+            <div class="feature-card position-relative">';
+    
+    // Add admin edit button if admin
+    if ($account->isadmin() && isset($card['card_key']) && $user_product_id) {
+        echo '<div class="position-absolute top-0 end-0 p-2">';
+        echo '<button type="button" class="btn btn-sm btn-outline-primary" 
+                data-bs-toggle="modal" 
+                data-bs-target="#editCardModal_' . $card['card_key'] . '"
+                title="Edit card overrides">
+                <i class="bi bi-pencil"></i>
+              </button>';
+        echo '</div>';
+    }
+    
+    echo '
+                <div class="feature-icon ' . htmlspecialchars($card['icon_color'] ?? 'primary') . '">
+                    <i class="' . htmlspecialchars($card['icon']) . '"></i>
                 </div>
-                <h3 class="feature-title">Celebration Planner</h3>
-                <div class="feature-value">Tour Maps</div>
-                <p class="feature-description">Plan your perfect birthday celebration! Generate custom tour schedules and maps to maximize your birthday rewards collection.</p>
+                <h3 class="feature-title">' . htmlspecialchars($card['title']) . '</h3>
+                <div class="feature-value">' . htmlspecialchars($card['value']) . '</div>
+                <p class="feature-description">' . $card['description'] . '</p>';
+    
+    echo '
             </div>
-        </div>
+        </div>';
+}
 
-        <!-- Email Support -->
-        <div class="col-lg-4 col-md-6">
-            <div class="feature-card">
-                <div class="feature-icon primary">
-                    <i class="bi bi-headset"></i>
-                </div>
-                <h3 class="feature-title">Priority Support</h3>
-                <div class="feature-value">Email</div>
-                <p class="feature-description">Get help when you need it. Our support team is ready to assist you with any questions about your birthday rewards.</p>
-            </div>
-        </div>
-
-        <!-- Reward Tracking -->
-        <div class="col-lg-4 col-md-6">
-            <div class="feature-card">
-                <div class="feature-icon danger">
-                    <i class="bi bi-gift-fill"></i>
-                </div>
-                <h3 class="feature-title">Reward Tracking</h3>
-                <div class="feature-value">Dashboard</div>
-                <p class="feature-description">Keep track of all your birthday rewards in one place. See what is available, what you have claimed, and what is coming up.</p>
-            </div>
-        </div>
-
-        <!-- Coming Soon: Social Features -->
-        <div class="col-lg-4 col-md-6">
-            <div class="feature-card">
-                <div class="feature-icon dark">
-                    <i class="bi bi-people-fill"></i>
-                </div>
-                <h3 class="feature-title">Social Celebrations</h3>
-                <div class="feature-value">Coming Soon</div>
-                <p class="feature-description">Connect with other birthday celebrants! Share your experiences and celebrate together in our upcoming social features.</p>
-            </div>
-        </div>
-    </div>';
+echo '    </div>';
 
     // Upgrade Section for Free Users
     if ($user_plan === 'free') {
@@ -682,7 +1071,144 @@ echo '
 
 echo '
 </div>';
+
+// Generate edit modals for admin
+if ($account->isadmin() && $user_product_id && !empty($feature_cards)) {
+    foreach ($feature_cards as $card) {
+        if (!isset($card['card_key'])) continue;
+        
+        $card_key = $card['card_key'];
+        echo '
+        <!-- Edit Modal for ' . htmlspecialchars($card_key) . ' -->
+        <div class="modal fade" id="editCardModal_' . $card_key . '" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Card Override: ' . htmlspecialchars($card['title']) . '</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="post" action="" id="editCardForm_' . $card_key . '">
+                            ' . $display->inputcsrf_token() . '
+                            <input type="hidden" name="action" value="update_card_override">
+                            <input type="hidden" name="card_key" value="' . htmlspecialchars($card_key) . '">
+                            <input type="hidden" name="product_id" value="' . $user_product_id . '">
+                            
+                            <div class="alert alert-info">
+                                <small>Leave fields empty to use default values. Only fill in what you want to override for this plan.</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Title Override</label>
+                                <input type="text" class="form-control" name="override_title" 
+                                    value="' . htmlspecialchars($features_by_name['card_' . $card_key . '_title'] ?? '') . '"
+                                    placeholder="Default: ' . htmlspecialchars($card['title']) . '">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Value Override</label>
+                                <input type="text" class="form-control" name="override_value"
+                                    value="' . htmlspecialchars($features_by_name['card_' . $card_key . '_value'] ?? '') . '"
+                                    placeholder="Default: ' . htmlspecialchars($card['value']) . '">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Description Override</label>
+                                <textarea class="form-control" name="override_description" rows="3"
+                                    placeholder="Default: ' . htmlspecialchars($card['description']) . '">' . 
+                                    htmlspecialchars($features_by_name['card_' . $card_key . '_description'] ?? '') . '</textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Icon Override (Bootstrap Icons class)</label>
+                                        <input type="text" class="form-control" name="override_icon"
+                                            value="' . htmlspecialchars($features_by_name['card_' . $card_key . '_icon'] ?? '') . '"
+                                            placeholder="Default: ' . htmlspecialchars($card['icon']) . '">
+                                        <small class="text-muted">e.g., bi-star-fill, bi-trophy, etc.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Icon Color Override</label>
+                                        <select class="form-select" name="override_icon_color">
+                                            <option value="">Default: ' . htmlspecialchars($card['icon_color'] ?? 'primary') . '</option>
+                                            <option value="primary"' . ($features_by_name['card_' . $card_key . '_icon_color'] ?? '' == 'primary' ? ' selected' : '') . '>Primary (Blue)</option>
+                                            <option value="success"' . ($features_by_name['card_' . $card_key . '_icon_color'] ?? '' == 'success' ? ' selected' : '') . '>Success (Green)</option>
+                                            <option value="warning"' . ($features_by_name['card_' . $card_key . '_icon_color'] ?? '' == 'warning' ? ' selected' : '') . '>Warning (Yellow)</option>
+                                            <option value="danger"' . ($features_by_name['card_' . $card_key . '_icon_color'] ?? '' == 'danger' ? ' selected' : '') . '>Danger (Red)</option>
+                                            <option value="info"' . ($features_by_name['card_' . $card_key . '_icon_color'] ?? '' == 'info' ? ' selected' : '') . '>Info (Light Blue)</option>
+                                            <option value="dark"' . ($features_by_name['card_' . $card_key . '_icon_color'] ?? '' == 'dark' ? ' selected' : '') . '>Dark (Gray)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="override_excluded" value="true" id="exclude_' . $card_key . '"
+                                        ' . (isset($features_by_name['card_' . $card_key . '_excluded']) && $features_by_name['card_' . $card_key . '_excluded'] === 'true' ? 'checked' : '') . '>
+                                    <label class="form-check-label" for="exclude_' . $card_key . '">
+                                        <strong>Exclude this card from this plan</strong><br>
+                                        <small>Check this to completely hide this card for this specific plan</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" form="editCardForm_' . $card_key . '" class="btn btn-primary">Save Overrides</button>
+                    </div>
+                </div>
+            </div>
+        </div>';
+    }
+}
+
 echo $outputm;
+
+// Add JavaScript for tab switching
+echo '
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Handle modern tab navigation
+    const tabItems = document.querySelectorAll(".nav-tab-item");
+    const tabPanes = document.querySelectorAll(".tab-pane");
+    
+    tabItems.forEach(function(tab) {
+        tab.addEventListener("click", function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all tabs
+            tabItems.forEach(function(t) {
+                t.classList.remove("active");
+            });
+            
+            // Add active class to clicked tab
+            this.classList.add("active");
+            
+            // Get target panel
+            const targetId = this.getAttribute("data-tab-target");
+            
+            // Hide all panels
+            tabPanes.forEach(function(pane) {
+                pane.classList.add("d-none");
+                pane.classList.remove("active");
+            });
+            
+            // Show target panel
+            const targetPane = document.getElementById(targetId);
+            if (targetPane) {
+                targetPane.classList.remove("d-none");
+                targetPane.classList.add("active");
+            }
+        });
+    });
+});
+</script>
+';
 
 $display_footertype='';
 include($dir['core_components'] . '/bg_footer.inc');

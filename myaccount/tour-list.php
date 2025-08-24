@@ -103,8 +103,9 @@ include($dir['core_components'] . '/bg_header.inc');
                 echo '<pre>Upcoming dates detail: ' . print_r($upcoming_dates, true) . '</pre>';
                 echo '<pre>Past dates detail: ' . print_r($past_dates, true) . '</pre>';
             }
-            ?>
             
+            // Display upcoming tours section
+            echo '
             <!-- Upcoming Tours -->
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0">Tour Management</h5>
@@ -114,15 +115,15 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
             <div class="card m-0 p-0 mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Upcoming Tours <span class="badge bg-primary"><?php echo count($upcoming_dates); ?></span></h5>
+                    <h5 class="mb-0">Upcoming Tours <span class="badge bg-primary">' . count($upcoming_dates) . '</span></h5>
                 </div>
 
-                <div class="card-body">
-                    <?php if (empty($upcoming_tours)) { ?>
-                        <p class="text-muted">No upcoming tours scheduled.</p>
-                    <?php } else { ?>
-                        <div class="accordion" id="accordionUpcoming">
-                            <?PHP
+                <div class="card-body">';
+                    
+            if (empty($upcoming_tours)) {
+                echo '<p class="text-muted">No upcoming tours scheduled.</p>';
+            } else {
+                echo '<div class="accordion" id="accordionUpcoming">';
                             $first_upcoming = true;
                             $processed_dates = [];
                             
@@ -175,24 +176,26 @@ include($dir['core_components'] . '/bg_header.inc');
                                 
                                 echo '</div></div></div>';
                             }
-                            ?>
-                        </div>
-                    <?php } ?>
-                </div>
-            </div>
-
+                            
+                echo '</div>'; // Close accordion
+            }
+            
+            echo '</div></div>'; // Close card-body and card
+            
+            // Display past tours section
+            echo '
             <!-- Past Tours -->
             <div class="card m-0 p-0">
                 <div class="card-header">
-                    <h5 class="mb-0">Past Tours <span class="badge bg-secondary"><?php echo count($past_dates); ?></span></h5>
+                    <h5 class="mb-0">Past Tours <span class="badge bg-secondary">' . count($past_dates) . '</span></h5>
                 </div>
 
-                <div class="card-body">
-                    <?php if (empty($past_tours)) { ?>
-                        <p class="text-muted">No past tours.</p>
-                    <?php } else { ?>
-                        <div class="accordion" id="accordionPast">
-                            <?PHP
+                <div class="card-body">';
+                    
+            if (empty($past_tours)) {
+                echo '<p class="text-muted">No past tours.</p>';
+            } else {
+                echo '<div class="accordion" id="accordionPast">';
                             foreach ($past_dates as $date => $count) {
                                 $expanded = 'false';
                                 $expanded_show = '';
@@ -240,11 +243,14 @@ include($dir['core_components'] . '/bg_header.inc');
                                 
                                 echo '</div></div></div>';
                             }
-                            ?>
-                        </div>
-                    <?php } ?>
-                </div>
-            </div>
+                            
+                echo '</div>'; // Close accordion
+            }
+            
+            echo '</div></div>'; // Close card-body and card
+            
+            echo '</div>'; // Close row
+            ?>
         </div>
     </div>
 </div>

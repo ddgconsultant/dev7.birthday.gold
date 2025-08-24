@@ -20,7 +20,8 @@ $isKioskMode = in_array($signupMode, ['tabletkiosk', 'upgrade']);
 // Only hide in kiosk/iframe modes
 // Also hide on social pages as they have their own navigation
 $currentPath = $_SERVER['REQUEST_URI'];
-$isSocialPage = strpos($currentPath, '/social') !== false;
+// Check if we're actually in the /social/ directory, not just any page with 'social' in the name
+$isSocialPage = strpos($currentPath, '/social/') === 0;
 $showBottomNav = !$isKioskMode && !$isSocialPage;
 
 // Footer styling - combine original and enhanced styles
@@ -414,7 +415,7 @@ $additionalstyles .= "
 /* Mobile body padding to account for bottom nav */
 @media (max-width: 767px) {
     body {
-        padding-bottom: 80px !important;
+        padding-bottom: 65px !important;
     }
     
     /* Hide full footer content on mobile when using mobilemin */

@@ -873,5 +873,237 @@ margin-bottom: 15px;
   }
 }
 
+/* Staff Header Styles - Blue Theme */
+.content-header-staff {
+  background: linear-gradient(135deg, #1a3a52 0%, #0f1f3a 50%, #2e4a7f 100%) !important;
+  color: white;
+  padding: 2.5rem 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  min-height: auto;
+  display: flex;
+  align-items: center;
+}
+
+.content-header-staff .container {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+/* Animated background effect */
+.content-header-staff::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(52, 152, 219, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: float 20s infinite linear;
+  z-index: 0;
+}
+
+/* Text elements inside content-header-staff */
+.content-header-staff h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+  color: white !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  line-height: 1.2;
+}
+
+.content-header-staff h2 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+  color: white !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.content-header-staff h3 {
+  font-size: 2rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+  color: white !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.content-header-staff p,
+.content-header-staff .lead {
+  font-size: 1.125rem;
+  font-weight: 400;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Highlight text with blue gradient */
+.content-header-staff .highlight {
+  background: linear-gradient(135deg, #3498db, #5dade2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* Size variations */
+.content-header-staff.compact {
+  padding: 2rem 0;
+}
+
+.content-header-staff.large {
+  padding: 3.5rem 0;
+}
+
+/* Stats display */
+.content-header-staff .stats {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin: 1.5rem 0 0;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+}
+
+.content-header-staff .stat-item {
+  text-align: center;
+}
+
+.content-header-staff .stat-number {
+  font-size: 2rem;
+  font-weight: 800;
+  display: block;
+  color: #5dade2;
+}
+
+.content-header-staff .stat-label {
+  font-size: 1rem;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .content-header-staff h1 {
+    font-size: 1.875rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .content-header-staff h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .content-header-staff h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .content-header-staff p,
+  .content-header-staff .lead {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .content-header-staff {
+    padding: 1.75rem 0;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+  }
+
+  .content-header-staff.compact {
+    padding: 1.5rem 0;
+  }
+  
+  .content-header-staff.large {
+    padding: 2.5rem 0;
+  }
+  
+  .content-header-staff .stats {
+    gap: 1.5rem;
+    margin: 1rem 0;
+  }
+
+  .content-header-staff .stat-number {
+    font-size: 1.75rem;
+  }
+  
+  
+  .content-header-staff.no-rounded-corners {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .content-header-staff h1 {
+    font-size: 1.625rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .content-header-staff h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .content-header-staff h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .content-header-staff p,
+  .content-header-staff .lead {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .content-header-staff {
+    padding: 1.25rem 0;
+    border-bottom-left-radius: 25px;
+    border-bottom-right-radius: 25px;
+  }
+
+  .content-header-staff.compact {
+    padding: 1rem 0;
+  }
+  
+  .content-header-staff.large {
+    padding: 2rem 0;
+  }
+  
+  .content-header-staff .stats {
+    gap: 1rem;
+    margin: 0.75rem 0;
+  }
+
+  .content-header-staff .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .content-header-staff .stat-label {
+    font-size: 0.875rem;
+  }
+  
+  
+  .content-header-staff.no-rounded-corners {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
 
   

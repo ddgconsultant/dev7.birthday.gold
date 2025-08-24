@@ -340,6 +340,20 @@ echo '
     <!-- Additional Staff Tools -->
     <div class="row mb-4">
         <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/newsletter-list.php" class="quick-link d-block">
+                <i class="bi bi-envelope fs-3 mb-2"></i>
+                <h6>Newsletter System</h6>
+                <small class="text-muted">Email campaigns</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/marketing-campaigns.php" class="quick-link d-block">
+                <i class="bi bi-megaphone fs-3 mb-2"></i>
+                <h6>Marketing Manager</h6>
+                <small class="text-muted">Campaign management</small>
+            </a>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
             <a href="/staff/legal-policy-editor" class="quick-link d-block">
                 <i class="bi bi-file-text fs-3 mb-2"></i>
                 <h6>Legal Policies</h6>
@@ -353,6 +367,9 @@ echo '
                 <small class="text-muted">Help & documentation</small>
             </a>
         </div>
+    </div>
+    
+    <div class="row mb-4">
         <div class="col-md-3 col-sm-6 mb-3">
             <a href="/staff/ticket-manager" class="quick-link d-block">
                 <i class="bi bi-list-check fs-3 mb-2"></i>
@@ -429,6 +446,9 @@ echo '
                 </div>
                 <div class="card-body">
                     <div class="list-group list-group-flush">
+                        <a href="/staff/newsletter-list.php" class="list-group-item list-group-item-action">
+                            <i class="bi bi-envelope me-2"></i> Newsletter System
+                        </a>
                         <a href="/staff/companylogos" class="list-group-item list-group-item-action">
                             <i class="bi bi-image me-2"></i> Company Logos Management
                         </a>

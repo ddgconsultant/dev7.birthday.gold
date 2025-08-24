@@ -242,6 +242,46 @@ public function getcountryviaip($ip = '', $reset = '')
 }
 
 
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+public function checkCountrySupport($approvedCountries = null, $redirectUrl = '/country-not-supported')
+{
+    global $session, $client_ip, $supported_countries;
+    
+    // Use global supported_countries if not specified
+    if ($approvedCountries === null) {
+        $approvedCountries = $supported_countries ?? ['US'];
+    }
+    
+    // Check if already processed
+    $countryCode = $session->get('countrynotsupported', '');
+    $getcountryviaip_data = $session->get('client_locationdata', '');
+    
+    if ($countryCode == '') {
+        // Get country code from IP
+        if ($getcountryviaip_data == '' || $getcountryviaip_data == 'notset') {
+            $client_locationdata = $this->getcountryviaip($client_ip, 'reset');
+            if (!empty($client_locationdata['countryCode']))
+                $countryCode = $client_locationdata['countryCode'];
+        } else {
+            if (!empty($getcountryviaip_data['countryCode']))
+                $countryCode = $getcountryviaip_data['countryCode'];
+        }
+        
+        // Check if override is set
+        $override = $session->get('country_not_supported_override', false);
+        
+        // If country not approved and no override, redirect
+        if (!in_array($countryCode, $approvedCountries) && $countryCode != '' && !$override) {
+            $session->set('countrynotsupported', $countryCode);
+            $session->set('countrynotsupportedtag', '[' . $countryCode . ']');
+            header('Location: ' . $redirectUrl);
+            exit();
+        }
+    }
+    
+    return $countryCode;
+}
+
 
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 public function getcountryviaip_old($ip = '', $reset = '')

@@ -1,65 +1,39 @@
 <?php
 /**
  * Upgrade Complete Page
- * Shows confirmation of successful plan upgrade
+ * Success page after plan upgrade
  */
 
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
 
-// Check if user is logged in
-if (!$account->isactive()) {
-    header('Location: /login');
-    exit();
+// Page setup
+$pagetitle = "Upgrade Complete!";
+
+// Get the plan from URL
+$upgraded_plan = $_GET['plan'] ?? '';
+
+// Get current user data from global variable set by site-controller
+$current_plan = $current_user_data['account_plan'] ?? '';
+$current_product_id = $current_user_data['account_product_id'] ?? null;
+$user_email = $current_user_data['email'] ?? '';
+
+// Normalize plan name for display
+$display_plan = ucfirst(str_replace(['user_', 'parental_', 'minor_', 'business_'], '', $current_plan));
+
+// Get product details if we have a product ID
+$product_name = $display_plan;
+if ($current_product_id) {
+    $sql = "SELECT account_name FROM bg_products WHERE id = :id AND status = 'active'";
+    $stmt = $database->prepare($sql);
+    $stmt->execute(['id' => $current_product_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($result && !empty($result['account_name'])) {
+        $product_name = $result['account_name'];
+    }
 }
 
-$confirmationId = $_GET['id'] ?? '';
-
-if (empty($confirmationId)) {
-    header('Location: /myaccount/billing');
-    exit();
-}
-
-// Get upgrade details from database
-$sql = "SELECT * FROM bg_plan_upgrades 
-        WHERE upgrade_session_id = :session_id 
-        AND user_id = :user_id
-        ORDER BY created_at DESC
-        LIMIT 1";
-
-$upgradeRecord = $database->getrow($sql, [
-    'session_id' => $confirmationId,
-    'user_id' => $account->getUserId()
-]);
-
-if (!$upgradeRecord) {
-    $errormessage = 'Upgrade confirmation not found';
-    $session->set('errormessage', $errormessage);
-    header('Location: /myaccount/billing');
-    exit();
-}
-
-// Initialize product manager to get plan details
-$productManager = new ProductManager($database, $qik);
-$newProduct = $productManager->getProduct($upgradeRecord['to_product_id']);
-
-// Get user's updated details
-$userData = $database->getrow(
-    "SELECT * FROM bg_users WHERE user_id = :user_id",
-    ['user_id' => $account->getUserId()]
-);
-
-// Page configuration
-$pagedata = [
-    'pagetitle' => 'Upgrade Complete!',
-    'activepage' => 'billing'
-];
-
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
-?>
-
-<style>
+// Add custom styles
+$additionalstyles .= '<style>
 .success-container {
     max-width: 800px;
     margin: 0 auto;
@@ -149,140 +123,119 @@ include($dir['core_components'] . '/bg_header.inc');
 .animate-in {
     animation: fadeInUp 0.5s ease-out;
 }
-</style>
 
-<div class="success-container">
-    <div class="success-card animate-in">
-        <i class="bi bi-check-circle-fill success-icon"></i>
-        
-        <h1 class="mb-3">Upgrade Complete!</h1>
-        
-        <p class="lead mb-4">
-            Congratulations! You've successfully upgraded to the <strong><?php echo htmlspecialchars($newProduct['name']); ?></strong> plan.
-        </p>
-        
-        <div class="plan-badge">
-            <?php echo htmlspecialchars($newProduct['name']); ?>
-        </div>
-        
-        <!-- New Features Available -->
-        <h3 class="mt-4 mb-3">Your New Features</h3>
-        <div class="features-grid">
-            <?php 
-            $features = $newProduct['features'] ?? [];
-            foreach ($features as $feature): 
-                if (strpos($feature['name'], '_sys_') === 0) continue;
-            ?>
-            <div class="feature-item">
-                <i class="bi bi-check-circle-fill feature-icon"></i>
-                <div>
-                    <strong><?php echo htmlspecialchars($feature['display_value'] ?? $feature['value']); ?></strong>
-                </div>
-            </div>
-            <?php endforeach; ?>
-        </div>
-        
-        <!-- Confirmation Details -->
-        <div class="confirmation-details">
-            <h5 class="mb-3">Upgrade Details</h5>
-            <div class="row">
-                <div class="col-sm-6">
-                    <strong>Confirmation ID:</strong><br>
-                    <code><?php echo htmlspecialchars($confirmationId); ?></code>
-                </div>
-                <div class="col-sm-6">
-                    <strong>Upgrade Date:</strong><br>
-                    <?php echo date('F j, Y', strtotime($upgradeRecord['created_at'])); ?>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-sm-6">
-                    <strong>Previous Plan:</strong><br>
-                    <?php echo htmlspecialchars($upgradeRecord['from_plan']); ?>
-                </div>
-                <div class="col-sm-6">
-                    <strong>New Plan:</strong><br>
-                    <?php echo htmlspecialchars($upgradeRecord['to_plan']); ?>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Receipt Info -->
-        <div class="receipt-info">
-            <i class="bi bi-envelope-check me-2"></i>
-            A confirmation email with your receipt has been sent to <strong><?php echo htmlspecialchars($userData['email']); ?></strong>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <a href="/myaccount/" class="btn btn-primary btn-lg">
-                <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
-            </a>
-            <a href="/myaccount/billing" class="btn btn-outline-primary btn-lg">
-                <i class="bi bi-credit-card me-2"></i>View Billing
-            </a>
-            <?php if ($newProduct['account_type'] === 'parental'): ?>
-            <a href="/myaccount/family" class="btn btn-outline-primary btn-lg">
-                <i class="bi bi-people me-2"></i>Manage Family Members
-            </a>
-            <?php endif; ?>
-        </div>
-    </div>
-    
-    <!-- What's Next Section -->
-    <div class="card">
-        <div class="card-body">
-            <h4 class="card-title">What's Next?</h4>
-            <ul class="text-start">
-                <li>Your new plan features are available immediately</li>
-                <li>Any unused time from your previous plan has been credited</li>
-                <li>Your next billing date remains the same</li>
-                <li>You can manage your subscription anytime from the billing page</li>
-            </ul>
-        </div>
-    </div>
-</div>
+.confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    position: absolute;
+    animation: confetti-fall 3s linear;
+    z-index: 9999;
+}
 
-<script>
-// Confetti animation for celebration
-document.addEventListener('DOMContentLoaded', function() {
-    // Simple confetti effect
-    const colors = ['#198754', '#ffc107', '#0dcaf0', '#6f42c1'];
-    const confettiCount = 100;
-    
-    for (let i = 0; i < confettiCount; i++) {
-        const confetti = document.createElement('div');
-        confetti.style.cssText = `
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background: ${colors[Math.floor(Math.random() * colors.length)]};
-            left: ${Math.random() * 100}%;
-            top: -10px;
-            opacity: ${Math.random()};
-            transform: rotate(${Math.random() * 360}deg);
-            animation: fall ${3 + Math.random() * 2}s linear;
-            z-index: 9999;
-        `;
-        document.body.appendChild(confetti);
-        
-        setTimeout(() => confetti.remove(), 5000);
+@keyframes confetti-fall {
+    to {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+</style>';
+
+// Add celebration script
+$additionalscripts .= '<script>
+$(document).ready(function() {
+    // Create confetti effect
+    function createConfetti() {
+        const colors = ["#667eea", "#764ba2", "#28a745", "#ffc107", "#dc3545"];
+        for (let i = 0; i < 30; i++) {
+            setTimeout(() => {
+                const confetti = $("<div>").addClass("confetti");
+                confetti.css({
+                    left: Math.random() * 100 + "%",
+                    top: "-10px",
+                    background: colors[Math.floor(Math.random() * colors.length)],
+                    animationDelay: Math.random() * 2 + "s",
+                    animationDuration: Math.random() * 3 + 3 + "s"
+                });
+                $("body").append(confetti);
+                setTimeout(() => confetti.remove(), 6000);
+            }, i * 100);
+        }
     }
     
-    // Add CSS animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fall {
-            to {
-                transform: translateY(100vh) rotate(360deg);
-            }
-        }
-    `;
-    document.head.appendChild(style);
+    // Trigger confetti on page load
+    createConfetti();
 });
-</script>
+</script>';
 
-<?php
+// Include header
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
+
+echo '<div class="success-container">';
+echo '<div class="success-card animate-in">';
+echo '<i class="bi bi-check-circle-fill success-icon"></i>';
+echo '<h1 class="mb-3">Upgrade Complete!</h1>';
+echo '<p class="lead mb-4">Congratulations! You have successfully upgraded to the <strong>' . htmlspecialchars($product_name) . '</strong> plan.</p>';
+echo '<div class="plan-badge">' . htmlspecialchars($product_name) . ' Plan</div>';
+echo '<h3 class="mt-4 mb-3">Your New Features</h3>';
+echo '<div class="features-grid">';
+
+$features = [
+    'Unlimited enrollments',
+    'Priority customer support',
+    'Ad-free experience',
+    'Exclusive rewards and offers'
+];
+
+foreach ($features as $feature) {
+    echo '<div class="feature-item">';
+    echo '<i class="bi bi-check-circle-fill feature-icon"></i>';
+    echo '<div><strong>' . $feature . '</strong></div>';
+    echo '</div>';
+}
+
+echo '</div>';
+echo '<div class="confirmation-details">';
+echo '<h5 class="mb-3">Upgrade Details</h5>';
+echo '<div class="row">';
+echo '<div class="col-sm-6">';
+echo '<strong>Upgrade Date:</strong><br>';
+echo date('F j, Y');
+echo '</div>';
+echo '<div class="col-sm-6">';
+echo '<strong>New Plan:</strong><br>';
+echo htmlspecialchars($product_name);
+echo '</div>';
+echo '</div>';
+echo '</div>';
+echo '<div class="receipt-info">';
+echo '<i class="bi bi-envelope-check me-2"></i>';
+echo 'A confirmation email with your receipt has been sent to <strong>' . htmlspecialchars($user_email) . '</strong>';
+echo '</div>';
+echo '<div class="action-buttons">';
+echo '<a href="/myaccount/" class="btn btn-primary btn-lg">';
+echo '<i class="bi bi-speedometer2 me-2"></i>Go to Dashboard';
+echo '</a>';
+echo '<a href="/myaccount/plan-details" class="btn btn-outline-primary btn-lg">';
+echo '<i class="bi bi-credit-card me-2"></i>View Plan Details';
+echo '</a>';
+echo '</div>';
+echo '</div>'; // End success-card
+echo '<div class="card">';
+echo '<div class="card-body">';
+echo '<h4 class="card-title">What is Next?</h4>';
+echo '<ul class="text-start">';
+echo '<li>Your new plan features are available immediately</li>';
+echo '<li>Any unused time from your previous plan has been credited</li>';
+echo '<li>Your next billing date remains the same</li>';
+echo '<li>You can manage your subscription anytime from the billing page</li>';
+echo '</ul>';
+echo '</div>';
+echo '</div>';
+
+echo '</div>'; // End container
+
+// Include footer
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
-?>

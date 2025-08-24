@@ -15,11 +15,41 @@ $last_name = $current_user_data['last_name'];
 $email = $current_user_data['email'];
 $birthdate = $current_user_data['birthdate'];
 
-// Format birthdate for display
+// Calculate last birthday and age at last birthday
 $birthdate_obj = new DateTime($birthdate);
-$formatted_birthdate = $birthdate_obj->format('F jS');
-$age = date('Y') - $birthdate_obj->format('Y');
-$age_suffix = $qik->getOrdinalSuffix($age);
+$current_date = new DateTime();
+$current_year = (int)$current_date->format('Y');
+$birth_month = (int)$birthdate_obj->format('n');
+$birth_day = (int)$birthdate_obj->format('j');
+
+// Determine the year of the last birthday
+if ($birth_month > (int)$current_date->format('n') || 
+    ($birth_month == (int)$current_date->format('n') && $birth_day > (int)$current_date->format('j'))) {
+    // Birthday has not occurred yet this year, so last birthday was last year
+    $last_birthday_year = $current_year - 1;
+} else {
+    // Birthday has already occurred this year
+    $last_birthday_year = $current_year;
+}
+
+// Create DateTime object for last birthday
+$last_birthday = new DateTime($last_birthday_year . '-' . $birthdate_obj->format('m-d'));
+$formatted_birthdate = $last_birthday->format('F jS');
+$age_at_last_birthday = $last_birthday_year - (int)$birthdate_obj->format('Y');
+$age_suffix = $qik->getOrdinalSuffix($age_at_last_birthday);
+
+// Check if user joined after their last birthday
+// Get the user's create date from database
+$sql = "SELECT create_dt FROM bg_users WHERE user_id = :user_id";
+$user_data = $database->getrow($sql, ['user_id' => $user_id]);
+
+$has_celebrated_birthday = true; // Default to true (allow feedback)
+$user_create_date = null;
+
+if (!empty($user_data['create_dt'])) {
+    $user_create_date = new DateTime($user_data['create_dt']);
+    $has_celebrated_birthday = $user_create_date < $last_birthday;
+}
 
 // Get enrolled businesses count for this user
 $sql = "SELECT COUNT(*) AS enrolled_count 
@@ -363,7 +393,44 @@ a[href="#main"] {
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 echo '<div class="container my-5">';
-if ($feedback_submitted) {
+
+// Check if user has celebrated a birthday since joining
+if (!$has_celebrated_birthday) {
+    // User joined after their last birthday - show message
+    echo '
+    <div class="feedback-survey">
+        <div class="container" style="max-width: 800px;">
+            <div class="survey-container">
+                <div class="header-section">
+                    <h2 class="mb-3">Birthday Feedback Not Yet Available</h2>
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
+                        <span class="cake-icon">🎂</span>
+                        <p class="mb-0">Hi ' . htmlspecialchars($first_name) . '!</p>
+                    </div>
+                </div>
+                
+                <div class="p-4">
+                    <div class="alert alert-info" role="alert">
+                        <h4 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> You have not celebrated a birthday with Birthday Gold yet
+                        </h4>
+                        <p>You can only provide feedback after you have celebrated your first birthday as a Birthday Gold member.</p>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>Your next birthday:</strong> ' . $birthdate_obj->format('F jS') . '<br>
+                            <strong>You joined:</strong> ' . ($user_create_date ? $user_create_date->format('F jS, Y') : 'Recently') . '
+                        </p>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <p>We look forward to hearing about your birthday experience after your next birthday!</p>
+                        <a href="/myaccount/" class="btn btn-primary">Return to Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>';
+} elseif ($feedback_submitted) {
     // Show thank you page
     echo '
     <div class="feedback-survey">
@@ -413,7 +480,7 @@ if ($feedback_submitted) {
                             <h2 class="mb-3">Hey ' . htmlspecialchars($first_name) . '! How was your birthday?</h2>
                             <div class="d-flex align-items-center justify-content-center gap-2 mb-3">
                                 <span class="cake-icon">🎂</span>
-                                <p class="mb-0">You celebrated your <span class="fw-bold">' . $age . $age_suffix . '</span> birthday on <span class="fw-bold">' . $formatted_birthdate . '</span>!</p>
+                                <p class="mb-0">You celebrated your <span class="fw-bold">' . $age_at_last_birthday . $age_suffix . '</span> birthday on <span class="fw-bold">' . $formatted_birthdate . '</span>!</p>
                             </div>
                             <div class="incentive-callout">
                                 <div class="d-flex align-items-center gap-3">

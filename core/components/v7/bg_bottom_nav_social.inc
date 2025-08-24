@@ -104,8 +104,8 @@ echo '
 }
 </style>';
 
-// Add desktop navigation for social pages
-if (strpos($currentPath, '/social') !== false) {
+// Add desktop navigation for social pages (must be in /social/ directory)
+if (strpos($currentPath, '/social/') === 0) {
     echo '
     <!-- Desktop Social Navigation -->
     <div class="social-desktop-nav d-none d-lg-flex">

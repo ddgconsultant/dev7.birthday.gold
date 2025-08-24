@@ -727,6 +727,16 @@ $businessHours = $app->bg_businesshours();
                     <p class="admin-card-text">Create and manage promotional codes</p>
                 </div>
             </a>
+            
+            <a href="/admin/manage_plan_cards.php" class="admin-card">
+                <div class="admin-icon icon-plans">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Plan Feature Cards</h3>
+                    <p class="admin-card-text">Manage plan detail page feature cards</p>
+                </div>
+            </a>
         </div>
         
         <!-- Analytics & Monitoring Section -->

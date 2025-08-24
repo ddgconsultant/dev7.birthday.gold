@@ -585,6 +585,10 @@ include($dir['core_components'] . '/bg_header.inc');
                                         onclick="editProduct(<?php echo $product['id']; ?>)">
                                     <i class="bi bi-pencil"></i> Edit Plan
                                 </button>
+                                <a href="/admin/view-plan-details.php?product_id=<?php echo $product['id']; ?>" 
+                                   class="btn btn-info btn-sm text-white">
+                                    <i class="bi bi-card-list"></i> View Details
+                                </a>
                                 <button class="btn btn-outline-secondary btn-sm" 
                                         onclick="previewPlan(<?php echo $product['id']; ?>)">
                                     <i class="bi bi-eye"></i> Preview

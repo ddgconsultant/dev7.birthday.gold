@@ -32,14 +32,6 @@ $referralcode = $account->manageReferralCode();
 $pagetitle = 'Earn More Enrollments';
 $additionalstyles .= '
 <style>
-/* Balance Display in Header */
-.content-header-dark .balance-display {
-    font-size: 3rem;
-    font-weight: 700;
-    line-height: 1;
-    color: #fff;
-}
-
 /* Method Cards */
 .method-section {
     margin-bottom: 3rem;
@@ -48,9 +40,13 @@ $additionalstyles .= '
 .method-header {
     display: flex;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #e9ecef;
+}
+
+/* When header is inside card, no border needed */
+.method-card .method-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
 .method-icon {
@@ -93,6 +89,24 @@ $additionalstyles .= '
     top: 0;
     right: 0;
     background: #667eea;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 1rem;
+    border-bottom-left-radius: 12px;
+}
+
+.method-card.fastest {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+}
+
+.method-card.fastest::before {
+    content: "FASTEST";
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #dc3545;
     color: white;
     font-size: 0.7rem;
     font-weight: 600;
@@ -222,40 +236,31 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="content-header-dark">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-md-8 text-center text-md-start">
+            <div class="col-12 text-center">
                 <h1 class="mb-3"><i class="bi bi-stars me-3"></i>Earn More Enrollments</h1>
                 <p class="lead mb-0">Discover ways to increase your enrollment allocations</p>
-            </div>
-            <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
-                <div class="d-inline-block text-center">
-                    <div class="balance-display"><?php echo $balance['available_allocations']; ?></div>
-                    <p class="mb-0">Available Enrollments</p>
-                    <?php if ($balance['pending_allocations'] > 0): ?>
-                    <p class="mt-1 mb-0"><small class="text-warning"><i class="bi bi-clock-history me-1"></i><?php echo $balance['pending_allocations']; ?> pending</small></p>
-                    <?php endif; ?>
-                </div>
             </div>
         </div>
     </div>
 </div>
 
 <div class="page-content-wrapper" style="min-height: calc(100vh - 300px); margin-bottom: 60px;">
-<div class="container my-4">
+<div class="container" style="margin-top: 3rem; margin-bottom: 2rem;">
     <div class="row">
         <div class="col-lg-8">
             <!-- Recommend Businesses Section -->
             <div class="method-section">
-                <div class="method-header">
-                    <div class="method-icon" style="background: #d4edda;">
-                        <i class="bi bi-building-add text-success"></i>
-                    </div>
-                    <div>
-                        <h2 class="h3 mb-0">Recommend Businesses</h2>
-                        <p class="text-muted mb-0">Earn rewards by helping us grow our directory</p>
-                    </div>
-                </div>
-                
                 <div class="method-card featured">
+                    <div class="method-header mb-3">
+                        <div class="method-icon" style="background: #d4edda;">
+                            <i class="bi bi-building-add text-success"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 mb-0">Recommend Businesses</h2>
+                            <p class="text-muted mb-0">Earn rewards by helping us grow our directory</p>
+                        </div>
+                    </div>
+                    <hr class="my-3">
                     <div class="row align-items-center">
                         <div class="col">
                             <h4 class="h5 mb-2">Submit Business Recommendations</h4>
@@ -342,17 +347,17 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
             <!-- Referral Section -->
             <div class="method-section">
-                <div class="method-header">
-                    <div class="method-icon" style="background: #f8d7da;">
-                        <i class="bi bi-people-fill text-danger"></i>
+                <div class="method-card fastest">
+                    <div class="method-header mb-3">
+                        <div class="method-icon" style="background: #f8d7da;">
+                            <i class="bi bi-people-fill text-danger"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 mb-0">Refer Friends</h2>
+                            <p class="text-muted mb-0">Share Birthday.Gold with friends and earn rewards</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="h3 mb-0">Refer Friends</h2>
-                        <p class="text-muted mb-0">Share Birthday.Gold with friends and earn rewards</p>
-                    </div>
-                </div>
-                
-                <div class="method-card">
+                    <hr class="my-3">
                     <div class="row align-items-center">
                         <div class="col">
                             <h4 class="h5 mb-2">Invite Your Friends</h4>
@@ -369,9 +374,87 @@ include($dir['core_components'] . '/bg_header.inc');
                             </div>
                         </div>
                         <div class="col-auto">
-                            <button class="btn btn-outline-primary" onclick="copyReferralCode()">
-                                <i class="bi bi-clipboard me-2"></i>Copy Code
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-primary" onclick="copyReferralCode()">
+                                    <i class="bi bi-clipboard me-2"></i>Copy Code
+                                </button>
+                                <a href="/myaccount/invite-friends" class="btn btn-primary">
+                                    <i class="bi bi-send me-2"></i>Invite Friends
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Birthday Feedback Section -->
+            <div class="method-section">
+                <div class="method-card">
+                    <div class="method-header mb-3">
+                        <div class="method-icon" style="background: #fff3cd;">
+                            <i class="bi bi-star-fill text-warning"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 mb-0">Share Birthday Experiences</h2>
+                            <p class="text-muted mb-0">Tell us about your birthday rewards experiences</p>
+                        </div>
+                    </div>
+                    <hr class="my-3">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h4 class="h5 mb-2">Submit Birthday Feedback</h4>
+                            <p class="text-muted mb-3">Share your birthday reward experiences and help others discover great offers. Get rewarded for quality feedback!</p>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div>
+                                    <div class="reward-amount text-warning">+1</div>
+                                    <small class="text-muted">Per feedback</small>
+                                </div>
+                                <div class="text-muted">+</div>
+                                <div>
+                                    <div class="reward-amount text-warning">+2</div>
+                                    <small class="text-muted">Featured feedback</small>
+                                </div>
+                            </div>
+                            <a href="/myaccount/birthday-feedback" class="btn btn-warning">
+                                <i class="bi bi-chat-left-text me-2"></i>Share Feedback
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Media Share Section -->
+            <div class="method-section">
+                <div class="method-card">
+                    <div class="method-header mb-3">
+                        <div class="method-icon" style="background: #e3f2fd;">
+                            <i class="bi bi-share-fill text-primary"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 mb-0">Post on Social Media</h2>
+                            <p class="text-muted mb-0">Share Birthday Gold with your followers</p>
+                        </div>
+                    </div>
+                    <hr class="my-3">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h4 class="h5 mb-2">Share with #birthdaygold</h4>
+                            <p class="text-muted mb-3">Post about Birthday Gold on your social media with our hashtag and earn allocations!</p>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div>
+                                    <div class="reward-amount text-primary">+1</div>
+                                    <small class="text-muted">Per day</small>
+                                </div>
+                                <div class="ms-3">
+                                    <small class="text-muted d-block"><i class="bi bi-twitter-x me-1"></i>Twitter/X</small>
+                                    <small class="text-muted d-block"><i class="bi bi-facebook me-1"></i>Facebook</small>
+                                    <small class="text-muted d-block"><i class="bi bi-instagram me-1"></i>Instagram</small>
+                                    <small class="text-muted d-block"><i class="bi bi-tiktok me-1"></i>TikTok</small>
+                                </div>
+                            </div>
+                            <a href="/myaccount/social-share-verify" class="btn btn-primary">
+                                <i class="bi bi-share me-2"></i>Share & Verify
+                            </a>
                         </div>
                     </div>
                 </div>

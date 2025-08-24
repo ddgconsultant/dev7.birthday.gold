@@ -353,8 +353,9 @@ npm test
 // Standard page setup
 include '../core/site-controller.php';
 $pagetitle = "Page Title";
-$additionalstyles = [];
-$additionalscripts = [];
+// $additionalstyles is a STRING established in site-controller.php - use .= to concatenate
+$additionalstyles .= '<style>/* custom styles */</style>';
+$additionalscripts .= '<script>/* custom scripts */</script>';
 
 // Page logic here
 // NO AUTHENTICATION CHECKS - handled by site-controller.php

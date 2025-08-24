@@ -13,28 +13,7 @@ $step = 1; // Default to step 1
 #-------------------------------------------------------------------------------
 # HANDLE FOREIGN COUNTRIES
 #-------------------------------------------------------------------------------
-$approvedCountries = ['US'];
-$countryCode = $session->get('countrynotsupported', '');
-$getcountryviaip_data = $session->get('client_locationdata', '');
-
-if ($countryCode == '') {
-    if ($getcountryviaip_data == '' || $getcountryviaip_data == 'notset') {
-        $client_locationdata = $system->getcountryviaip($client_ip, 'reset');
-        if (!empty($client_locationdata['countryCode']))
-            $countryCode = $client_locationdata['countryCode'];
-    } else {
-        if (!empty($getcountryviaip_data['countryCode']))
-            $countryCode = $getcountryviaip_data['countryCode'];
-    }
-
-    $override = $session->get('country_not_supported_override', false);
-    if (!in_array($countryCode, $approvedCountries) && $countryCode != '' && !$override) {
-        $session->set('countrynotsupported', $countryCode);
-        $session->set('countrynotsupportedtag', '[' . $countryCode . ']');
-        header('Location: /country-not-supported');
-        exit();
-    }
-}
+$system->checkCountrySupport();
 
 #-------------------------------------------------------------------------------
 # HANDLE INITIALIZATION

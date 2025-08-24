@@ -194,6 +194,203 @@ $additionalstyles .= '
     margin-bottom: 1rem;
 }
 
+/* Mobile card view for tables */
+@media (max-width: 768px) {
+    /* Hide table headers on mobile */
+    .history-table thead {
+        display: none;
+    }
+    
+    /* Convert table rows to cards with better mobile layout */
+    .history-table tbody tr.enrollment-row {
+        display: flex;
+        margin-bottom: 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        position: relative;
+        align-items: center;
+    }
+    
+    .history-table tbody td {
+        display: block;
+        padding: 0;
+        border: none;
+        position: relative;
+    }
+    
+    /* ENROLLMENT TAB MOBILE LAYOUT */
+    /* Company logo column - left side */
+    .history-table tbody td.company-cell {
+        flex: 0 0 auto;
+        margin-right: 0.75rem;
+        order: 1;
+    }
+    
+    /* Mobile content cell - contains company name, status, allocation, date */
+    .history-table tbody td.mobile-content-cell {
+        flex: 1;
+        order: 2;
+        display: flex !important;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .history-table .company-name-mobile {
+        font-size: 0.9375rem;
+        line-height: 1.3;
+        margin-bottom: 0.125rem;
+    }
+    
+    .history-table .mobile-details {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+        font-size: 0.75rem;
+    }
+    
+    .history-table .mobile-details .badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.35rem;
+    }
+    
+    .history-table .mobile-details .allocation-negative {
+        color: #dc3545;
+        font-weight: 600;
+    }
+    
+    /* ALLOCATIONS TAB MOBILE LAYOUT */
+    .history-table tbody tr.allocation-row {
+        display: flex;
+        margin-bottom: 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        align-items: flex-start;
+    }
+    
+    .history-table tbody td.badge-cell {
+        flex: 0 0 auto;
+        margin-right: 0.75rem;
+        order: 1;
+        display: flex !important;
+        align-items: center;
+        padding-top: 0.125rem;
+    }
+    
+    .history-table tbody td.badge-cell:before {
+        content: none !important;
+    }
+    
+    .history-table tbody td.description-cell {
+        flex: 1;
+        order: 2;
+        display: block !important;
+    }
+    
+    .history-table tbody td.description-cell:before {
+        content: none !important;
+    }
+    
+    /* Mobile allocation details styling */
+    .mobile-alloc-details {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+        font-size: 0.75rem;
+    }
+    
+    .mobile-alloc-details .allocation-positive {
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    .mobile-alloc-details .badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.35rem;
+    }
+    
+    /* RECENT ACTIVITY TAB */
+    .history-table tbody tr.activity-row {
+        display: flex;
+        margin-bottom: 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        align-items: flex-start;
+    }
+    
+    .history-table tbody td.activity-type-cell {
+        flex: 0 0 auto;
+        margin-right: 0.75rem;
+        order: 1;
+        display: flex !important;
+        align-items: center;
+        padding-top: 0.125rem;
+    }
+    
+    .history-table tbody td.activity-type-cell:before {
+        content: none !important;
+    }
+    
+    .history-table tbody td.activity-desc-cell {
+        flex: 1;
+        order: 2;
+        display: block !important;
+    }
+    
+    .history-table tbody td.activity-desc-cell:before {
+        content: none !important;
+    }
+    
+    .mobile-activity-details {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.75rem;
+    }
+    
+    .mobile-activity-details .allocation-positive {
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    .mobile-activity-details .allocation-negative {
+        color: #dc3545;
+        font-weight: 600;
+    }
+    
+    /* General mobile styles */
+    .history-table tbody td .badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    /* Ensure proper spacing */
+    .history-table {
+        margin-bottom: 0;
+    }
+    
+    /* Fix for rows without specific classes */
+    .history-table tbody tr:not(.enrollment-row):not(.allocation-row):not(.activity-row) {
+        display: flex;
+        margin-bottom: 0.75rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+}
+
 /* Responsive adjustments */
 @media (max-width: 576px) {
     .nav-tab-item {
@@ -203,11 +400,31 @@ $additionalstyles .= '
     
     .nav-tab-item i {
         font-size: 1rem;
+        margin-right: 0.25rem !important;
     }
     
     .tab-badge {
         font-size: 0.7rem;
         padding: 1px 4px;
+    }
+    
+    /* Stack earn more button on mobile */
+    .content-header-dark .btn-lg {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    /* Adjust stats cards on smallest screens */
+    .stats-card {
+        padding: 1rem;
+    }
+    
+    .stats-number {
+        font-size: 1.5rem;
+    }
+    
+    .stats-label {
+        font-size: 0.75rem;
     }
 }
 </style>
@@ -222,20 +439,22 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="content-header-dark">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-md-8 text-center text-md-start">
+            <div class="col-12 text-center">
                 <h1 class="mb-3"><i class="bi bi-coin me-3"></i>Allocation History</h1>
                 <p class="lead mb-0">Track your enrollment allocation earnings and usage</p>
-            </div>
-            <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
-                <a href="/myaccount/earn-enrollments" class="btn btn-primary btn-lg" style="border-radius: 25px;">
-                    <i class="bi bi-plus-circle me-2"></i>Earn More Allocations
-                </a>
             </div>
         </div>
     </div>
 </div>
 
 <div class="container my-5">
+    <!-- Earn More Button -->
+    <div class="mb-4 text-end">
+        <a href="/myaccount/earn-enrollments" class="btn btn-primary" style="border-radius: 25px;">
+            <i class="bi bi-plus-circle me-2"></i>Earn More Allocations
+        </a>
+    </div>
+    
     <!-- Modern Tab Navigation -->
     <nav class="nav-tabs-modern">
         <a href="#overview" class="nav-tab-item active" data-tab="overview">
@@ -327,36 +546,16 @@ include($dir['core_components'] . '/bg_header.inc');
                         <thead>
                             <tr>
                                 <th>Date</th>
+                                <th class="text-center">Type</th>
                                 <th>Description</th>
-                                <th>Type</th>
-                                <th class="text-end">Amount</th>
+                                <th class="text-center">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($recent_activities as $activity): ?>
-                            <tr>
-                                <td><?php echo date('M j, Y', strtotime($activity['date'])); ?></td>
-                                <td>
-                                    <?php if ($activity['type'] == 'allocation'): ?>
-                                        <div>
-                                            <strong><?php echo ucfirst($activity['data']['allocation_type']); ?> Allocation</strong>
-                                            <?php if (!empty($activity['data']['allocation_comment'])): ?>
-                                                <br><small class="text-muted"><?php echo htmlspecialchars($activity['data']['allocation_comment']); ?></small>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="d-flex align-items-center">
-                                            <?php if (!empty($activity['data']['company_logo'])): ?>
-                                            <img src="<?php echo $display->companyimage($activity['data']['company_id'] . '/' . $activity['data']['company_logo']); ?>" 
-                                                 class="rounded me-2" 
-                                                 style="width: 24px; height: 24px; object-fit: cover;"
-                                                 alt="">
-                                            <?php endif; ?>
-                                            <strong><?php echo htmlspecialchars($activity['data']['company_name']); ?></strong>
-                                        </div>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
+                            <tr class="activity-row">
+                                <td data-label="Date" class="d-none d-md-table-cell"><?php echo date('M j, Y', strtotime($activity['date'])); ?></td>
+                                <td data-label="Type" class="text-center activity-type-cell">
                                     <?php if ($activity['type'] == 'allocation'): ?>
                                         <span class="badge bg-<?php echo $activity['data']['status'] == 'pending' ? 'warning' : 'success'; ?>">
                                             <?php echo $activity['data']['status'] == 'pending' ? 'Pending' : 'Earned'; ?>
@@ -365,7 +564,63 @@ include($dir['core_components'] . '/bg_header.inc');
                                         <span class="badge bg-danger">Used</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="text-end <?php echo $activity['type'] == 'allocation' ? 'allocation-positive' : 'allocation-negative'; ?>">
+                                <td data-label="Description" class="activity-desc-cell">
+                                    <!-- Desktop view -->
+                                    <div class="d-none d-md-block">
+                                        <?php if ($activity['type'] == 'allocation'): ?>
+                                            <div>
+                                                <strong><?php echo ucfirst($activity['data']['allocation_type']); ?> Allocation</strong>
+                                                <?php if (!empty($activity['data']['allocation_comment'])): ?>
+                                                    <br><small class="text-muted"><?php echo htmlspecialchars($activity['data']['allocation_comment']); ?></small>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="d-flex align-items-center">
+                                                <?php if (!empty($activity['data']['company_logo'])): ?>
+                                                <img src="<?php echo $display->companyimage($activity['data']['company_id'] . '/' . $activity['data']['company_logo']); ?>" 
+                                                     class="rounded me-2" 
+                                                     style="width: 24px; height: 24px; object-fit: cover;"
+                                                     alt="">
+                                                <?php endif; ?>
+                                                <strong><?php echo htmlspecialchars($activity['data']['company_name']); ?></strong>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <!-- Mobile view -->
+                                    <div class="d-md-none">
+                                        <?php if ($activity['type'] == 'allocation'): ?>
+                                            <div class="mb-1">
+                                                <strong><?php echo ucfirst($activity['data']['allocation_type']); ?> Allocation</strong>
+                                                <?php if (!empty($activity['data']['allocation_comment'])): ?>
+                                                    <div class="text-muted small"><?php echo htmlspecialchars($activity['data']['allocation_comment']); ?></div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="mobile-activity-details">
+                                                <span class="allocation-positive me-2">+<?php echo $activity['data']['amount']; ?></span>
+                                                <span class="text-muted small"><?php echo date('M j, Y', strtotime($activity['date'])); ?></span>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="d-flex">
+                                                <?php if (!empty($activity['data']['company_logo'])): ?>
+                                                <img src="<?php echo $display->companyimage($activity['data']['company_id'] . '/' . $activity['data']['company_logo']); ?>" 
+                                                     class="rounded me-2" 
+                                                     style="width: 40px; height: 40px; object-fit: cover;"
+                                                     alt="">
+                                                <?php endif; ?>
+                                                <div>
+                                                    <div class="mb-1">
+                                                        <strong><?php echo htmlspecialchars($activity['data']['company_name']); ?></strong>
+                                                    </div>
+                                                    <div class="mobile-activity-details">
+                                                        <span class="allocation-negative me-2">-1</span>
+                                                        <span class="text-muted small"><?php echo date('M j, Y', strtotime($activity['date'])); ?></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td class="text-center <?php echo $activity['type'] == 'allocation' ? 'allocation-positive' : 'allocation-negative'; ?> d-none d-md-table-cell" data-label="Amount">
                                     <?php echo $activity['type'] == 'allocation' ? '+' . $activity['data']['amount'] : '-1'; ?>
                                 </td>
                             </tr>
@@ -390,41 +645,63 @@ include($dir['core_components'] . '/bg_header.inc');
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>Date & Time</th>
+                            <th>Date</th>
                             <th>Type</th>
-                            <th>Amount</th>
+                            <th class="text-center">Amount</th>
                             <th>Description</th>
                             <th>Status</th>
-                            <th>Available</th>
+                            <th class="text-center">Available</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($user_allocations as $alloc): ?>
-                        <tr>
-                            <td>
-                                <?php echo date('M j, Y', strtotime($alloc['created_at'])); ?><br>
-                                <small class="text-muted"><?php echo date('g:i A', strtotime($alloc['created_at'])); ?></small>
+                        <tr class="allocation-row">
+                            <td data-label="Date" class="d-none d-md-table-cell">
+                                <?php echo date('M j, Y', strtotime($alloc['created_at'])); ?>
                             </td>
-                            <td>
+                            <td data-label="Type" class="badge-cell">
                                 <span class="badge bg-<?php echo $alloc['allocation_type'] == 'plan' ? 'primary' : ($alloc['allocation_type'] == 'bonus' ? 'success' : 'info'); ?>">
                                     <?php echo ucfirst($alloc['allocation_type']); ?>
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Amount" class="text-center d-none d-md-table-cell">
                                 <span class="allocation-positive">+<?php echo $alloc['amount']; ?></span>
                             </td>
-                            <td>
-                                <?php echo htmlspecialchars($alloc['allocation_comment'] ?? ''); ?>
-                                <?php if ($alloc['reference_type']): ?>
-                                    <br><small class="text-muted">Ref: <?php echo $alloc['reference_type']; ?></small>
-                                <?php endif; ?>
+                            <td data-label="Description" class="description-cell">
+                                <div class="d-none d-md-block">
+                                    <?php echo htmlspecialchars($alloc['allocation_comment'] ?? ''); ?>
+                                    <?php if ($alloc['reference_type']): ?>
+                                        <br><small class="text-muted">Ref: <?php echo $alloc['reference_type']; ?></small>
+                                    <?php endif; ?>
+                                </div>
+                                <!-- Mobile layout content -->
+                                <div class="d-md-none">
+                                    <div class="mb-1">
+                                        <strong><?php echo htmlspecialchars($alloc['allocation_comment'] ?? 'Allocation'); ?></strong>
+                                    </div>
+                                    <div class="mobile-alloc-details">
+                                        <span class="allocation-positive me-2">+<?php echo $alloc['amount']; ?> allocations</span>
+                                        <span class="badge bg-<?php echo $alloc['status'] == 'active' ? 'success' : 'secondary'; ?> me-2">
+                                            <?php echo ucfirst($alloc['status']); ?>
+                                        </span>
+                                        <span class="text-muted small"><?php echo date('M j, Y', strtotime($alloc['created_at'])); ?></span>
+                                    </div>
+                                    <?php if ($alloc['amount_used'] > 0): ?>
+                                    <div class="text-muted small mt-1">
+                                        Available: <?php echo $alloc['amount'] - $alloc['amount_used']; ?> (Used: <?php echo $alloc['amount_used']; ?>)
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if ($alloc['reference_type']): ?>
+                                    <div class="text-muted small mt-1">Ref: <?php echo $alloc['reference_type']; ?></div>
+                                    <?php endif; ?>
+                                </div>
                             </td>
-                            <td>
+                            <td data-label="Status" class="d-none d-md-table-cell">
                                 <span class="badge bg-<?php echo $alloc['status'] == 'active' ? 'success' : 'secondary'; ?>">
                                     <?php echo ucfirst($alloc['status']); ?>
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Available" class="text-center d-none d-md-table-cell">
                                 <?php echo $alloc['amount'] - $alloc['amount_used']; ?>
                                 <?php if ($alloc['amount_used'] > 0): ?>
                                     <br><small class="text-muted">Used: <?php echo $alloc['amount_used']; ?></small>
@@ -462,10 +739,10 @@ include($dir['core_components'] . '/bg_header.inc');
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Date & Time</th>
+                        <th>Date</th>
+                        <th>Status</th>
                         <th>Company</th>
                         <th>Category</th>
-                        <th>Status</th>
                         <th class="text-end">Allocation</th>
                         <th class="text-end">Balance After</th>
                     </tr>
@@ -475,35 +752,11 @@ include($dir['core_components'] . '/bg_header.inc');
                     $running_balance = $balance['available_allocations'] + $stats['total_used'];
                     foreach ($enrollment_history as $history): 
                     ?>
-                    <tr>
-                        <td>
-                            <?php echo date('M j, Y', strtotime($history['enrollment_date'])); ?><br>
-                            <small class="text-muted"><?php echo date('g:i A', strtotime($history['enrollment_date'])); ?></small>
+                    <tr class="enrollment-row">
+                        <td data-label="Date" class="mobile-info-cell d-none d-md-table-cell">
+                            <?php echo date('M j, Y', strtotime($history['enrollment_date'])); ?>
                         </td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <?php if (!empty($history['company_logo'])): ?>
-                                <img src="<?php echo $display->companyimage($history['company_id'] . '/' . $history['company_logo']); ?>" 
-                                     class="rounded me-2" 
-                                     style="width: 32px; height: 32px; object-fit: cover;"
-                                     alt="">
-                                <?php endif; ?>
-                                <div>
-                                    <a href="/brand-details?cid=<?php echo $history['company_id']; ?>" class="text-decoration-none">
-                                        <strong><?php echo htmlspecialchars($history['company_name']); ?></strong>
-                                    </a>
-                                    <?php if (!empty($history['company_description'])): ?>
-                                    <br><small class="text-muted"><?php echo htmlspecialchars(substr($history['company_description'], 0, 50)); ?>...</small>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge bg-light text-dark">
-                                <?php echo htmlspecialchars($history['company_category'] ?? 'Other'); ?>
-                            </span>
-                        </td>
-                        <td>
+                        <td data-label="Status" class="d-none d-md-table-cell">
                             <?php 
                             $status_class = 'bg-success';
                             $status_text = 'Enrolled';
@@ -519,14 +772,71 @@ include($dir['core_components'] . '/bg_header.inc');
                                 <?php echo $status_text; ?>
                             </span>
                         </td>
-                        <td class="text-end">
+                        <td data-label="Company" class="company-cell">
+                            <?php if (!empty($history['company_logo'])): ?>
+                            <img src="<?php echo $display->companyimage($history['company_id'] . '/' . $history['company_logo']); ?>" 
+                                 class="rounded company-logo d-md-none" 
+                                 style="width: 48px; height: 48px; object-fit: cover;"
+                                 alt="">
+                            <?php else: ?>
+                            <div class="company-logo-placeholder d-md-none" style="width: 48px; height: 48px; background: #f0f0f0; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-building" style="color: #999;"></i>
+                            </div>
+                            <?php endif; ?>
+                            <div class="d-none d-md-flex align-items-center">
+                                <?php if (!empty($history['company_logo'])): ?>
+                                <img src="<?php echo $display->companyimage($history['company_id'] . '/' . $history['company_logo']); ?>" 
+                                     class="rounded me-2" 
+                                     style="width: 32px; height: 32px; object-fit: cover;"
+                                     alt="">
+                                <?php endif; ?>
+                                <div>
+                                    <a href="/brand-details?cid=<?php echo $history['company_id']; ?>" class="text-decoration-none">
+                                        <strong><?php echo htmlspecialchars($history['company_name']); ?></strong>
+                                    </a>
+                                    <?php if (!empty($history['company_description'])): ?>
+                                    <br><small class="text-muted d-none d-md-block"><?php echo htmlspecialchars(substr($history['company_description'], 0, 50)); ?>...</small>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </td>
+                        <td data-label="Category" class="d-none d-md-table-cell">
+                            <span class="badge bg-light text-dark">
+                                <?php echo htmlspecialchars($history['company_category'] ?? 'Other'); ?>
+                            </span>
+                        </td>
+                        <td class="text-end d-none d-md-table-cell" data-label="Allocation">
                             <span class="allocation-negative">-1</span>
                         </td>
-                        <td class="text-end">
+                        <td class="text-end d-none d-md-table-cell" data-label="Balance After">
                             <?php 
                             $running_balance -= 1;
                             echo $running_balance; 
                             ?>
+                        </td>
+                        <!-- Mobile layout info cell -->
+                        <td data-label="Date" class="mobile-content-cell d-md-none">
+                            <div class="company-name-mobile">
+                                <a href="/brand-details?cid=<?php echo $history['company_id']; ?>" class="text-decoration-none text-dark">
+                                    <strong><?php echo htmlspecialchars($history['company_name']); ?></strong>
+                                </a>
+                            </div>
+                            <div class="mobile-details">
+                                <?php 
+                                $status_class = 'bg-success';
+                                $status_text = 'Enrolled';
+                                if ($history['enrollment_status'] == 'pending') {
+                                    $status_class = 'bg-warning';
+                                    $status_text = 'Pending';
+                                } elseif ($history['enrollment_status'] == 'existing') {
+                                    $status_class = 'bg-info';
+                                    $status_text = 'Existing';
+                                }
+                                ?>
+                                <span class="badge <?php echo $status_class; ?> me-2"><?php echo $status_text; ?></span>
+                                <span class="text-muted small">Allocation: <span class="allocation-negative">-1</span></span>
+                                <span class="text-muted small ms-2"><?php echo date('M j, Y', strtotime($history['enrollment_date'])); ?></span>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>

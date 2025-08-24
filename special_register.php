@@ -37,31 +37,9 @@ if (isset($_GET['code'])  && isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQU
 
 
 #-------------------------------------------------------------------------------
-# HANDLE FORIEGN COUNTRIES
+# HANDLE FOREIGN COUNTRIES
 #-------------------------------------------------------------------------------
-$approvedCountries = ['US'];
-$countryCode = $session->get('countrynotsupported', '');
-$getcountryviaip_data = $session->get('client_locationdata', '');
-if ($countryCode == '') {
-
-  if ($getcountryviaip_data == '') {
-    $client_locationdata = $system->getcountryviaip($client_ip, 'reset');
-    $countryCode = $client_locationdata['countryCode'];
-    # $session->set('client_locationdata', $response);
-  } else {
-    $countryCode = $getcountryviaip_data['countryCode'];
-  }
-
-  // Check if country is approved
-  $override = $session->get('country_not_supported_override', false);
-  if (!in_array($countryCode, $approvedCountries) && $countryCode != '' && !$override) {
-    // Not approved, redirect
-    $session->set('countrynotsupported', $countryCode);
-    $session->set('countrynotsupportedtag', '[' . $countryCode . ']');
-    header('Location: /country-not-supported');
-    exit();
-  }
-}
+$system->checkCountrySupport();
 
 
 #-------------------------------------------------------------------------------

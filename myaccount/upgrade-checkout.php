@@ -1,475 +1,326 @@
 <?php
 /**
  * Upgrade Checkout Page
- * Handles Stripe payment for plan upgrades
+ * Simple checkout for plan upgrades
  */
 
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.upgrademanager.php');
 
-// Check if user is logged in
-if (!$account->isactive()) {
-    header('Location: /login');
+// Page setup
+$pagetitle = "Upgrade Checkout";
+
+// Get parameters
+$plan_name = $_GET['plan'] ?? '';
+$product_id = intval($_GET['id'] ?? 0);
+
+if (!$product_id) {
+    header('Location: /myaccount/upgrade');
     exit();
 }
 
-// Get upgrade session
-$upgradeSessionId = $_GET['session'] ?? '';
-$upgradeSession = $session->get('upgrade_session');
+// Get current user data from global variable set by site-controller
+$current_plan = $current_user_data['account_plan'] ?? 'free';
+$current_product_id = $current_user_data['account_product_id'] ?? null;
+$user_id = $current_user_data['user_id'] ?? 0;
 
-if (!$upgradeSession || $upgradeSession['upgrade_session_id'] !== $upgradeSessionId) {
-    $errormessage = 'Invalid upgrade session. Please start again.';
-    $session->set('errormessage', $errormessage);
-    header('Location: /myaccount/upgrade-plan');
+// Get new product details
+$sql = "SELECT p.*, 
+        (SELECT value FROM bg_product_features WHERE product_id = p.id AND name = 'price' AND status = 'active' LIMIT 1) as price,
+        (SELECT value FROM bg_product_features WHERE product_id = p.id AND name = 'billing_period' AND status = 'active' LIMIT 1) as billing_period,
+        (SELECT value FROM bg_product_features WHERE product_id = p.id AND name = 'description' AND status = 'active' LIMIT 1) as description,
+        (SELECT value FROM bg_product_features WHERE product_id = p.id AND name = 'stripe_price_id' AND status = 'active' LIMIT 1) as stripe_price_id
+        FROM bg_products p
+        WHERE p.id = :product_id AND p.status = 'active'";
+
+$stmt = $database->prepare($sql);
+$stmt->execute(['product_id' => $product_id]);
+$new_product = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$new_product) {
+    $session->set('errormessage', 'Invalid product selected');
+    header('Location: /myaccount/upgrade');
     exit();
 }
 
-// Check if session is still valid (1 hour timeout)
-if ((time() - $upgradeSession['created_at']) > 3600) {
-    $errormessage = 'Your upgrade session has expired. Please start again.';
-    $session->set('errormessage', $errormessage);
-    $session->unset('upgrade_session');
-    header('Location: /myaccount/upgrade-plan');
-    exit();
-}
-
-// Initialize managers
-$productManager = new ProductManager($database, $qik);
-$upgradeManager = new UpgradeManager($database, $account, $productManager, $session, $qik);
-
-// Get product details
-$newProduct = $productManager->getProduct($upgradeSession['to_product_id']);
-$currentProduct = $productManager->getProduct($upgradeSession['from_product_id']);
-
-if (!$newProduct || !$currentProduct) {
-    $errormessage = 'Invalid product configuration';
-    $session->set('errormessage', $errormessage);
-    header('Location: /myaccount/upgrade-plan');
-    exit();
+// Get current product price for pro-rating
+$current_price = 0;
+if ($current_product_id) {
+    $sql = "SELECT value FROM bg_product_features WHERE product_id = :id AND name = 'price' AND status = 'active' LIMIT 1";
+    $stmt = $database->prepare($sql);
+    $stmt->execute(['id' => $current_product_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($result) {
+        $current_price = floatval(str_replace(['$', ','], '', $result['value']));
+    }
 }
 
 // Calculate pricing
-$baseUpgradeCost = $newProduct['price'] - $currentProduct['price'];
-$discount = 0;
+$new_price = floatval(str_replace(['$', ','], '', $new_product['price'] ?? '0'));
+$upgrade_cost = max(0, $new_price - $current_price);
 
-// Apply promo code if present
-if (!empty($upgradeSession['promo_code'])) {
-    if ($upgradeSession['promo_type'] === 'percentage') {
-        $discount = ($baseUpgradeCost * $upgradeSession['promo_discount']) / 100;
-    } else {
-        $discount = $upgradeSession['promo_discount'];
-    }
-}
-
-$finalAmount = max(0, $baseUpgradeCost - $discount);
-
-// Handle promo code form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'apply_promo') {
-    $promoCode = $_POST['promo_code'] ?? '';
-    $result = $upgradeManager->applyPromoCode($promoCode, $upgradeSessionId);
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // For now, just update the user's plan in the database
+    // In production, this would integrate with Stripe
     
-    if ($result['success']) {
-        $session->set('messages', ['Promo code applied successfully!']);
-        header('Location: /myaccount/upgrade-checkout?session=' . $upgradeSessionId);
-        exit();
-    } else {
-        $errormessage = $result['error'];
-    }
-}
-
-// If amount is 0, process without payment
-if ($finalAmount <= 0) {
-    $result = $upgradeManager->processUpgrade($upgradeSessionId);
-    if ($result['success']) {
-        header('Location: /myaccount/upgrade-complete?id=' . $result['confirmation_id']);
-        exit();
-    } else {
-        $session->set('errormessage', $result['error']);
-        header('Location: /myaccount/upgrade-plan');
-        exit();
-    }
-}
-
-// Initialize Stripe
-require_once($_SERVER['DOCUMENT_ROOT'] . '/../ENV_CONFIGS/vendor/autoload.php');
-\Stripe\Stripe::setApiKey($STRIPECONFIG['stripe_secret_key']);
-
-// Create or retrieve Stripe customer
-$stripeCustomerId = null;
-$customerEmail = $current_user_data['email'] ?? '';
-
-// Check if user already has a Stripe customer ID
-$sql = "SELECT stripe_customer_id FROM bg_users WHERE user_id = :user_id";
-$userData = $database->getrow($sql, ['user_id' => $account->getUserId()]);
-
-if (!empty($userData['stripe_customer_id'])) {
-    $stripeCustomerId = $userData['stripe_customer_id'];
-} else {
-    // Create new Stripe customer
-    try {
-        $customer = \Stripe\Customer::create([
-            'email' => $customerEmail,
-            'metadata' => [
-                'user_id' => $account->getUserId(),
-                'username' => $current_user_data['username'] ?? ''
-            ]
-        ]);
-        $stripeCustomerId = $customer->id;
+    $sql = "UPDATE bg_users SET 
+            account_plan = :plan,
+            account_product_id = :product_id,
+            modify_dt = NOW()
+            WHERE user_id = :user_id";
+    
+    $stmt = $database->prepare($sql);
+    $result = $stmt->execute([
+        'plan' => $new_product['account_plan'],
+        'product_id' => $product_id,
+        'user_id' => $user_id
+    ]);
+    
+    if ($result) {
+        // Log the upgrade
+        $sql = "INSERT INTO bg_user_events (user_id, event_type, event_description, event_data, create_dt)
+                VALUES (:user_id, 'upgrade', :description, :data, NOW())";
         
-        // Save to database
-        $database->query(
-            "UPDATE bg_users SET stripe_customer_id = :stripe_id WHERE user_id = :user_id",
-            ['stripe_id' => $stripeCustomerId, 'user_id' => $account->getUserId()]
-        );
-    } catch (Exception $e) {
-        $errormessage = 'Error creating payment profile: ' . $e->getMessage();
+        $event_data = json_encode([
+            'from_plan' => $current_plan,
+            'to_plan' => $new_product['account_plan'],
+            'from_product_id' => $current_product_id,
+            'to_product_id' => $product_id,
+            'amount' => $upgrade_cost
+        ]);
+        
+        $stmt = $database->prepare($sql);
+        $stmt->execute([
+            'user_id' => $user_id,
+            'description' => 'Upgraded to ' . $new_product['account_name'],
+            'data' => $event_data
+        ]);
+        
+        // Redirect to success page
+        header('Location: /myaccount/upgrade-complete?plan=' . urlencode($new_product['account_plan']));
+        exit();
+    } else {
+        $errormessage = 'Failed to process upgrade. Please try again.';
     }
 }
 
-// Page configuration
-$pagedata = [
-    'pagetitle' => 'Upgrade Checkout',
-    'activepage' => 'billing'
-];
-
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
-
-// Initialize messages
-$messages = $session->get('messages', []);
-$session->unset('messages');
-$errormessage = $errormessage ?? '';
-?>
-
-<style>
+// Add custom styles
+$additionalstyles .= '<style>
 .checkout-container {
     max-width: 800px;
-    margin: 0 auto;
-    padding: 2rem;
+    margin: 40px auto;
 }
 
 .checkout-card {
     background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
     overflow: hidden;
 }
 
 .checkout-header {
-    background: #f8f9fa;
-    padding: 2rem;
-    border-bottom: 1px solid #dee2e6;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
 }
 
 .checkout-body {
-    padding: 2rem;
+    padding: 40px;
 }
 
-.plan-comparison {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 2rem;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.plan-box {
-    text-align: center;
-    padding: 1.5rem;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-}
-
-.plan-box.current {
+.plan-summary {
     background: #f8f9fa;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 30px;
 }
 
-.plan-box.new {
-    border-color: #198754;
-    background: #f1f8f4;
-}
-
-.arrow-icon {
-    font-size: 2rem;
-    color: #198754;
-}
-
-.pricing-breakdown {
-    background: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-}
-
-.pricing-row {
+.plan-row {
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem 0;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #dee2e6;
 }
 
-.pricing-row.total {
-    border-top: 2px solid #dee2e6;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    font-weight: bold;
+.plan-row:last-child {
+    border-bottom: none;
+    font-weight: 700;
     font-size: 1.2rem;
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 2px solid #dee2e6;
 }
 
-.promo-section {
-    background: #fff3cd;
-    border: 1px solid #ffeeba;
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
+.upgrade-benefits {
+    margin: 30px 0;
 }
 
-.promo-applied {
-    background: #d4edda;
-    border-color: #c3e6cb;
-}
-
-#payment-element {
-    margin-bottom: 2rem;
-}
-
-.guarantee-box {
-    background: #e8f5e9;
-    border: 1px solid #c8e6c9;
-    padding: 1rem;
-    border-radius: 8px;
-    margin-top: 2rem;
-    text-align: center;
-}
-
-.security-badges {
+.benefit-item {
     display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 2rem;
-    opacity: 0.7;
-}
-</style>
-
-<div class="checkout-container">
-    <?php if (!empty($errormessage)): ?>
-        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-            <?php echo htmlspecialchars($errormessage); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-    
-    <?php if (!empty($messages)): ?>
-        <?php foreach ($messages as $message): ?>
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <?php echo htmlspecialchars($message); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
-    
-    <div class="checkout-card">
-        <div class="checkout-header">
-            <h1 class="h3 mb-0">Complete Your Upgrade</h1>
-        </div>
-        
-        <div class="checkout-body">
-            <!-- Plan Comparison -->
-            <div class="plan-comparison">
-                <div class="plan-box current">
-                    <h5>Current Plan</h5>
-                    <h4><?php echo htmlspecialchars($currentProduct['name']); ?></h4>
-                    <div class="text-muted">
-                        $<?php echo number_format($currentProduct['price'] / 100, 2); ?>/year
-                    </div>
-                </div>
-                
-                <div class="arrow-icon">
-                    <i class="bi bi-arrow-right-circle-fill"></i>
-                </div>
-                
-                <div class="plan-box new">
-                    <h5>New Plan</h5>
-                    <h4><?php echo htmlspecialchars($newProduct['name']); ?></h4>
-                    <div class="text-success">
-                        $<?php echo number_format($newProduct['price'] / 100, 2); ?>/year
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Pricing Breakdown -->
-            <div class="pricing-breakdown">
-                <h5 class="mb-3">Pricing Details</h5>
-                
-                <div class="pricing-row">
-                    <span><?php echo htmlspecialchars($newProduct['name']); ?> Annual Price</span>
-                    <span>$<?php echo number_format($newProduct['price'] / 100, 2); ?></span>
-                </div>
-                
-                <div class="pricing-row">
-                    <span>Less: <?php echo htmlspecialchars($currentProduct['name']); ?> Credit</span>
-                    <span>-$<?php echo number_format($currentProduct['price'] / 100, 2); ?></span>
-                </div>
-                
-                <?php if ($discount > 0): ?>
-                <div class="pricing-row text-success">
-                    <span>Promo Discount</span>
-                    <span>-$<?php echo number_format($discount / 100, 2); ?></span>
-                </div>
-                <?php endif; ?>
-                
-                <div class="pricing-row total">
-                    <span>Total Due Today</span>
-                    <span>$<?php echo number_format($finalAmount / 100, 2); ?></span>
-                </div>
-            </div>
-            
-            <!-- Promo Code Section -->
-            <div class="promo-section <?php echo !empty($upgradeSession['promo_code']) ? 'promo-applied' : ''; ?>">
-                <?php if (!empty($upgradeSession['promo_code'])): ?>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>
-                            Promo code applied: <strong><?php echo htmlspecialchars($upgradeSession['promo_code']); ?></strong>
-                        </div>
-                        <div>
-                            Discount: $<?php echo number_format($discount / 100, 2); ?>
-                        </div>
-                    </div>
-                <?php else: ?>
-                    <form method="POST" action="" class="d-flex gap-2">
-                        <input type="hidden" name="action" value="apply_promo">
-                        <?php echo $display->inputcsrf_token(); ?>
-                        <input type="text" name="promo_code" class="form-control" placeholder="Enter promo code">
-                        <button type="submit" class="btn btn-outline-primary">Apply</button>
-                    </form>
-                <?php endif; ?>
-            </div>
-            
-            <!-- Payment Form -->
-            <form id="payment-form">
-                <div id="payment-element">
-                    <!-- Stripe Elements will be inserted here -->
-                </div>
-                
-                <button type="submit" id="submit-button" class="btn btn-primary btn-lg w-100">
-                    <span id="button-text">Complete Upgrade - $<?php echo number_format($finalAmount / 100, 2); ?></span>
-                    <span id="spinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status">
-                        <span class="visually-hidden">Processing...</span>
-                    </span>
-                </button>
-                
-                <div id="payment-message" class="alert mt-3 d-none"></div>
-            </form>
-            
-            <!-- Money Back Guarantee -->
-            <div class="guarantee-box">
-                <i class="bi bi-shield-check fs-3 text-success mb-2"></i>
-                <h6>30-Day Money Back Guarantee</h6>
-                <p class="mb-0 text-muted small">
-                    If you're not completely satisfied with your upgrade, contact us within 30 days for a full refund.
-                </p>
-            </div>
-            
-            <!-- Security Badges -->
-            <div class="security-badges">
-                <img src="/public/images/stripe-badge.png" alt="Powered by Stripe" height="30">
-                <img src="/public/images/ssl-secure.png" alt="SSL Secure" height="30">
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://js.stripe.com/v3/"></script>
-<script>
-// Initialize Stripe
-const stripe = Stripe('<?php echo $STRIPECONFIG['stripe_publishable_key']; ?>');
-
-// Create Payment Intent
-let elements;
-
-initialize();
-
-async function initialize() {
-    const response = await fetch('/api/create-upgrade-payment-intent', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            upgrade_session_id: '<?php echo $upgradeSessionId; ?>',
-            amount: <?php echo $finalAmount; ?>,
-            customer_id: '<?php echo $stripeCustomerId; ?>'
-        })
-    });
-    
-    const { clientSecret, error } = await response.json();
-    
-    if (error) {
-        showMessage(error);
-        return;
-    }
-    
-    const appearance = {
-        theme: 'stripe',
-        variables: {
-            colorPrimary: '#198754',
-        }
-    };
-    
-    elements = stripe.elements({ appearance, clientSecret });
-    
-    const paymentElement = elements.create('payment');
-    paymentElement.mount('#payment-element');
+    align-items: center;
+    margin-bottom: 15px;
 }
 
-// Handle form submission
-const form = document.getElementById('payment-form');
-form.addEventListener('submit', handleSubmit);
-
-async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    
-    const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-            return_url: '<?php echo $website['baseurl']; ?>/myaccount/upgrade-process?session=<?php echo $upgradeSessionId; ?>',
-        },
-    });
-    
-    if (error) {
-        if (error.type === "card_error" || error.type === "validation_error") {
-            showMessage(error.message);
-        } else {
-            showMessage("An unexpected error occurred.");
-        }
-    }
-    
-    setLoading(false);
+.benefit-item i {
+    color: #28a745;
+    font-size: 1.2rem;
+    margin-right: 15px;
 }
 
-function showMessage(messageText) {
-    const messageContainer = document.querySelector('#payment-message');
-    messageContainer.classList.remove('d-none', 'alert-success', 'alert-danger');
-    messageContainer.classList.add('alert-danger');
-    messageContainer.textContent = messageText;
+.checkout-actions {
+    text-align: center;
+    margin-top: 30px;
 }
 
-function setLoading(isLoading) {
-    if (isLoading) {
-        document.querySelector('#submit-button').disabled = true;
-        document.querySelector('#spinner').classList.remove('d-none');
-        document.querySelector('#button-text').textContent = 'Processing...';
-    } else {
-        document.querySelector('#submit-button').disabled = false;
-        document.querySelector('#spinner').classList.add('d-none');
-        document.querySelector('#button-text').textContent = 'Complete Upgrade - $<?php echo number_format($finalAmount / 100, 2); ?>';
-    }
+.btn-upgrade {
+    padding: 15px 40px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: uppercase;
 }
-</script>
 
-<?php
+.secure-notice {
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 20px;
+}
+
+.secure-notice i {
+    color: #28a745;
+    margin-right: 5px;
+}
+</style>';
+
+// Include header
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
+
+echo '<div class="checkout-container">';
+
+// Display any error messages
+if (!empty($errormessage)) {
+    echo '<div class="alert alert-danger">' . htmlspecialchars($errormessage) . '</div>';
+}
+
+echo '<div class="checkout-card">';
+
+// Header
+echo '<div class="checkout-header">';
+echo '<h2>Complete Your Upgrade</h2>';
+echo '<p class="mb-0">Upgrade to ' . htmlspecialchars($new_product['account_name'] ?? ucfirst($new_product['account_plan'])) . '</p>';
+echo '</div>';
+
+// Body
+echo '<div class="checkout-body">';
+
+// Plan summary
+echo '<div class="plan-summary">';
+echo '<h4 class="mb-3">Order Summary</h4>';
+
+echo '<div class="plan-row">';
+echo '<span>Current Plan</span>';
+echo '<span>' . ucfirst(str_replace(['user_', 'parental_', 'minor_', 'business_'], '', $current_plan)) . '</span>';
+echo '</div>';
+
+echo '<div class="plan-row">';
+echo '<span>New Plan</span>';
+echo '<span>' . htmlspecialchars($new_product['account_name'] ?? ucfirst($new_product['account_plan'])) . '</span>';
+echo '</div>';
+
+if ($current_price > 0) {
+    echo '<div class="plan-row">';
+    echo '<span>Current Plan Price</span>';
+    echo '<span>-$' . number_format($current_price, 2) . '</span>';
+    echo '</div>';
+}
+
+echo '<div class="plan-row">';
+echo '<span>New Plan Price</span>';
+echo '<span>$' . number_format($new_price, 2) . '</span>';
+echo '</div>';
+
+echo '<div class="plan-row">';
+echo '<span>Amount Due Today</span>';
+echo '<span>$' . number_format($upgrade_cost, 2) . '</span>';
+echo '</div>';
+
+echo '</div>'; // End plan-summary
+
+// Benefits of upgrading
+echo '<div class="upgrade-benefits">';
+echo '<h4 class="mb-3">What You Will Get</h4>';
+
+$benefits = [
+    'Immediate access to all ' . htmlspecialchars($new_product['account_name'] ?? 'premium') . ' features',
+    'Priority customer support',
+    'Ad-free experience',
+    'Exclusive rewards and offers'
+];
+
+foreach ($benefits as $benefit) {
+    echo '<div class="benefit-item">';
+    echo '<i class="bi bi-check-circle-fill"></i>';
+    echo '<span>' . $benefit . '</span>';
+    echo '</div>';
+}
+
+echo '</div>'; // End upgrade-benefits
+
+// Checkout form
+echo '<form method="POST" action="">';
+echo $display->inputcsrf_token();
+
+// Payment method section (placeholder for now)
+if ($upgrade_cost > 0) {
+    echo '<div class="alert alert-info">';
+    echo '<i class="bi bi-info-circle"></i> ';
+    echo 'Payment processing will be handled by Stripe. Your card will be charged $' . number_format($upgrade_cost, 2) . '.';
+    echo '</div>';
+}
+
+echo '<div class="checkout-actions">';
+if ($upgrade_cost > 0) {
+    echo '<button type="submit" class="btn btn-primary btn-upgrade">';
+    echo 'Complete Upgrade - $' . number_format($upgrade_cost, 2);
+    echo '</button>';
+} else {
+    echo '<button type="submit" class="btn btn-success btn-upgrade">';
+    echo 'Complete Free Upgrade';
+    echo '</button>';
+}
+
+echo '<div class="mt-3">';
+echo '<a href="/myaccount/upgrade" class="btn btn-link">Cancel and go back</a>';
+echo '</div>';
+echo '</div>';
+
+echo '</form>';
+
+// Secure notice
+echo '<div class="secure-notice">';
+echo '<i class="bi bi-shield-check"></i>';
+echo 'Your payment information is secure and encrypted';
+echo '</div>';
+
+echo '</div>'; // End checkout-body
+echo '</div>'; // End checkout-card
+
+// FAQ section
+echo '<div class="mt-5">';
+echo '<h4>Questions?</h4>';
+echo '<p><strong>When will my upgrade take effect?</strong><br>';
+echo 'Your upgrade will be activated immediately after payment is processed.</p>';
+echo '<p><strong>Can I cancel or change my plan later?</strong><br>';
+echo 'Yes, you can modify or cancel your subscription at any time from your account settings.</p>';
+echo '<p><strong>Is this a recurring charge?</strong><br>';
+echo 'Yes, you will be charged ' . htmlspecialchars($new_product['billing_period'] ?? 'annually') . ' unless you cancel.</p>';
+echo '</div>';
+
+echo '</div>'; // End container
+
+// Include footer
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
-?>

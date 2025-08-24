@@ -19,8 +19,8 @@ $isKioskMode = in_array($signupMode, ['tabletkiosk', 'upgrade']);
 // Determine if we should show bottom navigation
 $showBottomNav = !$isKioskMode;
 
-// Check if we're in the social module
-$isInSocialModule = strpos($currentPath, '/social') !== false;
+// Check if we're in the social module (must start with /social/)
+$isInSocialModule = strpos($currentPath, '/social/') === 0;
 
 // Include the rest of the standard footer content
 include($dir['core_components'] . '/bg_footer.inc');
