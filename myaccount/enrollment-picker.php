@@ -113,6 +113,7 @@ $eligibilities = $enrollment->getCompanyEligibilities($user_id, $company_ids);
 // Process companies to add additional data
 $processed_companies = [];
 $suppressed_companies = [];
+$total_suppressed_count = 0; // Track total suppressed count
 
 foreach ($companies as $company) {
     $suppression_reasons = [];
@@ -122,9 +123,12 @@ foreach ($companies as $company) {
         $age_range = $company['minage'] . '-' . $company['maxage'];
         $suppression_reasons['age'] = "Age requirement: $age_range years (you are {$alive['years']} years old)";
         
+        // Always track suppressed companies for the count
+        $company['suppression_reasons'] = $suppression_reasons;
+        $suppressed_companies[] = $company;
+        $total_suppressed_count++;
+        
         if (!$show_suppressed || ($suppression_filter !== 'all' && $suppression_filter !== 'age')) {
-            $company['suppression_reasons'] = $suppression_reasons;
-            $suppressed_companies[] = $company;
             continue; // Skip age-restricted companies unless showing suppressed
         }
     }
@@ -290,7 +294,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
     
     <!-- Suppression Toggle -->
-    <?php if (count($suppressed_companies) > 0): ?>
+    <?php if ($total_suppressed_count > 0 || $show_suppressed): ?>
     <div class="suppression-controls">
         <div class="d-flex align-items-center justify-content-between px-3 py-2">
             <div class="form-check form-switch">
@@ -299,7 +303,7 @@ include($dir['core_components'] . '/bg_header.inc');
                        onchange="toggleSuppressed(this.checked)">
                 <label class="form-check-label" for="showSuppressed">
                     Show Hidden <?php echo ucfirst($website['biznames']); ?> 
-                    <span class="badge bg-secondary"><?php echo count($suppressed_companies); ?></span>
+                    <span class="badge bg-secondary"><?php echo $total_suppressed_count; ?></span>
                 </label>
             </div>
             <button type="button" class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#suppressionModal">
@@ -307,7 +311,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </button>
         </div>
         
-        <?php if ($show_suppressed && count($suppressed_companies) > 0): ?>
+        <?php if ($show_suppressed && $total_suppressed_count > 0): ?>
         <div class="suppression-filter px-3 pb-2">
             <select class="form-select form-select-sm" id="suppressionFilter" onchange="filterSuppressed(this.value)">
                 <option value="all" <?php echo $suppression_filter === 'all' ? 'selected' : ''; ?>>All hidden reasons</option>
