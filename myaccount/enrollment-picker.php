@@ -48,7 +48,9 @@ $display_categories = ['All', 'Food', 'Beverage', 'Beauty', 'Retail', 'Other'];
 $selected_category = $_GET['category'] ?? 'All';
 $search_query = $_GET['search'] ?? '';
 $show_suppressed = isset($_GET['show_suppressed']) ? true : false;
-$suppression_filter = $_GET['suppression_filter'] ?? 'all'; // all, age, diet, gender, etc.
+// Parse suppression filters - can be comma-separated for multiple filters
+$suppression_filter = $_GET['suppression_filter'] ?? 'all';
+$active_filters = $suppression_filter === 'all' ? [] : explode(',', $suppression_filter);
 
 // Get companies using existing system from businessselect.php
 $companies = [];
@@ -128,7 +130,13 @@ foreach ($companies as $company) {
         $suppressed_companies[] = $company;
         $total_suppressed_count++;
         
-        if (!$show_suppressed || ($suppression_filter !== 'all' && $suppression_filter !== 'age')) {
+        // Check if this suppression type should be shown
+        $should_show = $show_suppressed && 
+                      ($suppression_filter === 'all' || 
+                       empty($active_filters) || 
+                       in_array('age', $active_filters));
+        
+        if (!$should_show) {
             continue; // Skip age-restricted companies unless showing suppressed
         }
     }
@@ -310,20 +318,6 @@ include($dir['core_components'] . '/bg_header.inc');
                 <i class="bi bi-info-circle"></i> Why are some hidden?
             </button>
         </div>
-        
-        <?php if ($show_suppressed && $total_suppressed_count > 0): ?>
-        <div class="suppression-filter px-3 pb-2">
-            <select class="form-select form-select-sm" id="suppressionFilter" onchange="filterSuppressed(this.value)">
-                <option value="all" <?php echo $suppression_filter === 'all' ? 'selected' : ''; ?>>All hidden reasons</option>
-                <option value="age" <?php echo $suppression_filter === 'age' ? 'selected' : ''; ?>>Age restrictions</option>
-                <!-- Future options:
-                <option value="diet">Dietary restrictions</option>
-                <option value="gender">Gender specific</option>
-                <option value="location">Location based</option>
-                -->
-            </select>
-        </div>
-        <?php endif; ?>
     </div>
     <?php endif; ?>
 </div>
@@ -549,43 +543,68 @@ endif; ?>
                     }
                     ?>
                     
-                    <h6 class="mb-2">Currently Hidden:</h6>
-                    <ul class="list-unstyled">
+                    <h6 class="mb-3">Currently Hidden:</h6>
+                    
+                    <?php if (count($suppression_counts) > 1 && $show_suppressed): ?>
+                    <div class="alert alert-light border mb-3">
+                        <small class="text-muted">Toggle which types to show:</small>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div class="suppression-filters">
                         <?php foreach ($suppression_counts as $type => $count): ?>
-                        <li class="mb-2">
-                            <?php 
-                            $icon = 'bi-x-circle';
-                            $label = ucfirst($type);
-                            switch($type) {
-                                case 'age':
-                                    $icon = 'bi-calendar-x';
-                                    $label = 'Age Restrictions';
-                                    $desc = 'Outside your age range';
-                                    break;
-                                case 'diet':
-                                    $icon = 'bi-egg-fill';
-                                    $label = 'Dietary Restrictions';
-                                    $desc = 'Based on your dietary preferences';
-                                    break;
-                                case 'gender':
-                                    $icon = 'bi-gender-ambiguous';
-                                    $label = 'Gender Specific';
-                                    $desc = 'Targeted to different gender';
-                                    break;
-                                case 'location':
-                                    $icon = 'bi-geo-alt';
-                                    $label = 'Location Based';
-                                    $desc = 'Not available in your area';
-                                    break;
-                            }
-                            ?>
-                            <i class="bi <?php echo $icon; ?> text-muted me-2"></i>
-                            <strong><?php echo $label; ?>:</strong> 
-                            <?php echo $count; ?> <?php echo $count == 1 ? $website['bizname'] : $website['biznames']; ?>
-                            <small class="text-muted d-block ms-4"><?php echo $desc ?? ''; ?></small>
-                        </li>
+                        <?php 
+                        $icon = 'bi-x-circle';
+                        $label = ucfirst($type);
+                        switch($type) {
+                            case 'age':
+                                $icon = 'bi-calendar-x';
+                                $label = 'Age Restrictions';
+                                $desc = 'Outside your age range';
+                                break;
+                            case 'diet':
+                                $icon = 'bi-egg-fill';
+                                $label = 'Dietary Restrictions';
+                                $desc = 'Based on your dietary preferences';
+                                break;
+                            case 'gender':
+                                $icon = 'bi-gender-ambiguous';
+                                $label = 'Gender Specific';
+                                $desc = 'Targeted to different gender';
+                                break;
+                            case 'location':
+                                $icon = 'bi-geo-alt';
+                                $label = 'Location Based';
+                                $desc = 'Not available in your area';
+                                break;
+                        }
+                        $is_active = in_array($type, $active_filters) || $suppression_filter === 'all' || empty($active_filters);
+                        ?>
+                        <div class="suppression-filter-item mb-3 p-2 border rounded">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div class="flex-grow-1">
+                                    <div>
+                                        <i class="bi <?php echo $icon; ?> text-muted me-2"></i>
+                                        <strong><?php echo $label; ?>:</strong> 
+                                        <span class="badge bg-secondary"><?php echo $count; ?></span>
+                                        <?php echo $count == 1 ? $website['bizname'] : $website['biznames']; ?>
+                                    </div>
+                                    <small class="text-muted d-block ms-4"><?php echo $desc ?? ''; ?></small>
+                                </div>
+                                <?php if (count($suppression_counts) > 1 && $show_suppressed): ?>
+                                <div class="form-check form-switch ms-3">
+                                    <input class="form-check-input suppression-type-toggle" 
+                                           type="checkbox" 
+                                           data-type="<?php echo $type; ?>"
+                                           id="toggle_<?php echo $type; ?>" 
+                                           <?php echo $is_active ? 'checked' : ''; ?>
+                                           onchange="toggleSuppressionType('<?php echo $type; ?>')">
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                         <?php endforeach; ?>
-                    </ul>
+                    </div>
                 </div>
                 <?php endif; ?>
                 
@@ -856,8 +875,14 @@ body {
     margin-top: -1px;
 }
 
-.suppression-filter {
-    max-width: 300px;
+/* Suppression filter items in modal */
+.suppression-filter-item {
+    background: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.suppression-filter-item:hover {
+    background: #e9ecef;
 }
 
 /* Suppressed company cards */
@@ -1046,9 +1071,29 @@ function toggleSuppressed(show) {
     window.location.href = currentUrl.toString();
 }
 
-function filterSuppressed(filter) {
+function toggleSuppressionType(type) {
     const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('suppression_filter', filter);
+    const currentFilter = currentUrl.searchParams.get('suppression_filter') || 'all';
+    
+    let filters = [];
+    if (currentFilter !== 'all' && currentFilter !== '') {
+        filters = currentFilter.split(',');
+    }
+    
+    // Get all checked toggles
+    const checkedTypes = [];
+    document.querySelectorAll('.suppression-type-toggle:checked').forEach(toggle => {
+        checkedTypes.push(toggle.dataset.type);
+    });
+    
+    // If all are checked or none are checked, use 'all'
+    const allTypes = Array.from(document.querySelectorAll('.suppression-type-toggle')).map(t => t.dataset.type);
+    if (checkedTypes.length === 0 || checkedTypes.length === allTypes.length) {
+        currentUrl.searchParams.set('suppression_filter', 'all');
+    } else {
+        currentUrl.searchParams.set('suppression_filter', checkedTypes.join(','));
+    }
+    
     window.location.href = currentUrl.toString();
 }
 
