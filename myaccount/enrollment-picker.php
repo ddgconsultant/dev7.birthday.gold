@@ -44,9 +44,11 @@ $rewardiconlist = $get_rewardcategories[1];
 // Category list for filter - using existing categories from businessselect.php
 $display_categories = ['All', 'Food', 'Beverage', 'Beauty', 'Retail', 'Other'];
 
-// Get selected category
+// Get selected category and suppression settings
 $selected_category = $_GET['category'] ?? 'All';
 $search_query = $_GET['search'] ?? '';
+$show_suppressed = isset($_GET['show_suppressed']) ? true : false;
+$suppression_filter = $_GET['suppression_filter'] ?? 'all'; // all, age, diet, gender, etc.
 
 // Get companies using existing system from businessselect.php
 $companies = [];
@@ -110,11 +112,33 @@ $eligibilities = $enrollment->getCompanyEligibilities($user_id, $company_ids);
 
 // Process companies to add additional data
 $processed_companies = [];
+$suppressed_companies = [];
+
 foreach ($companies as $company) {
+    $suppression_reasons = [];
+    
     // Age check
     if (($company['minage'] > $alive['years']) || ($company['maxage'] < $alive['years'])) {
-        continue; // Skip age-restricted companies
+        $age_range = $company['minage'] . '-' . $company['maxage'];
+        $suppression_reasons['age'] = "Age requirement: $age_range years (you are {$alive['years']} years old)";
+        
+        if (!$show_suppressed || ($suppression_filter !== 'all' && $suppression_filter !== 'age')) {
+            $company['suppression_reasons'] = $suppression_reasons;
+            $suppressed_companies[] = $company;
+            continue; // Skip age-restricted companies unless showing suppressed
+        }
     }
+    
+    // Check for dietary restrictions (placeholder for future implementation)
+    // This would check user preferences against company attributes
+    if (!empty($company['dietary_restrictions'])) {
+        // Example: if user is vegan and company serves only meat
+        // $suppression_reasons['diet'] = "Contains non-vegan options";
+    }
+    
+    // Store suppression info
+    $company['is_suppressed'] = !empty($suppression_reasons);
+    $company['suppression_reasons'] = $suppression_reasons;
     
     // Check if already selected/enrolled
     $company['is_enrolled'] = in_array($company['company_id'], $selectionList) || in_array($company['company_id'], $existingList);
@@ -264,6 +288,40 @@ include($dir['core_components'] . '/bg_header.inc');
             <?php endforeach; ?>
         </div>
     </div>
+    
+    <!-- Suppression Toggle -->
+    <?php if (count($suppressed_companies) > 0): ?>
+    <div class="suppression-controls">
+        <div class="d-flex align-items-center justify-content-between px-3 py-2">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="showSuppressed" 
+                       <?php echo $show_suppressed ? 'checked' : ''; ?>
+                       onchange="toggleSuppressed(this.checked)">
+                <label class="form-check-label" for="showSuppressed">
+                    Show Hidden <?php echo ucfirst($website['biznames']); ?> 
+                    <span class="badge bg-secondary"><?php echo count($suppressed_companies); ?></span>
+                </label>
+            </div>
+            <button type="button" class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#suppressionModal">
+                <i class="bi bi-info-circle"></i> Why are some hidden?
+            </button>
+        </div>
+        
+        <?php if ($show_suppressed && count($suppressed_companies) > 0): ?>
+        <div class="suppression-filter px-3 pb-2">
+            <select class="form-select form-select-sm" id="suppressionFilter" onchange="filterSuppressed(this.value)">
+                <option value="all" <?php echo $suppression_filter === 'all' ? 'selected' : ''; ?>>All hidden reasons</option>
+                <option value="age" <?php echo $suppression_filter === 'age' ? 'selected' : ''; ?>>Age restrictions</option>
+                <!-- Future options:
+                <option value="diet">Dietary restrictions</option>
+                <option value="gender">Gender specific</option>
+                <option value="location">Location based</option>
+                -->
+            </select>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- Warning Messages -->
@@ -310,8 +368,11 @@ endif; ?>
             $debugged = true;
         }
         foreach ($companies as $company): ?>
-        <div class="company-card <?php echo $company['is_enrolled'] ? 'enrolled' : ''; ?>" 
-             data-company-id="<?php echo $company['company_id']; ?>">
+        <div class="company-card <?php echo $company['is_enrolled'] ? 'enrolled' : ''; ?> <?php echo !empty($company['is_suppressed']) ? 'suppressed' : ''; ?>" 
+             data-company-id="<?php echo $company['company_id']; ?>"
+             <?php if (!empty($company['is_suppressed'])): ?>
+             data-suppression-reasons='<?php echo htmlspecialchars(json_encode($company['suppression_reasons'])); ?>'
+             <?php endif; ?>>
             
             <!-- Company Image -->
             <div class="company-image">
@@ -353,7 +414,18 @@ endif; ?>
                     <?php endif; ?>
                 </div>
                 
-                <?php if (!$company['eligibility']['eligible']): ?>
+                <?php if (!empty($company['is_suppressed'])): ?>
+                <div class="suppression-warning mt-2">
+                    <i class="bi bi-eye-slash-fill text-info"></i>
+                    <span class="text-muted small">
+                        Hidden: <?php 
+                        $reasons = array_values($company['suppression_reasons']);
+                        echo htmlspecialchars($reasons[0]); 
+                        if (count($reasons) > 1) echo ' (+' . (count($reasons) - 1) . ' more)';
+                        ?>
+                    </span>
+                </div>
+                <?php elseif (!$company['eligibility']['eligible']): ?>
                 <div class="eligibility-warning mt-2">
                     <i class="bi bi-exclamation-triangle-fill text-warning"></i>
                     <span class="text-danger small"><?php echo htmlspecialchars($company['eligibility']['message']); ?></span>
@@ -448,6 +520,86 @@ endif; ?>
     </div>
 </div>
 
+<!-- Suppression Explanation Modal -->
+<div class="modal fade" id="suppressionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Why Some <?php echo ucfirst($website['biznames']); ?> Are Hidden</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">We automatically hide <?php echo $website['biznames']; ?> that may not be suitable for you based on various factors:</p>
+                
+                <?php if (count($suppressed_companies) > 0): ?>
+                <div class="suppression-summary mb-3">
+                    <?php 
+                    $suppression_counts = [];
+                    foreach ($suppressed_companies as $sc) {
+                        foreach ($sc['suppression_reasons'] as $type => $reason) {
+                            if (!isset($suppression_counts[$type])) {
+                                $suppression_counts[$type] = 0;
+                            }
+                            $suppression_counts[$type]++;
+                        }
+                    }
+                    ?>
+                    
+                    <h6 class="mb-2">Currently Hidden:</h6>
+                    <ul class="list-unstyled">
+                        <?php foreach ($suppression_counts as $type => $count): ?>
+                        <li class="mb-2">
+                            <?php 
+                            $icon = 'bi-x-circle';
+                            $label = ucfirst($type);
+                            switch($type) {
+                                case 'age':
+                                    $icon = 'bi-calendar-x';
+                                    $label = 'Age Restrictions';
+                                    $desc = 'Outside your age range';
+                                    break;
+                                case 'diet':
+                                    $icon = 'bi-egg-fill';
+                                    $label = 'Dietary Restrictions';
+                                    $desc = 'Based on your dietary preferences';
+                                    break;
+                                case 'gender':
+                                    $icon = 'bi-gender-ambiguous';
+                                    $label = 'Gender Specific';
+                                    $desc = 'Targeted to different gender';
+                                    break;
+                                case 'location':
+                                    $icon = 'bi-geo-alt';
+                                    $label = 'Location Based';
+                                    $desc = 'Not available in your area';
+                                    break;
+                            }
+                            ?>
+                            <i class="bi <?php echo $icon; ?> text-muted me-2"></i>
+                            <strong><?php echo $label; ?>:</strong> 
+                            <?php echo $count; ?> <?php echo $count == 1 ? $website['bizname'] : $website['biznames']; ?>
+                            <small class="text-muted d-block ms-4"><?php echo $desc ?? ''; ?></small>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    You can toggle "Show Hidden <?php echo ucfirst($website['biznames']); ?>" above to see and enroll in these <?php echo $website['biznames']; ?> if you wish.
+                </div>
+                
+                <!-- Future: Add preferences management link -->
+                <!-- <div class="text-center mt-3">
+                    <a href="/myaccount/preferences" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-gear"></i> Manage My Preferences
+                    </a>
+                </div> -->
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
 /* Floating counter button */
@@ -691,6 +843,86 @@ body {
     border-color: #f5c6cb;
     color: #721c24;
 }
+
+/* Suppression Controls */
+.suppression-controls {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+    margin-top: -1px;
+}
+
+.suppression-filter {
+    max-width: 300px;
+}
+
+/* Suppressed company cards */
+.company-card.suppressed {
+    opacity: 0.7;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.company-card.suppressed .company-image {
+    position: relative;
+}
+
+.company-card.suppressed .company-image::after {
+    content: '\F5D6'; /* Bootstrap Icons eye-slash */
+    font-family: 'Bootstrap Icons';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    color: #6c757d;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.suppression-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: #e7f3ff;
+    border-radius: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.suppression-warning i {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Sticky header adjustments for suppression controls */
+.enrollment-header.sticky-top {
+    z-index: 1020;
+}
+
+.suppression-controls {
+    position: sticky;
+    top: var(--header-height, 180px); /* Adjust based on header height */
+    z-index: 1010;
+    transition: all 0.3s ease;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .suppression-controls .d-flex {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    
+    .suppression-controls .btn-link {
+        margin-top: 0.5rem;
+        text-align: left;
+    }
+}
 </style>
 
         </div> <!-- close enrollment-container -->
@@ -797,6 +1029,31 @@ document.addEventListener('DOMContentLoaded', function() {
         checkScroll(); // Initial check
     }
 });
+
+// Suppression toggle functions
+function toggleSuppressed(show) {
+    const currentUrl = new URL(window.location.href);
+    if (show) {
+        currentUrl.searchParams.set('show_suppressed', '1');
+    } else {
+        currentUrl.searchParams.delete('show_suppressed');
+        currentUrl.searchParams.delete('suppression_filter');
+    }
+    window.location.href = currentUrl.toString();
+}
+
+function filterSuppressed(filter) {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('suppression_filter', filter);
+    window.location.href = currentUrl.toString();
+}
+
+// Clear search
+function clearSearch() {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete('search');
+    window.location.href = currentUrl.toString();
+}
 </script>
 
 <script src="/public/js/enrollment-picker.js"></script>
