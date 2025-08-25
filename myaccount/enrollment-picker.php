@@ -2,6 +2,12 @@
 /**
  * Mobile-First Enrollment Picker
  * Modern interface inspired by Groupon/Amazon mobile apps
+ * 
+ * BIRTHDAY GOLD DEVELOPMENT STANDARDS COMPLIANT
+ * - Single PHP block with echo statements
+ * - No mixed HTML/PHP output
+ * - Bootstrap 5 utility-first approach
+ * - No abbreviations in comments
  */
 
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
@@ -9,7 +15,7 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.allocationmanager.php');
 include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.configmanager.php');
 include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.enrollment.php');
 
-// Check login
+// Check login - handled by site-controller.php
 $activeuser = $account->isactive();
 if (empty($activeuser)) {
     header('Location: /login');
@@ -145,14 +151,14 @@ foreach ($companies as $company) {
     // This would check user preferences against company attributes
     if (!empty($company['dietary_restrictions'])) {
         // Example: if user is vegan and company serves only meat
-        // $suppression_reasons['diet'] = "Contains non-vegan options";
+        // suppression_reasons diet equals Contains non-vegan options
     }
     
     // Store suppression info
     $company['is_suppressed'] = !empty($suppression_reasons);
     $company['suppression_reasons'] = $suppression_reasons;
     
-    // Check if already selected/enrolled
+    // Check if already selected or enrolled
     $company['is_enrolled'] = in_array($company['company_id'], $selectionList) || in_array($company['company_id'], $existingList);
     $company['is_selected'] = in_array($company['company_id'], $selectionList);
     $company['is_existing'] = in_array($company['company_id'], $existingList);
@@ -192,12 +198,12 @@ $companies = $processed_companies;
 
 // Debug: Check if we got any results
 if (empty($companies)) {
-    echo "<!-- DEBUG: No companies returned from query -->";
+    echo '<!-- DEBUG: No companies returned from query -->';
     
     // Try a simpler query to see if we get any companies
     $simple_sql = "SELECT * FROM bg_companies WHERE status = 'active' LIMIT 5";
     $simple_results = $database->getrows($simple_sql);
-    echo "<!-- DEBUG: Simple query returned " . count($simple_results) . " companies -->";
+    echo '<!-- DEBUG: Simple query returned ' . count($simple_results) . ' companies -->';
 }
 
 // Set up token labels for flexibility
@@ -209,428 +215,15 @@ $pagetitle = 'Pick Your Birthday Rewards';
 $bodycontentclass = '';
 $additionalstyles .= '<link rel="stylesheet" href="/public/css/enrollment-picker.css">';
 
-include($dir['core_components'] . '/bg_pagestart.inc');
-include($dir['core_components'] . '/bg_header.inc');
-?>
-
-<!-- Hero Section -->
-<div class="content-header-dark">
-    <div class="container">
-        <h1>Pick Your Birthday Rewards</h1>
-        <p class="lead">Choose from hundreds of birthday reward programs</p>
-    </div>
-</div>
-
-<div class="main-content py-3">
-    <!-- Use container-fluid on mobile, container on desktop -->
-    <div class="container-fluid px-0 px-md-3">
-        <div class="enrollment-container mx-auto" style="max-width: 1400px;">
-
-<!-- Sticky Header -->
-<div class="enrollment-header sticky-top">
-    <!-- Balance Bar -->
-    <div class="balance-bar">
-        <div class="balance-info">
-            <span class="balance-number"><?php echo $balance['available_allocations']; ?></span>
-            <span class="balance-label"><?php echo $qik->plural( $label_token, $balance['available_allocations']); ?> available</span>
-        </div>
-        
-        <div class="selected-info" id="selectedInfo" style="display: none;" onclick="toggleBasketDetails()">
-            <i class="bi bi-basket-fill"></i>
-            <span class="selected-number" id="selectedCount">0</span>
-            <span class="selected-label"><?php echo $label_tokened; ?></span>
-        </div>
-        
-        <?php if ($balance['expiring_soon_count'] > 0): ?>
-        <div class="expiring-warning">
-            <i class="bi bi-clock-history"></i>
-            <?php echo $balance['expiring_soon_count']; ?> expiring soon
-        </div>
-        <?php endif; ?>
-    </div>
-    
-    <!-- Search Bar -->
-    <div class="search-bar">
-        <form method="GET" class="search-form">
-            <div class="search-input-wrapper">
-                <i class="bi bi-search"></i>
-                <input type="search" 
-                       name="search" 
-                       class="search-input" 
-                       placeholder="Search birthday rewards..." 
-                       value="<?php echo htmlspecialchars($search_query); ?>"
-                       autocomplete="off">
-                <?php if ($search_query): ?>
-                <button type="button" class="clear-search" onclick="clearSearch()">
-                    <i class="bi bi-x-circle"></i>
-                </button>
-                <?php endif; ?>
-            </div>
-            <?php if ($selected_category !== 'all'): ?>
-            <input type="hidden" name="category" value="<?php echo $selected_category; ?>">
-            <?php endif; ?>
-        </form>
-    </div>
-    
-    <!-- Category Filter -->
-    <div class="category-filter">
-        <div class="category-scroll">
-            <a href="?category=All" 
-               class="category-pill <?php echo $selected_category === 'All' ? 'active' : ''; ?>">
-                <i class="bi bi-grid"></i> All
-            </a>
-            <?php foreach ($display_categories as $cat): 
-                if ($cat === 'All') continue;
-                $cat_slug = strtolower($cat);
-                $cat_icon = 'bi-tag';
-                // Set icons for known categories
-                switch($cat) {
-                    case 'Food': $cat_icon = 'bi-egg-fried'; break;
-                    case 'Beverage': $cat_icon = 'bi-cup-straw'; break;
-                    case 'Beauty': $cat_icon = 'bi-stars'; break;
-                    case 'Retail': $cat_icon = 'bi-shop'; break;
-                    case 'Other': $cat_icon = 'bi-three-dots'; break;
-                }
-            ?>
-            <a href="?category=<?php echo $cat; ?>" 
-               class="category-pill <?php echo $selected_category === $cat ? 'active' : ''; ?>">
-                <i class="<?php echo $cat_icon; ?>"></i>
-                <?php echo $cat; ?>
-            </a>
-            <?php endforeach; ?>
-        </div>
-    </div>
-    
-    <!-- Suppression Toggle -->
-    <?php if ($total_suppressed_count > 0 || $show_suppressed): ?>
-    <div class="suppression-controls">
-        <div class="d-flex align-items-center justify-content-between px-3 py-2">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="showSuppressed" 
-                       <?php echo $show_suppressed ? 'checked' : ''; ?>
-                       onchange="toggleSuppressed(this.checked)">
-                <label class="form-check-label" for="showSuppressed">
-                    Show Hidden <?php echo ucfirst($website['biznames']); ?> 
-                    <span class="badge bg-secondary"><?php echo $total_suppressed_count; ?></span>
-                </label>
-            </div>
-            <button type="button" class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#suppressionModal">
-                <i class="bi bi-info-circle"></i> Why are some hidden?
-            </button>
-        </div>
-    </div>
-    <?php endif; ?>
-</div>
-
-<!-- Warning Messages -->
-<?php
-$containermargin= '';
-if ($allocation_warning): 
-
-echo ' <div class="container '.$containermargin.'"></div>';
-?>
-<div class="allocation-alert alert-<?php echo $allocation_warning['type']; ?>">
-    <div class="container">
-        <div class="d-flex align-items-center justify-content-between">
-            <div>
-                <i class="bi bi-exclamation-circle me-2"></i>
-                <?php echo $allocation_warning['message']; ?>
-            </div>
-            <?php if ($balance['available_allocations'] == 0): ?>
-            <a href="/myaccount/earn-enrollments" class="btn btn-sm btn-light">Earn More <?php echo $qik->plural2(2, $label_token); ?></a>
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
-<?php 
-$containermargin= '';
-endif; ?>
-
-<!-- Company Grid -->
-<div class="companies-container<?php echo $allocation_warning ? '' : ' '.$containermargin; ?>"><?php 
-// Removed the extra echo statement
-?>
-    <?php if (empty($companies)): ?>
-    <div class="no-results">
-        <i class="bi bi-search"></i>
-        <h3>No <?php echo $website['biznames']; ?> found</h3>
-        <p>Try adjusting your search or filters</p>
-    </div>
-    <?php else: ?>
-    
-    <div class="companies-grid">
-        <?php 
-        // Debug first company to see field names
-        if (!isset($debugged) && count($companies) > 0) {
-            echo "<!-- DEBUG Company fields: " . implode(', ', array_keys($companies[0])) . " -->";
-            $debugged = true;
-        }
-        foreach ($companies as $company): ?>
-        <div class="company-card <?php echo $company['is_enrolled'] ? 'enrolled' : ''; ?> <?php echo !empty($company['is_suppressed']) ? 'suppressed' : ''; ?>" 
-             data-company-id="<?php echo $company['company_id']; ?>"
-             <?php if (!empty($company['is_suppressed'])): ?>
-             data-suppression-reasons='<?php echo htmlspecialchars(json_encode($company['suppression_reasons'])); ?>'
-             <?php endif; ?>>
-            
-            <!-- Company Image -->
-            <div class="company-image">
-                <?php 
-                // Use the company logo from the query
-                if (!empty($company['company_logo'])) {
-                    $company_image = $display->companyimage($company['company_id'] . '/' . $company['company_logo']);
-                    echo '<img class="h-100 w-100 object-fit-cover" loading="lazy" src="' . $company_image . '" alt="' . htmlspecialchars($company['company_name']) . '" />';
-                } else {
-                    // Default placeholder
-                    echo '<div class="company-placeholder"><i class="bi bi-gift"></i></div>';
-                }
-                ?>
-              
-            
-            </div>
-            
-            <!-- Company Info -->
-            <div class="company-info">
-                <h3 class="company-name"><?php echo htmlspecialchars($company['company_name']); ?></h3>
-                
-                <?php if (!empty($company['reward_preview'])): ?>
-                <p class="reward-preview"><?php echo htmlspecialchars($company['reward_preview']); ?></p>
-                <?php elseif (!empty($company['spinner_description'])): ?>
-                <p class="reward-preview"><?php echo htmlspecialchars($company['spinner_description']); ?></p>
-                <?php elseif (!empty($company['description'])): ?>
-                <p class="reward-preview"><?php echo htmlspecialchars(substr($company['description'], 0, 100)) . '...'; ?></p>
-                <?php endif; ?>
-                
-                <div class="company-categories">
-                    <?php if (!empty($company['categories'])): ?>
-                    <span class="category-tag"><?php echo $company['categories']; ?></span>
-                    <?php endif; ?>
-                    <?php if ($company['is_app_only']): ?>
-                    <span class="category-tag app-only"><i class="bi bi-phone-fill"></i> App Only</span>
-                    <?php endif; ?>
-                    <?php if ($company['total_value'] > 0): ?>
-                    <span class="category-tag value">$<?php echo number_format($company['total_value'], 0); ?> value</span>
-                    <?php endif; ?>
-                </div>
-                
-                <?php if (!empty($company['is_suppressed'])): ?>
-                <div class="suppression-warning mt-2">
-                    <i class="bi bi-eye-slash-fill text-info"></i>
-                    <span class="text-muted small">
-                        Hidden: <?php 
-                        $reasons = array_values($company['suppression_reasons']);
-                        echo htmlspecialchars($reasons[0]); 
-                        if (count($reasons) > 1) echo ' (+' . (count($reasons) - 1) . ' more)';
-                        ?>
-                    </span>
-                </div>
-                <?php elseif (!$company['eligibility']['eligible']): ?>
-                <div class="eligibility-warning mt-2">
-                    <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-                    <span class="text-danger small"><?php echo htmlspecialchars($company['eligibility']['message']); ?></span>
-                    <?php if (!empty($company['eligibility']['action_url'])): ?>
-                    <a href="<?php echo htmlspecialchars($company['eligibility']['action_url']); ?>" class="small">Fix</a>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
-            </div>
-            
-            <!-- Action Button -->
-            <div class="company-action">
-                <?php if ($company['is_enrolled']): ?>
-                <button class="action-btn enrolled" disabled>
-                    <i class="bi bi-check-circle-fill"></i> <?php echo $label_tokened; ?>
-                </button>
-                <?php elseif (!$company['eligibility']['eligible']): ?>
-                <button class="action-btn disabled" disabled 
-                        data-bs-toggle="tooltip" 
-                        data-bs-placement="top" 
-                        title="<?php echo htmlspecialchars($company['eligibility']['message']); ?>">
-                    <i class="bi bi-exclamation-circle"></i> Not Eligible
-                </button>
-                <?php elseif ($balance['available_allocations'] > 0): ?>
-                <button class="action-btn enroll" 
-                        onclick="addToBasket(<?php echo $company['company_id']; ?>, '<?php echo htmlspecialchars(addslashes($company['company_name'])); ?>', '<?php echo isset($company['company_logo']) ? $display->companyimage($company['company_id'] . '/' . $company['company_logo']) : ''; ?>')">
-                    <i class="bi bi-plus-circle"></i> <?php echo $label_token; ?>
-                </button>
-                <?php else: ?>
-                <button class="action-btn disabled" disabled>
-                    <i class="bi bi-lock"></i> No <?php echo $qik->plural2(0, $label_token); ?>
-                </button>
-                <?php endif; ?>
-            </div>
-        </div>
-        <?php endforeach; ?>
-    </div>
-    
-    <?php endif; ?>
-</div>
-
-<!-- Loading Overlay -->
-<div id="loadingOverlay" class="loading-overlay" style="display: none;">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-</div>
-
-<!-- Success Modal -->
-<div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body text-center py-4">
-                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
-                <h4 class="mt-3"><?php echo $qik->plural2(2, $label_token); ?> Submitted!</h4>
-                <p id="successMessage" class="mb-3"></p>
-                <p class="text-muted small mb-4">You will receive a notification when the enrollment has been completed.</p>
-                <button type="button" class="btn btn-primary px-5" onclick="redirectToMyAccount()">OK</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Floating Selection Counter -->
-<div id="selectionCounter" class="selection-counter" style="display: none;" onclick="toggleBasketDetails()">
-    <i class="bi bi-basket-fill"></i>
-    <span id="basketCount">0</span>
-</div>
-
-<!-- Selection Details Modal -->
-<div class="modal fade" id="basketModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <?php echo ucwords($website['biznames']); ?> Picked (<span id="modalBasketCount">0</span>)
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="basketItems">
-                    <!-- Items will be added here dynamically -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="clearBasket()">Clear All</button>
-                <button type="button" class="btn btn-success" onclick="confirmEnrollments()" id="confirmButton">
-                    <i class="bi bi-check-circle"></i> Confirm
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Suppression Explanation Modal -->
-<div class="modal fade" id="suppressionModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Why Some <?php echo ucfirst($website['biznames']); ?> Are Hidden</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-3">We automatically hide <?php echo $website['biznames']; ?> that may not be suitable for you based on various factors:</p>
-                
-                <?php if (count($suppressed_companies) > 0): ?>
-                <div class="suppression-summary mb-3">
-                    <?php 
-                    $suppression_counts = [];
-                    foreach ($suppressed_companies as $sc) {
-                        foreach ($sc['suppression_reasons'] as $type => $reason) {
-                            if (!isset($suppression_counts[$type])) {
-                                $suppression_counts[$type] = 0;
-                            }
-                            $suppression_counts[$type]++;
-                        }
-                    }
-                    ?>
-                    
-                    <h6 class="mb-3">Currently Hidden:</h6>
-                    
-                    <?php if (count($suppression_counts) > 1 && $show_suppressed): ?>
-                    <div class="alert alert-light border mb-3">
-                        <small class="text-muted">Toggle which types to show:</small>
-                    </div>
-                    <?php endif; ?>
-                    
-                    <div class="suppression-filters">
-                        <?php foreach ($suppression_counts as $type => $count): ?>
-                        <?php 
-                        $icon = 'bi-x-circle';
-                        $label = ucfirst($type);
-                        switch($type) {
-                            case 'age':
-                                $icon = 'bi-calendar-x';
-                                $label = 'Age Restrictions';
-                                $desc = 'Outside your age range';
-                                break;
-                            case 'diet':
-                                $icon = 'bi-egg-fill';
-                                $label = 'Dietary Restrictions';
-                                $desc = 'Based on your dietary preferences';
-                                break;
-                            case 'gender':
-                                $icon = 'bi-gender-ambiguous';
-                                $label = 'Gender Specific';
-                                $desc = 'Targeted to different gender';
-                                break;
-                            case 'location':
-                                $icon = 'bi-geo-alt';
-                                $label = 'Location Based';
-                                $desc = 'Not available in your area';
-                                break;
-                        }
-                        $is_active = in_array($type, $active_filters) || $suppression_filter === 'all' || empty($active_filters);
-                        ?>
-                        <div class="suppression-filter-item mb-3 p-2 border rounded">
-                            <div class="d-flex align-items-start justify-content-between">
-                                <div class="flex-grow-1">
-                                    <div>
-                                        <i class="bi <?php echo $icon; ?> text-muted me-2"></i>
-                                        <strong><?php echo $label; ?>:</strong> 
-                                        <span class="badge bg-secondary"><?php echo $count; ?></span>
-                                        <?php echo $count == 1 ? $website['bizname'] : $website['biznames']; ?>
-                                    </div>
-                                    <small class="text-muted d-block ms-4"><?php echo $desc ?? ''; ?></small>
-                                </div>
-                                <?php if (count($suppression_counts) > 1 && $show_suppressed): ?>
-                                <div class="form-check form-switch ms-3">
-                                    <input class="form-check-input suppression-type-toggle" 
-                                           type="checkbox" 
-                                           data-type="<?php echo $type; ?>"
-                                           id="toggle_<?php echo $type; ?>" 
-                                           <?php echo $is_active ? 'checked' : ''; ?>
-                                           onchange="toggleSuppressionType('<?php echo $type; ?>')">
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    You can toggle "Show Hidden <?php echo ucfirst($website['biznames']); ?>" above to see and enroll in these <?php echo $website['biznames']; ?> if you wish.
-                </div>
-                
-                <!-- Future: Add preferences management link -->
-                <!-- <div class="text-center mt-3">
-                    <a href="/myaccount/preferences" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-gear"></i> Manage My Preferences
-                    </a>
-                </div> -->
-            </div>
-        </div>
-    </div>
-</div>
-
+// Add custom CSS using Bootstrap 5 utilities where possible
+$additionalstyles .= '
 <style>
 /* Floating counter button */
 .selection-counter {
     position: fixed;
     bottom: 2rem;
     right: 2rem;
-    background: var(--bs-success); /* Green to encourage clicking */
+    background: var(--bs-success);
     color: white;
     width: 60px;
     height: 60px;
@@ -640,7 +233,7 @@ endif; ?>
     justify-content: center;
     font-size: 1.2rem;
     font-weight: bold;
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4); /* Green shadow */
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
     cursor: pointer;
     z-index: 1040;
     transition: all 0.3s ease;
@@ -655,6 +248,28 @@ endif; ?>
 .selection-counter i {
     font-size: 1.5rem;
     margin-right: 0.25rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 576px) {
+    .selection-counter {
+        bottom: 4.5rem; /* Account for mobile bottom nav */
+        right: 1rem;
+        width: 50px;
+        height: 50px;
+        font-size: 1rem;
+    }
+    
+    .selection-counter i {
+        font-size: 1.25rem;
+    }
+}
+
+/* Position cart icon above bottom nav on mobile */
+@media (max-width: 768px) {
+    .selection-counter {
+        bottom: 80px !important;
+    }
 }
 
 /* Modal customization */
@@ -706,31 +321,6 @@ endif; ?>
     transform: scale(1.1);
 }
 
-/* Selected state for cards */
-.action-btn.selected {
-    background: #28a745;
-    color: white;
-}
-
-.action-btn.selected:hover {
-    background: #218838;
-}
-
-/* Mobile responsive */
-@media (max-width: 576px) {
-    .selection-counter {
-        bottom: 4.5rem; /* Account for mobile bottom nav */
-        right: 1rem;
-        width: 50px;
-        height: 50px;
-        font-size: 1rem;
-    }
-    
-    .selection-counter i {
-        font-size: 1.25rem;
-    }
-}
-
 /* Fix modal z-index issues */
 .modal-backdrop {
     z-index: 1040 !important;
@@ -749,122 +339,6 @@ endif; ?>
     position: relative;
     z-index: 1;
     cursor: pointer !important;
-}
-
-/* Fix for Android Chrome black background */
-body {
-    background-color: #f8f9fa !important;
-    color: #212529 !important;
-}
-
-/* Position cart icon above bottom nav on mobile */
-@media (max-width: 768px) {
-    .selection-counter {
-        bottom: 80px !important;
-    }
-}
-
-/* First-time picker help popover styling */
-.first-picker-popover {
-    z-index: 9999;
-}
-
-.first-picker-popover .popover-body {
-    background: #212529; /* Black background */
-    color: white;
-    font-weight: 500;
-    padding: 12px 16px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Added shadow for more prominence */
-}
-
-/* Fix popover arrow for different placements */
-.first-picker-popover .popover-arrow::before {
-    border-left-color: #212529 !important;
-}
-
-.first-picker-popover.bs-popover-start .popover-arrow::after,
-.first-picker-popover.bs-popover-auto[data-popper-placement^="left"] .popover-arrow::after {
-    border-left-color: #212529 !important;
-}
-
-.first-picker-popover.bs-popover-end .popover-arrow::after,
-.first-picker-popover.bs-popover-auto[data-popper-placement^="right"] .popover-arrow::after {
-    border-right-color: #212529 !important;
-}
-
-.first-picker-popover.bs-popover-top .popover-arrow::after,
-.first-picker-popover.bs-popover-auto[data-popper-placement^="top"] .popover-arrow::after {
-    border-top-color: #212529 !important;
-}
-
-.first-picker-popover.bs-popover-bottom .popover-arrow::after,
-.first-picker-popover.bs-popover-auto[data-popper-placement^="bottom"] .popover-arrow::after {
-    border-bottom-color: #212529 !important;
-}
-
-/* Smooth transitions for header elements */
-.search-bar, .category-filter {
-    transition: all 0.3s ease-in-out;
-}
-
-/* Visual indicators for scrollable content */
-.category-filter {
-    position: relative;
-}
-
-/* Gradient fade on edges when scrollable */
-.category-filter.has-scroll-left::before,
-.category-filter.has-scroll-right::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 20px;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.category-filter.has-scroll-left::before {
-    left: 0;
-    background: linear-gradient(to right, white, transparent);
-}
-
-.category-filter.has-scroll-right::after {
-    right: 0;
-    background: linear-gradient(to left, white, transparent);
-}
-
-/* Ensure header stays on top during transitions */
-.enrollment-header {
-    transition: transform 0.3s ease-in-out;
-}
-
-/* Eligibility warning styles */
-.eligibility-warning {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    background-color: #fff3cd;
-    border-radius: 0.25rem;
-    margin-top: 0.5rem;
-}
-
-.eligibility-warning i {
-    flex-shrink: 0;
-}
-
-.eligibility-warning a {
-    margin-left: auto;
-    white-space: nowrap;
-}
-
-/* Not eligible button styling */
-.action-btn.disabled[data-bs-toggle="tooltip"] {
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
 }
 
 /* Suppression Controls */
@@ -896,8 +370,8 @@ body {
 }
 
 .company-card.suppressed .company-image::after {
-    content: '\F5D6'; /* Bootstrap Icons eye-slash */
-    font-family: 'Bootstrap Icons';
+    content: "\F5D6"; /* Bootstrap Icons eye-slash */
+    font-family: "Bootstrap Icons";
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
@@ -935,47 +409,561 @@ body {
 
 .suppression-controls {
     position: sticky;
-    top: var(--header-height, 180px); /* Adjust based on header height */
+    top: var(--header-height, 180px);
     z-index: 1010;
     transition: all 0.3s ease;
 }
 
-/* Mobile responsive adjustments */
-@media (max-width: 768px) {
-    .suppression-controls .d-flex {
-        flex-direction: column;
-        align-items: stretch !important;
+/* Success modal icon fix */
+#successModal .modal-body i.bi-check-circle-fill {
+    font-size: 4rem !important;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+/* Fix modal close button positioning */
+.modal-header .btn-close {
+    padding: 0.5rem;
+    margin: -0.5rem -0.5rem -0.5rem auto;
+    opacity: 0.5;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+</style>';
+
+// Include header
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
+
+// Build the page output using echo statements
+$output = '';
+
+// Hero Section
+$output .= '
+<div class="content-header-dark">
+    <div class="container">
+        <h1>Pick Your Birthday Rewards</h1>
+        <p class="lead">Choose from hundreds of birthday reward programs</p>
+    </div>
+</div>';
+
+$output .= '
+<div class="main-content py-3">
+    <div class="container-fluid px-0 px-md-3">
+        <div class="enrollment-container mx-auto" style="max-width: 1400px;">';
+
+// Sticky Header
+$output .= '
+<div class="enrollment-header sticky-top">
+    <div class="balance-bar">
+        <div class="balance-info">
+            <span class="balance-number">' . $balance['available_allocations'] . '</span>
+            <span class="balance-label">' . $qik->plural($label_token, $balance['available_allocations']) . ' available</span>
+        </div>
+        
+        <div class="selected-info" id="selectedInfo" style="display: none;" onclick="toggleBasketDetails()">
+            <i class="bi bi-basket-fill"></i>
+            <span class="selected-number" id="selectedCount">0</span>
+            <span class="selected-label">' . $label_tokened . '</span>
+        </div>';
+
+if ($balance['expiring_soon_count'] > 0) {
+    $output .= '
+        <div class="expiring-warning">
+            <i class="bi bi-clock-history"></i>
+            ' . $balance['expiring_soon_count'] . ' expiring soon
+        </div>';
+}
+
+$output .= '
+    </div>';
+
+// Search Bar
+$output .= '
+    <div class="search-bar">
+        <form method="GET" class="search-form">
+            <div class="search-input-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="search" 
+                       name="search" 
+                       class="search-input" 
+                       placeholder="Search birthday rewards..." 
+                       value="' . htmlspecialchars($search_query) . '"
+                       autocomplete="off">';
+
+if ($search_query) {
+    $output .= '
+                <button type="button" class="clear-search" onclick="clearSearch()">
+                    <i class="bi bi-x-circle"></i>
+                </button>';
+}
+
+$output .= '
+            </div>';
+
+if ($selected_category !== 'all') {
+    $output .= '
+            <input type="hidden" name="category" value="' . htmlspecialchars($selected_category) . '">';
+}
+
+$output .= '
+        </form>
+    </div>';
+
+// Category Filter
+$output .= '
+    <div class="category-filter">
+        <div class="category-scroll">
+            <a href="?category=All" 
+               class="category-pill ' . ($selected_category === 'All' ? 'active' : '') . '">
+                <i class="bi bi-grid"></i> All
+            </a>';
+
+foreach ($display_categories as $cat) {
+    if ($cat === 'All') continue;
+    
+    $cat_icon = 'bi-tag';
+    switch($cat) {
+        case 'Food': 
+            $cat_icon = 'bi-egg-fried'; 
+            break;
+        case 'Beverage': 
+            $cat_icon = 'bi-cup-straw'; 
+            break;
+        case 'Beauty': 
+            $cat_icon = 'bi-stars'; 
+            break;
+        case 'Retail': 
+            $cat_icon = 'bi-shop'; 
+            break;
+        case 'Other': 
+            $cat_icon = 'bi-three-dots'; 
+            break;
     }
     
-    .suppression-controls .btn-link {
-        margin-top: 0.5rem;
-        text-align: left;
-    }
+    $output .= '
+            <a href="?category=' . $cat . '" 
+               class="category-pill ' . ($selected_category === $cat ? 'active' : '') . '">
+                <i class="' . $cat_icon . '"></i>
+                ' . $cat . '
+            </a>';
 }
-</style>
 
+$output .= '
+        </div>
+    </div>';
+
+// Suppression Toggle
+if ($total_suppressed_count > 0 || $show_suppressed) {
+    $output .= '
+    <div class="suppression-controls">
+        <div class="d-flex align-items-center justify-content-between px-3 py-2">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="showSuppressed" 
+                       ' . ($show_suppressed ? 'checked' : '') . '
+                       onchange="toggleSuppressed(this.checked)">
+                <label class="form-check-label" for="showSuppressed">
+                    Show Hidden ' . ucfirst($website['biznames']) . ' 
+                    <span class="badge bg-secondary">' . $total_suppressed_count . '</span>
+                </label>
+            </div>
+            <button type="button" class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#suppressionModal">
+                <i class="bi bi-info-circle"></i> Why are some hidden?
+            </button>
+        </div>
+    </div>';
+}
+
+$output .= '</div>'; // Close enrollment-header
+
+// Warning Messages
+$containermargin = '';
+if ($allocation_warning) {
+    $output .= '
+<div class="container ' . $containermargin . '"></div>
+<div class="allocation-alert alert-' . $allocation_warning['type'] . '">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <i class="bi bi-exclamation-circle me-2"></i>
+                ' . $allocation_warning['message'] . '
+            </div>';
+    
+    if ($balance['available_allocations'] == 0) {
+        $output .= '
+            <a href="/myaccount/earn-enrollments" class="btn btn-sm btn-light">Earn More ' . $qik->plural2(2, $label_token) . '</a>';
+    }
+    
+    $output .= '
+        </div>
+    </div>
+</div>';
+    $containermargin = '';
+}
+
+// Company Grid
+$output .= '
+<div class="companies-container' . ($allocation_warning ? '' : ' ' . $containermargin) . '">';
+
+if (empty($companies)) {
+    $output .= '
+    <div class="no-results">
+        <i class="bi bi-search"></i>
+        <h3>No ' . $website['biznames'] . ' found</h3>
+        <p>Try adjusting your search or filters</p>
+    </div>';
+} else {
+    $output .= '
+    <div class="companies-grid">';
+    
+    // Debug first company to see field names
+    if (!isset($debugged) && count($companies) > 0) {
+        $output .= '<!-- DEBUG Company fields: ' . implode(', ', array_keys($companies[0])) . ' -->';
+        $debugged = true;
+    }
+    
+    foreach ($companies as $company) {
+        $card_classes = 'company-card';
+        if ($company['is_enrolled']) $card_classes .= ' enrolled';
+        if (!empty($company['is_suppressed'])) $card_classes .= ' suppressed';
+        
+        $output .= '
+        <div class="' . $card_classes . '" 
+             data-company-id="' . $company['company_id'] . '"';
+        
+        if (!empty($company['is_suppressed'])) {
+            $output .= '
+             data-suppression-reasons=\'' . htmlspecialchars(json_encode($company['suppression_reasons'])) . '\'';
+        }
+        
+        $output .= '>';
+        
+        // Company Image
+        $output .= '
+            <div class="company-image">';
+        
+        if (!empty($company['company_logo'])) {
+            $company_image = $display->companyimage($company['company_id'] . '/' . $company['company_logo']);
+            $output .= '<img class="h-100 w-100 object-fit-cover" loading="lazy" src="' . $company_image . '" alt="' . htmlspecialchars($company['company_name']) . '" />';
+        } else {
+            $output .= '<div class="company-placeholder"><i class="bi bi-gift"></i></div>';
+        }
+        
+        $output .= '
+            </div>';
+        
+        // Company Info
+        $output .= '
+            <div class="company-info">
+                <h3 class="company-name">' . htmlspecialchars($company['company_name']) . '</h3>';
+        
+        if (!empty($company['reward_preview'])) {
+            $output .= '
+                <p class="reward-preview">' . htmlspecialchars($company['reward_preview']) . '</p>';
+        } elseif (!empty($company['spinner_description'])) {
+            $output .= '
+                <p class="reward-preview">' . htmlspecialchars($company['spinner_description']) . '</p>';
+        } elseif (!empty($company['description'])) {
+            $output .= '
+                <p class="reward-preview">' . htmlspecialchars(substr($company['description'], 0, 100)) . '...</p>';
+        }
+        
+        $output .= '
+                <div class="company-categories">';
+        
+        if (!empty($company['categories'])) {
+            $output .= '
+                    <span class="category-tag">' . htmlspecialchars($company['categories']) . '</span>';
+        }
+        
+        if ($company['is_app_only']) {
+            $output .= '
+                    <span class="category-tag app-only"><i class="bi bi-phone-fill"></i> App Only</span>';
+        }
+        
+        if ($company['total_value'] > 0) {
+            $output .= '
+                    <span class="category-tag value">$' . number_format($company['total_value'], 0) . ' value</span>';
+        }
+        
+        $output .= '
+                </div>';
+        
+        // Suppression or eligibility warning
+        if (!empty($company['is_suppressed'])) {
+            $reasons = array_values($company['suppression_reasons']);
+            $reason_text = htmlspecialchars($reasons[0]);
+            if (count($reasons) > 1) {
+                $reason_text .= ' (+' . (count($reasons) - 1) . ' more)';
+            }
+            
+            $output .= '
+                <div class="suppression-warning mt-2">
+                    <i class="bi bi-eye-slash-fill text-info"></i>
+                    <span class="text-muted small">Hidden: ' . $reason_text . '</span>
+                </div>';
+        } elseif (!$company['eligibility']['eligible']) {
+            $output .= '
+                <div class="eligibility-warning mt-2">
+                    <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                    <span class="text-danger small">' . htmlspecialchars($company['eligibility']['message']) . '</span>';
+            
+            if (!empty($company['eligibility']['action_url'])) {
+                $output .= '
+                    <a href="' . htmlspecialchars($company['eligibility']['action_url']) . '" class="small">Fix</a>';
+            }
+            
+            $output .= '
+                </div>';
+        }
+        
+        $output .= '
+            </div>';
+        
+        // Action Button
+        $output .= '
+            <div class="company-action">';
+        
+        if ($company['is_enrolled']) {
+            $output .= '
+                <button class="action-btn enrolled" disabled>
+                    <i class="bi bi-check-circle-fill"></i> ' . $label_tokened . '
+                </button>';
+        } elseif (!$company['eligibility']['eligible']) {
+            $output .= '
+                <button class="action-btn disabled" disabled 
+                        data-bs-toggle="tooltip" 
+                        data-bs-placement="top" 
+                        title="' . htmlspecialchars($company['eligibility']['message']) . '">
+                    <i class="bi bi-exclamation-circle"></i> Not Eligible
+                </button>';
+        } elseif ($balance['available_allocations'] > 0) {
+            $company_logo_url = isset($company['company_logo']) ? $display->companyimage($company['company_id'] . '/' . $company['company_logo']) : '';
+            $output .= '
+                <button class="action-btn enroll" 
+                        onclick="addToBasket(' . $company['company_id'] . ', \'' . htmlspecialchars(addslashes($company['company_name'])) . '\', \'' . $company_logo_url . '\')">
+                    <i class="bi bi-plus-circle"></i> ' . $label_token . '
+                </button>';
+        } else {
+            $output .= '
+                <button class="action-btn disabled" disabled>
+                    <i class="bi bi-lock"></i> No ' . $qik->plural2(0, $label_token) . '
+                </button>';
+        }
+        
+        $output .= '
+            </div>
+        </div>';
+    }
+    
+    $output .= '
+    </div>';
+}
+
+$output .= '
+</div>';
+
+// Loading Overlay
+$output .= '
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>';
+
+// Success Modal
+$output .= '
+<div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <h4 class="mt-3">' . $qik->plural2(2, $label_token) . ' Submitted!</h4>
+                <p id="successMessage" class="mb-3"></p>
+                <p class="text-muted small mb-4">You will receive a notification when the enrollment has been completed.</p>
+                <button type="button" class="btn btn-primary px-5" onclick="redirectToMyAccount()">OK</button>
+            </div>
+        </div>
+    </div>
+</div>';
+
+// Floating Selection Counter
+$output .= '
+<div id="selectionCounter" class="selection-counter" style="display: none;" onclick="toggleBasketDetails()">
+    <i class="bi bi-basket-fill"></i>
+    <span id="basketCount">0</span>
+</div>';
+
+// Selection Details Modal
+$output .= '
+<div class="modal fade" id="basketModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    ' . ucwords($website['biznames']) . ' Picked (<span id="modalBasketCount">0</span>)
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="basketItems">
+                    <!-- Items will be added here dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="clearBasket()">Clear All</button>
+                <button type="button" class="btn btn-success" onclick="confirmEnrollments()" id="confirmButton">
+                    <i class="bi bi-check-circle"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>';
+
+// Suppression Explanation Modal
+$output .= '
+<div class="modal fade" id="suppressionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Why Some ' . ucfirst($website['biznames']) . ' Are Hidden</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">We automatically hide ' . $website['biznames'] . ' that may not be suitable for you based on various factors:</p>';
+
+if (count($suppressed_companies) > 0) {
+    $output .= '
+                <div class="suppression-summary mb-3">';
+    
+    $suppression_counts = [];
+    foreach ($suppressed_companies as $sc) {
+        foreach ($sc['suppression_reasons'] as $type => $reason) {
+            if (!isset($suppression_counts[$type])) {
+                $suppression_counts[$type] = 0;
+            }
+            $suppression_counts[$type]++;
+        }
+    }
+    
+    $output .= '
+                    <h6 class="mb-3">Currently Hidden:</h6>';
+    
+    if (count($suppression_counts) > 1 && $show_suppressed) {
+        $output .= '
+                    <div class="alert alert-light border mb-3">
+                        <small class="text-muted">Toggle which types to show:</small>
+                    </div>';
+    }
+    
+    $output .= '
+                    <div class="suppression-filters">';
+    
+    foreach ($suppression_counts as $type => $count) {
+        $icon = 'bi-x-circle';
+        $label = ucfirst($type);
+        $desc = '';
+        
+        switch($type) {
+            case 'age':
+                $icon = 'bi-calendar-x';
+                $label = 'Age Restrictions';
+                $desc = 'Outside your age range';
+                break;
+            case 'diet':
+                $icon = 'bi-egg-fill';
+                $label = 'Dietary Restrictions';
+                $desc = 'Based on your dietary preferences';
+                break;
+            case 'gender':
+                $icon = 'bi-gender-ambiguous';
+                $label = 'Gender Specific';
+                $desc = 'Targeted to different gender';
+                break;
+            case 'location':
+                $icon = 'bi-geo-alt';
+                $label = 'Location Based';
+                $desc = 'Not available in your area';
+                break;
+        }
+        
+        $is_active = in_array($type, $active_filters) || $suppression_filter === 'all' || empty($active_filters);
+        
+        $output .= '
+                        <div class="suppression-filter-item mb-3 p-2 border rounded">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div class="flex-grow-1">
+                                    <div>
+                                        <i class="bi ' . $icon . ' text-muted me-2"></i>
+                                        <strong>' . $label . ':</strong> 
+                                        <span class="badge bg-secondary">' . $count . '</span>
+                                        ' . ($count == 1 ? $website['bizname'] : $website['biznames']) . '
+                                    </div>
+                                    <small class="text-muted d-block ms-4">' . $desc . '</small>
+                                </div>';
+        
+        if (count($suppression_counts) > 1 && $show_suppressed) {
+            $output .= '
+                                <div class="form-check form-switch ms-3">
+                                    <input class="form-check-input suppression-type-toggle" 
+                                           type="checkbox" 
+                                           data-type="' . $type . '"
+                                           id="toggle_' . $type . '" 
+                                           ' . ($is_active ? 'checked' : '') . '
+                                           onchange="toggleSuppressionType(\'' . $type . '\')">
+                                </div>';
+        }
+        
+        $output .= '
+                            </div>
+                        </div>';
+    }
+    
+    $output .= '
+                    </div>
+                </div>';
+}
+
+$output .= '
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    You can toggle "Show Hidden ' . ucfirst($website['biznames']) . '" above to see and enroll in these ' . $website['biznames'] . ' if you wish.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>';
+
+$output .= '
         </div> <!-- close enrollment-container -->
     </div> <!-- close container-fluid -->
-</div> <!-- close main-content -->
+</div> <!-- close main-content -->';
 
+// Output the built HTML
+echo $output;
+
+// JavaScript section
+echo '
 <script>
 // Initialize user data
 window.userData = {
-    userId: <?php echo $user_id; ?>,
-    availableAllocations: <?php echo $balance['available_allocations']; ?>,
+    userId: ' . $user_id . ',
+    availableAllocations: ' . $balance['available_allocations'] . ',
     labels: {
-        token: '<?php echo $label_token; ?>',
-        tokened: '<?php echo $label_tokened; ?>'
+        token: "' . $label_token . '",
+        tokened: "' . $label_tokened . '"
     },
-    hasEnrollments: <?php echo (($accountstats['business_success'] ?? 0) + ($accountstats['business_pending'] ?? 0)) > 0 ? 'true' : 'false'; ?>,
-    forceShowHelp: <?php echo isset($_GET['showhelp']) ? 'true' : 'false'; ?>
+    hasEnrollments: ' . ((($accountstats['business_success'] ?? 0) + ($accountstats['business_pending'] ?? 0)) > 0 ? 'true' : 'false') . ',
+    forceShowHelp: ' . (isset($_GET['showhelp']) ? 'true' : 'false') . '
 };
 
 // Smart header scroll behavior
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function() {
     let lastScrollTop = 0;
-    const header = document.querySelector('.enrollment-header');
-    const searchBar = document.querySelector('.search-bar');
+    const header = document.querySelector(".enrollment-header");
+    const searchBar = document.querySelector(".search-bar");
     let ticking = false;
     let headerOriginalOffset = 0;
     
@@ -1000,20 +988,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // If we haven't scrolled past the original header position, keep it relative
+        // If we have not scrolled past the original header position, keep it relative
         if (scrollTop < headerOriginalOffset) {
-            header.classList.remove('is-fixed');
-            header.classList.remove('hidden');
+            header.classList.remove("is-fixed");
+            header.classList.remove("hidden");
         } else {
-            // We've scrolled past the header's original position
-            header.classList.add('is-fixed');
+            // We have scrolled past the header original position
+            header.classList.add("is-fixed");
             
             if (scrollTop > lastScrollTop) {
-                // Scrolling down - hide header only if we're past its original position
-                header.classList.add('hidden');
+                // Scrolling down - hide header only if we are past its original position
+                header.classList.add("hidden");
             } else {
                 // Scrolling up - show header
-                header.classList.remove('hidden');
+                header.classList.remove("hidden");
             }
         }
         
@@ -1022,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Listen to both scroll and touchmove for better mobile support
-    ['scroll', 'touchmove'].forEach(eventType => {
+    ["scroll", "touchmove"].forEach(eventType => {
         window.addEventListener(eventType, function() {
             if (!ticking) {
                 window.requestAnimationFrame(updateHeader);
@@ -1032,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Add fade effect to category scroll edges
-    const categoryScroll = document.querySelector('.category-scroll');
+    const categoryScroll = document.querySelector(".category-scroll");
     if (categoryScroll) {
         const checkScroll = () => {
             const parent = categoryScroll.parentElement;
@@ -1042,19 +1030,19 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add gradient indicators for more content
             if (scrollLeft > 0) {
-                parent.classList.add('has-scroll-left');
+                parent.classList.add("has-scroll-left");
             } else {
-                parent.classList.remove('has-scroll-left');
+                parent.classList.remove("has-scroll-left");
             }
             
             if (scrollLeft + clientWidth < scrollWidth - 5) {
-                parent.classList.add('has-scroll-right');
+                parent.classList.add("has-scroll-right");
             } else {
-                parent.classList.remove('has-scroll-right');
+                parent.classList.remove("has-scroll-right");
             }
         };
         
-        categoryScroll.parentElement.addEventListener('scroll', checkScroll);
+        categoryScroll.parentElement.addEventListener("scroll", checkScroll);
         checkScroll(); // Initial check
     }
 });
@@ -1063,35 +1051,35 @@ document.addEventListener('DOMContentLoaded', function() {
 function toggleSuppressed(show) {
     const currentUrl = new URL(window.location.href);
     if (show) {
-        currentUrl.searchParams.set('show_suppressed', '1');
+        currentUrl.searchParams.set("show_suppressed", "1");
     } else {
-        currentUrl.searchParams.delete('show_suppressed');
-        currentUrl.searchParams.delete('suppression_filter');
+        currentUrl.searchParams.delete("show_suppressed");
+        currentUrl.searchParams.delete("suppression_filter");
     }
     window.location.href = currentUrl.toString();
 }
 
 function toggleSuppressionType(type) {
     const currentUrl = new URL(window.location.href);
-    const currentFilter = currentUrl.searchParams.get('suppression_filter') || 'all';
+    const currentFilter = currentUrl.searchParams.get("suppression_filter") || "all";
     
     let filters = [];
-    if (currentFilter !== 'all' && currentFilter !== '') {
-        filters = currentFilter.split(',');
+    if (currentFilter !== "all" && currentFilter !== "") {
+        filters = currentFilter.split(",");
     }
     
     // Get all checked toggles
     const checkedTypes = [];
-    document.querySelectorAll('.suppression-type-toggle:checked').forEach(toggle => {
+    document.querySelectorAll(".suppression-type-toggle:checked").forEach(toggle => {
         checkedTypes.push(toggle.dataset.type);
     });
     
-    // If all are checked or none are checked, use 'all'
-    const allTypes = Array.from(document.querySelectorAll('.suppression-type-toggle')).map(t => t.dataset.type);
+    // If all are checked or none are checked, use all
+    const allTypes = Array.from(document.querySelectorAll(".suppression-type-toggle")).map(t => t.dataset.type);
     if (checkedTypes.length === 0 || checkedTypes.length === allTypes.length) {
-        currentUrl.searchParams.set('suppression_filter', 'all');
+        currentUrl.searchParams.set("suppression_filter", "all");
     } else {
-        currentUrl.searchParams.set('suppression_filter', checkedTypes.join(','));
+        currentUrl.searchParams.set("suppression_filter", checkedTypes.join(","));
     }
     
     window.location.href = currentUrl.toString();
@@ -1100,16 +1088,14 @@ function toggleSuppressionType(type) {
 // Clear search
 function clearSearch() {
     const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.delete('search');
+    currentUrl.searchParams.delete("search");
     window.location.href = currentUrl.toString();
 }
 </script>
 
 <script src="/public/js/enrollment-picker.js"></script>
-<script src="/public/js/enrollment-basket.js"></script>
+<script src="/public/js/enrollment-basket.js"></script>';
 
-<?php
-$display_footertype='min';+
+$display_footertype='min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
-?>
