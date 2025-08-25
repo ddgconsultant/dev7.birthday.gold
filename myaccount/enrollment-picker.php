@@ -125,26 +125,17 @@ $total_suppressed_count = 0; // Track total suppressed count
 
 foreach ($companies as $company) {
     $suppression_reasons = [];
+    $skip_company = false;
     
     // Age check
     if (($company['minage'] > $alive['years']) || ($company['maxage'] < $alive['years'])) {
         $age_range = $company['minage'] . '-' . $company['maxage'];
         $suppression_reasons['age'] = "Age requirement: $age_range years (you are {$alive['years']} years old)";
-        
-        // Always track suppressed companies for the count
-        $company['suppression_reasons'] = $suppression_reasons;
-        $suppressed_companies[] = $company;
-        $total_suppressed_count++;
-        
-        // Check if this suppression type should be shown
-        $should_show = $show_suppressed && 
-                      ($suppression_filter === 'all' || 
-                       empty($active_filters) || 
-                       in_array('age', $active_filters));
-        
-        if (!$should_show) {
-            continue; // Skip age-restricted companies unless showing suppressed
-        }
+    }
+    
+    // App-only check (treat as optional suppression)
+    if ($company['signup_url'] == $website['apponlytag']) {
+        $suppression_reasons['app'] = "Requires mobile app for signup";
     }
     
     // Check for dietary restrictions (placeholder for future implementation)
@@ -152,6 +143,35 @@ foreach ($companies as $company) {
     if (!empty($company['dietary_restrictions'])) {
         // Example: if user is vegan and company serves only meat
         // suppression_reasons diet equals Contains non-vegan options
+    }
+    
+    // Process suppressions if any exist
+    if (!empty($suppression_reasons)) {
+        // Track for statistics
+        $company['suppression_reasons'] = $suppression_reasons;
+        $suppressed_companies[] = $company;
+        $total_suppressed_count++;
+        
+        // Check if this company should be shown based on active filters
+        if ($show_suppressed) {
+            // If showing suppressed, check if any active suppression matches filters
+            if ($suppression_filter !== 'all' && !empty($active_filters)) {
+                $has_matching_filter = false;
+                foreach (array_keys($suppression_reasons) as $reason_type) {
+                    if (in_array($reason_type, $active_filters)) {
+                        $has_matching_filter = true;
+                        break;
+                    }
+                }
+                if (!$has_matching_filter) {
+                    continue; // Skip if no matching filter
+                }
+            }
+            // If we get here, show the company with suppression warning
+        } else {
+            // Not showing suppressed items at all
+            continue;
+        }
     }
     
     // Store suppression info
@@ -854,7 +874,7 @@ if (count($suppressed_companies) > 0) {
     if (count($suppression_counts) > 1 && $show_suppressed) {
         $output .= '
                     <div class="alert alert-light border mb-3">
-                        <small class="text-muted">Toggle which types to show:</small>
+                        <small class="text-muted">Toggle which types to show (you can select multiple):</small>
                     </div>';
     }
     
@@ -871,6 +891,11 @@ if (count($suppressed_companies) > 0) {
                 $icon = 'bi-calendar-x';
                 $label = 'Age Restrictions';
                 $desc = 'Outside your age range';
+                break;
+            case 'app':
+                $icon = 'bi-phone-fill';
+                $label = 'App Only';
+                $desc = 'Requires mobile app for signup';
                 break;
             case 'diet':
                 $icon = 'bi-egg-fill';
