@@ -48,10 +48,26 @@ $get_rewardcategories = $app->get_rewardcategories();
 $rewardiconlist = $get_rewardcategories[1];
 
 // Category list for filter - using existing categories from businessselect.php
-$display_categories = ['All', 'Food', 'Beverage', 'Beauty', 'Retail', 'Other'];
+$display_categories = ['All', 'Food', 'Beverage', 'Beauty', 'Retail', 'Other', 'App Only'];
 
-// Get selected category and suppression settings
-$selected_category = $_GET['category'] ?? 'All';
+// Get selected categories and filters (supports multiple selection with comma separation)
+$category_param = $_GET['category'] ?? 'All';
+$selected_categories = explode(',', $category_param);
+
+// Clean up selected categories
+$selected_categories = array_map('trim', $selected_categories);
+$selected_categories = array_filter($selected_categories); // Remove empty
+
+// If no valid categories, default to All
+if (empty($selected_categories)) {
+    $selected_categories = ['All'];
+}
+
+// If 'All' is selected with others, just use 'All'
+if (in_array('All', $selected_categories) && count($selected_categories) > 1) {
+    $selected_categories = ['All'];
+}
+
 $search_query = $_GET['search'] ?? '';
 $show_suppressed = isset($_GET['show_suppressed']) ? true : false;
 // Parse suppression filters - can be comma-separated for multiple filters
@@ -65,6 +81,12 @@ $counter = ['total' => 0, 'record' => 0, 'display' => 0, 'rewards' => 0];
 
 // If search query, use direct query
 if ($search_query) {
+    // Initialize params with search terms
+    $params = [
+        'search1' => "%{$search_query}%",
+        'search2' => "%{$search_query}%"
+    ];
+    
     // Direct search query
     $sql = "SELECT DISTINCT c.*, a.description as company_logo 
             FROM bg_companies AS c
@@ -73,26 +95,46 @@ if ($search_query) {
             WHERE c.status = 'finalized' 
                 AND (c.company_name LIKE :search1 OR c.description LIKE :search2)";
     
-    if ($selected_category !== 'All') {
-        $sql .= " AND c.display_category = :category";
+    // Handle category filtering for search
+    if (!in_array('All', $selected_categories)) {
+        $category_conditions = [];
+        $has_app_only = in_array('App Only', $selected_categories);
+        $regular_categories = array_diff($selected_categories, ['App Only']);
+        
+        // Add regular category filter
+        if (!empty($regular_categories)) {
+            $category_placeholders = [];
+            $idx = 0;
+            foreach ($regular_categories as $cat) {
+                $placeholder = "cat_" . $idx;
+                $category_placeholders[] = ":" . $placeholder;
+                $params[$placeholder] = $cat;
+                $idx++;
+            }
+            $category_conditions[] = "c.display_category IN (" . implode(',', $category_placeholders) . ")";
+        }
+        
+        // Add app-only filter
+        if ($has_app_only) {
+            $category_conditions[] = "c.signup_url = :app_only_tag";
+            $params['app_only_tag'] = $website['apponlytag'];
+        }
+        
+        // Combine conditions with AND logic
+        if (!empty($category_conditions)) {
+            $sql .= " AND (" . implode(' AND ', $category_conditions) . ")";
+        }
     }
     
     $sql .= " ORDER BY c.company_name LIMIT " . $resultsize;
     
-    $params = [
-        'search1' => "%{$search_query}%",
-        'search2' => "%{$search_query}%"
-    ];
-    if ($selected_category !== 'All') {
-        $params['category'] = $selected_category;
-    }
     $companies = $database->getrows($sql, $params);
 } else {
     // Use existing getSelectionCompanies method which filters out already enrolled companies
-    if ($selected_category === 'All') {
+    if (in_array('All', $selected_categories)) {
         // Get companies from all categories
         foreach ($display_categories as $category) {
-            if ($category === 'All') continue;
+            if ($category === 'All' || $category === 'App Only') continue;
             $catCompanies = $app->getSelectionCompanies($resultsize, $category);
             foreach ($catCompanies as $company) {
                 // Check for duplicates
@@ -109,8 +151,62 @@ if ($search_query) {
             }
         }
     } else {
-        // Get companies for specific category
-        $companies = $app->getSelectionCompanies($resultsize, $selected_category);
+        // Get companies for specific categories with filtering
+        $all_companies = [];
+        
+        // Check if we need app-only filter
+        $has_app_only = in_array('App Only', $selected_categories);
+        $regular_categories = array_diff($selected_categories, ['App Only']);
+        
+        // Get companies for regular categories
+        if (!empty($regular_categories)) {
+            foreach ($regular_categories as $category) {
+                $catCompanies = $app->getSelectionCompanies($resultsize, $category);
+                foreach ($catCompanies as $company) {
+                    // Check for duplicates
+                    $isDuplicate = false;
+                    foreach ($all_companies as $existingCompany) {
+                        if ($existingCompany['company_id'] == $company['company_id']) {
+                            $isDuplicate = true;
+                            break;
+                        }
+                    }
+                    if (!$isDuplicate) {
+                        $all_companies[] = $company;
+                    }
+                }
+            }
+        } else if ($has_app_only) {
+            // If only App Only selected, get all companies (we'll filter below)
+            foreach (['Food', 'Beverage', 'Beauty', 'Retail', 'Other'] as $category) {
+                $catCompanies = $app->getSelectionCompanies($resultsize, $category);
+                foreach ($catCompanies as $company) {
+                    // Check for duplicates
+                    $isDuplicate = false;
+                    foreach ($all_companies as $existingCompany) {
+                        if ($existingCompany['company_id'] == $company['company_id']) {
+                            $isDuplicate = true;
+                            break;
+                        }
+                    }
+                    if (!$isDuplicate) {
+                        $all_companies[] = $company;
+                    }
+                }
+            }
+        }
+        
+        // Filter by app-only if needed
+        if ($has_app_only) {
+            $companies = [];
+            foreach ($all_companies as $company) {
+                if ($company['signup_url'] == $website['apponlytag']) {
+                    $companies[] = $company;
+                }
+            }
+        } else {
+            $companies = $all_companies;
+        }
     }
 }
 
@@ -523,9 +619,9 @@ if ($search_query) {
 $output .= '
             </div>';
 
-if ($selected_category !== 'all') {
+if (!in_array('All', $selected_categories)) {
     $output .= '
-            <input type="hidden" name="category" value="' . htmlspecialchars($selected_category) . '">';
+            <input type="hidden" name="category" value="' . htmlspecialchars(implode(',', $selected_categories)) . '">';
 }
 
 $output .= '
@@ -535,17 +631,16 @@ $output .= '
 // Category Filter
 $output .= '
     <div class="category-filter">
-        <div class="category-scroll">
-            <a href="?category=All" 
-               class="category-pill ' . ($selected_category === 'All' ? 'active' : '') . '">
-                <i class="bi bi-grid"></i> All
-            </a>';
+        <div class="category-scroll">';
 
 foreach ($display_categories as $cat) {
-    if ($cat === 'All') continue;
-    
     $cat_icon = 'bi-tag';
+    $is_active = in_array($cat, $selected_categories);
+    
     switch($cat) {
+        case 'All':
+            $cat_icon = 'bi-grid';
+            break;
         case 'Food': 
             $cat_icon = 'bi-egg-fried'; 
             break;
@@ -561,11 +656,50 @@ foreach ($display_categories as $cat) {
         case 'Other': 
             $cat_icon = 'bi-three-dots'; 
             break;
+        case 'App Only':
+            $cat_icon = 'bi-phone';
+            break;
+    }
+    
+    // Build URL for this category
+    if ($cat === 'All') {
+        // All clears other selections
+        $cat_url = '?category=All';
+    } else {
+        // Toggle this category
+        if ($is_active && count($selected_categories) > 1) {
+            // Remove this category from selection
+            $new_categories = array_diff($selected_categories, [$cat, 'All']);
+            if (empty($new_categories)) {
+                $cat_url = '?category=All';
+            } else {
+                $cat_url = '?category=' . implode(',', $new_categories);
+            }
+        } else if ($is_active) {
+            // If only this is selected, go to All
+            $cat_url = '?category=All';
+        } else {
+            // Add this category to selection
+            $new_categories = array_diff($selected_categories, ['All']); // Remove 'All' when selecting specific
+            $new_categories[] = $cat;
+            $cat_url = '?category=' . implode(',', $new_categories);
+        }
+    }
+    
+    // Preserve other parameters
+    if ($search_query) {
+        $cat_url .= '&search=' . urlencode($search_query);
+    }
+    if ($show_suppressed) {
+        $cat_url .= '&show_suppressed=1';
+    }
+    if ($suppression_filter !== 'all') {
+        $cat_url .= '&suppression_filter=' . urlencode($suppression_filter);
     }
     
     $output .= '
-            <a href="?category=' . $cat . '" 
-               class="category-pill ' . ($selected_category === $cat ? 'active' : '') . '">
+            <a href="' . htmlspecialchars($cat_url) . '" 
+               class="category-pill ' . ($is_active ? 'active' : '') . '">
                 <i class="' . $cat_icon . '"></i>
                 ' . $cat . '
             </a>';
