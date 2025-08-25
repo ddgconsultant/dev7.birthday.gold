@@ -35,6 +35,7 @@ echo '
                 <form action="user_components/set_accounttypeplan.php" method="POST">
                     '.$display->inputcsrf_token().'
                     <input type="hidden" name="uid" value="'.htmlspecialchars($workinguserdata['user_id']).'">
+                    <input type="hidden" name="product_id" id="selectedProductId" value="">
                     
                     <div class="mb-3">
                         <label class="form-label">Account Status</label>
@@ -52,9 +53,75 @@ echo '
 
                     <div class="mb-3">
                         <label class="form-label">Account Plan</label>
-                        <select class="form-select" name="accountplan">
-                            '.$display->list_accountplan($workinguserdata['account_plan']).'
+                        <select class="form-select" name="accountplan" id="accountPlanSelect">
+                            <option value="">-- Select Plan --</option>';
+                            
+                    // Get available plans from database
+                    $plan_sql = "SELECT p.id, p.account_name, p.account_plan, p.account_type, p.version, p.status,
+                                 p.price, p.billing_cycle
+                                 FROM bg_products p
+                                 WHERE p.status = 'active'
+                                 AND p.version = :version
+                                 ORDER BY p.account_type, 
+                                 CASE p.account_plan 
+                                     WHEN 'user_free' THEN 1
+                                     WHEN 'parental_free' THEN 1
+                                     WHEN 'family_free' THEN 1
+                                     WHEN 'user_plus' THEN 2
+                                     WHEN 'parental_plus' THEN 2
+                                     WHEN 'user_gold' THEN 3
+                                     WHEN 'parental_gold' THEN 3
+                                     WHEN 'family_gold' THEN 3
+                                     WHEN 'user_platinum' THEN 4
+                                     WHEN 'parental_platinum' THEN 4
+                                     WHEN 'business_bronze' THEN 1
+                                     WHEN 'business_silver' THEN 2
+                                     WHEN 'business_gold' THEN 3
+                                     WHEN 'business_platinum' THEN 4
+                                     ELSE 5
+                                 END";
+                    
+                    $plan_params = ['version' => $website['plan_version'] ?? 'v7'];
+                    $available_plans = $database->getrows($plan_sql, $plan_params);
+                    
+                    // Group plans by account type
+                    $plans_by_type = [];
+                    foreach ($available_plans as $plan) {
+                        $type = ucfirst($plan['account_type']);
+                        if (!isset($plans_by_type[$type])) {
+                            $plans_by_type[$type] = [];
+                        }
+                        $plans_by_type[$type][] = $plan;
+                    }
+                    
+                    // Display plans grouped by type
+                    foreach ($plans_by_type as $type => $plans) {
+                        echo '<optgroup label="' . htmlspecialchars($type) . ' Plans">';
+                        foreach ($plans as $plan) {
+                            $price_display = '';
+                            if ($plan['price'] > 0) {
+                                $price_formatted = number_format($plan['price'] / 100, 2);
+                                $price_display = ' - $' . $price_formatted;
+                                if ($plan['billing_cycle'] != 'one_time') {
+                                    $price_display .= '/' . $plan['billing_cycle'];
+                                }
+                            } else {
+                                $price_display = ' - Free';
+                            }
+                            
+                            $selected = ($workinguserdata['account_product_id'] == $plan['id']) ? ' selected' : '';
+                            echo '<option value="' . $plan['id'] . '"' . $selected . ' 
+                                  data-account-type="' . htmlspecialchars($plan['account_type']) . '"
+                                  data-account-plan="' . htmlspecialchars($plan['account_plan']) . '">
+                                  ' . htmlspecialchars($plan['account_name']) . $price_display . '
+                                  </option>';
+                        }
+                        echo '</optgroup>';
+                    }
+                    
+                    echo '
                         </select>
+                        <small class="text-muted">Current Plan ID: ' . ($workinguserdata['account_product_id'] ?? 'None') . '</small>
                     </div>
 
                     <div class="form-check mb-3">
@@ -292,3 +359,39 @@ if ($account->isadmin()) {
     </div>
     ';
     }
+
+// Add JavaScript for plan selection handling
+echo '
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Auto-update account type and hidden product_id when plan is selected
+    var planSelect = document.getElementById("accountPlanSelect");
+    if (planSelect) {
+        planSelect.addEventListener("change", function() {
+            var selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                // Update hidden product_id field
+                document.getElementById("selectedProductId").value = selectedOption.value;
+                
+                // Update account type based on the selected plan
+                var accountType = selectedOption.getAttribute("data-account-type");
+                var accountTypeSelect = document.querySelector("select[name=\"accounttype\"]");
+                if (accountTypeSelect && accountType) {
+                    // Set the account type based on the selected plan
+                    for (var i = 0; i < accountTypeSelect.options.length; i++) {
+                        if (accountTypeSelect.options[i].value.toLowerCase() === accountType.toLowerCase()) {
+                            accountTypeSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Set initial product_id value if a plan is already selected
+        if (planSelect.value) {
+            document.getElementById("selectedProductId").value = planSelect.value;
+        }
+    }
+});
+</script>';

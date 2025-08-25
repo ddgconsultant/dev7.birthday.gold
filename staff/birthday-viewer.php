@@ -30,8 +30,9 @@ body {
 }
 
 .birthday-card {
-    border-left: 4px solid #28a745;
+    border-left: 4px solid #6c757d;
     transition: transform 0.2s;
+    background: #f8f9fa;
 }
 .birthday-card:hover {
     transform: translateY(-2px);
@@ -41,18 +42,13 @@ body {
     border-left-color: #dc3545;
     background: #fff5f5;
 }
-.birthday-soon {
+.birthday-week {
     border-left-color: #ffc107;
     background: #fffbf0;
 }
 .birthday-month {
-    border-left-color: #17a2b8;
-}
-
-.stat-box {
-    text-align: center;
-    padding: 1.5rem;
-    border-radius: 10px;
+    border-left-color: #28a745;
+    background: #f0fff4;
 }
 
 .json-viewer {
@@ -87,13 +83,36 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="container my-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h1><i class="fas fa-birthday-cake"></i> Staff Birthday Viewer</h1>
-            <p class="text-muted">Complete staff birthday information dashboard</p>
+<!-- Staff Header Section -->
+<div class="content-header-staff">
+    <div class="container text-center">
+        <h1><i class="fas fa-birthday-cake"></i> Staff Birthday Viewer</h1>
+        <p class="lead">Complete staff birthday information dashboard</p>
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-number"><?= $birthday_data['statistics']['total_staff'] ?></span>
+                <span class="stat-label">Total Staff</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number"><?= $birthday_data['statistics']['birthdays_today'] ?></span>
+                <span class="stat-label">Today</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number"><?= $birthday_data['statistics']['birthdays_this_week'] ?></span>
+                <span class="stat-label">This Week</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number"><?= $birthday_data['statistics']['birthdays_next_30_days'] ?></span>
+                <span class="stat-label">Next 30 Days</span>
+            </div>
         </div>
-        <div class="col-auto">
+    </div>
+</div>
+
+<div class="container my-4">
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-12 text-end">
             <button class="btn btn-primary" onclick="toggleJSON()">
                 <i class="fas fa-code"></i> Toggle JSON
             </button>
@@ -103,33 +122,6 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stat-box bg-primary text-white">
-                <h3><?= $birthday_data['statistics']['total_staff'] ?></h3>
-                <p class="mb-0">Total Staff</p>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-box bg-danger text-white">
-                <h3><?= $birthday_data['statistics']['birthdays_today'] ?></h3>
-                <p class="mb-0">Today</p>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-box bg-warning text-dark">
-                <h3><?= $birthday_data['statistics']['birthdays_this_week'] ?></h3>
-                <p class="mb-0">This Week</p>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-box bg-info text-white">
-                <h3><?= $birthday_data['statistics']['birthdays_next_30_days'] ?></h3>
-                <p class="mb-0">Next 30 Days</p>
-            </div>
-        </div>
-    </div>
 
     <!-- Staff Birthday Cards -->
     <div class="row mb-4">
@@ -142,10 +134,11 @@ include($dir['core_components'] . '/bg_header.inc');
             if ($staff['days_until'] == 0) {
                 $card_class .= ' birthday-today';
             } elseif ($staff['days_until'] <= 7) {
-                $card_class .= ' birthday-soon';
+                $card_class .= ' birthday-week';
             } elseif ($staff['days_until'] <= 30) {
                 $card_class .= ' birthday-month';
             }
+            // Otherwise stays gray (default birthday-card)
             ?>
             <div class="col-md-6 col-lg-4 mb-3">
                 <div class="card <?= $card_class ?>">
@@ -155,17 +148,17 @@ include($dir['core_components'] . '/bg_header.inc');
                                 <?php if ($staff['days_until'] == 0): ?>
                                     🎂
                                 <?php elseif ($staff['days_until'] <= 7): ?>
-                                    🎁
+                                    ⚠️
                                 <?php elseif ($staff['days_until'] <= 30): ?>
-                                    📅
+                                    ✅
                                 <?php else: ?>
-                                    🎈
+                                    📅
                                 <?php endif; ?>
                             </span>
                             <div class="flex-grow-1">
                                 <h5 class="mb-1">
                                     <?= htmlspecialchars($staff['name']) ?>
-                                    <span class="age-badge ms-2">Age <?= $staff['current_age'] ?></span>
+                                    <span class="age-badge ms-2"><?= isset($staff['current_age_display']) ? $staff['current_age_display'] : $staff['current_age'] . ' years' ?></span>
                                 </h5>
                                 <p class="mb-1 text-muted">
                                     <i class="fas fa-user"></i> <?= htmlspecialchars($staff['username']) ?>
@@ -176,12 +169,15 @@ include($dir['core_components'] . '/bg_header.inc');
                                     (<?= $staff['birthdate_full'] ?>)
                                 </p>
                                 <p class="mb-0">
+                                    <?php 
+                                    $turning_display = isset($staff['turning_age_display']) ? $staff['turning_age_display'] : $staff['turning_age'] . ' years';
+                                    ?>
                                     <?php if ($staff['days_until'] == 0): ?>
-                                        <span class="badge bg-danger">TODAY! Turning <?= $staff['turning_age'] ?></span>
+                                        <span class="badge bg-danger">TODAY! Turning <?= $turning_display ?></span>
                                     <?php elseif ($staff['days_until'] == 1): ?>
-                                        <span class="badge bg-warning">Tomorrow - Turning <?= $staff['turning_age'] ?></span>
+                                        <span class="badge bg-warning">Tomorrow - Turning <?= $turning_display ?></span>
                                     <?php else: ?>
-                                        <span class="badge bg-secondary">In <?= $staff['days_until'] ?> days - Turning <?= $staff['turning_age'] ?></span>
+                                        <span class="badge bg-secondary">In <?= $staff['days_until'] ?> days - Turning <?= $turning_display ?></span>
                                     <?php endif; ?>
                                 </p>
                                 <small class="text-muted">

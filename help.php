@@ -255,6 +255,16 @@ $additionalstyles = '
     margin-bottom: 0.5rem;
 }
 
+/* Phone number hover effect for Call Us and Text Us */
+.customer-service-section .help-card p.text-muted small {
+    transition: all 0.2s ease;
+}
+
+.customer-service-section .help-card:hover p.text-muted small {
+    color: #4c63d2;
+    font-weight: 600;
+}
+
 .help-content p:last-child {
     margin-bottom: 0;
 }

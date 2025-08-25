@@ -299,7 +299,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <a href="https://docs.birthdaygold.cloud" target="_blank" class="quick-link">
                         <i class="fas fa-book-open"></i> Internal Documentation
                     </a>
-                    <a href="/staff/legal-policy-editor" class="quick-link">
+                    <a href="/staff/redirect_legalpolicyeditor" class="quick-link">
                         <i class="fas fa-gavel"></i> Legal Policy Editor
                     </a>
                 </div>

@@ -23,7 +23,10 @@ class AllocationManager {
         
         // Get user's plan details
         $user_data = $account->getuserdata($user_id, 'user_id');
-        $plan_details = $app->plandetail('details_id', $user_data['account_product_id']);
+        $plan_details = false;
+        if (!empty($user_data['account_product_id'])) {
+            $plan_details = $app->plandetail('details_id', $user_data['account_product_id']);
+        }
         
         // Get allocations from bg_user_allocations table
         $sql = "SELECT 
@@ -60,8 +63,11 @@ class AllocationManager {
         
         $used_count = $result['used_count'] ?? 0;
         
-        // Get max allocations from plan (default to 10 if not set)
-        $plan_max_allocations = $plan_details['max_business_select'] ?? 10;
+        // Get max allocations from plan (default to 3 if not set)
+        $plan_max_allocations = 3;
+        if ($plan_details && isset($plan_details['max_business_select'])) {
+            $plan_max_allocations = $plan_details['max_business_select'];
+        }
         
         // For free plans, give a small number of allocations
         if ($user_data['account_plan'] == 'free') {

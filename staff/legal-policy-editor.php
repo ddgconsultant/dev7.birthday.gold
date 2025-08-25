@@ -6,28 +6,11 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 // This page is in /staff/ directory - accessible to staff and admin users
 
 $pagetitle = "Legal Policy Editor";
-$additionalstyles = '
+
+// Use Bootstrap 5 utilities instead of custom CSS where possible
+$additionalstyles .= '
 <style>
-/* Hide skip to main content link */
-.sr-only, .sr-only-focusable:not(:focus) {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    padding: 0 !important;
-    margin: -1px !important;
-    overflow: hidden !important;
-    clip: rect(0,0,0,0) !important;
-    white-space: nowrap !important;
-    border: 0 !important;
-}
-
-/* Add bottom margin to body */
-body { 
-    margin-bottom: 100px !important; 
-    padding-bottom: 50px !important; 
-}
-
-/* TinyMCE Editor adjustments */
+/* TinyMCE Editor adjustments - cannot be done with Bootstrap utilities */
 .tox-tinymce {
     border: 1px solid #ced4da !important;
     border-radius: 0.25rem !important;
@@ -35,11 +18,10 @@ body {
 </style>
 ';
 
-// Add TinyMCE script - using local version
-$additionalscripts = '
+// Add TinyMCE script
+$additionalscripts .= '
 <script src="/public/js/tinymce.min.js"></script>
 <script>
-// Initialize TinyMCE when page loads
 window.addEventListener("load", function() {
     if (typeof tinymce !== "undefined") {
         tinymce.init({
@@ -59,14 +41,11 @@ window.addEventListener("load", function() {
             branding: false,
             base_url: "/public/js",
             setup: function(editor) {
-                // Ensure the form submits the content
                 editor.on("change", function() {
                     tinymce.triggerSave();
                 });
             }
         });
-    } else {
-        console.error("TinyMCE not loaded");
     }
 });
 </script>
@@ -77,15 +56,54 @@ $policy_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $message = '';
 $message_type = '';
 
-#-------------------------------------------------------------------------------
-# HANDLE FORM SUBMISSION
-#-------------------------------------------------------------------------------
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $policy_id > 0) {
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
-    if ($action === 'update') {
-        // Update existing policy
+    // Handle new policy creation
+    if ($action === 'create') {
+        $name = $_POST['name'] ?? '';
+        $display_name = $_POST['display_name'] ?? '';
+        $description = $_POST['description'] ?? '';
+        $content = $_POST['content'] ?? '';
+        $category = $_POST['category'] ?? '';
+        $type = $_POST['type'] ?? '';
+        $grouping = $_POST['grouping'] ?? 'legal';
+        $review_period = intval($_POST['review_period'] ?? 180);
+        
+        // Check if name already exists
+        $check_sql = "SELECT id FROM bg_content WHERE name = :name AND status = 'active'";
+        $existing = $database->query($check_sql, ['name' => $name])->fetch();
+        
+        if ($existing) {
+            $message = "A policy with this name already exists.";
+            $message_type = 'danger';
+        } else {
+            $tags = json_encode(['review_period' => $review_period]);
+            
+            $insert_sql = "INSERT INTO bg_content 
+                          (name, category, type, `grouping`, display_name, description, content, tags, version, status, create_dt, modify_dt, publish_dt)
+                          VALUES (:name, :category, :type, :grouping, :display_name, :description, :content, :tags, '1.0', 'active', NOW(), NOW(), NOW())";
+            
+            $database->query($insert_sql, [
+                'name' => $name,
+                'category' => $category,
+                'type' => $type,
+                'grouping' => $grouping,
+                'display_name' => $display_name,
+                'description' => $description,
+                'content' => $content,
+                'tags' => $tags
+            ]);
+            
+            $new_id = $database->lastInsertId();
+            header("Location: /staff/redirect_legalpolicyeditor.php?id=$new_id&msg=created");
+            exit;
+        }
+    }
+    
+    // Handle existing policy update
+    if ($policy_id > 0 && $action === 'update') {
         $display_name = $_POST['display_name'] ?? '';
         $description = $_POST['description'] ?? '';
         $content = $_POST['content'] ?? '';
@@ -103,29 +121,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $policy_id > 0) {
         $old_content = $database->query($check_sql, ['id' => $policy_id])->fetchColumn();
         
         if ($old_content !== $content) {
-            // Content has changed - create new version and expire old one
-            
-            // First, expire the current version
-            $expire_sql = "UPDATE bg_content SET 
-                          status = 'replaced',
-                          expire_dt = NOW()
-                          WHERE id = :id";
+            // Content changed - create new version
+            $expire_sql = "UPDATE bg_content SET status = 'replaced', expire_dt = NOW() WHERE id = :id";
             $database->query($expire_sql, ['id' => $policy_id]);
             
-            // Get the current version number
             $version_sql = "SELECT version FROM bg_content WHERE id = :id";
             $current_version = $database->query($version_sql, ['id' => $policy_id])->fetchColumn();
             
-            // Increment version
             $version_parts = explode('.', $current_version ?: '1.0');
             $major = intval($version_parts[0]);
             $minor = intval($version_parts[1] ?? 0) + 1;
             $new_version = "$major.$minor";
             
-            // Insert new version
             $insert_sql = "INSERT INTO bg_content 
-                          (name, category, type, grouping, display_name, description, content, tags, version, status, create_dt, modify_dt, publish_dt)
-                          SELECT name, :category, :type, grouping, :display_name, :description, :content, :tags, :version, 'active', NOW(), NOW(), NOW()
+                          (name, category, type, `grouping`, display_name, description, content, tags, version, status, create_dt, modify_dt, publish_dt)
+                          SELECT name, :category, :type, `grouping`, :display_name, :description, :content, :tags, :version, 'active', NOW(), NOW(), NOW()
                           FROM bg_content WHERE id = :id";
             
             $database->query($insert_sql, [
@@ -140,15 +150,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $policy_id > 0) {
             ]);
             
             $new_id = $database->lastInsertId();
-            $message = "Policy updated successfully. New version $new_version created. Review timer has been reset.";
-            $message_type = 'success';
-            
-            // Redirect to the new version
-            header("Location: /admin/legal-policy-editor.php?id=$new_id&msg=updated");
+            header("Location: /staff/redirect_legalpolicyeditor.php?id=$new_id&msg=updated");
             exit;
-            
         } else {
-            // No content change - just update metadata and reset review timer
+            // No content change - just update metadata
             $update_sql = "UPDATE bg_content SET 
                           display_name = :display_name,
                           description = :description,
@@ -167,12 +172,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $policy_id > 0) {
                 'id' => $policy_id
             ]);
             
-            $message = "Policy metadata updated and review timer reset. No content changes detected.";
+            $message = "Policy metadata updated and review timer reset.";
             $message_type = 'info';
         }
-        
     } elseif ($action === 'review_only') {
-        // Just mark as reviewed (update modify_dt only)
+        // Mark as reviewed
         $update_sql = "UPDATE bg_content SET modify_dt = NOW() WHERE id = :id";
         $database->query($update_sql, ['id' => $policy_id]);
         
@@ -182,15 +186,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $policy_id > 0) {
 }
 
 // Check for message from redirect
-if (isset($_GET['msg']) && $_GET['msg'] === 'updated') {
-    $message = "Policy updated successfully.";
-    $message_type = 'success';
+if (isset($_GET['msg'])) {
+    if ($_GET['msg'] === 'updated') {
+        $message = "Policy updated successfully.";
+        $message_type = 'success';
+    } elseif ($_GET['msg'] === 'created') {
+        $message = "Policy created successfully.";
+        $message_type = 'success';
+    }
 }
 
-#-------------------------------------------------------------------------------
-# FETCH POLICY DATA
-#-------------------------------------------------------------------------------
-
+// Fetch policy data if ID provided
 $policy = null;
 if ($policy_id > 0) {
     $sql = "SELECT * FROM bg_content WHERE id = :id";
@@ -198,9 +204,9 @@ if ($policy_id > 0) {
     
     if ($policy) {
         $tags = json_decode($policy['tags'], true) ?: [];
-        $review_period = $tags['review_period'] ?? 180; // Default to 180 days
+        $review_period = $tags['review_period'] ?? 180;
         
-        // If no review period is set, update the database with default
+        // Set default review period if not set
         if (!isset($tags['review_period'])) {
             $tags['review_period'] = 180;
             $update_default_sql = "UPDATE bg_content SET tags = :tags WHERE id = :id";
@@ -221,296 +227,365 @@ if ($policy_id > 0) {
 // Include page components
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-?>
 
-<div class="container my-5 pt-3">
-    <div class="row">
-        <div class="col-12">
-            <h1>Legal Policy Editor</h1>
+// Start page output - single PHP block with echo statements
+echo '<div class="container my-5 pt-3">';
+echo '<div class="row">';
+echo '<div class="col-12">';
+echo '<h1 class="mb-4">Legal Policy Editor</h1>';
+
+// Display message if exists
+if ($message) {
+    $alert_class = $message_type === 'success' ? 'success' : ($message_type === 'info' ? 'info' : 'danger');
+    echo '<div class="alert alert-' . $alert_class . ' alert-dismissible fade show" role="alert">';
+    echo htmlspecialchars($message);
+    echo '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+    echo '</div>';
+}
+
+// Display policy list or edit form
+if (!$policy) {
+    // Fetch all policies
+    $policies_sql = "SELECT id, name, display_name, category, type, version, modify_dt, status, 
+                     JSON_EXTRACT(tags, '$.review_period') as review_period 
+                     FROM bg_content 
+                     WHERE `grouping` = 'legal' AND status = 'active' 
+                     ORDER BY category, display_name";
+    $all_policies = $database->query($policies_sql)->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Calculate review status for each policy
+    foreach ($all_policies as &$pol) {
+        $review_period = $pol['review_period'] ?? 180;
+        $modify_date = new DateTime($pol['modify_dt']);
+        $current_date = new DateTime();
+        $days_since = $current_date->diff($modify_date)->days;
+        $days_until = $review_period - $days_since;
+        $pol['days_until_review'] = $days_until;
+        $pol['review_status'] = $days_until < 0 ? 'overdue' : ($days_until <= 7 ? 'soon' : 'ok');
+    }
+    
+    // Display policies list card
+    echo '<div class="card">';
+    echo '<div class="card-header d-flex justify-content-between align-items-center">';
+    echo '<h4 class="mb-0">Legal Policies Management</h4>';
+    echo '<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createPolicyModal">';
+    echo '<i class="fas fa-plus me-2"></i>Create New Policy';
+    echo '</button>';
+    echo '</div>';
+    echo '<div class="card-body">';
+    
+    if (!empty($all_policies)) {
+        echo '<div class="table-responsive">';
+        echo '<table class="table table-hover">';
+        echo '<thead>';
+        echo '<tr>';
+        echo '<th>Policy Name</th>';
+        echo '<th>Category</th>';
+        echo '<th>Type</th>';
+        echo '<th>Version</th>';
+        echo '<th>Last Reviewed</th>';
+        echo '<th>Review Status</th>';
+        echo '<th>Action</th>';
+        echo '</tr>';
+        echo '</thead>';
+        echo '<tbody>';
+        
+        foreach ($all_policies as $pol) {
+            echo '<tr>';
+            echo '<td>' . htmlspecialchars($pol['display_name'] ?: $pol['name']) . '</td>';
+            echo '<td>' . htmlspecialchars($pol['category']) . '</td>';
+            echo '<td>' . htmlspecialchars($pol['type']) . '</td>';
+            echo '<td>' . htmlspecialchars($pol['version'] ?: '1.0') . '</td>';
+            echo '<td>' . date('M d, Y', strtotime($pol['modify_dt'])) . '</td>';
+            echo '<td>';
             
-            <?php if ($message): ?>
-                <div class="alert alert-<?= $message_type === 'success' ? 'success' : ($message_type === 'info' ? 'info' : 'warning') ?> alert-dismissible fade show" role="alert">
-                    <?= htmlspecialchars($message) ?>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            <?php endif; ?>
-            
-            <?php if (!$policy): ?>
-                <div class="alert alert-warning">
-                    <h4>No Policy Selected</h4>
-                    <p>Please select a policy to edit from your review reminder notification.</p>
-                    <a href="/admin/" class="btn btn-primary">Back to Admin</a>
-                </div>
-            <?php else: ?>
-                
-                <!-- Policy Status Card -->
-                <div class="card mb-4">
-                    <div class="card-header bg-<?= $days_until_review < 0 ? 'danger' : ($days_until_review <= 7 ? 'warning' : 'info') ?> text-white">
-                        <h5 class="mb-0">Review Status</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <strong>Policy:</strong> <?= htmlspecialchars($policy['display_name'] ?: $policy['name']) ?>
-                            </div>
-                            <div class="col-md-2">
-                                <strong>Version:</strong> <?= htmlspecialchars($policy['version'] ?: '1.0') ?>
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Last Reviewed:</strong> <?= date('M d, Y', strtotime($policy['modify_dt'])) ?>
-                            </div>
-                            <div class="col-md-2">
-                                <strong>Days Since Review:</strong> <?= $days_since_modified ?>
-                            </div>
-                            <div class="col-md-2">
-                                <strong>Review Due:</strong> 
-                                <?php if ($days_until_review < 0): ?>
-                                    <span class="text-danger">Overdue by <?= abs($days_until_review) ?> days</span>
-                                <?php else: ?>
-                                    <span class="text-<?= $days_until_review <= 7 ? 'warning' : 'success' ?>">In <?= $days_until_review ?> days</span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Policy Edit Form -->
-                <form method="POST" action="">
-                    <input type="hidden" name="existing_tags" value="<?= htmlspecialchars(json_encode($tags)) ?>">
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Edit Policy</h5>
-                        </div>
-                        <div class="card-body">
-                            
-                            <!-- Metadata Fields -->
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="display_name" class="form-label">Display Name</label>
-                                    <input type="text" class="form-control" id="display_name" name="display_name" 
-                                           value="<?= htmlspecialchars($policy['display_name'] ?: '') ?>" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="category" class="form-label">Category</label>
-                                    <select class="form-control" id="category" name="category" required>
-                                        <option value="Policies" <?= $policy['category'] === 'Policies' ? 'selected' : '' ?>>Policies</option>
-                                        <option value="Legal" <?= $policy['category'] === 'Legal' ? 'selected' : '' ?>>Legal</option>
-                                        <option value="Compliance" <?= $policy['category'] === 'Compliance' ? 'selected' : '' ?>>Compliance</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="type" class="form-label">Type</label>
-                                    <input type="text" class="form-control" id="type" name="type" 
-                                           value="<?= htmlspecialchars($policy['type'] ?: '') ?>" required>
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-9">
-                                    <label for="description" class="form-label">Description</label>
-                                    <input type="text" class="form-control" id="description" name="description" 
-                                           value="<?= htmlspecialchars($policy['description'] ?: '') ?>" maxlength="500">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="review_period" class="form-label">Review Period (days)</label>
-                                    <input type="number" class="form-control" id="review_period" name="review_period" 
-                                           value="<?= $review_period ?>" min="1" max="365" required>
-                                    <small class="text-muted">How often this policy should be reviewed</small>
-                                </div>
-                            </div>
-                            
-                            <!-- Content Field -->
-                            <div class="mb-3">
-                                <label for="content" class="form-label">Policy Content</label>
-                                <textarea class="form-control" id="content" name="content" rows="20" required><?= htmlspecialchars($policy['content'] ?: '') ?></textarea>
-                                <small class="text-muted">Modifying content will create a new version. Metadata changes only will not create a new version.</small>
-                            </div>
-                            
-                            <!-- Action Buttons -->
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <button type="submit" name="action" value="update" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> Save Changes
-                                    </button>
-                                    <button type="submit" name="action" value="review_only" class="btn btn-success">
-                                        <i class="fas fa-check"></i> Mark as Reviewed (No Changes)
-                                    </button>
-                                </div>
-                                <div>
-                                    <a href="/admin/" class="btn btn-secondary">Cancel</a>
-                                </div>
-                            </div>
-                            
-                        </div>
-                    </div>
-                </form>
-                
-                <!-- Version History -->
-                <?php
-                $history_sql = "SELECT id, version, modify_dt, status 
-                               FROM bg_content 
-                               WHERE name = :name 
-                               ORDER BY id DESC 
-                               LIMIT 10";
-                $history = $database->query($history_sql, ['name' => $policy['name']])->fetchAll(PDO::FETCH_ASSOC);
-                ?>
-                
-                <?php if (count($history) > 1): ?>
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">Version History</h5>
-                    </div>
-                    <div class="card-body">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Version</th>
-                                    <th>Modified</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($history as $version): ?>
-                                <tr <?= $version['id'] == $policy_id ? 'class="table-active"' : '' ?>>
-                                    <td><?= htmlspecialchars($version['version'] ?: '1.0') ?></td>
-                                    <td><?= date('M d, Y g:i A', strtotime($version['modify_dt'])) ?></td>
-                                    <td>
-                                        <span class="badge bg-<?= $version['status'] === 'active' ? 'success' : 'secondary' ?>">
-                                            <?= htmlspecialchars($version['status']) ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <?php if ($version['id'] != $policy_id): ?>
-                                        <a href="?id=<?= $version['id'] ?>" class="btn btn-sm btn-outline-primary">View</a>
-                                        <?php else: ?>
-                                        <span class="badge bg-primary">Current</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <?php endif; ?>
-                
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
-
-<?php
-include($dir['core_components'] . '/bg_footer.inc');
-?>
-
-<?php
-// Get TinyMCE API key from sitesettings
-// Domains are configured at: https://www.tiny.cloud/my-account/domains/
-// The key should be in sitesettings as: $sitesettings['tinymce']['api_key']
-$tinymce_api_key = '';
-
-// Try different possible locations for the API key
-if (isset($sitesettings['tinymce']['api_key'])) {
-    $tinymce_api_key = $sitesettings['tinymce']['api_key'];
-} elseif (isset($sitesettings['tinymce_api_key'])) {
-    $tinymce_api_key = $sitesettings['tinymce_api_key'];
-} elseif (defined('TINYMCE_API_KEY')) {
-    $tinymce_api_key = TINYMCE_API_KEY;
-}
-
-// For initial setup - you need to add your API key here or in config
-if (empty($tinymce_api_key)) {
-    // TODO: Add your TinyMCE API key to sitesettings config file
-    // Get your key from: https://www.tiny.cloud/my-account/api-keys/
-    $tinymce_api_key = 'no-api-key'; // Replace with your actual API key
-}
-
-// Debug: Show API key status
-if (isset($_GET['debug'])) {
-    echo "<!-- TinyMCE API Key: " . (!empty($tinymce_api_key) ? substr($tinymce_api_key, 0, 10) . "..." : "Not configured") . " -->\n";
-}
-
-// Only use fallback if absolutely no key
-if (false): // Disabled CKEditor fallback for now since you have TinyMCE account 
-?>
-<!-- Fallback to CKEditor 5 (free, no API key required) -->
-<script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    ClassicEditor
-        .create(document.querySelector('#content'), {
-            height: '500px',
-            toolbar: {
-                items: [
-                    'heading', '|',
-                    'bold', 'italic', 'underline', 'strikethrough', '|',
-                    'link', 'bulletedList', 'numberedList', '|',
-                    'outdent', 'indent', '|',
-                    'blockQuote', 'insertTable', '|',
-                    'undo', 'redo', '|',
-                    'sourceEditing'
-                ]
-            },
-            table: {
-                contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
+            if ($pol['review_status'] === 'overdue') {
+                echo '<span class="badge bg-danger">Overdue by ' . abs($pol['days_until_review']) . ' days</span>';
+            } elseif ($pol['review_status'] === 'soon') {
+                echo '<span class="badge bg-warning text-dark">Due in ' . $pol['days_until_review'] . ' days</span>';
+            } else {
+                echo '<span class="badge bg-success">OK (' . $pol['days_until_review'] . ' days)</span>';
             }
-        })
-        .then(editor => {
-            // Update textarea on change
-            editor.model.document.on('change:data', () => {
-                document.querySelector('#content').value = editor.getData();
-            });
-        })
-        .catch(error => {
-            console.error('CKEditor initialization error:', error);
-        });
-});
-</script>
-
-<?php else: ?>
-<!-- TinyMCE with API Key -->
-<script src="https://cdn.tiny.cloud/1/<?= htmlspecialchars($tinymce_api_key) ?>/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
-<script>
-// Initialize TinyMCE with full features
-document.addEventListener("DOMContentLoaded", function() {
-    tinymce.init({
-        selector: '#content',
-        height: 500,
-        menubar: true,
-        plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'help', 'wordcount', 'codesample'
-        ],
-        toolbar: 'undo redo | blocks | ' +
-            'bold italic underline strikethrough | alignleft aligncenter ' +
-            'alignright alignjustify | bullist numlist outdent indent | ' +
-            'link image media | forecolor backcolor | ' +
-            'removeformat | table | code codesample | fullscreen help',
-        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
-        branding: false,
-        promotion: false,
-        relative_urls: false,
-        remove_script_host: false,
-        convert_urls: true,
-        // Advanced features
-        image_advtab: true,
-        table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
-        table_appearance_options: true,
-        table_sizing_mode: 'responsive',
-        // Save changes back to textarea
-        setup: function(editor) {
-            editor.on('change', function() {
-                tinymce.triggerSave();
+            
+            echo '</td>';
+            echo '<td>';
+            echo '<a href="?id=' . $pol['id'] . '" class="btn btn-sm btn-primary">';
+            echo '<i class="fas fa-edit me-1"></i>Edit';
+            echo '</a>';
+            echo '</td>';
+            echo '</tr>';
+        }
+        
+        echo '</tbody>';
+        echo '</table>';
+        echo '</div>';
+    } else {
+        echo '<p class="text-center text-muted py-5">No policies found. Click "Create New Policy" to add one.</p>';
+    }
+    
+    echo '</div>';
+    echo '</div>';
+    
+    // Create Policy Modal
+    echo '<div class="modal fade" id="createPolicyModal" tabindex="-1">';
+    echo '<div class="modal-dialog modal-lg">';
+    echo '<div class="modal-content">';
+    echo '<form method="POST" action="">';
+    echo '<input type="hidden" name="action" value="create">';
+    
+    echo '<div class="modal-header">';
+    echo '<h5 class="modal-title">Create New Policy</h5>';
+    echo '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>';
+    echo '</div>';
+    
+    echo '<div class="modal-body">';
+    echo '<div class="row g-3">';
+    
+    echo '<div class="col-md-6">';
+    echo '<label for="new_name" class="form-label">Internal Name</label>';
+    echo '<input type="text" class="form-control" id="new_name" name="name" required>';
+    echo '<small class="text-muted">System identifier (no spaces)</small>';
+    echo '</div>';
+    
+    echo '<div class="col-md-6">';
+    echo '<label for="new_display_name" class="form-label">Display Name</label>';
+    echo '<input type="text" class="form-control" id="new_display_name" name="display_name" required>';
+    echo '</div>';
+    
+    echo '<div class="col-md-6">';
+    echo '<label for="new_category" class="form-label">Category</label>';
+    echo '<select class="form-control" id="new_category" name="category" required>';
+    echo '<option value="Policies">Policies</option>';
+    echo '<option value="Terms">Terms</option>';
+    echo '<option value="Agreements">Agreements</option>';
+    echo '<option value="Notices">Notices</option>';
+    echo '</select>';
+    echo '</div>';
+    
+    echo '<div class="col-md-6">';
+    echo '<label for="new_type" class="form-label">Type</label>';
+    echo '<input type="text" class="form-control" id="new_type" name="type" value="legal" required>';
+    echo '</div>';
+    
+    echo '<div class="col-12">';
+    echo '<label for="new_description" class="form-label">Description</label>';
+    echo '<textarea class="form-control" id="new_description" name="description" rows="2"></textarea>';
+    echo '</div>';
+    
+    echo '<div class="col-md-6">';
+    echo '<label for="new_review_period" class="form-label">Review Period (days)</label>';
+    echo '<input type="number" class="form-control" id="new_review_period" name="review_period" value="180" min="30" max="365">';
+    echo '</div>';
+    
+    echo '<div class="col-md-6">';
+    echo '<label for="new_grouping" class="form-label">Grouping</label>';
+    echo '<input type="text" class="form-control" id="new_grouping" name="grouping" value="legal" readonly>';
+    echo '</div>';
+    
+    echo '<div class="col-12">';
+    echo '<label for="new_content" class="form-label">Content</label>';
+    echo '<textarea class="form-control" id="new_content" name="content" rows="10" required></textarea>';
+    echo '</div>';
+    
+    echo '</div>';
+    echo '</div>';
+    
+    echo '<div class="modal-footer">';
+    echo '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>';
+    echo '<button type="submit" class="btn btn-primary">Create Policy</button>';
+    echo '</div>';
+    
+    echo '</form>';
+    echo '</div>';
+    echo '</div>';
+    echo '</div>';
+    
+} else {
+    // Display edit form for existing policy
+    $header_class = $days_until_review < 0 ? 'danger' : ($days_until_review <= 7 ? 'warning' : 'info');
+    
+    echo '<div class="card">';
+    echo '<div class="card-header bg-' . $header_class . ' text-white">';
+    echo '<h4 class="mb-0">Edit Policy</h4>';
+    echo '<div class="row mt-3">';
+    echo '<div class="col-md-6">';
+    echo '<strong>Policy:</strong> ' . htmlspecialchars($policy['display_name'] ?: $policy['name']);
+    echo '</div>';
+    echo '<div class="col-md-2">';
+    echo '<strong>Version:</strong> ' . htmlspecialchars($policy['version'] ?: '1.0');
+    echo '</div>';
+    echo '<div class="col-md-4">';
+    echo '<strong>Last Reviewed:</strong> ' . date('M d, Y', strtotime($policy['modify_dt']));
+    echo '</div>';
+    echo '</div>';
+    
+    if ($days_until_review < 0) {
+        echo '<div class="alert alert-danger mt-3 mb-0">';
+        echo '<i class="fas fa-exclamation-triangle me-2"></i>';
+        echo 'This policy is <strong>overdue</strong> for review by ' . abs($days_until_review) . ' days!';
+        echo '</div>';
+    } elseif ($days_until_review <= 7) {
+        echo '<div class="alert alert-warning mt-3 mb-0">';
+        echo '<i class="fas fa-clock me-2"></i>';
+        echo 'This policy needs review in <strong>' . $days_until_review . ' days</strong>.';
+        echo '</div>';
+    }
+    
+    echo '</div>';
+    
+    echo '<div class="card-body">';
+    echo '<form method="POST" action="">';
+    echo '<input type="hidden" name="policy_id" value="' . $policy_id . '">';
+    echo '<input type="hidden" name="action" value="update">';
+    echo '<input type="hidden" name="existing_tags" value="' . htmlspecialchars(json_encode($tags)) . '">';
+    
+    echo '<div class="row g-3 mb-3">';
+    
+    echo '<div class="col-md-6">';
+    echo '<label for="display_name" class="form-label">Display Name</label>';
+    echo '<input type="text" class="form-control" id="display_name" name="display_name" value="' . htmlspecialchars($policy['display_name'] ?: '') . '" required>';
+    echo '</div>';
+    
+    echo '<div class="col-md-3">';
+    echo '<label for="category" class="form-label">Category</label>';
+    echo '<select class="form-control" id="category" name="category" required>';
+    $categories = ['Policies', 'Terms', 'Agreements', 'Notices'];
+    foreach ($categories as $cat) {
+        $selected = $policy['category'] === $cat ? ' selected' : '';
+        echo '<option value="' . $cat . '"' . $selected . '>' . $cat . '</option>';
+    }
+    echo '</select>';
+    echo '</div>';
+    
+    echo '<div class="col-md-3">';
+    echo '<label for="type" class="form-label">Type</label>';
+    echo '<input type="text" class="form-control" id="type" name="type" value="' . htmlspecialchars($policy['type'] ?: 'legal') . '" required>';
+    echo '</div>';
+    
+    echo '<div class="col-md-9">';
+    echo '<label for="description" class="form-label">Description</label>';
+    echo '<textarea class="form-control" id="description" name="description" rows="2">' . htmlspecialchars($policy['description'] ?: '') . '</textarea>';
+    echo '</div>';
+    
+    echo '<div class="col-md-3">';
+    echo '<label for="review_period" class="form-label">Review Period (days)</label>';
+    echo '<input type="number" class="form-control" id="review_period" name="review_period" value="' . $review_period . '" min="30" max="365">';
+    echo '</div>';
+    
+    echo '</div>';
+    
+    echo '<div class="mb-3">';
+    echo '<label for="content" class="form-label">Policy Content</label>';
+    echo '<textarea class="form-control" id="content" name="content" rows="15">' . htmlspecialchars($policy['content'] ?: '') . '</textarea>';
+    echo '</div>';
+    
+    echo '<div class="d-flex justify-content-between">';
+    echo '<div>';
+    echo '<a href="/staff/redirect_legalpolicyeditor.php" class="btn btn-secondary">';
+    echo '<i class="fas fa-arrow-left me-2"></i>Back to List';
+    echo '</a>';
+    echo '</div>';
+    echo '<div>';
+    echo '<button type="submit" name="action" value="review_only" class="btn btn-info me-2">';
+    echo '<i class="fas fa-check me-2"></i>Mark as Reviewed (No Changes)';
+    echo '</button>';
+    echo '<button type="submit" name="action" value="update" class="btn btn-primary">';
+    echo '<i class="fas fa-save me-2"></i>Save Changes';
+    echo '</button>';
+    echo '</div>';
+    echo '</div>';
+    
+    echo '</form>';
+    
+    // Show version history if available
+    $history_sql = "SELECT id, version, modify_dt, status 
+                   FROM bg_content 
+                   WHERE name = :name 
+                   ORDER BY id DESC 
+                   LIMIT 10";
+    $history = $database->query($history_sql, ['name' => $policy['name']])->fetchAll(PDO::FETCH_ASSOC);
+    
+    if (count($history) > 1) {
+        echo '<div class="mt-5">';
+        echo '<h5>Version History</h5>';
+        echo '<div class="table-responsive">';
+        echo '<table class="table table-sm">';
+        echo '<thead>';
+        echo '<tr>';
+        echo '<th>Version</th>';
+        echo '<th>Modified</th>';
+        echo '<th>Status</th>';
+        echo '<th>Action</th>';
+        echo '</tr>';
+        echo '</thead>';
+        echo '<tbody>';
+        
+        foreach ($history as $hist) {
+            echo '<tr>';
+            echo '<td>' . htmlspecialchars($hist['version'] ?: '1.0') . '</td>';
+            echo '<td>' . date('M d, Y H:i', strtotime($hist['modify_dt'])) . '</td>';
+            echo '<td>';
+            if ($hist['status'] === 'active') {
+                echo '<span class="badge bg-success">Active</span>';
+            } else {
+                echo '<span class="badge bg-secondary">' . htmlspecialchars($hist['status']) . '</span>';
+            }
+            echo '</td>';
+            echo '<td>';
+            if ($hist['id'] != $policy_id) {
+                echo '<a href="?id=' . $hist['id'] . '" class="btn btn-sm btn-outline-primary">View</a>';
+            } else {
+                echo '<span class="text-muted">Current</span>';
+            }
+            echo '</td>';
+            echo '</tr>';
+        }
+        
+        echo '</tbody>';
+        echo '</table>';
+        echo '</div>';
+        echo '</div>';
+    }
+    
+    echo '</div>';
+    echo '</div>';
+    
+    // Add TinyMCE initialization for edit form
+    $additionalscripts .= '
+    <script>
+    window.addEventListener("load", function() {
+        if (typeof tinymce !== "undefined") {
+            tinymce.init({
+                selector: "#content",
+                height: 500,
+                menubar: true,
+                plugins: [
+                    "lists", "link", "charmap", 
+                    "searchreplace", "code", "fullscreen",
+                    "table", "help", "wordcount"
+                ],
+                toolbar: "undo redo | formatselect | " +
+                    "bold italic underline strikethrough | alignleft aligncenter " +
+                    "alignright alignjustify | bullist numlist outdent indent | " +
+                    "removeformat | link table | code fullscreen",
+                branding: false,
+                base_url: "/public/js",
+                setup: function(editor) {
+                    editor.on("change", function() {
+                        tinymce.triggerSave();
+                    });
+                }
             });
         }
     });
-});
-</script>
-<?php endif; ?>
+    </script>
+    ';
+}
 
-<?php
-$app->outputpage();
-?>
+// Close container
+echo '</div>'; // col-12
+echo '</div>'; // row
+echo '</div>'; // container
+
+// Output footer
+include($dir['core_components'] . '/bg_footer.inc');

@@ -297,7 +297,7 @@ endif; ?>
     <?php if (empty($companies)): ?>
     <div class="no-results">
         <i class="bi bi-search"></i>
-        <h3>No companies found</h3>
+        <h3>No <?php echo $website['biznames']; ?> found</h3>
         <p>Try adjusting your search or filters</p>
     </div>
     <?php else: ?>

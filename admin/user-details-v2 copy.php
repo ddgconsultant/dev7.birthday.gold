@@ -3,13 +3,17 @@ $addClasses[] = 'Referral';
 $addClasses[] = 'allocationmanager';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-// PREP VARIABLES AND SETUP
+#-------------------------------------------------------------------------------
+# PREP VARIABLES AND SETUP
+#-------------------------------------------------------------------------------
 $p_displaylength = 30;
 $badgeColors = ['success', 'warning', 'primary', 'danger', 'info', 'secondary', 'dark'];
 $colorIndex = 0;
 $ipColorMap = [];
 
-// GET USER DATA
+#-------------------------------------------------------------------------------
+# GET USER DATA
+#-------------------------------------------------------------------------------
 if (isset($_REQUEST['u'])) {
     $workingUser = $qik->decodeId($_REQUEST['u']);
     $tmpsettings['status']='*';
@@ -21,8 +25,10 @@ if (isset($_REQUEST['u'])) {
     exit;
 }
 
-// GET ADDITIONAL USER DATA
-// Get current allocation balance for user
+#-------------------------------------------------------------------------------
+# GET ADDITIONAL USER DATA
+#-------------------------------------------------------------------------------
+// Get user's current allocation balance
 $allocation_balance = $allocationmanager->getUserBalance($workingUser);
 
 // Get recent enrollments
@@ -68,7 +74,9 @@ $social_connections = $database->getrows(
     ['user_id' => $workingUser]
 );
 
-// SETUP REFERER DATA
+#-------------------------------------------------------------------------------
+# SETUP REFERER DATA
+#-------------------------------------------------------------------------------
 $referer = $referral->getreferer($workinguserdata['user_id']);
 $refererbuttontitle = 'Add Referer';
 $refereraction = 'add';
@@ -78,7 +86,9 @@ if (!empty($referer)) {
     $refereraction = 'change';
 }
 
-// PAGE STYLES
+#-------------------------------------------------------------------------------
+# PAGE STYLES
+#-------------------------------------------------------------------------------
 $additionalstyles .= '
 <style>
 /* Modern User Details Page Styles */
@@ -172,14 +182,14 @@ $additionalstyles .= '
 /* Timeline */
 .timeline {
     position: relative;
-    padding: 2rem;
-    margin: 1rem;
+    padding: 2rem;  /* Add padding all around */
+    margin: 1rem;  /* Add margin for extra spacing */
 }
 
 .timeline::before {
     content: "";
     position: absolute;
-    left: 2rem;
+    left: 2rem;  /* Adjust for new padding */
     top: 2rem;
     bottom: 2rem;
     width: 2px;
@@ -189,13 +199,13 @@ $additionalstyles .= '
 .timeline-item {
     position: relative;
     padding-bottom: 1.5rem;
-    padding-left: 2rem;
+    padding-left: 2rem;  /* Add left padding to items */
 }
 
 .timeline-item::before {
     content: "";
     position: absolute;
-    left: 1.75rem;
+    left: 1.75rem;  /* Adjusted for new padding structure */
     top: 0;
     width: 8px;
     height: 8px;
@@ -336,15 +346,15 @@ $additionalstyles .= '
     .nav-tabs-custom {
         overflow-x: auto;
         flex-wrap: nowrap;
-        -webkit-overflow-scrolling: touch;
+        -webkit-overflow-scrolling: touch;  /* Smooth scrolling on iOS */
     }
     
     .nav-tabs-custom .nav-item {
-        margin-right: 1.5rem;
+        margin-right: 1.5rem;  /* Smaller gap on mobile */
     }
     
     .nav-tabs-custom .nav-link {
-        padding: 0.75rem 1.75rem;
+        padding: 0.75rem 1.75rem;  /* Slightly less padding on mobile for space */
         font-size: 0.9rem;
     }
     
@@ -355,16 +365,20 @@ $additionalstyles .= '
 }
 </style>';
 
-// START PAGE OUTPUT
+// Add Bootstrap Icons
+#$additionalheaders = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">';
+
+#-------------------------------------------------------------------------------
+# START PAGE OUTPUT
+#-------------------------------------------------------------------------------
 $transferpagedata = $system->startpostpage();
 
 $header_flush = true;
 $pagetitle = "User Details - " . $workinguserdata['first_name'] . " " . $workinguserdata['last_name'];
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
+?>
 
-// Build the page HTML
-echo '
 <!-- Admin Header Section -->
 <div class="content-header-admin">
     <div class="container">
@@ -383,7 +397,7 @@ echo '
     <div class="user-header-card">
         <div class="row align-items-center">
             <div class="col-auto">
-                <img src="' . htmlspecialchars($workinguserdata['avatar']) . '" 
+                <img src="<?php echo htmlspecialchars($workinguserdata['avatar']); ?>" 
                      alt="User Avatar" 
                      class="user-avatar-large"
                      data-bs-toggle="modal" 
@@ -393,27 +407,35 @@ echo '
                 <div class="row align-items-center">
                     <div class="col-lg-8">
                         <h2 class="mb-1">
-                            ' . htmlspecialchars($workinguserdata['first_name'] . ' ' . $workinguserdata['last_name']) . '
-                            ' . ($workinguserdata['account_admin'] == 'Y' ? '<span class="badge bg-danger ms-2">Admin</span>' : '') . '
-                            ' . ($account->isstaff('*', $workinguserdata['user_id']) ? '<span class="badge bg-success ms-2">Staff</span>' : '') . '
+                            <?php echo htmlspecialchars($workinguserdata['first_name'] . ' ' . $workinguserdata['last_name']); ?>
+                            <?php if ($workinguserdata['account_admin'] == 'Y'): ?>
+                                <span class="badge bg-danger ms-2">Admin</span>
+                            <?php endif; ?>
+                            <?php if ($account->isstaff('*', $workinguserdata['user_id'])): ?>
+                                <span class="badge bg-success ms-2">Staff</span>
+                            <?php endif; ?>
                         </h2>
                         <p class="text-muted mb-2">
-                            <i class="bi bi-envelope me-2"></i>' . htmlspecialchars($workinguserdata['email']) . '
+                            <i class="bi bi-envelope me-2"></i><?php echo htmlspecialchars($workinguserdata['email']); ?>
                             <span class="mx-2">·</span>
-                            <i class="bi bi-person me-2"></i>@' . htmlspecialchars($workinguserdata['username']) . '
+                            <i class="bi bi-person me-2"></i>@<?php echo htmlspecialchars($workinguserdata['username']); ?>
                         </p>
                         <div class="d-flex gap-3 flex-wrap">
-                            <span class="status-indicator ' . $workinguserdata['status'] . '">
+                            <span class="status-indicator <?php echo $workinguserdata['status']; ?>">
                                 <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i>
-                                ' . ucfirst($workinguserdata['status']) . '
+                                <?php echo ucfirst($workinguserdata['status']); ?>
                             </span>
                             <small class="text-muted">
-                                <i class="bi bi-calendar-plus me-1"></i>
-                                Joined ' . date('M j, Y', strtotime($workinguserdata['create_dt'])) . '
+                                <?php
+                                echo '<i class="bi bi-calendar-plus me-1"></i>';
+                                echo 'Joined ' . date('M j, Y', strtotime($workinguserdata['create_dt']));
+                                ?>
                             </small>
                             <small class="text-muted">
-                                <i class="bi bi-hash me-1"></i>
-                                ID: ' . $workinguserdata['user_id'] . '
+                                <?php
+                                echo '<i class="bi bi-hash me-1"></i>';
+                                echo 'ID: ' . $workinguserdata['user_id'];
+                                ?>
                             </small>
                         </div>
                     </div>
@@ -426,25 +448,19 @@ echo '
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#accounttypeplanModal">
                                     <i class="bi bi-person-gear me-2"></i>Set Account/Plan</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#refererModal">
-                                    <i class="bi bi-people-fill me-2"></i>' . $refererbuttontitle . '</a></li>';
-
-if ($account->isadmin()) {
-    echo '
+                                    <i class="bi bi-people-fill me-2"></i><?php echo $refererbuttontitle; ?></a></li>
+                                <?php if ($account->isadmin()): ?>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#employeeModal">
                                     <i class="bi bi-person-badge me-2"></i>Set Staff</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#adminModal">
-                                    <i class="bi bi-shield-lock me-2"></i>Set Admin Role</a></li>';
-    
-    if ($workinguserdata['status'] != 'pending' && $workinguserdata['status'] != 'deleted') {
-        echo '
+                                    <i class="bi bi-shield-lock me-2"></i>Set Admin Role</a></li>
+                                <?php if ($workinguserdata['status'] != 'pending' && $workinguserdata['status'] != 'deleted'): ?>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a href="/myaccount/myaccount_actions/switch2user?id=' . $qik->encodeId($workinguserdata['user_id']) . '&aid=' . $qik->encodeId($current_user_data['user_id']) . '&_token=' . $display->inputcsrf_token('tokenonly') . '" class="dropdown-item">
-                                    <i class="bi bi-person-arrows me-2"></i>Impersonate User</a></li>';
-    }
-}
-
-echo '
+                                <li><a href="/myaccount/myaccount_actions/switch2user?id=<?php echo $qik->encodeId($workinguserdata['user_id']); ?>&aid=<?php echo $qik->encodeId($current_user_data['user_id']); ?>&_token=<?php echo $display->inputcsrf_token('tokenonly'); ?>" class="dropdown-item">
+                                    <i class="bi bi-person-arrows me-2"></i>Impersonate User</a></li>
+                                <?php endif; ?>
+                                <?php endif; ?>
                             </ul>
                         </div>
                     </div>
@@ -458,25 +474,25 @@ echo '
         <div class="row g-4">
             <div class="col-6 col-md-3">
                 <div class="stat-item">
-                    <div class="stat-value text-primary">' . $businessoutput['counts']['success'] . '</div>
+                    <div class="stat-value text-primary"><?php echo $businessoutput['counts']['success']; ?></div>
                     <div class="stat-label">Enrollments</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="stat-item">
-                    <div class="stat-value text-success">' . $allocation_balance['available_allocations'] . '</div>
+                    <div class="stat-value text-success"><?php echo $allocation_balance['available_allocations']; ?></div>
                     <div class="stat-label">Available Allocations</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="stat-item">
-                    <div class="stat-value text-info">' . $profilecompletion['required_percentage'] . '%</div>
+                    <div class="stat-value text-info"><?php echo $profilecompletion['required_percentage']; ?>%</div>
                     <div class="stat-label">Profile Complete</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="stat-item">
-                    <div class="stat-value text-warning">' . count($recent_logins) . '</div>
+                    <div class="stat-value text-warning"><?php echo count($recent_logins); ?></div>
                     <div class="stat-label">Recent Logins</div>
                 </div>
             </div>
@@ -524,32 +540,40 @@ echo '
                                 <tr>
                                     <td class="text-muted">Birthday</td>
                                     <td class="text-end">
-                                        ' . htmlspecialchars($workinguserdata['birthdate']) . '
-                                        <small class="text-muted d-block">' . $alive['years'] . ' years old</small>
+                                        <?php echo htmlspecialchars($workinguserdata['birthdate']); ?>
+                                        <small class="text-muted d-block"><?php echo $alive['years']; ?> years old</small>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Zodiac Sign</td>
                                     <td class="text-end">
-                                        ' . htmlspecialchars($user_astrosigndetails['name']) . '
+                                        <?php
+                                        echo htmlspecialchars($user_astrosigndetails['name']);
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Location</td>
                                     <td class="text-end">
-                                        ' . htmlspecialchars($location) . '
+                                        <?php
+                                        echo htmlspecialchars($location);
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Phone</td>
                                     <td class="text-end">
-                                        ' . htmlspecialchars($workinguserdata['phone_number'] ?? 'Not set') . '
+                                        <?php
+                                        echo htmlspecialchars($workinguserdata['phone_number'] ?? 'Not set');
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Gender</td>
                                     <td class="text-end">
-                                        ' . htmlspecialchars($workinguserdata['gender'] ?? 'Not specified') . '
+                                        <?php
+                                        echo htmlspecialchars($workinguserdata['gender'] ?? 'Not specified');
+                                        ?>
                                     </td>
                                 </tr>
                             </table>
@@ -571,39 +595,49 @@ echo '
                                 <tr>
                                     <td class="text-muted">Current Plan</td>
                                     <td class="text-end">
-                                        <strong>' . htmlspecialchars($user_planddetails['displayname'] ?? 'Free') . '</strong>
+                                        <?php
+                                        $plan_displayname = htmlspecialchars($user_planddetails['displayname'] ?? 'Free');
+                                        echo '<strong>' . $plan_displayname . '</strong>';
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Account Type</td>
                                     <td class="text-end">
-                                        ' . ucfirst($workinguserdata['account_type']) . '
+                                        <?php
+                                        echo ucfirst($workinguserdata['account_type']);
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Allocations</td>
                                     <td class="text-end">
-                                        <span class="badge bg-success">' . $allocation_balance['available_allocations'] . ' Available</span>
-                                        ' . ($allocation_balance['pending_allocations'] > 0 ? '<span class="badge bg-warning">' . $allocation_balance['pending_allocations'] . ' Pending</span>' : '') . '
+                                        <?php
+                                        echo '<span class="badge bg-success">' . $allocation_balance['available_allocations'] . ' Available</span>';
+                                        if ($allocation_balance['pending_allocations'] > 0) {
+                                            echo ' <span class="badge bg-warning">' . $allocation_balance['pending_allocations'] . ' Pending</span>';
+                                        }
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Feature Email</td>
                                     <td class="text-end">
-                                        ' . htmlspecialchars($workinguserdata['feature_email'] ?? 'Not set') . '
+                                        <?php
+                                        echo htmlspecialchars($workinguserdata['feature_email'] ?? 'Not set');
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Referrer</td>
-                                    <td class="text-end">';
-
-if (!empty($referer)) {
-    echo '<a href="/admin/user-details?u=' . $qik->encodeId($referer['referrer_id']) . '">' . htmlspecialchars($referer['referrer_name']) . '</a>';
-} else {
-    echo '<span class="text-muted">None</span>';
-}
-
-echo '
+                                    <td class="text-end">
+                                        <?php if (!empty($referer)): ?>
+                                            <a href="/admin/user-details?u=<?php echo $qik->encodeId($referer['referrer_id']); ?>">
+                                                <?php echo htmlspecialchars($referer['referrer_name']); ?>
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-muted">None</span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             </table>
@@ -614,64 +648,62 @@ echo '
                 <!-- Recent Activity Timeline -->
                 <div class="col-12 mt-4">
                     <div class="info-card">
-                        <div class="card-body p-4">
+                        <div class="card-body p-4">  <!-- Added p-4 for padding -->
                             <div class="d-flex align-items-center mb-4">
                                 <div class="card-icon bg-info bg-opacity-10 text-info">
                                     <i class="bi bi-clock-history"></i>
                                 </div>
                                 <h5 class="mb-0 ms-3">Recent Activity</h5>
                             </div>
-                            <div class="timeline">';
-
-// Combine different activities
-$activities = [];
-
-// Add recent enrollments
-foreach ($recent_enrollments as $enrollment) {
-    $activities[] = [
-        'type' => 'enrollment',
-        'date' => $enrollment['create_dt'],
-        'title' => 'Enrolled in ' . $enrollment['company_name'],
-        'status' => $enrollment['status'],
-        'icon' => 'bi-gift'
-    ];
-}
-
-// Add recent logins
-foreach ($recent_logins as $login) {
-    $activities[] = [
-        'type' => 'login',
-        'date' => $login['create_dt'],
-        'title' => 'Logged in from ' . $login['ip'],
-        'status' => 'success',
-        'icon' => 'bi-box-arrow-in-right'
-    ];
-}
-
-// Sort by date
-usort($activities, function($a, $b) {
-    return strtotime($b['date']) - strtotime($a['date']);
-});
-
-// Display top 10
-$activities = array_slice($activities, 0, 10);
-
-foreach ($activities as $activity) {
-    echo '
-                                <div class="timeline-item ' . $activity['status'] . '">
+                            <div class="timeline">
+                                <?php
+                                // Combine different activities
+                                $activities = [];
+                                
+                                // Add recent enrollments
+                                foreach ($recent_enrollments as $enrollment) {
+                                    $activities[] = [
+                                        'type' => 'enrollment',
+                                        'date' => $enrollment['create_dt'],
+                                        'title' => 'Enrolled in ' . $enrollment['company_name'],
+                                        'status' => $enrollment['status'],
+                                        'icon' => 'bi-gift'
+                                    ];
+                                }
+                                
+                                // Add recent logins
+                                foreach ($recent_logins as $login) {
+                                    $activities[] = [
+                                        'type' => 'login',
+                                        'date' => $login['create_dt'],
+                                        'title' => 'Logged in from ' . $login['ip'],
+                                        'status' => 'success',
+                                        'icon' => 'bi-box-arrow-in-right'
+                                    ];
+                                }
+                                
+                                // Sort by date
+                                usort($activities, function($a, $b) {
+                                    return strtotime($b['date']) - strtotime($a['date']);
+                                });
+                                
+                                // Display top 10
+                                $activities = array_slice($activities, 0, 10);
+                                
+                                foreach ($activities as $activity):
+                                ?>
+                                <div class="timeline-item <?php echo $activity['status']; ?>">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
-                                            <i class="' . $activity['icon'] . ' me-2"></i>
-                                            <strong>' . htmlspecialchars($activity['title']) . '</strong>
+                                            <i class="<?php echo $activity['icon']; ?> me-2"></i>
+                                            <strong><?php echo htmlspecialchars($activity['title']); ?></strong>
                                         </div>
                                         <small class="text-muted">
-                                            ' . date('M j, g:i A', strtotime($activity['date'])) . '
+                                            <?php echo date('M j, g:i A', strtotime($activity['date'])); ?>
                                         </small>
                                     </div>
-                                </div>';
-}
-
-echo '
+                                </div>
+                                <?php endforeach; ?>
                             </div>
                         </div>
                     </div>
@@ -689,73 +721,92 @@ echo '
                             <table class="table">
                                 <tr>
                                     <td width="200"><strong>User ID</strong></td>
-                                    <td>' . $workinguserdata['user_id'] . '</td>
+                                    <td>
+                                        <?php
+                                        echo $workinguserdata['user_id'];
+                                        ?>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Username</strong></td>
-                                    <td>' . htmlspecialchars($workinguserdata['username']) . '</td>
+                                    <td>
+                                        <?php
+                                        echo htmlspecialchars($workinguserdata['username']);
+                                        ?>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Email</strong></td>
                                     <td>
-                                        <a href="mailto:' . htmlspecialchars($workinguserdata['email']) . '">
-                                            ' . htmlspecialchars($workinguserdata['email']) . '
-                                        </a>';
-
-if (isset($workinguserdata['email_verified']) && $workinguserdata['email_verified'] == 'Y') {
-    echo ' <span class="badge bg-success ms-2">Verified</span>';
-} elseif (isset($workinguserdata['email_verified'])) {
-    echo ' <span class="badge bg-warning ms-2">Unverified</span>';
-}
-
-echo '
+                                        <a href="mailto:<?php echo htmlspecialchars($workinguserdata['email']); ?>">
+                                            <?php echo htmlspecialchars($workinguserdata['email']); ?>
+                                        </a>
+                                        <?php if (isset($workinguserdata['email_verified']) && $workinguserdata['email_verified'] == 'Y'): ?>
+                                            <span class="badge bg-success ms-2">Verified</span>
+                                        <?php elseif (isset($workinguserdata['email_verified'])): ?>
+                                            <span class="badge bg-warning ms-2">Unverified</span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Account Status</strong></td>
                                     <td>
-                                        <span class="status-indicator ' . $workinguserdata['status'] . '">
+                                        <span class="status-indicator <?php echo $workinguserdata['status']; ?>">
                                             <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i>
-                                            ' . ucfirst($workinguserdata['status']) . '
-                                        </span>';
-
-if ($workinguserdata['status'] == 'pending') {
-    $validatedata = [
-        'rawdata' => $workinguserdata['email'],
-        'user_id' => $workinguserdata['user_id'],
-        'sendcount' => 0,
-        'action' => 'getlatest'
-    ];
-    $validationcodes = $app->getvalidationcodes($validatedata);
-    if (!empty($validationcodes['mini'])) {
-        echo '
-                                        <span class="ms-2 small text-muted">
-                                            Code: <code class="user-select-all">' . htmlspecialchars($validationcodes['mini']) . '</code>
-                                        </span>';
-    }
-}
-
-echo '
+                                            <?php echo ucfirst($workinguserdata['status']); ?>
+                                        </span>
+                                        <?php if ($workinguserdata['status'] == 'pending'): ?>
+                                            <?php
+                                            $validatedata = [
+                                                'rawdata' => $workinguserdata['email'],
+                                                'user_id' => $workinguserdata['user_id'],
+                                                'sendcount' => 0,
+                                                'action' => 'getlatest'
+                                            ];
+                                            $validationcodes = $app->getvalidationcodes($validatedata);
+                                            if (!empty($validationcodes['mini'])):
+                                            ?>
+                                            <span class="ms-2 small text-muted">
+                                                Code: <code class="user-select-all"><?php echo htmlspecialchars($validationcodes['mini']); ?></code>
+                                            </span>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Account Type</strong></td>
-                                    <td>' . ucfirst($workinguserdata['account_type']) . '</td>
+                                    <td>
+                                        <?php
+                                        echo ucfirst($workinguserdata['account_type']);
+                                        ?>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Plan</strong></td>
                                     <td>
-                                        ' . htmlspecialchars($user_planddetails['displayname'] ?? 'Free') . '
-                                        <small class="text-muted">(ID: ' . $workinguserdata['account_product_id'] . ')</small>
+                                        <?php
+                                        $plan_name = htmlspecialchars($user_planddetails['displayname'] ?? 'Free');
+                                        $product_id = $workinguserdata['account_product_id'];
+                                        echo $plan_name;
+                                        echo '<small class="text-muted">(ID: ' . $product_id . ')</small>';
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Created</strong></td>
-                                    <td>' . date('F j, Y g:i A', strtotime($workinguserdata['create_dt'])) . '</td>
+                                    <td>
+                                        <?php
+                                        echo date('F j, Y g:i A', strtotime($workinguserdata['create_dt']));
+                                        ?>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Last Modified</strong></td>
-                                    <td>' . date('F j, Y g:i A', strtotime($workinguserdata['modify_dt'])) . '</td>
+                                    <td>
+                                        <?php
+                                        echo date('F j, Y g:i A', strtotime($workinguserdata['modify_dt']));
+                                        ?>
+                                    </td>
                                 </tr>
                             </table>
                         </div>
@@ -765,53 +816,39 @@ echo '
                     <div class="info-card">
                         <div class="card-body">
                             <h5 class="mb-3">Roles & Permissions</h5>
-                            <div class="mb-3">';
-
-if ($workinguserdata['account_admin'] == 'Y') {
-    echo '
-                                <span class="badge bg-danger d-inline-block mb-2">
-                                    <i class="bi bi-shield-lock me-1"></i>Administrator
-                                </span>';
-}
-
-if ($account->isstaff('*', $workinguserdata['user_id'])) {
-    echo '
-                                <span class="badge bg-success d-inline-block mb-2">
-                                    <i class="bi bi-person-badge me-1"></i>Staff Member
-                                </span>';
-}
-
-if ($account->isbrandowner('*', $workinguserdata['user_id'])) {
-    echo '
-                                <span class="badge bg-primary d-inline-block mb-2">
-                                    <i class="bi bi-building me-1"></i>Brand Owner
-                                </span>';
-}
-
-if ($account->iscconsultant($workinguserdata['user_id'])) {
-    echo '
-                                <span class="badge bg-info d-inline-block mb-2">
-                                    <i class="bi bi-briefcase me-1"></i>Consultant
-                                </span>';
-}
-
-echo '
+                            <div class="mb-3">
+                                <?php if ($workinguserdata['account_admin'] == 'Y'): ?>
+                                    <span class="badge bg-danger d-inline-block mb-2">
+                                        <i class="bi bi-shield-lock me-1"></i>Administrator
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($account->isstaff('*', $workinguserdata['user_id'])): ?>
+                                    <span class="badge bg-success d-inline-block mb-2">
+                                        <i class="bi bi-person-badge me-1"></i>Staff Member
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($account->isbrandowner('*', $workinguserdata['user_id'])): ?>
+                                    <span class="badge bg-primary d-inline-block mb-2">
+                                        <i class="bi bi-building me-1"></i>Brand Owner
+                                    </span>
+                                <?php endif; ?>
+                                <?php if ($account->iscconsultant($workinguserdata['user_id'])): ?>
+                                    <span class="badge bg-info d-inline-block mb-2">
+                                        <i class="bi bi-briefcase me-1"></i>Consultant
+                                    </span>
+                                <?php endif; ?>
                             </div>
                             
                             <h6 class="mt-4 mb-3">Quick Actions</h6>
                             <div class="d-grid gap-2">
                                 <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#accounttypeplanModal">
                                     <i class="bi bi-gear me-2"></i>Change Plan
-                                </button>';
-
-if ($account->isadmin()) {
-    echo '
+                                </button>
+                                <?php if ($account->isadmin()): ?>
                                 <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#adminModal">
                                     <i class="bi bi-shield me-2"></i>Admin Settings
-                                </button>';
-}
-
-echo '
+                                </button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -826,10 +863,10 @@ echo '
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="mb-0">Enrollment History</h5>
                         <div>
-                            <span class="badge bg-primary">' . $businessoutput['counts']['remaining'] . ' Available</span>
-                            <span class="badge bg-warning">' . $businessoutput['counts']['pending'] . ' Pending</span>
-                            <span class="badge bg-success">' . $businessoutput['counts']['success'] . ' Successful</span>
-                            <span class="badge bg-danger">' . $businessoutput['counts']['failed'] . ' Failed</span>
+                            <span class="badge bg-primary"><?php echo $businessoutput['counts']['remaining']; ?> Available</span>
+                            <span class="badge bg-warning"><?php echo $businessoutput['counts']['pending']; ?> Pending</span>
+                            <span class="badge bg-success"><?php echo $businessoutput['counts']['success']; ?> Successful</span>
+                            <span class="badge bg-danger"><?php echo $businessoutput['counts']['failed']; ?> Failed</span>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -842,44 +879,43 @@ echo '
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>';
-
-$enrollment_sql = "SELECT uc.*, c.company_name 
-                  FROM bg_user_companies uc
-                  JOIN bg_companies c ON uc.company_id = c.company_id
-                  WHERE uc.user_id = :user_id
-                  ORDER BY uc.create_dt DESC
-                  LIMIT 50";
-$enrollments = $database->getrows($enrollment_sql, ['user_id' => $workingUser]);
-
-foreach ($enrollments as $enrollment) {
-    $status_class = 'secondary';
-    if ($enrollment['status'] == 'success') $status_class = 'success';
-    elseif ($enrollment['status'] == 'pending') $status_class = 'warning';
-    elseif ($enrollment['status'] == 'failed') $status_class = 'danger';
-    
-    echo '
+                            <tbody>
+                                <?php
+                                $enrollment_sql = "SELECT uc.*, c.company_name 
+                                                  FROM bg_user_companies uc
+                                                  JOIN bg_companies c ON uc.company_id = c.company_id
+                                                  WHERE uc.user_id = :user_id
+                                                  ORDER BY uc.create_dt DESC
+                                                  LIMIT 50";
+                                $enrollments = $database->getrows($enrollment_sql, ['user_id' => $workingUser]);
+                                
+                                foreach ($enrollments as $enrollment):
+                                ?>
                                 <tr>
                                     <td>
-                                        <strong>' . htmlspecialchars($enrollment['company_name']) . '</strong>
-                                        <small class="text-muted d-block">ID: ' . $enrollment['company_id'] . '</small>
+                                        <strong><?php echo htmlspecialchars($enrollment['company_name']); ?></strong>
+                                        <small class="text-muted d-block">ID: <?php echo $enrollment['company_id']; ?></small>
                                     </td>
                                     <td>
-                                        <span class="badge bg-' . $status_class . '">
-                                            ' . ucfirst($enrollment['status']) . '
+                                        <?php
+                                        $status_class = 'secondary';
+                                        if ($enrollment['status'] == 'success') $status_class = 'success';
+                                        elseif ($enrollment['status'] == 'pending') $status_class = 'warning';
+                                        elseif ($enrollment['status'] == 'failed') $status_class = 'danger';
+                                        ?>
+                                        <span class="badge bg-<?php echo $status_class; ?>">
+                                            <?php echo ucfirst($enrollment['status']); ?>
                                         </span>
                                     </td>
-                                    <td>' . date('M j, Y', strtotime($enrollment['create_dt'])) . '</td>
+                                    <td><?php echo date('M j, Y', strtotime($enrollment['create_dt'])); ?></td>
                                     <td>
-                                        <a href="/admin/company-details?id=' . $enrollment['company_id'] . '" 
+                                        <a href="/admin/company-details?id=<?php echo $enrollment['company_id']; ?>" 
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                     </td>
-                                </tr>';
-}
-
-echo '
+                                </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -903,43 +939,40 @@ echo '
                                     <th>Details</th>
                                 </tr>
                             </thead>
-                            <tbody>';
-
-$sql = "SELECT * FROM bg_sessiontracking 
-        WHERE user_id = ? " . 
-        ($mode != 'dev' ? "AND site = 'www'" : "AND type = 'user'") . 
-        " ORDER BY create_dt DESC LIMIT 100";
-
-$stmt = $database->prepare($sql);
-$stmt->execute([$workinguserdata['user_id']]);
-$logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-foreach ($logs as $log) {
-    if (!isset($ipColorMap[$log['ip']])) {
-        $ipColorMap[$log['ip']] = $badgeColors[$colorIndex % count($badgeColors)];
-        $colorIndex++;
-    }
-    
-    echo '
+                            <tbody>
+                                <?php
+                                $sql = "SELECT * FROM bg_sessiontracking 
+                                        WHERE user_id = ? " . 
+                                        ($mode != 'dev' ? "AND site = 'www'" : "AND type = 'user'") . 
+                                        " ORDER BY create_dt DESC LIMIT 100";
+                                
+                                $stmt = $database->prepare($sql);
+                                $stmt->execute([$workinguserdata['user_id']]);
+                                $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                
+                                foreach ($logs as $log):
+                                    if (!isset($ipColorMap[$log['ip']])) {
+                                        $ipColorMap[$log['ip']] = $badgeColors[$colorIndex % count($badgeColors)];
+                                        $colorIndex++;
+                                    }
+                                ?>
                                 <tr>
                                     <td>
-                                        <span class="badge bg-' . $ipColorMap[$log['ip']] . '">
-                                            ' . htmlspecialchars($log['ip']) . '
+                                        <span class="badge bg-<?php echo $ipColorMap[$log['ip']]; ?>">
+                                            <?php echo htmlspecialchars($log['ip']); ?>
                                         </span>
                                     </td>
-                                    <td>' . htmlspecialchars($log['name']) . '</td>
-                                    <td><code>' . htmlspecialchars($log['page']) . '</code></td>
-                                    <td>' . date('M j, g:i A', strtotime($log['create_dt'])) . '</td>
+                                    <td><?php echo htmlspecialchars($log['name']); ?></td>
+                                    <td><code><?php echo htmlspecialchars($log['page']); ?></code></td>
+                                    <td><?php echo date('M j, g:i A', strtotime($log['create_dt'])); ?></td>
                                     <td>
-                                        <a href="/admin/sessiondetails?id=' . $log['id'] . '" 
+                                        <a href="/admin/sessiondetails?id=<?php echo $log['id']; ?>" 
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-search"></i>
                                         </a>
                                     </td>
-                                </tr>';
-}
-
-echo '
+                                </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -957,60 +990,59 @@ echo '
                             <table class="table">
                                 <tr>
                                     <td>Two-Factor Authentication</td>
-                                    <td class="text-end">';
-
-$has_2fa = $database->query("SELECT COUNT(*) FROM bg_user_attributes WHERE user_id = {$workingUser} AND type = 'security' AND name = '2fa' AND status = 'active'")->fetchColumn() > 0;
-$tfa_class = $has_2fa ? 'enabled' : 'disabled';
-$tfa_icon = $has_2fa ? 'check' : 'x';
-$tfa_text = $has_2fa ? 'Enabled' : 'Disabled';
-
-echo '
-                                        <span class="security-badge ' . $tfa_class . '">
-                                            <i class="bi bi-' . $tfa_icon . '-circle"></i> 
-                                            ' . $tfa_text . '
-                                        </span>
+                                    <td class="text-end">
+                                        <?php
+                                        $has_2fa = $database->query("SELECT COUNT(*) FROM bg_user_attributes WHERE user_id = {$workingUser} AND type = 'security' AND name = '2fa' AND status = 'active'")->fetchColumn() > 0;
+                                        $tfa_class = $has_2fa ? 'enabled' : 'disabled';
+                                        $tfa_icon = $has_2fa ? 'check' : 'x';
+                                        $tfa_text = $has_2fa ? 'Enabled' : 'Disabled';
+                                        
+                                        echo '<span class="security-badge ' . $tfa_class . '">';
+                                        echo '<i class="bi bi-' . $tfa_icon . '-circle"></i> ';
+                                        echo $tfa_text;
+                                        echo '</span>';
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Security Questions</td>
-                                    <td class="text-end">';
-
-$has_sq = $database->query("SELECT COUNT(*) FROM bg_user_attributes WHERE user_id = {$workingUser} AND type = 'security' AND name = 'security_questions' AND status = 'active'")->fetchColumn() > 0;
-$sq_class = $has_sq ? 'enabled' : 'disabled';
-$sq_icon = $has_sq ? 'check' : 'x';
-$sq_text = $has_sq ? 'Set' : 'Not Set';
-
-echo '
-                                        <span class="security-badge ' . $sq_class . '">
-                                            <i class="bi bi-' . $sq_icon . '-circle"></i> 
-                                            ' . $sq_text . '
-                                        </span>
+                                    <td class="text-end">
+                                        <?php
+                                        $has_sq = $database->query("SELECT COUNT(*) FROM bg_user_attributes WHERE user_id = {$workingUser} AND type = 'security' AND name = 'security_questions' AND status = 'active'")->fetchColumn() > 0;
+                                        $sq_class = $has_sq ? 'enabled' : 'disabled';
+                                        $sq_icon = $has_sq ? 'check' : 'x';
+                                        $sq_text = $has_sq ? 'Set' : 'Not Set';
+                                        
+                                        echo '<span class="security-badge ' . $sq_class . '">';
+                                        echo '<i class="bi bi-' . $sq_icon . '-circle"></i> ';
+                                        echo $sq_text;
+                                        echo '</span>';
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Email Verified</td>
-                                    <td class="text-end">';
-
-$email_verified = $workinguserdata['email_verified'] ?? 'N';
-$verified_class = ($email_verified == 'Y') ? 'enabled' : 'disabled';
-$verified_icon = ($email_verified == 'Y') ? 'check' : 'x';
-$verified_text = ($email_verified == 'Y') ? 'Verified' : 'Unverified';
-
-echo '
-                                        <span class="security-badge ' . $verified_class . '">
-                                            <i class="bi bi-' . $verified_icon . '-circle"></i> 
-                                            ' . $verified_text . '
-                                        </span>
+                                    <td class="text-end">
+                                        <?php 
+                                        $email_verified = $workinguserdata['email_verified'] ?? 'N';
+                                        $verified_class = ($email_verified == 'Y') ? 'enabled' : 'disabled';
+                                        $verified_icon = ($email_verified == 'Y') ? 'check' : 'x';
+                                        $verified_text = ($email_verified == 'Y') ? 'Verified' : 'Unverified';
+                                        
+                                        echo '<span class="security-badge ' . $verified_class . '">';
+                                        echo '<i class="bi bi-' . $verified_icon . '-circle"></i> ';
+                                        echo $verified_text;
+                                        echo '</span>';
+                                        ?>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Password Last Changed</td>
-                                    <td class="text-end">';
-
-$pwd_change = $database->getrow("SELECT modify_dt FROM bg_user_attributes WHERE user_id = :user_id AND type = 'security' AND name = 'password_changed' ORDER BY modify_dt DESC LIMIT 1", ['user_id' => $workingUser]);
-echo $pwd_change ? date('M j, Y', strtotime($pwd_change['modify_dt'])) : 'Never';
-
-echo '
+                                    <td class="text-end">
+                                        <?php
+                                        $pwd_change = $database->getrow("SELECT modify_dt FROM bg_user_attributes WHERE user_id = :user_id AND type = 'security' AND name = 'password_changed' ORDER BY modify_dt DESC LIMIT 1", ['user_id' => $workingUser]);
+                                        echo $pwd_change ? date('M j, Y', strtotime($pwd_change['modify_dt'])) : 'Never';
+                                        ?>
                                     </td>
                                 </tr>
                             </table>
@@ -1030,18 +1062,14 @@ echo '
                                             <th>Device</th>
                                         </tr>
                                     </thead>
-                                    <tbody>';
-
-foreach ($recent_logins as $login) {
-    echo '
+                                    <tbody>
+                                        <?php foreach ($recent_logins as $login): ?>
                                         <tr>
-                                            <td>' . date('M j, g:i A', strtotime($login['create_dt'])) . '</td>
-                                            <td>' . htmlspecialchars($login['ip']) . '</td>
-                                            <td>' . htmlspecialchars(substr($login['page'] ?? 'Unknown', 0, 50)) . '</td>
-                                        </tr>';
-}
-
-echo '
+                                            <td><?php echo date('M j, g:i A', strtotime($login['create_dt'])); ?></td>
+                                            <td><?php echo htmlspecialchars($login['ip']); ?></td>
+                                            <td><?php echo htmlspecialchars(substr($login['page'] ?? 'Unknown', 0, 50)); ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
                                     </tbody>
                                 </table>
                             </div>
@@ -1056,19 +1084,15 @@ echo '
             <div class="info-card">
                 <div class="card-body">
                     <h5 class="mb-4">User Attributes</h5>
-                    <div class="row mb-4">';
-
-foreach ($user_attributes as $attr) {
-    echo '
+                    <div class="row mb-4">
+                        <?php foreach ($user_attributes as $attr): ?>
                         <div class="col-md-3 mb-3">
                             <div class="text-center">
-                                <h3 class="mb-1">' . $attr['count'] . '</h3>
-                                <small class="text-muted">' . ucfirst(str_replace('_', ' ', $attr['type'])) . '</small>
+                                <h3 class="mb-1"><?php echo $attr['count']; ?></h3>
+                                <small class="text-muted"><?php echo ucfirst(str_replace('_', ' ', $attr['type'])); ?></small>
                             </div>
-                        </div>';
-}
-
-echo '
+                        </div>
+                        <?php endforeach; ?>
                     </div>
                     
                     <h6 class="mb-3">Recent Attributes</h6>
@@ -1082,27 +1106,24 @@ echo '
                                     <th>Created</th>
                                 </tr>
                             </thead>
-                            <tbody>';
-
-$recent_attrs = $database->getrows(
-    "SELECT * FROM bg_user_attributes 
-     WHERE user_id = :user_id 
-     ORDER BY create_dt DESC 
-     LIMIT 20",
-    ['user_id' => $workingUser]
-);
-
-foreach ($recent_attrs as $attr) {
-    echo '
+                            <tbody>
+                                <?php
+                                $recent_attrs = $database->getrows(
+                                    "SELECT * FROM bg_user_attributes 
+                                     WHERE user_id = :user_id 
+                                     ORDER BY create_dt DESC 
+                                     LIMIT 20",
+                                    ['user_id' => $workingUser]
+                                );
+                                foreach ($recent_attrs as $attr):
+                                ?>
                                 <tr>
-                                    <td><span class="badge bg-secondary">' . htmlspecialchars($attr['type']) . '</span></td>
-                                    <td>' . htmlspecialchars($attr['name']) . '</td>
-                                    <td>' . htmlspecialchars(substr($attr['value'] ?? $attr['description'], 0, 50)) . '...</td>
-                                    <td>' . date('M j', strtotime($attr['create_dt'])) . '</td>
-                                </tr>';
-}
-
-echo '
+                                    <td><span class="badge bg-secondary"><?php echo htmlspecialchars($attr['type']); ?></span></td>
+                                    <td><?php echo htmlspecialchars($attr['name']); ?></td>
+                                    <td><?php echo htmlspecialchars(substr($attr['value'] ?? $attr['description'], 0, 50)); ?>...</td>
+                                    <td><?php echo date('M j', strtotime($attr['create_dt'])); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -1113,11 +1134,8 @@ echo '
 </div>
 
 <!-- Include Modals -->
-';
+<?php include('user_components/user-details_modals.inc'); ?>
 
-include('user_components/user-details_modals.inc');
-
-echo '
 <!-- Avatar Modal -->
 <div class="modal fade" id="avatarModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -1127,7 +1145,7 @@ echo '
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center">
-                <img src="' . htmlspecialchars($workinguserdata['avatar']) . '" 
+                <img src="<?php echo htmlspecialchars($workinguserdata['avatar']); ?>" 
                      alt="User Avatar" 
                      class="img-fluid rounded">
             </div>
@@ -1137,39 +1155,40 @@ echo '
 
 <script>
 // Tab switching functionality - similar to loginhistory.php
-document.addEventListener("DOMContentLoaded", function() {
-    const tabItems = document.querySelectorAll(".nav-tab-item");
-    const tabPanes = document.querySelectorAll(".tab-pane");
+document.addEventListener('DOMContentLoaded', function() {
+    const tabItems = document.querySelectorAll('.nav-tab-item');
+    const tabPanes = document.querySelectorAll('.tab-pane');
     
     tabItems.forEach(function(tab) {
-        tab.addEventListener("click", function(e) {
+        tab.addEventListener('click', function(e) {
             e.preventDefault();
             
             // Remove active class from all tabs
             tabItems.forEach(function(item) {
-                item.classList.remove("active");
+                item.classList.remove('active');
             });
             
             // Remove show and active classes from all panes
             tabPanes.forEach(function(pane) {
-                pane.classList.remove("show", "active");
+                pane.classList.remove('show', 'active');
             });
             
             // Add active class to clicked tab
-            this.classList.add("active");
+            this.classList.add('active');
             
             // Show corresponding pane
-            const targetId = this.getAttribute("href").substring(1);
+            const targetId = this.getAttribute('href').substring(1);
             const targetPane = document.getElementById(targetId);
             if (targetPane) {
-                targetPane.classList.add("show", "active");
+                targetPane.classList.add('show', 'active');
             }
         });
     });
 });
 </script>
-';
 
+<?php
 $display_footertype = 'min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
+?>

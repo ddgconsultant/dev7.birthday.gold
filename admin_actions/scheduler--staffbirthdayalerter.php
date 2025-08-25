@@ -1,4 +1,7 @@
 <?php
+// Include required classes
+$addClasses[] = 'app';
+$addClasses[] = 'qik';
 // Include site controller
 include(dirname(__FILE__) . '/../core/site-controller.php');
 
@@ -78,10 +81,11 @@ if ($json_output) {
 // Query for active staff members with birthdays
 // Join bg_users with bg_user_attributes to get staff members only
 // Handle invalid dates properly - use STR_TO_DATE to avoid strict mode issues
+// Use first_name and last_name fields for staff names
 $sql = "SELECT 
     u.user_id,
-    u.profile_first_name,
-    u.profile_last_name,
+    u.first_name,
+    u.last_name,
     u.profile_username,
     u.birthdate,
     u.email,
@@ -136,7 +140,7 @@ foreach ($staff_members as $staff) {
     // Skip invalid birthdates
     if (empty($staff['birthdate']) || $staff['birthdate'] == '0000-00-00' || $staff['birthdate'] == '00-00-0000') {
         if ($debug_mode || $list_all) {
-            echo "Skipping user {$staff['user_id']} ({$staff['profile_first_name']} {$staff['profile_last_name']}) - Invalid birthdate\n";
+            echo "Skipping user {$staff['user_id']} ({$staff['first_name']} {$staff['last_name']}) - Invalid birthdate\n";
         }
         continue;
     }
@@ -146,7 +150,7 @@ foreach ($staff_members as $staff) {
         $birthdate = new DateTime($staff['birthdate']);
     } catch (Exception $e) {
         if ($debug_mode || $list_all) {
-            echo "Skipping user {$staff['user_id']} ({$staff['profile_first_name']} {$staff['profile_last_name']}) - Cannot parse birthdate: {$staff['birthdate']}\n";
+            echo "Skipping user {$staff['user_id']} ({$staff['first_name']} {$staff['last_name']}) - Cannot parse birthdate: {$staff['birthdate']}\n";
         }
         continue;
     }
@@ -167,13 +171,46 @@ foreach ($staff_members as $staff) {
     // Calculate days until birthday
     $days_until = $current_date->diff($next_birthday)->days;
     
-    // Calculate age they will be
-    $age = $next_birthday->format('Y') - $birthdate->format('Y');
+    // Use the app's calculateAge method for current age
+    $current_age_data = $app->calculateAge($staff['birthdate']);
+    $current_age = $current_age_data['years_int'];
+    $current_age_display = $current_age_data['badgeage'];
+    
+    // Calculate age they will be turning on their next birthday
+    $turning_age = $next_birthday->format('Y') - $birthdate->format('Y');
+    
+    // For turning age display, we need to calculate what their age will be after birthday
+    // We can simulate this by using calculateAge with a date after their next birthday
+    $future_date = clone $next_birthday;
+    $future_date->add(new DateInterval('P1D')); // Add one day to be after birthday
+    $turning_age_data = $app->calculateAge($staff['birthdate']);
+    // Since we're calculating for next birthday, we just add appropriate time
+    if ($current_age_data['years_int'] < $turning_age) {
+        // Birthday hasn't happened yet this year
+        $turning_age_display = $qik->plural2($turning_age, 'year');
+    } else {
+        // Use the standard format
+        $turning_age_display = $turning_age >= 1 ? $turning_age : $qik->plural2($turning_age, 'year');
+    }
     
     // Add staff info with calculated data
+    // Build the name with fallback to username if both names are empty
+    $full_name = trim($staff['first_name'] . ' ' . $staff['last_name']);
+    if (empty($full_name)) {
+        // If no name available, try username or email prefix as last resort
+        if (!empty($staff['profile_username'])) {
+            $full_name = $staff['profile_username'];
+        } elseif (!empty($staff['email'])) {
+            // Use email prefix as last resort
+            $full_name = explode('@', $staff['email'])[0];
+        } else {
+            $full_name = 'Staff Member #' . $staff['user_id'];
+        }
+    }
+    
     $staff_info = [
         'user_id' => $staff['user_id'],
-        'name' => $staff['profile_first_name'] . ' ' . $staff['profile_last_name'],
+        'name' => $full_name,
         'username' => $staff['profile_username'],
         'email' => $staff['email'],
         'role' => $staff['staff_role'],
@@ -181,8 +218,10 @@ foreach ($staff_members as $staff) {
         'birthdate_full' => $birthdate->format('Y-m-d'),  // Full date for listall
         'next_birthday' => $next_birthday->format('Y-m-d'),
         'days_until' => $days_until,
-        'turning_age' => $age,
-        'current_age' => $current_date->format('Y') - $birthdate->format('Y')
+        'turning_age' => $turning_age,
+        'current_age' => $current_age,
+        'current_age_display' => $current_age_display,
+        'turning_age_display' => $turning_age_display
     ];
     
     // Store for listall mode
@@ -192,7 +231,7 @@ foreach ($staff_members as $staff) {
     if ($json_output || $list_all) {
         $json_response['staff_members'][] = [
             'user_id' => $staff_info['user_id'],
-            'name' => trim($staff_info['name']) ?: 'Unknown',
+            'name' => $staff_info['name'],
             'username' => $staff_info['username'] ?: 'N/A',
             'email' => $staff_info['email'],
             'role' => $staff_info['role'] ?: 'staff',
@@ -201,7 +240,9 @@ foreach ($staff_members as $staff) {
             'next_birthday' => $staff_info['next_birthday'],
             'days_until' => $staff_info['days_until'],
             'turning_age' => $staff_info['turning_age'],
-            'current_age' => $staff_info['current_age']
+            'current_age' => $staff_info['current_age'],
+            'current_age_display' => $staff_info['current_age_display'],
+            'turning_age_display' => $staff_info['turning_age_display']
         ];
         
         // Categorize birthdays
@@ -215,7 +256,7 @@ foreach ($staff_members as $staff) {
             $json_response['birthdays']['this_month'][] = $staff_info['user_id'];
             $json_response['birthdays']['next_30_days'][] = [
                 'user_id' => $staff_info['user_id'],
-                'name' => trim($staff_info['name']) ?: 'Unknown',
+                'name' => $staff_info['name'],
                 'days_until' => $staff_info['days_until'],
                 'birthday' => $staff_info['birthdate']
             ];
@@ -228,7 +269,7 @@ foreach ($staff_members as $staff) {
         }
         $json_response['by_month'][$birth_month][] = [
             'user_id' => $staff_info['user_id'],
-            'name' => trim($staff_info['name']) ?: 'Unknown',
+            'name' => $staff_info['name'],
             'day' => date('j', strtotime($staff_info['birthdate_full']))
         ];
     }

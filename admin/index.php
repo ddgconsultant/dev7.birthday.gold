@@ -208,6 +208,27 @@ body {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Subtle background colors for each metric card */
+.stat-card:nth-child(1) {
+    background: linear-gradient(135deg, #f6f9ff 0%, #ffffff 100%);
+    border-color: #e3ecff;
+}
+
+.stat-card:nth-child(2) {
+    background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+    border-color: #ffe5e5;
+}
+
+.stat-card:nth-child(3) {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+    border-color: #dcfce7;
+}
+
+.stat-card:nth-child(4) {
+    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+    border-color: #fef3c7;
+}
+
 .stat-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -221,13 +242,46 @@ body {
 .stat-value {
     font-size: 2rem;
     font-weight: 700;
-    color: var(--bs-primary);
     margin-bottom: 0.25rem;
+}
+
+/* Different colors for each stat value */
+.stat-card:nth-child(1) .stat-value {
+    color: #4f46e5; /* Purple-blue for users */
+}
+
+.stat-card:nth-child(2) .stat-value {
+    color: #dc2626; /* Red for pending enrollments */
+}
+
+.stat-card:nth-child(3) .stat-value {
+    color: #16a34a; /* Green for active sessions */
+}
+
+.stat-card:nth-child(4) .stat-value {
+    color: #ea580c; /* Orange for business hours */
 }
 
 .stat-label {
     font-size: 0.875rem;
     color: #6c757d;
+}
+
+/* Development server indicator */
+.dev-indicator {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 
 /* Removed main-content styling - using content-header-admin instead */
@@ -419,7 +473,7 @@ $businessHours = $app->bg_businesshours();
 <!-- Hero Section -->
 <div class="content-header-admin no-rounded-corners">
     <div class="container">
-        <h1 class="mt-3">Admin Dashboard</h1>
+        <h1 class="mt-3">Admin Dashboard<?php if ($mode == 'dev' && $site == 'dev7') echo ' <span class="badge bg-warning text-dark ms-2 dev-indicator" style="font-size: 0.5em; vertical-align: middle;">dev7 Development Servers</span>'; ?></h1>
         <p class="lead mb-4">Manage the Birthday.Gold platform with powerful administrative tools</p>
     </div>
 </div>
@@ -625,6 +679,16 @@ $businessHours = $app->bg_businesshours();
                 <div class="admin-content">
                     <h3 class="admin-card-title">Blog Editor</h3>
                     <p class="admin-card-text">Create and manage blog content</p>
+                </div>
+            </a>
+            
+            <a href="/staff/redirect_legalpolicyeditor" class="admin-card">
+                <div class="admin-icon icon-productivity">
+                    <i class="bi bi-gavel"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Legal Policy Editor</h3>
+                    <p class="admin-card-text">Review and update legal policies</p>
                 </div>
             </a>
         </div>
@@ -988,6 +1052,16 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
+            <a href="/staff/birthday-viewer" class="admin-card">
+                <div class="admin-icon icon-help">
+                    <i class="bi bi-cake2"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Birthday Viewer</h3>
+                    <p class="admin-card-text">View all staff birthdays and upcoming celebrations</p>
+                </div>
+            </a>
+            
             <a href="//chat.birthdaygold.cloud" target="_blank" class="admin-card">
                 <div class="admin-icon icon-help">
                     <i class="bi bi-chat-dots"></i>
@@ -1004,7 +1078,7 @@ $businessHours = $app->bg_businesshours();
                 </div>
                 <div class="admin-content">
                     <h3 class="admin-card-title">Corporate Holidays</h3>
-                    <p class="admin-card-text">View company holiday schedule</p>
+                    <p class="admin-card-text">View <?php echo $website['bizname']; ?> holiday schedule</p>
                 </div>
             </a>
             
@@ -1024,7 +1098,7 @@ $businessHours = $app->bg_businesshours();
                 </div>
                 <div class="admin-content">
                     <h3 class="admin-card-title">Organization Chart</h3>
-                    <p class="admin-card-text">Company organizational structure</p>
+                    <p class="admin-card-text"><?php echo ucfirst($website['bizname']); ?> organizational structure</p>
                 </div>
             </a>
         </div>
@@ -1073,8 +1147,8 @@ $businessHours = $app->bg_businesshours();
                     <i class="bi bi-building"></i>
                 </div>
                 <div class="admin-content">
-                    <h3 class="admin-card-title">Companies</h3>
-                    <p class="admin-card-text">Manage company partnerships</p>
+                    <h3 class="admin-card-title"><?php echo ucfirst($website['biznames']); ?></h3>
+                    <p class="admin-card-text">Manage <?php echo $website['bizname']; ?> partnerships</p>
                 </div>
             </a>
             
@@ -1175,6 +1249,16 @@ $businessHours = $app->bg_businesshours();
                 <div class="admin-content">
                     <h3 class="admin-card-title">DEV5 Server</h3>
                     <p class="admin-card-text">Development environment 5</p>
+                </div>
+            </a>
+            
+            <a href="//dev7.birthday.gold/" class="admin-card">
+                <div class="admin-icon icon-tech">
+                    <i class="bi bi-hdd-network-fill"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">DEV7 Server</h3>
+                    <p class="admin-card-text">Development environment 7</p>
                 </div>
             </a>
         </div>

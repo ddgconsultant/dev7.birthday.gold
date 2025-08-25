@@ -300,16 +300,18 @@ class UpgradeManager {
                 throw new Exception('Invalid product');
             }
             
-            // Update user's plan
+            // Update user's plan - MUST include account_product_id for consistency
             $updateSql = "UPDATE bg_users 
                          SET account_plan = :new_plan,
                              account_type = :account_type,
-                             updated_at = NOW()
+                             account_product_id = :product_id,
+                             modify_dt = NOW()
                          WHERE user_id = :user_id";
             
             $this->database->query($updateSql, [
                 'new_plan' => $newProduct['account_plan'],
                 'account_type' => $newProduct['account_type'],
+                'product_id' => $newProduct['id'],  // Critical: Must update product_id
                 'user_id' => $upgradeSession['user_id']
             ]);
             

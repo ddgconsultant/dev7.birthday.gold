@@ -17,9 +17,9 @@ include(dirname(__FILE__) . '/../core/site-controller.php');
 #-------------------------------------------------------------------------------
 
 // Configuration
-$rocketchat_channel = "#testing";  // TODO: Change back to #BG_Legal after testing
-$primary_contact = "@Richard";      // TODO: Change back to @Liz after testing
-$policy_editor_url = "https://dev7.birthday.gold/staff/legal-policy-editor";
+$rocketchat_channel = "#BG_Legal";  // Production channel for legal team
+$primary_contact = "@Liz";          // Primary legal contact
+$policy_editor_url = "https://dev7.birthday.gold/staff/redirect_legalpolicyeditor";
 
 // Get current date for comparison
 $current_date = new DateTime();

@@ -321,6 +321,13 @@ if ($app->formposted()) {
             $state = trim(!empty($client_locationdata['regionName']) ? $client_locationdata['regionName'] : '');
             $zip_code = trim(!empty($client_locationdata['zip']) ? $client_locationdata['zip'] : '');
             
+            // Use centralized function to ensure correct product assignment
+            $product_details = $createaccount->resolveProductDetails([
+                'product_id' => $plandata['id'] ?? null,
+                'account_type' => $account_type,
+                'account_plan' => $account_plan
+            ]);
+            
             // Prepare input array for user creation
             $input = [
             'first_name' => $first_name,
@@ -343,9 +350,9 @@ if ($app->formposted()) {
             'state2' => $state,
             'zip_code2' => $zip_code,
             'type' => 'real',
-            'product_id' => $plandata['id'] ?? null,
-            'account_plan' => $account_plan,
-            'account_type' => $account_type,
+            'product_id' => $product_details['product_id'],  // Ensured to be correct
+            'account_plan' => $product_details['account_plan'],  // From resolved details
+            'account_type' => $product_details['account_type'],  // From resolved details
             'account_cost' => $account_cost,
             'account_validation' => $plandata['account_verification'] ?? 'required',
                 'avatar_file' => ''

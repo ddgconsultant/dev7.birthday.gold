@@ -439,7 +439,7 @@ echo '                <div class="platform-badge"><i class="bi bi-tiktok"></i><s
 echo '            </div>';
 echo '        </div>';
 echo '        <div class="alert alert-warning">';
-echo '            <strong>Important:</strong> Your post must be publicly visible and contain the hashtag <strong>#birthdaygold</strong> to be verified.';
+echo '            <strong>Important:</strong> Your post must contain the hashtag <strong>#birthdaygold</strong> AND be publicly visible to be verified.';
 echo '        </div>';
 echo '    </div>';
 echo '</div>';

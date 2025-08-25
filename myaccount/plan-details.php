@@ -1019,8 +1019,22 @@ if (empty($feature_cards)) {
     ];
 }
 
+// Get upgrade options to determine if we should show upgrade cards
+$should_show_upgrade_cards = !empty($upgrade_options['available_plans']);
+
 // Display feature cards
 foreach ($feature_cards as $index => $card) {
+    // Skip upgrade-related cards if user has no available upgrades
+    if (!$should_show_upgrade_cards) {
+        // Check if this is an upgrade card (by title or key)
+        $card_title_lower = strtolower($card['title'] ?? '');
+        $card_key_lower = strtolower($card['card_key'] ?? '');
+        if (strpos($card_title_lower, 'upgrade') !== false || 
+            strpos($card_key_lower, 'upgrade') !== false) {
+            continue; // Skip this card
+        }
+    }
+    
     echo '
         <div class="col-lg-4 col-md-6">
             <div class="feature-card position-relative">';
@@ -1052,22 +1066,47 @@ foreach ($feature_cards as $index => $card) {
 
 echo '    </div>';
 
-    // Upgrade Section for Free Users
-    if ($user_plan === 'free') {
-        echo '
+    // Upgrade Section - Use the new getUpgradeOptions function to determine if we should show upgrade options
+    $upgrade_options = $account->getUpgradeOptions();
+    
+    // Only show upgrade section if there are available upgrades
+    if ($upgrade_options['is_upgradeable'] && !empty($upgrade_options['available_plans'])) {
+        // Customize message based on current plan type
+        if ($upgrade_options['is_free_plan']) {
+            echo '
         <div class="upgrade-section">
             <h3 class="mb-3">Ready to unlock more birthday rewards?</h3>
-            <p class="mb-4">Upgrade to Gold and get access to unlimited brands, priority support, and exclusive features!</p>
-            <a href="/myaccount/upgrade-plan" class="btn btn-primary btn-lg">Upgrade to Gold</a>
+            <p class="mb-4">Upgrade your plan to get access to more brands, priority support, and exclusive features!</p>
+            <a href="/myaccount/upgrade" class="btn btn-primary btn-lg">View Upgrade Options</a>
         </div>';
-    } elseif ($user_plan === 'gold') {
+        } else {
+            // For non-free plans with available upgrades
+            echo '
+        <div class="upgrade-section">
+            <h3 class="mb-3">Want even more benefits?</h3>
+            <p class="mb-4">Explore our premium plans for additional features and rewards!</p>
+            <a href="/myaccount/upgrade" class="btn btn-primary btn-lg">View Upgrade Options</a>
+        </div>';
+        }
+    } elseif (!$upgrade_options['is_upgradeable'] && !empty($upgrade_options['upgrade_message'])) {
+        // Show custom message for non-upgradeable plans
         echo '
         <div class="upgrade-section">
-            <h3 class="mb-3">Want lifetime access?</h3>
-            <p class="mb-4">Upgrade to our Lifetime plan and never worry about renewals again!</p>
-            <a href="/myaccount/upgrade-plan" class="btn btn-primary btn-lg">Get Lifetime Access</a>
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                ' . htmlspecialchars($upgrade_options['upgrade_message']) . '
+            </div>
+        </div>';
+    } elseif ($upgrade_options['is_top_tier']) {
+        // User is at the highest tier - celebrate!
+        echo '
+        <div class="upgrade-section text-center">
+            <i class="bi bi-trophy-fill text-warning" style="font-size: 2.5rem;"></i>
+            <h3 class="mt-3 mb-3">You have our best plan!</h3>
+            <p class="text-muted">Thank you for being a premium member. You are enjoying all available features and benefits.</p>
         </div>';
     }
+    // If none of the above conditions are met, don't show an upgrade section at all
 
 echo '
 </div>';

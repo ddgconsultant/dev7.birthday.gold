@@ -15,6 +15,114 @@ class CreateAccount
     $this->session = $session;
   }
 
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Determine the correct product ID from various inputs
+   * This is a CRITICAL function that ensures users are assigned to the correct product
+   * Uses the Product class for lookups to avoid duplication
+   * 
+   * @param array $input Input data that may contain product_id, account_type, account_plan
+   * @param array $existing_user_data Optional existing user data for fallback
+   * @return array Returns array with product_id, account_type, account_plan, and product_name
+   */
+  public function resolveProductDetails($input, $existing_user_data = [])
+  {
+    global $website, $product;
+    
+    $result = [
+      'product_id' => null,
+      'account_type' => null,
+      'account_plan' => null,
+      'product_name' => null
+    ];
+    
+    // Priority 1: Direct product_id provided
+    if (!empty($input['product_id'])) {
+      $productData = $product->getProduct($input['product_id'], 'id');
+      if ($productData) {
+        $result['product_id'] = $productData['id'];
+        $result['account_type'] = $productData['account_type'];
+        $result['account_plan'] = $productData['account_plan'];
+        $result['product_name'] = $productData['account_name'];
+        return $result;
+      }
+    }
+    
+    // Priority 2: Account type and plan provided - need to find matching product
+    if (!empty($input['account_type']) && !empty($input['account_plan'])) {
+      $version = $input['version'] ?? $website['plan_version'] ?? 'v7';
+      
+      // Look up the product ID from bg_products
+      $sql = "SELECT id, account_name, account_type, account_plan 
+              FROM bg_products 
+              WHERE account_type = :account_type 
+              AND account_plan = :account_plan 
+              AND status = 'active' 
+              AND version = :version
+              ORDER BY id DESC 
+              LIMIT 1";
+      
+      try {
+        $productData = $this->db->getrow($sql, [
+          'account_type' => $input['account_type'],
+          'account_plan' => $input['account_plan'],
+          'version' => $version
+        ]);
+        
+        if ($productData) {
+          $result['product_id'] = $productData['id'];
+          $result['account_type'] = $productData['account_type'];
+          $result['account_plan'] = $productData['account_plan'];
+          $result['product_name'] = $productData['account_name'];
+          return $result;
+        }
+      } catch (Exception $e) {
+        error_log("resolveProductDetails: Database error - " . $e->getMessage());
+      }
+    }
+    
+    // Priority 3: Use existing user data
+    if (!empty($existing_user_data)) {
+      $result['product_id'] = $existing_user_data['account_product_id'] ?? null;
+      $result['account_type'] = $existing_user_data['account_type'] ?? 'user';
+      $result['account_plan'] = $existing_user_data['account_plan'] ?? 'free';
+      
+      // Try to get product name if we have a product_id
+      if ($result['product_id']) {
+        $productData = $product->getProduct($result['product_id'], 'id');
+        if ($productData) {
+          $result['product_name'] = $productData['account_name'];
+        }
+      }
+    }
+    
+    // Final fallback: Default to user/free if nothing else works
+    if (!$result['account_type']) {
+      $result['account_type'] = 'user';
+      $result['account_plan'] = 'free';
+      
+      // Try to find the free plan product ID
+      $version = $website['plan_version'] ?? 'v7';
+      $sql = "SELECT id FROM bg_products 
+              WHERE account_type = 'user' 
+              AND account_plan = 'free' 
+              AND status = 'active' 
+              AND version = :version
+              LIMIT 1";
+      
+      try {
+        $freeProduct = $this->db->getrow($sql, ['version' => $version]);
+        if ($freeProduct) {
+          $result['product_id'] = $freeProduct['id'];
+        }
+      } catch (Exception $e) {
+        error_log("resolveProductDetails: Could not find free plan - " . $e->getMessage());
+      }
+    }
+    
+    return $result;
+  }
+
 
 
   

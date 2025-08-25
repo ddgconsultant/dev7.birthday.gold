@@ -2911,5 +2911,276 @@ id="date'. $display_start_date->format('Y-m-d').'" value="'. $display_start_date
     setcookie('bg_device_id', '', $expire_time, $cookie_path, $cookie_domain, $secure, $httponly);
   }
 
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Get available upgrade options for a user/plan
+   * 
+   * @param array $options Optional parameters to override defaults:
+   *   - user_id: User ID to check (defaults to current user)
+   *   - product_id: Product ID to check (defaults to user's current product)
+   *   - account_type: Account type to check (defaults to user's type)
+   *   - account_plan: Account plan to check (defaults to user's plan)
+   *   - debug: Enable debug mode to return additional info
+   * 
+   * @return array Contains:
+   *   - available_plans: Array of available upgrade plans
+   *   - is_upgradeable: Boolean if plan can be upgraded
+   *   - upgrade_message: Custom message for non-upgradeable plans
+   *   - is_grandfathered: Boolean if current plan is grandfathered
+   *   - is_free_plan: Boolean if current plan is free
+   *   - is_top_tier: Boolean if at highest tier
+   *   - debug_info: Debug information (if debug=true)
+   */
+  public function getUpgradeOptions($options = []) {
+    global $website, $current_user_data;
+    
+    // Default values from current user
+    $user_id = $options['user_id'] ?? ($current_user_data['user_id'] ?? 0);
+    $current_product_id = $options['product_id'] ?? ($current_user_data['account_product_id'] ?? null);
+    $current_type = $options['account_type'] ?? ($current_user_data['account_type'] ?? 'user');
+    $current_plan = $options['account_plan'] ?? ($current_user_data['account_plan'] ?? 'free');
+    $debug_mode = $options['debug'] ?? false;
+    
+    // Initialize return data
+    $result = [
+      'available_plans' => [],
+      'is_upgradeable' => true,
+      'upgrade_message' => '',
+      'is_grandfathered' => false,
+      'is_free_plan' => false,
+      'is_top_tier' => false,
+      'current_plan_display' => '',
+      'debug_info' => []
+    ];
+    
+    // Get current plan display name
+    $current_plan_display = ucfirst(str_replace(['user_', 'parental_', 'minor_', 'business_', 'family_'], '', $current_plan));
+    if ($current_product_id) {
+      $sql = "SELECT account_name FROM bg_products WHERE id = :id AND status = 'active'";
+      $stmt = $this->db->prepare($sql);
+      $stmt->execute(['id' => $current_product_id]);
+      $plan_result = $stmt->fetch(PDO::FETCH_ASSOC);
+      if ($plan_result && !empty($plan_result['account_name'])) {
+        $current_plan_display = $plan_result['account_name'];
+      }
+    }
+    $result['current_plan_display'] = $current_plan_display;
+    
+    // Check if plan is free
+    $result['is_free_plan'] = (strpos($current_plan, 'free') !== false || $current_plan == 'free');
+    
+    // Check if at top tier (including lifetime plans)
+    $plan_lower = strtolower($current_plan);
+    if (strpos($plan_lower, 'platinum') !== false || 
+        strpos($plan_lower, 'gold') !== false ||
+        strpos($plan_lower, 'life') !== false ||
+        strpos($plan_lower, 'lifetime') !== false) {
+      $result['is_top_tier'] = true;
+    }
+    
+    // Use system's plan version setting
+    $version_to_use = $website['plan_version'] ?? 'v7';
+    
+    // Check if current plan has upgradeable restrictions
+    $allowed_upgrades = [];
+    if ($current_product_id) {
+      // Check if plan is explicitly non-upgradeable
+      $sql = "SELECT value FROM bg_product_features 
+              WHERE product_id = :product_id 
+              AND name = 'upgradeable' 
+              AND status = 'active' 
+              LIMIT 1";
+      $stmt = $this->db->prepare($sql);
+      $stmt->execute(['product_id' => $current_product_id]);
+      $feature_result = $stmt->fetch(PDO::FETCH_ASSOC);
+      
+      if ($feature_result && $feature_result['value']) {
+        $value = trim(strtolower($feature_result['value']));
+        // Check for explicit non-upgradeable values
+        if ($value === 'false' || $value === 'no' || $value === '0' || $value === 'none') {
+          $result['is_upgradeable'] = false;
+        } elseif (strpos($value, '[') === 0) {
+          $allowed_upgrades = json_decode($feature_result['value'], true) ?? [];
+        } else {
+          $allowed_upgrades = array_map('trim', explode(',', $feature_result['value']));
+        }
+      }
+      
+      // Check for upgrade message
+      $sql = "SELECT value FROM bg_product_features 
+              WHERE product_id = :product_id 
+              AND name = 'upgrade_message' 
+              AND status = 'active' 
+              LIMIT 1";
+      $stmt = $this->db->prepare($sql);
+      $stmt->execute(['product_id' => $current_product_id]);
+      $msg_result = $stmt->fetch(PDO::FETCH_ASSOC);
+      if ($msg_result && $msg_result['value']) {
+        $result['upgrade_message'] = $msg_result['value'];
+      }
+      
+      // Check if grandfathered
+      $sql = "SELECT version FROM bg_products WHERE id = :product_id AND status = 'active' LIMIT 1";
+      $stmt = $this->db->prepare($sql);
+      $stmt->execute(['product_id' => $current_product_id]);
+      $version_result = $stmt->fetch(PDO::FETCH_ASSOC);
+      if ($version_result && $version_result['version'] && !in_array($version_result['version'], ['v7', 'v3'])) {
+        $result['is_grandfathered'] = true;
+      }
+    }
+    
+    // If not upgradeable, return early
+    if (!$result['is_upgradeable']) {
+      if ($debug_mode) {
+        $result['debug_info'] = [
+          'reason' => 'Plan explicitly marked as non-upgradeable',
+          'current_product_id' => $current_product_id
+        ];
+      }
+      return $result;
+    }
+    
+    // Determine target account types for upgrades
+    // Hierarchy: user < parental/family < business
+    if ($current_type == 'minor') {
+      $target_account_types = ['user', 'parental', 'family', 'business'];
+    } elseif ($current_type == 'user') {
+      $target_account_types = ['user', 'parental', 'family', 'business'];
+    } elseif ($current_type == 'parental') {
+      $target_account_types = ['parental', 'family', 'business'];
+    } elseif ($current_type == 'family') {
+      $target_account_types = ['family', 'parental', 'business'];
+    } elseif ($current_type == 'business') {
+      $target_account_types = ['business'];
+    } else {
+      $target_account_types = ['user', 'parental', 'family', 'business'];
+    }
+    
+    // Build query for available plans
+    $type_placeholders = array_map(function($i) { return ':type' . $i; }, range(0, count($target_account_types) - 1));
+    $type_in_clause = implode(', ', $type_placeholders);
+    
+    $sql = "SELECT DISTINCT p.id, p.account_name, p.account_plan, p.account_type, p.version,
+            p.price, p.billing_cycle,
+            (SELECT value FROM bg_product_features WHERE product_id = p.id AND name = 'billing_period' AND status = 'active' LIMIT 1) as billing_period,
+            (SELECT value FROM bg_product_features WHERE product_id = p.id AND name = 'description' AND status = 'active' LIMIT 1) as description,
+            (SELECT value FROM bg_product_features WHERE product_id = p.id AND name = 'enrollments_per_period' AND status = 'active' LIMIT 1) as enrollments
+            FROM bg_products p
+            WHERE p.status = 'active' 
+            AND p.account_type IN (" . $type_in_clause . ")
+            AND p.version = :version
+            AND p.id != :current_product_id
+            ORDER BY 
+            CASE p.account_plan 
+                WHEN 'parental_free' THEN 1
+                WHEN 'user_free' THEN 1
+                WHEN 'family_free' THEN 1
+                WHEN 'parental_plus' THEN 2
+                WHEN 'user_plus' THEN 2  
+                WHEN 'parental_gold' THEN 3
+                WHEN 'user_gold' THEN 3
+                WHEN 'family_gold' THEN 3
+                WHEN 'parental_platinum' THEN 4
+                WHEN 'user_platinum' THEN 4
+                WHEN 'business_bronze' THEN 1
+                WHEN 'business_silver' THEN 2
+                WHEN 'business_gold' THEN 3
+                WHEN 'business_platinum' THEN 4
+                ELSE 5
+            END";
+    
+    $params = [
+      'version' => $version_to_use,
+      'current_product_id' => $current_product_id ?? 0
+    ];
+    
+    // Add type parameters
+    foreach ($target_account_types as $i => $type) {
+      $params['type' . $i] = $type;
+    }
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute($params);
+    $all_plans = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Filter available plans based on upgrade logic
+    $available_plans = [];
+    
+    // Determine current tier
+    $current_tier = 0;
+    if (strpos($current_plan, 'free') !== false || $current_plan == 'free') $current_tier = 1;
+    elseif (strpos($current_plan, 'plus') !== false) $current_tier = 2;
+    elseif (strpos($current_plan, 'gold') !== false) $current_tier = 3;
+    elseif (strpos($current_plan, 'platinum') !== false) $current_tier = 4;
+    
+    foreach ($all_plans as $plan) {
+      // Determine plan tier - check both account_plan and account_name for tier keywords
+      $plan_tier = 0;
+      $plan_check = strtolower($plan['account_plan'] . ' ' . ($plan['account_name'] ?? ''));
+      
+      if (strpos($plan_check, 'trial') !== false) $plan_tier = 0.5;
+      elseif (strpos($plan_check, 'free') !== false) $plan_tier = 1;
+      elseif (strpos($plan_check, 'plus') !== false || strpos($plan_check, 'bronze') !== false) $plan_tier = 2;
+      elseif (strpos($plan_check, 'gold') !== false || strpos($plan_check, 'silver') !== false) $plan_tier = 3;
+      elseif (strpos($plan_check, 'platinum') !== false) $plan_tier = 4;
+      
+      // Business plans default to tier 3 if not set
+      if ($plan_tier == 0 && $plan['account_type'] == 'business') {
+        $plan_tier = 3;
+      }
+      
+      // Only show plans that are upgrades (higher tier)
+      // If current tier is 0 (unknown/legacy), don't show plans unless explicitly allowed
+      if ($current_tier > 0 && $plan_tier > $current_tier) {
+        // Format price from cents to dollars
+        $plan['price_formatted'] = number_format(($plan['price'] ?? 0) / 100, 2, '.', '');
+        
+        // Determine billing period display
+        $plan['period_display'] = $plan['billing_period'] ?? '';
+        if (empty($plan['period_display'])) {
+          $plan['period_display'] = ($plan['billing_cycle'] == 'one_time') ? 'lifetime' : 'month';
+        }
+        
+        $available_plans[] = $plan;
+      }
+    }
+    
+    // Apply upgradeable restrictions if any
+    // Exception: Free plans should show all upgrades unless explicitly set to 'false'/'no'
+    if (!empty($allowed_upgrades) && !$result['is_free_plan']) {
+      // Apply restrictions for non-free plans
+      $available_plans = array_filter($available_plans, function($plan) use ($allowed_upgrades) {
+        return in_array($plan['id'], $allowed_upgrades) || in_array($plan['account_plan'], $allowed_upgrades);
+      });
+    } elseif (!empty($allowed_upgrades) && $result['is_free_plan']) {
+      // For free plans, only apply restrictions if they seem reasonable (more than 1 option)
+      if (count($allowed_upgrades) > 1) {
+        $available_plans = array_filter($available_plans, function($plan) use ($allowed_upgrades) {
+          return in_array($plan['id'], $allowed_upgrades) || in_array($plan['account_plan'], $allowed_upgrades);
+        });
+      }
+      // If free plan has only 1 upgrade option, ignore it and show all valid upgrades
+    }
+    
+    $result['available_plans'] = array_values($available_plans); // Re-index array
+    
+    // Add debug info if requested
+    if ($debug_mode) {
+      $result['debug_info'] = [
+        'current_plan' => $current_plan,
+        'current_type' => $current_type,
+        'current_product_id' => $current_product_id,
+        'current_tier' => $current_tier,
+        'target_types' => $target_account_types,
+        'version_used' => $version_to_use,
+        'total_plans_found' => count($all_plans),
+        'allowed_upgrades' => $allowed_upgrades,
+        'sql_params' => $params
+      ];
+    }
+    
+    return $result;
+  }
+
 
 }

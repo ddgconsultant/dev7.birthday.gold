@@ -2246,46 +2246,79 @@ function generateCaptcha($size = 'large', $numberofoptions = 4)
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function calculateAge($birthDate)
   {
-
-        // If the input date is empty, return false
-        if (empty($birthDate)) {
+      if (empty($birthDate)) {
           return false;
       }
-
-      // Try to create a DateTime object to validate the date
-    //  $date = DateTime::createFromFormat('Y-m-d', $birthDate);
-  //    if (!$date || $date->format('Y-m-d') !== $birthDate) {
-   //       return false; // Return false if the date is invalid or doesn't match the format
-   //   }
-
-    $output = array();
-    $today = new DateTime('now');
-    $birthdate = new DateTime($birthDate);
-    $interval = $today->diff($birthdate);
-
-    $output['days'] = $interval->format('%a');
-    $output['years'] = $interval->format('%y');
-    $output['months'] = $interval->format('%m');
-    $output['minutes'] = $interval->format('%i');
-    $output['seconds'] = $interval->format('%s');
-
-    // Date components of the provided birthDate
-    $output['dtpart_year'] = $birthdate->format('Y');
-    $output['dtpart_month'] = $birthdate->format('m');
-    $output['dtpart_day'] = $birthdate->format('d');
-    $output['dtpart_hour'] = $birthdate->format('H');
-    $output['dtpart_minute'] = $birthdate->format('i');
-    $output['dtpart_second'] = $birthdate->format('s');
-
-    // If years is zero, set the tag to months; otherwise, set to years
-    if ($interval->y == 0) {
-      $output['agetag'] = $interval->m . ' months';
-    } else {
-      $output['agetag'] = $interval->y . ' years';
-    }
-
-    return $output;
+  
+      try {
+          $today = new DateTime('now');
+          $birthdate = new DateTime($birthDate);
+      } catch (Exception $e) {
+          return false;
+      }
+  
+      if ($birthdate > $today) {
+          return false;
+      }
+  
+      $interval = $today->diff($birthdate);
+  
+      $output = array();
+  
+      // Existing fields
+      $output['days']    = $interval->format('%a');
+      $output['years']   = $interval->format('%y');
+      $output['months']  = $interval->format('%m');
+      $output['minutes'] = $interval->format('%i');
+      $output['seconds'] = $interval->format('%s');
+  
+      // Int helpers
+      $yearsInt   = (int)$interval->y;
+      $monthsInt  = (int)$interval->m;
+      $totalDays  = (int)$interval->format('%a');
+  
+      $output['years_int']  = $yearsInt;
+      $output['months_int'] = $monthsInt;
+      $output['days_int']   = $totalDays;
+  
+      // Date parts
+      $output['dtpart_year']   = $birthdate->format('Y');
+      $output['dtpart_month']  = $birthdate->format('m');
+      $output['dtpart_day']    = $birthdate->format('d');
+      $output['dtpart_hour']   = $birthdate->format('H');
+      $output['dtpart_minute'] = $birthdate->format('i');
+      $output['dtpart_second'] = $birthdate->format('s');
+  
+      // Legacy agetag (months if under a year, else years) — no pluralizer here to keep behavior identical
+      if ($yearsInt === 0) {
+          $output['agetag'] = $monthsInt . ' months';
+      } else {
+          $output['agetag'] = $yearsInt . ' years';
+      }
+  
+      // Badge logic (centralized):
+      // - years ≥ 1 → plain number (no unit)
+      // - years = 0 and months ≥ 1 → use plural2('month')
+      // - years = 0 and months = 0 → use plural2('day') with total days
+      // Assumes $qik is available (as in your codebase).
+      if ($yearsInt >= 1) {
+          $output['badgeage'] = (string)$yearsInt;
+          $output['value']    = $yearsInt;
+          $output['unit']     = 'year';
+      } elseif ($monthsInt >= 1) {
+          $output['badgeage'] = $GLOBALS['qik']->plural2($monthsInt, 'month');
+          $output['value']    = $monthsInt;
+          $output['unit']     = 'month';
+      } else {
+          $daysToShow = max(0, $totalDays);
+          $output['badgeage'] = $GLOBALS['qik']->plural2($daysToShow, 'day');
+          $output['value']    = $daysToShow;
+          $output['unit']     = 'day';
+      }
+  
+      return $output;
   }
+  
 
 
 

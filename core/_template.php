@@ -6,12 +6,13 @@
 
 
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-// always use single PHP BLOCK, ECHO block statements. 
+// BIRTHDAY GOLD DEVELOPMENT/CODING STANDARDS
+// always use single PHP BLOCK, ECHO block statements.  (do not Mixing HTML output directly with conditional PHP using php tags/Multiple PHP tags)
 // Do not use Short Echo Tags, Short Tags, Multiple PHP Tags or Nowdoc/Heredoc syntax
 // access to /myaccount and /admin pages are controlled by the site-controller.php file - do not put any access control in the files
 // Bootstrap 5 utility-first approach! - do not use custom css unless absolutely necessary of which you add to $additionalstyles
 // typically member data is in $current_user_data array
-// do not use abbreviation in comments - use full words
+// do not use abbreviation in comments - use full words (no single quotes/apostrophes)
 
 #-------------------------------------------------------------------------------
 # PREP VARIABLES PAGE

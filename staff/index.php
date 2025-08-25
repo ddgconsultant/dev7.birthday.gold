@@ -88,6 +88,7 @@ if ($app->formposted()) {
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
 $bodycontentclass = '';
+$additionalheaders = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
 $additionalstyles = '
     <style>
     /* Hide skip to main content link unless focused */
@@ -131,14 +132,21 @@ $additionalstyles = '
         padding: 1rem;
         text-decoration: none;
         color: inherit;
+        background: white;
         border: 1px solid var(--bs-border-color);
         border-radius: 0.5rem;
         transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .quick-link:hover {
-        background: var(--bs-primary);
-        color: white;
+        background: white;
+        border-color: var(--bs-primary);
+        color: var(--bs-primary);
         transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+    .quick-link:hover .bi {
+        color: var(--bs-primary);
     }
     </style>';
 
@@ -149,13 +157,15 @@ include($dir['core_components'] . '/bg_header.inc');
 echo $additionalstyles;
 
 echo '
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="h2">Staff Dashboard</h1>
-            <p class="text-muted">Welcome back, ' . htmlspecialchars($staff_user['profile_first_name'] ?? $staff_user['profile_username'] ?? 'Staff Member') . '</p>
-        </div>
-    </div>';
+<!-- Staff Header Section -->
+<div class="content-header-staff compact">
+    <div class="container text-center">
+        <h1><i class="bi bi-speedometer2"></i> Staff Dashboard</h1>
+        <p class="lead">Welcome back, ' . htmlspecialchars($staff_user['profile_first_name'] ?? $staff_user['profile_username'] ?? 'Staff Member') . '</p>
+    </div>
+</div>
+
+<div class="container mt-4">';
 
 // Clock In/Out Section
 echo '
@@ -354,7 +364,7 @@ echo '
             </a>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">
-            <a href="/staff/legal-policy-editor" class="quick-link d-block">
+            <a href="/staff/redirect_legalpolicyeditor" class="quick-link d-block">
                 <i class="bi bi-file-text fs-3 mb-2"></i>
                 <h6>Legal Policies</h6>
                 <small class="text-muted">Review & update policies</small>

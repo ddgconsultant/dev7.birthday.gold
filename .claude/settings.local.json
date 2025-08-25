@@ -85,7 +85,12 @@
       "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT id, account_name, account_plan, account_type, version FROM bg_products WHERE status = ''active'' LIMIT 5;\")",
       "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT p.id, p.account_name, p.account_plan, p.account_type, \n(SELECT value FROM bg_product_features WHERE product_id = p.id AND name = ''price'' AND status = ''active'' LIMIT 1) as price,\n(SELECT value FROM bg_product_features WHERE product_id = p.id AND name = ''billing_period'' AND status = ''active'' LIMIT 1) as billing_period,\n(SELECT value FROM bg_product_features WHERE product_id = p.id AND name = ''description'' AND status = ''active'' LIMIT 1) as description,\n(SELECT value FROM bg_product_features WHERE product_id = p.id AND name = ''enrollments_per_period'' AND status = ''active'' LIMIT 1) as enrollments\nFROM bg_products p\nWHERE p.status = ''active'' \nAND p.account_type = ''parental''\nAND p.version IN (''v7'', ''v3'', ''v2'')\nORDER BY p.version DESC, p.id;\")",
       "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT * FROM bg_product_features WHERE product_id IN (461, 471) AND status = ''active'' LIMIT 20;\")",
-      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT product_id, name, value FROM bg_product_features WHERE product_id = 431 AND name = ''upgradeable'' AND status = ''active'';\")"
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT product_id, name, value FROM bg_product_features WHERE product_id = 431 AND name = ''upgradeable'' AND status = ''active'';\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_user_allocations;\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SHOW TABLES LIKE ''%subscription%'';\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_subscriptions;\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SHOW TABLES LIKE ''%stripe%'';\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SELECT user_id, profile_username, profile_first_name, profile_last_name, first_name, last_name FROM bg_users WHERE user_id IN (SELECT user_id FROM bg_user_attributes WHERE type = ''staff'' AND status = ''active'') LIMIT 10;\")"
     ],
     "deny": []
   }

@@ -286,6 +286,41 @@ npm test
 - **Components**: Utilize Bootstrap components (cards, modals, alerts, etc.) before custom solutions
 - **Utilities**: Leverage Bootstrap utility classes for spacing, colors, and responsive design
 
+### Tab Navigation Pattern (IMPORTANT)
+- **DO NOT** use Bootstrap's nav-tabs structure (`<ul class="nav nav-tabs">`) - it causes layout collapse issues
+- **ALWAYS** use the proven pattern from `/myaccount/loginhistory.php` for tabs
+- **Structure**: Simple `<nav class="nav-tabs-modern">` with `<a class="nav-tab-item">` elements
+- **Critical CSS**: Must include `flex: 0 0 auto` on `.nav-tab-item` to prevent tab collapse
+- **Example Implementation**:
+  ```css
+  .nav-tabs-modern {
+      display: flex;
+      border-bottom: 2px solid #e9ecef;
+      margin-bottom: 2rem;
+      gap: 0;
+      overflow: hidden;
+  }
+  
+  .nav-tab-item {
+      flex: 0 0 auto;  /* CRITICAL: prevents tabs from collapsing */
+      padding: 1rem 2rem;
+      text-decoration: none;
+      color: #6c757d;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s ease;
+  }
+  ```
+  ```html
+  <nav class="nav-tabs-modern">
+      <a href="#tab1" class="nav-tab-item active">
+          <i class="bi bi-icon me-2"></i>Tab Label
+      </a>
+  </nav>
+  ```
+- **Note**: Add custom JavaScript for tab switching if not using Bootstrap's data-bs-toggle
+
 ### Include File System (.inc files)
 - **Component Includes**: Located in `/core/components/v3/` and `/core/components/v7/`
 - **Page Structure**:
