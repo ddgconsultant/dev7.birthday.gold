@@ -48,7 +48,10 @@ $get_rewardcategories = $app->get_rewardcategories();
 $rewardiconlist = $get_rewardcategories[1];
 
 // Category list for filter - using existing categories from businessselect.php
-$display_categories = ['All', 'Food', 'Beverage', 'Beauty', 'Retail', 'Other', 'App Only'];
+$display_categories = ['All', 'Food', 'Beverage', 'Beauty', 'Retail', 'Other', 'App Only', 'Local'];
+
+// Get user's state for Local filter
+$user_state = $current_user_data['state'] ?? $current_user_data['profile_state'] ?? '';
 
 // Get selected categories and filters (supports multiple selection with comma separation)
 $category_param = $_GET['category'] ?? 'All';
@@ -73,6 +76,11 @@ $show_suppressed = isset($_GET['show_suppressed']) ? true : false;
 // Parse suppression filters - can be comma-separated for multiple filters
 $suppression_filter = $_GET['suppression_filter'] ?? 'all';
 $active_filters = $suppression_filter === 'all' ? [] : explode(',', $suppression_filter);
+
+// Advanced filters
+$rating_filter = $_GET['rating'] ?? '';  // e.g., "3+" for 3 stars and above
+$popular_filter = $_GET['popular'] ?? '';  // e.g., "top10", "top25", "top50"
+$value_filter = $_GET['value'] ?? '';  // e.g., "10+", "25+", "50+"
 
 // Get companies using existing system from businessselect.php
 $companies = [];
@@ -99,7 +107,8 @@ if ($search_query) {
     if (!in_array('All', $selected_categories)) {
         $category_conditions = [];
         $has_app_only = in_array('App Only', $selected_categories);
-        $regular_categories = array_diff($selected_categories, ['App Only']);
+        $has_local = in_array('Local', $selected_categories);
+        $regular_categories = array_diff($selected_categories, ['App Only', 'Local']);
         
         // Add regular category filter
         if (!empty($regular_categories)) {
@@ -118,6 +127,17 @@ if ($search_query) {
         if ($has_app_only) {
             $category_conditions[] = "c.signup_url = :app_only_tag";
             $params['app_only_tag'] = $website['apponlytag'];
+        }
+        
+        // Add local filter (matches user's state)
+        if ($has_local && !empty($user_state)) {
+            // Check if company has locations in user's state
+            $category_conditions[] = "EXISTS (
+                SELECT 1 FROM bg_company_locations cl 
+                WHERE cl.company_id = c.company_id 
+                AND cl.state = :user_state
+            )";
+            $params['user_state'] = $user_state;
         }
         
         // Combine conditions with AND logic
@@ -154,9 +174,10 @@ if ($search_query) {
         // Get companies for specific categories with filtering
         $all_companies = [];
         
-        // Check if we need app-only filter
+        // Check if we need special filters
         $has_app_only = in_array('App Only', $selected_categories);
-        $regular_categories = array_diff($selected_categories, ['App Only']);
+        $has_local = in_array('Local', $selected_categories);
+        $regular_categories = array_diff($selected_categories, ['App Only', 'Local']);
         
         // Get companies for regular categories
         if (!empty($regular_categories)) {
@@ -196,16 +217,36 @@ if ($search_query) {
             }
         }
         
+        // Apply special filters
+        $companies = $all_companies;
+        
         // Filter by app-only if needed
         if ($has_app_only) {
-            $companies = [];
-            foreach ($all_companies as $company) {
+            $filtered = [];
+            foreach ($companies as $company) {
                 if ($company['signup_url'] == $website['apponlytag']) {
-                    $companies[] = $company;
+                    $filtered[] = $company;
                 }
             }
-        } else {
-            $companies = $all_companies;
+            $companies = $filtered;
+        }
+        
+        // Filter by local (state) if needed
+        if ($has_local && !empty($user_state)) {
+            $filtered = [];
+            foreach ($companies as $company) {
+                // Check if company has locations in user's state
+                $location_sql = "SELECT COUNT(*) as count FROM bg_company_locations 
+                                WHERE company_id = :company_id AND state = :user_state LIMIT 1";
+                $location_result = $database->get_row($location_sql, [
+                    'company_id' => $company['company_id'],
+                    'user_state' => $user_state
+                ]);
+                if ($location_result['count'] > 0) {
+                    $filtered[] = $company;
+                }
+            }
+            $companies = $filtered;
         }
     }
 }
@@ -306,6 +347,64 @@ foreach ($companies as $company) {
     $processed_companies[] = $company;
 }
 $companies = $processed_companies;
+
+// Apply advanced filters
+if ($value_filter) {
+    $filtered = [];
+    $min_value = intval(str_replace('+', '', $value_filter));
+    foreach ($companies as $company) {
+        if ($company['total_value'] >= $min_value) {
+            $filtered[] = $company;
+        }
+    }
+    $companies = $filtered;
+}
+
+// Apply popularity filter (this would normally use enrollment counts or other metrics)
+if ($popular_filter) {
+    // For now, we'll simulate popularity based on reward value as a proxy
+    // In production, this would use actual enrollment/view counts
+    usort($companies, function($a, $b) {
+        return $b['total_value'] <=> $a['total_value'];
+    });
+    
+    switch($popular_filter) {
+        case 'top10':
+            $companies = array_slice($companies, 0, 10);
+            break;
+        case 'top25':
+            $companies = array_slice($companies, 0, 25);
+            break;
+        case 'top50':
+            $companies = array_slice($companies, 0, 50);
+            break;
+        case 'trending':
+            // Would normally check recent enrollment velocity
+            // For now, just take top 20 by value
+            $companies = array_slice($companies, 0, 20);
+            break;
+    }
+}
+
+// Apply rating filter (would need actual rating data)
+if ($rating_filter) {
+    // This would normally filter by actual company ratings
+    // For demonstration, we'll simulate based on reward count
+    $filtered = [];
+    $min_rating = floatval(str_replace('+', '', $rating_filter));
+    
+    foreach ($companies as $company) {
+        // Simulate rating based on reward count (1-5 scale)
+        $simulated_rating = min(5, 2 + ($company['reward_count'] * 0.5));
+        
+        if ($rating_filter === '5' && $simulated_rating == 5) {
+            $filtered[] = $company;
+        } else if (strpos($rating_filter, '+') !== false && $simulated_rating >= $min_rating) {
+            $filtered[] = $company;
+        }
+    }
+    $companies = $filtered;
+}
 
 // Debug: Check if we got any results
 if (empty($companies)) {
@@ -654,6 +753,9 @@ foreach ($display_categories as $cat) {
         case 'App Only':
             $cat_icon = 'bi-phone';
             break;
+        case 'Local':
+            $cat_icon = 'bi-geo-alt-fill';
+            break;
     }
     
     // Build URL for this category
@@ -697,6 +799,113 @@ foreach ($display_categories as $cat) {
                class="category-pill ' . ($is_active ? 'active' : '') . '">
                 <i class="' . $cat_icon . '"></i>
                 ' . $cat . '
+            </a>';
+}
+
+$output .= '
+        </div>
+    </div>';
+
+// Helper function to build filter URLs
+$buildFilterUrl = function($params, $key, $value) {
+    $new_params = $params;
+    if (empty($value)) {
+        unset($new_params[$key]);
+    } else {
+        $new_params[$key] = $value;
+    }
+    return '?' . http_build_query($new_params);
+};
+
+// Advanced Filters Section
+$output .= '
+    <div class="advanced-filters px-3 py-2 border-bottom bg-light">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <span class="text-muted small">Advanced:</span>
+            
+            <!-- Rating Filter -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                        id="ratingDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-star-fill text-warning"></i> 
+                    ' . ($rating_filter ? str_replace('+', '+ stars', $rating_filter) : 'Rating') . '
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="ratingDropdown">
+                    <li><a class="dropdown-item' . (!$rating_filter ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'rating', '') . '">Any Rating</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item' . ($rating_filter === '5' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'rating', '5') . '">
+                        <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 5 stars only
+                    </a></li>
+                    <li><a class="dropdown-item' . ($rating_filter === '4+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'rating', '4+') . '">
+                        <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 4+ stars
+                    </a></li>
+                    <li><a class="dropdown-item' . ($rating_filter === '3+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'rating', '3+') . '">
+                        <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 3+ stars
+                    </a></li>
+                </ul>
+            </div>
+            
+            <!-- Popular Filter -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                        id="popularDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-fire text-danger"></i> 
+                    ' . ($popular_filter ? 'Top ' . str_replace('top', '', $popular_filter) : 'Popular') . '
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="popularDropdown">
+                    <li><a class="dropdown-item' . (!$popular_filter ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', '') . '">All</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item' . ($popular_filter === 'top10' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', 'top10') . '">
+                        <i class="bi bi-fire text-danger"></i> Top 10 Most Popular
+                    </a></li>
+                    <li><a class="dropdown-item' . ($popular_filter === 'top25' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', 'top25') . '">
+                        <i class="bi bi-fire text-danger"></i> Top 25 Most Popular
+                    </a></li>
+                    <li><a class="dropdown-item' . ($popular_filter === 'top50' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', 'top50') . '">
+                        <i class="bi bi-fire text-danger"></i> Top 50 Most Popular
+                    </a></li>
+                    <li><a class="dropdown-item' . ($popular_filter === 'trending' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', 'trending') . '">
+                        <i class="bi bi-graph-up text-success"></i> Trending Now
+                    </a></li>
+                </ul>
+            </div>
+            
+            <!-- Value Filter -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                        id="valueDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-cash-stack text-success"></i> 
+                    ' . ($value_filter ? '$' . str_replace('+', '+', $value_filter) . ' value' : 'Value') . '
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="valueDropdown">
+                    <li><a class="dropdown-item' . (!$value_filter ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '') . '">Any Value</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item' . ($value_filter === '50+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '50+') . '">
+                        <i class="bi bi-cash-stack text-success"></i> $50+ value
+                    </a></li>
+                    <li><a class="dropdown-item' . ($value_filter === '25+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '25+') . '">
+                        <i class="bi bi-cash-stack text-success"></i> $25+ value
+                    </a></li>
+                    <li><a class="dropdown-item' . ($value_filter === '10+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '10+') . '">
+                        <i class="bi bi-cash-stack text-success"></i> $10+ value
+                    </a></li>
+                    <li><a class="dropdown-item' . ($value_filter === '5+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '5+') . '">
+                        <i class="bi bi-cash text-success"></i> $5+ value
+                    </a></li>
+                </ul>
+            </div>';
+
+// Show active filter count and clear button if any advanced filters are active
+if ($rating_filter || $popular_filter || $value_filter) {
+    $filter_count = 0;
+    if ($rating_filter) $filter_count++;
+    if ($popular_filter) $filter_count++;
+    if ($value_filter) $filter_count++;
+    
+    $output .= '
+            <a href="?' . http_build_query(array_diff_key($_GET, array_flip(['rating', 'popular', 'value']))) . '" 
+               class="btn btn-sm btn-outline-danger ms-auto">
+                <i class="bi bi-x-circle"></i> Clear (' . $filter_count . ')
             </a>';
 }
 
