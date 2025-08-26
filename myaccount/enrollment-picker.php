@@ -623,6 +623,35 @@ $additionalstyles .= '
     border-left: 1px solid var(--border-color);
 }
 
+/* Eye toggle button styling */
+.eye-toggle-btn {
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: all 0.2s;
+}
+
+.eye-toggle-btn:hover {
+    transform: scale(1.05);
+}
+
+.eye-toggle-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.eye-toggle-btn.active .badge {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.eye-toggle-btn .badge {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+}
+
 /* More button styling */
 button.category-pill {
     background: var(--light-gray);
@@ -873,6 +902,7 @@ $output .= '
 
 // Add suppression controls to the right side of filter bar
 if ($total_suppressed_count > 0 || $show_suppressed) {
+    /* Original toggle switch design - kept for rollback
     $output .= '
         <div class="suppression-toggle-wrapper d-flex align-items-center gap-2 px-3">
             <div class="form-check form-switch mb-0">
@@ -884,6 +914,25 @@ if ($total_suppressed_count > 0 || $show_suppressed) {
                 </label>
             </div>
             <button type="button" class="btn btn-sm p-1" data-bs-toggle="modal" data-bs-target="#suppressionModal"
+                    title="Why are some hidden?">
+                <i class="bi bi-info-circle"></i>
+            </button>
+        </div>';
+    */
+    
+    // New eye icon button design
+    $eye_icon = $show_suppressed ? 'bi-eye' : 'bi-eye-slash';
+    $eye_title = $show_suppressed ? 'Hide suppressed ' . $website['biznames'] : 'Show hidden ' . $website['biznames'];
+    
+    $output .= '
+        <div class="suppression-toggle-wrapper d-flex align-items-center gap-1 px-3">
+            <button type="button" class="btn btn-sm btn-outline-secondary eye-toggle-btn' . ($show_suppressed ? ' active' : '') . '" 
+                    onclick="toggleSuppressed(' . ($show_suppressed ? 'false' : 'true') . ')"
+                    title="' . $eye_title . '">
+                <i class="bi ' . $eye_icon . '"></i>
+                <span class="badge bg-secondary ms-1">' . $total_suppressed_count . '</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-link p-1" data-bs-toggle="modal" data-bs-target="#suppressionModal"
                     title="Why are some hidden?">
                 <i class="bi bi-info-circle"></i>
             </button>
