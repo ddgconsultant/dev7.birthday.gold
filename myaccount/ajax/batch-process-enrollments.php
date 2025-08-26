@@ -119,7 +119,7 @@ try {
             'company_id' => $company_id,
             'company_name' => $company['company_name'],
             'success' => true,
-            'enrollment_id' => $database->last_id()
+            'enrollment_id' => $database->lastInsertId()
         ];
     }
     
@@ -179,7 +179,7 @@ try {
             'company_id' => $company_id,
             'company_name' => $company['company_name'],
             'success' => true,
-            'enrollment_id' => $database->last_id()
+            'enrollment_id' => $database->lastInsertId()
         ];
     }
     
@@ -219,10 +219,15 @@ try {
     // Rollback on error
     $database->query("ROLLBACK");
     
-    // Log error
+    // Log detailed error
     error_log("Batch enrollment error for user $user_id: " . $e->getMessage());
+    error_log("Error trace: " . $e->getTraceAsString());
+    error_log("Picked IDs: " . json_encode($picked_ids));
+    error_log("Tracked IDs: " . json_encode($tracked_ids));
     
+    // More specific error message for debugging
     $response['message'] = 'An error occurred during processing';
+    $response['debug_error'] = $e->getMessage(); // Add debug info
 }
 
 // Output response

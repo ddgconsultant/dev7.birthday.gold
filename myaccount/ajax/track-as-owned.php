@@ -59,7 +59,7 @@ if (!$company) {
 
 // Check if user already has this company enrolled or tracked
 $existing_sql = "SELECT enrollment_id, status 
-                 FROM bg_enrollments 
+                 FROM bg_user_enrollments 
                  WHERE user_id = :user_id 
                  AND company_id = :company_id 
                  AND status IN ('active', 'pending', 'user_owned')";
@@ -84,7 +84,7 @@ try {
     $database->query("START TRANSACTION");
     
     // Insert enrollment record with user_owned status
-    $insert_sql = "INSERT INTO bg_enrollments 
+    $insert_sql = "INSERT INTO bg_user_enrollments 
                    (user_id, company_id, status, enrollment_source, created_at, updated_at) 
                    VALUES 
                    (:user_id, :company_id, 'user_owned', 'enrollment_picker_tracked', NOW(), NOW())";
@@ -94,7 +94,7 @@ try {
         'company_id' => $company_id
     ]);
     
-    $enrollment_id = $database->last_id();
+    $enrollment_id = $database->lastInsertId();
     
     // Log this action in session tracking
     if (isset($session)) {

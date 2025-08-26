@@ -551,6 +551,10 @@ async function confirmEnrollments() {
         
         // Check if the server reported success
         if (result.success === false && result.message) {
+            // Log debug error if available
+            if (result.debug_error) {
+                console.error('Debug error from server:', result.debug_error);
+            }
             throw new Error(result.message);
         }
         
