@@ -84,7 +84,7 @@ try {
         }
         
         // Check for existing enrollment
-        $existing_sql = "SELECT enrollment_id 
+        $existing_sql = "SELECT user_company_id 
                          FROM bg_user_enrollments 
                          WHERE user_id = :user_id 
                          AND company_id = :company_id 
@@ -106,7 +106,7 @@ try {
         
         // Create enrollment
         $insert_sql = "INSERT INTO bg_user_enrollments 
-                       (user_id, company_id, status, enrollment_source, created_at, updated_at) 
+                       (user_id, company_id, status, status_method, create_dt, modify_dt) 
                        VALUES 
                        (:user_id, :company_id, 'active', 'enrollment_picker', NOW(), NOW())";
         
@@ -119,7 +119,7 @@ try {
             'company_id' => $company_id,
             'company_name' => $company['company_name'],
             'success' => true,
-            'enrollment_id' => $database->lastInsertId()
+            'user_company_id' => $database->lastInsertId()
         ];
     }
     
@@ -144,7 +144,7 @@ try {
         }
         
         // Check for existing enrollment or tracking
-        $existing_sql = "SELECT enrollment_id, status 
+        $existing_sql = "SELECT user_company_id, status 
                          FROM bg_user_enrollments 
                          WHERE user_id = :user_id 
                          AND company_id = :company_id 
@@ -166,7 +166,7 @@ try {
         
         // Create user_owned enrollment
         $insert_sql = "INSERT INTO bg_user_enrollments 
-                       (user_id, company_id, status, enrollment_source, created_at, updated_at) 
+                       (user_id, company_id, status, status_method, create_dt, modify_dt) 
                        VALUES 
                        (:user_id, :company_id, 'user_owned', 'enrollment_picker_tracked', NOW(), NOW())";
         
@@ -179,7 +179,7 @@ try {
             'company_id' => $company_id,
             'company_name' => $company['company_name'],
             'success' => true,
-            'enrollment_id' => $database->lastInsertId()
+            'user_company_id' => $database->lastInsertId()
         ];
     }
     

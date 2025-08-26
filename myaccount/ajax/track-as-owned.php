@@ -58,7 +58,7 @@ if (!$company) {
 }
 
 // Check if user already has this company enrolled or tracked
-$existing_sql = "SELECT enrollment_id, status 
+$existing_sql = "SELECT user_company_id, status 
                  FROM bg_user_enrollments 
                  WHERE user_id = :user_id 
                  AND company_id = :company_id 
@@ -85,7 +85,7 @@ try {
     
     // Insert enrollment record with user_owned status
     $insert_sql = "INSERT INTO bg_user_enrollments 
-                   (user_id, company_id, status, enrollment_source, created_at, updated_at) 
+                   (user_id, company_id, status, status_method, create_dt, modify_dt) 
                    VALUES 
                    (:user_id, :company_id, 'user_owned', 'enrollment_picker_tracked', NOW(), NOW())";
     
@@ -94,7 +94,7 @@ try {
         'company_id' => $company_id
     ]);
     
-    $enrollment_id = $database->lastInsertId();
+    $user_company_id = $database->lastInsertId();
     
     // Log this action in session tracking
     if (isset($session)) {
@@ -123,7 +123,7 @@ try {
         'data' => json_encode([
             'company_id' => $company_id,
             'company_name' => $company['company_name'],
-            'enrollment_id' => $enrollment_id
+            'user_company_id' => $user_company_id
         ])
     ]);
     
@@ -133,7 +133,7 @@ try {
     // Success response
     $response['success'] = true;
     $response['message'] = 'Reward tracked successfully';
-    $response['enrollment_id'] = $enrollment_id;
+    $response['user_company_id'] = $user_company_id;
     $response['status'] = 'user_owned';
     
 } catch (Exception $e) {

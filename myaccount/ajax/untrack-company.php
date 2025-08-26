@@ -40,7 +40,7 @@ if (!$company_id) {
 }
 
 // Check if user has this company tracked
-$check_sql = "SELECT enrollment_id 
+$check_sql = "SELECT user_company_id 
               FROM bg_user_enrollments 
               WHERE user_id = :user_id 
               AND company_id = :company_id 
@@ -63,12 +63,12 @@ try {
     
     // Delete the user_owned enrollment
     $delete_sql = "DELETE FROM bg_user_enrollments 
-                   WHERE enrollment_id = :enrollment_id 
+                   WHERE user_company_id = :user_company_id 
                    AND user_id = :user_id 
                    AND status = 'user_owned'";
     
     $database->query($delete_sql, [
-        'enrollment_id' => $enrollment['enrollment_id'],
+        'user_company_id' => $enrollment['user_company_id'],
         'user_id' => $user_id
     ]);
     
@@ -95,7 +95,7 @@ try {
             'user_id' => $user_id,
             'data' => json_encode([
                 'company_id' => $company_id,
-                'enrollment_id' => $enrollment['enrollment_id']
+                'user_company_id' => $enrollment['user_company_id']
             ])
         ]);
     } catch (Exception $e) {
