@@ -423,7 +423,7 @@ $label_tokened = 'Picked';
 // Page setup - MUST be before includes
 $pagetitle = 'Pick Your Birthday Rewards';
 $bodycontentclass = '';
-$additionalstyles .= '<link rel="stylesheet" href="/public/css/enrollment-picker.css">';
+$additionalstyles .= '<link rel="stylesheet" href="/public/css/enrollment-picker.css?v=' . time() . '">';
 
 // Add custom CSS using Bootstrap 5 utilities where possible
 $additionalstyles .= '
