@@ -229,11 +229,6 @@ foreach ($companies as $company) {
         $suppression_reasons['age'] = "Age requirement: $age_range years (you are {$alive['years']} years old)";
     }
     
-    // App-only check (treat as optional suppression)
-    if ($company['signup_url'] == $website['apponlytag']) {
-        $suppression_reasons['app'] = "Requires mobile app for signup";
-    }
-    
     // Check for dietary restrictions (placeholder for future implementation)
     // This would check user preferences against company attributes
     if (!empty($company['dietary_restrictions'])) {
@@ -1025,11 +1020,6 @@ if (count($suppressed_companies) > 0) {
                 $icon = 'bi-calendar-x';
                 $label = 'Age Restrictions';
                 $desc = 'Outside your age range';
-                break;
-            case 'app':
-                $icon = 'bi-phone-fill';
-                $label = 'App Only';
-                $desc = 'Requires mobile app for signup';
                 break;
             case 'diet':
                 $icon = 'bi-egg-fill';
