@@ -33,16 +33,31 @@ if (!$user_id) {
 }
 
 // Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
+$raw_input = file_get_contents('php://input');
+$input = json_decode($raw_input, true);
 
-if (!$input || (!isset($input['picked']) && !isset($input['tracked']))) {
-    $response['message'] = 'No items to process';
+// Debug logging
+error_log("Batch process received: " . $raw_input);
+
+if (!$input) {
+    $response['message'] = 'Invalid request data';
     echo json_encode($response);
     exit;
 }
 
 $picked_ids = isset($input['picked']) ? array_map('intval', $input['picked']) : [];
 $tracked_ids = isset($input['tracked']) ? array_map('intval', $input['tracked']) : [];
+
+// Debug logging
+error_log("Picked IDs: " . json_encode($picked_ids));
+error_log("Tracked IDs: " . json_encode($tracked_ids));
+
+// Check if we have any items to process
+if (empty($picked_ids) && empty($tracked_ids)) {
+    $response['message'] = 'No items to process';
+    echo json_encode($response);
+    exit;
+}
 
 // Start transaction
 $database->query("START TRANSACTION");

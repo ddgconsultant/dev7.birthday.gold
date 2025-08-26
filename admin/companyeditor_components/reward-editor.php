@@ -456,11 +456,19 @@ echo $additionalstyles;
 </div>
 
 <script>
-function createReward() {
+// Store rewards data for easy access
+const rewardsData = <?php echo json_encode(array_merge($companyRewards, $locationRewards)); ?>;
+
+function createReward(locationId = null) {
     // Clear the form
     document.getElementById('rewardForm').reset();
     document.getElementById('reward_id').value = '';
     document.getElementById('rewardModalTitle').textContent = 'Add New Reward';
+    
+    // If location ID provided, pre-select it
+    if (locationId) {
+        document.getElementById('location_id').value = locationId;
+    }
     
     // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('rewardEditorModal'));
@@ -468,9 +476,31 @@ function createReward() {
 }
 
 function editReward(rewardId) {
-    // This would typically fetch the reward data via AJAX
-    // For now, we'll just open the modal with the ID set
-    document.getElementById('reward_id').value = rewardId;
+    // Find the reward data
+    const reward = rewardsData.find(r => r.reward_id == rewardId);
+    
+    if (!reward) {
+        console.error('Reward not found:', rewardId);
+        return;
+    }
+    
+    // Clear the form first
+    document.getElementById('rewardForm').reset();
+    
+    // Populate the form fields
+    document.getElementById('reward_id').value = reward.reward_id || '';
+    document.getElementById('reward_name').value = reward.reward_name || '';
+    document.getElementById('reward_type').value = reward.reward_type || '';
+    document.getElementById('reward_description_short').value = reward.reward_description_short || '';
+    document.getElementById('reward_description_long').value = reward.reward_description_long || '';
+    document.getElementById('reward_value').value = reward.reward_value || '';
+    document.getElementById('cash_value').value = reward.cash_value || '';
+    document.getElementById('location_id').value = reward.location_id || '';
+    document.getElementById('minage').value = reward.minage || '';
+    document.getElementById('maxage').value = reward.maxage || '';
+    document.getElementById('mindaysstart').value = reward.mindaysstart || '';
+    
+    // Update modal title
     document.getElementById('rewardModalTitle').textContent = 'Edit Reward';
     
     // Show the modal

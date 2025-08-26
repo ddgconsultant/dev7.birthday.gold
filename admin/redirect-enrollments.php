@@ -1,2 +1,2 @@
 <?PHP
-header('location: https://dev.birthday.gold/admin/bgreb_v3/enrollment-listv2');
+header('location: https://dev7.birthday.gold/admin/bgreb_v3/enrollment-listv2');

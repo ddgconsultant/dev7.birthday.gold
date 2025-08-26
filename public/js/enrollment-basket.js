@@ -8,11 +8,14 @@ let selectionBasket = JSON.parse(sessionStorage.getItem('enrollmentBasket') || '
 
 // Initialize basket on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Restore basket UI state
-    if (selectionBasket.length > 0) {
+    // Load tracked basket
+    const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+    
+    // Restore basket UI state if we have any items
+    if (selectionBasket.length > 0 || trackedBasket.length > 0) {
         updateBasketUI();
         
-        // Update card states for items in basket
+        // Update card states for picked items
         selectionBasket.forEach(item => {
             const card = document.querySelector(`[data-company-id="${item.id}"]`);
             if (card && !card.classList.contains('enrolled')) {
@@ -22,6 +25,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     actionDiv.innerHTML = `
                         <button class="action-btn selected" onclick="removeFromBasket(${item.id})">
                             <i class="bi bi-check-circle"></i> ${window.userData.labels.tokened}
+                        </button>
+                    `;
+                }
+            }
+        });
+        
+        // Update card states for tracked items
+        trackedBasket.forEach(item => {
+            const card = document.querySelector(`[data-company-id="${item.id}"]`);
+            if (card && !card.classList.contains('enrolled')) {
+                const actionDiv = card.querySelector('.company-action');
+                if (actionDiv) {
+                    // Replace button group with single tracked button
+                    actionDiv.innerHTML = `
+                        <button class="action-btn tracked" onclick="removeFromTrackedBasket(${item.id})">
+                            <i class="bi bi-bookmark-check-fill"></i> Tracked
                         </button>
                     `;
                 }
@@ -164,8 +183,7 @@ function removeFromBasket(companyId) {
                 <div class="btn-group w-100" role="group">
                     <button class="action-btn enroll split-main" 
                             style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; padding-left: 1.5rem;"
-                            onclick="selectCompany(${companyId}, '${name.replace(/'/g, "\\'")}')"
-                            data-company-logo="${logo}">
+                            onclick="addToBasket(${companyId}, '${name.replace(/'/g, "\\'")}', '${logo}')">
                         <span class="pick-text">(+) ${window.userData.labels.token}</span>
                     </button>
                     <button type="button" class="action-btn enroll split-dropdown dropdown-toggle dropdown-toggle-split" 
@@ -193,31 +211,36 @@ function removeFromBasket(companyId) {
     }
 }
 
-// Remove tracked item from basket
+// Remove tracked item from basket (now calls removeFromTrackedBasket)
 function removeTrackedItem(companyId) {
-    let trackedItems = JSON.parse(sessionStorage.getItem('trackedItems') || '[]');
-    trackedItems = trackedItems.filter(item => item.id !== companyId);
-    sessionStorage.setItem('trackedItems', JSON.stringify(trackedItems));
-    
-    updateBasketUI();
-    
-    // Update the card button back to split button
-    // This should match what untrackCompany does
-    // For now just update the UI
+    // This function now just calls the unified removeFromTrackedBasket
+    if (typeof removeFromTrackedBasket === 'function') {
+        removeFromTrackedBasket(companyId);
+    } else {
+        // Fallback if removeFromTrackedBasket is not available
+        let trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+        trackedBasket = trackedBasket.filter(item => item.id !== companyId);
+        sessionStorage.setItem('trackedBasket', JSON.stringify(trackedBasket));
+        updateBasketUI();
+    }
 }
 
-// Clear entire basket
+// Clear entire basket (both picked and tracked)
 function clearBasket() {
-    const companyIds = [...selectionBasket.map(item => item.id)];
-    selectionBasket = [];
+    // Get all company IDs from both baskets
+    const pickedIds = [...selectionBasket.map(item => item.id)];
+    const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+    const trackedIds = [...trackedBasket.map(item => item.id)];
     
-    // Clear from sessionStorage
+    // Clear both baskets
+    selectionBasket = [];
     sessionStorage.removeItem('enrollmentBasket');
+    sessionStorage.removeItem('trackedBasket');
     
     updateBasketUI();
     
-    // Reset all buttons
-    companyIds.forEach(id => {
+    // Reset all picked buttons
+    pickedIds.forEach(id => {
         const card = document.querySelector(`[data-company-id="${id}"]`);
         if (card && !card.classList.contains('enrolled')) {
             const actionDiv = card.querySelector('.company-action');
@@ -231,7 +254,48 @@ function clearBasket() {
                     <div class="btn-group w-100" role="group">
                         <button class="action-btn enroll split-main" 
                                 style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; padding-left: 1.5rem;"
-                                onclick="selectCompany(${id}, '${name.replace(/'/g, "\\'")}')">
+                                onclick="addToBasket(${id}, '${name.replace(/'/g, "\\'")}', '${logo}')">
+                            <span class="pick-text">(+) ${window.userData.labels.token}</span>
+                        </button>
+                        <button type="button" class="action-btn enroll split-dropdown dropdown-toggle dropdown-toggle-split" 
+                                style="border-top-left-radius: 0; border-bottom-left-radius: 0; width: auto; border-left: 1px solid rgba(255,255,255,0.2);"
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false">
+                            <span class="visually-hidden">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="trackAsOwned(${id}, '${name.replace(/'/g, "\\'")}', this); return false;">
+                                <i class="bi bi-bookmark-check me-2"></i> I Already Have This
+                            </a></li>
+                        </ul>
+                    </div>
+                `;
+                
+                // Re-initialize Bootstrap dropdowns
+                const dropdownToggle = actionDiv.querySelector('[data-bs-toggle="dropdown"]');
+                if (dropdownToggle) {
+                    new bootstrap.Dropdown(dropdownToggle);
+                }
+            }
+        }
+    });
+    
+    // Reset all tracked buttons
+    trackedIds.forEach(id => {
+        const card = document.querySelector(`[data-company-id="${id}"]`);
+        if (card && !card.classList.contains('enrolled')) {
+            const actionDiv = card.querySelector('.company-action');
+            if (actionDiv) {
+                const name = card.querySelector('.company-name').textContent;
+                const imgEl = card.querySelector('.company-image img');
+                const logo = imgEl ? imgEl.src : '';
+                
+                // Restore the split button group with proper styling
+                actionDiv.innerHTML = `
+                    <div class="btn-group w-100" role="group">
+                        <button class="action-btn enroll split-main" 
+                                style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; padding-left: 1.5rem;"
+                                onclick="addToBasket(${id}, '${name.replace(/'/g, "\\'")}', '${logo}')">
                             <span class="pick-text">(+) ${window.userData.labels.token}</span>
                         </button>
                         <button type="button" class="action-btn enroll split-dropdown dropdown-toggle dropdown-toggle-split" 
@@ -289,25 +353,24 @@ function updateBasketUI() {
         if (totalCount > 0) {
             selectedInfo.style.display = 'flex';
             
+            const selectedLabel = document.getElementById('selectedLabel');
+            
             // Show breakdown if we have both picked and tracked
             if (pickedCount > 0 && trackedCount > 0) {
-                selectedCount.textContent = `${pickedCount} + ${trackedCount}`;
-                // Update label to show both types
-                const selectedLabel = document.getElementById('selectedLabel');
+                // Format: "2 Picked / 1 Tracked"
+                selectedCount.textContent = pickedCount + ' / ' + trackedCount;
                 if (selectedLabel) {
-                    selectedLabel.textContent = `${window.userData.labels.tokened} + Tracked`;
+                    selectedLabel.textContent = `${window.userData.labels.tokened} / Tracked`;
                 }
             } else if (pickedCount > 0) {
                 // Only picked items
                 selectedCount.textContent = pickedCount;
-                const selectedLabel = document.getElementById('selectedLabel');
                 if (selectedLabel) {
                     selectedLabel.textContent = window.userData.labels.tokened;
                 }
             } else if (trackedCount > 0) {
                 // Only tracked items
                 selectedCount.textContent = trackedCount;
-                const selectedLabel = document.getElementById('selectedLabel');
                 if (selectedLabel) {
                     selectedLabel.textContent = 'Tracked';
                 }
@@ -335,8 +398,9 @@ function updateBasketUI() {
             }
         }
         
-        // Get tracked items
-        const trackedItems = JSON.parse(sessionStorage.getItem('trackedItems') || '[]');
+        // Get tracked items from trackedBasket (not trackedItems)
+        const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+        console.log('UpdateBasketUI - Tracked basket has', trackedBasket.length, 'items');
         
         // Build HTML for picked items
         let itemsHTML = '';
@@ -360,11 +424,11 @@ function updateBasketUI() {
         }
         
         // Add tracked items with gold badge
-        if (trackedItems.length > 0) {
+        if (trackedBasket.length > 0) {
             itemsHTML += '<div class="mb-3"><h6 class="text-warning"><i class="bi bi-bookmark-check-fill"></i> Already Have (Tracking Only)</h6>';
-            itemsHTML += trackedItems.map(item => `
+            itemsHTML += trackedBasket.map(item => `
                 <div class="basket-item">
-                    <div style="width:50px;height:50px;background:#f0f0f0;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building text-muted"></i></div>
+                    ${item.logo ? `<img src="${item.logo}" alt="${item.name}">` : '<div style="width:50px;height:50px;background:#f0f0f0;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building text-muted"></i></div>'}
                     <div class="basket-item-info">
                         <div class="basket-item-name">${item.name}</div>
                         <div class="basket-item-category"><span class="badge bg-warning text-dark">Tracked</span></div>
@@ -429,9 +493,20 @@ function toggleBasketDetails() {
 
 // Confirm enrollments - handles both picked and tracked items
 async function confirmEnrollments() {
+    // Sync global variable with sessionStorage first
+    selectionBasket = JSON.parse(sessionStorage.getItem('enrollmentBasket') || '[]');
     const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
     
-    if (selectionBasket.length === 0 && trackedBasket.length === 0) return;
+    console.log('Picked basket (synced):', selectionBasket);
+    console.log('Tracked basket:', trackedBasket);
+    console.log('Picked length:', selectionBasket.length);
+    console.log('Tracked length:', trackedBasket.length);
+    
+    if (selectionBasket.length === 0 && trackedBasket.length === 0) {
+        console.log('Both baskets are empty');
+        showError('No items to submit');
+        return;
+    }
     
     // Close basket modal
     const basketModal = bootstrap.Modal.getInstance(document.getElementById('basketModal'));
@@ -443,11 +518,15 @@ async function confirmEnrollments() {
     showLoading(true);
     
     try {
-        // Prepare batch data for submission
+        // Prepare batch data for submission - ensure IDs are numbers
         const batchData = {
-            picked: selectionBasket.map(item => item.id),
-            tracked: trackedBasket.map(item => item.id)
+            picked: selectionBasket.map(item => parseInt(item.id, 10)),
+            tracked: trackedBasket.map(item => parseInt(item.id, 10))
         };
+        
+        console.log('Submitting batch data:', batchData);
+        console.log('Picked IDs:', batchData.picked);
+        console.log('Tracked IDs:', batchData.tracked);
         
         // Submit both picked and tracked in batch
         const response = await fetch('/myaccount/ajax/batch-process-enrollments.php', {
@@ -459,14 +538,28 @@ async function confirmEnrollments() {
             body: JSON.stringify(batchData)
         });
         
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+        
         const result = await response.json();
+        console.log('Server response:', result);
+        
+        if (!result) {
+            throw new Error('No response from server');
+        }
+        
+        // Check if the server reported success
+        if (result.success === false && result.message) {
+            throw new Error(result.message);
+        }
         
         let successCount = 0;
         let trackedSuccessCount = 0;
         let errors = [];
         
         // Handle results for picked items
-        if (result.picked) {
+        if (result.picked && Array.isArray(result.picked)) {
             result.picked.forEach(item => {
                 if (item.success) {
                     successCount++;
@@ -478,43 +571,67 @@ async function confirmEnrollments() {
         }
         
         // Handle results for tracked items
-        if (result.tracked) {
+        if (result.tracked && Array.isArray(result.tracked)) {
             result.tracked.forEach(item => {
                 if (item.success) {
                     trackedSuccessCount++;
-                    // Update card to show tracked status
-                    const card = document.querySelector(`[data-company-id="${item.company_id}"]`);
-                    if (card) {
-                        const actionDiv = card.querySelector('.company-action');
-                        if (actionDiv) {
-                            actionDiv.innerHTML = `
-                                <button class="action-btn tracked" onclick="removeFromTrackedBasket(${item.company_id})">
-                                    <i class="bi bi-bookmark-check-fill"></i> Tracked
-                                </button>
-                            `;
-                        }
-                    }
+                    // Note: No need to update cards since tracked companies are filtered from the list
                 } else {
                     errors.push(`${item.company_name}: ${item.error || 'Failed to track'}`);
                 }
             });
         }
         
+        // If we got a successful response but no items were processed, 
+        // assume everything went through successfully based on what we sent
+        if (result.success === true && successCount === 0 && trackedSuccessCount === 0 && errors.length === 0) {
+            // Count what we sent as successful
+            successCount = selectionBasket.length;
+            trackedSuccessCount = trackedBasket.length;
+        }
+        
         // Clear both baskets
-        selectionBasket = [];
+        selectionBasket = [];  // Clear global variable
         sessionStorage.removeItem('enrollmentBasket');
         sessionStorage.removeItem('trackedBasket');
         updateBasketUI();
         
         // Show results
-        if (successCount > 0 && errors.length === 0) {
-            const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
-            showSuccess(`Your ${successCount} ${pickWord} ${successCount === 1 ? 'has' : 'have'} been successfully submitted for enrollment processing.`, successCount);
-        } else if (successCount > 0 && errors.length > 0) {
-            const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
-            showError(`${successCount} ${pickWord} submitted. Errors: ${errors.join(', ')}`);
-        } else {
+        const totalSuccess = successCount + trackedSuccessCount;
+        
+        if (totalSuccess > 0 && errors.length === 0) {
+            let message = '';
+            if (successCount > 0 && trackedSuccessCount > 0) {
+                const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
+                message = `Successfully submitted ${successCount} ${pickWord} for enrollment and tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} you already have.`;
+            } else if (successCount > 0) {
+                const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
+                message = `Your ${successCount} ${pickWord} ${successCount === 1 ? 'has' : 'have'} been successfully submitted for enrollment processing.`;
+            } else if (trackedSuccessCount > 0) {
+                message = `Successfully tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} you already have.`;
+            }
+            showSuccess(message, totalSuccess);
+            
+            // Reload page after showing success message to remove tracked items from display
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else if (totalSuccess > 0 && errors.length > 0) {
+            showError(`Partially successful. ${totalSuccess} processed, but errors: ${errors.join(', ')}`);
+            
+            // Reload page after partial success
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        } else if (errors.length > 0) {
             showError(`Failed to submit. Errors: ${errors.join(', ')}`);
+        } else {
+            // This shouldn't happen if we have a successful response
+            // But if it does, still reload to clear tracked items
+            showError('No items to submit');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
         }
         
         // Update balance display
@@ -524,7 +641,13 @@ async function confirmEnrollments() {
         
     } catch (error) {
         console.error('Batch enrollment error:', error);
-        showError('Failed to process enrollments');
+        
+        // Show more specific error message
+        let errorMsg = 'Failed to process enrollments';
+        if (error.message) {
+            errorMsg += ': ' + error.message;
+        }
+        showError(errorMsg);
     } finally {
         showLoading(false);
     }

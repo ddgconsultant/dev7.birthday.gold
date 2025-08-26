@@ -121,6 +121,10 @@ include($dir['core_components'] . '/bg_header.inc');
                         <i class="bi bi-house-door me-2"></i>General
                     </button>
                     
+                    <button class="nav-link" id="details-tab" data-bs-toggle="pill" data-bs-target="#details" type="button" role="tab">
+                        <i class="bi bi-info-circle me-2"></i>Details
+                    </button>
+                    
                     <button class="nav-link" id="locations-tab" data-bs-toggle="pill" data-bs-target="#locations" type="button" role="tab">
                         <i class="bi bi-geo-alt me-2"></i>Locations
                     </button>
@@ -182,6 +186,16 @@ include($dir['core_components'] . '/bg_header.inc');
                             <?php 
                             $componentmode = 'include';
                             include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/general-details.php'); 
+                            ?>
+                        </div>
+                    </div>
+                    
+                    <!-- Details Tab -->
+                    <div class="tab-pane fade" id="details" role="tabpanel">
+                        <div class="content-section">
+                            <?php 
+                            $componentmode = 'include';
+                            include($_SERVER['DOCUMENT_ROOT'] . '/admin/companyeditor_components/company-details.php'); 
                             ?>
                         </div>
                     </div>

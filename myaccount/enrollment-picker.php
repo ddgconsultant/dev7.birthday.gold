@@ -103,13 +103,19 @@ if ($search_query) {
         'search2' => "%{$search_query}%"
     ];
     
-    // Direct search query
+    // Direct search query - exclude tracked companies
     $sql = "SELECT DISTINCT c.*, a.description as company_logo 
             FROM bg_companies AS c
             LEFT JOIN bg_company_attributes AS a ON c.company_id = a.company_id 
                 AND a.category = 'company_logos' AND a.grouping = 'primary_logo'
             WHERE c.status = 'finalized' 
-                AND (c.company_name LIKE :search1 OR c.description LIKE :search2)";
+                AND (c.company_name LIKE :search1 OR c.description LIKE :search2)
+                AND c.company_id NOT IN (
+                    SELECT company_id FROM bg_user_enrollments 
+                    WHERE user_id = :user_id 
+                    AND status = 'user_owned'
+                )";
+    $params['user_id'] = $user_id;
     
     // Handle category filtering for search
     if (!in_array('All', $selected_categories)) {
@@ -259,6 +265,16 @@ if ($search_query) {
     }
 }
 
+// Note: We only filter out companies that have been confirmed as tracked (in database)
+// Companies in the current session's trackedBasket are still shown until submitted
+if (!empty($trackedList)) {
+    $companies = array_filter($companies, function($company) use ($trackedList) {
+        return !in_array($company['company_id'], $trackedList);
+    });
+    // Re-index array after filtering
+    $companies = array_values($companies);
+}
+
 // Get all company IDs for eligibility check
 $company_ids = array_column($companies, 'company_id');
 $eligibilities = $enrollment->getCompanyEligibilities($user_id, $company_ids);
@@ -314,15 +330,17 @@ foreach ($companies as $company) {
         }
     }
     
+    // Check if already selected or enrolled
+    // Note: Companies that are tracked in DB are already filtered out
+    // But we need to check for session-tracked items that haven't been submitted yet
+    $company['is_enrolled'] = in_array($company['company_id'], $selectionList) || in_array($company['company_id'], $existingList);
+    $company['is_selected'] = in_array($company['company_id'], $selectionList);
+    $company['is_existing'] = in_array($company['company_id'], $existingList);
+    $company['is_tracked'] = false;  // Will be set by JavaScript for session-tracked items
+    
     // Store suppression info
     $company['is_suppressed'] = !empty($suppression_reasons);
     $company['suppression_reasons'] = $suppression_reasons;
-    
-    // Check if already selected, enrolled, or tracked
-    $company['is_enrolled'] = in_array($company['company_id'], $selectionList) || in_array($company['company_id'], $existingList) || in_array($company['company_id'], $trackedList);
-    $company['is_selected'] = in_array($company['company_id'], $selectionList);
-    $company['is_existing'] = in_array($company['company_id'], $existingList);
-    $company['is_tracked'] = in_array($company['company_id'], $trackedList);  // "I Already Have This"
     
     // Get rewards
     $query = "SELECT * FROM bg_company_rewards WHERE company_id = ? AND status = 'active'";
@@ -1290,13 +1308,8 @@ if (empty($companies)) {
         $output .= '
             <div class="company-action">';
         
-        if ($company['is_tracked']) {
-            // Show as tracked (I Already Have This) with ability to remove
-            $output .= '
-                <button class="action-btn tracked" onclick="untrackCompany(' . $company['company_id'] . ', \'' . htmlspecialchars(addslashes($company['company_name'])) . '\', this)">
-                    <i class="bi bi-bookmark-check-fill"></i> Tracked
-                </button>';
-        } elseif ($company['is_enrolled']) {
+        // Note: tracked companies are filtered out from the list entirely
+        if ($company['is_enrolled']) {
             $output .= '
                 <button class="action-btn enrolled" disabled>
                     <i class="bi bi-check-circle-fill"></i> ' . $label_tokened . '
@@ -1313,12 +1326,13 @@ if (empty($companies)) {
             $company_logo_url = isset($company['company_logo']) ? $display->companyimage($company['company_id'] . '/' . $company['company_logo']) : '';
             $output .= '
                 <div class="btn-group w-100" role="group">
-                    <button class="action-btn enroll" style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1;"
+                    <button class="action-btn enroll split-main" 
+                            style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; padding-left: 1.5rem;"
                             onclick="addToBasket(' . $company['company_id'] . ', \'' . htmlspecialchars(addslashes($company['company_name'])) . '\', \'' . $company_logo_url . '\')">
-                        <i class="bi bi-plus-circle"></i> ' . $label_token . '
+                        <span class="pick-text">(+) ' . $label_token . '</span>
                     </button>
-                    <button type="button" class="action-btn enroll dropdown-toggle dropdown-toggle-split" 
-                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem 0.35rem; width: auto;"
+                    <button type="button" class="action-btn enroll split-dropdown dropdown-toggle dropdown-toggle-split" 
+                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; width: auto; border-left: 1px solid rgba(255,255,255,0.2);"
                             data-bs-toggle="dropdown" 
                             aria-expanded="false">
                         <span class="visually-hidden">Toggle Dropdown</span>
@@ -1617,6 +1631,12 @@ $output .= '
 // Output the built HTML
 echo $output;
 
+// Load required scripts first
+echo '
+<script src="/public/js/enrollment-picker.js"></script>
+<script src="/public/js/enrollment-basket.js"></script>
+';
+
 // JavaScript section
 echo '
 <script>
@@ -1688,14 +1708,18 @@ function trackAsOwned(companyId, companyName, element) {
     
     // Check if already tracked
     let trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
-    if (trackedBasket.find(item => item.id === companyId)) {
+    
+    // Ensure companyId is a number for consistency
+    const numericCompanyId = parseInt(companyId, 10);
+    
+    if (trackedBasket.find(item => item.id === numericCompanyId)) {
         showNotification('info', 'This company is already marked as tracked');
         return;
     }
     
-    // Add to tracked basket
+    // Add to tracked basket with numeric ID
     trackedBasket.push({
-        id: companyId,
+        id: numericCompanyId,
         name: companyName,
         logo: companyLogo
     });
@@ -1704,7 +1728,7 @@ function trackAsOwned(companyId, companyName, element) {
     // Replace the entire button group with a single tracked button
     const actionDiv = element.closest('.btn-group').parentElement;
     actionDiv.innerHTML = `
-        <button class="action-btn tracked" onclick="removeFromTrackedBasket(${companyId})">
+        <button class="action-btn tracked" onclick="removeFromTrackedBasket(${numericCompanyId})">
             <i class="bi bi-bookmark-check-fill"></i> Tracked
         </button>
     `;
@@ -1712,8 +1736,7 @@ function trackAsOwned(companyId, companyName, element) {
     // Update basket UI to show counts
     updateBasketUI();
     
-    // Show quick feedback
-    showNotification('success', companyName + ' marked as already owned');
+    // No notification needed - the button change is enough feedback
 }
 
 // Remove from tracked basket - mirrors removeFromBasket for picked items
@@ -1740,8 +1763,7 @@ function removeFromTrackedBasket(companyId) {
             // Restore split button with proper styling
             actionDiv.innerHTML = `
                 <div class="btn-group w-100" role="group">
-                    <button class="action-btn enroll split-main" onclick="selectCompany(${companyId}, '${name.replace(/'/g, "\\'")}')"
-                            data-company-logo="${logo}"
+                    <button class="action-btn enroll split-main" onclick="addToBasket(${companyId}, '${name.replace(/'/g, "\\'")}', '${logo}')"
                             style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; padding-left: 1.5rem;">
                         <span class="pick-text">(+) ${window.userData.labels.token}</span>
                     </button>
@@ -2015,8 +2037,6 @@ function clearSearch() {
 }
 </script>
 
-<script src="/public/js/enrollment-picker.js"></script>
-<script src="/public/js/enrollment-basket.js"></script>
 <?PHP
 $display_footertype='min';
 include($dir['core_components'] . '/bg_footer.inc');

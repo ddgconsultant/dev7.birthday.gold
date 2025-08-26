@@ -473,7 +473,7 @@ $businessHours = $app->bg_businesshours();
 <!-- Hero Section -->
 <div class="content-header-admin no-rounded-corners">
     <div class="container">
-        <h1 class="mt-3">Admin Dashboard<?php if ($mode == 'dev' && $site == 'dev7') echo ' <span class="badge bg-warning text-dark ms-2 dev-indicator" style="font-size: 0.5em; vertical-align: middle;">dev7 Development Servers</span>'; ?></h1>
+        <h1 class="mt-3">Admin Dashboard</h1>
         <p class="lead mb-4">Manage the Birthday.Gold platform with powerful administrative tools</p>
     </div>
 </div>
