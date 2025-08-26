@@ -48,7 +48,7 @@ $get_rewardcategories = $app->get_rewardcategories();
 $rewardiconlist = $get_rewardcategories[1];
 
 // Category list for filter - using existing categories from businessselect.php
-$display_categories = ['All', 'Food', 'Beverage', 'Beauty', 'Retail', 'Other', 'App Only', 'Local'];
+$display_categories = ['All', 'Food', 'Beverage', 'Beauty', 'Retail', 'Other', 'App Only', 'Local', 'More'];
 
 // Get user's state for Local filter
 $user_state = $current_user_data['state'] ?? $current_user_data['profile_state'] ?? '';
@@ -617,11 +617,38 @@ $additionalstyles .= '
     z-index: 1020;
 }
 
-.suppression-controls {
-    position: sticky;
-    top: var(--header-height, 180px);
-    z-index: 1010;
-    transition: all 0.3s ease;
+/* Suppression toggle in filter bar */
+.suppression-toggle-wrapper {
+    white-space: nowrap;
+    border-left: 1px solid var(--border-color);
+}
+
+/* More button styling */
+button.category-pill {
+    background: var(--light-gray);
+    color: var(--dark);
+    border: none;
+    text-decoration: none;
+}
+
+button.category-pill:hover {
+    background: #e9ecef;
+}
+
+button.category-pill.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Mobile adjustments for filter bar */
+@media (max-width: 576px) {
+    .suppression-toggle-wrapper .form-check-label {
+        font-size: 0.75rem;
+    }
+    
+    .suppression-toggle-wrapper .badge {
+        font-size: 0.625rem;
+    }
 }
 
 /* Success modal icon fix */
@@ -722,10 +749,10 @@ $output .= '
         </form>
     </div>';
 
-// Category Filter
+// Category Filter with Suppression Controls
 $output .= '
-    <div class="category-filter">
-        <div class="category-scroll">';
+    <div class="category-filter d-flex justify-content-between align-items-center">
+        <div class="category-scroll flex-grow-1">';
 
 foreach ($display_categories as $cat) {
     $cat_icon = 'bi-tag';
@@ -756,6 +783,26 @@ foreach ($display_categories as $cat) {
         case 'Local':
             $cat_icon = 'bi-geo-alt-fill';
             break;
+        case 'More':
+            $cat_icon = 'bi-sliders';
+            break;
+    }
+    
+    // Special handling for More pill - opens modal instead of URL
+    if ($cat === 'More') {
+        // Count active advanced filters
+        $active_advanced_count = 0;
+        if ($rating_filter) $active_advanced_count++;
+        if ($popular_filter) $active_advanced_count++;
+        if ($value_filter) $active_advanced_count++;
+        
+        $output .= '
+            <button type="button" class="category-pill' . ($active_advanced_count > 0 ? ' active' : '') . '" 
+                    data-bs-toggle="modal" data-bs-target="#advancedFiltersModal">
+                <i class="' . $cat_icon . '"></i>
+                More' . ($active_advanced_count > 0 ? ' (' . $active_advanced_count . ')' : '') . '
+            </button>';
+        continue;
     }
     
     // Build URL for this category
@@ -803,7 +850,28 @@ foreach ($display_categories as $cat) {
 }
 
 $output .= '
-        </div>
+        </div>';
+
+// Add suppression controls to the right side of filter bar
+if ($total_suppressed_count > 0 || $show_suppressed) {
+    $output .= '
+        <div class="suppression-toggle-wrapper d-flex align-items-center gap-2 px-3">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="showSuppressed" 
+                       ' . ($show_suppressed ? 'checked' : '') . '
+                       onchange="toggleSuppressed(this.checked)">
+                <label class="form-check-label small" for="showSuppressed">
+                    Hidden <span class="badge bg-secondary">' . $total_suppressed_count . '</span>
+                </label>
+            </div>
+            <button type="button" class="btn btn-sm p-1" data-bs-toggle="modal" data-bs-target="#suppressionModal"
+                    title="Why are some hidden?">
+                <i class="bi bi-info-circle"></i>
+            </button>
+        </div>';
+}
+
+$output .= '
     </div>';
 
 // Helper function to build filter URLs
@@ -816,123 +884,6 @@ $buildFilterUrl = function($params, $key, $value) {
     }
     return '?' . http_build_query($new_params);
 };
-
-// Advanced Filters Section
-$output .= '
-    <div class="advanced-filters px-3 py-2 border-bottom bg-light">
-        <div class="d-flex gap-2 align-items-center flex-wrap">
-            <span class="text-muted small">Advanced:</span>
-            
-            <!-- Rating Filter -->
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                        id="ratingDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-star-fill text-warning"></i> 
-                    ' . ($rating_filter ? str_replace('+', '+ stars', $rating_filter) : 'Rating') . '
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="ratingDropdown">
-                    <li><a class="dropdown-item' . (!$rating_filter ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'rating', '') . '">Any Rating</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item' . ($rating_filter === '5' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'rating', '5') . '">
-                        <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 5 stars only
-                    </a></li>
-                    <li><a class="dropdown-item' . ($rating_filter === '4+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'rating', '4+') . '">
-                        <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 4+ stars
-                    </a></li>
-                    <li><a class="dropdown-item' . ($rating_filter === '3+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'rating', '3+') . '">
-                        <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 3+ stars
-                    </a></li>
-                </ul>
-            </div>
-            
-            <!-- Popular Filter -->
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                        id="popularDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-fire text-danger"></i> 
-                    ' . ($popular_filter ? 'Top ' . str_replace('top', '', $popular_filter) : 'Popular') . '
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="popularDropdown">
-                    <li><a class="dropdown-item' . (!$popular_filter ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', '') . '">All</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item' . ($popular_filter === 'top10' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', 'top10') . '">
-                        <i class="bi bi-fire text-danger"></i> Top 10 Most Popular
-                    </a></li>
-                    <li><a class="dropdown-item' . ($popular_filter === 'top25' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', 'top25') . '">
-                        <i class="bi bi-fire text-danger"></i> Top 25 Most Popular
-                    </a></li>
-                    <li><a class="dropdown-item' . ($popular_filter === 'top50' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', 'top50') . '">
-                        <i class="bi bi-fire text-danger"></i> Top 50 Most Popular
-                    </a></li>
-                    <li><a class="dropdown-item' . ($popular_filter === 'trending' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'popular', 'trending') . '">
-                        <i class="bi bi-graph-up text-success"></i> Trending Now
-                    </a></li>
-                </ul>
-            </div>
-            
-            <!-- Value Filter -->
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                        id="valueDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-cash-stack text-success"></i> 
-                    ' . ($value_filter ? '$' . str_replace('+', '+', $value_filter) . ' value' : 'Value') . '
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="valueDropdown">
-                    <li><a class="dropdown-item' . (!$value_filter ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '') . '">Any Value</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item' . ($value_filter === '50+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '50+') . '">
-                        <i class="bi bi-cash-stack text-success"></i> $50+ value
-                    </a></li>
-                    <li><a class="dropdown-item' . ($value_filter === '25+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '25+') . '">
-                        <i class="bi bi-cash-stack text-success"></i> $25+ value
-                    </a></li>
-                    <li><a class="dropdown-item' . ($value_filter === '10+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '10+') . '">
-                        <i class="bi bi-cash-stack text-success"></i> $10+ value
-                    </a></li>
-                    <li><a class="dropdown-item' . ($value_filter === '5+' ? ' active' : '') . '" href="' . $buildFilterUrl($_GET, 'value', '5+') . '">
-                        <i class="bi bi-cash text-success"></i> $5+ value
-                    </a></li>
-                </ul>
-            </div>';
-
-// Show active filter count and clear button if any advanced filters are active
-if ($rating_filter || $popular_filter || $value_filter) {
-    $filter_count = 0;
-    if ($rating_filter) $filter_count++;
-    if ($popular_filter) $filter_count++;
-    if ($value_filter) $filter_count++;
-    
-    $output .= '
-            <a href="?' . http_build_query(array_diff_key($_GET, array_flip(['rating', 'popular', 'value']))) . '" 
-               class="btn btn-sm btn-outline-danger ms-auto">
-                <i class="bi bi-x-circle"></i> Clear (' . $filter_count . ')
-            </a>';
-}
-
-$output .= '
-        </div>
-    </div>';
-
-// Suppression Toggle
-if ($total_suppressed_count > 0 || $show_suppressed) {
-    $output .= '
-    <div class="suppression-controls">
-        <div class="d-flex align-items-center justify-content-between px-3 py-2">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="showSuppressed" 
-                       ' . ($show_suppressed ? 'checked' : '') . '
-                       onchange="toggleSuppressed(this.checked)">
-                <label class="form-check-label" for="showSuppressed">
-                    Show Hidden ' . ucfirst($website['biznames']) . ' 
-                    <span class="badge bg-secondary">' . $total_suppressed_count . '</span>
-                </label>
-            </div>
-            <button type="button" class="btn btn-sm btn-link" data-bs-toggle="modal" data-bs-target="#suppressionModal">
-                <i class="bi bi-info-circle"></i> Why are some hidden?
-            </button>
-        </div>
-    </div>';
-}
 
 $output .= '</div>'; // Close enrollment-header
 
@@ -1289,6 +1240,145 @@ $output .= '
                     <i class="bi bi-info-circle me-2"></i>
                     You can toggle "Show Hidden ' . ucfirst($website['biznames']) . '" above to see and enroll in these ' . $website['biznames'] . ' if you wish.
                 </div>
+            </div>
+        </div>
+    </div>
+</div>';
+
+// Advanced Filters Modal
+$output .= '
+<div class="modal fade" id="advancedFiltersModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Advanced Filters</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="advancedFiltersForm" method="get" action="">
+                    <!-- Preserve existing parameters -->
+                    <input type="hidden" name="category" value="' . htmlspecialchars(implode(',', $selected_categories)) . '">
+                    <input type="hidden" name="search" value="' . htmlspecialchars($search_query) . '">
+                    ' . ($show_suppressed ? '<input type="hidden" name="show_suppressed" value="1">' : '') . '
+                    
+                    <!-- Rating Filter -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-star-fill text-warning"></i> Rating
+                        </label>
+                        <div class="d-grid gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="rating" value="" id="rating-any"
+                                       ' . (!$rating_filter ? 'checked' : '') . '>
+                                <label class="form-check-label" for="rating-any">Any Rating</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="rating" value="5" id="rating-5"
+                                       ' . ($rating_filter === '5' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="rating-5">
+                                    <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 5 stars only
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="rating" value="4+" id="rating-4"
+                                       ' . ($rating_filter === '4+' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="rating-4">
+                                    <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 4+ stars
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="rating" value="3+" id="rating-3"
+                                       ' . ($rating_filter === '3+' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="rating-3">
+                                    <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 3+ stars
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Popular Filter -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-fire text-danger"></i> Popularity
+                        </label>
+                        <div class="d-grid gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="popular" value="" id="popular-any"
+                                       ' . (!$popular_filter ? 'checked' : '') . '>
+                                <label class="form-check-label" for="popular-any">All ' . ucfirst($website['biznames']) . '</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="popular" value="top10" id="popular-10"
+                                       ' . ($popular_filter === 'top10' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="popular-10">Top 10 Most Popular</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="popular" value="top25" id="popular-25"
+                                       ' . ($popular_filter === 'top25' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="popular-25">Top 25 Most Popular</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="popular" value="top50" id="popular-50"
+                                       ' . ($popular_filter === 'top50' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="popular-50">Top 50 Most Popular</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="popular" value="trending" id="popular-trending"
+                                       ' . ($popular_filter === 'trending' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="popular-trending">
+                                    <i class="bi bi-graph-up text-success"></i> Trending Now
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Value Filter -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-cash-stack text-success"></i> Minimum Value
+                        </label>
+                        <div class="d-grid gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="value" value="" id="value-any"
+                                       ' . (!$value_filter ? 'checked' : '') . '>
+                                <label class="form-check-label" for="value-any">Any Value</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="value" value="50+" id="value-50"
+                                       ' . ($value_filter === '50+' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="value-50">$50+ value</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="value" value="25+" id="value-25"
+                                       ' . ($value_filter === '25+' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="value-25">$25+ value</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="value" value="10+" id="value-10"
+                                       ' . ($value_filter === '10+' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="value-10">$10+ value</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="value" value="5+" id="value-5"
+                                       ' . ($value_filter === '5+' ? 'checked' : '') . '>
+                                <label class="form-check-label" for="value-5">$5+ value</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>';
+
+// Add clear button if filters are active
+if ($rating_filter || $popular_filter || $value_filter) {
+    $output .= '
+                <a href="?' . http_build_query(array_diff_key($_GET, array_flip(['rating', 'popular', 'value']))) . '" 
+                   class="btn btn-outline-danger">Clear Filters</a>';
+}
+
+$output .= '
+                <button type="button" class="btn btn-primary" onclick="document.getElementById(\'advancedFiltersForm\').submit()">Apply Filters</button>
             </div>
         </div>
     </div>
