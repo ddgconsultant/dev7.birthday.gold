@@ -8,10 +8,13 @@
  * that tracks the reward but doesn't count against allocations
  */
 
+error_reporting(0);
+ini_set('display_errors', 0);
+
 // Include site controller for authentication
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-// Set JSON response header
+ob_clean();
 header('Content-Type: application/json');
 
 // Initialize response
@@ -20,10 +23,15 @@ $response = [
     'message' => ''
 ];
 
-// Check if user is logged in (handled by site-controller.php)
-if (!isset($user_id) || !$user_id) {
-    $response['message'] = 'You must be logged in to track rewards';
-    echo json_encode($response);
+// Authentication is handled by site-controller.php
+// The myaccount folder requires login, so we should have user data
+// Get user_id from current_user_data like other pages
+$user_id = $current_user_data['user_id'] ?? 0;
+
+// Check if user is logged in
+if (!$user_id) {
+    ob_clean();
+    echo json_encode(['success' => false, 'message' => 'Authentication required']);
     exit;
 }
 
@@ -41,7 +49,7 @@ $company_sql = "SELECT company_id, company_name, status
                 FROM bg_companies 
                 WHERE company_id = :company_id 
                 AND status IN ('active', 'finalized')";
-$company = $database->get_row($company_sql, ['company_id' => $company_id]);
+$company = $database->getrow($company_sql, ['company_id' => $company_id]);
 
 if (!$company) {
     $response['message'] = 'Company not found or inactive';
@@ -55,7 +63,7 @@ $existing_sql = "SELECT enrollment_id, status
                  WHERE user_id = :user_id 
                  AND company_id = :company_id 
                  AND status IN ('active', 'pending', 'user_owned')";
-$existing = $database->get_row($existing_sql, [
+$existing = $database->getrow($existing_sql, [
     'user_id' => $user_id,
     'company_id' => $company_id
 ]);

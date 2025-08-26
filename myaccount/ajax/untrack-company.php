@@ -5,10 +5,13 @@
  * This deletes the user_owned enrollment record
  */
 
+error_reporting(0);
+ini_set('display_errors', 0);
+
 // Include site controller for authentication
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-// Set JSON response header
+ob_clean();
 header('Content-Type: application/json');
 
 // Initialize response
@@ -17,10 +20,13 @@ $response = [
     'message' => ''
 ];
 
-// Check if user is logged in (authentication handled by site-controller.php)
-if (!isset($user_id) || !$user_id) {
-    $response['message'] = 'You must be logged in to manage tracked rewards';
-    echo json_encode($response);
+// Get user ID from current_user_data like other pages
+$user_id = $current_user_data['user_id'] ?? 0;
+
+// Check if user is logged in
+if (!$user_id) {
+    ob_clean();
+    echo json_encode(['success' => false, 'message' => 'Authentication required']);
     exit;
 }
 
@@ -39,7 +45,7 @@ $check_sql = "SELECT enrollment_id
               WHERE user_id = :user_id 
               AND company_id = :company_id 
               AND status = 'user_owned'";
-$enrollment = $database->get_row($check_sql, [
+$enrollment = $database->getrow($check_sql, [
     'user_id' => $user_id,
     'company_id' => $company_id
 ]);

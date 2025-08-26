@@ -513,23 +513,25 @@ button.action-btn.enrolled:disabled,
     opacity: 1 !important;
 }
 
-/* Tracked button state - info blue for "I Already Have This" */
+/* Tracked button state - gold for "I Already Have This" */
 button.action-btn.tracked,
 .company-card .action-btn.tracked,
 .company-action .action-btn.tracked,
 .action-btn.tracked {
-    background: #17a2b8 !important;  /* Info blue */
-    background-color: #17a2b8 !important;
-    border-color: #17a2b8 !important;
-    color: white !important;
+    background: #ffc107 !important;  /* Gold/warning color */
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #212529 !important;  /* Dark text on gold background */
     cursor: pointer !important;  /* Clickable to remove */
     opacity: 1 !important;
+    width: 100% !important;  /* Full width like picked */
+    border-radius: var(--radius) !important;  /* Proper rounded corners */
 }
 
 .action-btn.tracked:hover {
-    background: #138496 !important;  /* Darker blue on hover */
-    background-color: #138496 !important;
-    border-color: #117a8b !important;
+    background: #e0a800 !important;  /* Darker gold on hover */
+    background-color: #e0a800 !important;
+    border-color: #d39e00 !important;
 }
 
 /* Also try Bootstrap button override */
@@ -928,7 +930,7 @@ $output .= '
         <div class="selected-info" id="selectedInfo" style="display: none;" onclick="toggleBasketDetails()">
             <i class="bi bi-basket-fill"></i>
             <span class="selected-number" id="selectedCount">0</span>
-            <span class="selected-label">' . $label_tokened . '</span>
+            <span class="selected-label" id="selectedLabel">' . $label_tokened . '</span>
         </div>';
 
 if ($balance['expiring_soon_count'] > 0) {
@@ -1634,77 +1636,139 @@ window.userData = {
 // Define hasMoreCompanies variable for enrollment-picker.js
 window.hasMoreCompanies = false; // Set to true if there are more companies to load
 
-// Track As Owned function - for "I Already Have This" feature
+// Update balance display to show picked and tracked counts
+function updateBalanceDisplay() {
+    const pickedCount = selectionBasket ? selectionBasket.length : 0;
+    const trackedCount = JSON.parse(sessionStorage.getItem('trackedItems') || '[]').length;
+    const totalCount = pickedCount + trackedCount;
+    
+    // Update the header display
+    const selectedInfo = document.getElementById('selectedInfo');
+    const selectedCount = document.getElementById('selectedCount');
+    const selectedLabel = document.querySelector('.selected-label');
+    
+    if (totalCount > 0) {
+        selectedInfo.style.display = 'flex';
+        
+        // Show both counts if we have tracked items
+        if (trackedCount > 0 && pickedCount > 0) {
+            selectedCount.textContent = pickedCount + ' / ' + trackedCount;
+            selectedLabel.innerHTML = 'Picked / Tracked';
+        } else if (trackedCount > 0) {
+            selectedCount.textContent = trackedCount;
+            selectedLabel.textContent = 'Tracked';
+        } else {
+            selectedCount.textContent = pickedCount;
+            selectedLabel.textContent = window.userData.labels.tokened;
+        }
+    } else {
+        selectedInfo.style.display = 'none';
+    }
+    
+    // Update the floating counter (bottom right) with total
+    const selectionCounter = document.getElementById('selectionCounter');
+    const basketCount = document.getElementById('basketCount');
+    if (totalCount > 0) {
+        selectionCounter.style.display = 'flex';
+        basketCount.textContent = totalCount;
+    } else {
+        selectionCounter.style.display = 'none';
+    }
+}
+
+// Track As Owned function - adds to tracked basket (like picked items)
 function trackAsOwned(companyId, companyName, element) {
     // Prevent default link behavior
     event.preventDefault();
     
-    // Show loading state
-    const button = element.closest('.btn-group').querySelector('.action-btn.enroll');
-    const originalHtml = button.innerHTML;
-    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Tracking...';
-    button.disabled = true;
+    // Get company logo from card
+    const card = element.closest('.company-card');
+    const imgEl = card ? card.querySelector('.company-image img') : null;
+    const companyLogo = imgEl ? imgEl.src : '';
     
-    // Make AJAX call to track as owned (without using allocation)
-    fetch('/myaccount/ajax/track-as-owned.php', {
-        method: 'POST',
-        credentials: 'same-origin', // Include cookies for authentication
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'company_id=' + companyId
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Change button to show tracked status
-            button.className = 'action-btn tracked';
-            button.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Tracked';
-            button.disabled = true;
-            button.style.background = '#17a2b8';
-            button.style.borderColor = '#17a2b8';
-            
-            // Remove dropdown toggle
-            const dropdownToggle = button.nextElementSibling;
-            if (dropdownToggle) {
-                dropdownToggle.remove();
-            }
-            
-            // Show success message
-            showNotification('success', companyName + ' has been tracked to your account (no ' + window.userData.labels.token.toLowerCase() + ' used)');
-        } else {
-            // Restore button
-            button.innerHTML = originalHtml;
-            button.disabled = false;
-            showNotification('error', data.message || 'Failed to track company');
-        }
-    })
-    .catch(error => {
-        // Restore button on error
-        button.innerHTML = originalHtml;
-        button.disabled = false;
-        showNotification('error', 'An error occurred. Please try again.');
-        console.error('Track as owned error:', error);
-    });
-}
-
-// Untrack Company function - remove "I Already Have This" status
-function untrackCompany(companyId, companyName, element) {
-    // Prevent default if called from a link
-    if (event) event.preventDefault();
-    
-    // Confirm removal
-    if (!confirm('Remove "' + companyName + '" from your tracked rewards?')) {
+    // Check if already tracked
+    let trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+    if (trackedBasket.find(item => item.id === companyId)) {
+        showNotification('info', 'This company is already marked as tracked');
         return;
     }
     
-    // Show loading state
-    const button = element;
-    const originalHtml = button.innerHTML;
-    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Removing...';
-    button.disabled = true;
+    // Add to tracked basket
+    trackedBasket.push({
+        id: companyId,
+        name: companyName,
+        logo: companyLogo
+    });
+    sessionStorage.setItem('trackedBasket', JSON.stringify(trackedBasket));
     
-    // Make AJAX call to untrack
+    // Replace the entire button group with a single tracked button
+    const actionDiv = element.closest('.btn-group').parentElement;
+    actionDiv.innerHTML = `
+        <button class="action-btn tracked" onclick="removeFromTrackedBasket(${companyId})">
+            <i class="bi bi-bookmark-check-fill"></i> Tracked
+        </button>
+    `;
+    
+    // Update basket UI to show counts
+    updateBasketUI();
+    
+    // Show quick feedback
+    showNotification('success', companyName + ' marked as already owned');
+}
+
+// Remove from tracked basket - mirrors removeFromBasket for picked items
+function removeFromTrackedBasket(companyId) {
+    let trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+    trackedBasket = trackedBasket.filter(item => item.id !== companyId);
+    
+    // Save to sessionStorage
+    sessionStorage.setItem('trackedBasket', JSON.stringify(trackedBasket));
+    
+    // Update basket UI
+    updateBasketUI();
+    
+    // Update the card button back to split button with Pick/I Already Have This
+    const card = document.querySelector(`[data-company-id="${companyId}"]`);
+    if (card && !card.classList.contains('enrolled')) {
+        const actionDiv = card.querySelector('.company-action');
+        if (actionDiv) {
+            // Re-fetch company data from card
+            const name = card.querySelector('.company-name').textContent;
+            const imgEl = card.querySelector('.company-image img');
+            const logo = imgEl ? imgEl.src : '';
+            
+            // Restore split button with proper styling
+            actionDiv.innerHTML = `
+                <div class="btn-group w-100" role="group">
+                    <button class="action-btn enroll split-main" onclick="selectCompany(${companyId}, '${name.replace(/'/g, "\\'")}')"
+                            data-company-logo="${logo}"
+                            style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; padding-left: 1.5rem;">
+                        <span class="pick-text">(+) ${window.userData.labels.token}</span>
+                    </button>
+                    <button type="button" class="action-btn enroll split-dropdown dropdown-toggle dropdown-toggle-split"
+                            data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false"
+                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; width: auto; border-left: 1px solid rgba(255,255,255,0.2);">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="#" onclick="trackAsOwned(${companyId}, '${name.replace(/'/g, "\\'")}', this)">
+                                <i class="bi bi-bookmark-check me-2"></i> I Already Have This
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            `;
+        }
+    }
+}
+
+// Untrack Company function - deprecated, now using removeFromTrackedBasket
+function untrackCompany(companyId, companyName, element) {
+    // This function is deprecated - we now use removeFromTrackedBasket
+    // which handles everything through the array-based approach
+    removeFromTrackedBasket(companyId);
+    return;
     fetch('/myaccount/ajax/untrack-company.php', {
         method: 'POST',
         credentials: 'same-origin', // Include cookies for authentication
@@ -1751,6 +1815,14 @@ function untrackCompany(companyId, companyName, element) {
             if (dropdownToggle) {
                 new bootstrap.Dropdown(dropdownToggle);
             }
+            
+            // Remove from tracked items in session storage
+            let trackedItems = JSON.parse(sessionStorage.getItem('trackedItems') || '[]');
+            trackedItems = trackedItems.filter(item => item.id !== companyId);
+            sessionStorage.setItem('trackedItems', JSON.stringify(trackedItems));
+            
+            // Update the balance display
+            updateBalanceDisplay();
             
             // Show success message
             showNotification('success', companyName + ' has been removed from tracked rewards');

@@ -159,22 +159,24 @@ function removeFromBasket(companyId) {
             const imgEl = card.querySelector('.company-image img');
             const logo = imgEl ? imgEl.src : '';
             
-            // Restore the split button group
+            // Restore the split button group with proper styling
             actionDiv.innerHTML = `
                 <div class="btn-group w-100" role="group">
-                    <button class="action-btn enroll" style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1;"
-                            onclick="addToBasket(${companyId}, '${name.replace(/'/g, "\\'")}', '${logo}')">
-                        <i class="bi bi-plus-circle"></i> ${window.userData.labels.token}
+                    <button class="action-btn enroll split-main" 
+                            style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; padding-left: 1.5rem;"
+                            onclick="selectCompany(${companyId}, '${name.replace(/'/g, "\\'")}')"
+                            data-company-logo="${logo}">
+                        <span class="pick-text">(+) ${window.userData.labels.token}</span>
                     </button>
-                    <button type="button" class="action-btn enroll dropdown-toggle dropdown-toggle-split" 
-                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem 0.35rem; width: auto;"
+                    <button type="button" class="action-btn enroll split-dropdown dropdown-toggle dropdown-toggle-split" 
+                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; width: auto; border-left: 1px solid rgba(255,255,255,0.2);"
                             data-bs-toggle="dropdown" 
                             aria-expanded="false">
                         <span class="visually-hidden">Toggle Dropdown</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="#" onclick="trackAsOwned(${companyId}, '${name.replace(/'/g, "\\'")}', this); return false;">
-                            <i class="bi bi-bookmark-check text-info"></i> I Already Have This
+                            <i class="bi bi-bookmark-check me-2"></i> I Already Have This
                         </a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><span class="dropdown-item-text text-muted small"><em>Track without using a ${window.userData.labels.token.toLowerCase()}</em></span></li>
@@ -189,6 +191,19 @@ function removeFromBasket(companyId) {
             }
         }
     }
+}
+
+// Remove tracked item from basket
+function removeTrackedItem(companyId) {
+    let trackedItems = JSON.parse(sessionStorage.getItem('trackedItems') || '[]');
+    trackedItems = trackedItems.filter(item => item.id !== companyId);
+    sessionStorage.setItem('trackedItems', JSON.stringify(trackedItems));
+    
+    updateBasketUI();
+    
+    // Update the card button back to split button
+    // This should match what untrackCompany does
+    // For now just update the UI
 }
 
 // Clear entire basket
@@ -211,25 +226,24 @@ function clearBasket() {
                 const imgEl = card.querySelector('.company-image img');
                 const logo = imgEl ? imgEl.src : '';
                 
-                // Restore the split button group
+                // Restore the split button group with proper styling
                 actionDiv.innerHTML = `
                     <div class="btn-group w-100" role="group">
-                        <button class="action-btn enroll" style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1;"
-                                onclick="addToBasket(${id}, '${name.replace(/'/g, "\\'")}', '${logo}')">
-                            <i class="bi bi-plus-circle"></i> ${window.userData.labels.token}
+                        <button class="action-btn enroll split-main" 
+                                style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1; padding-left: 1.5rem;"
+                                onclick="selectCompany(${id}, '${name.replace(/'/g, "\\'")}')">
+                            <span class="pick-text">(+) ${window.userData.labels.token}</span>
                         </button>
-                        <button type="button" class="action-btn enroll dropdown-toggle dropdown-toggle-split" 
-                                style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem 0.35rem; width: auto;"
+                        <button type="button" class="action-btn enroll split-dropdown dropdown-toggle dropdown-toggle-split" 
+                                style="border-top-left-radius: 0; border-bottom-left-radius: 0; width: auto; border-left: 1px solid rgba(255,255,255,0.2);"
                                 data-bs-toggle="dropdown" 
                                 aria-expanded="false">
                             <span class="visually-hidden">Toggle Dropdown</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#" onclick="trackAsOwned(${id}, '${name.replace(/'/g, "\\'")}', this); return false;">
-                                <i class="bi bi-bookmark-check text-info"></i> I Already Have This
+                                <i class="bi bi-bookmark-check me-2"></i> I Already Have This
                             </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><span class="dropdown-item-text text-muted small"><em>Track without using a ${window.userData.labels.token.toLowerCase()}</em></span></li>
                         </ul>
                     </div>
                 `;
@@ -255,18 +269,49 @@ let activePopover = null;
 
 // Update basket UI
 function updateBasketUI() {
+    // Call the new updateBalanceDisplay function if it exists
+    if (typeof updateBalanceDisplay === 'function') {
+        updateBalanceDisplay();
+    }
     const counter = document.getElementById('selectionCounter');
     const basketCount = document.getElementById('basketCount');
     const modalBasketCount = document.getElementById('modalBasketCount');
+    const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+    const trackedCount = trackedBasket.length;
+    const pickedCount = selectionBasket.length;
+    const totalCount = pickedCount + trackedCount;
     const basketItems = document.getElementById('basketItems');
     const selectedInfo = document.getElementById('selectedInfo');
     const selectedCount = document.getElementById('selectedCount');
     
-    // Update the purple header selected count
+    // Update the header with combined picked and tracked count
     if (selectedInfo && selectedCount) {
-        if (selectionBasket.length > 0) {
+        if (totalCount > 0) {
             selectedInfo.style.display = 'flex';
-            selectedCount.textContent = selectionBasket.length;
+            
+            // Show breakdown if we have both picked and tracked
+            if (pickedCount > 0 && trackedCount > 0) {
+                selectedCount.textContent = `${pickedCount} + ${trackedCount}`;
+                // Update label to show both types
+                const selectedLabel = document.getElementById('selectedLabel');
+                if (selectedLabel) {
+                    selectedLabel.textContent = `${window.userData.labels.tokened} + Tracked`;
+                }
+            } else if (pickedCount > 0) {
+                // Only picked items
+                selectedCount.textContent = pickedCount;
+                const selectedLabel = document.getElementById('selectedLabel');
+                if (selectedLabel) {
+                    selectedLabel.textContent = window.userData.labels.tokened;
+                }
+            } else if (trackedCount > 0) {
+                // Only tracked items
+                selectedCount.textContent = trackedCount;
+                const selectedLabel = document.getElementById('selectedLabel');
+                if (selectedLabel) {
+                    selectedLabel.textContent = 'Tracked';
+                }
+            }
         } else {
             selectedInfo.style.display = 'none';
         }
@@ -275,10 +320,10 @@ function updateBasketUI() {
     // Update confirm button count (removed - no longer needed)
     // Button now just says "Confirm" without count
     
-    if (selectionBasket.length > 0) {
+    if (totalCount > 0) {
         counter.style.display = 'flex';
-        basketCount.textContent = selectionBasket.length;
-        modalBasketCount.textContent = selectionBasket.length;
+        basketCount.textContent = totalCount;
+        modalBasketCount.textContent = totalCount;
         
         // Show first-time picker help popover
         // Shows for new users (no enrollments) or when forced via URL parameter
@@ -290,19 +335,49 @@ function updateBasketUI() {
             }
         }
         
-        // Build items HTML with more details
-        basketItems.innerHTML = selectionBasket.map(item => `
-            <div class="basket-item">
-                ${item.logo ? `<img src="${item.logo}" alt="${item.name}">` : '<div style="width:50px;height:50px;background:#f0f0f0;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building text-muted"></i></div>'}
-                <div class="basket-item-info">
-                    <div class="basket-item-name">${item.name}</div>
-                    <div class="basket-item-category">Birthday Reward</div>
+        // Get tracked items
+        const trackedItems = JSON.parse(sessionStorage.getItem('trackedItems') || '[]');
+        
+        // Build HTML for picked items
+        let itemsHTML = '';
+        
+        // Add picked items with green badge
+        if (selectionBasket.length > 0) {
+            itemsHTML += '<div class="mb-3"><h6 class="text-success"><i class="bi bi-check-circle"></i> Using Picks</h6>';
+            itemsHTML += selectionBasket.map(item => `
+                <div class="basket-item">
+                    ${item.logo ? `<img src="${item.logo}" alt="${item.name}">` : '<div style="width:50px;height:50px;background:#f0f0f0;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building text-muted"></i></div>'}
+                    <div class="basket-item-info">
+                        <div class="basket-item-name">${item.name}</div>
+                        <div class="basket-item-category"><span class="badge bg-success">Pick</span></div>
+                    </div>
+                    <button class="basket-item-remove" onclick="removeFromBasket(${item.id})">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
                 </div>
-                <button class="basket-item-remove" onclick="removeFromBasket(${item.id})">
-                    <i class="bi bi-x-circle"></i>
-                </button>
-            </div>
-        `).join('');
+            `).join('');
+            itemsHTML += '</div>';
+        }
+        
+        // Add tracked items with gold badge
+        if (trackedItems.length > 0) {
+            itemsHTML += '<div class="mb-3"><h6 class="text-warning"><i class="bi bi-bookmark-check-fill"></i> Already Have (Tracking Only)</h6>';
+            itemsHTML += trackedItems.map(item => `
+                <div class="basket-item">
+                    <div style="width:50px;height:50px;background:#f0f0f0;border-radius:0.5rem;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building text-muted"></i></div>
+                    <div class="basket-item-info">
+                        <div class="basket-item-name">${item.name}</div>
+                        <div class="basket-item-category"><span class="badge bg-warning text-dark">Tracked</span></div>
+                    </div>
+                    <button class="basket-item-remove" onclick="removeTrackedItem(${item.id})">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                </div>
+            `).join('');
+            itemsHTML += '</div>';
+        }
+        
+        basketItems.innerHTML = itemsHTML;
     } else {
         counter.style.display = 'none';
         // Close modal if open
@@ -352,9 +427,11 @@ function toggleBasketDetails() {
 }
 
 
-// Confirm enrollments
+// Confirm enrollments - handles both picked and tracked items
 async function confirmEnrollments() {
-    if (selectionBasket.length === 0) return;
+    const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+    
+    if (selectionBasket.length === 0 && trackedBasket.length === 0) return;
     
     // Close basket modal
     const basketModal = bootstrap.Modal.getInstance(document.getElementById('basketModal'));
@@ -366,40 +443,67 @@ async function confirmEnrollments() {
     showLoading(true);
     
     try {
-        // For now, we'll process each enrollment individually
-        // In the future, this could be a batch API call
+        // Prepare batch data for submission
+        const batchData = {
+            picked: selectionBasket.map(item => item.id),
+            tracked: trackedBasket.map(item => item.id)
+        };
+        
+        // Submit both picked and tracked in batch
+        const response = await fetch('/myaccount/ajax/batch-process-enrollments.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(batchData)
+        });
+        
+        const result = await response.json();
+        
         let successCount = 0;
+        let trackedSuccessCount = 0;
         let errors = [];
         
-        for (const company of selectionBasket) {
-            try {
-                // Use existing enrollment logic
-                const response = await fetch('/api/enroll.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        company_id: company.id
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
+        // Handle results for picked items
+        if (result.picked) {
+            result.picked.forEach(item => {
+                if (item.success) {
                     successCount++;
-                    updateCompanyCard(company.id, true);
+                    updateCompanyCard(item.company_id, true);
                 } else {
-                    errors.push(`${company.name}: ${result.error || 'Failed'}`);
+                    errors.push(`${item.company_name}: ${item.error || 'Failed'}`);
                 }
-            } catch (error) {
-                errors.push(`${company.name}: Network error`);
-            }
+            });
         }
         
-        // Clear basket
+        // Handle results for tracked items
+        if (result.tracked) {
+            result.tracked.forEach(item => {
+                if (item.success) {
+                    trackedSuccessCount++;
+                    // Update card to show tracked status
+                    const card = document.querySelector(`[data-company-id="${item.company_id}"]`);
+                    if (card) {
+                        const actionDiv = card.querySelector('.company-action');
+                        if (actionDiv) {
+                            actionDiv.innerHTML = `
+                                <button class="action-btn tracked" onclick="removeFromTrackedBasket(${item.company_id})">
+                                    <i class="bi bi-bookmark-check-fill"></i> Tracked
+                                </button>
+                            `;
+                        }
+                    }
+                } else {
+                    errors.push(`${item.company_name}: ${item.error || 'Failed to track'}`);
+                }
+            });
+        }
+        
+        // Clear both baskets
         selectionBasket = [];
         sessionStorage.removeItem('enrollmentBasket');
+        sessionStorage.removeItem('trackedBasket');
         updateBasketUI();
         
         // Show results
