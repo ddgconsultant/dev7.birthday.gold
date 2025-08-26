@@ -434,6 +434,8 @@ $additionalstyles .= '
 }
 
 /* Override enrolled button to ensure green background */
+button.action-btn.enrolled,
+.company-card .action-btn.enrolled,
 .company-action .action-btn.enrolled,
 .action-btn.enrolled {
     background: #28a745 !important;
@@ -444,13 +446,27 @@ $additionalstyles .= '
     opacity: 1 !important;
 }
 
+button.action-btn.enrolled[disabled],
+button.action-btn.enrolled:disabled,
+.company-card .action-btn.enrolled:disabled,
 .company-action .action-btn.enrolled:disabled,
-.action-btn.enrolled:disabled {
+.action-btn.enrolled:disabled,
+.action-btn.enrolled[disabled] {
     background: #28a745 !important;
     background-color: #28a745 !important;
     border-color: #28a745 !important;
     color: white !important;
     opacity: 1 !important;
+}
+
+/* Also try Bootstrap button override */
+.btn.action-btn.enrolled,
+.btn.action-btn.enrolled:disabled,
+.btn.action-btn.enrolled[disabled] {
+    background: #28a745 !important;
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: white !important;
 }
 
 /* Floating counter button */
