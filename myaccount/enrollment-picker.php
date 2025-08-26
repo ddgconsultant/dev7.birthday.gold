@@ -640,6 +640,25 @@ button.category-pill.active {
     color: white;
 }
 
+/* Special styling for More Filters pill */
+.more-filters-pill {
+    border: 2px solid var(--primary-color) !important;
+    background: white !important;
+    color: var(--primary-color) !important;
+    font-weight: 600;
+}
+
+.more-filters-pill:hover {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+.more-filters-pill.active {
+    background: var(--primary-color) !important;
+    color: white !important;
+    box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.25);
+}
+
 /* Mobile adjustments for filter bar */
 @media (max-width: 576px) {
     .suppression-toggle-wrapper .form-check-label {
@@ -797,10 +816,10 @@ foreach ($display_categories as $cat) {
         if ($value_filter) $active_advanced_count++;
         
         $output .= '
-            <button type="button" class="category-pill' . ($active_advanced_count > 0 ? ' active' : '') . '" 
+            <button type="button" class="category-pill more-filters-pill' . ($active_advanced_count > 0 ? ' active' : '') . '" 
                     data-bs-toggle="modal" data-bs-target="#advancedFiltersModal">
                 <i class="' . $cat_icon . '"></i>
-                More' . ($active_advanced_count > 0 ? ' (' . $active_advanced_count . ')' : '') . '
+                More Filters' . ($active_advanced_count > 0 ? ' (' . $active_advanced_count . ')' : '') . '
             </button>';
         continue;
     }
@@ -1263,107 +1282,43 @@ $output .= '
                     
                     <!-- Rating Filter -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">
-                            <i class="bi bi-star-fill text-warning"></i> Rating
+                        <label class="form-label fw-bold" for="ratingSelect">
+                            <i class="bi bi-star-fill text-warning"></i> Minimum Rating
                         </label>
-                        <div class="d-grid gap-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="rating" value="" id="rating-any"
-                                       ' . (!$rating_filter ? 'checked' : '') . '>
-                                <label class="form-check-label" for="rating-any">Any Rating</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="rating" value="5" id="rating-5"
-                                       ' . ($rating_filter === '5' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="rating-5">
-                                    <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 5 stars only
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="rating" value="4+" id="rating-4"
-                                       ' . ($rating_filter === '4+' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="rating-4">
-                                    <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 4+ stars
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="rating" value="3+" id="rating-3"
-                                       ' . ($rating_filter === '3+' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="rating-3">
-                                    <i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i> 3+ stars
-                                </label>
-                            </div>
-                        </div>
+                        <select class="form-select" name="rating" id="ratingSelect">
+                            <option value=""' . (!$rating_filter ? ' selected' : '') . '>Any Rating</option>
+                            <option value="5"' . ($rating_filter === '5' ? ' selected' : '') . '>⭐⭐⭐⭐⭐ 5 stars only</option>
+                            <option value="4+"' . ($rating_filter === '4+' ? ' selected' : '') . '>⭐⭐⭐⭐ 4+ stars</option>
+                            <option value="3+"' . ($rating_filter === '3+' ? ' selected' : '') . '>⭐⭐⭐ 3+ stars</option>
+                        </select>
                     </div>
                     
                     <!-- Popular Filter -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">
+                        <label class="form-label fw-bold" for="popularSelect">
                             <i class="bi bi-fire text-danger"></i> Popularity
                         </label>
-                        <div class="d-grid gap-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="popular" value="" id="popular-any"
-                                       ' . (!$popular_filter ? 'checked' : '') . '>
-                                <label class="form-check-label" for="popular-any">All ' . ucfirst($website['biznames']) . '</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="popular" value="top10" id="popular-10"
-                                       ' . ($popular_filter === 'top10' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="popular-10">Top 10 Most Popular</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="popular" value="top25" id="popular-25"
-                                       ' . ($popular_filter === 'top25' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="popular-25">Top 25 Most Popular</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="popular" value="top50" id="popular-50"
-                                       ' . ($popular_filter === 'top50' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="popular-50">Top 50 Most Popular</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="popular" value="trending" id="popular-trending"
-                                       ' . ($popular_filter === 'trending' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="popular-trending">
-                                    <i class="bi bi-graph-up text-success"></i> Trending Now
-                                </label>
-                            </div>
-                        </div>
+                        <select class="form-select" name="popular" id="popularSelect">
+                            <option value=""' . (!$popular_filter ? ' selected' : '') . '>All ' . ucfirst($website['biznames']) . '</option>
+                            <option value="top10"' . ($popular_filter === 'top10' ? ' selected' : '') . '>🔥 Top 10 Most Popular</option>
+                            <option value="top25"' . ($popular_filter === 'top25' ? ' selected' : '') . '>🔥 Top 25 Most Popular</option>
+                            <option value="top50"' . ($popular_filter === 'top50' ? ' selected' : '') . '>🔥 Top 50 Most Popular</option>
+                            <option value="trending"' . ($popular_filter === 'trending' ? ' selected' : '') . '>📈 Trending Now</option>
+                        </select>
                     </div>
                     
                     <!-- Value Filter -->
                     <div class="mb-4">
-                        <label class="form-label fw-bold">
-                            <i class="bi bi-cash-stack text-success"></i> Minimum Value
+                        <label class="form-label fw-bold" for="valueSelect">
+                            <i class="bi bi-cash-stack text-success"></i> Minimum Reward Value
                         </label>
-                        <div class="d-grid gap-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="value" value="" id="value-any"
-                                       ' . (!$value_filter ? 'checked' : '') . '>
-                                <label class="form-check-label" for="value-any">Any Value</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="value" value="50+" id="value-50"
-                                       ' . ($value_filter === '50+' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="value-50">$50+ value</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="value" value="25+" id="value-25"
-                                       ' . ($value_filter === '25+' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="value-25">$25+ value</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="value" value="10+" id="value-10"
-                                       ' . ($value_filter === '10+' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="value-10">$10+ value</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="value" value="5+" id="value-5"
-                                       ' . ($value_filter === '5+' ? 'checked' : '') . '>
-                                <label class="form-check-label" for="value-5">$5+ value</label>
-                            </div>
-                        </div>
+                        <select class="form-select" name="value" id="valueSelect">
+                            <option value=""' . (!$value_filter ? ' selected' : '') . '>Any Value</option>
+                            <option value="50+"' . ($value_filter === '50+' ? ' selected' : '') . '>💰 $50+ value</option>
+                            <option value="25+"' . ($value_filter === '25+' ? ' selected' : '') . '>💵 $25+ value</option>
+                            <option value="10+"' . ($value_filter === '10+' ? ' selected' : '') . '>💵 $10+ value</option>
+                            <option value="5+"' . ($value_filter === '5+' ? ' selected' : '') . '>💵 $5+ value</option>
+                        </select>
                     </div>
                 </form>
             </div>
