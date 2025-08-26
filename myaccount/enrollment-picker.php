@@ -433,11 +433,15 @@ $additionalstyles .= '
     --success-color: #28a745;
 }
 
-/* Override enrolled button to ensure green background */
+/* Override enrolled AND selected buttons to ensure green background */
 button.action-btn.enrolled,
+button.action-btn.selected,
 .company-card .action-btn.enrolled,
+.company-card .action-btn.selected,
 .company-action .action-btn.enrolled,
-.action-btn.enrolled {
+.company-action .action-btn.selected,
+.action-btn.enrolled,
+.action-btn.selected {
     background: #28a745 !important;
     background-color: #28a745 !important;
     border-color: #28a745 !important;
@@ -448,10 +452,16 @@ button.action-btn.enrolled,
 
 button.action-btn.enrolled[disabled],
 button.action-btn.enrolled:disabled,
+button.action-btn.selected[disabled],
+button.action-btn.selected:disabled,
 .company-card .action-btn.enrolled:disabled,
+.company-card .action-btn.selected:disabled,
 .company-action .action-btn.enrolled:disabled,
+.company-action .action-btn.selected:disabled,
 .action-btn.enrolled:disabled,
-.action-btn.enrolled[disabled] {
+.action-btn.enrolled[disabled],
+.action-btn.selected:disabled,
+.action-btn.selected[disabled] {
     background: #28a745 !important;
     background-color: #28a745 !important;
     border-color: #28a745 !important;
@@ -461,8 +471,11 @@ button.action-btn.enrolled:disabled,
 
 /* Also try Bootstrap button override */
 .btn.action-btn.enrolled,
+.btn.action-btn.selected,
 .btn.action-btn.enrolled:disabled,
-.btn.action-btn.enrolled[disabled] {
+.btn.action-btn.selected:disabled,
+.btn.action-btn.enrolled[disabled],
+.btn.action-btn.selected[disabled] {
     background: #28a745 !important;
     background-color: #28a745 !important;
     border-color: #28a745 !important;
@@ -1458,6 +1471,9 @@ window.userData = {
     hasEnrollments: ' . ((($accountstats['business_success'] ?? 0) + ($accountstats['business_pending'] ?? 0)) > 0 ? 'true' : 'false') . ',
     forceShowHelp: ' . (isset($_GET['showhelp']) ? 'true' : 'false') . '
 };
+
+// Define hasMoreCompanies variable for enrollment-picker.js
+window.hasMoreCompanies = false; // Set to true if there are more companies to load
 ';
 ?>
 // Smart header scroll behavior
