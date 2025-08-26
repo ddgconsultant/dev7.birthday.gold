@@ -38,6 +38,13 @@ $plandatafeatures = $app->plandetail('details_id', $current_user_data['account_p
 $selectionList = $session->get('goldmine_selectionList', []);
 $existingList = $session->get('goldmine_existingList', []);
 
+// Also get user_owned companies (tracked as "I Already Have This")
+$tracked_sql = "SELECT company_id FROM bg_user_enrollments 
+                WHERE user_id = :user_id 
+                AND status = 'user_owned'";
+$tracked_companies = $database->getrows($tracked_sql, ['user_id' => $user_id]);
+$trackedList = array_column($tracked_companies, 'company_id');
+
 // Get user balance
 $balance = $allocationManager->getUserBalance($user_id);
 $allocation_warning = $allocationManager->getAllocationWarning($user_id);
@@ -81,6 +88,7 @@ $active_filters = $suppression_filter === 'all' ? [] : explode(',', $suppression
 $rating_filter = $_GET['rating'] ?? '';  // e.g., "3+" for 3 stars and above
 $popular_filter = $_GET['popular'] ?? '';  // e.g., "top10", "top25", "top50"
 $value_filter = $_GET['value'] ?? '';  // e.g., "10+", "25+", "50+"
+$enrolled_filter = $_GET['enrolled'] ?? '';  // e.g., "show", "hide", "" (all)
 
 // Get companies using existing system from businessselect.php
 $companies = [];
@@ -310,10 +318,11 @@ foreach ($companies as $company) {
     $company['is_suppressed'] = !empty($suppression_reasons);
     $company['suppression_reasons'] = $suppression_reasons;
     
-    // Check if already selected or enrolled
-    $company['is_enrolled'] = in_array($company['company_id'], $selectionList) || in_array($company['company_id'], $existingList);
+    // Check if already selected, enrolled, or tracked
+    $company['is_enrolled'] = in_array($company['company_id'], $selectionList) || in_array($company['company_id'], $existingList) || in_array($company['company_id'], $trackedList);
     $company['is_selected'] = in_array($company['company_id'], $selectionList);
     $company['is_existing'] = in_array($company['company_id'], $existingList);
+    $company['is_tracked'] = in_array($company['company_id'], $trackedList);  // "I Already Have This"
     
     // Get rewards
     $query = "SELECT * FROM bg_company_rewards WHERE company_id = ? AND status = 'active'";
@@ -406,6 +415,21 @@ if ($rating_filter) {
     $companies = $filtered;
 }
 
+// Apply enrolled filter
+if ($enrolled_filter) {
+    $filtered = [];
+    foreach ($companies as $company) {
+        if ($enrolled_filter === 'show' && $company['is_enrolled']) {
+            // Show only enrolled
+            $filtered[] = $company;
+        } else if ($enrolled_filter === 'hide' && !$company['is_enrolled']) {
+            // Hide enrolled
+            $filtered[] = $company;
+        }
+    }
+    $companies = $filtered;
+}
+
 // Debug: Check if we got any results
 if (empty($companies)) {
     echo '<!-- DEBUG: No companies returned from query -->';
@@ -444,6 +468,8 @@ button.action-btn.selected,
     color: white !important;
     cursor: default !important;
     opacity: 1 !important;
+    width: 100% !important;  /* Ensure full width */
+    border-radius: var(--radius) !important;  /* Ensure proper rounded corners */
 }
 
 /* Enrolled buttons - dark green for already saved enrollments */
@@ -485,6 +511,25 @@ button.action-btn.enrolled:disabled,
     border-color: #155724 !important;
     color: white !important;
     opacity: 1 !important;
+}
+
+/* Tracked button state - info blue for "I Already Have This" */
+button.action-btn.tracked,
+.company-card .action-btn.tracked,
+.company-action .action-btn.tracked,
+.action-btn.tracked {
+    background: #17a2b8 !important;  /* Info blue */
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    color: white !important;
+    cursor: pointer !important;  /* Clickable to remove */
+    opacity: 1 !important;
+}
+
+.action-btn.tracked:hover {
+    background: #138496 !important;  /* Darker blue on hover */
+    background-color: #138496 !important;
+    border-color: #117a8b !important;
 }
 
 /* Also try Bootstrap button override */
@@ -766,6 +811,60 @@ button.category-pill.active {
     box-shadow: 0 0 0 2px rgba(var(--bs-primary-rgb), 0.25);
 }
 
+/* Split button styling for I Already Have This */
+.company-action .btn-group {
+    display: flex;
+}
+
+.company-action .btn-group .action-btn:first-child {
+    flex: 1;
+    padding-left: 1rem !important;  /* Shift content right to appear more centered */
+    padding-right: 0.25rem !important;  /* Reduce right padding to compensate */
+}
+
+.company-action .dropdown-toggle-split {
+    border-left: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.company-action .dropdown-toggle-split::after {
+    color: #6c757d !important; /* Gray caret color */
+}
+
+.company-action .dropdown-menu {
+    min-width: 200px;
+    z-index: 9999999 !important; /* Very high z-index to prevent masking */
+    margin-top: 2px !important; /* Force gap below button */
+    transform: translate(0, 0) !important; /* Reset any transform */
+    top: 100% !important; /* Position below button */
+    bottom: auto !important; /* Do not position from bottom */
+}
+
+/* Force dropdown to stay below */
+.company-action .btn-group {
+    position: relative !important;
+}
+
+.company-action .dropdown-menu.show {
+    position: absolute !important;
+    top: 100% !important;
+    bottom: auto !important;
+    transform: translate(0, 0) !important;
+    z-index: 9999999 !important; /* Very high z-index when shown */
+}
+
+/* Fix overflow clipping on card containers */
+.company-card {
+    overflow: visible !important; /* Allow dropdown to extend outside card */
+}
+
+.company-action {
+    overflow: visible !important; /* Ensure action area does not clip */
+}
+
+.companies-grid {
+    overflow: visible !important; /* Ensure grid does not clip */
+}
+
 /* Mobile adjustments for filter bar */
 @media (max-width: 576px) {
     .suppression-toggle-wrapper .form-check-label {
@@ -921,6 +1020,7 @@ foreach ($display_categories as $cat) {
         if ($rating_filter) $active_advanced_count++;
         if ($popular_filter) $active_advanced_count++;
         if ($value_filter) $active_advanced_count++;
+        if ($enrolled_filter) $active_advanced_count++;
         
         $output .= '
             <button type="button" class="category-pill more-filters-pill' . ($active_advanced_count > 0 ? ' active' : '') . '" 
@@ -1188,7 +1288,13 @@ if (empty($companies)) {
         $output .= '
             <div class="company-action">';
         
-        if ($company['is_enrolled']) {
+        if ($company['is_tracked']) {
+            // Show as tracked (I Already Have This) with ability to remove
+            $output .= '
+                <button class="action-btn tracked" onclick="untrackCompany(' . $company['company_id'] . ', \'' . htmlspecialchars(addslashes($company['company_name'])) . '\', this)">
+                    <i class="bi bi-bookmark-check-fill"></i> Tracked
+                </button>';
+        } elseif ($company['is_enrolled']) {
             $output .= '
                 <button class="action-btn enrolled" disabled>
                     <i class="bi bi-check-circle-fill"></i> ' . $label_tokened . '
@@ -1204,10 +1310,25 @@ if (empty($companies)) {
         } elseif ($balance['available_allocations'] > 0) {
             $company_logo_url = isset($company['company_logo']) ? $display->companyimage($company['company_id'] . '/' . $company['company_logo']) : '';
             $output .= '
-                <button class="action-btn enroll" 
-                        onclick="addToBasket(' . $company['company_id'] . ', \'' . htmlspecialchars(addslashes($company['company_name'])) . '\', \'' . $company_logo_url . '\')">
-                    <i class="bi bi-plus-circle"></i> ' . $label_token . '
-                </button>';
+                <div class="btn-group w-100" role="group">
+                    <button class="action-btn enroll" style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1;"
+                            onclick="addToBasket(' . $company['company_id'] . ', \'' . htmlspecialchars(addslashes($company['company_name'])) . '\', \'' . $company_logo_url . '\')">
+                        <i class="bi bi-plus-circle"></i> ' . $label_token . '
+                    </button>
+                    <button type="button" class="action-btn enroll dropdown-toggle dropdown-toggle-split" 
+                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem 0.35rem; width: auto;"
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="trackAsOwned(' . $company['company_id'] . ', \'' . htmlspecialchars(addslashes($company['company_name'])) . '\', this); return false;">
+                            <i class="bi bi-bookmark-check text-info"></i> I Already Have This
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><span class="dropdown-item-text text-muted small"><em>Track without using a ' . strtolower($label_token) . '</em></span></li>
+                    </ul>
+                </div>';
         } else {
             $output .= '
                 <button class="action-btn disabled" disabled>
@@ -1454,15 +1575,28 @@ $output .= '
                             <option value="5+"' . ($value_filter === '5+' ? ' selected' : '') . '>💵 $5+ value</option>
                         </select>
                     </div>
+                    
+                    <!-- Enrolled Filter -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" for="enrolledSelect">
+                            <i class="bi bi-check-circle text-success"></i> Enrollment Status
+                        </label>
+                        <select class="form-select" name="enrolled" id="enrolledSelect">
+                            <option value=""' . (!$enrolled_filter ? ' selected' : '') . '>Show All</option>
+                            <option value="hide"' . ($enrolled_filter === 'hide' ? ' selected' : '') . '>Hide Already Enrolled</option>
+                            <option value="show"' . ($enrolled_filter === 'show' ? ' selected' : '') . '>Show Only Enrolled</option>
+                        </select>
+                        <small class="form-text text-muted">Filter ' . $website['biznames'] . ' based on your enrollment status</small>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>';
 
 // Add clear button if filters are active
-if ($rating_filter || $popular_filter || $value_filter) {
+if ($rating_filter || $popular_filter || $value_filter || $enrolled_filter) {
     $output .= '
-                <a href="?' . http_build_query(array_diff_key($_GET, array_flip(['rating', 'popular', 'value']))) . '" 
+                <a href="?' . http_build_query(array_diff_key($_GET, array_flip(['rating', 'popular', 'value', 'enrolled']))) . '" 
                    class="btn btn-outline-danger">Clear Filters</a>';
 }
 
@@ -1495,11 +1629,178 @@ window.userData = {
     hasEnrollments: ' . ((($accountstats['business_success'] ?? 0) + ($accountstats['business_pending'] ?? 0)) > 0 ? 'true' : 'false') . ',
     forceShowHelp: ' . (isset($_GET['showhelp']) ? 'true' : 'false') . '
 };
-
-// Define hasMoreCompanies variable for enrollment-picker.js
-window.hasMoreCompanies = false; // Set to true if there are more companies to load
 ';
 ?>
+// Define hasMoreCompanies variable for enrollment-picker.js
+window.hasMoreCompanies = false; // Set to true if there are more companies to load
+
+// Track As Owned function - for "I Already Have This" feature
+function trackAsOwned(companyId, companyName, element) {
+    // Prevent default link behavior
+    event.preventDefault();
+    
+    // Show loading state
+    const button = element.closest('.btn-group').querySelector('.action-btn.enroll');
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Tracking...';
+    button.disabled = true;
+    
+    // Make AJAX call to track as owned (without using allocation)
+    fetch('/myaccount/ajax/track-as-owned.php', {
+        method: 'POST',
+        credentials: 'same-origin', // Include cookies for authentication
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'company_id=' + companyId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Change button to show tracked status
+            button.className = 'action-btn tracked';
+            button.innerHTML = '<i class="bi bi-bookmark-check-fill"></i> Tracked';
+            button.disabled = true;
+            button.style.background = '#17a2b8';
+            button.style.borderColor = '#17a2b8';
+            
+            // Remove dropdown toggle
+            const dropdownToggle = button.nextElementSibling;
+            if (dropdownToggle) {
+                dropdownToggle.remove();
+            }
+            
+            // Show success message
+            showNotification('success', companyName + ' has been tracked to your account (no ' + window.userData.labels.token.toLowerCase() + ' used)');
+        } else {
+            // Restore button
+            button.innerHTML = originalHtml;
+            button.disabled = false;
+            showNotification('error', data.message || 'Failed to track company');
+        }
+    })
+    .catch(error => {
+        // Restore button on error
+        button.innerHTML = originalHtml;
+        button.disabled = false;
+        showNotification('error', 'An error occurred. Please try again.');
+        console.error('Track as owned error:', error);
+    });
+}
+
+// Untrack Company function - remove "I Already Have This" status
+function untrackCompany(companyId, companyName, element) {
+    // Prevent default if called from a link
+    if (event) event.preventDefault();
+    
+    // Confirm removal
+    if (!confirm('Remove "' + companyName + '" from your tracked rewards?')) {
+        return;
+    }
+    
+    // Show loading state
+    const button = element;
+    const originalHtml = button.innerHTML;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Removing...';
+    button.disabled = true;
+    
+    // Make AJAX call to untrack
+    fetch('/myaccount/ajax/untrack-company.php', {
+        method: 'POST',
+        credentials: 'same-origin', // Include cookies for authentication
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'company_id=' + companyId
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Get company info for restoration
+            const card = button.closest('.company-card');
+            const name = card.querySelector('.company-name').textContent;
+            const imgEl = card.querySelector('.company-image img');
+            const logo = imgEl ? imgEl.src : '';
+            
+            // Replace button with split button group
+            const actionDiv = button.parentElement;
+            actionDiv.innerHTML = `
+                <div class="btn-group w-100" role="group">
+                    <button class="action-btn enroll" style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1;"
+                            onclick="addToBasket(${companyId}, '${name.replace(/'/g, "\\'")}', '${logo}')">
+                        <i class="bi bi-plus-circle"></i> ${window.userData.labels.token}
+                    </button>
+                    <button type="button" class="action-btn enroll dropdown-toggle dropdown-toggle-split" 
+                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem 0.35rem; width: auto;"
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="trackAsOwned(${companyId}, '${name.replace(/'/g, "\\'")}', this); return false;">
+                            <i class="bi bi-bookmark-check text-info"></i> I Already Have This
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><span class="dropdown-item-text text-muted small"><em>Track without using a ${window.userData.labels.token.toLowerCase()}</em></span></li>
+                    </ul>
+                </div>
+            `;
+            
+            // Re-initialize dropdown
+            const dropdownToggle = actionDiv.querySelector('[data-bs-toggle="dropdown"]');
+            if (dropdownToggle) {
+                new bootstrap.Dropdown(dropdownToggle);
+            }
+            
+            // Show success message
+            showNotification('success', companyName + ' has been removed from tracked rewards');
+        } else {
+            // Restore button on error
+            button.innerHTML = originalHtml;
+            button.disabled = false;
+            showNotification('error', data.message || 'Failed to remove tracking');
+        }
+    })
+    .catch(error => {
+        // Restore button on error
+        button.innerHTML = originalHtml;
+        button.disabled = false;
+        showNotification('error', 'An error occurred. Please try again.');
+        console.error('Untrack error:', error);
+    });
+}
+
+// Notification helper function
+function showNotification(type, message) {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById('picker-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'picker-notification';
+        notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
+        document.body.appendChild(notification);
+    }
+    
+    // Set notification content
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    notification.innerHTML = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = notification.querySelector('.alert');
+        if (alert) {
+            alert.classList.remove('show');
+            setTimeout(() => notification.innerHTML = '', 300);
+        }
+    }, 5000);
+}
+
+
 // Smart header scroll behavior
 document.addEventListener("DOMContentLoaded", function() {
     // Initialize Bootstrap tooltips

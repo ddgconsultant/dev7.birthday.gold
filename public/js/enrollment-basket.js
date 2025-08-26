@@ -16,10 +16,15 @@ document.addEventListener('DOMContentLoaded', function() {
         selectionBasket.forEach(item => {
             const card = document.querySelector(`[data-company-id="${item.id}"]`);
             if (card && !card.classList.contains('enrolled')) {
-                const btn = card.querySelector('.action-btn');
-                btn.className = 'action-btn selected';
-                btn.innerHTML = '<i class="bi bi-check-circle"></i> ' + window.userData.labels.tokened;
-                btn.onclick = () => removeFromBasket(item.id);
+                const actionDiv = card.querySelector('.company-action');
+                if (actionDiv) {
+                    // Replace button group with single selected button
+                    actionDiv.innerHTML = `
+                        <button class="action-btn selected" onclick="removeFromBasket(${item.id})">
+                            <i class="bi bi-check-circle"></i> ${window.userData.labels.tokened}
+                        </button>
+                    `;
+                }
             }
         });
     }
@@ -123,10 +128,15 @@ function addToBasket(companyId, companyName, companyLogo) {
     // Update the card to show it's selected
     const card = document.querySelector(`[data-company-id="${companyId}"]`);
     if (card) {
-        const btn = card.querySelector('.action-btn');
-        btn.className = 'action-btn selected';
-        btn.innerHTML = '<i class="bi bi-check-circle"></i> ' + window.userData.labels.tokened;
-        btn.onclick = () => removeFromBasket(companyId);
+        const actionDiv = card.querySelector('.company-action');
+        if (actionDiv) {
+            // Replace the entire button group with a single selected button (no split)
+            actionDiv.innerHTML = `
+                <button class="action-btn selected" onclick="removeFromBasket(${companyId})">
+                    <i class="bi bi-check-circle"></i> ${window.userData.labels.tokened}
+                </button>
+            `;
+        }
     }
 }
 
@@ -139,22 +149,45 @@ function removeFromBasket(companyId) {
     
     updateBasketUI();
     
-    // Update the card button back to Select
+    // Update the card button back to Select with split button
     const card = document.querySelector(`[data-company-id="${companyId}"]`);
     if (card && !card.classList.contains('enrolled')) {
-        const btn = card.querySelector('.action-btn');
-        btn.className = 'action-btn enroll';
-        btn.innerHTML = '<i class="bi bi-plus-circle"></i> ' + window.userData.labels.token;
-        btn.onclick = () => {
-            const company = selectionBasket.find(item => item.id === companyId);
-            if (!company) {
-                // Re-fetch company data from card
-                const name = card.querySelector('.company-name').textContent;
-                const imgEl = card.querySelector('.company-image img');
-                const logo = imgEl ? imgEl.src : '';
-                addToBasket(companyId, name, logo);
+        const actionDiv = card.querySelector('.company-action');
+        if (actionDiv) {
+            // Re-fetch company data from card
+            const name = card.querySelector('.company-name').textContent;
+            const imgEl = card.querySelector('.company-image img');
+            const logo = imgEl ? imgEl.src : '';
+            
+            // Restore the split button group
+            actionDiv.innerHTML = `
+                <div class="btn-group w-100" role="group">
+                    <button class="action-btn enroll" style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1;"
+                            onclick="addToBasket(${companyId}, '${name.replace(/'/g, "\\'")}', '${logo}')">
+                        <i class="bi bi-plus-circle"></i> ${window.userData.labels.token}
+                    </button>
+                    <button type="button" class="action-btn enroll dropdown-toggle dropdown-toggle-split" 
+                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem 0.35rem; width: auto;"
+                            data-bs-toggle="dropdown" 
+                            aria-expanded="false">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" onclick="trackAsOwned(${companyId}, '${name.replace(/'/g, "\\'")}', this); return false;">
+                            <i class="bi bi-bookmark-check text-info"></i> I Already Have This
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><span class="dropdown-item-text text-muted small"><em>Track without using a ${window.userData.labels.token.toLowerCase()}</em></span></li>
+                    </ul>
+                </div>
+            `;
+            
+            // Re-initialize Bootstrap dropdowns for this new element
+            const dropdownToggle = actionDiv.querySelector('[data-bs-toggle="dropdown"]');
+            if (dropdownToggle) {
+                new bootstrap.Dropdown(dropdownToggle);
             }
-        };
+        }
     }
 }
 
@@ -172,15 +205,41 @@ function clearBasket() {
     companyIds.forEach(id => {
         const card = document.querySelector(`[data-company-id="${id}"]`);
         if (card && !card.classList.contains('enrolled')) {
-            const btn = card.querySelector('.action-btn');
-            btn.className = 'action-btn enroll';
-            btn.innerHTML = '<i class="bi bi-plus-circle"></i> ' + window.userData.labels.token;
-            btn.onclick = () => {
+            const actionDiv = card.querySelector('.company-action');
+            if (actionDiv) {
                 const name = card.querySelector('.company-name').textContent;
                 const imgEl = card.querySelector('.company-image img');
                 const logo = imgEl ? imgEl.src : '';
-                addToBasket(id, name, logo);
-            };
+                
+                // Restore the split button group
+                actionDiv.innerHTML = `
+                    <div class="btn-group w-100" role="group">
+                        <button class="action-btn enroll" style="border-top-right-radius: 0; border-bottom-right-radius: 0; flex: 1;"
+                                onclick="addToBasket(${id}, '${name.replace(/'/g, "\\'")}', '${logo}')">
+                            <i class="bi bi-plus-circle"></i> ${window.userData.labels.token}
+                        </button>
+                        <button type="button" class="action-btn enroll dropdown-toggle dropdown-toggle-split" 
+                                style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem 0.35rem; width: auto;"
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false">
+                            <span class="visually-hidden">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="trackAsOwned(${id}, '${name.replace(/'/g, "\\'")}', this); return false;">
+                                <i class="bi bi-bookmark-check text-info"></i> I Already Have This
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><span class="dropdown-item-text text-muted small"><em>Track without using a ${window.userData.labels.token.toLowerCase()}</em></span></li>
+                        </ul>
+                    </div>
+                `;
+                
+                // Re-initialize Bootstrap dropdowns
+                const dropdownToggle = actionDiv.querySelector('[data-bs-toggle="dropdown"]');
+                if (dropdownToggle) {
+                    new bootstrap.Dropdown(dropdownToggle);
+                }
+            }
         }
     });
     
