@@ -434,11 +434,23 @@ $additionalstyles .= '
 }
 
 /* Override enrolled button to ensure green background */
+.company-action .action-btn.enrolled,
 .action-btn.enrolled {
     background: #28a745 !important;
     background-color: #28a745 !important;
+    border-color: #28a745 !important;
     color: white !important;
-    cursor: default;
+    cursor: default !important;
+    opacity: 1 !important;
+}
+
+.company-action .action-btn.enrolled:disabled,
+.action-btn.enrolled:disabled {
+    background: #28a745 !important;
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: white !important;
+    opacity: 1 !important;
 }
 
 /* Floating counter button */
