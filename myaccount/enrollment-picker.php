@@ -922,7 +922,7 @@ if ($total_suppressed_count > 0 || $show_suppressed) {
     
     // New eye icon button design
     $eye_icon = $show_suppressed ? 'bi-eye' : 'bi-eye-slash';
-    $eye_title = $show_suppressed ? 'Hide suppressed ' . htmlspecialchars($website['biznames']) : 'Show hidden ' . htmlspecialchars($website['biznames']);
+    $eye_title = $show_suppressed ? 'Hide suppressed ' . $website['biznames'] : 'Show hidden ' . $website['biznames'];
     
     $output .= '
         <div class="suppression-toggle-wrapper d-flex align-items-center gap-1 px-3">
@@ -932,11 +932,11 @@ if ($total_suppressed_count > 0 || $show_suppressed) {
                     data-bs-toggle="tooltip"
                     data-bs-placement="left"
                     data-bs-html="true"
-                    title="<strong>' . htmlspecialchars($eye_title) . '</strong><br><small>' . $total_suppressed_count . ' ' . htmlspecialchars($website['biznames']) . ' hidden</small>">
+                    title="' . htmlspecialchars('<strong>' . $eye_title . '</strong><br><small>' . $total_suppressed_count . ' ' . $website['biznames'] . ' hidden</small>', ENT_QUOTES) . '">
                 <i class="bi ' . $eye_icon . '"></i>
                 <span class="badge bg-secondary ms-1">' . $total_suppressed_count . '</span>
             </button>
-            <span data-bs-toggle="tooltip" data-bs-placement="left" title="Learn why some ' . htmlspecialchars($website['biznames']) . ' are hidden">
+            <span data-bs-toggle="tooltip" data-bs-placement="left" title="' . htmlspecialchars('Learn why some ' . $website['biznames'] . ' are hidden', ENT_QUOTES) . '">
                 <button type="button" class="btn btn-sm btn-link p-1" 
                         data-bs-toggle="modal"
                         data-bs-target="#suppressionModal">
