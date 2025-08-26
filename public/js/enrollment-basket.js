@@ -348,6 +348,10 @@ function updateBasketUI() {
     const selectedInfo = document.getElementById('selectedInfo');
     const selectedCount = document.getElementById('selectedCount');
     
+    // Console logging for both baskets
+    console.log('UpdateBasketUI - Picked basket has ' + pickedCount + ' items');
+    console.log('UpdateBasketUI - Tracked basket has ' + trackedCount + ' items');
+    
     // Update the header with combined picked and tracked count
     if (selectedInfo && selectedCount) {
         if (totalCount > 0) {
@@ -400,7 +404,6 @@ function updateBasketUI() {
         
         // Get tracked items from trackedBasket (not trackedItems)
         const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
-        console.log('UpdateBasketUI - Tracked basket has', trackedBasket.length, 'items');
         
         // Build HTML for picked items
         let itemsHTML = '';
