@@ -433,14 +433,10 @@ $additionalstyles .= '
     --success-color: #28a745;
 }
 
-/* Override enrolled AND selected buttons to ensure green background */
-button.action-btn.enrolled,
+/* Selected buttons - regular green for newly picked items */
 button.action-btn.selected,
-.company-card .action-btn.enrolled,
 .company-card .action-btn.selected,
-.company-action .action-btn.enrolled,
 .company-action .action-btn.selected,
-.action-btn.enrolled,
 .action-btn.selected {
     background: #28a745 !important;
     background-color: #28a745 !important;
@@ -450,16 +446,24 @@ button.action-btn.selected,
     opacity: 1 !important;
 }
 
-button.action-btn.enrolled[disabled],
-button.action-btn.enrolled:disabled,
+/* Enrolled buttons - dark green for already saved enrollments */
+button.action-btn.enrolled,
+.company-card .action-btn.enrolled,
+.company-action .action-btn.enrolled,
+.action-btn.enrolled {
+    background: #155724 !important;  /* Dark green */
+    background-color: #155724 !important;
+    border-color: #155724 !important;
+    color: white !important;
+    cursor: default !important;
+    opacity: 1 !important;
+}
+
+/* Selected disabled states - regular green */
 button.action-btn.selected[disabled],
 button.action-btn.selected:disabled,
-.company-card .action-btn.enrolled:disabled,
 .company-card .action-btn.selected:disabled,
-.company-action .action-btn.enrolled:disabled,
 .company-action .action-btn.selected:disabled,
-.action-btn.enrolled:disabled,
-.action-btn.enrolled[disabled],
 .action-btn.selected:disabled,
 .action-btn.selected[disabled] {
     background: #28a745 !important;
@@ -469,16 +473,36 @@ button.action-btn.selected:disabled,
     opacity: 1 !important;
 }
 
+/* Enrolled disabled states - dark green */
+button.action-btn.enrolled[disabled],
+button.action-btn.enrolled:disabled,
+.company-card .action-btn.enrolled:disabled,
+.company-action .action-btn.enrolled:disabled,
+.action-btn.enrolled:disabled,
+.action-btn.enrolled[disabled] {
+    background: #155724 !important;  /* Dark green */
+    background-color: #155724 !important;
+    border-color: #155724 !important;
+    color: white !important;
+    opacity: 1 !important;
+}
+
 /* Also try Bootstrap button override */
-.btn.action-btn.enrolled,
 .btn.action-btn.selected,
-.btn.action-btn.enrolled:disabled,
 .btn.action-btn.selected:disabled,
-.btn.action-btn.enrolled[disabled],
 .btn.action-btn.selected[disabled] {
     background: #28a745 !important;
     background-color: #28a745 !important;
     border-color: #28a745 !important;
+    color: white !important;
+}
+
+.btn.action-btn.enrolled,
+.btn.action-btn.enrolled:disabled,
+.btn.action-btn.enrolled[disabled] {
+    background: #155724 !important;  /* Dark green */
+    background-color: #155724 !important;
+    border-color: #155724 !important;
     color: white !important;
 }
 
