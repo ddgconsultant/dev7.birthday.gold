@@ -922,7 +922,7 @@ if ($total_suppressed_count > 0 || $show_suppressed) {
     
     // New eye icon button design
     $eye_icon = $show_suppressed ? 'bi-eye' : 'bi-eye-slash';
-    $eye_title = $show_suppressed ? 'Hide suppressed ' . $website['biznames'] : 'Show hidden ' . $website['biznames'];
+    $eye_title = $show_suppressed ? 'Hide suppressed ' . htmlspecialchars($website['biznames']) : 'Show hidden ' . htmlspecialchars($website['biznames']);
     
     $output .= '
         <div class="suppression-toggle-wrapper d-flex align-items-center gap-1 px-3">
@@ -932,17 +932,17 @@ if ($total_suppressed_count > 0 || $show_suppressed) {
                     data-bs-toggle="tooltip"
                     data-bs-placement="left"
                     data-bs-html="true"
-                    title="<strong>' . $eye_title . '</strong><br><small>' . $total_suppressed_count . ' ' . $website['biznames'] . ' hidden</small>">
+                    title="<strong>' . htmlspecialchars($eye_title) . '</strong><br><small>' . $total_suppressed_count . ' ' . htmlspecialchars($website['biznames']) . ' hidden</small>">
                 <i class="bi ' . $eye_icon . '"></i>
                 <span class="badge bg-secondary ms-1">' . $total_suppressed_count . '</span>
             </button>
-            <button type="button" class="btn btn-sm btn-link p-1" 
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="left"
-                    title="Learn why some ' . $website['biznames'] . ' are hidden"
-                    onclick="bootstrap.Tooltip.getInstance(this).hide(); $(\'#suppressionModal\').modal(\'show\');">
-                <i class="bi bi-info-circle"></i>
-            </button>
+            <span data-bs-toggle="tooltip" data-bs-placement="left" title="Learn why some ' . htmlspecialchars($website['biznames']) . ' are hidden">
+                <button type="button" class="btn btn-sm btn-link p-1" 
+                        data-bs-toggle="modal"
+                        data-bs-target="#suppressionModal">
+                    <i class="bi bi-info-circle"></i>
+                </button>
+            </span>
         </div>';
 }
 
