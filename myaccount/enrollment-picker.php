@@ -927,13 +927,20 @@ if ($total_suppressed_count > 0 || $show_suppressed) {
     $output .= '
         <div class="suppression-toggle-wrapper d-flex align-items-center gap-1 px-3">
             <button type="button" class="btn btn-sm btn-outline-secondary eye-toggle-btn' . ($show_suppressed ? ' active' : '') . '" 
+                    id="eyeToggleBtn"
                     onclick="toggleSuppressed(' . ($show_suppressed ? 'false' : 'true') . ')"
-                    title="' . $eye_title . '">
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="left"
+                    data-bs-html="true"
+                    title="<strong>' . $eye_title . '</strong><br><small>' . $total_suppressed_count . ' ' . $website['biznames'] . ' hidden</small>">
                 <i class="bi ' . $eye_icon . '"></i>
                 <span class="badge bg-secondary ms-1">' . $total_suppressed_count . '</span>
             </button>
-            <button type="button" class="btn btn-sm btn-link p-1" data-bs-toggle="modal" data-bs-target="#suppressionModal"
-                    title="Why are some hidden?">
+            <button type="button" class="btn btn-sm btn-link p-1" 
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="left"
+                    title="Learn why some ' . $website['biznames'] . ' are hidden"
+                    onclick="bootstrap.Tooltip.getInstance(this).hide(); $(\'#suppressionModal\').modal(\'show\');">
                 <i class="bi bi-info-circle"></i>
             </button>
         </div>';
@@ -1413,6 +1420,14 @@ window.userData = {
 
 // Smart header scroll behavior
 document.addEventListener("DOMContentLoaded", function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            trigger: 'hover'
+        });
+    });
+    
     let lastScrollTop = 0;
     const header = document.querySelector(".enrollment-header");
     const searchBar = document.querySelector(".search-bar");
