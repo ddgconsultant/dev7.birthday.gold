@@ -428,6 +428,19 @@ $additionalstyles .= '<link rel="stylesheet" href="/public/css/enrollment-picker
 // Add custom CSS using Bootstrap 5 utilities where possible
 $additionalstyles .= '
 <style>
+/* Ensure success color is defined */
+:root {
+    --success-color: #28a745;
+}
+
+/* Override enrolled button to ensure green background */
+.action-btn.enrolled {
+    background: #28a745 !important;
+    background-color: #28a745 !important;
+    color: white !important;
+    cursor: default;
+}
+
 /* Floating counter button */
 .selection-counter {
     position: fixed;
@@ -1417,7 +1430,8 @@ window.userData = {
     hasEnrollments: ' . ((($accountstats['business_success'] ?? 0) + ($accountstats['business_pending'] ?? 0)) > 0 ? 'true' : 'false') . ',
     forceShowHelp: ' . (isset($_GET['showhelp']) ? 'true' : 'false') . '
 };
-
+';
+?>
 // Smart header scroll behavior
 document.addEventListener("DOMContentLoaded", function() {
     // Initialize Bootstrap tooltips
@@ -1561,8 +1575,8 @@ function clearSearch() {
 </script>
 
 <script src="/public/js/enrollment-picker.js"></script>
-<script src="/public/js/enrollment-basket.js"></script>';
-
+<script src="/public/js/enrollment-basket.js"></script>
+<?PHP
 $display_footertype='min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
