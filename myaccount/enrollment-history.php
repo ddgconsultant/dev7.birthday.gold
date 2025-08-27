@@ -219,7 +219,7 @@ $additionalstyles .= '
 /* Search box - matching help page */
 .enrollment-search {
     max-width: 600px;
-    margin: 2rem auto 3rem;
+    margin: -2rem auto 3rem;
     position: relative;
     z-index: 10;
 }
@@ -316,7 +316,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 </div>
 
-<div class="container mt-4">
+<div class="container">
     <!-- Search Bar -->
     <div class="enrollment-search">
         <div class="position-relative">
@@ -558,7 +558,7 @@ $statusDetails = [
     // 'total' is excluded as it doesn't need a tab representation
 ];
 
-
+echo '<div class="container">';
 
 echo '<nav class="nav-tabs-modern" role="tablist">';
 foreach ($statusCounters as $status => $count) {
@@ -888,7 +888,8 @@ echo '
 
 // end of tab content
 // -----------------------------------------------------
-echo '</div>';
+echo '</div>'; // Close tab-content
+echo '</div>'; // Close container
 
 
 echo '<!-- Modal Structure -->
@@ -917,7 +918,6 @@ $csrfToken = $display->inputcsrf_token('tokenonly');
 ?> 
 </div> <!-- close col-lg-10 -->
 </div> <!-- close row -->
-</div> <!-- close container -->
 
 <!-- Modal Structure for QR Code -->
 <div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
