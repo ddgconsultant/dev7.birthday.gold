@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Check if name already exists
         $check_sql = "SELECT id FROM bg_content WHERE name = :name AND status = 'active'";
-        $existing = $database->query($check_sql, ['name' => $name])->fetch();
+        $existing = $database->getrow($check_sql, ['name' => $name]);
         
         if ($existing) {
             $message = "A policy with this name already exists.";
@@ -118,7 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Check if content has actually changed
         $check_sql = "SELECT content FROM bg_content WHERE id = :id";
-        $old_content = $database->query($check_sql, ['id' => $policy_id])->fetchColumn();
+        $result = $database->getrow($check_sql, ['id' => $policy_id]);
+        $old_content = $result ? $result['content'] : null;
         
         if ($old_content !== $content) {
             // Content changed - create new version
@@ -126,7 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $database->query($expire_sql, ['id' => $policy_id]);
             
             $version_sql = "SELECT version FROM bg_content WHERE id = :id";
-            $current_version = $database->query($version_sql, ['id' => $policy_id])->fetchColumn();
+            $version_result = $database->getrow($version_sql, ['id' => $policy_id]);
+            $current_version = $version_result ? $version_result['version'] : '1.0';
             
             $version_parts = explode('.', $current_version ?: '1.0');
             $major = intval($version_parts[0]);
@@ -200,7 +202,7 @@ if (isset($_GET['msg'])) {
 $policy = null;
 if ($policy_id > 0) {
     $sql = "SELECT * FROM bg_content WHERE id = :id";
-    $policy = $database->query($sql, ['id' => $policy_id])->fetch(PDO::FETCH_ASSOC);
+    $policy = $database->getrow($sql, ['id' => $policy_id]);
     
     if ($policy) {
         $tags = json_decode($policy['tags'], true) ?: [];
@@ -251,7 +253,7 @@ if (!$policy) {
                      FROM bg_content 
                      WHERE `grouping` = 'legal' AND status = 'active' 
                      ORDER BY category, display_name";
-    $all_policies = $database->query($policies_sql)->fetchAll(PDO::FETCH_ASSOC);
+    $all_policies = $database->get_rows($policies_sql);
     
     // Calculate review status for each policy
     foreach ($all_policies as &$pol) {
@@ -503,7 +505,7 @@ if (!$policy) {
                    WHERE name = :name 
                    ORDER BY id DESC 
                    LIMIT 10";
-    $history = $database->query($history_sql, ['name' => $policy['name']])->fetchAll(PDO::FETCH_ASSOC);
+    $history = $database->get_rows($history_sql, ['name' => $policy['name']]);
     
     if (count($history) > 1) {
         echo '<div class="mt-5">';
