@@ -233,11 +233,19 @@ if ($policy_id > 0) {
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
+// Staff header section
+echo '
+<div class="content-header-staff compact">
+    <div class="container text-center">
+        <h1><i class="bi bi-shield-check"></i> Legal Policy Editor</h1>
+        <p class="lead">Manage legal policies, terms, and privacy documents</p>
+    </div>
+</div>';
+
 // Start page output - single PHP block with echo statements
-echo '<div class="container my-5 pt-3">';
+echo '<div class="container my-4">';
 echo '<div class="row">';
 echo '<div class="col-12">';
-echo '<h1 class="mb-4">Legal Policy Editor</h1>';
 
 // Display message if exists
 if ($message) {
@@ -298,8 +306,8 @@ if (!$policy) {
         foreach ($all_policies as $pol) {
             echo '<tr>';
             echo '<td>' . htmlspecialchars($pol['display_name'] ?: $pol['name']) . '</td>';
-            echo '<td>' . htmlspecialchars($pol['category']) . '</td>';
-            echo '<td>' . htmlspecialchars($pol['type']) . '</td>';
+            echo '<td>' . htmlspecialchars($pol['category'] ?? '') . '</td>';
+            echo '<td>' . htmlspecialchars($pol['type'] ?? '') . '</td>';
             echo '<td>' . htmlspecialchars($pol['version'] ?: '1.0') . '</td>';
             echo '<td>' . date('M d, Y', strtotime($pol['modify_dt'])) . '</td>';
             echo '<td>';
