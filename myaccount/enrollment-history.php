@@ -135,7 +135,7 @@ $additionalstyles .= '
 .nav-tabs-modern {
     display: flex;
     border-bottom: 2px solid #e9ecef;
-    margin-bottom: 2rem;
+    margin-bottom: 0;
     gap: 0;
     overflow: hidden;
     position: relative;
@@ -219,7 +219,7 @@ $additionalstyles .= '
 /* Search box - matching help page */
 .enrollment-search {
     max-width: 600px;
-    margin: -3rem auto 3rem;
+    margin: -4rem auto 3rem;
     position: relative;
     z-index: 10;
 }
@@ -272,7 +272,7 @@ $additionalstyles .= '
     border: 1px solid #dee2e6;
     border-top: none;
     border-radius: 0 0 0.5rem 0.5rem;
-    padding: 0 2rem 2rem 2rem;
+    padding: 1rem 2rem 2rem 2rem;
     margin-top: -1px;
 }
 
