@@ -219,7 +219,7 @@ $additionalstyles .= '
 /* Search box - matching help page */
 .enrollment-search {
     max-width: 600px;
-    margin: -2rem auto 3rem;
+    margin: 2rem auto 3rem;
     position: relative;
     z-index: 10;
 }
@@ -316,7 +316,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 </div>
 
-<div class="container">
+<div class="container mt-4">
     <!-- Search Bar -->
     <div class="enrollment-search">
         <div class="position-relative">
