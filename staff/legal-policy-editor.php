@@ -248,16 +248,16 @@ if ($message) {
 // Display policy list or edit form
 if (!$policy) {
     // Fetch all policies
-    $policies_sql = "SELECT id, name, display_name, category, type, version, modify_dt, status, 
-                     JSON_EXTRACT(tags, '$.review_period') as review_period 
+    $policies_sql = "SELECT id, name, display_name, category, type, version, modify_dt, status, tags
                      FROM bg_content 
                      WHERE `grouping` = 'legal' AND status = 'active' 
                      ORDER BY category, display_name";
-    $all_policies = $database->get_rows($policies_sql);
+    $all_policies = $database->getrows($policies_sql);
     
     // Calculate review status for each policy
     foreach ($all_policies as &$pol) {
-        $review_period = $pol['review_period'] ?? 180;
+        $tags = json_decode($pol['tags'] ?? '{}', true);
+        $review_period = $tags['review_period'] ?? 180;
         $modify_date = new DateTime($pol['modify_dt']);
         $current_date = new DateTime();
         $days_since = $current_date->diff($modify_date)->days;
@@ -505,7 +505,7 @@ if (!$policy) {
                    WHERE name = :name 
                    ORDER BY id DESC 
                    LIMIT 10";
-    $history = $database->get_rows($history_sql, ['name' => $policy['name']]);
+    $history = $database->getrows($history_sql, ['name' => $policy['name']]);
     
     if (count($history) > 1) {
         echo '<div class="mt-5">';
