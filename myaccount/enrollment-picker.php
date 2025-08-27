@@ -1381,7 +1381,7 @@ $output .= '
                 <i class="bi bi-check-circle-fill text-success"></i>
                 <h4 class="mt-3">' . $qik->plural2(2, $label_token) . ' Submitted!</h4>
                 <p id="successMessage" class="mb-3"></p>
-                <p class="text-muted small mb-4">You will receive a notification when the enrollment has been completed.</p>
+                <p id="successNotification" class="text-muted small mb-4">You will receive a notification when the enrollment has been completed.</p>
                 <button type="button" class="btn btn-primary px-5" onclick="redirectToMyAccount()">OK</button>
             </div>
         </div>

@@ -79,18 +79,47 @@ function showError(message) {
 }
 
 // Show success message
-function showSuccess(message, count = 0) {
+function showSuccess(message, pickedCount = 0, trackedCount = 0) {
     const modal = document.getElementById('successModal');
     if (modal) {
-        // Update the modal title dynamically
+        // Update the modal title dynamically based on what was submitted
         const modalTitle = modal.querySelector('h4');
-        if (modalTitle && count > 0) {
-            const pickWord = count === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
-            modalTitle.textContent = `${count} ${pickWord} Submitted!`;
+        if (modalTitle) {
+            if (pickedCount > 0 && trackedCount > 0) {
+                // Mixed submission - be specific
+                const pickWord = pickedCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
+                modalTitle.textContent = `${pickedCount} ${pickWord} & ${trackedCount} Tracked!`;
+            } else if (pickedCount > 0) {
+                // Only picks
+                const pickWord = pickedCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
+                modalTitle.textContent = `${pickedCount} ${pickWord} Submitted!`;
+            } else if (trackedCount > 0) {
+                // Only tracked
+                modalTitle.textContent = `${trackedCount} Reward${trackedCount === 1 ? '' : 's'} Tracked!`;
+            }
         }
         
         const modalInstance = new bootstrap.Modal(modal);
         document.getElementById('successMessage').textContent = message;
+        
+        // Update notification message based on what was submitted
+        const notificationEl = document.getElementById('successNotification');
+        if (notificationEl) {
+            if (pickedCount > 0 && trackedCount === 0) {
+                // Only picks - will get enrollment notification
+                notificationEl.textContent = 'You will receive a notification when the enrollment has been completed.';
+                notificationEl.style.display = 'block';
+            } else if (pickedCount > 0 && trackedCount > 0) {
+                // Mixed - only picks will get notifications
+                notificationEl.textContent = 'You will receive a notification when the enrollment has been completed for the picked rewards.';
+                notificationEl.style.display = 'block';
+            } else if (trackedCount > 0) {
+                // Only tracked - no enrollment needed
+                notificationEl.textContent = 'Tracked rewards have been saved to your account.';
+                notificationEl.style.display = 'block';
+            }
+        }
+        
         modalInstance.show();
     }
 }
@@ -610,14 +639,14 @@ async function confirmEnrollments() {
             let message = '';
             if (successCount > 0 && trackedSuccessCount > 0) {
                 const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
-                message = `Successfully submitted ${successCount} ${pickWord} for enrollment and tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} you already have.`;
+                message = `Successfully submitted ${successCount} ${pickWord} for enrollment and tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} as already owned.`;
             } else if (successCount > 0) {
                 const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
                 message = `Your ${successCount} ${pickWord} ${successCount === 1 ? 'has' : 'have'} been successfully submitted for enrollment processing.`;
             } else if (trackedSuccessCount > 0) {
-                message = `Successfully tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} you already have.`;
+                message = `Successfully tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} as already owned.`;
             }
-            showSuccess(message, totalSuccess);
+            showSuccess(message, successCount, trackedSuccessCount);
             
             // Don't auto-reload - let user see the success message
             // The page will need to be manually refreshed or navigated away
