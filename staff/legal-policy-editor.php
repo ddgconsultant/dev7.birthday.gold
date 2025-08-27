@@ -66,9 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $display_name = $_POST['display_name'] ?? '';
         $description = $_POST['description'] ?? '';
         $content = $_POST['content'] ?? '';
-        $category = $_POST['category'] ?? '';
-        $type = $_POST['type'] ?? '';
-        $grouping = $_POST['grouping'] ?? 'legal';
+        $category = $_POST['category'] ?? 'legal';
+        $type = $_POST['type'] ?? 'policy';
+        $grouping = $_POST['grouping'] ?? NULL;
         $review_period = intval($_POST['review_period'] ?? 180);
         
         // Check if name already exists
@@ -248,9 +248,9 @@ if ($message) {
 // Display policy list or edit form
 if (!$policy) {
     // Fetch all policies
-    $policies_sql = "SELECT id, name, display_name, category, type, version, modify_dt, status, tags
+    $policies_sql = "SELECT id, name, display_name, category, type, version, modify_dt, status, tags, `grouping`
                      FROM bg_content 
-                     WHERE `grouping` = 'legal' AND status = 'active' 
+                     WHERE (category = 'legal' OR category = 'Policies' OR `grouping` = 'legal') AND status = 'active' 
                      ORDER BY category, display_name";
     $all_policies = $database->getrows($policies_sql);
     
