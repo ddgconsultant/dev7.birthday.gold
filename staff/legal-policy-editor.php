@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Include site controller - handles authentication/authorization
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
@@ -68,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $content = $_POST['content'] ?? '';
         $category = $_POST['category'] ?? 'legal';
         $type = $_POST['type'] ?? 'policy';
-        $grouping = $_POST['grouping'] ?? NULL;
+        $grouping = $_POST['grouping'] ?? null;
         $review_period = intval($_POST['review_period'] ?? 180);
         
         // Check if name already exists
@@ -591,3 +594,5 @@ echo '</div>'; // container
 
 // Output footer
 include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();
+?>
