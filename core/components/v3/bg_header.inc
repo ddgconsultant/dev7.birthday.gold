@@ -165,7 +165,7 @@ else
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-3 col-xxl-3 menu-icons icon-enrollments">
                         <h6 class="dropdown-header">Pick Enrollments</h6>
                       '. (!$account->isactive() ? '<a class="dropdown-item" href="/discover"><i class="bi bi-search"></i> Search '.ucfirst($website['biznames']).'</a>':'').'
-                        <a class="dropdown-item" href="/myaccount/select"><i class="bi bi-ui-checks"></i> Select '.ucfirst($website['biznames']).'</a>
+                        <a class="dropdown-item" href="/myaccount/enrollment-picker"><i class="bi bi-ui-checks"></i> Select '.ucfirst($website['biznames']).'</a>
                             <a class="dropdown-item long-text" href="/myaccount/profile"><i class="bi bi-person"></i> Enrollment Profile</a>
                         <a class="dropdown-item short-text" href="/myaccount/profile"><i class="bi bi-person"></i> Profile</a>
                     <a class="dropdown-item long-text" href="/myaccount/enrollment-schedule"><i class="bi bi-calendar-check"></i> Enrollment Schedule</a>

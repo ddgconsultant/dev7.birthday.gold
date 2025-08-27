@@ -427,7 +427,7 @@ echo '<span>';
 
 if ($businessoutput['counts']['remaining'] > 0) {
     echo 'You have ' . $businessoutput['counts']['remaining'] . ' enrollments remaining. ';
-    echo '<a class="btn btn-sm btn-outline-primary py-1 ms-2" href="/myaccount/select">Pick more '.$website['biznames'].'</a>';
+    echo '<a class="btn btn-sm btn-outline-primary py-1 ms-2" href="/myaccount/enrollment-picker">Pick more '.$website['biznames'].'</a>';
 } else {
     echo 'You have used all ' . $totalEnrollments . ' of your enrollments.';
 }
