@@ -619,26 +619,16 @@ async function confirmEnrollments() {
             }
             showSuccess(message, totalSuccess);
             
-            // Reload page after showing success message to remove tracked items from display
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
+            // Don't auto-reload - let user see the success message
+            // The page will need to be manually refreshed or navigated away
         } else if (totalSuccess > 0 && errors.length > 0) {
             showError(`Partially successful. ${totalSuccess} processed, but errors: ${errors.join(', ')}`);
-            
-            // Reload page after partial success
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
+            // Don't auto-reload on partial success - let user see what happened
         } else if (errors.length > 0) {
             showError(`Failed to submit. Errors: ${errors.join(', ')}`);
         } else {
             // This shouldn't happen if we have a successful response
-            // But if it does, still reload to clear tracked items
             showError('No items to submit');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
         }
         
         // Update balance display
