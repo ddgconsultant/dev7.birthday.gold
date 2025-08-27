@@ -219,7 +219,7 @@ $additionalstyles .= '
 /* Search box - matching help page */
 .enrollment-search {
     max-width: 600px;
-    margin: -2rem auto 3rem;
+    margin: -3rem auto 3rem;
     position: relative;
     z-index: 10;
 }
