@@ -393,6 +393,7 @@ $statusCounters = [
     'existing' => 0,
     'default' => 0,
     'removed' => 0,
+    'user_owned' => 0,
     'total' => 0
 ];
 
@@ -545,6 +546,14 @@ $statusDetails = [
         'allowapplink' => false,
         'allowremoval' => false,
         'allowsearchbar' => false,
+    ],
+    'user_owned' => [
+        'label' => 'Already Have',
+        'color' => 'warning',
+        'icon' => 'bi-bookmark-check-fill',
+        'allowapplink' => true,
+        'allowremoval' => true,
+        'allowsearchbar' => true,
     ]
     // 'total' is excluded as it doesn't need a tab representation
 ];
