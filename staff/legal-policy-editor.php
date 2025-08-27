@@ -21,35 +21,30 @@ $additionalstyles .= '
 </style>
 ';
 
-// Add TinyMCE script
+// Add TinyMCE script from CDN
 $additionalscripts .= '
-<script src="/public/js/tinymce.min.js"></script>
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
-window.addEventListener("load", function() {
-    if (typeof tinymce !== "undefined") {
-        tinymce.init({
-            selector: "#content",
-            height: 500,
-            menubar: true,
-            plugins: [
-                "lists", "link", "charmap", 
-                "searchreplace", "code", "fullscreen",
-                "table", "help", "wordcount"
-            ],
-            toolbar: "undo redo | formatselect | " +
-                "bold italic underline strikethrough | alignleft aligncenter " +
-                "alignright alignjustify | bullist numlist outdent indent | " +
-                "removeformat | link table | code fullscreen",
-            content_style: "body { font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; font-size: 14px; line-height: 1.6; }",
-            branding: false,
-            base_url: "/public/js",
-            setup: function(editor) {
-                editor.on("change", function() {
-                    tinymce.triggerSave();
-                });
-            }
-        });
-    }
+document.addEventListener("DOMContentLoaded", function() {
+    tinymce.init({
+        selector: "#content, #new_content",
+        height: 500,
+        menubar: true,
+        plugins: [
+            "anchor", "autolink", "charmap", "codesample", "emoticons", "image", "link", "lists", "media", 
+            "searchreplace", "table", "visualblocks", "wordcount", "code", "fullscreen"
+        ],
+        toolbar: "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | " +
+                "link image media table | align lineheight | numlist bullist indent outdent | " +
+                "emoticons charmap | removeformat | code fullscreen",
+        content_style: "body { font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; font-size: 14px; line-height: 1.6; }",
+        branding: false,
+        setup: function(editor) {
+            editor.on("change", function() {
+                tinymce.triggerSave();
+            });
+        }
+    });
 });
 </script>
 ';
@@ -235,7 +230,7 @@ include($dir['core_components'] . '/bg_header.inc');
 
 // Staff header section
 echo '
-<div class="content-header-staff compact">
+<div class="content-header-staff no-rounded-corners">
     <div class="container text-center">
         <h1><i class="bi bi-shield-check"></i> Legal Policy Editor</h1>
         <p class="lead">Manage legal policies, terms, and privacy documents</p>
