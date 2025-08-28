@@ -3,6 +3,9 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Newsletter Campaigns";
 
+// Add Font Awesome for icons
+$additionalstyles = '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">';
+
 // Get campaigns from database
 $campaigns_sql = "SELECT 
     nc.*,

@@ -378,7 +378,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                 <button class="btn btn-outline-primary" onclick="copyReferralCode()">
                                     <i class="bi bi-clipboard me-2"></i>Copy Code
                                 </button>
-                                <a href="/myaccount/invite-friends" class="btn btn-primary">
+                                <a href="/myaccount/invite" class="btn btn-primary">
                                     <i class="bi bi-send me-2"></i>Invite Friends
                                 </a>
                             </div>

@@ -763,6 +763,16 @@ $businessHours = $app->bg_businesshours();
                     <p class="admin-card-text">Analytics and management for enrollment allocations</p>
                 </div>
             </a>
+            
+            <a href="/admin/personality-results.php" class="admin-card">
+                <div class="admin-icon icon-user" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="bi bi-palette"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Team Personality Results</h3>
+                    <p class="admin-card-text">View staff personality test results and team composition</p>
+                </div>
+            </a>
         </div>
         
         <!-- Plans & Products Section -->

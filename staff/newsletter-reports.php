@@ -23,20 +23,31 @@ if (!$campaign) {
 
 $pagetitle = "Campaign Report: " . $campaign['title'];
 
-// Get overall stats
+// Get overall stats - use unique parameter names for each occurrence
 $stats_sql = "SELECT 
-    (SELECT COUNT(*) FROM bg_newsletter_queue WHERE campaign_id = :campaign_id) as total_recipients,
-    (SELECT COUNT(*) FROM bg_newsletter_queue WHERE campaign_id = :campaign_id AND status = 'sent') as sent_count,
-    (SELECT COUNT(*) FROM bg_newsletter_queue WHERE campaign_id = :campaign_id AND status = 'error') as error_count,
-    (SELECT COUNT(*) FROM bg_newsletter_queue WHERE campaign_id = :campaign_id AND status = 'pending') as pending_count,
-    (SELECT COUNT(DISTINCT user_id) FROM bg_newsletter_events WHERE campaign_id = :campaign_id AND event_type = 'open') as unique_opens,
-    (SELECT COUNT(*) FROM bg_newsletter_events WHERE campaign_id = :campaign_id AND event_type = 'open') as total_opens,
-    (SELECT COUNT(DISTINCT user_id) FROM bg_newsletter_events WHERE campaign_id = :campaign_id AND event_type = 'click') as unique_clicks,
-    (SELECT COUNT(*) FROM bg_newsletter_events WHERE campaign_id = :campaign_id AND event_type = 'click') as total_clicks,
-    (SELECT COUNT(DISTINCT user_id) FROM bg_newsletter_events WHERE campaign_id = :campaign_id AND event_type = 'cta_click') as cta_clicks,
-    (SELECT COUNT(*) FROM bg_newsletter_events WHERE campaign_id = :campaign_id AND event_type = 'unsubscribe') as unsubscribes";
+    (SELECT COUNT(*) FROM bg_newsletter_queue WHERE campaign_id = :cid1) as total_recipients,
+    (SELECT COUNT(*) FROM bg_newsletter_queue WHERE campaign_id = :cid2 AND status = 'sent') as sent_count,
+    (SELECT COUNT(*) FROM bg_newsletter_queue WHERE campaign_id = :cid3 AND status = 'error') as error_count,
+    (SELECT COUNT(*) FROM bg_newsletter_queue WHERE campaign_id = :cid4 AND status = 'pending') as pending_count,
+    (SELECT COUNT(DISTINCT user_id) FROM bg_newsletter_events WHERE campaign_id = :cid5 AND event_type = 'open') as unique_opens,
+    (SELECT COUNT(*) FROM bg_newsletter_events WHERE campaign_id = :cid6 AND event_type = 'open') as total_opens,
+    (SELECT COUNT(DISTINCT user_id) FROM bg_newsletter_events WHERE campaign_id = :cid7 AND event_type = 'click') as unique_clicks,
+    (SELECT COUNT(*) FROM bg_newsletter_events WHERE campaign_id = :cid8 AND event_type = 'click') as total_clicks,
+    (SELECT COUNT(DISTINCT user_id) FROM bg_newsletter_events WHERE campaign_id = :cid9 AND event_type = 'cta_click') as cta_clicks,
+    (SELECT COUNT(*) FROM bg_newsletter_events WHERE campaign_id = :cid10 AND event_type = 'unsubscribe') as unsubscribes";
 
-$stats = $database->getrow($stats_sql, ['campaign_id' => $campaign_id]);
+$stats = $database->getrow($stats_sql, [
+    'cid1' => $campaign_id,
+    'cid2' => $campaign_id,
+    'cid3' => $campaign_id,
+    'cid4' => $campaign_id,
+    'cid5' => $campaign_id,
+    'cid6' => $campaign_id,
+    'cid7' => $campaign_id,
+    'cid8' => $campaign_id,
+    'cid9' => $campaign_id,
+    'cid10' => $campaign_id
+]);
 
 // Calculate rates
 $open_rate = $stats['sent_count'] > 0 ? round(($stats['unique_opens'] / $stats['sent_count']) * 100, 1) : 0;

@@ -394,6 +394,13 @@ echo '
                 <small class="text-muted">Staff birthdays</small>
             </a>
         </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/staff/personality-test.php" class="quick-link d-block">
+                <i class="bi bi-palette fs-3 mb-2" style="color: #667eea;"></i>
+                <h6>Personality Test</h6>
+                <small class="text-muted">Discover your work style</small>
+            </a>
+        </div>
     </div>';
 
 // Recent Activity Section

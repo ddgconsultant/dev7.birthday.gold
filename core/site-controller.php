@@ -23,7 +23,8 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
 # MAINTENANCE MODE
 #-------------------------------------------------------------------------------
 $site_maintenancemode = false;
-$website['statuspage'] = 'https://uptime.birthdaygold.cloud/status/all';
+#$website['statuspage'] = 'https://uptime.birthdaygold.cloud/status/all';
+$website['statuspage'] = '/sitestatus';
 
 if (!empty($site_maintenancemode)) {
   echo '

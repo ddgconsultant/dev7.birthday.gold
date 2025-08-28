@@ -21,30 +21,41 @@ $additionalstyles .= '
 </style>
 ';
 
-// Add TinyMCE script from CDN
-$additionalscripts .= '
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+// Add TinyMCE script - using CDN with fallback to textarea
+$additionalstyles .= '
+<script src="https://cdn.jsdelivr.net/npm/tinymce@5.10.9/tinymce.min.js"></script>
 <script>
+// Initialize TinyMCE when page loads
 document.addEventListener("DOMContentLoaded", function() {
-    tinymce.init({
-        selector: "#content, #new_content",
-        height: 500,
-        menubar: true,
-        plugins: [
-            "anchor", "autolink", "charmap", "codesample", "emoticons", "image", "link", "lists", "media", 
-            "searchreplace", "table", "visualblocks", "wordcount", "code", "fullscreen"
-        ],
-        toolbar: "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | " +
-                "link image media table | align lineheight | numlist bullist indent outdent | " +
-                "emoticons charmap | removeformat | code fullscreen",
-        content_style: "body { font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; font-size: 14px; line-height: 1.6; }",
-        branding: false,
-        setup: function(editor) {
-            editor.on("change", function() {
-                tinymce.triggerSave();
-            });
-        }
-    });
+    if (typeof tinymce !== "undefined") {
+        tinymce.init({
+            selector: "#content, #new_content",
+            height: 500,
+            menubar: true,
+            plugins: [
+                "advlist autolink lists link image charmap print preview anchor",
+                "searchreplace visualblocks code fullscreen",
+                "insertdatetime media table paste code help wordcount"
+            ],
+            toolbar: "undo redo | formatselect | " +
+                "bold italic underline strikethrough | alignleft aligncenter " +
+                "alignright alignjustify | bullist numlist outdent indent | " +
+                "removeformat | link image | code fullscreen | help",
+            content_style: "body { font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; font-size: 14px; line-height: 1.6; }",
+            branding: false,
+            paste_data_images: false,
+            relative_urls: false,
+            remove_script_host: false,
+            setup: function(editor) {
+                // Ensure the form submits the content
+                editor.on("change", function() {
+                    tinymce.triggerSave();
+                });
+            }
+        });
+    } else {
+        console.error("TinyMCE not loaded - falling back to plain textarea");
+    }
 });
 </script>
 ';
@@ -227,7 +238,7 @@ if ($policy_id > 0) {
 // Include page components
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-
+$bodycontentclass = '';
 // Staff header section
 echo '
 <div class="content-header-staff no-rounded-corners">
@@ -410,35 +421,44 @@ if (!$policy) {
     
 } else {
     // Display edit form for existing policy
+    
+    // Policy Status Card - brought over from admin version
     $header_class = $days_until_review < 0 ? 'danger' : ($days_until_review <= 7 ? 'warning' : 'info');
     
-    echo '<div class="card">';
+    echo '<div class="card mb-4">';
     echo '<div class="card-header bg-' . $header_class . ' text-white">';
-    echo '<h4 class="mb-0">Edit Policy</h4>';
-    echo '<div class="row mt-3">';
-    echo '<div class="col-md-6">';
+    echo '<h5 class="mb-0">Review Status</h5>';
+    echo '</div>';
+    echo '<div class="card-body">';
+    echo '<div class="row">';
+    echo '<div class="col-md-3">';
     echo '<strong>Policy:</strong> ' . htmlspecialchars($policy['display_name'] ?: $policy['name']);
     echo '</div>';
     echo '<div class="col-md-2">';
     echo '<strong>Version:</strong> ' . htmlspecialchars($policy['version'] ?: '1.0');
     echo '</div>';
-    echo '<div class="col-md-4">';
+    echo '<div class="col-md-3">';
     echo '<strong>Last Reviewed:</strong> ' . date('M d, Y', strtotime($policy['modify_dt']));
     echo '</div>';
+    echo '<div class="col-md-2">';
+    echo '<strong>Days Since Review:</strong> ' . $days_since_modified;
+    echo '</div>';
+    echo '<div class="col-md-2">';
+    echo '<strong>Review Due:</strong> ';
+    if ($days_until_review < 0) {
+        echo '<span class="text-danger">Overdue by ' . abs($days_until_review) . ' days</span>';
+    } else {
+        echo '<span class="text-' . ($days_until_review <= 7 ? 'warning' : 'success') . '">In ' . $days_until_review . ' days</span>';
+    }
+    echo '</div>';
+    echo '</div>';
+    echo '</div>';
     echo '</div>';
     
-    if ($days_until_review < 0) {
-        echo '<div class="alert alert-danger mt-3 mb-0">';
-        echo '<i class="fas fa-exclamation-triangle me-2"></i>';
-        echo 'This policy is <strong>overdue</strong> for review by ' . abs($days_until_review) . ' days!';
-        echo '</div>';
-    } elseif ($days_until_review <= 7) {
-        echo '<div class="alert alert-warning mt-3 mb-0">';
-        echo '<i class="fas fa-clock me-2"></i>';
-        echo 'This policy needs review in <strong>' . $days_until_review . ' days</strong>.';
-        echo '</div>';
-    }
-    
+    // Policy Edit Form
+    echo '<div class="card">';
+    echo '<div class="card-header">';
+    echo '<h5 class="mb-0">Edit Policy</h5>';
     echo '</div>';
     
     echo '<div class="card-body">';
@@ -485,6 +505,7 @@ if (!$policy) {
     echo '<div class="mb-3">';
     echo '<label for="content" class="form-label">Policy Content</label>';
     echo '<textarea class="form-control" id="content" name="content" rows="15">' . htmlspecialchars($policy['content'] ?: '') . '</textarea>';
+    echo '<small class="text-muted">Modifying content will create a new version. Metadata changes only will not create a new version.</small>';
     echo '</div>';
     
     echo '<div class="d-flex justify-content-between">';
@@ -557,37 +578,6 @@ if (!$policy) {
     
     echo '</div>';
     echo '</div>';
-    
-    // Add TinyMCE initialization for edit form
-    $additionalscripts .= '
-    <script>
-    window.addEventListener("load", function() {
-        if (typeof tinymce !== "undefined") {
-            tinymce.init({
-                selector: "#content",
-                height: 500,
-                menubar: true,
-                plugins: [
-                    "lists", "link", "charmap", 
-                    "searchreplace", "code", "fullscreen",
-                    "table", "help", "wordcount"
-                ],
-                toolbar: "undo redo | formatselect | " +
-                    "bold italic underline strikethrough | alignleft aligncenter " +
-                    "alignright alignjustify | bullist numlist outdent indent | " +
-                    "removeformat | link table | code fullscreen",
-                branding: false,
-                base_url: "/public/js",
-                setup: function(editor) {
-                    editor.on("change", function() {
-                        tinymce.triggerSave();
-                    });
-                }
-            });
-        }
-    });
-    </script>
-    ';
 }
 
 // Close container

@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $cta_category = $_POST['cta_category'];
     $send_dt = $_POST['send_date'] . ' ' . $_POST['send_time'] . ':00';
     $status = $_POST['action'] == 'schedule' ? 'scheduled' : 'draft';
+    $recipient_criteria = isset($_POST['recipient_criteria']) ? $_POST['recipient_criteria'] : '{"type":"all"}';
     
     if ($campaign_id > 0) {
         // Update existing campaign
@@ -48,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'campaign_id' => $campaign_id
         ]);
         
-        $system->addmessage('success', 'Campaign updated successfully!');
+        $_SESSION['message'] = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Campaign updated successfully!</div>';
     } else {
         // Create new campaign
         $insert_sql = "INSERT INTO bg_newsletter_campaigns 
@@ -63,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'cta_category' => $cta_category,
             'send_dt' => $send_dt,
             'status' => $status,
-            'created_by' => $account->getuser('user_id')
+            'created_by' => isset($current_user_data['user_id']) ? $current_user_data['user_id'] : 0
         ]);
         
         $campaign_id = $database->lastInsertId();
@@ -91,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
         
-        $system->addmessage('success', 'Campaign created successfully!');
+        $_SESSION['message'] = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Campaign created successfully!</div>';
     }
     
     header('Location: /staff/newsletter-list.php');
@@ -158,13 +159,18 @@ echo '
                     <div class="col-md-6">
                         <label for="title" class="form-label">Campaign Title</label>
                         <input type="text" class="form-control" id="title" name="title" 
-                               value="' . ($campaign ? htmlspecialchars($campaign['title']) : '') . '" required>
+                               value="' . ($campaign ? htmlspecialchars($campaign['title']) : 'Grab Dinner with Your Family') . '" required>
                         <small class="text-muted">Internal reference only - not shown to recipients</small>
                     </div>
                     <div class="col-md-6">
                         <label for="subject" class="form-label">Email Subject</label>
-                        <input type="text" class="form-control" id="subject" name="subject" 
-                               value="' . ($campaign ? htmlspecialchars($campaign['subject']) : '') . '" required>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="subject" name="subject" 
+                                   value="' . ($campaign ? htmlspecialchars($campaign['subject']) : '') . '" required>
+                            <button type="button" class="btn btn-outline-success" id="aiGenerateBtn" title="AI Generate Content">
+                                <i class="fas fa-magic"></i> AI Generate
+                            </button>
+                        </div>
                         <small class="text-muted">Available placeholders: [[first_name]], [[city]], [[birthday_month]]</small>
                     </div>
                 </div>
@@ -176,7 +182,8 @@ echo '
                             <option value="">Select a category...</option>';
 
 foreach ($categories as $cat) {
-    $selected = ($campaign && $campaign['cta_category'] == $cat) ? ' selected' : '';
+    // Default to 'restaurant' for testing (matches "Grab Dinner with Your Family")
+    $selected = ($campaign && $campaign['cta_category'] == $cat) ? ' selected' : (!$campaign && $cat == 'restaurant' ? ' selected' : '');
     echo '
                             <option value="' . $cat . '"' . $selected . '>' . ucfirst($cat) . '</option>';
 }
@@ -188,7 +195,7 @@ echo '
                     <div class="col-md-3">
                         <label for="send_date" class="form-label">Send Date</label>
                         <input type="date" class="form-control" id="send_date" name="send_date" 
-                               value="' . ($campaign ? date('Y-m-d', strtotime($campaign['send_dt'])) : date('Y-m-d')) . '" required>
+                               value="' . ($campaign ? date('Y-m-d', strtotime($campaign['send_dt'])) : '2025-09-01') . '" required>
                     </div>
                     <div class="col-md-3">
                         <label for="send_time" class="form-label">Send Time</label>
@@ -196,6 +203,216 @@ echo '
                                value="' . ($campaign ? date('H:i', strtotime($campaign['send_dt'])) : '09:00') . '" required>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Recipients</h5>
+            </div>
+            <div class="card-body">
+                <style>
+                .recipient-builder {
+                    border: 2px solid #e9ecef;
+                    border-radius: 8px;
+                    padding: 15px;
+                    background: #f8f9fa;
+                    min-height: 80px;
+                }
+                .recipient-token {
+                    display: inline-block;
+                    background: #007bff;
+                    color: white;
+                    padding: 5px 12px;
+                    border-radius: 20px;
+                    margin: 3px;
+                    font-size: 14px;
+                }
+                .recipient-token .remove-token {
+                    margin-left: 8px;
+                    cursor: pointer;
+                    font-weight: bold;
+                }
+                .recipient-token.operator {
+                    background: #6c757d;
+                }
+                .segment-buttons {
+                    margin-top: 15px;
+                }
+                .segment-btn {
+                    margin: 3px;
+                    width: 100%;
+                    text-align: left;
+                    justify-content: flex-start;
+                }
+                .recipient-builder-main {
+                    min-height: 120px;
+                    max-height: 300px;
+                    overflow-y: auto;
+                    border: 2px solid #dee2e6;
+                    border-radius: 8px;
+                    padding: 10px;
+                    background: #fff;
+                    transition: all 0.3s ease;
+                }
+                .recipient-builder-main:focus-within {
+                    border-color: #0d6efd;
+                    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+                }
+                .segment-accordion .accordion-button {
+                    padding: 0.75rem 1rem;
+                    font-size: 0.95rem;
+                    font-weight: 600;
+                }
+                .segment-accordion .accordion-body {
+                    padding: 0.5rem;
+                }
+                .segment-sidebar {
+                    position: sticky;
+                    top: 20px;
+                    max-height: calc(100vh - 100px);
+                    overflow-y: auto;
+                }
+                </style>
+                
+                <div class="row">
+                    <!-- Left Sidebar - Segment Selectors -->
+                    <div class="col-lg-4 col-md-5">
+                        <div class="card segment-sidebar">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-filter"></i> Segment Filters</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <!-- Accordion for segment categories -->
+                                <div class="accordion accordion-flush segment-accordion" id="segmentAccordion">
+                                    
+                                    <!-- Basic Segments -->
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#basicSegments">
+                                                <i class="fas fa-star me-2"></i> Basic Segments
+                                            </button>
+                                        </h2>
+                                        <div id="basicSegments" class="accordion-collapse collapse show" data-bs-parent="#segmentAccordion">
+                                            <div class="accordion-body">
+                                                <button type="button" class="btn btn-sm btn-outline-primary segment-btn" onclick="addSegment(&#39;all&#39;, &#39;All Active Users&#39;)">
+                                                    <i class="fas fa-users me-2"></i> All Active Users
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-warning segment-btn" onclick="showTokenOptions(&#39;account_type&#39;)">
+                                                    <i class="fas fa-user-check me-2"></i> Account Type
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Demographics -->
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#demographics">
+                                                <i class="fas fa-users-cog me-2"></i> Demographics
+                                            </button>
+                                        </h2>
+                                        <div id="demographics" class="accordion-collapse collapse" data-bs-parent="#segmentAccordion">
+                                            <div class="accordion-body">
+                                                <button type="button" class="btn btn-sm btn-outline-primary segment-btn" onclick="showTokenOptions(&#39;gender&#39;)">
+                                                    <i class="fas fa-venus-mars me-2"></i> Gender
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary segment-btn" onclick="showTokenOptions(&#39;age_range&#39;)">
+                                                    <i class="fas fa-user-clock me-2"></i> Age Range
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary segment-btn" onclick="showTokenOptions(&#39;birthday_month&#39;)">
+                                                    <i class="fas fa-birthday-cake me-2"></i> Birthday Month
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary segment-btn" onclick="showTokenOptions(&#39;state&#39;)">
+                                                    <i class="fas fa-map-marker-alt me-2"></i> State/Location
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Account Details -->
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accountDetails">
+                                                <i class="fas fa-user-circle me-2"></i> Account Details
+                                            </button>
+                                        </h2>
+                                        <div id="accountDetails" class="accordion-collapse collapse" data-bs-parent="#segmentAccordion">
+                                            <div class="accordion-body">
+                                                <button type="button" class="btn btn-sm btn-outline-primary segment-btn" onclick="showTokenOptions(&#39;plan&#39;)">
+                                                    <i class="fas fa-crown me-2"></i> Subscription Plan
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary segment-btn" onclick="showTokenOptions(&#39;profile_completeness&#39;)">
+                                                    <i class="fas fa-percentage me-2"></i> Profile Completeness
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary segment-btn" onclick="showTokenOptions(&#39;enrollment_count&#39;)">
+                                                    <i class="fas fa-list-ol me-2"></i> Enrollment Count
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Business Interests -->
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#businessInterests">
+                                                <i class="fas fa-building me-2"></i> Business Interests
+                                            </button>
+                                        </h2>
+                                        <div id="businessInterests" class="accordion-collapse collapse" data-bs-parent="#segmentAccordion">
+                                            <div class="accordion-body">
+                                                <button type="button" class="btn btn-sm btn-outline-primary segment-btn" onclick="showTokenOptions(&#39;business_category&#39;)">
+                                                    <i class="fas fa-store me-2"></i> Business Category
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                                
+                                <!-- Operator buttons at bottom of card -->
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="btn-group btn-group-sm me-2">
+                                                <button type="button" class="btn btn-outline-secondary" onclick="addOperatorToken(&#39;AND&#39;)">AND</button>
+                                                <button type="button" class="btn btn-outline-secondary" onclick="addOperatorToken(&#39;OR&#39;)">OR</button>
+                                                <button type="button" class="btn btn-outline-secondary" onclick="addOperatorToken(&#39;NOT&#39;)">NOT</button>
+                                            </div>
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-dark" onclick="addParenthesis(&#39;(&#39;)" title="Open group">(</button>
+                                                <button type="button" class="btn btn-outline-dark" onclick="addParenthesis(&#39;)&#39;)" title="Close group">)</button>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearTokens()">
+                                            <i class="fas fa-times"></i> Clear
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Content - Main Form -->
+                    <div class="col-lg-8 col-md-7">
+                        <label class="form-label">Recipient Selection</label>
+                        
+                        <!-- Vertically expanding recipient builder -->
+                        <div class="recipient-builder-main" id="recipientBuilder">
+                            <div id="recipientTokens">
+                                <!-- Tokens will be dynamically added here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Recipient count -->
+                        <div class="mt-2 text-muted small" id="recipientCount">
+                            <i class="fas fa-spinner fa-spin"></i> Calculating recipients...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hidden field to store recipient criteria -->
+                <input type="hidden" name="recipient_criteria" id="recipient_criteria" value="all">
             </div>
         </div>
         
@@ -261,10 +478,69 @@ echo '
     </div>
 </div>
 
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="errorContent" style="font-family: monospace; background: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word;">
+                    <!-- Error message will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="copyErrorMessage()">
+                    <i class="fas fa-copy"></i> Copy Error
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Email Modal -->
+<div class="modal fade" id="testEmailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-envelope"></i> Send Test Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="testEmailAddress" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="testEmailAddress" placeholder="name@example.com" required>
+                    <small class="text-muted">Enter the email address to send a test newsletter to</small>
+                </div>
+                <div id="testEmailStatus" class="alert d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="sendTestEmailFromModal()">
+                    <i class="fas fa-paper-plane"></i> Send Test
+                </button>
+            </div>
+        </div>
+    </div>
+</div>';
+
+// Close the PHP echo and continue with HTML/JavaScript
+?>
+
+<!-- Token Field Styles -->
+<link rel="stylesheet" href="/public/css/recipient-token-field.css">
+
 <!-- TinyMCE with API Key -->
-<script src="https://cdn.tiny.cloud/1/' . htmlspecialchars($tinymce_api_key) . '/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.tiny.cloud/1/<?php echo htmlspecialchars($tinymce_api_key); ?>/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
+<!-- Token Field JavaScript -->
+<script src="/public/js/recipient-token-field-simple.js"></script>
+
 <script>
-// Initialize TinyMCE following legal-policy-editor pattern
+// Initialize TinyMCE
 tinymce.init({
     selector: "#body_html",
     height: 500,
@@ -322,25 +598,193 @@ function previewEmail() {
 }
 
 function sendTestEmail() {
-    var email = prompt("Enter email address to send test to:");
-    if (email) {
-        $.post("/staff/ajax/newsletter-test.php", {
-            campaign_id: ' . $campaign_id . ',
-            test_email: email,
-            subject: $("#subject").val(),
-            body: tinymce.get("body_html").getContent(),
-            category: $("#cta_category").val()
-        }, function(response) {
-            if (response.success) {
-                alert("Test email sent successfully!");
-            } else {
-                alert("Error: " + response.message);
-            }
-        }, "json");
-    }
+    // Show the test email modal
+    var modal = new bootstrap.Modal(document.getElementById("testEmailModal"));
+    modal.show();
+    
+    // Clear any previous status
+    $("#testEmailStatus").addClass("d-none").removeClass("alert-success alert-danger");
+    $("#testEmailAddress").val("");
 }
-</script>';
 
+function sendTestEmailFromModal() {
+    var email = $("#testEmailAddress").val();
+    
+    if (!email) {
+        $("#testEmailStatus")
+            .removeClass("d-none alert-success")
+            .addClass("alert-danger")
+            .html("<i class=\"fas fa-exclamation-circle\"></i> Please enter an email address");
+        return;
+    }
+    
+    // Show loading state
+    var btn = $("button:contains(\"Send Test\")");
+    var originalHtml = btn.html();
+    btn.html("<i class=\"fas fa-spinner fa-spin\"></i> Sending...").prop("disabled", true);
+    
+    $.post("/staff/ajax/newsletter-test.php", {
+        campaign_id: ' . $campaign_id . ',
+        test_email: email,
+        subject: $("#subject").val(),
+        body: tinymce.get("body_html").getContent(),
+        category: $("#cta_category").val()
+    }, function(response) {
+        if (response.success) {
+            $("#testEmailStatus")
+                .removeClass("d-none alert-danger")
+                .addClass("alert-success")
+                .html("<i class=\"fas fa-check-circle\"></i> Test email sent successfully to " + email);
+            
+            // Clear the input and close modal after 2 seconds
+            setTimeout(function() {
+                bootstrap.Modal.getInstance(document.getElementById("testEmailModal")).hide();
+            }, 2000);
+        } else {
+            $("#testEmailStatus")
+                .removeClass("d-none alert-success")
+                .addClass("alert-danger")
+                .html("<i class=\"fas fa-exclamation-circle\"></i> Error: " + response.message);
+        }
+    }, "json").fail(function(xhr, status, error) {
+        $("#testEmailStatus")
+            .removeClass("d-none alert-success")
+            .addClass("alert-danger")
+            .html("<i class=\"fas fa-exclamation-circle\"></i> Failed to send test email: " + error);
+    }).always(function() {
+        // Restore button state
+        btn.html(originalHtml).prop("disabled", false);
+    });
+}
+
+// Error modal functions
+function showErrorModal(message) {
+    $("#errorContent").text(message);
+    var modal = new bootstrap.Modal(document.getElementById("errorModal"));
+    modal.show();
+}
+
+function copyErrorMessage() {
+    var errorText = $("#errorContent").text();
+    navigator.clipboard.writeText(errorText).then(function() {
+        // Show success feedback
+        var btn = $("button:contains(\'Copy Error\')");
+        var originalText = btn.html();
+        btn.html('<i class="fas fa-check"></i> Copied!');
+        btn.removeClass("btn-secondary").addClass("btn-success");
+        
+        setTimeout(function() {
+            btn.html(originalText);
+            btn.removeClass("btn-success").addClass("btn-secondary");
+        }, 2000);
+    }).catch(function(err) {
+        // Fallback for older browsers
+        var textArea = document.createElement("textarea");
+        textArea.value = errorText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand("copy");
+            alert("Error copied to clipboard!");
+        } catch (err) {
+            alert("Failed to copy. Please select and copy manually.");
+        }
+        document.body.removeChild(textArea);
+    });
+}
+
+// Page-specific initialization
+$(document).ready(function() {
+    // AI Content Generation
+    $("#aiGenerateBtn").click(function() {
+    var title = $("#title").val();
+    var category = $("#cta_category").val();
+    var sendDate = $("#send_date").val();
+    
+    if (!title) {
+        alert("Please enter a Campaign Title first");
+        $("#title").focus();
+        return;
+    }
+    
+    if (!category) {
+        alert("Please select a CTA Category first");
+        $("#cta_category").focus();
+        return;
+    }
+    
+    if (!sendDate) {
+        alert("Please select a Send Date first");
+        $("#send_date").focus();
+        return;
+    }
+    
+    // Show loading state
+    var btn = $(this);
+    var originalHtml = btn.html();
+    btn.html('<i class="fas fa-spinner fa-spin"></i> Generating...');
+    btn.prop("disabled", true);
+    
+    // Make AJAX request
+    $.ajax({
+        url: "/staff/ajax/newsletter-ai-generate.php",
+        method: "POST",
+        data: {
+            campaign_title: title,
+            cta_category: category,
+            send_date: sendDate
+        },
+        dataType: "json",
+        success: function(response) {
+            if (response.success) {
+                // Update subject
+                $("#subject").val(response.subject);
+                
+                // Update body content in TinyMCE
+                tinymce.get("body_html").setContent(response.body);
+                
+                // Show success message
+                var successAlert = $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                    '<i class="fas fa-check-circle"></i> AI content generated successfully! Please review and customize as needed.' +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                    '</div>');
+                $(".card").first().before(successAlert);
+                
+                // Auto-dismiss after 5 seconds
+                setTimeout(function() {
+                    successAlert.fadeOut();
+                }, 5000);
+            } else {
+                // Show error in modal
+                var errorMessage = "Error: " + (response.message || "Failed to generate content");
+                if (response.debug) {
+                    errorMessage += "\n\nDebug Information:\n" + JSON.stringify(response.debug, null, 2);
+                }
+                showErrorModal(errorMessage);
+            }
+        },
+        error: function(xhr, status, error) {
+            var errorMessage = "Error generating content: " + error;
+            if (xhr.responseText) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    errorMessage += "\n\nResponse:\n" + JSON.stringify(response, null, 2);
+                } catch(e) {
+                    errorMessage += "\n\nResponse:\n" + xhr.responseText;
+                }
+            }
+            showErrorModal(errorMessage);
+        },
+        complete: function() {
+            // Restore button state
+            btn.html(originalHtml);
+            btn.prop("disabled", false);
+        }
+    });
+    }); // End of AI button click handler
+}); // End of document.ready
+</script>
+<?php
 include($dir['core_components'] . '/bg_footer.inc');
 
 $app->outputpage();

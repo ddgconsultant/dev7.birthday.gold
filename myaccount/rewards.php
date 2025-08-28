@@ -323,9 +323,9 @@ include($dir['core_components'] . '/bg_header.inc');
             <div class="dashboard-card action-card">
                 <i class="bi bi-plus-circle text-primary action-icon"></i>
                 <h5>Use Picks</h5>
-                <p class="text-muted">Browse programs and use picks to get enrollments</p>
+                <p class="text-muted">Browse businesses and use picks to get birthday rewards</p>
                 <a href="/myaccount/enrollment-picker" class="btn btn-primary">
-                    Browse Programs
+                    Browse Businesses
                 </a>
             </div>
         </div>

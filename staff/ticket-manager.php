@@ -157,17 +157,20 @@ $stats_sql = "SELECT
     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
     SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved,
     SUM(CASE WHEN priority = 'critical' THEN 1 ELSE 0 END) as critical,
-    SUM(CASE WHEN priority = 'high' THEN 1 ELSE 0 END) as high_priority
+    SUM(CASE WHEN priority = 'high' THEN 1 ELSE 0 END) as high_priority_count
 FROM bg_tickets
 WHERE status IN ('open', 'in_progress', 'pending')";
 $stats = $database->query($stats_sql)->fetch(PDO::FETCH_ASSOC);
 
 // Get staff members for assignment dropdown
-$staff_sql = "SELECT user_id, profile_first_name, profile_last_name, profile_username 
-              FROM bg_users 
-              WHERE user_role IN ('staff', 'admin', 'manager') 
-              AND status = 'active' 
-              ORDER BY profile_first_name";
+// Staff are identified by having a 'staff' type attribute in bg_user_attributes
+$staff_sql = "SELECT DISTINCT u.user_id, u.profile_first_name, u.profile_last_name, u.profile_username 
+              FROM bg_users u
+              INNER JOIN bg_user_attributes ua ON u.user_id = ua.user_id
+              WHERE ua.type = 'staff' 
+              AND ua.status = 'active'
+              AND u.status = 'active' 
+              ORDER BY u.profile_first_name";
 $staff_members = $database->query($staff_sql)->fetchAll(PDO::FETCH_ASSOC);
 
 $additionalstyles = '
@@ -318,7 +321,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <div class="card stat-card critical">
                 <div class="card-body">
                     <h6 class="text-muted mb-2">Critical/High Priority</h6>
-                    <h2 class="mb-0"><?= ($stats['critical'] ?? 0) + ($stats['high_priority'] ?? 0) ?></h2>
+                    <h2 class="mb-0"><?= ($stats['critical'] ?? 0) + ($stats['high_priority_count'] ?? 0) ?></h2>
                 </div>
             </div>
         </div>

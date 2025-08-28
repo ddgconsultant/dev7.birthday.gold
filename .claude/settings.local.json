@@ -94,8 +94,16 @@
       "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_companies;\")",
       "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_user_enrollments;\")",
       "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SHOW TABLES LIKE ''%enrollment%'';\")",
-      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SHOW COLUMNS FROM bg_user_enrollments;\")"
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SHOW COLUMNS FROM bg_user_enrollments;\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SHOW TABLES LIKE ''bg_ai_generations'';\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_newsletter_campaigns;\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"DESCRIBE bg_user_attributes;\")",
+      "Bash(MYSQL_PWD='XqC2NVlbjw3trP' mysql -h 71.33.250.235 -u claudecode birthday_gold_www -e \"SHOW COLUMNS FROM bg_users;\")"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "/mnt/w/BIRTHDAY_SERVER/ENV_CONFIGS",
+      "/var/log/apache2"
+    ]
   }
 }
