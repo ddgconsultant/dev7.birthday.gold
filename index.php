@@ -7,9 +7,9 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 $page_title = "Never Miss Another Birthday Reward - Birthday.Gold";
 $page_description = "Automatically get enrolled in 500+ birthday reward programs. No forms, no hassle, just freebies. Join 50,000+ members saving $300+ annually.";
 $page_keywords = "birthday rewards, birthday freebies, automatic enrollment, birthday programs";
-$pagedata['pagetitle']='Birthday Rewards Enrollment - Birthday Gold';
-$pagedata['metakeywords']='Birthday Rewards Enrollment, Birthday Rewards, Birthday Gold, Reward Enrollment';
-$pagedata['metadescriptions']='Join Birthday Gold for easy Birthday Rewards Enrollment! Discover exclusive birthday rewards & perks. Sign up now for the best reward enrollment deals!';
+$pagedata['pagetitle']='Birthday Rewards Enrollment - Birthday.Gold';
+$pagedata['metakeywords']='Birthday Rewards Enrollment, Birthday Rewards, Birthday.Gold, Reward Enrollment';
+$pagedata['metadescriptions']='Join Birthday.Gold for easy Birthday Rewards Enrollment! Discover exclusive birthday rewards & perks. Sign up now for the best reward enrollment deals!';
 
 #-------------------------------------------------------------------------------
 # ADDITIONAL HEAD CONTENT

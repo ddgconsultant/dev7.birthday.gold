@@ -127,9 +127,9 @@ try {
     $system->sendemail('partners@birthday.gold', $admin_subject, $admin_message);
     
     // Send confirmation email to applicant
-    $applicant_subject = "Thank you for applying to Birthday Gold Partner Program";
+    $applicant_subject = "Thank you for applying to Birthday.Gold Partner Program";
     $applicant_message = "Dear " . $form_data['contact_name'] . ",\n\n";
-    $applicant_message .= "Thank you for your interest in becoming a Birthday Gold partner!\n\n";
+    $applicant_message .= "Thank you for your interest in becoming a Birthday.Gold partner!\n\n";
     $applicant_message .= "We have received your application for " . $form_data['business_name'] . " and our team will review it within 1-2 business days.\n\n";
     $applicant_message .= "Here's what happens next:\n";
     $applicant_message .= "1. Our team will review your application and proposed birthday offer\n";
@@ -137,7 +137,7 @@ try {
     $applicant_message .= "3. Once approved, we'll send you onboarding materials and get your offer live\n\n";
     $applicant_message .= "If you have any questions in the meantime, please feel free to reach out to partners@birthday.gold\n\n";
     $applicant_message .= "Best regards,\n";
-    $applicant_message .= "The Birthday Gold Team";
+    $applicant_message .= "The Birthday.Gold Team";
     
     $system->sendemail($form_data['contact_email'], $applicant_subject, $applicant_message);
     

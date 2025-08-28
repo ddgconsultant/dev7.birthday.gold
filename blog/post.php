@@ -445,7 +445,7 @@ echo '
                 📖 All Birthday Guides
               </a>
               <a href="/about" class="list-group-item list-group-item-action border-0 px-0">
-                ℹ️ How Birthday Gold Works
+                ℹ️ How Birthday.Gold Works
               </a>
             </div>
           </div>

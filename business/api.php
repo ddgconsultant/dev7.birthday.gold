@@ -2,9 +2,9 @@
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Page metadata
-$pagedata['pagetitle'] = 'Partner API Documentation - Birthday Gold Business';
-$pagedata['metakeywords'] = 'Birthday Gold API, Partner API, Business API Documentation, Birthday Rewards API';
-$pagedata['metadescriptions'] = 'Complete API documentation for Birthday Gold business partners. Manage users, campaigns, and reward programs programmatically.';
+$pagedata['pagetitle'] = 'Partner API Documentation - Birthday.Gold Business';
+$pagedata['metakeywords'] = 'Birthday.Gold API, Partner API, Business API Documentation, Birthday Rewards API';
+$pagedata['metadescriptions'] = 'Complete API documentation for Birthday.Gold business partners. Manage users, campaigns, and reward programs programmatically.';
 
 // Header flush for better spacing
 $header_flush = true;
@@ -382,7 +382,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Overview Section -->
     <section id="overview" class="api-section">
         <h2 class="section-title">API Overview</h2>
-        <p class="section-subtitle">Build powerful integrations with Birthday Gold's Partner API</p>
+        <p class="section-subtitle">Build powerful integrations with Birthday.Gold's Partner API</p>
         
         <div class="feature-grid">
             <div class="feature-card">
@@ -416,7 +416,7 @@ include($dir['core_components'] . '/bg_header.inc');
         
         <div class="alert alert-info mt-5">
             <h5><i class="bi bi-info-circle me-2"></i>API Access</h5>
-            <p>The Birthday Gold Partner API is currently under development. Join our partner program to be notified when API access becomes available.</p>
+            <p>The Birthday.Gold Partner API is currently under development. Join our partner program to be notified when API access becomes available.</p>
         </div>
     </section>
     
@@ -453,14 +453,14 @@ grant_type=authorization_code
     <!-- User Management Section -->
     <section id="users" class="api-section">
         <h2 class="section-title">User Management API</h2>
-        <p class="section-subtitle">Manage Birthday Gold members from your platform</p>
+        <p class="section-subtitle">Manage Birthday.Gold members from your platform</p>
         
         <div class="endpoint-card">
             <div class="endpoint-header">
                 <span class="method-badge method-post">POST</span>
                 <span class="endpoint-path">/api/v1/users/enroll</span>
             </div>
-            <p class="endpoint-description">Enroll a new user in Birthday Gold</p>
+            <p class="endpoint-description">Enroll a new user in Birthday.Gold</p>
             
             <h5>Request Body</h5>
             <div class="code-block">
@@ -510,7 +510,7 @@ grant_type=authorization_code
                 <span class="method-badge method-delete">DELETE</span>
                 <span class="endpoint-path">/api/v1/users/{user_id}</span>
             </div>
-            <p class="endpoint-description">Remove user from Birthday Gold (soft delete)</p>
+            <p class="endpoint-description">Remove user from Birthday.Gold (soft delete)</p>
         </div>
     </section>
     

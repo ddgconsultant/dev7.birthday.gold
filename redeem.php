@@ -38,8 +38,8 @@ if ($app->formposted()) {
 #-------------------------------------------------------------------------------
 # PAGE SETUP
 #-------------------------------------------------------------------------------
-$page_title = "Redeem Gift Certificate - Birthday Gold";
-$page_description = "Redeem your Birthday Gold gift certificate and start enjoying birthday rewards";
+$page_title = "Redeem Gift Certificate - Birthday.Gold";
+$page_description = "Redeem your Birthday.Gold gift certificate and start enjoying birthday rewards";
 
 $additionalstyles = '<link href="/public/css/redeem_styles_v2.css" rel="stylesheet">';
 

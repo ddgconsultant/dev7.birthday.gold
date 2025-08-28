@@ -108,7 +108,7 @@ Respond with ONLY 'SPAM' if this appears to be spam/marketing/solicitation, or '
       if (strpos($aiDecision, 'SPAM') !== false) {
         $errormessage = '<div class="alert alert-warning p-4 mb-4" role="alert">
           <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Message Flagged</h4>
-          <p>Your message has been flagged as potentially inappropriate use of our contact system. This form is for customer service inquiries about Birthday Gold services only.</p>';
+          <p>Your message has been flagged as potentially inappropriate use of our contact system. This form is for customer service inquiries about Birthday.Gold services only.</p>';
           
         // Show AI details in dev mode
         if ($mode == 'dev') {

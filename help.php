@@ -16,8 +16,8 @@ if (isset($_SESSION['ask_goldie_lockout_until']) && $_SESSION['ask_goldie_lockou
 #-------------------------------------------------------------------------------
 # PAGE SETUP
 #-------------------------------------------------------------------------------
-$page_title = "Help Center - Birthday Gold";
-$page_description = "Get help with Birthday Gold - FAQs, guides, and customer support";
+$page_title = "Help Center - Birthday.Gold";
+$page_description = "Get help with Birthday.Gold - FAQs, guides, and customer support";
 
 // Get business hours settings
 $businessHours = $app->bg_businesshours();
@@ -472,7 +472,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 <div class="help-content">
                     <h3 class="help-card-title">Ask Goldie</h3>
-                    <p class="text-muted small mb-0 lh-base">Get instant answers about Birthday Gold from our AI assistant</p>
+                    <p class="text-muted small mb-0 lh-base">Get instant answers about Birthday.Gold from our AI assistant</p>
                 </div>
             </a>
             <?php endif; ?>
@@ -493,7 +493,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 <div class="help-content">
                     <h3 class="help-card-title">How It Works</h3>
-                    <p class="text-muted small mb-0 lh-base">Learn how Birthday Gold celebrates you</p>
+                    <p class="text-muted small mb-0 lh-base">Learn how Birthday.Gold celebrates you</p>
                 </div>
             </a>
             
@@ -514,7 +514,7 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="community-help-section">
             <div class="mb-4 mt-5">
                 <h2 class="h3 text-primary fw-bold border-bottom border-2 border-secondary d-inline-block pb-2 mb-2">Community Help</h2>
-            <p class="text-muted">Connect with other Birthday Gold users</p>
+            <p class="text-muted">Connect with other Birthday.Gold users</p>
         </div>
         
         <div class="help-grid">

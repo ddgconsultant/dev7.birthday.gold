@@ -2,9 +2,9 @@
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Page metadata
-$pagedata['pagetitle'] = 'Application Submitted - Birthday Gold Partner';
-$pagedata['metakeywords'] = 'Birthday Gold Partner Application Success';
-$pagedata['metadescriptions'] = 'Thank you for applying to become a Birthday Gold partner. We will review your application shortly.';
+$pagedata['pagetitle'] = 'Application Submitted - Birthday.Gold Partner';
+$pagedata['metakeywords'] = 'Birthday.Gold Partner Application Success';
+$pagedata['metadescriptions'] = 'Thank you for applying to become a Birthday.Gold partner. We will review your application shortly.';
 
 // Header flush for better spacing
 $header_flush = true;
@@ -133,7 +133,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <h1 class="success-title">Application Submitted Successfully!</h1>
     
     <p class="success-message">
-        Thank you for your interest in becoming a Birthday Gold partner. 
+        Thank you for your interest in becoming a Birthday.Gold partner. 
         We've received your application and will review it within 1-2 business days.
     </p>
     
@@ -143,7 +143,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <li>Our partnership team will review your application and proposed birthday offer</li>
             <li>We may contact you if we need any additional information</li>
             <li>Once approved, we'll send you onboarding materials and help you get started</li>
-            <li>Your business will be live on Birthday Gold and ready to receive birthday customers!</li>
+            <li>Your business will be live on Birthday.Gold and ready to receive birthday customers!</li>
         </ol>
     </div>
     

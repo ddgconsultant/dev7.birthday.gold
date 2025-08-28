@@ -4,9 +4,9 @@ $addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Page metadata
-$pagedata['pagetitle'] = 'Plans, Pricing, and Other Details - Birthday Gold';
-$pagedata['metakeywords'] = 'Birthday Gold Pricing, Birthday Rewards Plans, Birthday Deals Pricing';
-$pagedata['metadescriptions'] = 'Choose the perfect Birthday Gold plan for you. Free, Gold, and Lifetime options available. Start collecting birthday rewards from 500+ businesses!';
+$pagedata['pagetitle'] = 'Plans, Pricing, and Other Details - Birthday.Gold';
+$pagedata['metakeywords'] = 'Birthday.Gold Pricing, Birthday Rewards Plans, Birthday Deals Pricing';
+$pagedata['metadescriptions'] = 'Choose the perfect Birthday.Gold plan for you. Free, Gold, and Lifetime options available. Start collecting birthday rewards from 500+ businesses!';
 
 
 // Get the product version from site configuration
@@ -593,7 +593,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <!-- Eligibility Section -->
     <div class="eligibility-section">
         <div class="container">
-            <h2 class="section-header text-center mb-4">Birthday Gold Eligibility</h2>
+            <h2 class="section-header text-center mb-4">Birthday.Gold Eligibility</h2>
             
             <!-- Modern Tabs -->
             <nav class="nav-tabs-modern justify-content-center" id="eligibilityTab" role="tablist">
@@ -614,7 +614,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                 </div>
                                 <div>
                                     <h4>Exceptional Birthday Experience</h4>
-                                    <p>Our Birthday Gold service is designed to provide an exceptional birthday experience for our users with exclusive deals, personalized gifts, and unforgettable experiences.</p>
+                                    <p>Our Birthday.Gold service is designed to provide an exceptional birthday experience for our users with exclusive deals, personalized gifts, and unforgettable experiences.</p>
                                 </div>
                             </div>
                         </div>
@@ -651,13 +651,13 @@ include($dir['core_components'] . '/bg_header.inc');
                             <div class="col-md-6">
                                 <div class="eligibility-card">
                                     <h5><i class="bi bi-calendar me-2"></i>Age Restrictions</h5>
-                                    <p>A minimum age of 16 is required to sign up for a paid account. However, gift certificates can be enjoyed by users of any age. Birthday Gold enrollments are age-restricted, and businesses may require identification.</p>
+                                    <p>A minimum age of 16 is required to sign up for a paid account. However, gift certificates can be enjoyed by users of any age. Birthday.Gold enrollments are age-restricted, and businesses may require identification.</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="eligibility-card">
                                     <h5><i class="bi bi-people me-2"></i>Parents with Children</h5>
-                                    <p>Parents can sign up their children for Birthday Gold service. As the responsible party, parents manage their child account and may need to be present when redeeming rewards.</p>
+                                    <p>Parents can sign up their children for Birthday.Gold service. As the responsible party, parents manage their child account and may need to be present when redeeming rewards.</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -688,7 +688,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                     </div>
                                     <div>
                                         <h5>Exclusively Available in the United States</h5>
-                                        <p>Currently, Birthday Gold service is exclusively available within the United States. We offer rewards from <?php echo $website['biznames']; ?> across the nation.</p>
+                                        <p>Currently, Birthday.Gold service is exclusively available within the United States. We offer rewards from <?php echo $website['biznames']; ?> across the nation.</p>
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-start mb-4">

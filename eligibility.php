@@ -28,7 +28,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </style>
 
 <div class="container main-content my-5 thick-border">
-    <h1 class="text-center mb-4">Birthday Gold Eligibility</h1>
+    <h1 class="text-center mb-4">Birthday.Gold Eligibility</h1>
     <ul class="nav nav-tabs" id="myTab" role="tablist" >
         <li class="nav-item" role="presentation" >
             <button class="nav-link px-2 px-md-5 active" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab" aria-controls="features" aria-selected="true">General</button>
@@ -56,7 +56,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                         </button>
                             
             <h3 class="fs-2">Exceptional Birthday Experience</h3>
-            <p class="pe-5">Our Birthday Gold service is designed to provide an exceptional birthday experience for our users. We offer exclusive deals, personalized gifts, and unforgettable experiences tailored to make your birthday special.</p>
+            <p class="pe-5">Our Birthday.Gold service is designed to provide an exceptional birthday experience for our users. We offer exclusive deals, personalized gifts, and unforgettable experiences tailored to make your birthday special.</p>
         </div>
         <div class="feature col mb-5">
         <button class="btn btn-primary btn-lg me-3">
@@ -144,7 +144,7 @@ echo '
         </button>
         <h4 class="fw-semibold mb-0">Parents with Children</h4>
     </div>
-    <p class="text-muted mb-0 pb-0">Parents can sign up their children for our Birthday Gold service, ensuring a memorable birthday experience for the whole family. As the responsible party, parents manage their child's account and select appropriate enrollments. It's important to note that parents may need to be present when redeeming rewards to verify the child's eligibility and facilitate the process. This ensures a seamless and enjoyable experience for both the children and the participating businesses.</p>
+    <p class="text-muted mb-0 pb-0">Parents can sign up their children for our Birthday.Gold service, ensuring a memorable birthday experience for the whole family. As the responsible party, parents manage their child's account and select appropriate enrollments. It's important to note that parents may need to be present when redeeming rewards to verify the child's eligibility and facilitate the process. This ensures a seamless and enjoyable experience for both the children and the participating businesses.</p>
     <div class="mt-0 pt-0">
         <button type="button" class="btn btn-sm btn-info fs-8 py-1" data-bs-toggle="modal" data-bs-target="#learnMoreModal">
             <i class="bi bi-info-circle"></i> Learn more
@@ -159,7 +159,7 @@ echo '
         </button>
         <h4 class="fw-semibold mb-0">Honor Classes</h4>
     </div>
-    <p class="text-muted mb-0 pb-0">Some businesses offer special privileges and discounts available for military personnel, teachers, and medical professionals as a token of appreciation for their service and dedication. You can indicate your special honor class with Birthday Gold to receive distinctive rewards. Please note that businesses may require identification to redeem these rewards, as Birthday Gold does not offer these rewards directly.</p>
+    <p class="text-muted mb-0 pb-0">Some businesses offer special privileges and discounts available for military personnel, teachers, and medical professionals as a token of appreciation for their service and dedication. You can indicate your special honor class with Birthday.Gold to receive distinctive rewards. Please note that businesses may require identification to redeem these rewards, as Birthday.Gold does not offer these rewards directly.</p>
     <div class="mt-0 pt-0">
         <button type="button" class="btn btn-sm btn-info fs-8 py-1" data-bs-toggle="modal" data-bs-target="#learnMoreModal">
             <i class="bi bi-info-circle"></i> Learn more
@@ -203,7 +203,7 @@ echo '
         <button class="btn btn-primary btn-lg me-3">
             <i class="bi bi-check-circle-fill fs-2"></i>
         </button>
-<?PHP echo '        <p>Currently, our Birthday Gold service is exclusively available within the United States. We are thrilled to offer a wide range of rewards and perks from a diverse array of ' . $website['biznames'] . ' across the nation. While we hope to expand our services to other regions in the future, our focus is on delivering an exceptional experience to our American users.</p>'; ?>
+<?PHP echo '        <p>Currently, our Birthday.Gold service is exclusively available within the United States. We are thrilled to offer a wide range of rewards and perks from a diverse array of ' . $website['biznames'] . ' across the nation. While we hope to expand our services to other regions in the future, our focus is on delivering an exceptional experience to our American users.</p>'; ?>
     </div>
     
     <div class="d-flex align-items-start mb-3">
@@ -217,7 +217,7 @@ echo '
         <button class="btn btn-primary btn-lg me-3">
             <i class="bi bi-check-circle-fill fs-2"></i>
         </button>
-        <p>One of the standout features of Birthday Gold is the ability to limit your rewards to businesses that are local to you. Whether you prefer to celebrate close to home or explore new places within your community, our platform allows you to customize your rewards to fit your preferences. This means you can enjoy exclusive deals from your favorite local shops, restaurants, and entertainment venues, making your birthday celebration even more special.</p>
+        <p>One of the standout features of Birthday.Gold is the ability to limit your rewards to businesses that are local to you. Whether you prefer to celebrate close to home or explore new places within your community, our platform allows you to customize your rewards to fit your preferences. This means you can enjoy exclusive deals from your favorite local shops, restaurants, and entertainment venues, making your birthday celebration even more special.</p>
     </div>
     
     <div class="d-flex align-items-start mb-3">
@@ -231,7 +231,7 @@ echo '
         <button class="btn btn-primary btn-lg me-3">
             <i class="bi bi-check-circle-fill fs-2"></i>
         </button>
-        <p>With Birthday Gold, you can rest assured that your birthday will be celebrated with the finest local experiences. From dining and shopping to entertainment and more, we bring you the best that your community has to offer. Join Birthday Gold today and discover a world of rewards that make every birthday an extraordinary event!</p>
+        <p>With Birthday.Gold, you can rest assured that your birthday will be celebrated with the finest local experiences. From dining and shopping to entertainment and more, we bring you the best that your community has to offer. Join Birthday.Gold today and discover a world of rewards that make every birthday an extraordinary event!</p>
     </div>
 </div>
 

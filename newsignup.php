@@ -201,7 +201,7 @@ $session->unset('force_error_message');
 # PAGE CONFIGURATION
 #-------------------------------------------------------------------------------
 $page_title = "Create Your Account - Birthday.Gold";
-$page_description = "Sign up for Birthday Gold and start receiving birthday rewards from hundreds of brands";
+$page_description = "Sign up for Birthday.Gold and start receiving birthday rewards from hundreds of brands";
 
 #-------------------------------------------------------------------------------
 # ADDITIONAL STYLES

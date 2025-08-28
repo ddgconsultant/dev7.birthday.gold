@@ -454,7 +454,7 @@ if ($app->formposted()) {
 # PAGE CONFIGURATION
 #-------------------------------------------------------------------------------
 $page_title = "Account Details - Birthday.Gold";
-$page_description = "Complete your Birthday Gold account setup";
+$page_description = "Complete your Birthday.Gold account setup";
 
 #-------------------------------------------------------------------------------
 # ADDITIONAL STYLES

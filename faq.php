@@ -354,7 +354,7 @@ $additionalstyles = '
   <div class="content-header-dark no-rounded-corners">
     <div class="container">
       <h1>Frequently Asked Questions</h1>
-      <p class="lead">Find answers to common questions about Birthday Gold</p>
+      <p class="lead">Find answers to common questions about Birthday.Gold</p>
     </div>
   </div>
   

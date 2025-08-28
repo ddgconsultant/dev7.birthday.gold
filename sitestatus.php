@@ -4,7 +4,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 #-------------------------------------------------------------------------------
 # PREP VARIABLES PAGE
 #-------------------------------------------------------------------------------
-$pagetitle = 'Site Status - Birthday Gold';
+$pagetitle = 'Site Status - Birthday.Gold';
 $statusUrl = 'https://uptime.birthdaygold.cloud/status/production';
 
 // Function to fetch and parse status from Uptime Kuma API
@@ -40,7 +40,7 @@ function fetchUptimeStatus($baseUrl, $cacheFile = null, $cacheTime = 60) {
         $options = [
             'timeout' => 10,
             'followlocation' => true,
-            'useragent' => 'Birthday Gold Status Checker/1.0'
+            'useragent' => 'Birthday.Gold Status Checker/1.0'
         ];
         
         $serviceStatusResponse = $system->curlRequest($serviceStatusUrl, [], [], 'GET', $options);
@@ -364,7 +364,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="content-header-dark">
     <div class="container">
         <h1>System Status</h1>
-        <p class="lead">Real-time monitoring and performance metrics for Birthday Gold</p>
+        <p class="lead">Real-time monitoring and performance metrics for Birthday.Gold</p>
     </div>
 </div>
 
@@ -548,7 +548,7 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="card shadow mt-4 mb-5 p-4">
         <h2 class="d-flex align-items-center mb-4"><i class="bi bi-shield-check-fill text-success me-3"></i>What We Monitor</h2>
         
-        <p class="mb-4">Our comprehensive monitoring system tracks all critical Birthday Gold services to ensure optimal performance and availability:</p>
+        <p class="mb-4">Our comprehensive monitoring system tracks all critical Birthday.Gold services to ensure optimal performance and availability:</p>
         
         <ul class="list-unstyled monitor-list">
             <li class="d-flex align-items-center py-2 monitor-item">Website availability & response times</li>

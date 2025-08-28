@@ -2,9 +2,9 @@
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Page metadata
-$pagedata['pagetitle'] = 'Become a Partner - Birthday Gold Business';
-$pagedata['metakeywords'] = 'Birthday Gold Partner, Business Birthday Rewards, Birthday Marketing, Customer Retention, Birthday Promotions';
-$pagedata['metadescriptions'] = 'Partner with Birthday Gold to offer birthday rewards to your customers. Increase customer loyalty and drive repeat business with our automated birthday marketing platform.';
+$pagedata['pagetitle'] = 'Become a Partner - Birthday.Gold Business';
+$pagedata['metakeywords'] = 'Birthday.Gold Partner, Business Birthday Rewards, Birthday Marketing, Customer Retention, Birthday Promotions';
+$pagedata['metadescriptions'] = 'Partner with Birthday.Gold to offer birthday rewards to your customers. Increase customer loyalty and drive repeat business with our automated birthday marketing platform.';
 
 // Header flush for better spacing
 $header_flush = true;
@@ -245,7 +245,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <section class="benefits-section">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="display-4 fw-bold">Why Partner with Birthday Gold?</h2>
+            <h2 class="display-4 fw-bold">Why Partner with Birthday.Gold?</h2>
             <p class="lead text-muted">Increase customer retention and drive repeat business</p>
         </div>
         
@@ -493,7 +493,7 @@ include($dir['core_components'] . '/bg_header.inc');
                             <div class="form-check mb-4">
                                 <input type="checkbox" class="form-check-input" id="agree_terms" name="agree_terms" required>
                                 <label class="form-check-label" for="agree_terms">
-                                    I agree to the Birthday Gold <a href="/legalhub/partnerterms" target="_blank">Partner Terms & Conditions</a>
+                                    I agree to the Birthday.Gold <a href="/legalhub/partnerterms" target="_blank">Partner Terms & Conditions</a>
                                 </label>
                             </div>
                             
@@ -510,7 +510,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <section class="cta-section">
     <div class="container">
         <h2>Ready to Grow Your Business?</h2>
-        <p>Join Birthday Gold today and start connecting with birthday celebrants</p>
+        <p>Join Birthday.Gold today and start connecting with birthday celebrants</p>
         <a href="#apply-form" class="btn-white">Apply Now</a>
     </div>
 </section>

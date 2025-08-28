@@ -260,7 +260,7 @@ echo '
         <a href="employment-policies" class="btn btn-primary">Read our Employment Policies</a>
       ';
       /*
-        <p><strong>Equal Opportunity Employment:</strong> At Birthday Gold, we are committed to creating an inclusive environment for all employees. We are proud to be an equal opportunity employer.</p>
+        <p><strong>Equal Opportunity Employment:</strong> At Birthday.Gold, we are committed to creating an inclusive environment for all employees. We are proud to be an equal opportunity employer.</p>
         <p><strong>Data Protection and Privacy:</strong> We take the privacy and security of employee and customer data seriously. Learn more about our data protection policies.</p>
       */
       

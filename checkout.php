@@ -321,7 +321,7 @@ try {
             'product_id' => $user_data['account_product_id'] ?? '',
             'email' => $user_data['email'] ?? ''
         ],
-        'description' => 'Birthday Gold ' . ucfirst($user_data['account_type']) . ' Account'
+        'description' => 'Birthday.Gold ' . ucfirst($user_data['account_type']) . ' Account'
     ]);
     
     error_log('[CHECKOUT_API] Payment intent created: ' . $payment_intent->id);
@@ -367,7 +367,7 @@ try {
 # PAGE DISPLAY
 #-------------------------------------------------------------------------------
 $page_title = 'Complete Your Purchase - Birthday.Gold';
-$page_description = 'Complete your Birthday Gold checkout';
+$page_description = 'Complete your Birthday.Gold checkout';
 $errormessage = '';
 
 // Modern Minimalist CSS - Matching /login and /forgot style
@@ -1078,7 +1078,7 @@ include($dir['core_components'] . '/bg_header.inc');
             
             <div class="order-context">
                 <div class="context-card mb-3">
-                    <h4 class="h5 mb-3">Your <?php echo htmlspecialchars($user_data['name'] ?? 'Birthday Gold'); ?> membership includes:</h4>
+                    <h4 class="h5 mb-3">Your <?php echo htmlspecialchars($user_data['name'] ?? 'Birthday.Gold'); ?> membership includes:</h4>
                     <?php
                     // Dynamic description based on account type
                     $account_descriptions = [
@@ -1138,7 +1138,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <div class="mobile-order-summary d-lg-none mb-3">
                 <div class="mobile-summary-card">
                     <div class="mobile-summary-header">
-                        <h5 class="mb-0"><?php echo htmlspecialchars($user_data['name'] ?? 'Birthday Gold'); ?></h5>
+                        <h5 class="mb-0"><?php echo htmlspecialchars($user_data['name'] ?? 'Birthday.Gold'); ?></h5>
                         <p class="mb-0 text-muted small"><?php echo ucfirst($user_data['account_type']); ?> Plan</p>
                     </div>
                     <div class="mobile-summary-price">
