@@ -4,36 +4,93 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Include any necessary headers, session classes, or configuration files
 
+// Check if user already has a verification application
+$existing_application = null;
+$user_id = $current_user_data['user_id'] ?? 0;
 
+if ($user_id > 0) {
+    // Check for existing verification application in bg_user_attributes
+    $sql = "SELECT * FROM bg_user_attributes 
+            WHERE user_id = ? 
+            AND attribute_type = 'verification_application' 
+            AND status = 'active'
+            ORDER BY create_dt DESC 
+            LIMIT 1";
+    $existing_application = $database->getrow($sql, [$user_id]);
+    
+    // Parse the JSON data if exists
+    if ($existing_application && !empty($existing_application['attribute_value'])) {
+        $app_data = json_decode($existing_application['attribute_value'], true);
+        if ($app_data) {
+            $existing_application = array_merge($existing_application, $app_data);
+            $existing_application['created_at'] = $existing_application['create_dt'];
+        }
+    }
+}
 
 #-------------------------------------------------------------------------------
 # HANDLE FORM ACTIONS
 #-------------------------------------------------------------------------------
-// Processing form submission
-if ($app->formposted()) {
+// Variables to store messages
+$submission_success = false;
+$submission_message = '';
+
+// Processing form submission (only if no existing application)
+if ($app->formposted() && empty($existing_application)) {
     // Grab form data
-    $name = $_POST['name'];
-    $email = $_POST['email'];
-    $phone = $_POST['phone'];
-    $address = $_POST['address'];
-    $social_profile = $_POST['social_profile'];
-    $photo_id = $_FILES['photo_id'];
+    $name = $_POST['name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $phone = $_POST['phone'] ?? '';
+    $address = $_POST['address'] ?? '';
+    $social_profile = $_POST['social_profile'] ?? '';
+    $photo_id = $_FILES['photo_id'] ?? null;
 
     // Basic validation
-    if (empty($name) || empty($email) || empty($phone) || empty($address) || empty($social_profile) || empty($photo_id)) {
-        echo '<div class="alert alert-danger">All fields are required. Please fill in all information.</div>';
+    if (empty($name) || empty($email) || empty($phone) || empty($address) || empty($social_profile) || empty($photo_id['name'])) {
+        $submission_message = 'All fields are required. Please fill in all information.';
     } else {
         // File upload logic for the photo ID
-        $target_dir = "/uploads/photo_id/";
-        $target_file = $target_dir . basename($photo_id["name"]);
+        $upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/photo_id/';
+        if (!file_exists($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+        
+        $file_extension = pathinfo($photo_id["name"], PATHINFO_EXTENSION);
+        $unique_filename = 'verification_' . $current_user_data['user_id'] . '_' . time() . '.' . $file_extension;
+        $target_file = $upload_dir . $unique_filename;
+        
         if (move_uploaded_file($photo_id["tmp_name"], $target_file)) {
-            // Save form data into the database
-            $database->query('INSERT INTO bg_verified_accounts (name, email, phone, address, social_profile, photo_id_path) VALUES (?, ?, ?, ?, ?, ?)', 
-                [$name, $email, $phone, $address, $social_profile, $target_file]);
+            // Save form data into bg_user_attributes as JSON
+            $verification_data = [
+                'name' => $name,
+                'email' => $email,
+                'phone' => $phone,
+                'address' => $address,
+                'social_profile' => $social_profile,
+                'photo_id_path' => '/uploads/photo_id/' . $unique_filename,
+                'status' => 'pending',
+                'submitted_date' => date('Y-m-d H:i:s')
+            ];
+            
+            // Insert into bg_user_attributes
+            $sql = 'INSERT INTO bg_user_attributes (user_id, attribute_type, attribute_name, attribute_value, status, create_dt) 
+                    VALUES (?, ?, ?, ?, ?, NOW())';
+            $database->query($sql, [
+                $current_user_data['user_id'],
+                'verification_application',
+                'verification_request',
+                json_encode($verification_data),
+                'active'
+            ]);
 
-            echo '<div class="alert alert-success">Your application has been submitted. We will review your request.</div>';
+            $submission_success = true;
+            $submission_message = 'Your verification application has been successfully submitted! Our team will review your application within 3-5 business days. You will receive an email notification once the review is complete.';
+            
+            // Update the existing_application variable so the page shows the right status
+            $existing_application = $verification_data;
+            $existing_application['created_at'] = date('Y-m-d H:i:s');
         } else {
-            echo '<div class="alert alert-danger">Error uploading your photo ID. Please try again.</div>';
+            $submission_message = 'Error uploading your photo ID. Please try again. Make sure the file is under 5MB and is a valid image format (JPG, PNG, GIF).';
         }
     }
 }
@@ -331,15 +388,124 @@ $canApplyForVerification = ($completedRequirements === $totalRequirements);
 ?>
 
 <div class="container my-5 pt-5">
+    <?php if (!empty($submission_message)): ?>
+        <?php if ($submission_success): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <h4 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>Application Submitted Successfully!</h4>
+                <p><?php echo htmlspecialchars($submission_message); ?></p>
+                <hr>
+                <p class="mb-0">
+                    <strong>What happens next:</strong><br>
+                    • Our team will review your application<br>
+                    • You'll receive email updates on your status<br>
+                    • Continue using Birthday.Gold while we review<br>
+                    • Check back here to see your verification status
+                </p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php else: ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <h4 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Submission Error</h4>
+                <p><?php echo htmlspecialchars($submission_message); ?></p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+    <?php endif; ?>
+
     <div class="verification-header">
         <h2>Account Verification</h2>
+        <?php if (!$submission_success && empty($existing_application)): ?>
         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#verificationModal" <?php echo !$canApplyForVerification ? 'disabled' : ''; ?>>
             Apply for Verification
         </button>
+        <?php endif; ?>
     </div>
 
     <div class="content-panel">
-        <p class="lead">Join our trusted community and unlock exclusive rewards by verifying your account. A verified badge shows that you're an authentic member of Birthday.Gold.</p>
+        
+        <?php if (!empty($existing_application)): ?>
+            <?php 
+            $status = $existing_application['status'] ?? 'pending';
+            $submitted_date = date('F j, Y', strtotime($existing_application['created_at']));
+            ?>
+            
+            <?php if ($status === 'pending' || $status === 'under_review'): ?>
+                <!-- Application Under Review -->
+                <div class="alert alert-warning d-flex align-items-start" role="alert">
+                    <i class="bi bi-hourglass-split fs-1 me-3"></i>
+                    <div class="flex-grow-1">
+                        <h4 class="alert-heading">Verification Application Under Review</h4>
+                        <p>Great news! Your verification application has been received and is currently being reviewed by our team.</p>
+                        
+                        <div class="mt-3 p-3 bg-white rounded">
+                            <h6 class="text-dark mb-3">Application Details:</h6>
+                            <ul class="list-unstyled mb-0">
+                                <li><i class="bi bi-calendar-check text-success me-2"></i><strong>Submitted:</strong> <?php echo $submitted_date; ?></li>
+                                <li><i class="bi bi-clock-history text-info me-2"></i><strong>Status:</strong> Under Review</li>
+                                <li><i class="bi bi-timer text-warning me-2"></i><strong>Expected Review Time:</strong> 3-5 business days</li>
+                            </ul>
+                        </div>
+                        
+                        <hr>
+                        <p class="mb-0 small">
+                            <strong>What happens next:</strong> Our verification team is carefully reviewing your application. You'll receive an email notification once the review is complete. In the meantime, continue enjoying Birthday.Gold and earning rewards!
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="mt-4">
+                    <h5 class="mb-3">Verification Progress</h5>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 65%">
+                            <span class="fw-bold">Review in Progress</span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <small class="text-muted">Application Submitted</small>
+                        <small class="text-muted">Under Review</small>
+                        <small class="text-muted">Decision</small>
+                    </div>
+                </div>
+                
+            <?php elseif ($status === 'approved' || $status === 'verified'): ?>
+                <!-- Verified Status -->
+                <div class="alert alert-success d-flex align-items-start" role="alert">
+                    <i class="bi bi-patch-check-fill fs-1 me-3"></i>
+                    <div>
+                        <h4 class="alert-heading">Congratulations! You're Verified!</h4>
+                        <p>Your account has been successfully verified. You now have access to exclusive verified member benefits.</p>
+                        <hr>
+                        <p class="mb-0">Your verified badge is now visible on your profile, and you've received your 20 enrollment allocations!</p>
+                    </div>
+                </div>
+                
+            <?php elseif ($status === 'rejected'): ?>
+                <!-- Rejected Status -->
+                <div class="alert alert-danger d-flex align-items-start" role="alert">
+                    <i class="bi bi-x-circle-fill fs-1 me-3"></i>
+                    <div>
+                        <h4 class="alert-heading">Verification Not Approved</h4>
+                        <p>Unfortunately, we couldn't verify your account at this time. Please ensure all requirements are met and try again.</p>
+                        <hr>
+                        <p class="mb-0">If you have questions, please contact our support team for assistance.</p>
+                    </div>
+                </div>
+            <?php endif; ?>
+            
+        <?php else: ?>
+            <!-- No Application Yet -->
+            <p class="lead">Join our trusted community and unlock exclusive rewards by verifying your account. A verified badge shows that you're an authentic member of Birthday.Gold.</p>
+
+            <!-- Reward Callout -->
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+                <i class="bi bi-patch-check-fill fs-1 me-3"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">Earn 20 Enrollment Allocations!</h5>
+                    <p class="mb-0">Get verified and receive 20 allocations immediately - our biggest reward for account verification.</p>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <!-- Progress Section -->
         <div class="progress-section">
@@ -478,8 +644,8 @@ $canApplyForVerification = ($completedRequirements === $totalRequirements);
                     <div class="benefit-icon bg-success">
                         <i class="bi bi-coin"></i>
                     </div>
-                    <h3 class="benefit-title">100 Enrollment Credits</h3>
-                    <p class="benefit-description">Receive 100 enrollment credits to get started with even more birthday rewards</p>
+                    <h3 class="benefit-title">20 Enrollment Allocations</h3>
+                    <p class="benefit-description">Receive 20 enrollment allocations immediately upon verification to unlock more birthday rewards</p>
                 </div>
             </div>
         </section>
@@ -527,7 +693,7 @@ echo '
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-5">
-                <form action="/path-to-verification-form-handler.php" method="POST" enctype="multipart/form-data">
+                <form action="/myaccount/manage-verification" method="POST" enctype="multipart/form-data">
                     <div class="row mb-3">
                         <label for="name" class="col-sm-3 col-form-label text-end">Full Name:</label>
                         <div class="col-sm-9">

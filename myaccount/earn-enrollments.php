@@ -114,6 +114,24 @@ $additionalstyles .= '
     border-bottom-left-radius: 12px;
 }
 
+.method-card.biggest {
+    border-color: #0dcaf0;
+    background: linear-gradient(135deg, #f0fbff 0%, #fff 100%);
+}
+
+.method-card.biggest::before {
+    content: "BIGGEST";
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #0dcaf0;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 1rem;
+    border-bottom-left-radius: 12px;
+}
+
 .reward-amount {
     font-size: 2rem;
     font-weight: 700;
@@ -432,14 +450,14 @@ include($dir['core_components'] . '/bg_header.inc');
                         </div>
                         <div>
                             <h2 class="h3 mb-0">Post on Social Media</h2>
-                            <p class="text-muted mb-0">Share Birthday Gold with your followers</p>
+                            <p class="text-muted mb-0">Share Birthday.Gold with your followers</p>
                         </div>
                     </div>
                     <hr class="my-3">
                     <div class="row align-items-center">
                         <div class="col">
                             <h4 class="h5 mb-2">Share with #birthdaygold</h4>
-                            <p class="text-muted mb-3">Post about Birthday Gold on your social media with our hashtag and earn allocations!</p>
+                            <p class="text-muted mb-3">Post about Birthday.Gold on your social media with our hashtag and earn allocations!</p>
                             <div class="d-flex align-items-center gap-3 mb-3">
                                 <div>
                                     <div class="reward-amount text-primary">+1</div>
@@ -453,7 +471,50 @@ include($dir['core_components'] . '/bg_header.inc');
                                 </div>
                             </div>
                             <a href="/myaccount/social-share-verify" class="btn btn-primary">
-                                <i class="bi bi-share me-2"></i>Share & Verify
+                                <i class="bi bi-share me-2"></i>Post
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Get Verified Section -->
+            <div class="method-section">
+                <div class="method-card biggest">
+                    <div class="method-header mb-3">
+                        <div class="method-icon" style="background: #cff4fc;">
+                            <i class="bi bi-patch-check-fill text-info"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 mb-0">Get Verified</h2>
+                            <p class="text-muted mb-0">Earn the blue checkmark and stand out</p>
+                        </div>
+                    </div>
+                    <hr class="my-3">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h4 class="h5 mb-2">Account Verification</h4>
+                            <p class="text-muted mb-3">Get verified and unlock exclusive benefits with the coveted blue checkmark badge!</p>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div>
+                                    <div class="reward-amount text-info">+20</div>
+                                    <small class="text-muted">Enrollments</small>
+                                </div>
+                                <div>
+                                    <i class="bi bi-plus text-muted"></i>
+                                </div>
+                                <div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-patch-check-fill text-info fs-4 me-2"></i>
+                                        <div>
+                                            <strong class="d-block">Blue Checkmark</strong>
+                                            <small class="text-muted">Verified status</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="/myaccount/manage-verification" class="btn btn-info">
+                                <i class="bi bi-patch-check me-2"></i>Get Verified
                             </a>
                         </div>
                     </div>
