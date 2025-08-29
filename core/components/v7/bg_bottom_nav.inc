@@ -81,7 +81,7 @@ if (!$isLoggedIn) {
     echo '
 <nav class="bottom-nav" id="loggedInNav">
     <div class="nav-items">
-        <a href="/myaccount" class="nav-item' . (($currentPage === 'index' && strpos($currentPath, '/myaccount') !== false) || $currentPath === '/myaccount' ? ' active' : '') . '">
+        <a href="/myaccount" class="nav-item' . ($currentPath === '/myaccount' || $currentPath === '/myaccount/' ? ' active' : '') . '">
             <i class="nav-icon bi bi-house"></i>
             <span class="nav-label">Home</span>
         </a>

@@ -1013,8 +1013,12 @@ document.addEventListener("DOMContentLoaded", function() {
         if (href === "/" && currentPath === "/") {
             item.classList.add("active");
         }
-        // For other pages, check if current path starts with href
-        else if (href !== "/" && currentPath.startsWith(href)) {
+        // Special handling for /myaccount - only exact match
+        else if (href === "/myaccount" && (currentPath === "/myaccount" || currentPath === "/myaccount/")) {
+            item.classList.add("active");
+        }
+        // For other pages, check if current path starts with href (but not myaccount)
+        else if (href !== "/" && href !== "/myaccount" && currentPath.startsWith(href)) {
             item.classList.add("active");
         }
     });
