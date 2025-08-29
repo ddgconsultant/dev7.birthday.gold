@@ -475,6 +475,54 @@ $additionalstyles .= '
     --success-color: #28a745;
 }
 
+/* Enhanced Category Filter Swipe Styles */
+.category-filter {
+    background: white;
+    border-bottom: 1px solid #dee2e6;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    /* Hide scrollbar but keep functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Desktop-only cursor styles - only on devices with precise pointing (mouse) */
+@media (hover: hover) and (pointer: fine) {
+    .category-filter {
+        cursor: grab;
+        user-select: none;
+    }
+    
+    .category-filter:active {
+        cursor: grabbing;
+    }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.category-filter::-webkit-scrollbar {
+    display: none;
+}
+
+.category-scroll {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
+    transition: transform 0.2s ease-out;
+}
+
+/* Snap scrolling for better pill alignment */
+.category-filter {
+    scroll-snap-type: x mandatory;
+}
+
+.category-pill {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+}
+
 /* Selected buttons - regular green for newly picked items */
 button.action-btn.selected,
 .company-card .action-btn.selected,
@@ -1988,7 +2036,73 @@ document.addEventListener("DOMContentLoaded", function() {
         
         categoryScroll.parentElement.addEventListener("scroll", checkScroll);
         checkScroll(); // Initial check
-    }
+        
+        // Enhanced swipe/drag functionality for filter pills (desktop only)
+        // Skip on touch devices to avoid conflicts with native touch scrolling
+        const isTouchDevice = 'ontouchstart' in window || 
+                             navigator.maxTouchPoints > 0 || 
+                             navigator.msMaxTouchPoints > 0;
+        
+        if (!isTouchDevice) {
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+            let momentum = 0;
+            let lastX = 0;
+            let lastTime = 0;
+            
+            const container = categoryScroll.parentElement;
+        
+        // Mouse events for desktop
+        container.addEventListener('mousedown', (e) => {
+            isDown = true;
+            container.style.cursor = 'grabbing';
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+            momentum = 0;
+            lastX = startX;
+            lastTime = Date.now();
+            e.preventDefault();
+        });
+        
+        container.addEventListener('mouseleave', () => {
+            isDown = false;
+            container.style.cursor = 'grab';
+        });
+        
+        container.addEventListener('mouseup', () => {
+            isDown = false;
+            container.style.cursor = 'grab';
+            
+            // Apply momentum scrolling
+            if (Math.abs(momentum) > 1) {
+                const targetScroll = container.scrollLeft + momentum * 20;
+                container.scrollTo({
+                    left: targetScroll,
+                    behavior: 'smooth'
+                });
+            }
+        });
+        
+        container.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            
+            const x = e.pageX - container.offsetLeft;
+            const walk = (x - startX) * 1.5; // Scroll speed multiplier
+            
+            // Calculate momentum
+            const currentTime = Date.now();
+            const timeDiff = currentTime - lastTime;
+            if (timeDiff > 0) {
+                momentum = (x - lastX) / timeDiff;
+            }
+            lastX = x;
+            lastTime = currentTime;
+            
+            container.scrollLeft = scrollLeft - walk;
+        });
+        } // End desktop-only swipe functionality
 });
 
 // Suppression toggle functions

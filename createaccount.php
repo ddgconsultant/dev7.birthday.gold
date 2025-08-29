@@ -26,6 +26,33 @@ $account_cost = $signup_process['account_cost'] ?? 0;
 $values = $_POST;
 $errors = [];
 
+// Merge URL parameters into values (for referral codes, etc.) if not already in POST
+if (empty($values['referral_code']) && !empty($_GET['referral'])) {
+    $values['referral_code'] = $_GET['referral'];
+}
+if (empty($values['referral_code']) && !empty($_GET['ref'])) {
+    $values['referral_code'] = $_GET['ref'];
+}
+if (empty($values['promo_code']) && !empty($_GET['promo'])) {
+    $values['promo_code'] = $_GET['promo'];
+}
+
+// Also merge URL parameters into signup_process for form sections
+if (!empty($_GET['referral']) && empty($signup_process['referral'])) {
+    $signup_process['referral'] = $_GET['referral'];
+}
+if (!empty($_GET['ref']) && empty($signup_process['ref'])) {
+    $signup_process['ref'] = $_GET['ref'];
+}
+
+// Debug referral code handling (remove after testing)
+if ($mode === 'dev') {
+    error_log('[CREATEACCOUNT] GET parameters: ' . json_encode($_GET));
+    error_log('[CREATEACCOUNT] POST parameters: ' . json_encode($_POST));
+    error_log('[CREATEACCOUNT] Signup process referral params: referral=' . ($signup_process['referral'] ?? 'NOT SET') . ', ref=' . ($signup_process['ref'] ?? 'NOT SET'));
+    error_log('[CREATEACCOUNT] Final referral_code value: ' . ($values['referral_code'] ?? 'NOT SET'));
+}
+
 // Debug POST data for gift certificate
 if ($mode === 'dev' && $app->formposted() && $account_type === 'giftcertificate') {
     error_log('[CREATENEWACCOUNT] POST data keys: ' . json_encode(array_keys($_POST)));

@@ -2373,7 +2373,7 @@ if (!isset($plandetails[$userplan])) {
     $count = 1;
     $finalCode = $code;
     do {
-        $stmt = $this->db->prepare('SELECT COUNT(*) FROM bg_user_attributes WHERE referral_code = :code');
+        $stmt = $this->db->prepare('SELECT COUNT(*) FROM bg_user_attributes WHERE type = "referralcode" AND name = "code" AND description = :code');
         $stmt->execute([':code' => $finalCode]);
         $exists = $stmt->fetchColumn();
         if ($exists > 0) {
@@ -2382,11 +2382,8 @@ if (!isset($plandetails[$userplan])) {
         }
     } while ($exists > 0);
 
-    // Store the unique referral code for the current user
-    $stmt = $this->db->prepare('UPDATE bg_user_attributes SET referral_code = :code WHERE user_id = :user_id');
-    $stmt->execute([':code' => $finalCode, ':user_id' => $current_user_data['user_id']]);
-
-    return $finalCode;
+    // Store the unique referral code for the current user - use manageReferralCode method instead
+    return $this->manageReferralCode($current_user_data, 'update', $finalCode)['code'];
 }
 
 

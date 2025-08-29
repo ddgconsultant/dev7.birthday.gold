@@ -417,6 +417,30 @@ $stmt = $this->db->query($sql, [
 
   session_tracking('create user bg_user_attributes-images', $sql);
 
+  // Handle referral code if provided
+  if (!empty($input['referral_code'])) {
+      // Look up the referrer's user_id
+      $referral_sql = "SELECT user_id FROM bg_user_attributes 
+                       WHERE type = 'referralcode' 
+                       AND name = 'generated_code' 
+                       AND description = :referral_code 
+                       AND status = 'active'";
+      $referrer_result = $this->db->query($referral_sql, ['referral_code' => $input['referral_code']]);
+      $referrer_data = $referrer_result->fetch(PDO::FETCH_ASSOC);
+      
+      if ($referrer_data) {
+          // Create referral relationship
+          $referral_relationship_sql = "INSERT INTO bg_user_attributes (user_id, type, name, value, status, create_dt, modify_dt)
+                                        VALUES (:user_id, 'referralcode', 'referred_by_user_id', :referrer_id, 'active', NOW(), NOW())";
+          $this->db->query($referral_relationship_sql, [
+              'user_id' => $lastId,
+              'referrer_id' => $referrer_data['user_id']
+          ]);
+          
+          session_tracking('create referral relationship', 'User ' . $lastId . ' referred by ' . $referrer_data['user_id'] . ' via code ' . $input['referral_code']);
+      }
+  }
+
 return $lastId;
 
 }

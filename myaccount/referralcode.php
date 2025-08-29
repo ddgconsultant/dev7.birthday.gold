@@ -15,27 +15,33 @@ $referralcode = $account->manageReferralCode();
 
 // Get user ID from referral code
 $sql = "SELECT user_id FROM bg_user_attributes 
-        WHERE type = 'referral_code' 
-        AND name = 'code' 
+        WHERE type = 'referralcode' 
+        AND name = 'generated_code' 
         AND description = :code 
         AND status = 'active'";
 $stmt = $database->query($sql, ['code' => $referralcode['code']]);
 $referrer_data = $stmt->fetch(PDO::FETCH_ASSOC);
 $referrer_id = $referrer_data ? $referrer_data['user_id'] : $userId;
 
-// Get referral stats
+// Get referral stats from bg_user_attributes
 $sql = "SELECT COUNT(*) as total_referrals 
-        FROM referrals 
-        WHERE referrer_id = :user_id";
+        FROM bg_user_attributes 
+        WHERE type = 'referralcode' 
+        AND name = 'referred_by_user_id' 
+        AND value = :user_id
+        AND status = 'active'";
 $stmt = $database->query($sql, ['user_id' => $referrer_id]);
 $referral_stats = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Get recent referrals
-$sql = "SELECT u.first_name, u.last_name, u.create_dt 
-        FROM referrals r
-        JOIN bg_users u ON r.referred_id = u.user_id
-        WHERE r.referrer_id = :user_id 
-        ORDER BY u.create_dt DESC 
+// Get recent referrals from bg_user_attributes
+$sql = "SELECT u.first_name, u.last_name, u.create_dt, ua.user_id as referred_user_id
+        FROM bg_user_attributes ua
+        JOIN bg_users u ON ua.user_id = u.user_id
+        WHERE ua.type = 'referralcode' 
+        AND ua.name = 'referred_by_user_id' 
+        AND ua.value = :user_id
+        AND ua.status = 'active'
+        ORDER BY ua.create_dt DESC 
         LIMIT 5";
 $stmt = $database->query($sql, ['user_id' => $referrer_id]);
 $recent_referrals = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -76,8 +82,8 @@ if ($app->formposted()) {
         } else {
             // Check if code is already in use
             $sql = "SELECT user_id FROM bg_user_attributes 
-                    WHERE type = 'referral_code' 
-                    AND name = 'code' 
+                    WHERE type = 'referralcode' 
+                    AND name = 'generated_code' 
                     AND description = :code 
                     AND user_id != :user_id";
             $stmt = $database->query($sql, ['code' => $customCode, 'user_id' => $userId]);

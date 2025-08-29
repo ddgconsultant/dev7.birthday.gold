@@ -72,12 +72,78 @@ $stats_sql = "SELECT
               AND status NOT IN ('failed', 'removed')";
 $enrollment_stats = $database->getrow($stats_sql, ['user_id' => $user_id]);
 
+// Get monthly breakdown for current year
+$monthly_sql = "SELECT 
+                    MONTH(create_dt) as month,
+                    COUNT(*) as enrollments
+                FROM bg_user_companies 
+                WHERE user_id = :user_id 
+                AND YEAR(create_dt) = YEAR(NOW())
+                AND status NOT IN ('failed', 'removed')
+                GROUP BY MONTH(create_dt)
+                ORDER BY month";
+$monthly_data = $database->getrows($monthly_sql, ['user_id' => $user_id]);
+
+// Get yearly breakdown
+$yearly_sql = "SELECT 
+                    YEAR(create_dt) as year,
+                    COUNT(*) as enrollments
+                FROM bg_user_companies 
+                WHERE user_id = :user_id 
+                AND status NOT IN ('failed', 'removed')
+                GROUP BY YEAR(create_dt)
+                ORDER BY year ASC";
+$yearly_data = $database->getrows($yearly_sql, ['user_id' => $user_id]);
+
+// Get allocation earning patterns
+$allocation_earning_sql = "SELECT 
+                            YEAR(created_at) as year,
+                            MONTH(created_at) as month,
+                            allocation_type,
+                            SUM(amount) as total_amount,
+                            COUNT(*) as count
+                        FROM bg_user_allocations 
+                        WHERE user_id = :user_id
+                        GROUP BY YEAR(created_at), MONTH(created_at), allocation_type
+                        ORDER BY year DESC, month DESC";
+$allocation_earning_data = $database->getrows($allocation_earning_sql, ['user_id' => $user_id]);
+
+// Calculate average usage patterns
+$avg_monthly = 0;
+$avg_yearly = 0;
+if (!empty($monthly_data) && count($monthly_data) > 0) {
+    $avg_monthly = array_sum(array_column($monthly_data, 'enrollments')) / count($monthly_data);
+}
+if (!empty($yearly_data) && count($yearly_data) > 0) {
+    $avg_yearly = array_sum(array_column($yearly_data, 'enrollments')) / count($yearly_data);
+}
+
+// Get current month/year enrollments
+$current_month_sql = "SELECT COUNT(*) as current_month_enrollments
+                      FROM bg_user_companies 
+                      WHERE user_id = :user_id 
+                      AND YEAR(create_dt) = YEAR(NOW())
+                      AND MONTH(create_dt) = MONTH(NOW())
+                      AND status NOT IN ('failed', 'removed')";
+$current_month_result = $database->getrow($current_month_sql, ['user_id' => $user_id]);
+
+$current_year_sql = "SELECT COUNT(*) as current_year_enrollments
+                     FROM bg_user_companies 
+                     WHERE user_id = :user_id 
+                     AND YEAR(create_dt) = YEAR(NOW())
+                     AND status NOT IN ('failed', 'removed')";
+$current_year_result = $database->getrow($current_year_sql, ['user_id' => $user_id]);
+
 // Get earned allocations from plan
 $stats = [
     'total_earned' => $balance['total_earned'] ?? $balance['plan_allocations'] ?? 0,
     'total_used' => $enrollment_stats['total_used'] ?? 0,
     'earn_count' => 1, // From plan
-    'use_count' => $enrollment_stats['use_count'] ?? 0
+    'use_count' => $enrollment_stats['use_count'] ?? 0,
+    'current_month_enrollments' => $current_month_result['current_month_enrollments'] ?? 0,
+    'current_year_enrollments' => $current_year_result['current_year_enrollments'] ?? 0,
+    'avg_monthly_usage' => round($avg_monthly, 1),
+    'avg_yearly_usage' => round($avg_yearly, 1)
 ];
 
 // Page setup
@@ -427,10 +493,104 @@ $additionalstyles .= '
         font-size: 0.75rem;
     }
 }
+
+/* Chart containers */
+.chart-container {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    height: 300px;
+    margin-bottom: 1.5rem;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.chart-container h5 {
+    margin-bottom: 1rem;
+    color: #495057;
+    font-weight: 600;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 220px;
+    width: 100%;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-item {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0d6efd;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    overflow: hidden;
+}
+
+.chart-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 1400px) {
+    .chart-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .chart-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .chart-row-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-container {
+        height: 280px;
+        padding: 1rem;
+    }
+    
+    .chart-wrapper {
+        height: 200px;
+    }
+}
 </style>
 ';
-
-include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/header3.inc');
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
@@ -463,7 +623,7 @@ include($dir['core_components'] . '/bg_header.inc');
         <a href="#allocations" class="nav-tab-item" data-tab="allocations">
             <i class="bi bi-plus-circle me-2"></i>Allocations
             <?php if (!empty($user_allocations)): ?>
-            <span class="tab-badge"><?php echo count($user_allocations); ?></span>
+            <span class="tab-badge"><?php echo count($user_allocations ?? []); ?></span>
             <?php endif; ?>
         </a>
         <a href="#enrollments" class="nav-tab-item" data-tab="enrollments">
@@ -478,57 +638,77 @@ include($dir['core_components'] . '/bg_header.inc');
     <div class="tab-content" id="allocationTabContent">
         <!-- Overview Tab -->
         <div class="tab-pane fade show active" id="overview" role="tabpanel">
-            <!-- Summary Stats -->
+            <!-- Primary Stats -->
+            <?php $has_pending = ($balance['pending_allocations'] ?? 0) > 0; ?>
             <div class="row g-3 mb-4">
-                <div class="col-6 col-md-3">
+                <div class="<?php echo $has_pending ? 'col-6 col-md-4 col-lg' : 'col-6 col-lg-3'; ?>">
                     <div class="stats-card">
                         <h3 class="stats-number text-primary"><?php echo $balance['available_allocations']; ?></h3>
                         <p class="stats-label mb-0">Current Balance</p>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="<?php echo $has_pending ? 'col-6 col-md-4 col-lg' : 'col-6 col-lg-3'; ?>">
                     <div class="stats-card">
                         <h3 class="stats-number text-success"><?php echo $stats['total_earned'] ?? 0; ?></h3>
                         <p class="stats-label mb-0">Total Earned</p>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="<?php echo $has_pending ? 'col-6 col-md-4 col-lg' : 'col-6 col-lg-3'; ?>">
                     <div class="stats-card">
                         <h3 class="stats-number text-danger"><?php echo $stats['total_used'] ?? 0; ?></h3>
                         <p class="stats-label mb-0">Total Used</p>
                     </div>
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="<?php echo $has_pending ? 'col-6 col-md-4 col-lg' : 'col-6 col-lg-3'; ?>">
                     <div class="stats-card">
                         <h3 class="stats-number text-info"><?php echo $total_records; ?></h3>
                         <p class="stats-label mb-0">Total Transactions</p>
                     </div>
                 </div>
+                <?php if ($has_pending): ?>
+                <div class="col-12 col-md-4 col-lg">
+                    <div class="stats-card">
+                        <h3 class="stats-number text-warning"><?php echo $balance['pending_allocations']; ?></h3>
+                        <p class="stats-label mb-0">Pending Allocations</p>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
-            
+
             <!-- Recent Activity -->
-            <h4 class="mb-3">Recent Activity</h4>
+            <h4 class="mb-3">Recent Activity <small class="text-muted">(Last 10 items)</small></h4>
             <div class="history-table">
                 <?php 
                 // Combine allocations and enrollments for recent activity
                 $recent_activity = [];
+                $activity_keys = []; // Track unique activities to prevent duplicates
                 
                 // Add allocations to activity
                 foreach ($user_allocations as $alloc) {
-                    $recent_activity[] = [
-                        'type' => 'allocation',
-                        'date' => $alloc['created_at'],
-                        'data' => $alloc
-                    ];
+                    $unique_key = 'alloc_' . $alloc['allocation_id'] . '_' . $alloc['created_at'];
+                    if (!in_array($unique_key, $activity_keys)) {
+                        $recent_activity[] = [
+                            'type' => 'allocation',
+                            'date' => $alloc['created_at'],
+                            'data' => $alloc,
+                            'unique_key' => $unique_key
+                        ];
+                        $activity_keys[] = $unique_key;
+                    }
                 }
                 
                 // Add enrollments to activity
                 foreach ($enrollment_history as $enrollment) {
-                    $recent_activity[] = [
-                        'type' => 'enrollment',
-                        'date' => $enrollment['enrollment_date'],
-                        'data' => $enrollment
-                    ];
+                    $unique_key = 'enrollment_' . $enrollment['user_company_id'] . '_' . $enrollment['enrollment_date'];
+                    if (!in_array($unique_key, $activity_keys)) {
+                        $recent_activity[] = [
+                            'type' => 'enrollment',
+                            'date' => $enrollment['enrollment_date'],
+                            'data' => $enrollment,
+                            'unique_key' => $unique_key
+                        ];
+                        $activity_keys[] = $unique_key;
+                    }
                 }
                 
                 // Sort by date descending
@@ -536,12 +716,21 @@ include($dir['core_components'] . '/bg_header.inc');
                     return strtotime($b['date']) - strtotime($a['date']);
                 });
                 
-                // Get last 5 activities
-                $recent_activities = array_slice($recent_activity, 0, 5);
+                // Get last 10 activities
+                $recent_activities = array_slice($recent_activity, 0, 10);
+                
+                // Debug: Check for potential data issues (remove this comment block after testing)
+                /*
+                echo "<!-- DEBUG INFO -->";
+                echo "<!-- Total User Allocations: " . count($user_allocations) . " -->";
+                echo "<!-- Total Enrollment History: " . count($enrollment_history) . " -->";
+                echo "<!-- Total Recent Activities: " . count($recent_activities) . " -->";
+                echo "<!-- Activity Keys: " . implode(', ', array_slice($activity_keys, 0, 10)) . " -->";
+                */
                 
                 if (!empty($recent_activities)): 
                 ?>
-                <div class="table-responsive">
+                <div class="table-responsive p-3">
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
@@ -634,6 +823,59 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
                 <?php endif; ?>
             </div>
+
+            <!-- Charts Row -->
+            <div class="chart-row mt-5">
+                <!-- Monthly Usage Chart -->
+                <div class="chart-container">
+                    <h5><i class="bi bi-bar-chart me-2"></i>Monthly Usage (<?php echo date('Y'); ?>)</h5>
+                    <div class="chart-wrapper">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Yearly Trend Chart -->
+                <div class="chart-container">
+                    <h5><i class="bi bi-graph-up me-2"></i>Yearly Trend</h5>
+                    <div class="chart-wrapper">
+                        <canvas id="yearlyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Usage Distribution Chart -->
+                <?php 
+                // Debug yearly data
+                // echo "<!-- DEBUG: Yearly data: " . json_encode($yearly_data) . " -->";
+                ?>
+                <?php if (!empty($yearly_data) && count($yearly_data) > 0): ?>
+                <div class="chart-container">
+                    <?php 
+                    $years = array_column($yearly_data, 'year');
+                    $year_range = count($years) > 1 ? min($years) . '-' . max($years) : $years[0];
+                    ?>
+                    <h5><i class="bi bi-pie-chart me-2"></i>Usage Distribution by Year (<?php echo $year_range; ?>)
+                    <?php if (count($years) > 1 && (max($years) - min($years) + 1) > count($years)): ?>
+                    <small class="text-muted">- <?php echo count($years); ?> years with data</small>
+                    <?php endif; ?>
+                    </h5>
+                    <div class="chart-wrapper">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+                <?php else: ?>
+                <!-- Placeholder for when no yearly data -->
+                <div class="chart-container">
+                    <h5><i class="bi bi-pie-chart me-2"></i>Usage Distribution</h5>
+                    <div class="chart-wrapper d-flex align-items-center justify-content-center">
+                        <div class="text-center text-muted">
+                            <i class="bi bi-bar-chart-line" style="font-size: 2rem;"></i>
+                            <p class="mb-0 mt-2">No data available</p>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+            
         </div>
 
         <!-- Allocations Tab -->
@@ -641,7 +883,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <h3 class="mb-3">Allocation Transactions</h3>
             <?php if (!empty($user_allocations)): ?>
         <div class="history-table">
-            <div class="table-responsive">
+            <div class="table-responsive p-3">
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
@@ -735,7 +977,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <a href="/myaccount/earn-enrollments" class="btn btn-primary mt-3">Start Earning</a>
         </div>
         <?php else: ?>
-        <div class="table-responsive">
+        <div class="table-responsive p-3">
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
@@ -870,7 +1112,9 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Version: 2025-08-28-v2
 // Handle tab switching
 document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.nav-tab-item');
@@ -899,7 +1143,197 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Initialize charts
+    initializeCharts();
 });
+
+function initializeCharts() {
+    console.log('Initializing charts...');
+    console.log('Chart.js available:', typeof Chart !== 'undefined');
+    
+    // Monthly data from PHP
+    const monthlyData = <?php echo json_encode($monthly_data ?? []); ?>;
+    const yearlyData = <?php echo json_encode($yearly_data ?? []); ?>;
+    
+    console.log('Monthly Data:', monthlyData);
+    console.log('Yearly Data:', yearlyData);
+    
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded!');
+        return;
+    }
+    
+    // Create monthly usage chart
+    const monthlyChartElement = document.getElementById('monthlyChart');
+    if (monthlyChartElement) {
+        console.log('Creating monthly chart...');
+        const monthlyLabels = [];
+        const monthlyValues = [];
+        
+        // Initialize all months with 0
+        for (let i = 1; i <= 12; i++) {
+            const monthName = new Date(2000, i-1, 1).toLocaleString('default', { month: 'short' });
+            monthlyLabels.push(monthName);
+            monthlyValues.push(0);
+        }
+        
+        // Fill in actual data
+        if (monthlyData && Array.isArray(monthlyData)) {
+            monthlyData.forEach(item => {
+                if (item.month >= 1 && item.month <= 12) {
+                    monthlyValues[item.month - 1] = parseInt(item.enrollments);
+                }
+            });
+        }
+        
+        console.log('Monthly Labels:', monthlyLabels);
+        console.log('Monthly Values:', monthlyValues);
+        
+        new Chart(monthlyChartElement, {
+            type: 'bar',
+            data: {
+                labels: monthlyLabels,
+                datasets: [{
+                    label: 'Enrollments',
+                    data: monthlyValues,
+                    backgroundColor: 'rgba(13, 110, 253, 0.8)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Create yearly trend chart
+    const yearlyChartElement = document.getElementById('yearlyChart');
+    if (yearlyChartElement && yearlyData && yearlyData.length > 0) {
+        console.log('Creating yearly chart...');
+        const yearlyLabels = yearlyData.map(item => item.year.toString());
+        const yearlyValues = yearlyData.map(item => parseInt(item.enrollments));
+        
+        console.log('Yearly Labels:', yearlyLabels);
+        console.log('Yearly Values:', yearlyValues);
+        
+        new Chart(yearlyChartElement, {
+            type: 'line',
+            data: {
+                labels: yearlyLabels,
+                datasets: [{
+                    label: 'Annual Enrollments',
+                    data: yearlyValues,
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Create distribution pie chart
+    const distributionChartElement = document.getElementById('distributionChart');
+    console.log('Distribution chart element found:', !!distributionChartElement);
+    console.log('Yearly data for distribution:', yearlyData);
+    console.log('Yearly data length:', yearlyData ? yearlyData.length : 'null');
+    
+    if (distributionChartElement && yearlyData && yearlyData.length > 0) {
+        console.log('Creating distribution chart...');
+        const colors = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+        ];
+        
+        const chartLabels = yearlyData.map(item => item.year.toString());
+        const chartData = yearlyData.map(item => parseInt(item.enrollments));
+        
+        console.log('Distribution Labels:', chartLabels);
+        console.log('Distribution Data:', chartData);
+        
+        new Chart(distributionChartElement, {
+            type: 'doughnut',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    data: chartData,
+                    backgroundColor: colors.slice(0, yearlyData.length),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        align: 'center',
+                        labels: {
+                            padding: 8,
+                            font: {
+                                size: 11
+                            },
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 12,
+                            boxHeight: 12
+                        }
+                    }
+                },
+                layout: {
+                    padding: {
+                        top: 10,
+                        bottom: 40,
+                        left: 40,
+                        right: 40
+                    }
+                },
+                cutout: '50%',
+                elements: {
+                    arc: {
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+    }
+}
 </script>
 
 <?php
