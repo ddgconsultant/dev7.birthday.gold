@@ -222,7 +222,7 @@ class Account
       $logintrackingdata['agent'] = $_SERVER['HTTP_USER_AGENT'];
       $logintrackingdata['location'] = $this->session->get('client_locationdata');
       $logintrackingdata['browser'] = $qik->getbrowser('quick', $_SERVER['HTTP_USER_AGENT']);
-      $logintrackingdata['device_id'] = $deviceid;
+      $logintrackingdata['device_id'] = isset($deviceid) ? $deviceid : null;
 
 
       $this->logintracking($user['user_id'], $logintrackingdata);
@@ -3177,6 +3177,579 @@ id="date'. $display_start_date->format('Y-m-d').'" value="'. $display_start_date
     }
     
     return $result;
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Require selective 2FA for sensitive operations on trusted devices
+   * Call this at the top of protected pages to enforce periodic 2FA verification
+   * 
+   * @param string $redirect_after_success URL to redirect to after successful 2FA
+   * @param int $valid_hours How many hours 2FA verification is valid (default: 168 = 7 days)
+   */
+  public function requireSelectiveTwoFactor($redirect_after_success = null, $valid_hours = 168) {
+    global $session, $database, $twofactorauth;
+    
+    // Only check if user is logged in
+    if (!$this->isactive()) {
+      return;
+    }
+    
+    $user_id = $this->session->get('current_user_id');
+    
+    // Check if user has 2FA enabled
+    $sql = 'SELECT string_value as auth_method FROM bg_user_attributes 
+            WHERE user_id = :user_id 
+            AND type = "2fa_method" 
+            AND status = "active"';
+    $stmt = $database->prepare($sql);
+    $stmt->execute(['user_id' => $user_id]);
+    $user_2fa = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // If no 2FA enabled, allow access
+    if (!$user_2fa || empty($user_2fa['auth_method'])) {
+      return;
+    }
+    
+    // Check if this is a trusted device (remember me login)
+    $is_trusted_device = !empty($_COOKIE['bgralid']) && !empty($_COOKIE['bgraltoken']) && !empty($_COOKIE['bgdeviceid']);
+    
+    // If not a trusted device, don't interfere (regular 2FA will handle it)
+    if (!$is_trusted_device) {
+      return;
+    }
+    
+    // Check when 2FA was last verified on this device
+    $device_id = $_COOKIE['bgdeviceid'] ?? '';
+    $sql = 'SELECT modify_dt FROM bg_user_attributes 
+            WHERE user_id = :user_id 
+            AND type = "selective_2fa_verified" 
+            AND name = :device_id 
+            AND status = "active"';
+    $stmt = $database->prepare($sql);
+    $stmt->execute(['user_id' => $user_id, 'device_id' => $device_id]);
+    $last_verification = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // If verified within valid hours, allow access
+    if ($last_verification) {
+      $hours_since = (time() - strtotime($last_verification['modify_dt'])) / 3600;
+      if ($hours_since < $valid_hours) {
+        return; // Still valid, allow access
+      }
+    }
+    
+    // Need 2FA verification - set up session and redirect
+    $current_url = $redirect_after_success ?? $_SERVER['REQUEST_URI'];
+    
+    // Get user contact info for 2FA
+    $sql = 'SELECT email, phone_number FROM bg_users WHERE user_id = :user_id';
+    $stmt = $database->prepare($sql);
+    $stmt->execute(['user_id' => $user_id]);
+    $user_contact = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // For TOTP method, get the secret
+    $totp_secret = '';
+    if ($user_2fa['auth_method'] === 'Highly Secure') {
+      $sql = 'SELECT string_value FROM bg_user_attributes 
+             WHERE user_id = :user_id 
+             AND type = "2fa_secret" 
+             AND status = "active"';
+      $stmt = $database->prepare($sql);
+      $stmt->execute(['user_id' => $user_id]);
+      $secret_result = $stmt->fetch(PDO::FETCH_ASSOC);
+      $totp_secret = $secret_result['string_value'] ?? '';
+    }
+    
+    // Store selective 2FA session data
+    $pending_2fa_data = [
+      'user_id' => $user_id,
+      'method' => $user_2fa['auth_method'],
+      'email' => $user_contact['email'] ?? '',
+      'phone' => $user_contact['phone_number'] ?? '',
+      'secret' => $totp_secret,
+      'redirect_url' => $current_url,
+      'timestamp' => time(),
+      'code_sent' => false,
+      'selective_2fa' => true, // Flag to indicate this is selective 2FA
+      'device_id' => $device_id
+    ];
+    
+    $session->set('pending_2fa', $pending_2fa_data);
+    
+    // Redirect to 2FA verification
+    header('Location: /verify-2fa.php');
+    exit;
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Calculate password strength score and category
+   * @param string $password The plain text password
+   * @return array Contains strength score (0-100), category (weak/fair/good/strong), and color
+   */
+  public function calculatePasswordStrength($password) {
+    $score = 0;
+    $length = strlen($password);
+    
+    // Length scoring (0-40 points)
+    if ($length >= 8) $score += 10;
+    if ($length >= 10) $score += 10; 
+    if ($length >= 12) $score += 10;
+    if ($length >= 16) $score += 10;
+    
+    // Character variety (0-60 points)
+    if (preg_match('/[a-z]/', $password)) $score += 10; // lowercase
+    if (preg_match('/[A-Z]/', $password)) $score += 10; // uppercase
+    if (preg_match('/[0-9]/', $password)) $score += 10; // numbers
+    if (preg_match('/[^a-zA-Z0-9]/', $password)) $score += 15; // special chars
+    if (preg_match('/[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]/', $password)) $score += 5; // common special chars
+    if (preg_match('/[^\x20-\x7E]/', $password)) $score += 10; // unicode/extended chars
+    
+    // Complexity bonus
+    $char_types = 0;
+    if (preg_match('/[a-z]/', $password)) $char_types++;
+    if (preg_match('/[A-Z]/', $password)) $char_types++;
+    if (preg_match('/[0-9]/', $password)) $char_types++;
+    if (preg_match('/[^a-zA-Z0-9]/', $password)) $char_types++;
+    
+    if ($char_types >= 3 && $length >= 10) $score += 10; // complexity bonus
+    
+    // Penalize common patterns
+    if (preg_match('/(.)\1{2,}/', $password)) $score -= 10; // repeated chars
+    if (preg_match('/123|abc|password|qwerty/i', $password)) $score -= 15; // common sequences
+    
+    // Ensure score stays in bounds
+    $score = max(0, min(100, $score));
+    
+    // Determine category and color
+    if ($score >= 80) {
+        $category = 'Strong';
+        $color = 'success';
+    } elseif ($score >= 60) {
+        $category = 'Good';
+        $color = 'info';
+    } elseif ($score >= 40) {
+        $category = 'Fair';
+        $color = 'warning';
+    } else {
+        $category = 'Weak';
+        $color = 'danger';
+    }
+    
+    return [
+        'score' => $score,
+        'category' => $category,
+        'color' => $color,
+        'percentage' => $score,
+        'length' => $length
+    ];
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Get password requirements for frontend validation
+   * Returns standardized password requirements used across the site
+   * @return array Password requirements with descriptions and validation rules
+   */
+  public function getPasswordRequirements() {
+    return [
+      'minimum_length' => 8,
+      'requirements' => [
+        [
+          'id' => 'length',
+          'description' => 'At least 8 characters',
+          'pattern' => '.{8,}',
+          'points' => 10
+        ],
+        [
+          'id' => 'lowercase',
+          'description' => 'One lowercase letter (a-z)',
+          'pattern' => '[a-z]',
+          'points' => 10
+        ],
+        [
+          'id' => 'uppercase', 
+          'description' => 'One uppercase letter (A-Z)',
+          'pattern' => '[A-Z]',
+          'points' => 10
+        ],
+        [
+          'id' => 'number',
+          'description' => 'One number (0-9)',
+          'pattern' => '[0-9]',
+          'points' => 10
+        ],
+        [
+          'id' => 'special',
+          'description' => 'One special character (!@#$%^&*)',
+          'pattern' => '[^a-zA-Z0-9]',
+          'points' => 15
+        ]
+      ],
+      'strength_thresholds' => [
+        'weak' => ['min' => 0, 'max' => 39, 'color' => 'danger'],
+        'fair' => ['min' => 40, 'max' => 59, 'color' => 'warning'], 
+        'good' => ['min' => 60, 'max' => 79, 'color' => 'info'],
+        'strong' => ['min' => 80, 'max' => 100, 'color' => 'success']
+      ],
+      'minimum_score_for_submit' => 60 // Good or better required
+    ];
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Track password change with strength analysis
+   * @param int $user_id User ID
+   * @param string $password Plain text password (for strength analysis)
+   * @param string $context Context: 'creation', 'change', 'reset'
+   */
+  public function trackPasswordChange($user_id, $password, $context = 'change') {
+    global $database;
+    
+    // Calculate password strength
+    $password_strength = $this->calculatePasswordStrength($password);
+    
+    // Prepare tracking data
+    $password_data = json_encode([
+        'message' => 'Password ' . $context . ' successful',
+        'context' => $context,
+        'strength_score' => $password_strength['score'],
+        'strength_category' => $password_strength['category'],
+        'strength_color' => $password_strength['color'],
+        'length' => $password_strength['length']
+    ]);
+    
+    // Store tracking record
+    $sql = "INSERT INTO bg_user_attributes (user_id, type, name, description, status, create_dt, modify_dt) 
+            VALUES (:user_id, 'security', 'password_changed', :password_data, 'active', NOW(), NOW())
+            ON DUPLICATE KEY UPDATE 
+            description = VALUES(description), modify_dt = NOW(), status = 'active'";
+    
+    $stmt = $database->prepare($sql);
+    $stmt->execute(['user_id' => $user_id, 'password_data' => $password_data]);
+    
+    return $password_strength;
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Get recent account activity for security monitoring
+   * @param int $user_id User ID (optional, defaults to current user)
+   * @param int $limit Number of activities to return (default: 10)
+   * @param int $days_back How many days back to look (default: 30)
+   * @return array Recent activity events with timestamps, types, and details
+   */
+  public function getAccountActivity($user_id = null, $limit = 10, $days_back = 30) {
+    global $database;
+    
+    // Use current user if not specified
+    if ($user_id === null) {
+      $user_id = $this->session->get('current_user_id');
+    }
+    
+    if (!$user_id) {
+      return [];
+    }
+    
+    $activities = [];
+    $cutoff_date = date('Y-m-d H:i:s', strtotime("-{$days_back} days"));
+    
+    // Get login activities from bg_sessiontracking
+    $sql = "SELECT create_dt, type, name, ip, tracking_data, server_data, request_data
+            FROM bg_sessiontracking 
+            WHERE user_id = :user_id 
+            AND create_dt >= :cutoff_date
+            AND type IN ('LOGIN-success_user', '2fa_verification_required', 'bg_rememberme_attempt', 'bg_rememberme_loginsuccess')
+            ORDER BY create_dt DESC 
+            LIMIT :limit";
+    
+    $stmt = $database->prepare($sql);
+    $stmt->execute([
+      'user_id' => $user_id, 
+      'cutoff_date' => $cutoff_date,
+      'limit' => $limit
+    ]);
+    
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+      $activity = $this->parseActivityRow($row);
+      if ($activity) {
+        $activities[] = $activity;
+      }
+    }
+    
+    // Get security events from bg_user_attributes
+    $sql = "SELECT modify_dt as create_dt, name, description
+            FROM bg_user_attributes 
+            WHERE user_id = :user_id 
+            AND type = 'security'
+            AND modify_dt >= :cutoff_date
+            ORDER BY modify_dt DESC 
+            LIMIT :limit";
+    
+    $stmt = $database->prepare($sql);
+    $stmt->execute([
+      'user_id' => $user_id,
+      'cutoff_date' => $cutoff_date, 
+      'limit' => $limit
+    ]);
+    
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+      $activity = $this->parseSecurityEvent($row);
+      if ($activity) {
+        $activities[] = $activity;
+      }
+    }
+    
+    // Sort all activities by timestamp (most recent first)
+    usort($activities, function($a, $b) {
+      return strtotime($b['timestamp']) - strtotime($a['timestamp']);
+    });
+    
+    return array_slice($activities, 0, $limit);
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Parse session tracking row into standardized activity format
+   * @param array $row Raw database row from bg_sessiontracking
+   * @return array|null Formatted activity data or null if not displayable
+   */
+  private function parseActivityRow($row) {
+    $tracking_data = json_decode($row['tracking_data'] ?? '{}', true);
+    $server_data = json_decode($row['server_data'] ?? '{}', true);
+    $request_data = json_decode($row['request_data'] ?? '{}', true);
+    
+    $user_agent = $server_data['HTTP_USER_AGENT'] ?? $request_data['user_agent'] ?? '';
+    $browser = $this->parseBrowserFromUserAgent($user_agent);
+    $ip = $row['ip'] ?? 'Unknown';
+    
+    switch ($row['type']) {
+      case 'LOGIN-success_user':
+        return [
+          'type' => 'login_success',
+          'icon' => 'check-circle-fill',
+          'color' => 'success',
+          'title' => 'Successful login',
+          'details' => "from {$browser['browser']} on {$browser['os']}",
+          'timestamp' => $row['create_dt'],
+          'ip' => $ip,
+          'location' => $tracking_data['location'] ?? null
+        ];
+        
+      case 'bg_rememberme_loginsuccess':
+        return [
+          'type' => 'trusted_login',
+          'icon' => 'shield-check',
+          'color' => 'info', 
+          'title' => 'Trusted device login',
+          'details' => "from {$browser['browser']} on {$browser['os']}",
+          'timestamp' => $row['create_dt'],
+          'ip' => $ip
+        ];
+        
+      case '2fa_verification_required':
+        return [
+          'type' => '2fa_required',
+          'icon' => 'phone-fill',
+          'color' => 'warning',
+          'title' => '2FA verification required',
+          'details' => "from {$browser['browser']} on {$browser['os']}",
+          'timestamp' => $row['create_dt'],
+          'ip' => $ip
+        ];
+        
+      default:
+        return null;
+    }
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Parse security event into standardized activity format
+   * @param array $row Raw database row from bg_user_attributes (security type)
+   * @return array|null Formatted activity data or null if not displayable
+   */
+  private function parseSecurityEvent($row) {
+    $data = json_decode($row['description'] ?? '{}', true);
+    
+    switch ($row['name']) {
+      case 'password_changed':
+        $context = $data['context'] ?? 'change';
+        $strength = $data['strength_category'] ?? 'Unknown';
+        
+        if ($context === 'creation') {
+          $title = 'Account created';
+          $details = "with {$strength} password";
+        } else {
+          $title = 'Password updated';
+          $details = "new {$strength} password";
+        }
+        
+        return [
+          'type' => 'password_change',
+          'icon' => 'key-fill',
+          'color' => 'info',
+          'title' => $title,
+          'details' => $details,
+          'timestamp' => $row['create_dt']
+        ];
+        
+      case 'selective_2fa_verified':
+        return [
+          'type' => '2fa_verified',
+          'icon' => 'shield-lock',
+          'color' => 'success',
+          'title' => 'Selective 2FA verified',
+          'details' => 'for sensitive page access',
+          'timestamp' => $row['create_dt']
+        ];
+        
+      default:
+        return null;
+    }
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Parse browser and OS from user agent string
+   * @param string $user_agent User agent string
+   * @return array Browser and OS information
+   */
+  private function parseBrowserFromUserAgent($user_agent) {
+    $browser = 'Unknown Browser';
+    $os = 'Unknown OS';
+    
+    // Common browsers
+    if (strpos($user_agent, 'Chrome') !== false && strpos($user_agent, 'Edg') === false) {
+      $browser = 'Chrome';
+    } elseif (strpos($user_agent, 'Firefox') !== false) {
+      $browser = 'Firefox';
+    } elseif (strpos($user_agent, 'Safari') !== false && strpos($user_agent, 'Chrome') === false) {
+      $browser = 'Safari';
+    } elseif (strpos($user_agent, 'Edg') !== false) {
+      $browser = 'Edge';
+    } elseif (strpos($user_agent, 'Opera') !== false || strpos($user_agent, 'OPR') !== false) {
+      $browser = 'Opera';
+    }
+    
+    // Operating systems
+    if (strpos($user_agent, 'Windows') !== false) {
+      $os = 'Windows';
+    } elseif (strpos($user_agent, 'Mac OS X') !== false || strpos($user_agent, 'macOS') !== false) {
+      $os = 'macOS';
+    } elseif (strpos($user_agent, 'Linux') !== false) {
+      $os = 'Linux';
+    } elseif (strpos($user_agent, 'iPhone') !== false || strpos($user_agent, 'iPad') !== false) {
+      $os = 'iOS';
+    } elseif (strpos($user_agent, 'Android') !== false) {
+      $os = 'Android';
+    }
+    
+    return ['browser' => $browser, 'os' => $os];
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Format timestamp into human-readable "time ago" format
+   * @param string $timestamp Database timestamp
+   * @return string Formatted time ago string
+   */
+  public function formatTimeAgo($timestamp) {
+    $time_ago = time() - strtotime($timestamp);
+    
+    if ($time_ago < 60) {
+      return 'Just now';
+    } elseif ($time_ago < 3600) {
+      $minutes = floor($time_ago / 60);
+      return $minutes . ' minute' . ($minutes == 1 ? '' : 's') . ' ago';
+    } elseif ($time_ago < 86400) {
+      $hours = floor($time_ago / 3600);
+      return $hours . ' hour' . ($hours == 1 ? '' : 's') . ' ago';
+    } elseif ($time_ago < 604800) {
+      $days = floor($time_ago / 86400);
+      return $days . ' day' . ($days == 1 ? '' : 's') . ' ago';
+    } else {
+      return date('M j, Y', strtotime($timestamp));
+    }
+  }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Get account activity summary for security assessment
+   * @param int $user_id User ID (optional, defaults to current user)  
+   * @param int $days_back How many days back to analyze (default: 7)
+   * @return array Security summary with suspicious activity indicators
+   */
+  public function getSecuritySummary($user_id = null, $days_back = 7) {
+    global $database;
+    
+    // Use current user if not specified
+    if ($user_id === null) {
+      $user_id = $this->session->get('current_user_id');
+    }
+    
+    if (!$user_id) {
+      return ['status' => 'unknown', 'message' => 'No user data'];
+    }
+    
+    $cutoff_date = date('Y-m-d H:i:s', strtotime("-{$days_back} days"));
+    
+    // Count login attempts and successes
+    $sql = "SELECT type, COUNT(*) as count
+            FROM bg_sessiontracking 
+            WHERE user_id = :user_id 
+            AND create_dt >= :cutoff_date
+            AND type IN ('LOGIN-success_user', 'LOGIN-failed', '2fa_verification_required')
+            GROUP BY type";
+    
+    $stmt = $database->prepare($sql);
+    $stmt->execute(['user_id' => $user_id, 'cutoff_date' => $cutoff_date]);
+    
+    $login_stats = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+      $login_stats[$row['type']] = $row['count'];
+    }
+    
+    $successful_logins = $login_stats['LOGIN-success_user'] ?? 0;
+    $failed_logins = $login_stats['LOGIN-failed'] ?? 0;
+    $two_fa_required = $login_stats['2fa_verification_required'] ?? 0;
+    
+    // Assess security status
+    if ($failed_logins > 10 || ($failed_logins > 3 && $successful_logins == 0)) {
+      $status = 'suspicious';
+      $message = 'Suspicious login activity detected';
+      $status_class = 'status-inactive';
+    } elseif ($failed_logins > 3) {
+      $status = 'warning';
+      $message = 'Some failed login attempts';  
+      $status_class = 'status-warning';
+    } else {
+      $status = 'secure';
+      $message = 'No suspicious activity';
+      $status_class = 'status-active';
+    }
+    
+    return [
+      'status' => $status,
+      'message' => $message,
+      'status_class' => $status_class,
+      'stats' => [
+        'successful_logins' => $successful_logins,
+        'failed_logins' => $failed_logins,
+        'two_fa_events' => $two_fa_required
+      ],
+      'days_analyzed' => $days_back
+    ];
   }
 
 

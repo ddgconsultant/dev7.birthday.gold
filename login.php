@@ -125,6 +125,81 @@ if ($show_captcha && !$app->validateCaptcha()) {
           'login_type' => $logintype
       ]);
 
+      // Check if 2FA is enabled for this user
+      $current_user_data = $session->get('current_user_data');
+      $user_id = $current_user_data['user_id'];
+      
+      // Get 2FA method if enabled
+      $sql = 'SELECT string_value as auth_method FROM bg_user_attributes 
+             WHERE user_id = :user_id 
+             AND type = "2fa_method" 
+             AND status = "active"';
+      $stmt = $database->prepare($sql);
+      $stmt->execute(['user_id' => $user_id]);
+      $user_2fa = $stmt->fetch(PDO::FETCH_ASSOC);
+      
+      // Skip 2FA for trusted device (remember me) logins - selective 2FA will handle sensitive pages
+      $is_trusted_device = $doautologin && strpos($logintype, 'rememberme') !== false;
+      
+      if ($user_2fa && !empty($user_2fa['auth_method']) && !$is_trusted_device) {
+        // 2FA is enabled - logout user temporarily and redirect to 2FA verification
+        session_tracking('2fa_verification_required-setupfailure', [
+          'user_id' => $user_id,
+          'method' => $user_2fa['auth_method']
+        ]);
+        $account->logout(); // Logout to prevent bypass
+        
+        // Get user contact info for 2FA
+        $sql = 'SELECT email, phone_number FROM bg_users WHERE user_id = :user_id';
+        $stmt = $database->prepare($sql);
+        $stmt->execute(['user_id' => $user_id]);
+        $user_contact = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // For TOTP method, get the secret
+        $totp_secret = '';
+        if ($user_2fa['auth_method'] === 'Highly Secure') {
+          $sql = 'SELECT string_value FROM bg_user_attributes 
+                 WHERE user_id = :user_id 
+                 AND type = "2fa_secret" 
+                 AND status = "active"';
+          $stmt = $database->prepare($sql);
+          $stmt->execute(['user_id' => $user_id]);
+          $secret_result = $stmt->fetch(PDO::FETCH_ASSOC);
+          $totp_secret = $secret_result['string_value'] ?? '';
+        }
+        
+        // Store 2FA verification data in session
+        $redirect_url = $_REQUEST['goto'] ?? '/myaccount';
+        foreach ($bg_secured_paths as $path) {
+          if (strpos($_SERVER['HTTP_REFERER'] ?? '', $path) !== false) {
+            $redirect_url = $_SERVER['HTTP_REFERER'];
+            break;
+          }
+        }
+        
+        $pending_2fa_data = [
+          'user_id' => $user_id,
+          'method' => $user_2fa['auth_method'],
+          'email' => $user_contact['email'] ?? '',
+          'phone' => $user_contact['phone_number'] ?? '',
+          'secret' => $totp_secret,
+          'redirect_url' => $redirect_url,
+          'timestamp' => time(),
+          'code_sent' => false
+        ];
+        
+        $session->set('pending_2fa', $pending_2fa_data);
+        
+        session_tracking('2fa_verification_required', [
+          'user_id' => $user_id,
+          'method' => $user_2fa['auth_method'],
+          'redirect_url' => $redirect_url
+        ]);
+        
+        header('Location: /verify-2fa');
+        exit();
+      }
+
       // Handle Remember Me functionality -- set new cookies
       if (isset($_POST['rememberme'])) {
         $current_user_data = $session->get('current_user_data');

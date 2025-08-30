@@ -13,6 +13,9 @@ if (!$account->isactive()) {
     exit();
 }
 
+// Require selective 2FA for billing access on trusted devices
+$account->requireSelectiveTwoFactor();
+
 // Page configuration
 $pagedata = [
     'pagetitle' => 'Billing & Payment History',

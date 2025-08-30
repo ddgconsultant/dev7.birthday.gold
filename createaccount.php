@@ -334,6 +334,9 @@ if ($app->formposted()) {
             $first_name = ucfirst($values['firstname']);
             $last_name = ucfirst($values['lastname']);
             $email = !empty($values['email']) ? trim(strtolower($values['email'])) : '';
+            
+            // Store password for strength tracking (will be used after account creation)
+            $password_for_tracking = $values['password'];
             $phone = !empty($values['phone_clean']) ? $values['phone_clean'] : preg_replace('/\D/', '', $values['phone'] ?? '');
             
             // Generate username if not provided
@@ -421,6 +424,11 @@ if ($app->formposted()) {
                 $user_id = $createaccount->create_user($input);
                 
                 if ($user_id) {
+                    // Track initial password strength at account creation
+                    if (isset($password_for_tracking) && !empty($password_for_tracking)) {
+                        $account->trackPasswordChange($user_id, $password_for_tracking, 'creation');
+                    }
+                    
                     // Handle children for parental accounts
                     if (($account_type === 'parental' || $account_type === 'family') && !empty($values['children'])) {
                         foreach ($values['children'] as $child) {
@@ -1458,26 +1466,89 @@ function formatPhoneNumber(e) {
     e.target.value = value;
 }
 
-// Password strength checker
+// Password strength checker using centralized Birthday Gold algorithm
 document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('password');
     const strengthBar = document.querySelector('.strength-bar');
     
+    // Get password requirements from server
+    <?php 
+    if (isset($account) && is_object($account)) {
+        $js_password_requirements = $account->getPasswordRequirements();
+    } else {
+        // Fallback requirements
+        $js_password_requirements = [
+            'requirements' => [
+                ['id' => 'length', 'description' => 'At least 8 characters', 'pattern' => '.{8,}'],
+                ['id' => 'lowercase', 'description' => 'One lowercase letter (a-z)', 'pattern' => '[a-z]'],
+                ['id' => 'uppercase', 'description' => 'One uppercase letter (A-Z)', 'pattern' => '[A-Z]'],
+                ['id' => 'number', 'description' => 'One number (0-9)', 'pattern' => '[0-9]'],
+                ['id' => 'special', 'description' => 'One special character (!@#$%^&*)', 'pattern' => '[^a-zA-Z0-9]']
+            ]
+        ];
+    }
+    ?>
+    const requirements = <?php echo json_encode($js_password_requirements['requirements']); ?>;
+    
     if (passwordInput && strengthBar) {
         passwordInput.addEventListener('input', function() {
             const password = this.value;
-            let strength = 0;
+            let score = 0;
+            const length = password.length;
             
-            if (password.length >= 8) strength++;
-            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
-            if (password.match(/[0-9]/)) strength++;
-            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+            // Use Birthday Gold scoring algorithm (matches calculatePasswordStrength)
+            if (length >= 8) score += 10;
+            if (length >= 10) score += 10; 
+            if (length >= 12) score += 10;
+            if (length >= 16) score += 10;
             
+            // Character variety
+            if (/[a-z]/.test(password)) score += 10; // lowercase
+            if (/[A-Z]/.test(password)) score += 10; // uppercase
+            if (/[0-9]/.test(password)) score += 10; // numbers
+            if (/[^a-zA-Z0-9]/.test(password)) score += 15; // special chars
+            if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 5; // common special chars
+            
+            // Complexity bonus
+            let charTypes = 0;
+            if (/[a-z]/.test(password)) charTypes++;
+            if (/[A-Z]/.test(password)) charTypes++;
+            if (/[0-9]/.test(password)) charTypes++;
+            if (/[^a-zA-Z0-9]/.test(password)) charTypes++;
+            
+            if (charTypes >= 3 && length >= 10) score += 10;
+            
+            // Penalize common patterns
+            if (/(.)\1{2,}/.test(password)) score -= 10;
+            if (/123|abc|password|qwerty/i.test(password)) score -= 15;
+            
+            score = Math.max(0, Math.min(100, score));
+            
+            // Update requirements display
+            requirements.forEach(req => {
+                const reqElement = document.getElementById('req-' + req.id);
+                if (reqElement) {
+                    const pattern = new RegExp(req.pattern);
+                    const met = req.id === 'length' ? length >= 8 : pattern.test(password);
+                    
+                    if (met) {
+                        reqElement.classList.add('met');
+                        reqElement.classList.remove('unmet');
+                        reqElement.querySelector('i').className = 'bi bi-check-circle-fill';
+                    } else {
+                        reqElement.classList.add('unmet');
+                        reqElement.classList.remove('met');
+                        reqElement.querySelector('i').className = 'bi bi-circle';
+                    }
+                }
+            });
+            
+            // Update strength bar using score-based thresholds
             strengthBar.classList.remove('weak', 'medium', 'strong');
             
-            if (strength <= 1) {
+            if (score < 40) {
                 strengthBar.classList.add('weak');
-            } else if (strength === 2) {
+            } else if (score < 80) {
                 strengthBar.classList.add('medium');
             } else {
                 strengthBar.classList.add('strong');
