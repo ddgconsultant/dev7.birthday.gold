@@ -144,7 +144,7 @@ echo '
 </div>';
 
 // Include navigation
-include('includes/newsletter-nav.php');
+include('../includes/newsletter-nav.php');
 
 echo '
 <div class="container mt-4">

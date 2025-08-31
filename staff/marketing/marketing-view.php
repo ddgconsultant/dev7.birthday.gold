@@ -62,7 +62,7 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 </div>
 
-<?php include('includes/marketing-nav.php'); ?>
+<?php include('../includes/marketing-nav.php'); ?>
 
 <div class="container mt-4 mb-5 pb-5">
     <div class="row">
