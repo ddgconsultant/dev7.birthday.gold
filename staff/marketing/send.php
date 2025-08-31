@@ -1,8 +1,7 @@
 <?PHP
+$addClasses[] = 'marketing';
+$addClasses[] = 'mail';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-
-// Initialize Marketing class
-$marketing = new Marketing($database, $qik, $mail);
 
 $campaign_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $pagetitle = "Queue Campaign for Sending";
@@ -141,7 +140,8 @@ $stats = $marketing->getCampaignStats($campaign_id);
 $states_sql = "SELECT DISTINCT state FROM bg_users WHERE state IS NOT NULL AND state != '' ORDER BY state";
 $states = $database->getrows($states_sql);
 
-include($dir['blade'] . '/staff-header.inc');
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <div class="container-fluid">
@@ -548,4 +548,4 @@ document.getElementById('sendForm').addEventListener('submit', function(e) {
 });
 </script>
 
-<?php include($dir['blade'] . '/staff-footer.inc'); ?>
+<?php include($dir['core_components'] . '/bg_footer.inc'); ?>

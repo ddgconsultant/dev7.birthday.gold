@@ -1,8 +1,7 @@
 <?PHP
+$addClasses[] = 'marketing';
+$addClasses[] = 'mail';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-
-// Initialize Marketing class
-$marketing = new Marketing($database, $qik, $mail);
 
 $campaign_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $pagetitle = "Newsletter Preview";
@@ -54,7 +53,8 @@ if (!$campaign) {
 $categories_sql = "SELECT DISTINCT company_category FROM bg_companies WHERE status = 'active' ORDER BY company_category";
 $categories = $database->getrows($categories_sql);
 
-include($dir['blade'] . '/staff-header.inc');
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <div class="container-fluid">
@@ -413,4 +413,4 @@ style.textContent = `
 document.head.appendChild(style);
 </script>
 
-<?php include($dir['blade'] . '/staff-footer.inc'); ?>
+<?php include($dir['core_components'] . '/bg_footer.inc'); ?>

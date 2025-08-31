@@ -359,7 +359,7 @@ $STRIPECONFIG = $sitesettings['paymentgateway-stripe-live'];
 # SET UP ALL THE CLASSES
 #-------------------------------------------------------------------------------
 // Base array of classes
-$classes = ['Timer', 'System', 'Qik', 'Session', 'Database', 'App', 'Account', 'Admin', 'Display', 'Product', 'Marketing'];
+$classes = ['Timer', 'System', 'Qik', 'Session', 'Database', 'App', 'Account', 'Admin', 'Display', 'Product'];
 
 // Check if any classes set externally
 if (isset($addClasses)) {

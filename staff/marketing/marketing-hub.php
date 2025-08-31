@@ -1,8 +1,7 @@
 <?PHP
+$addClasses[] = 'marketing';
+$addClasses[] = 'mail';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-
-// Initialize Marketing class
-$marketing = new Marketing($database, $qik, $mail);
 
 $pagetitle = "Marketing Hub";
 
@@ -54,7 +53,8 @@ $upcoming_campaigns = $database->getrows($upcoming_campaigns_sql);
 $message = $_SESSION['message'] ?? '';
 unset($_SESSION['message']);
 
-include($dir['blade'] . '/staff-header.inc');
+include($dir['core_components'] . '/bg_pagestart.inc');
+include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <div class="container-fluid">
@@ -389,4 +389,4 @@ include($dir['blade'] . '/staff-header.inc');
     </div>
 </div>
 
-<?php include($dir['blade'] . '/staff-footer.inc'); ?>
+<?php include($dir['core_components'] . '/bg_footer.inc'); ?>
