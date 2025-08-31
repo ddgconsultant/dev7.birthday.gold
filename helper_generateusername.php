@@ -2,7 +2,7 @@
 $addClasses[] = 'createaccount';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-$output = -1;
+$output = '';
 if ($app->formposted()||1==1) {
     if (isset($_REQUEST['first_name'])) {
         switch ($_REQUEST['type']??'') {
@@ -10,15 +10,25 @@ if ($app->formposted()||1==1) {
                 $first_name = $_REQUEST['first_name'];
                 $last_name = $_REQUEST['last_name'];
                 $birthday = $_REQUEST['birthday'];
-              #  if (strpos($username, '@mybdaygold.com') !== true) $username .= '@mybdaygold.com';
                 $output= $createaccount->generate_username($first_name, $last_name, $birthday, $type='real').'@mybdaygold.com';
-                
                 break;
-
-        
+                
+            default:
+                // For username generation (not email)
+                $first_name = $_REQUEST['first_name'];
+                $last_name = $_REQUEST['last_name'];
+                $birthday = $_REQUEST['birthday'];
+                $output = $createaccount->generate_username($first_name, $last_name, $birthday, $type='real');
+                break;
         }
+    } else if (isset($_REQUEST['action']) && $_REQUEST['action'] === 'generate_username') {
+        // Handle the new generate_username action
+        $first_name = $_REQUEST['first_name'];
+        $last_name = $_REQUEST['last_name'];
+        $birthday = $_REQUEST['birthday'];
+        $output = $createaccount->generate_username($first_name, $last_name, $birthday, $type='real');
     } else {
-        $output = -2;
+        $output = '';
     }
 }
 

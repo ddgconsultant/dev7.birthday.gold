@@ -236,6 +236,21 @@ $additionalstyles = '
     .bulk-action-btn:not(:disabled).btn-outline-danger {
         transition: all 0.2s ease-in-out;
     }
+    
+    /* View full message link styling */
+    .view-full-message {
+        color: #0d6efd !important;
+        text-decoration: underline !important;
+        font-size: 0.8rem !important;
+        font-weight: 400;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+    
+    .view-full-message:hover {
+        color: #0a58ca !important;
+        text-decoration: underline !important;
+    }
         </style>
 ';
 

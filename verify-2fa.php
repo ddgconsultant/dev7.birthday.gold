@@ -66,6 +66,22 @@ if (isset($_POST['ajax']) && $_POST['ajax'] == 'validate' && isset($_POST['code'
                 ]);
                 
                 error_log("Selective 2FA: Stored verification for user $user_id, device $device_id");
+                
+                // Add notification for selective 2FA completion
+                if (isset($mail) && is_object($mail)) {
+                    $mail->addNotification(
+                        $user_id,
+                        'security_2fa_selective',
+                        '🛡️ Security Verification Complete',
+                        'Your trusted device has been verified for secure access. This verification is valid for 7 days.',
+                        [
+                            'alert_class' => 'success',
+                            'priority' => 'normal',
+                            'category' => 'security',
+                            'end_dt' => '7d'
+                        ]
+                    );
+                }
             }
             
             $session->unset('pending_2fa');
@@ -74,8 +90,8 @@ if (isset($_POST['ajax']) && $_POST['ajax'] == 'validate' && isset($_POST['code'
             exit();
         } else {
             $error_message = $auth_method === 'Highly Secure' ? 
-                'Invalid authenticator code. Please try again.' : 
-                ($response['error'] ?? 'Invalid verification code. Please try again.');
+                'Invalid security code. Please try again.' : 
+                ($response['error'] ?? 'Invalid security code. Please try again.');
             
             echo json_encode(['success' => false, 'message' => $error_message]);
             exit();
@@ -448,20 +464,16 @@ echo '<div class="page-wrapper">
             
             <h1 class="verification-title">';
 
-if ($auth_method === 'Highly Secure') {
-    echo 'Enter Authenticator Code';
-} else {
-    echo 'Check your ' . (!empty($user_phone) ? 'phone' : 'email');
-}
+echo 'Enter Security Code';
 
 echo '</h1>
             
             <p class="verification-subtitle">';
 
 if ($auth_method === 'Highly Secure') {
-    echo 'Open your authenticator app and enter the 6-digit code to complete your login.';
+    echo 'Open your authenticator app and enter the 6-digit security code to complete your login.';
 } else {
-    echo 'A 6-digit verification code was sent to ';
+    echo 'A 6-digit security code was sent to ';
     if (!empty($user_phone)) {
         echo 'your phone ending in <strong>' . substr($user_phone, -4) . '</strong>';
     } else {
@@ -489,7 +501,7 @@ if (isset($_SESSION['error_message'])) {
 
 echo '<div class="error-message" id="errorMessage">
                 <i class="bi bi-exclamation-circle me-2"></i>
-                <span id="errorText">Invalid code. Please try again.</span>
+                <span id="errorText">Invalid security code. Please try again.</span>
             </div>
 
             <div class="code-inputs-container" id="codeContainer">
@@ -699,7 +711,7 @@ class TwoFactorVerification {
             } else {
                 // Only show errors for manual submit, not auto-submit
                 if (!isAutoSubmit) {
-                    this.showError(data.message || \'Invalid verification code. Please try again.\');
+                    this.showError(data.message || \'Invalid security code. Please try again.\');
                 }
             }
         } catch (error) {

@@ -35,10 +35,10 @@ include($dir['blade'] . '/staff-header.inc');
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-envelope-paper"></i> Newsletter Campaign Management</h2>
                 <div>
-                    <a href="/staff/newsletter-edit.php" class="btn btn-primary">
+                    <a href="newsletter-edit.php" class="btn btn-primary">
                         <i class="bi bi-plus-lg"></i> Create New Campaign
                     </a>
-                    <a href="/staff/newsletter-list.php" class="btn btn-outline-secondary">
+                    <a href="newsletter-list.php" class="btn btn-outline-secondary">
                         <i class="bi bi-list"></i> All Campaigns
                     </a>
                 </div>
@@ -139,7 +139,7 @@ include($dir['blade'] . '/staff-header.inc');
                             <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
                             <h4 class="text-muted mt-3">No Campaigns Found</h4>
                             <p class="text-muted">Create your first newsletter campaign to get started.</p>
-                            <a href="/staff/newsletter-edit.php" class="btn btn-primary">
+                            <a href="newsletter-edit.php" class="btn btn-primary">
                                 <i class="bi bi-plus-lg"></i> Create Campaign
                             </a>
                         </div>
@@ -215,14 +215,14 @@ include($dir['blade'] . '/staff-header.inc');
                                                             <i class="bi bi-eye"></i> Preview
                                                         </a></li>
                                                         <?php if (in_array($campaign['status'], ['draft', 'scheduled'])): ?>
-                                                            <li><a class="dropdown-item" href="/staff/newsletter-edit.php?id=<?= $campaign['campaign_id'] ?>">
+                                                            <li><a class="dropdown-item" href="newsletter-edit.php?id=<?= $campaign['campaign_id'] ?>">
                                                                 <i class="bi bi-pencil"></i> Edit
                                                             </a></li>
                                                             <li><a class="dropdown-item" href="send.php?id=<?= $campaign['campaign_id'] ?>">
                                                                 <i class="bi bi-send"></i> Queue for Sending
                                                             </a></li>
                                                         <?php endif; ?>
-                                                        <li><a class="dropdown-item" href="/staff/newsletter-reports.php?id=<?= $campaign['campaign_id'] ?>">
+                                                        <li><a class="dropdown-item" href="newsletter-reports.php?id=<?= $campaign['campaign_id'] ?>">
                                                             <i class="bi bi-graph-up"></i> Reports
                                                         </a></li>
                                                         <li><hr class="dropdown-divider"></li>
@@ -247,7 +247,7 @@ include($dir['blade'] . '/staff-header.inc');
 <script>
 function confirmDelete(campaignId) {
     if (confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
-        window.location.href = '/staff/ajax/newsletter-delete.php?id=' + campaignId;
+        window.location.href = '../ajax/newsletter-delete.php?id=' + campaignId;
     }
 }
 </script>

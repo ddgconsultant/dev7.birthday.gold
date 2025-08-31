@@ -40,9 +40,11 @@ try {
         $avatar_file = '/public/avatars/problemavatar.png';
     }
     
-    // Generate username from email
+    // Generate proper username using the createaccount class
     $email = trim($_POST['email'] ?? '');
-    $username = strtolower(str_replace('@mybdaygold.com', '', $email));
+    $first_name = trim($_POST['first'] ?? '');
+    $last_name = trim($_POST['last'] ?? '');
+    $username = $createaccount->generate_username($first_name, $last_name, $birthday);
     
     $input = [
         'first_name' => trim($_POST['first'] ?? ''),

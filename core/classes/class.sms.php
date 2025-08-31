@@ -11,7 +11,7 @@ class sms {
     
     const USE_SPECIFIED = 0;
     const USE_ALL_DEVICES = 1;
-    const USE_ALL_SIMS = 2;
+    const USE_ALL_SIMS = 0;
     
     /**
      * Constructor
@@ -20,7 +20,8 @@ class sms {
     public function __construct($config = []) {
         // Use config if provided, otherwise use defaults (will be replaced by ENV_CONFIG)
         $this->server = $config['server'] ?? 'https://sms.bd.gold';
-        $this->apiKey = $config['api_key'] ?? '2e545357a07f667e396da33d5d0ddde564afef55';
+      #  $this->apiKey = $config['api_key'] ?? '3ef81ae2193c15a5640c7f18005dd11032f50e4d';
+        $this->apiKey = '3ef81ae2193c15a5640c7f18005dd11032f50e4d';
     }
     
     /**
@@ -44,7 +45,7 @@ class sms {
             'key' => $this->apiKey,
             'devices' => $device,
             'type' => $isMMS ? "mms" : "sms",
-            'attachments' => $attachments,
+            'attachments' => $attachments,            
             'prioritize' => $prioritize ? 1 : 0
         );
         return $this->sendRequest($url, $postData)["messages"][0];

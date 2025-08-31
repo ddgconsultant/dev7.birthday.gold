@@ -345,17 +345,8 @@ $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">
 
 .benefit-list li {
     padding: 0.75rem 0;
-    padding-left: 2rem;
-    position: relative;
-}
-
-.benefit-list li:before {
-    content: "\F26A";
-    font-family: "Bootstrap Icons";
-    position: absolute;
-    left: 0;
-    color: #198754;
-    font-size: 1.25rem;
+    display: flex;
+    align-items: flex-start;
 }
 
 /* Steps */
@@ -415,7 +406,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <div class="content-header-dark">
     <div class="container">
         <div class="text-center">
-            <h1 class="mb-3"><i class="bi bi-phone-vibrate me-3"></i>Two-Factor Authentication</h1>
+            <h1 class="mb-3"><i class="bi bi-shield-lock me-3"></i>Two-Factor Authentication</h1>
             <p class="lead mb-0">Add an extra layer of security to protect your account</p>
         </div>
     </div>
@@ -432,10 +423,10 @@ include($dir['core_components'] . '/bg_header.inc');
         <div class="setup-card-body">
             <p class="mb-3">Two-factor authentication (2FA) significantly improves your account security by requiring two forms of identification:</p>
             <ul class="benefit-list">
-                <li>Protection against password theft - Even if someone gets your password, they cannot access your account</li>
-                <li>Real-time alerts - Get notified instantly when someone tries to log in</li>
-                <li>Peace of mind - Know that your birthday rewards and personal information are secure</li>
-                <li>Industry standard security - Join millions who use 2FA to protect their accounts</li>
+                <li><i class="bi bi-shield-check text-success me-3"></i>Protection against password theft - Even if someone gets your password, they cannot access your account</li>
+                <li><i class="bi bi-bell-fill text-success me-3"></i>Real-time alerts - Get notified instantly when someone tries to log in</li>
+                <li><i class="bi bi-heart-fill text-success me-3"></i>Peace of mind - Know that your birthday rewards and personal information are secure</li>
+                <li><i class="bi bi-people-fill text-success me-3"></i>Industry standard security - Join millions who use 2FA to protect their accounts</li>
             </ul>
         </div>
     </div>
@@ -474,7 +465,7 @@ if (!$current_2fa || $show_change_form) {
                         <label class="method-card">
                             <input type="radio" name="method" value="Highly Secure" id="method_app">
                             <div class="method-icon text-success">
-                                <i class="bi bi-shield-fill-check"></i>
+                                <i class="bi bi-smartphone"></i>
                             </div>
                             <h4 class="method-title">Authenticator App</h4>
                             <p class="method-description">
@@ -570,7 +561,7 @@ if (!$current_2fa || $show_change_form) {
 
 } else {
     // Show current configuration
-    $method_icon = $current_2fa['auth_method'] === 'Highly Secure' ? 'shield-fill-check' : 'envelope-check-fill';
+    $method_icon = $current_2fa['auth_method'] === 'Highly Secure' ? 'smartphone' : 'envelope-check-fill';
     $method_color = $current_2fa['auth_method'] === 'Highly Secure' ? 'success' : 'info';
     
     echo '
@@ -618,7 +609,7 @@ if (!$current_2fa || $show_change_form) {
     } else {
         echo '
                     <div class="alert alert-light" role="alert">
-                        <h6 class="alert-heading"><i class="bi bi-phone-vibrate me-2"></i>Authenticator App</h6>
+                        <h6 class="alert-heading"><i class="bi bi-smartphone me-2"></i>Authenticator App</h6>
                         <p class="mb-0">You are using an authenticator app to generate verification codes.</p>
                     </div>';
     }

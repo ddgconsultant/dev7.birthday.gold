@@ -312,12 +312,20 @@ foreach ($childaccount_records as $row) {
     $cid = $row['user_id'];
     $signinbutton = '<a class="btn btn-primary btn-switch-account accountswitch me-2" href="/myaccount/myaccount_actions/switch2minor?id=' . $cid . '&pid=' . $current_user_data['user_id'] . '&_token=' . $display->inputcsrf_token('tokenonly') . '">Switch Account</a>';
     $settingsbutton = '<button class="btn btn-light p-2" type="button" data-bs-toggle="collapse" data-bs-target="#minorcontroller' . $row['user_id'] . '" aria-expanded="false" aria-controls="minorcontroller' . $row['user_id'] . '"><i class="bi bi-gear fs-4"></i></button>';
-    $avatar = !empty($row['avatar']) ? $row['avatar'] : '/public/images/defaultavatar.png';
+    // Get avatar from bg_user_attributes first (proper image management system), then fallback to bg_users.avatar
+    $avatar_stmt = $database->prepare("SELECT description FROM bg_user_attributes WHERE user_id = :user_id AND type = 'profile_image' AND name = 'avatar' AND status = 'active' ORDER BY create_dt DESC LIMIT 1");
+    $avatar_stmt->execute([':user_id' => $row['user_id']]);
+    $avatar = $avatar_stmt->fetchColumn();
+    
+    // Fallback to bg_users.avatar if no avatar in attributes
+    if (!$avatar) {
+        $avatar = !empty($row['avatar']) ? $row['avatar'] : '/public/images/defaultavatar.png';
+    }
 
     echo '
     <div class="account-row d-flex align-items-center justify-content-between my-2 px-3 py-4">
         <a href="#!" class="d-flex align-items-center me-3">
-            <img class="img-fluid rounded-circle" src="' . $avatar . '" alt="" width="56" />
+            <img class="rounded-circle" src="' . $avatar . '" alt="" style="width: 75px; height: 75px; object-fit: contain;" />
         </a>
         <div class="flex-grow-1 ps-3">
             <h6 class="fs-9 mb-1"><a href="#!">' . htmlspecialchars($row['first_name']) . ' ' . htmlspecialchars($row['last_name']) . '</a></h6>

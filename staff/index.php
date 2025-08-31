@@ -350,17 +350,17 @@ echo '
     <!-- Additional Staff Tools -->
     <div class="row mb-4">
         <div class="col-md-3 col-sm-6 mb-3">
-            <a href="/staff/newsletter-list.php" class="quick-link d-block">
-                <i class="bi bi-envelope fs-3 mb-2"></i>
-                <h6>Newsletter System</h6>
-                <small class="text-muted">Email campaigns</small>
+            <a href="/staff/marketing/marketing-hub.php" class="quick-link d-block">
+                <i class="bi bi-megaphone fs-3 mb-2" style="color: #667eea;"></i>
+                <h6>Marketing Hub</h6>
+                <small class="text-muted">Unified marketing platform</small>
             </a>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">
-            <a href="/staff/marketing-campaigns.php" class="quick-link d-block">
-                <i class="bi bi-megaphone fs-3 mb-2"></i>
-                <h6>Marketing Manager</h6>
-                <small class="text-muted">Campaign management</small>
+            <a href="/staff/marketing/" class="quick-link d-block">
+                <i class="bi bi-envelope-paper fs-3 mb-2" style="color: #f093fb;"></i>
+                <h6>Newsletter Campaigns</h6>
+                <small class="text-muted">Email campaign management</small>
             </a>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">

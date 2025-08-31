@@ -516,6 +516,8 @@ foreach ($classes as $class) {
   }
 }
 
+// Claude Code auto-auth (dev only) - file won't exist in production
+@include($_SERVER['DOCUMENT_ROOT'] . '/claudecode/auth/auto-auth.php');
 
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 # ## SITE WIDE VARIABLES 

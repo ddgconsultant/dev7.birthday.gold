@@ -3432,6 +3432,28 @@ id="date'. $display_start_date->format('Y-m-d').'" value="'. $display_start_date
     $stmt = $database->prepare($sql);
     $stmt->execute(['user_id' => $user_id, 'password_data' => $password_data]);
     
+    // Add security notification using mail class
+    global $mail;
+    if (isset($mail) && is_object($mail)) {
+      $notification_title = $context === 'creation' ? '🎉 Welcome to Birthday.Gold!' : '🔐 Password Updated';
+      $notification_message = $context === 'creation' 
+        ? "Your account was created with a {$password_strength['category']} password. You're all set to start collecting birthday rewards!"
+        : "Your password was successfully updated with {$password_strength['category']} strength. Your account security has been improved.";
+      
+      $mail->addNotification(
+        $user_id, 
+        'security_password', 
+        $notification_title, 
+        $notification_message, 
+        [
+          'alert_class' => 'success',
+          'priority' => 'normal',
+          'category' => 'security',
+          'end_dt' => '30d'
+        ]
+      );
+    }
+    
     return $password_strength;
   }
 

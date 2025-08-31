@@ -8,7 +8,7 @@ $campaign_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $pagetitle = "Queue Campaign for Sending";
 
 if (!$campaign_id) {
-    header('Location: /staff/manage-newsletter/index.php');
+    header('Location: index.php');
     exit;
 }
 
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>';
         }
         
-        header('Location: /staff/manage-newsletter/index.php');
+        header('Location: index.php');
         exit;
     }
 }
@@ -127,7 +127,7 @@ $campaign_sql = "SELECT * FROM bg_newsletter_campaigns WHERE campaign_id = :camp
 $campaign = $database->getrow($campaign_sql, ['campaign_id' => $campaign_id]);
 
 if (!$campaign) {
-    header('Location: /staff/manage-newsletter/index.php');
+    header('Location: index.php');
     exit;
 }
 
@@ -154,7 +154,7 @@ include($dir['blade'] . '/staff-header.inc');
                     <h2><i class="bi bi-send"></i> Queue Campaign for Sending</h2>
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="/staff/manage-newsletter/index.php">Campaigns</a></li>
+                            <li class="breadcrumb-item"><a href="index.php">Campaigns</a></li>
                             <li class="breadcrumb-item active">Send: <?= htmlspecialchars($campaign['title']) ?></li>
                         </ol>
                     </nav>
@@ -163,7 +163,7 @@ include($dir['blade'] . '/staff-header.inc');
                     <a href="preview.php?id=<?= $campaign_id ?>" class="btn btn-outline-secondary">
                         <i class="bi bi-eye"></i> Preview
                     </a>
-                    <a href="/staff/manage-newsletter/index.php" class="btn btn-outline-primary">
+                    <a href="index.php" class="btn btn-outline-primary">
                         <i class="bi bi-arrow-left"></i> Back to Campaigns
                     </a>
                 </div>

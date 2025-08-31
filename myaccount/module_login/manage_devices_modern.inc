@@ -418,5 +418,18 @@ function confirmRemoveAllDevices() {
     const modal = new bootstrap.Modal(document.getElementById("removeAllDevicesModal"));
     modal.show();
 }
+
+// Auto-trigger delete all modal if coming from security settings
+document.addEventListener("DOMContentLoaded", function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("action") === "delete_all") {
+        // Wait a moment for the page to fully load, then trigger the modal
+        setTimeout(function() {
+            confirmRemoveAllDevices();
+            // Clean up the URL to remove the action parameter
+            window.history.replaceState({}, document.title, window.location.pathname + "?view=devices");
+        }, 500);
+    }
+});
 </script>';
 ?>

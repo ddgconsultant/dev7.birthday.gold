@@ -299,10 +299,10 @@ class TwoFactorAuth {
             $email_details = [
                 'to' => [$email, $email],
                 'from' => ['noreply@birthday.gold', 'Birthday.Gold Security'],
-                'subject' => 'Your 2FA Verification Code',
+                'subject' => 'Your Security Code - Birthday.Gold',
                 'body' => "
-                    <h2>Your Two-Factor Authentication Code</h2>
-                    <p>Your verification code is: <strong style='font-size: 1.5em; color: #0d6efd;'>$code</strong></p>
+                    <h2>Your 6-Digit Security Code</h2>
+                    <p>Your security code is: <strong style='font-size: 1.5em; color: #0d6efd;'>$code</strong></p>
                     <p>This code will expire in 15 minutes for your security.</p>
                     <p>If you did not request this code, please ignore this email.</p>
                     <hr>
@@ -332,10 +332,10 @@ class TwoFactorAuth {
                     $email_details = [
                         'to' => [$email, $email],
                         'from' => ['noreply@birthday.gold', 'Birthday.Gold Security'],
-                        'subject' => 'Your 2FA Verification Code',
+                        'subject' => 'Your Security Code - Birthday.Gold',
                         'body' => "
-                            <h2>Your Two-Factor Authentication Code</h2>
-                            <p>Your verification code is: <strong style='font-size: 1.5em; color: #0d6efd;'>$code</strong></p>
+                            <h2>Your 6-Digit Security Code</h2>
+                            <p>Your security code is: <strong style='font-size: 1.5em; color: #0d6efd;'>$code</strong></p>
                             <p>This code will expire in 15 minutes for your security.</p>
                             <p>If you did not request this code, please ignore this email.</p>
                             <hr>
@@ -354,9 +354,9 @@ class TwoFactorAuth {
             }
             
             // Final fallback to basic mail function
-            $subject = "Your 2FA Code - Birthday.Gold";
-            $message = "<h2>Your Two-Factor Authentication Code</h2>
-                       <p>Your verification code is: <strong style='font-size: 1.5em; color: #0d6efd;'>$code</strong></p>
+            $subject = "Your Security Code - Birthday.Gold";
+            $message = "<h2>Your 6-Digit Security Code</h2>
+                       <p>Your security code is: <strong style='font-size: 1.5em; color: #0d6efd;'>$code</strong></p>
                        <p>This code will expire in 15 minutes for your security.</p>
                        <p>If you did not request this code, please ignore this email.</p>";
             $headers = "From: Birthday.Gold <noreply@birthday.gold>\r\n";
@@ -391,7 +391,7 @@ class TwoFactorAuth {
         
         error_log("2FA sendSMS: Cleaned phone='$clean_phone' (10 digits)");
         
-        $message = "Your Birthday.Gold 2FA code is: {$code}. This code expires in 15 minutes.";
+        $message = "Your Birthday.Gold 6-digit security code is: {$code}. This code expires in 15 minutes.";
         
         try {
             if (isset($sms) && is_object($sms)) {

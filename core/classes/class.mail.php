@@ -1388,6 +1388,79 @@ class MailQueue
       'email_result' => $result
     ];
   }
+
+  
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Add notification to user's notification center (follows existing notifier pattern)
+   * @param int $user_id User ID
+   * @param string $type Notification type
+   * @param string $title Notification title
+   * @param string $message Notification message
+   * @param array $options Additional options: alert_class, priority, category, sent_to, end_dt
+   * @return int Notification ID
+   */
+  public function addNotification($user_id, $type, $title, $message, $options = []) {
+    global $database;
+    
+    // Default options
+    $defaults = [
+      'alert_class' => 'info',
+      'priority' => 'normal', 
+      'category' => 'general',
+      'sent_to' => 'display',
+      'status' => 'new',
+      'start_dt' => date('Y-m-d H:i:s'),
+      'end_dt' => null
+    ];
+    
+    $opts = array_merge($defaults, $options);
+    
+    // Calculate end_dt if provided in format like "7d", "1w", etc.
+    if (!empty($opts['end_dt']) && is_string($opts['end_dt'])) {
+      $interval = substr($opts['end_dt'], 0, -1);
+      $unit = substr($opts['end_dt'], -1);
+      
+      switch ($unit) {
+        case 'd':
+          $opts['end_dt'] = date('Y-m-d H:i:s', strtotime("+$interval days"));
+          break;
+        case 'w':
+          $opts['end_dt'] = date('Y-m-d H:i:s', strtotime("+$interval weeks"));
+          break;
+        case 'm':
+          $opts['end_dt'] = date('Y-m-d H:i:s', strtotime("+$interval months"));
+          break;
+        default:
+          $opts['end_dt'] = null;
+      }
+    }
+    
+    $sql = "INSERT INTO bg_user_notifications (
+              user_id, type, title, message, status, create_dt, modify_dt, 
+              alert_class, priority, category, sent_to, sent_dt, start_dt, end_dt
+            ) VALUES (
+              :user_id, :type, :title, :message, :status, NOW(), NOW(),
+              :alert_class, :priority, :category, :sent_to, NOW(), :start_dt, :end_dt
+            )";
+    
+    $stmt = $database->prepare($sql);
+    $stmt->execute([
+      'user_id' => $user_id,
+      'type' => $type,
+      'title' => $title,
+      'message' => $message,
+      'status' => $opts['status'],
+      'alert_class' => $opts['alert_class'],
+      'priority' => $opts['priority'],
+      'category' => $opts['category'],
+      'sent_to' => $opts['sent_to'],
+      'start_dt' => $opts['start_dt'],
+      'end_dt' => $opts['end_dt']
+    ]);
+    
+    return $database->lastInsertId();
+  }
 }
   
   // Usage:

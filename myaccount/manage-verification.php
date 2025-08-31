@@ -12,15 +12,15 @@ if ($user_id > 0) {
     // Check for existing verification application in bg_user_attributes
     $sql = "SELECT * FROM bg_user_attributes 
             WHERE user_id = ? 
-            AND attribute_type = 'verification_application' 
+            AND type = 'verification_application' 
             AND status = 'active'
             ORDER BY create_dt DESC 
             LIMIT 1";
     $existing_application = $database->getrow($sql, [$user_id]);
     
     // Parse the JSON data if exists
-    if ($existing_application && !empty($existing_application['attribute_value'])) {
-        $app_data = json_decode($existing_application['attribute_value'], true);
+    if ($existing_application && !empty($existing_application['description'])) {
+        $app_data = json_decode($existing_application['description'], true);
         if ($app_data) {
             $existing_application = array_merge($existing_application, $app_data);
             $existing_application['created_at'] = $existing_application['create_dt'];
@@ -73,7 +73,7 @@ if ($app->formposted() && empty($existing_application)) {
             ];
             
             // Insert into bg_user_attributes
-            $sql = 'INSERT INTO bg_user_attributes (user_id, attribute_type, attribute_name, attribute_value, status, create_dt) 
+            $sql = 'INSERT INTO bg_user_attributes (user_id, type, name, description, status, create_dt) 
                     VALUES (?, ?, ?, ?, ?, NOW())';
             $database->query($sql, [
                 $current_user_data['user_id'],
@@ -651,32 +651,52 @@ $canApplyForVerification = ($completedRequirements === $totalRequirements);
         </section>
 
         <!-- FAQ Section -->
+        <?php
+        // Get verification FAQs from database
+        $faq_sql = "SELECT display_name, content FROM bg_content 
+                    WHERE category = 'verification' 
+                    AND type = 'faq' 
+                    AND status = 'active' 
+                    ORDER BY `rank` ASC";
+        $verification_faqs = $database->getrows($faq_sql);
+        ?>
+        
         <section class="faq-section">
             <h2 class="faq-header">Frequently Asked Questions</h2>
-            <div class="faq-item">
-                <h3 class="faq-question">How to Apply for Verification</h3>
-                <p class="faq-answer">If you believe you qualify for verification, you can apply through the form by clicking the "Apply for Verification" button above. The application process will require you to submit personal information such as your full name, email address, and a government-issued photo ID for verification purposes.</p>
-            </div>
-            <div class="faq-item">
-                <h3 class="faq-question">What Happens After Verification?</h3>
-                <p class="faq-answer">After your account is verified, a special badge will be displayed on your profile, indicating that you are an authentic user. This badge signals to brands and other users that you have been vetted by Birthday.Gold and are eligible for premium offers and rewards.</p>
-            </div>
-            <div class="faq-item">
-                <h3 class="faq-question">Maintaining Your Verified Status</h3>
-                <p class="faq-answer">To maintain your verified status, you should continue to follow our platform's terms of service and guidelines. Birthday.Gold reserves the right to remove verification from accounts that engage in suspicious activity or violate our policies.</p>
-            </div>
-            <div class="faq-item">
-                <h3 class="faq-question">How long does the verification process take?</h3>
-                <p class="faq-answer">We typically process verification applications within a few business days. You will receive an email notification once your application has been reviewed.</p>
-            </div>
-            <div class="faq-item">
-                <h3 class="faq-question">Can I lose my verification status?</h3>
-                <p class="faq-answer">Yes, accounts that engage in suspicious behavior or violate Birthday.Gold's guidelines may have their verification revoked.</p>
-            </div>
-            <div class="faq-item">
-                <h3 class="faq-question">What information is required for verification?</h3>
-                <p class="faq-answer">We require basic identification such as your full name, email address, and a government-issued photo ID. This helps us confirm your identity and protect the integrity of our platform.</p>
-            </div>
+            <?php if (!empty($verification_faqs)): ?>
+                <?php foreach ($verification_faqs as $faq): ?>
+                    <div class="faq-item">
+                        <h3 class="faq-question"><?php echo htmlspecialchars($faq['display_name']); ?></h3>
+                        <p class="faq-answer"><?php echo htmlspecialchars($faq['content']); ?></p>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <!-- Fallback to hardcoded FAQs if none found in database -->
+                <div class="faq-item">
+                    <h3 class="faq-question">How to Apply for Verification</h3>
+                    <p class="faq-answer">If you believe you qualify for verification, you can apply through the form by clicking the "Apply for Verification" button above. The application process will require you to submit personal information such as your full name, email address, and a government-issued photo ID for verification purposes.</p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">What Happens After Verification?</h3>
+                    <p class="faq-answer">After your account is verified, a special badge will be displayed on your profile, indicating that you are an authentic user. This badge signals to brands and other users that you have been vetted by Birthday.Gold and are eligible for premium offers and rewards.</p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">Maintaining Your Verified Status</h3>
+                    <p class="faq-answer">To maintain your verified status, you should continue to follow our platform's terms of service and guidelines. Birthday.Gold reserves the right to remove verification from accounts that engage in suspicious activity or violate our policies.</p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">How long does the verification process take?</h3>
+                    <p class="faq-answer">We typically process verification applications within a few business days. You will receive an email notification once your application has been reviewed.</p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">Can I lose my verification status?</h3>
+                    <p class="faq-answer">Yes, accounts that engage in suspicious behavior or violate Birthday.Gold's guidelines may have their verification revoked.</p>
+                </div>
+                <div class="faq-item">
+                    <h3 class="faq-question">What information is required for verification?</h3>
+                    <p class="faq-answer">We require basic identification such as your full name, email address, and a government-issued photo ID. This helps us confirm your identity and protect the integrity of our platform.</p>
+                </div>
+            <?php endif; ?>
         </section>
     </div>
 </div>

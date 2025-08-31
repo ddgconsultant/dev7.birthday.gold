@@ -46,8 +46,8 @@ if ($notification['status'] == 'unread') {
 // Return the response
 $response = [
     'success' => true,
-    'title' => htmlspecialchars($notification['title']),
-    'content' => $fullContent,
+    'title' => html_entity_decode($notification['title'], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+    'content' => html_entity_decode($fullContent, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
     'type' => $notification['type'],
     'created' => date('F j, Y at g:i A', strtotime($notification['create_dt']))
 ];

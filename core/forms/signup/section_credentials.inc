@@ -62,15 +62,24 @@ if (isset($process_handlers) && $process_handlers) {
         }
     }
     
-    // Validate password
+    // Validate password using centralized requirements
     if (empty($values['password'])) {
         $errors['password'] = 'Password is required';
     } else {
-        if (strlen($values['password']) < 10) {
-            $errors['password'] = 'Password must be at least 10 characters';
+        // Use the centralized password requirements (check if account object exists)
+        if (isset($account) && is_object($account)) {
+            $password_requirements = $account->getPasswordRequirements();
+            $password_strength = $account->calculatePasswordStrength($values['password']);
+            
+            if ($password_strength['score'] < $password_requirements['minimum_score_for_submit']) {
+                $errors['password'] = 'Password must meet the security requirements below';
+            }
+        } else {
+            // Fallback to basic validation if account object not available
+            if (strlen($values['password']) < 8) {
+                $errors['password'] = 'Password must be at least 8 characters';
+            }
         }
-        // Additional password strength checks could go here
-        // e.g., require mix of letters and numbers
     }
     
     // Username validation removed - will be auto-generated
@@ -137,7 +146,7 @@ $contact_method = $values['contact_method'] ?? 'phone';
         <div class="password-strength mt-2">
             <div class="strength-bar"></div>
         </div>
-        <small class="text-muted">A mix at least 10 letters, numbers, symbols</small>
+        <small class="text-muted">At least 8 characters with uppercase, lowercase, number & special character</small>
         <?php if (!empty($errors['password'])): ?>
             <div class="invalid-feedback d-block"><?php echo $errors['password']; ?></div>
         <?php endif; ?>
