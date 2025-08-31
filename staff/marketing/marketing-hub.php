@@ -429,7 +429,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
         </div>
     </div>
-</div>
+</div>';
 
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

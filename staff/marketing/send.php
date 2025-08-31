@@ -546,7 +546,7 @@ document.getElementById('sendForm').addEventListener('submit', function(e) {
         e.preventDefault();
     }
 });
-</script>
+</script>';
 
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

@@ -411,7 +411,7 @@ style.textContent = `
     .spin { animation: spin 1s linear infinite; }
 `;
 document.head.appendChild(style);
-</script>
+</script>';
 
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
