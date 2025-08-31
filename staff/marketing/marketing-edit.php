@@ -1,5 +1,11 @@
-<?php
+<?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+
+// Get available platforms
+$platforms_sql = "SELECT id, display_name, tags FROM bg_content 
+                  WHERE category = 'marketing' AND type = 'platform_link' AND status = 'active'
+                  ORDER BY display_name ASC";
+$available_platforms = $database->getrows($platforms_sql);
 
 $campaign_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $campaign = null;
@@ -44,8 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'clicks_goal' => intval($_POST['clicks_goal']),
             'conversions_goal' => intval($_POST['conversions_goal'])
         ],
-        'created_by' => $account->getuser('user_id'),
-        'last_modified_by' => $account->getuser('user_id')
+        'created_by' => $current_user_data['user_id'],
+        'last_modified_by' => $current_user_data['user_id']
     ];
     
     $tags_json = json_encode($campaign_data);
@@ -74,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'id' => $campaign_id
         ]);
         
-        $system->addmessage('success', 'Campaign updated successfully!');
+        $system->addmessage('success', 'Campaign updated successfully');
     } else {
         // Create new campaign
         $insert_sql = "INSERT INTO bg_content 
@@ -96,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         ]);
         
         $campaign_id = $database->lastInsertId();
-        $system->addmessage('success', 'Campaign created successfully!');
+        $system->addmessage('success', 'Campaign created successfully');
     }
     
     header('Location: /staff/marketing-campaigns.php');
@@ -184,24 +190,24 @@ body {
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-?>
 
+echo '
 <div class="content-header-staff compact">
     <div class="container text-center">
         <h1><i class="fas fa-bullhorn"></i> Marketing Campaign Manager</h1>
-        <p class="lead"><?= $campaign ? 'Edit Campaign' : 'Create New Campaign' ?></p>
+        <p class="lead">' . ($campaign ? 'Edit Campaign' : 'Create New Campaign') . '</p>
     </div>
-</div>
+</div>';
 
-<?php include('../includes/marketing-nav.php'); ?>
+include('../includes/marketing-nav.php');
 
+echo '
 <div class="container mt-4 mb-5 pb-5">
     <form method="POST" id="campaignForm">
-        <input type="hidden" id="assets_data" name="assets_data" value="<?= htmlspecialchars(json_encode($campaign_data['assets'] ?? [])) ?>">
+        <input type="hidden" id="assets_data" name="assets_data" value="' . htmlspecialchars(json_encode($campaign_data['assets'] ?? [])) . '">
         
         <div class="row">
             <div class="col-lg-8">
-                <!-- Basic Information -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Campaign Details</h5>
@@ -210,12 +216,12 @@ include($dir['core_components'] . '/bg_header.inc');
                         <div class="mb-3">
                             <label for="display_name" class="form-label">Campaign Title *</label>
                             <input type="text" class="form-control" id="display_name" name="display_name" 
-                                   value="<?= $campaign ? htmlspecialchars($campaign['display_name']) : '' ?>" required>
+                                   value="' . ($campaign ? htmlspecialchars($campaign['display_name']) : '') . '" required>
                         </div>
                         
                         <div class="mb-3">
                             <label for="description" class="form-label">Brief Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3" maxlength="500"><?= $campaign ? htmlspecialchars($campaign['description']) : '' ?></textarea>
+                            <textarea class="form-control" id="description" name="description" rows="3" maxlength="500">' . ($campaign ? htmlspecialchars($campaign['description']) : '') . '</textarea>
                             <small class="text-muted">Maximum 500 characters</small>
                         </div>
                         
@@ -223,12 +229,12 @@ include($dir['core_components'] . '/bg_header.inc');
                             <div class="col-md-6 mb-3">
                                 <label for="start_date" class="form-label">Start Date *</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" 
-                                       value="<?= $campaign ? date('Y-m-d', strtotime($campaign['publish_dt'])) : date('Y-m-d') ?>" required>
+                                       value="' . ($campaign ? date('Y-m-d', strtotime($campaign['publish_dt'])) : date('Y-m-d')) . '" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="start_time" class="form-label">Start Time</label>
                                 <input type="time" class="form-control" id="start_time" name="start_time" 
-                                       value="<?= $campaign ? date('H:i', strtotime($campaign['publish_dt'])) : '09:00' ?>">
+                                       value="' . ($campaign ? date('H:i', strtotime($campaign['publish_dt'])) : '09:00') . '">
                             </div>
                         </div>
                         
@@ -236,26 +242,25 @@ include($dir['core_components'] . '/bg_header.inc');
                             <div class="col-md-6 mb-3">
                                 <label for="end_date" class="form-label">End Date</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" 
-                                       value="<?= ($campaign && $campaign['expire_dt']) ? date('Y-m-d', strtotime($campaign['expire_dt'])) : '' ?>">
+                                       value="' . (($campaign && $campaign['expire_dt']) ? date('Y-m-d', strtotime($campaign['expire_dt'])) : '') . '">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="end_time" class="form-label">End Time</label>
                                 <input type="time" class="form-control" id="end_time" name="end_time" 
-                                       value="<?= ($campaign && $campaign['expire_dt']) ? date('H:i', strtotime($campaign['expire_dt'])) : '23:59' ?>">
+                                       value="' . (($campaign && $campaign['expire_dt']) ? date('H:i', strtotime($campaign['expire_dt'])) : '23:59') . '">
                             </div>
                         </div>
                         
                         <div class="mb-3">
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select" id="status" name="status">
-                                <option value="inactive" <?= ($campaign && $campaign['status'] == 'inactive') ? 'selected' : '' ?>>Draft</option>
-                                <option value="active" <?= (!$campaign || $campaign['status'] == 'active') ? 'selected' : '' ?>>Active</option>
+                                <option value="inactive"' . (($campaign && $campaign['status'] == 'inactive') ? ' selected' : '') . '>Draft</option>
+                                <option value="active"' . ((!$campaign || $campaign['status'] == 'active') ? ' selected' : '') . '>Active</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Campaign Content -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Campaign Content</h5>
@@ -263,12 +268,11 @@ include($dir['core_components'] . '/bg_header.inc');
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="content" class="form-label">Full Campaign Details</label>
-                            <textarea class="form-control" id="content" name="content" rows="10"><?= $campaign ? htmlspecialchars($campaign['content']) : '' ?></textarea>
+                            <textarea class="form-control" id="content" name="content" rows="10">' . ($campaign ? htmlspecialchars($campaign['content']) : '') . '</textarea>
                         </div>
                     </div>
                 </div>
 
-                <!-- Media Assets -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Media Assets</h5>
@@ -281,33 +285,42 @@ include($dir['core_components'] . '/bg_header.inc');
                             <input type="file" id="assetUpload" multiple accept="image/*,video/*,.pdf" style="display: none;">
                         </div>
                         
-                        <div id="assetPreview" class="mt-3">
-                            <?php if (!empty($campaign_data['assets'])): ?>
-                                <?php foreach ($campaign_data['assets'] as $index => $asset): ?>
-                                    <div class="asset-preview" data-index="<?= $index ?>">
-                                        <?php if (strpos($asset['type'], 'image') !== false): ?>
-                                            <img src="<?= htmlspecialchars($asset['url']) ?>" alt="Asset">
-                                        <?php elseif (strpos($asset['type'], 'video') !== false): ?>
-                                            <video controls><source src="<?= htmlspecialchars($asset['url']) ?>"></video>
-                                        <?php else: ?>
-                                            <div class="p-3">
-                                                <i class="fas fa-file-pdf fa-2x"></i>
-                                                <p><?= htmlspecialchars($asset['name']) ?></p>
-                                            </div>
-                                        <?php endif; ?>
-                                        <button type="button" class="asset-remove" onclick="removeAsset(<?= $index ?>)">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                        <div id="assetPreview" class="mt-3">';
+
+if (!empty($campaign_data['assets'])) {
+    foreach ($campaign_data['assets'] as $index => $asset) {
+        echo '
+                            <div class="asset-preview" data-index="' . $index . '">';
+        
+        if (strpos($asset['type'], 'image') !== false) {
+            echo '
+                                <img src="' . htmlspecialchars($asset['url']) . '" alt="Asset">';
+        } elseif (strpos($asset['type'], 'video') !== false) {
+            echo '
+                                <video controls><source src="' . htmlspecialchars($asset['url']) . '"></video>';
+        } else {
+            echo '
+                                <div class="p-3">
+                                    <i class="fas fa-file-pdf fa-2x"></i>
+                                    <p>' . htmlspecialchars($asset['name']) . '</p>
+                                </div>';
+        }
+        
+        echo '
+                                <button type="button" class="asset-remove" onclick="removeAsset(' . $index . ')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>';
+    }
+}
+
+echo '
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-4">
-                <!-- Platforms -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Platforms</h5>
@@ -315,30 +328,47 @@ include($dir['core_components'] . '/bg_header.inc');
                     <div class="card-body">
                         <div class="mb-3">
                             <label class="form-label">Where are you launching this campaign?</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="platformInput" 
-                                       placeholder="e.g., Facebook, Instagram, Google Ads">
-                                <button type="button" class="btn btn-outline-secondary" onclick="addPlatform()">
-                                    <i class="fas fa-plus"></i>
-                                </button>
+                            <div class="mb-2">
+                                <small class="text-muted">Select from available platforms:</small>
+                            </div>';
+
+// Show available platforms as clickable tokens
+foreach ($available_platforms as $platform) {
+    $platform_data = json_decode($platform['tags'], true) ?: [];
+    $icon = $platform_data['icon'] ?? 'bi bi-link';
+    
+    echo '
+                            <button type="button" class="btn btn-outline-primary btn-sm me-2 mb-2 platform-selector" 
+                                    data-platform="' . htmlspecialchars($platform['display_name']) . '"
+                                    onclick="addPlatformToken(\'' . addslashes($platform['display_name']) . '\')">
+                                <i class="' . $icon . ' me-1"></i>' . htmlspecialchars($platform['display_name']) . '
+                            </button>';
+}
+
+echo '
+                            <div class="mt-3">
+                                <label class="form-label">Selected Platforms:</label>
                             </div>
                         </div>
-                        <div id="platformTags">
-                            <?php if (!empty($campaign_data['platforms'])): ?>
-                                <?php foreach ($campaign_data['platforms'] as $platform): ?>
-                                    <span class="platform-tag">
-                                        <?= htmlspecialchars($platform) ?>
-                                        <span class="remove-platform" onclick="removePlatform(this)">×</span>
-                                    </span>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                        <div id="platformTags">';
+
+if (!empty($campaign_data['platforms'])) {
+    foreach ($campaign_data['platforms'] as $platform) {
+        echo '
+                            <span class="platform-tag">
+                                ' . htmlspecialchars($platform) . '
+                                <span class="remove-platform" onclick="removePlatform(this)">×</span>
+                            </span>';
+    }
+}
+
+echo '
                         </div>
                         <input type="hidden" id="platforms" name="platforms" 
-                               value="<?= htmlspecialchars(implode(',', $campaign_data['platforms'] ?? [])) ?>">
+                               value="' . htmlspecialchars(implode(',', $campaign_data['platforms'] ?? [])) . '">
                     </div>
                 </div>
 
-                <!-- Budget -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Budget</h5>
@@ -349,22 +379,21 @@ include($dir['core_components'] . '/bg_header.inc');
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
                                 <input type="number" class="form-control" id="budget" name="budget" step="0.01"
-                                       value="<?= $campaign_data['budget'] ?? '' ?>">
+                                       value="' . ($campaign_data['budget'] ?? '') . '">
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="budget_type" class="form-label">Budget Type</label>
                             <select class="form-select" id="budget_type" name="budget_type">
-                                <option value="total" <?= (($campaign_data['budget_type'] ?? '') == 'total') ? 'selected' : '' ?>>Total Campaign</option>
-                                <option value="daily" <?= (($campaign_data['budget_type'] ?? '') == 'daily') ? 'selected' : '' ?>>Daily</option>
-                                <option value="weekly" <?= (($campaign_data['budget_type'] ?? '') == 'weekly') ? 'selected' : '' ?>>Weekly</option>
-                                <option value="monthly" <?= (($campaign_data['budget_type'] ?? '') == 'monthly') ? 'selected' : '' ?>>Monthly</option>
+                                <option value="total"' . ((($campaign_data['budget_type'] ?? '') == 'total') ? ' selected' : '') . '>Total Campaign</option>
+                                <option value="daily"' . ((($campaign_data['budget_type'] ?? '') == 'daily') ? ' selected' : '') . '>Daily</option>
+                                <option value="weekly"' . ((($campaign_data['budget_type'] ?? '') == 'weekly') ? ' selected' : '') . '>Weekly</option>
+                                <option value="monthly"' . ((($campaign_data['budget_type'] ?? '') == 'monthly') ? ' selected' : '') . '>Monthly</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Goals & Metrics -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Goals & Metrics</h5>
@@ -372,30 +401,29 @@ include($dir['core_components'] . '/bg_header.inc');
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="goals" class="form-label">Campaign Goals</label>
-                            <textarea class="form-control" id="goals" name="goals" rows="3"><?= htmlspecialchars($campaign_data['goals'] ?? '') ?></textarea>
+                            <textarea class="form-control" id="goals" name="goals" rows="3">' . htmlspecialchars($campaign_data['goals'] ?? '') . '</textarea>
                         </div>
                         
                         <div class="mb-3">
                             <label for="impressions_goal" class="form-label">Impressions Goal</label>
                             <input type="number" class="form-control" id="impressions_goal" name="impressions_goal" 
-                                   value="<?= $campaign_data['metrics']['impressions_goal'] ?? '' ?>">
+                                   value="' . ($campaign_data['metrics']['impressions_goal'] ?? '') . '">
                         </div>
                         
                         <div class="mb-3">
                             <label for="clicks_goal" class="form-label">Clicks Goal</label>
                             <input type="number" class="form-control" id="clicks_goal" name="clicks_goal" 
-                                   value="<?= $campaign_data['metrics']['clicks_goal'] ?? '' ?>">
+                                   value="' . ($campaign_data['metrics']['clicks_goal'] ?? '') . '">
                         </div>
                         
                         <div class="mb-3">
                             <label for="conversions_goal" class="form-label">Conversions Goal</label>
                             <input type="number" class="form-control" id="conversions_goal" name="conversions_goal" 
-                                   value="<?= $campaign_data['metrics']['conversions_goal'] ?? '' ?>">
+                                   value="' . ($campaign_data['metrics']['conversions_goal'] ?? '') . '">
                         </div>
                     </div>
                 </div>
 
-                <!-- Additional Info -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Additional Information</h5>
@@ -403,19 +431,18 @@ include($dir['core_components'] . '/bg_header.inc');
                     <div class="card-body">
                         <div class="mb-3">
                             <label for="target_audience" class="form-label">Target Audience</label>
-                            <textarea class="form-control" id="target_audience" name="target_audience" rows="3"><?= htmlspecialchars($campaign_data['target_audience'] ?? '') ?></textarea>
+                            <textarea class="form-control" id="target_audience" name="target_audience" rows="3">' . htmlspecialchars($campaign_data['target_audience'] ?? '') . '</textarea>
                         </div>
                         
                         <div class="mb-3">
                             <label for="notes" class="form-label">Internal Notes</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="4"><?= htmlspecialchars($campaign_data['notes'] ?? '') ?></textarea>
+                            <textarea class="form-control" id="notes" name="notes" rows="4">' . htmlspecialchars($campaign_data['notes'] ?? '') . '</textarea>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Form Actions -->
         <div class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -433,77 +460,71 @@ include($dir['core_components'] . '/bg_header.inc');
     </form>
 </div>
 
-<!-- TinyMCE -->
-<script src="https://cdn.tiny.cloud/1/<?= htmlspecialchars($tinymce_api_key) ?>/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+<script src="https://cdn.tiny.cloud/1/' . htmlspecialchars($tinymce_api_key) . '/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
-// Initialize TinyMCE
 tinymce.init({
-    selector: '#content',
+    selector: "#content",
     height: 400,
     menubar: true,
     plugins: [
-        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-        'insertdatetime', 'media', 'table', 'help', 'wordcount'
+        "advlist", "autolink", "lists", "link", "image", "charmap", "preview",
+        "anchor", "searchreplace", "visualblocks", "code", "fullscreen",
+        "insertdatetime", "media", "table", "help", "wordcount"
     ],
-    toolbar: 'undo redo | formatselect | bold italic forecolor backcolor | ' +
-        'alignleft aligncenter alignright alignjustify | ' +
-        'bullist numlist outdent indent | link image media | ' +
-        'removeformat | code fullscreen preview | help',
-    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.6; }',
+    toolbar: "undo redo | formatselect | bold italic forecolor backcolor | " +
+        "alignleft aligncenter alignright alignjustify | " +
+        "bullist numlist outdent indent | link image media | " +
+        "removeformat | code fullscreen preview | help",
+    content_style: "body { font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif; font-size: 14px; line-height: 1.6; }",
     branding: false,
     promotion: false,
     setup: function(editor) {
-        editor.on('change', function() {
+        editor.on("change", function() {
             editor.save();
         });
     }
 });
 
-// Asset management
-let assets = <?= json_encode($campaign_data['assets'] ?? []) ?>;
+let assets = ' . json_encode($campaign_data['assets'] ?? []) . ';
 
-// Drag and drop
-const dropZone = document.getElementById('assetDropZone');
-const fileInput = document.getElementById('assetUpload');
+const dropZone = document.getElementById("assetDropZone");
+const fileInput = document.getElementById("assetUpload");
 
-dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener("click", () => fileInput.click());
 
-dropZone.addEventListener('dragover', (e) => {
+dropZone.addEventListener("dragover", (e) => {
     e.preventDefault();
-    dropZone.classList.add('dragover');
+    dropZone.classList.add("dragover");
 });
 
-dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
+dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("dragover");
 });
 
-dropZone.addEventListener('drop', (e) => {
+dropZone.addEventListener("drop", (e) => {
     e.preventDefault();
-    dropZone.classList.remove('dragover');
+    dropZone.classList.remove("dragover");
     handleFiles(e.dataTransfer.files);
 });
 
-fileInput.addEventListener('change', (e) => {
+fileInput.addEventListener("change", (e) => {
     handleFiles(e.target.files);
 });
 
 function handleFiles(files) {
     Array.from(files).forEach(file => {
         if (file.size > 10 * 1024 * 1024) {
-            alert(file.name + ' is too large. Maximum size is 10MB.');
+            alert(file.name + " is too large. Maximum size is 10MB.");
             return;
         }
         
-        // In production, you would upload to server/CDN here
-        // For now, create a preview
         const reader = new FileReader();
         reader.onload = function(e) {
             const asset = {
                 name: file.name,
                 type: file.type,
                 size: file.size,
-                url: e.target.result // In production, this would be CDN URL
+                url: e.target.result
             };
             assets.push(asset);
             updateAssetPreview();
@@ -514,18 +535,18 @@ function handleFiles(files) {
 }
 
 function updateAssetPreview() {
-    const preview = document.getElementById('assetPreview');
-    preview.innerHTML = '';
+    const preview = document.getElementById("assetPreview");
+    preview.innerHTML = "";
     
     assets.forEach((asset, index) => {
-        const div = document.createElement('div');
-        div.className = 'asset-preview';
+        const div = document.createElement("div");
+        div.className = "asset-preview";
         div.dataset.index = index;
         
-        let content = '';
-        if (asset.type.startsWith('image')) {
+        let content = "";
+        if (asset.type.startsWith("image")) {
             content = `<img src="${asset.url}" alt="Asset">`;
-        } else if (asset.type.startsWith('video')) {
+        } else if (asset.type.startsWith("video")) {
             content = `<video controls><source src="${asset.url}"></video>`;
         } else {
             content = `<div class="p-3"><i class="fas fa-file-pdf fa-2x"></i><p>${asset.name}</p></div>`;
@@ -548,47 +569,53 @@ function removeAsset(index) {
 }
 
 function updateAssetsData() {
-    document.getElementById('assets_data').value = JSON.stringify(assets);
+    document.getElementById("assets_data").value = JSON.stringify(assets);
 }
 
-// Platform management
 function addPlatform() {
-    const input = document.getElementById('platformInput');
+    const input = document.getElementById("platformInput");
     const platform = input.value.trim();
     
     if (platform) {
-        const tagsDiv = document.getElementById('platformTags');
-        const tag = document.createElement('span');
-        tag.className = 'platform-tag';
+        const tagsDiv = document.getElementById("platformTags");
+        const tag = document.createElement("span");
+        tag.className = "platform-tag";
         tag.innerHTML = `${platform} <span class="remove-platform" onclick="removePlatform(this)">×</span>`;
         tagsDiv.appendChild(tag);
         
-        input.value = '';
+        input.value = "";
         updatePlatforms();
     }
 }
 
 function removePlatform(element) {
+    const platformName = element.parentElement.textContent.replace('×', '').trim();
     element.parentElement.remove();
     updatePlatforms();
+    
+    // Re-enable the platform selector button
+    const button = document.querySelector(`[data-platform="${platformName}"]`);
+    if (button) {
+        button.disabled = false;
+        button.classList.add('btn-outline-primary');
+        button.classList.remove('btn-secondary');
+    }
 }
 
 function updatePlatforms() {
-    const tags = document.querySelectorAll('.platform-tag');
-    const platforms = Array.from(tags).map(tag => tag.textContent.replace('×', '').trim());
-    document.getElementById('platforms').value = platforms.join(',');
+    const tags = document.querySelectorAll(".platform-tag");
+    const platforms = Array.from(tags).map(tag => tag.textContent.replace("×", "").trim());
+    document.getElementById("platforms").value = platforms.join(",");
 }
 
-// Allow Enter key to add platform
-document.getElementById('platformInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
+document.getElementById("platformInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
         e.preventDefault();
         addPlatform();
     }
 });
-</script>
+</script>';
 
-<?php
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

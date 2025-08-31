@@ -99,6 +99,222 @@ class Marketing
 
     # ##--------------------------------------------------------------------------------------------------------------------------------------------------
     /**
+     * Log marketing activity for calendar tracking
+     * @param string $activity_type Type of activity (platform_created, campaign_created, campaign_launched, etc.)
+     * @param string $title Activity title
+     * @param string $description Activity description
+     * @param int $related_id ID of related object (platform_id, campaign_id, etc.)
+     * @param string $related_type Type of related object (platform, campaign, etc.)
+     * @param string $scheduled_date Date for calendar display (defaults to now)
+     * @param array $metadata Additional data about the activity
+     * @return int|false Activity ID or false on failure
+     */
+    public function logActivity($activity_type, $title, $description = '', $related_id = 0, $related_type = '', $scheduled_date = null, $metadata = [])
+    {
+        global $current_user_data;
+        
+        if (!$scheduled_date) {
+            $scheduled_date = date('Y-m-d H:i:s');
+        }
+        
+        $activity_data = [
+            'activity_type' => $activity_type,
+            'related_id' => $related_id,
+            'related_type' => $related_type,
+            'metadata' => $metadata,
+            'created_by' => $current_user_data['user_id']
+        ];
+        
+        $insert_sql = "INSERT INTO bg_content 
+            (name, category, type, display_name, description, tags, publish_dt, status, create_dt) 
+            VALUES 
+            (:name, 'marketing', 'activity_log', :title, :description, :tags, :scheduled_date, 'active', NOW())";
+        
+        $name = 'activity_' . $activity_type . '_' . time() . '_' . $related_id;
+        
+        try {
+            $this->database->query($insert_sql, [
+                'name' => $name,
+                'title' => $title,
+                'description' => $description,
+                'tags' => json_encode($activity_data),
+                'scheduled_date' => $scheduled_date
+            ]);
+            
+            return $this->database->lastInsertId();
+        } catch (Exception $e) {
+            error_log("Marketing::logActivity - Error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Create a new marketing platform
+     * @param array $platform_config Platform configuration
+     * @return int|false Platform ID or false on failure
+     */
+    public function createPlatform($platform_config)
+    {
+        $insert_sql = "INSERT INTO bg_content 
+            (name, category, type, display_name, description, tags, `rank`, status, create_dt) 
+            VALUES 
+            (:name, 'marketing', 'platform_link', :display_name, :description, :tags, :rank, 'active', NOW())";
+        
+        $name = 'platform_' . time() . '_' . substr(md5($platform_config['display_name']), 0, 8);
+        
+        try {
+            $this->database->query($insert_sql, [
+                'name' => $name,
+                'display_name' => $platform_config['display_name'],
+                'description' => $platform_config['description'],
+                'tags' => json_encode($platform_config['tags']),
+                'rank' => $platform_config['rank']
+            ]);
+            
+            $platform_id = $this->database->lastInsertId();
+            
+            // Log the platform creation activity
+            $this->logActivity(
+                'platform_created',
+                'Platform Created: ' . $platform_config['display_name'],
+                'New marketing platform added: ' . $platform_config['description'],
+                $platform_id,
+                'platform',
+                null,
+                ['platform_type' => $platform_config['platform_type'] ?? 'unknown']
+            );
+            
+            return $platform_id;
+        } catch (Exception $e) {
+            error_log("Marketing::createPlatform - Error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Create a new marketing campaign
+     * @param int $platform_id Platform ID this campaign belongs to
+     * @param array $campaign_config Campaign configuration
+     * @return int|false Campaign ID or false on failure
+     */
+    public function createCampaign($platform_id, $campaign_config)
+    {
+        global $current_user_data;
+        
+        $campaign_data = array_merge($campaign_config, [
+            'platform_id' => $platform_id,
+            'created_by' => $current_user_data['user_id'],
+            'external_id' => null,
+            'metrics' => []
+        ]);
+        
+        $insert_sql = "INSERT INTO bg_content 
+            (name, category, type, display_name, description, tags, status, create_dt) 
+            VALUES 
+            (:name, 'marketing', 'campaign', :display_name, :description, :tags, :status, NOW())";
+        
+        $name = 'campaign_' . $platform_id . '_' . time();
+        
+        try {
+            $this->database->query($insert_sql, [
+                'name' => $name,
+                'display_name' => $campaign_config['display_name'],
+                'description' => $campaign_config['description'],
+                'tags' => json_encode($campaign_data),
+                'status' => $campaign_config['status']
+            ]);
+            
+            $campaign_id = $this->database->lastInsertId();
+            
+            // Log the campaign creation activity
+            $this->logActivity(
+                'campaign_created',
+                'Campaign Created: ' . $campaign_config['display_name'],
+                'New campaign created for platform',
+                $campaign_id,
+                'campaign',
+                null,
+                [
+                    'platform_id' => $platform_id,
+                    'campaign_type' => $campaign_config['type'] ?? 'unknown',
+                    'budget' => $campaign_config['budget'] ?? 0,
+                    'status' => $campaign_config['status']
+                ]
+            );
+            
+            // If campaign has a start date, log future launch activity
+            if (!empty($campaign_config['start_date']) && $campaign_config['status'] == 'active') {
+                $this->logActivity(
+                    'campaign_launched',
+                    'Campaign Launch: ' . $campaign_config['display_name'],
+                    'Campaign scheduled to go live',
+                    $campaign_id,
+                    'campaign',
+                    $campaign_config['start_date'] . ' 09:00:00',
+                    [
+                        'platform_id' => $platform_id,
+                        'budget' => $campaign_config['budget'] ?? 0
+                    ]
+                );
+            }
+            
+            return $campaign_id;
+        } catch (Exception $e) {
+            error_log("Marketing::createCampaign - Error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Get marketing activities for calendar display
+     * @param string $start_date Start date for range (Y-m-d)
+     * @param string $end_date End date for range (Y-m-d)
+     * @param array $activity_types Filter by activity types
+     * @return array Activities for calendar
+     */
+    public function getActivitiesForCalendar($start_date, $end_date, $activity_types = [])
+    {
+        $where_conditions = [
+            "category = 'marketing'",
+            "type = 'activity_log'",
+            "publish_dt BETWEEN :start_date AND :end_date"
+        ];
+        $params = [
+            'start_date' => $start_date . ' 00:00:00',
+            'end_date' => $end_date . ' 23:59:59'
+        ];
+        
+        if (!empty($activity_types)) {
+            $placeholders = str_repeat('?,', count($activity_types) - 1) . '?';
+            $where_conditions[] = "JSON_EXTRACT(tags, '$.activity_type') IN ($placeholders)";
+            $params = array_merge($params, $activity_types);
+        }
+        
+        $sql = "SELECT *, publish_dt as activity_date FROM bg_content 
+                WHERE " . implode(' AND ', $where_conditions) . "
+                ORDER BY publish_dt ASC";
+        
+        try {
+            $activities = $this->database->getrows($sql, $params);
+            
+            // Enhance with metadata
+            foreach ($activities as &$activity) {
+                $activity['metadata'] = json_decode($activity['tags'], true) ?: [];
+                $activity['activity_type'] = $activity['metadata']['activity_type'] ?? 'unknown';
+            }
+            
+            return $activities;
+        } catch (Exception $e) {
+            error_log("Marketing::getActivitiesForCalendar - Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
      * Get available business logos for CTA that match category but aren't already enrolled
      * @param int $user_id User ID to check enrollments for
      * @param string $category CTA category to match
