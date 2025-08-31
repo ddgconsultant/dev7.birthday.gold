@@ -359,7 +359,7 @@ $STRIPECONFIG = $sitesettings['paymentgateway-stripe-live'];
 # SET UP ALL THE CLASSES
 #-------------------------------------------------------------------------------
 // Base array of classes
-$classes = ['Timer', 'System', 'Qik', 'Session', 'Database', 'App', 'Account', 'Admin', 'Display', 'Product'];
+$classes = ['Timer', 'System', 'Qik', 'Session', 'Database', 'App', 'Account', 'Admin', 'Display', 'Product', 'Marketing'];
 
 // Check if any classes set externally
 if (isset($addClasses)) {
@@ -454,6 +454,10 @@ foreach ($classes as $class) {
         }
         $$className = new $className($usemailconfig);  // Instantiate the class with the resolved config
         #   print_r($usemailconfig); exit;// Debugging line to check the mail configuration
+        break;
+      // -----------------------------------------
+      case 'marketing':
+        $$className = new $className($database, $qik, $mail);
         break;
       // -----------------------------------------
       case 'telegramsmsservice':
