@@ -244,7 +244,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                 </a>
                                 <div class="btn-group">
                                     <a href="index.php" class="btn btn-outline-secondary">
-                                        <i class="bi bi-list"></i> Manage Campaigns
+                                        <i class="bi bi-list"></i> Manage Newsletters
                                     </a>
                                     <a href="newsletter-reports.php" class="btn btn-outline-secondary">
                                         <i class="bi bi-graph-up"></i> Reports
@@ -271,10 +271,13 @@ include($dir['core_components'] . '/bg_header.inc');
                                 </a>
                                 <div class="btn-group">
                                     <a href="marketing-campaigns.php" class="btn btn-outline-secondary">
-                                        <i class="bi bi-list"></i> View Campaigns
+                                        <i class="bi bi-list"></i> All Campaigns
                                     </a>
                                     <a href="marketing-platforms.php" class="btn btn-outline-secondary">
                                         <i class="bi bi-share"></i> Platforms
+                                    </a>
+                                    <a href="marketing-view.php" class="btn btn-outline-secondary">
+                                        <i class="bi bi-eye"></i> Resources
                                     </a>
                                 </div>
                             </div>
