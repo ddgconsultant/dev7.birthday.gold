@@ -16,7 +16,7 @@ $newsletter_stats_sql = "SELECT
     SUM(CASE WHEN status = 'sending' THEN 1 ELSE 0 END) as active_campaigns,
     SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_campaigns
     FROM bg_newsletter_campaigns 
-    WHERE created_dt >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+    WHERE create_dt >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
 
 $newsletter_stats = $database->getrow($newsletter_stats_sql);
 
@@ -27,14 +27,14 @@ $queue_stats_sql = "SELECT
     SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
     SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as errors
     FROM bg_newsletter_queue 
-    WHERE created_dt >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+    WHERE create_dt >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
 
 $queue_stats = $database->getrow($queue_stats_sql);
 
 // Recent activity
-$recent_campaigns_sql = "SELECT campaign_id, title, subject, status, created_dt, send_dt 
+$recent_campaigns_sql = "SELECT campaign_id, title, subject, status, create_dt, send_dt 
     FROM bg_newsletter_campaigns 
-    ORDER BY created_dt DESC 
+    ORDER BY create_dt DESC 
     LIMIT 5";
 
 $recent_campaigns = $database->getrows($recent_campaigns_sql);
@@ -321,7 +321,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                                 <div class="flex-grow-1">
                                                     <h6 class="mb-1"><?= htmlspecialchars($campaign['title']) ?></h6>
                                                     <p class="mb-1 small text-muted"><?= htmlspecialchars(substr($campaign['subject'], 0, 60)) ?><?= strlen($campaign['subject']) > 60 ? '...' : '' ?></p>
-                                                    <small class="text-muted"><?= date('M j, Y g:i A', strtotime($campaign['created_dt'])) ?></small>
+                                                    <small class="text-muted"><?= date('M j, Y g:i A', strtotime($campaign['create_dt'])) ?></small>
                                                 </div>
                                                 <div class="ms-2">
                                                     <?php

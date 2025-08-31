@@ -10,7 +10,7 @@ $campaigns_sql = "SELECT c.*,
     (SELECT COUNT(*) FROM bg_newsletter_queue q WHERE q.campaign_id = c.campaign_id) as total_queued,
     (SELECT COUNT(*) FROM bg_newsletter_queue q WHERE q.campaign_id = c.campaign_id AND q.status = 'sent') as sent_count
     FROM bg_newsletter_campaigns c 
-    ORDER BY c.created_dt DESC 
+    ORDER BY c.create_dt DESC 
     LIMIT 20";
 
 $campaigns = $database->getrows($campaigns_sql);
