@@ -548,4 +548,5 @@ document.getElementById('sendForm').addEventListener('submit', function(e) {
 });
 </script>
 
-<?php include($dir['core_components'] . '/bg_footer.inc'); ?>
+include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();

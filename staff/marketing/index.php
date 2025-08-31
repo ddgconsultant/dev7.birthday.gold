@@ -274,3 +274,4 @@ function confirmDelete(campaignId) {
 </script>';
 
 include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();

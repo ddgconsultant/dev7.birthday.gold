@@ -413,4 +413,5 @@ style.textContent = `
 document.head.appendChild(style);
 </script>
 
-<?php include($dir['core_components'] . '/bg_footer.inc'); ?>
+include($dir['core_components'] . '/bg_footer.inc');
+$app->outputpage();
