@@ -6,7 +6,8 @@
       "Read(/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/2025_cert/New Folder/**)",
       "Bash(openssl x509:*)",
       "Read(/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/2025_cert/**)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": [],

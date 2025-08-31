@@ -5,15 +5,20 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Newsletter Campaign Management";
 
-// Get all campaigns for dashboard
-$campaigns_sql = "SELECT c.*, 
-    (SELECT COUNT(*) FROM bg_newsletter_queue q WHERE q.campaign_id = c.campaign_id) as total_queued,
-    (SELECT COUNT(*) FROM bg_newsletter_queue q WHERE q.campaign_id = c.campaign_id AND q.status = 'sent') as sent_count
-    FROM bg_newsletter_campaigns c 
-    ORDER BY c.create_dt DESC 
-    LIMIT 20";
+// Get all campaigns for dashboard - with error handling for missing tables
+try {
+    $campaigns_sql = "SELECT c.*, 
+        (SELECT COUNT(*) FROM bg_newsletter_queue q WHERE q.campaign_id = c.campaign_id) as total_queued,
+        (SELECT COUNT(*) FROM bg_newsletter_queue q WHERE q.campaign_id = c.campaign_id AND q.status = 'sent') as sent_count
+        FROM bg_newsletter_campaigns c 
+        ORDER BY c.create_dt DESC 
+        LIMIT 20";
 
-$campaigns = $database->getrows($campaigns_sql);
+    $campaigns = $database->getrows($campaigns_sql);
+} catch (Exception $e) {
+    // Tables don't exist yet
+    $campaigns = [];
+}
 
 // Handle status message
 $message = $_SESSION['message'] ?? '';

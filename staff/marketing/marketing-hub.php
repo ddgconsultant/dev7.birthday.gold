@@ -8,46 +8,75 @@ $pagetitle = "Marketing Hub";
 // Get overview statistics
 $stats = [];
 
-// Newsletter stats
-$newsletter_stats_sql = "SELECT 
-    COUNT(*) as total_campaigns,
-    SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft_campaigns,
-    SUM(CASE WHEN status IN ('scheduled', 'queued') THEN 1 ELSE 0 END) as queued_campaigns,
-    SUM(CASE WHEN status = 'sending' THEN 1 ELSE 0 END) as active_campaigns,
-    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_campaigns
-    FROM bg_newsletter_campaigns 
-    WHERE create_dt >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+// Newsletter stats - with error handling for missing tables
+try {
+    $newsletter_stats_sql = "SELECT 
+        COUNT(*) as total_campaigns,
+        SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft_campaigns,
+        SUM(CASE WHEN status IN ('scheduled', 'queued') THEN 1 ELSE 0 END) as queued_campaigns,
+        SUM(CASE WHEN status = 'sending' THEN 1 ELSE 0 END) as active_campaigns,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_campaigns
+        FROM bg_newsletter_campaigns 
+        WHERE create_dt >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
 
-$newsletter_stats = $database->getrow($newsletter_stats_sql);
+    $newsletter_stats = $database->getrow($newsletter_stats_sql);
+} catch (Exception $e) {
+    // Tables don't exist yet - use default values
+    $newsletter_stats = [
+        'total_campaigns' => 0,
+        'draft_campaigns' => 0,
+        'queued_campaigns' => 0,
+        'active_campaigns' => 0,
+        'completed_campaigns' => 0
+    ];
+}
 
-// Queue stats
-$queue_stats_sql = "SELECT 
-    COUNT(*) as total_queued,
-    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-    SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
-    SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as errors
-    FROM bg_newsletter_queue 
-    WHERE create_dt >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+// Queue stats - with error handling for missing tables
+try {
+    $queue_stats_sql = "SELECT 
+        COUNT(*) as total_queued,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
+        SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as errors
+        FROM bg_newsletter_queue 
+        WHERE create_dt >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
 
-$queue_stats = $database->getrow($queue_stats_sql);
+    $queue_stats = $database->getrow($queue_stats_sql);
+} catch (Exception $e) {
+    // Tables don't exist yet - use default values
+    $queue_stats = [
+        'total_queued' => 0,
+        'pending' => 0,
+        'sent' => 0,
+        'errors' => 0
+    ];
+}
 
-// Recent activity
-$recent_campaigns_sql = "SELECT campaign_id, title, subject, status, create_dt, send_dt 
-    FROM bg_newsletter_campaigns 
-    ORDER BY create_dt DESC 
-    LIMIT 5";
+// Recent activity - with error handling
+try {
+    $recent_campaigns_sql = "SELECT campaign_id, title, subject, status, create_dt, send_dt 
+        FROM bg_newsletter_campaigns 
+        ORDER BY create_dt DESC 
+        LIMIT 5";
 
-$recent_campaigns = $database->getrows($recent_campaigns_sql);
+    $recent_campaigns = $database->getrows($recent_campaigns_sql);
+} catch (Exception $e) {
+    $recent_campaigns = [];
+}
 
-// Upcoming scheduled campaigns
-$upcoming_campaigns_sql = "SELECT campaign_id, title, subject, send_dt 
-    FROM bg_newsletter_campaigns 
-    WHERE status IN ('scheduled', 'queued') 
-    AND send_dt > NOW() 
-    ORDER BY send_dt ASC 
-    LIMIT 5";
+// Upcoming scheduled campaigns - with error handling
+try {
+    $upcoming_campaigns_sql = "SELECT campaign_id, title, subject, send_dt 
+        FROM bg_newsletter_campaigns 
+        WHERE status IN ('scheduled', 'queued') 
+        AND send_dt > NOW() 
+        ORDER BY send_dt ASC 
+        LIMIT 5";
 
-$upcoming_campaigns = $database->getrows($upcoming_campaigns_sql);
+    $upcoming_campaigns = $database->getrows($upcoming_campaigns_sql);
+} catch (Exception $e) {
+    $upcoming_campaigns = [];
+}
 
 // Handle status message
 $message = $_SESSION['message'] ?? '';
@@ -63,6 +92,16 @@ include($dir['core_components'] . '/bg_header.inc');
             
             <?php if ($message): ?>
                 <?= $message ?>
+            <?php endif; ?>
+            
+            <?php if (empty($newsletter_stats) || $newsletter_stats['total_campaigns'] === 0): ?>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Newsletter System Setup Required</strong><br>
+                    The newsletter database tables need to be created. Please run the SQL schema file:
+                    <code>/core/dbschema/newsletter_tables.sql</code>
+                    <br><small class="text-muted">This will create the required tables for campaign management, queue processing, and analytics.</small>
+                </div>
             <?php endif; ?>
 
             <!-- Page Header -->
