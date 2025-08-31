@@ -3,15 +3,15 @@
 
 -- Newsletter Campaigns Table
 CREATE TABLE IF NOT EXISTS `bg_newsletter_campaigns` (
-  `campaign_id` int(11) NOT NULL AUTO_INCREMENT,
+  `campaign_id` bigint NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `subject` varchar(255) NOT NULL,
   `body_html` longtext NOT NULL,
   `cta_category` varchar(100) DEFAULT NULL,
   `recipient_criteria` JSON DEFAULT NULL,
   `send_dt` datetime DEFAULT NULL,
-  `status` enum('draft','scheduled','queued','sending','completed','paused','cancelled') NOT NULL DEFAULT 'draft',
-  `created_by` int(11) DEFAULT NULL,
+  `status` varchar(50) NOT NULL DEFAULT 'draft',
+  `created_by` bigint DEFAULT NULL,
   `create_dt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modify_dt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `queued_dt` datetime DEFAULT NULL,
@@ -24,62 +24,54 @@ CREATE TABLE IF NOT EXISTS `bg_newsletter_campaigns` (
 
 -- Newsletter Queue Table (for batch processing)
 CREATE TABLE IF NOT EXISTS `bg_newsletter_queue` (
-  `queue_id` int(11) NOT NULL AUTO_INCREMENT,
-  `campaign_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
+  `queue_id` bigint NOT NULL AUTO_INCREMENT,
+  `campaign_id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
   `scheduled_dt` datetime NOT NULL,
   `processed_dt` datetime DEFAULT NULL,
-  `status` enum('pending','processing','sent','error') NOT NULL DEFAULT 'pending',
+  `status` varchar(50) NOT NULL DEFAULT 'pending',
   `error_message` text DEFAULT NULL,
   `create_dt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `modify_dt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`queue_id`),
-  KEY `fk_newsletter_queue_campaign` (`campaign_id`),
-  KEY `fk_newsletter_queue_user` (`user_id`),
+  INDEX `idx_campaign_id` (`campaign_id`),
+  INDEX `idx_user_id` (`user_id`),
   INDEX `idx_status_scheduled` (`status`, `scheduled_dt`),
-  INDEX `idx_create_dt` (`create_dt`),
-  CONSTRAINT `fk_newsletter_queue_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `bg_newsletter_campaigns` (`campaign_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_newsletter_queue_user` FOREIGN KEY (`user_id`) REFERENCES `bg_users` (`user_id`) ON DELETE CASCADE
+  INDEX `idx_create_dt` (`create_dt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Newsletter Events Table (for tracking opens, clicks, etc.)
 CREATE TABLE IF NOT EXISTS `bg_newsletter_events` (
-  `event_id` int(11) NOT NULL AUTO_INCREMENT,
-  `campaign_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `queue_id` int(11) DEFAULT NULL,
-  `event_type` enum('sent','opened','clicked','bounced','unsubscribed','error') NOT NULL,
+  `event_id` bigint NOT NULL AUTO_INCREMENT,
+  `campaign_id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
+  `queue_id` bigint DEFAULT NULL,
+  `event_type` varchar(50) NOT NULL,
   `event_dt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ip_address` varchar(45) DEFAULT NULL,
   `user_agent` text DEFAULT NULL,
   `extra` JSON DEFAULT NULL,
   PRIMARY KEY (`event_id`),
-  KEY `fk_newsletter_events_campaign` (`campaign_id`),
-  KEY `fk_newsletter_events_user` (`user_id`),
-  KEY `fk_newsletter_events_queue` (`queue_id`),
+  INDEX `idx_campaign_id` (`campaign_id`),
+  INDEX `idx_user_id` (`user_id`),
+  INDEX `idx_queue_id` (`queue_id`),
   INDEX `idx_event_type` (`event_type`),
-  INDEX `idx_event_dt` (`event_dt`),
-  CONSTRAINT `fk_newsletter_events_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `bg_newsletter_campaigns` (`campaign_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_newsletter_events_user` FOREIGN KEY (`user_id`) REFERENCES `bg_users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_newsletter_events_queue` FOREIGN KEY (`queue_id`) REFERENCES `bg_newsletter_queue` (`queue_id`) ON DELETE SET NULL
+  INDEX `idx_event_dt` (`event_dt`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Newsletter Unsubscribes Table
 CREATE TABLE IF NOT EXISTS `bg_newsletter_unsubscribes` (
-  `unsubscribe_id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
+  `unsubscribe_id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
   `email` varchar(255) NOT NULL,
-  `campaign_id` int(11) DEFAULT NULL,
+  `campaign_id` bigint DEFAULT NULL,
   `reason` varchar(255) DEFAULT NULL,
   `unsubscribe_dt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ip_address` varchar(45) DEFAULT NULL,
-  `status` enum('active','resubscribed') NOT NULL DEFAULT 'active',
+  `status` varchar(50) NOT NULL DEFAULT 'active',
   PRIMARY KEY (`unsubscribe_id`),
-  UNIQUE KEY `unique_user_active` (`user_id`, `status`),
-  KEY `fk_newsletter_unsubscribes_user` (`user_id`),
-  KEY `fk_newsletter_unsubscribes_campaign` (`campaign_id`),
+  INDEX `idx_user_id` (`user_id`),
+  INDEX `idx_campaign_id` (`campaign_id`),
   INDEX `idx_email` (`email`),
-  INDEX `idx_status` (`status`),
-  CONSTRAINT `fk_newsletter_unsubscribes_user` FOREIGN KEY (`user_id`) REFERENCES `bg_users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_newsletter_unsubscribes_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `bg_newsletter_campaigns` (`campaign_id`) ON DELETE SET NULL
+  INDEX `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
