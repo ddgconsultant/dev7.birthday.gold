@@ -211,6 +211,60 @@ $website['plan_version'] = 'v7';
 $additionalstyles = '';
 $logBuffer = [];
 
+#-------------------------------------------------------------------------------
+# TRUE COLORS PERSONALITY SYSTEM
+#-------------------------------------------------------------------------------
+// Consistent color order and definitions across all personality pages
+$true_colors = [
+    'orange' => [
+        'name' => 'Orange',
+        'title' => 'Action-Oriented Leader',
+        'color' => '#FF6B35',
+        'description' => 'Spontaneous, flexible, thrives on variety and challenge. Prefers direct communication and quick results.',
+        'strengths' => ['High energy and enthusiasm', 'Quick decision making', 'Adaptable to change', 'Natural risk-taker', 'Results-focused'],
+        'communication' => 'Be direct, allow freedom, focus on results not rigid rules',
+        'motivation' => 'Variety, challenge, recognition for quick wins',
+        'delegation' => 'Short-term, high-energy projects',
+        'stress_response' => 'May become disorganized or impulsive'
+    ],
+    'gold' => [
+        'name' => 'Gold', 
+        'title' => 'Organized Stabilizer',
+        'color' => '#FFD700',
+        'description' => 'Values structure, dependability, and clear processes. Thorough and responsible in approach.',
+        'strengths' => ['Highly organized', 'Reliable and punctual', 'Detail-oriented', 'Follows procedures', 'Quality-focused'],
+        'communication' => 'Give clear instructions and timelines',
+        'motivation' => 'Stability, clear structure, recognition for responsibility',
+        'delegation' => 'Procedures, quality control, planning tasks',
+        'stress_response' => 'May become rigid or overly critical'
+    ],
+    'blue' => [
+        'name' => 'Blue',
+        'title' => 'People-Focused Collaborator',
+        'color' => '#4A90E2', 
+        'description' => 'Compassionate, cooperative, values relationships. Works best in harmonious team environments.',
+        'strengths' => ['Strong interpersonal skills', 'Empathetic and caring', 'Team-oriented', 'Conflict resolver', 'Supportive of others'],
+        'communication' => 'Show empathy, value their input',
+        'motivation' => 'Harmony, team connection, appreciation for efforts',
+        'delegation' => 'Team-building roles, customer/patient interactions',
+        'stress_response' => 'May take criticism personally, avoid conflict'
+    ],
+    'green' => [
+        'name' => 'Green',
+        'title' => 'Analytical Problem-Solver',
+        'color' => '#50C878',
+        'description' => 'Logical, independent, prefers to work with facts and data. Values competence and expertise.',
+        'strengths' => ['Logical and analytical', 'Independent worker', 'Problem-solving skills', 'Data-driven decisions', 'High standards'],
+        'communication' => 'Present facts, give space to think',
+        'motivation' => 'Autonomy, opportunities for mastery, problem-solving challenges',
+        'delegation' => 'Research, data analysis, technical projects',
+        'stress_response' => 'May withdraw, overanalyze, become perfectionistic'
+    ]
+];
+
+// Display order for consistent presentation
+$true_colors_order = ['orange', 'gold', 'blue', 'green'];
+
 
 
 #-------------------------------------------------------------------------------
@@ -359,7 +413,7 @@ $STRIPECONFIG = $sitesettings['paymentgateway-stripe-live'];
 # SET UP ALL THE CLASSES
 #-------------------------------------------------------------------------------
 // Base array of classes
-$classes = ['Timer', 'System', 'Qik', 'Session', 'Database', 'App', 'Account', 'Admin', 'Display', 'Product'];
+$classes = ['Timer', 'System', 'Qik', 'Session', 'Database', 'App', 'Account', 'Company', 'Admin', 'Display', 'Product'];
 
 // Check if any classes set externally
 if (isset($addClasses)) {
@@ -453,7 +507,6 @@ foreach ($classes as $class) {
           $usemailconfig = array_merge($usemailconfig, $sitesettings['mailsender_' . $usemailsender]);
         }
         $$className = new $className($usemailconfig);  // Instantiate the class with the resolved config
-        #   print_r($usemailconfig); exit;// Debugging line to check the mail configuration
         break;
       // -----------------------------------------
       case 'marketing':
@@ -491,6 +544,10 @@ foreach ($classes as $class) {
         $sitesettings_ai = parse_ini_string($config_ai, true);
         $ai = new AI($system, $sitesettings_ai);
         #  $$className = AI::getInstance($sitesettings_ai['ai']);
+        break;
+      // -----------------------------------------
+      case 'company':
+        $$className = new $className($database, $account, $system);
         break;
       // -----------------------------------------
       case 'image':
@@ -607,6 +664,19 @@ if (empty($apibypass) && empty($claudebypass)) {
     if (strpos($uri, '/staff/')  !== false && !$account->isstaff()) {
       session_tracking('staff_access_failure');
       $system->redirectUser('staff_access_failure');
+    }
+
+    // For marketing access, check if the URI contains the '/marketing/' directory
+    if (strpos($uri, '/marketing/') !== false) {
+      $current_user_data = $session->get('current_user_data');
+      if (empty($current_user_data)) {
+        $current_user_data = $account->getuserdata($activeuser['user_id'], 'user_id');
+      }
+      // Check if user has company list access (company_listcount > 0)
+      if (empty($current_user_data['company_listcount']) || $current_user_data['company_listcount'] <= 0) {
+        session_tracking('marketing_access_failure');
+        $system->redirectUser('marketing_access_failure');
+      }
     }
   } else {
     $current_user_data = $session->get('current_user_data');

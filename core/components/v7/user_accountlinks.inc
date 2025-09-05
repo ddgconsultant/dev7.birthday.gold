@@ -75,6 +75,7 @@ if ($account->isstaff()) {
         'title' => 'Staff',
         'links' => [
             ['text' => 'Your Staff Profile', 'url' => '/staff/', 'icon' => 'bi bi-person-vcard'],
+            ['text' => 'Marketing Platform', 'url' => '/myaccount/marketing/', 'icon' => 'bi bi-megaphone'],
             ['text' => 'Human Resources', 'url' => '/hr/', 'icon' => 'bi bi-person-rolodex'],
             ['text' => 'Organization Chart', 'url' => '//whimsical.com/birthday-gold-organization-chart-DLzWNLXvT4wTb8VHD2Q7TH@6HYTAunKLgTVs8vpi5WC98mUWW3PbpNxuKAVmjk196shQQP', 'icon' => 'bi bi-diagram-3-fill', 'link_attributes' => 'target="link"'],
             ['text' => 'Corporate Holidays', 'url' => '/admin/redirect_corporateholidays', 'icon' => 'bi bi-calendar3', 'link_attributes' => 'target="link"'],

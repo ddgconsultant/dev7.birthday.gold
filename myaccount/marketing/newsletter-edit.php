@@ -1,4 +1,6 @@
 <?PHP
+$addClasses[] = 'mail';
+$addClasses[] = 'marketing';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Create/Edit Newsletter";
@@ -23,8 +25,15 @@ if ($campaign_id > 0) {
     $campaign = $database->getrow($campaign_sql, ['campaign_id' => $campaign_id]);
     
     if (!$campaign) {
-        header('Location: /staff/marketing/newsletter-report.php');
+        header('Location: /myaccount/marketing/campaigns.php');
         exit;
+    }
+    
+    // Also load the linked marketing campaign if exists
+    if ($campaign['mk_campaign_id']) {
+        $mk_campaign_sql = "SELECT * FROM mk_campaigns WHERE campaign_id = :campaign_id";
+        $mk_campaign = $database->getrow($mk_campaign_sql, ['campaign_id' => $campaign['mk_campaign_id']]);
+        $mk_campaign_id = $campaign['mk_campaign_id'];
     }
     
     $pagetitle = "Edit Newsletter: " . $campaign['title'];
@@ -41,6 +50,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $recipient_criteria = isset($_POST['recipient_criteria']) ? $_POST['recipient_criteria'] : '{"type":"all"}';
     
     if ($campaign_id > 0) {
+        // First get the existing campaign to check for mk_campaign_id
+        $existing_campaign = $database->getrow(
+            "SELECT mk_campaign_id FROM bg_newsletter_campaigns WHERE campaign_id = :campaign_id",
+            ['campaign_id' => $campaign_id]
+        );
+        
         // Update existing campaign
         $update_sql = "UPDATE bg_newsletter_campaigns SET 
             title = :title,
@@ -60,6 +75,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'status' => $status,
             'campaign_id' => $campaign_id
         ]);
+        
+        // Also update the marketing campaign name if linked
+        if ($existing_campaign && $existing_campaign['mk_campaign_id']) {
+            $update_mk_sql = "UPDATE mk_campaigns SET 
+                campaign_name = :campaign_name,
+                description = :description
+                WHERE campaign_id = :campaign_id";
+            
+            $database->query($update_mk_sql, [
+                'campaign_name' => $title,
+                'description' => 'Newsletter: ' . $subject,
+                'campaign_id' => $existing_campaign['mk_campaign_id']
+            ]);
+        }
         
         $_SESSION['message'] = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Newsletter updated successfully!</div>';
     } else {
@@ -83,6 +112,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         ]);
         
         $campaign_id = $database->lastInsertId();
+        
+        // Update the marketing campaign name if linked
+        if ($mk_campaign_id > 0) {
+            $update_mk_sql = "UPDATE mk_campaigns SET 
+                campaign_name = :campaign_name,
+                description = :description
+                WHERE campaign_id = :campaign_id";
+            
+            $database->query($update_mk_sql, [
+                'campaign_name' => $title,
+                'description' => 'Newsletter: ' . $subject,
+                'campaign_id' => $mk_campaign_id
+            ]);
+        }
         
         // If scheduled, populate the queue
         if ($status == 'scheduled') {
@@ -110,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['message'] = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Newsletter created successfully!</div>';
     }
     
-    header('Location: /staff/marketing/newsletter-report.php');
+    header('Location: /myaccount/marketing/campaigns.php');
     exit;
 }
 
@@ -132,7 +175,7 @@ if (empty($tinymce_api_key)) {
     $tinymce_api_key = 'no-api-key';
 }
 
-// Add styles for bottom margin
+// Add styles for bottom margin and consistent form styling
 $additionalstyles = '
 <style>
 body { 
@@ -141,8 +184,149 @@ body {
 }
 
 .tox-tinymce {
-    border: 1px solid #ced4da !important;
-    border-radius: 0.25rem !important;
+    border: 2px solid #e9ecef !important;
+    border-radius: 8px !important;
+}
+
+/* Form Section Styling - matching createaccount.php */
+.form-section {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+}
+
+@media (min-width: 768px) {
+    .form-section {
+        padding: 2.5rem;
+    }
+}
+
+/* Form Controls - matching createaccount.php styling */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background-color: #ffffff !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-control::placeholder {
+    color: #adb5bd;
+    opacity: 1;
+}
+
+/* Input Groups */
+.input-group .form-control {
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group .btn {
+    border: 2px solid #e9ecef;
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.input-group .form-control:focus ~ .btn {
+    border-color: #0d6efd;
+}
+
+/* Section Title */
+.section-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* Buttons - matching createaccount.php */
+.btn-primary, .btn-success {
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover, .btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-outline-secondary {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-outline-secondary:hover {
+    background: #f8f9fa;
+    border-color: #6c757d;
+}
+
+/* Card styling enhancement */
+.card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.card-header {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+}
+
+/* Recipient builder specific */
+#recipientBuilder {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.segment-btn {
+    border-radius: 6px;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.segment-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Small text helpers */
+small.text-muted {
+    font-size: 0.875rem;
+    color: #6c757d !important;
+}
+
+/* Alert styling */
+.alert {
+    border-radius: 8px;
+    border: 1px solid;
 }
 </style>
 ';
@@ -158,8 +342,8 @@ echo '
     </div>
 </div>';
 
-// Include navigation
-include('../includes/newsletter-nav.php');
+// Include marketing navigation
+include('nav.inc.php');
 
 echo '
 <div class="container mt-4">
@@ -579,7 +763,7 @@ tinymce.init({
         "alignleft aligncenter alignright alignjustify | " +
         "bullist numlist outdent indent | link image media | " +
         "removeformat | code fullscreen preview | help",
-    content_style: "body { font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; font-size: 14px; line-height: 1.6; }",
+    content_style: "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; line-height: 1.6; }",
     branding: false,
     promotion: false,
     relative_urls: false,
@@ -647,7 +831,7 @@ function sendTestEmailFromModal() {
     var originalHtml = btn.html();
     btn.html("<span class=\"spinner-border spinner-border-sm me-1\"></span> Sending...").prop("disabled", true);
     
-    $.post("/staff/ajax/newsletter-test.php", {
+    $.post("/myaccount/marketing/ajax/newsletter-test.php", {
         campaign_id: ' . $campaign_id . ',
         test_email: email,
         subject: $("#subject").val(),
@@ -692,7 +876,7 @@ function copyErrorMessage() {
     var errorText = $("#errorContent").text();
     navigator.clipboard.writeText(errorText).then(function() {
         // Show success feedback
-        var btn = $("button:contains(\'Copy Error\')");
+        var btn = $("button:contains('Copy Error')");
         var originalText = btn.html();
         btn.html('<i class="bi bi-check-lg"></i> Copied!');
         btn.removeClass("btn-secondary").addClass("btn-success");
@@ -718,114 +902,178 @@ function copyErrorMessage() {
 }
 
 // Page-specific initialization
-$(document).ready(function() {';
-
-if ($mk_campaign && $mk_campaign['start_date']) {
-    echo '
-    // Validate send date against campaign start date
-    $("#send_date").on("change", function() {
-        var sendDate = new Date($(this).val());
-        var campaignStartDate = new Date("' . date('Y-m-d', strtotime($mk_campaign['start_date'])) . '");
-        
-        if (sendDate < campaignStartDate) {
-            alert("Newsletter send date cannot be before the campaign start date (' . date('M j, Y', strtotime($mk_campaign['start_date'])) . ')");
-            $(this).val("' . date('Y-m-d', strtotime($mk_campaign['start_date'])) . '");
-        }
-    });';
-}
-
-echo '
+$(document).ready(function() {
     
     // AI Content Generation
-    $("#aiGenerateBtn").click(function() {
-    var title = $("#title").val();
-    var category = $("#cta_category").val();
-    var sendDate = $("#send_date").val();
-    
-    if (!title) {
-        alert("Please enter a Campaign Title first");
-        $("#title").focus();
-        return;
-    }
-    
-    if (!category) {
-        alert("Please select a CTA Category first");
-        $("#cta_category").focus();
-        return;
-    }
-    
-    if (!sendDate) {
-        alert("Please select a Send Date first");
-        $("#send_date").focus();
-        return;
-    }
-    
-    // Show loading state
-    var btn = $(this);
-    var originalHtml = btn.html();
-    btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Generating...');
-    btn.prop("disabled", true);
-    
-    // Make AJAX request
-    $.ajax({
-        url: "/staff/ajax/newsletter-ai-generate.php",
-        method: "POST",
-        data: {
+    $("#aiGenerateBtn").on("click", function(e) {
+        e.preventDefault();
+        console.log("AI Generate button clicked!");
+        
+        var title = $("#title").val();
+        var category = $("#cta_category").val();
+        var sendDate = $("#send_date").val();
+        
+        if (!title) {
+            alert("Please enter a Campaign Title first");
+            $("#title").focus();
+            return;
+        }
+        
+        if (!category) {
+            alert("Please select a CTA Category first");
+            $("#cta_category").focus();
+            return;
+        }
+        
+        if (!sendDate) {
+            alert("Please select a Send Date first");
+            $("#send_date").focus();
+            return;
+        }
+        
+        // Create loading overlay with big visual indicator
+        var loadingOverlay = $('<div id="aiLoadingOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;">' +
+            '<div class="card" style="padding: 40px; text-align: center; min-width: 400px;">' +
+            '<div class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem;"></div>' +
+            '<h3 class="mb-2">AI is Generating Content...</h3>' +
+            '<p class="text-muted">Creating personalized newsletter content for:</p>' +
+            '<p><strong>' + title + '</strong></p>' +
+            '<p class="text-muted">Category: <strong>' + category + '</strong></p>' +
+            '<p class="text-muted">Date: <strong>' + sendDate + '</strong></p>' +
+            '<div class="progress mt-3" style="height: 25px;">' +
+            '<div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%">Processing...</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>');
+        $("body").append(loadingOverlay);
+        
+        // Show loading state on button too
+        var btn = $(this);
+        var originalHtml = btn.html();
+        btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Generating...');
+        btn.prop("disabled", true);
+        btn.addClass("btn-warning");
+        
+        // Add timestamp for debugging
+        console.log("Starting AI generation at:", new Date().toISOString());
+        console.log("Request data:", {
             campaign_title: title,
             cta_category: category,
             send_date: sendDate
-        },
-        dataType: "json",
-        success: function(response) {
-            if (response.success) {
-                // Update subject
-                $("#subject").val(response.subject);
+        });
+        
+        // Make AJAX request
+        $.ajax({
+            url: "/myaccount/marketing/ajax/newsletter-ai-generate.php",
+            method: "POST",
+            data: {
+                campaign_title: title,
+                cta_category: category,
+                send_date: sendDate
+            },
+            dataType: "json",
+            success: function(response) {
+                console.log("AI Response received:", response);
                 
-                // Update body content in TinyMCE
-                tinymce.get("body_html").setContent(response.body);
+                // Remove loading overlay
+                $("#aiLoadingOverlay").fadeOut(300, function() {
+                    $(this).remove();
+                });
                 
-                // Show success message
-                var successAlert = $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
-                    '<i class="bi bi-check-circle-fill"></i> AI content generated successfully! Please review and customize as needed.' +
-                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
-                    '</div>');
-                $(".card").first().before(successAlert);
+                if (response.success) {
+                    // Flash the fields that are being updated
+                    $("#subject").css("background-color", "#d4edda").val(response.subject);
+                    setTimeout(function() {
+                        $("#subject").css("background-color", "");
+                    }, 2000);
+                    
+                    // Update body content in TinyMCE with visual effect
+                    tinymce.get("body_html").setContent(response.body);
+                    
+                    // Show prominent success message at top
+                    var successAlert = $('<div class="alert alert-success alert-dismissible fade show border-3 shadow-lg" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 500px;">' +
+                        '<h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> AI Generation Complete!</h4>' +
+                        '<p class="mb-0">Content has been generated and inserted into the form. Please review and customize as needed.</p>' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                        '</div>');
+                    $("body").append(successAlert);
+                    
+                    // Also add a permanent success message above the form
+                    var formAlert = $('<div class="alert alert-info alert-dismissible fade show" role="alert">' +
+                        '<i class="bi bi-info-circle-fill"></i> <strong>AI Generated Content:</strong> The subject and body have been populated with AI-generated content. Feel free to edit and customize.' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                        '</div>');
+                    $(".card").first().before(formAlert);
+                    
+                    // Auto-dismiss floating alert after 5 seconds
+                    setTimeout(function() {
+                        successAlert.fadeOut(function() {
+                            $(this).remove();
+                        });
+                    }, 5000);
+                } else {
+                    // Show error with more detail
+                    var errorMessage = "Error: " + (response.message || "Failed to generate content");
+                    if (response.debug) {
+                        errorMessage += "\n\nDebug Information:\n" + JSON.stringify(response.debug, null, 2);
+                    }
+                    console.error("AI Generation Error:", errorMessage);
+                    showErrorModal(errorMessage);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", status, error, xhr);
                 
-                // Auto-dismiss after 5 seconds
-                setTimeout(function() {
-                    successAlert.fadeOut();
-                }, 5000);
-            } else {
-                // Show error in modal
-                var errorMessage = "Error: " + (response.message || "Failed to generate content");
-                if (response.debug) {
-                    errorMessage += "\n\nDebug Information:\n" + JSON.stringify(response.debug, null, 2);
+                // Remove loading overlay
+                $("#aiLoadingOverlay").fadeOut(300, function() {
+                    $(this).remove();
+                });
+                
+                var errorMessage = "Error generating content: " + error;
+                if (xhr.responseText) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        errorMessage += "\n\nResponse:\n" + JSON.stringify(response, null, 2);
+                    } catch(e) {
+                        errorMessage += "\n\nResponse:\n" + xhr.responseText;
+                    }
                 }
                 showErrorModal(errorMessage);
+            },
+            complete: function() {
+                console.log("AI generation complete at:", new Date().toISOString());
+                
+                // Restore button state
+                btn.html(originalHtml);
+                btn.prop("disabled", false);
+                btn.removeClass("btn-warning");
             }
-        },
-        error: function(xhr, status, error) {
-            var errorMessage = "Error generating content: " + error;
-            if (xhr.responseText) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    errorMessage += "\n\nResponse:\n" + JSON.stringify(response, null, 2);
-                } catch(e) {
-                    errorMessage += "\n\nResponse:\n" + xhr.responseText;
-                }
-            }
-            showErrorModal(errorMessage);
-        },
-        complete: function() {
-            // Restore button state
-            btn.html(originalHtml);
-            btn.prop("disabled", false);
-        }
-    });
+        });
     }); // End of AI button click handler
 }); // End of document.ready
 </script>
+
 <?php
+// Add campaign date validation if needed
+if ($mk_campaign && $mk_campaign['start_date']) {
+?>
+<script>
+$(document).ready(function() {
+    // Validate send date against campaign start date
+    $("#send_date").on("change", function() {
+        var sendDate = new Date($(this).val());
+        var campaignStartDate = new Date("<?php echo date('Y-m-d', strtotime($mk_campaign['start_date'])); ?>");
+        
+        if (sendDate < campaignStartDate) {
+            alert("Newsletter send date cannot be before the campaign start date (<?php echo date('M j, Y', strtotime($mk_campaign['start_date'])); ?>)");
+            $(this).val("<?php echo date('Y-m-d', strtotime($mk_campaign['start_date'])); ?>");
+        }
+    });
+});
+</script>
+<?php
+}
+
 include($dir['core_components'] . '/bg_footer.inc');
 
 $app->outputpage();

@@ -755,7 +755,18 @@ echo '
             <a href="/myaccount/parental-mode" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
                 <div><i class="bi bi-person me-2"></i>Parental Mode</div>
                 <i class="bi bi-chevron-right"></i>
-            </a>
+            </a>';
+
+// Add marketing link for staff members
+if ($account->isstaff()) {
+    echo '
+            <a href="/myaccount/marketing/" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                <div><i class="bi bi-megaphone me-2"></i>Marketing Platform</div>
+                <i class="bi bi-chevron-right"></i>
+            </a>';
+}
+
+echo '
 
             <a href="/myaccount/invite" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
                 <div><i class="bi bi-hand-thumbs-up me-2"></i>Invite Friends</div>
