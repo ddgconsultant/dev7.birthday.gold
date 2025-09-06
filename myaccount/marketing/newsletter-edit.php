@@ -37,6 +37,10 @@ if ($campaign_id > 0) {
     }
     
     $pagetitle = "Edit Newsletter: " . $campaign['title'];
+    
+    // Debug recipient criteria
+    error_log("Campaign ID: " . $campaign_id);
+    error_log("Recipient Criteria from DB: " . ($campaign['recipient_criteria'] ?? 'NULL'));
 }
 
 // Handle form submission
@@ -45,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $subject = trim($_POST['subject']);
     $body_html = $_POST['body_html'];
     $cta_category = $_POST['cta_category'];
+    $cta_mode = isset($_POST['cta_mode']) ? $_POST['cta_mode'] : 'inclusive';
     $send_dt = $_POST['send_date'] . ' ' . $_POST['send_time'] . ':00';
     $status = $_POST['action'] == 'schedule' ? 'scheduled' : 'draft';
     $recipient_criteria = isset($_POST['recipient_criteria']) ? $_POST['recipient_criteria'] : '{"type":"all"}';
@@ -57,24 +62,77 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         );
         
         // Update existing campaign
-        $update_sql = "UPDATE bg_newsletter_campaigns SET 
-            title = :title,
-            subject = :subject,
-            body_html = :body_html,
-            cta_category = :cta_category,
-            send_dt = :send_dt,
-            status = :status
-            WHERE campaign_id = :campaign_id";
+        // Check if columns exist
+        $col_check = $database->getrow("SHOW COLUMNS FROM bg_newsletter_campaigns LIKE 'recipient_criteria'");
+        $cta_mode_check = $database->getrow("SHOW COLUMNS FROM bg_newsletter_campaigns LIKE 'cta_mode'");
         
-        $database->query($update_sql, [
-            'title' => $title,
-            'subject' => $subject,
-            'body_html' => $body_html,
-            'cta_category' => $cta_category,
-            'send_dt' => $send_dt,
-            'status' => $status,
-            'campaign_id' => $campaign_id
-        ]);
+        if ($col_check && $cta_mode_check) {
+            // Both columns exist
+            $update_sql = "UPDATE bg_newsletter_campaigns SET 
+                title = :title,
+                subject = :subject,
+                body_html = :body_html,
+                cta_category = :cta_category,
+                cta_mode = :cta_mode,
+                recipient_criteria = :recipient_criteria,
+                send_dt = :send_dt,
+                status = :status
+                WHERE campaign_id = :campaign_id";
+            
+            $database->query($update_sql, [
+                'title' => $title,
+                'subject' => $subject,
+                'body_html' => $body_html,
+                'cta_category' => $cta_category,
+                'cta_mode' => $cta_mode,
+                'recipient_criteria' => $recipient_criteria,
+                'send_dt' => $send_dt,
+                'status' => $status,
+                'campaign_id' => $campaign_id
+            ]);
+        } elseif ($col_check) {
+            // Only recipient_criteria exists
+            $update_sql = "UPDATE bg_newsletter_campaigns SET 
+                title = :title,
+                subject = :subject,
+                body_html = :body_html,
+                cta_category = :cta_category,
+                recipient_criteria = :recipient_criteria,
+                send_dt = :send_dt,
+                status = :status
+                WHERE campaign_id = :campaign_id";
+            
+            $database->query($update_sql, [
+                'title' => $title,
+                'subject' => $subject,
+                'body_html' => $body_html,
+                'cta_category' => $cta_category,
+                'recipient_criteria' => $recipient_criteria,
+                'send_dt' => $send_dt,
+                'status' => $status,
+                'campaign_id' => $campaign_id
+            ]);
+        } else {
+            // Column doesn't exist yet, skip it
+            $update_sql = "UPDATE bg_newsletter_campaigns SET 
+                title = :title,
+                subject = :subject,
+                body_html = :body_html,
+                cta_category = :cta_category,
+                send_dt = :send_dt,
+                status = :status
+                WHERE campaign_id = :campaign_id";
+            
+            $database->query($update_sql, [
+                'title' => $title,
+                'subject' => $subject,
+                'body_html' => $body_html,
+                'cta_category' => $cta_category,
+                'send_dt' => $send_dt,
+                'status' => $status,
+                'campaign_id' => $campaign_id
+            ]);
+        }
         
         // Also update the marketing campaign name if linked
         if ($existing_campaign && $existing_campaign['mk_campaign_id']) {
@@ -95,21 +153,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Create new campaign
         $mk_campaign_id = isset($_POST['mk_campaign_id']) ? intval($_POST['mk_campaign_id']) : 0;
         
-        $insert_sql = "INSERT INTO bg_newsletter_campaigns 
-            (title, subject, body_html, cta_category, send_dt, status, created_by, created_dt, mk_campaign_id) 
-            VALUES 
-            (:title, :subject, :body_html, :cta_category, :send_dt, :status, :created_by, NOW(), :mk_campaign_id)";
+        // Check if recipient_criteria column exists
+        $col_check = $database->getrow("SHOW COLUMNS FROM bg_newsletter_campaigns LIKE 'recipient_criteria'");
         
-        $database->query($insert_sql, [
-            'title' => $title,
-            'subject' => $subject,
-            'body_html' => $body_html,
-            'cta_category' => $cta_category,
-            'send_dt' => $send_dt,
-            'status' => $status,
-            'created_by' => isset($current_user_data['user_id']) ? $current_user_data['user_id'] : 0,
-            'mk_campaign_id' => $mk_campaign_id > 0 ? $mk_campaign_id : null
-        ]);
+        if ($col_check) {
+            // Column exists, include it
+            $insert_sql = "INSERT INTO bg_newsletter_campaigns 
+                (title, subject, body_html, cta_category, recipient_criteria, send_dt, status, created_by, created_dt, mk_campaign_id) 
+                VALUES 
+                (:title, :subject, :body_html, :cta_category, :recipient_criteria, :send_dt, :status, :created_by, NOW(), :mk_campaign_id)";
+            
+            $database->query($insert_sql, [
+                'title' => $title,
+                'subject' => $subject,
+                'body_html' => $body_html,
+                'cta_category' => $cta_category,
+                'recipient_criteria' => $recipient_criteria,
+                'send_dt' => $send_dt,
+                'status' => $status,
+                'created_by' => isset($current_user_data['user_id']) ? $current_user_data['user_id'] : 0,
+                'mk_campaign_id' => $mk_campaign_id > 0 ? $mk_campaign_id : null
+            ]);
+        } else {
+            // Column doesn't exist yet, skip it
+            $insert_sql = "INSERT INTO bg_newsletter_campaigns 
+                (title, subject, body_html, cta_category, send_dt, status, created_by, created_dt, mk_campaign_id) 
+                VALUES 
+                (:title, :subject, :body_html, :cta_category, :send_dt, :status, :created_by, NOW(), :mk_campaign_id)";
+            
+            $database->query($insert_sql, [
+                'title' => $title,
+                'subject' => $subject,
+                'body_html' => $body_html,
+                'cta_category' => $cta_category,
+                'send_dt' => $send_dt,
+                'status' => $status,
+                'created_by' => isset($current_user_data['user_id']) ? $current_user_data['user_id'] : 0,
+                'mk_campaign_id' => $mk_campaign_id > 0 ? $mk_campaign_id : null
+            ]);
+        }
         
         $campaign_id = $database->lastInsertId();
         
@@ -158,7 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 // Get categories for dropdown
-$categories = ['pizza', 'coffee', 'beauty', 'retail', 'restaurant', 'entertainment', 'health', 'other'];
+$categories = ['Food', 'Retail', 'pizza', 'coffee', 'beauty', 'restaurant', 'entertainment', 'health', 'other'];
 
 // Get TinyMCE API key - following same pattern as legal-policy-editor.php
 $tinymce_api_key = '';
@@ -166,9 +248,7 @@ if (isset($sitesettings['tinymce']['api_key'])) {
     $tinymce_api_key = $sitesettings['tinymce']['api_key'];
 } elseif (isset($sitesettings['tinymce_api_key'])) {
     $tinymce_api_key = $sitesettings['tinymce_api_key'];
-} elseif (defined('TINYMCE_API_KEY')) {
-    $tinymce_api_key = TINYMCE_API_KEY;
-}
+} 
 
 // Fallback to no-api-key if not configured
 if (empty($tinymce_api_key)) {
@@ -382,8 +462,8 @@ echo '
                 </div>
                 
                 <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="cta_category" class="form-label">CTA Category</label>
+                    <div class="col-md-3">
+                        <label for="cta_category" class="form-label">CTA '.ucwords($website['bizname']).' Category</label>
                         <select class="form-select" id="cta_category" name="cta_category" required>
                             <option value="">Select a category...</option>';
 
@@ -396,14 +476,22 @@ foreach ($categories as $cat) {
 
 echo '
                         </select>
-                        <small class="text-muted">This determines which brands are shown in the CTA block</small>
+                        <small class="text-muted">Which '.$website['biznames'].' to show</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="cta_mode" class="form-label">'.ucwords($website['biznames']).'</label>
+                        <select class="form-select" id="cta_mode" name="cta_mode">
+                            <option value="inclusive" selected>Inclusive - Enrolled</option>
+                            <option value="exclusive">Exclusive - Unenrolled</option>
+                        </select>
+                        <small class="text-muted">Use enrolled or unenrolled</small>
                     </div>
                     <div class="col-md-3">
                         <label for="send_date" class="form-label">Send Date</label>
                         <input type="date" class="form-control" id="send_date" name="send_date" 
                                value="' . ($campaign ? date('Y-m-d', strtotime($campaign['send_dt'])) : ($mk_campaign && $mk_campaign['start_date'] ? date('Y-m-d', strtotime($mk_campaign['start_date'])) : date('Y-m-d'))) . '" 
                                min="' . ($mk_campaign && $mk_campaign['start_date'] ? date('Y-m-d', strtotime($mk_campaign['start_date'])) : date('Y-m-d')) . '" required>
-                        ' . ($mk_campaign && $mk_campaign['start_date'] ? '<small class="text-muted">Cannot be before campaign start date</small>' : '') . '
+                        ' . ($mk_campaign && $mk_campaign['start_date'] ? '<small class="text-muted">Min: campaign start</small>' : '') . '
                     </div>
                     <div class="col-md-3">
                         <label for="send_time" class="form-label">Send Time</label>
@@ -620,7 +708,14 @@ echo '
                 </div>
                 
                 <!-- Hidden field to store recipient criteria -->
-                <input type="hidden" name="recipient_criteria" id="recipient_criteria" value="all">
+                ';
+                
+                // Debug what we're putting in the hidden field
+                $recipientCriteriaValue = isset($campaign['recipient_criteria']) ? $campaign['recipient_criteria'] : '[]';
+                error_log("Hidden field recipient_criteria value: " . $recipientCriteriaValue);
+                
+                echo '
+                <input type="hidden" name="recipient_criteria" id="recipient_criteria" value="'. htmlspecialchars($recipientCriteriaValue) . '">
             </div>
         </div>
         
@@ -658,7 +753,7 @@ echo '
                         </button>
                     </div>
                     <div class="col-md-6 text-end">
-                        <button type="button" class="btn btn-outline-primary" onclick="previewEmail()">
+                        <button type="button" class="btn btn-outline-primary" id="previewEmailBtn" onclick="previewEmail()" style="display:none;">
                             <i class="bi bi-eye-fill"></i> Preview
                         </button>
                         <button type="button" class="btn btn-outline-info" onclick="sendTestEmail()">
@@ -745,7 +840,7 @@ echo '
 <script src="https://cdn.tiny.cloud/1/<?php echo htmlspecialchars($tinymce_api_key); ?>/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 
 <!-- Token Field JavaScript -->
-<script src="/public/js/recipient-token-field-simple.js"></script>
+<script src="/public/js/recipient-token-field-simple.js?v=<?php echo time(); ?>"></script>
 
 <script>
 // Initialize TinyMCE
@@ -786,23 +881,217 @@ tinymce.init({
 function previewEmail() {
     var content = tinymce.get("body_html").getContent();
     var subject = $("#subject").val();
+    var ctaCategory = $("#cta_category").val();
+    var ctaMode = $("#cta_mode").val() || 'inclusive';
     
-    // Simple placeholder replacement for preview
-    content = content.replace(/\[\[first_name\]\]/g, "John");
-    content = content.replace(/\[\[city\]\]/g, "Seattle");
-    content = content.replace(/\[\[birthday_month\]\]/g, "January");
-    content = content.replace(/\[\[CTA_BLOCK\]\]/g, 
-        "<div style=\"border: 2px dashed #ccc; padding: 20px; margin: 20px 0; text-align: center;\">" +
-        "<strong>CTA BLOCK</strong><br>Personalized brand recommendations will appear here</div>");
+    // Get the current recipient tokens
+    var tokens = window.recipientTokens || [];
     
+    console.log('Preview Email - Tokens:', tokens);
+    console.log('Preview Email - CTA Category:', ctaCategory);
+    console.log('Preview Email - CTA Mode:', ctaMode);
+    
+    // Show loading state
     $("#previewContent").html(
-        "<div class=\"mb-3\"><strong>Subject:</strong> " + subject + "</div>" +
-        "<hr>" +
-        "<div>" + content + "</div>"
+        '<div class="text-center p-5">' +
+        '<div class="spinner-border text-primary" role="status">' +
+        '<span class="visually-hidden">Loading preview...</span>' +
+        '</div>' +
+        '<p class="mt-3">Fetching recipient data for preview...</p>' +
+        '</div>'
     );
     
     var modal = new bootstrap.Modal(document.getElementById("previewModal"));
     modal.show();
+    
+    // Debug the request data
+    var requestData = {
+        tokens: JSON.stringify(tokens),
+        process: 'single',  // Use 'single' mode for preview
+        cta_category: ctaCategory,
+        cta_mode: ctaMode,
+        debug: 'true'  // Enable debug mode
+    };
+    
+    console.log('Preview Request Data:', requestData);
+    console.log('Tokens being sent:', tokens);
+    
+    // Use the same endpoint as recipient count, but request single user data for preview
+    $.ajax({
+        url: '/myaccount/marketing/ajax/newsletter-recipients-count.php',
+        method: 'POST',
+        data: requestData,
+        dataType: 'json',
+        success: function(response) {
+            console.log('===== PREVIEW RESPONSE DEBUG =====');
+            console.log('Full Response:', response);
+            console.log('Success?', response.success);
+            console.log('Has user?', response.user ? 'YES' : 'NO');
+            if (response.user) {
+                console.log('User data:', response.user);
+            }
+            if (response.debug) {
+                console.log('Debug info:', response.debug);
+            }
+            if (response.error) {
+                console.error('Server error:', response.error);
+            }
+            console.log('==================================');
+            
+            if (response.success && response.user) {
+                var user = response.user;
+                var companies = response.companies || [];
+                
+                // Replace placeholders with actual user data
+                var previewContent = content;
+                var previewSubject = subject;
+                
+                previewContent = previewContent.replace(/\[\[first_name\]\]/g, user.first_name);
+                previewContent = previewContent.replace(/\[\[city\]\]/g, user.city);
+                previewContent = previewContent.replace(/\[\[birthday_month\]\]/g, user.birthday_month);
+                
+                previewSubject = previewSubject.replace(/\[\[first_name\]\]/g, user.first_name);
+                previewSubject = previewSubject.replace(/\[\[city\]\]/g, user.city);
+                previewSubject = previewSubject.replace(/\[\[birthday_month\]\]/g, user.birthday_month);
+                
+                // Debug companies data
+                console.log('Companies for CTA:', companies);
+                console.log('Number of companies:', companies.length);
+                console.log('CTA Category used:', ctaCategory);
+                console.log('CTA Mode used:', ctaMode);
+                
+                // Build CTA block with actual companies (2x2 grid)
+                var ctaBlock = '';
+                if (companies && companies.length > 0) {
+                    ctaBlock = '<div style="background: #f8f9fa; padding: 30px; margin: 20px 0; border-radius: 8px;">';
+                    ctaBlock += '<h3 style="color: #333; margin-bottom: 20px; text-align: center;">🎁 Your Birthday Rewards Await!</h3>';
+                    ctaBlock += '<table style="width: 100%; border-spacing: 15px;">';
+                    
+                    // Create 2x2 grid
+                    for (var i = 0; i < companies.length; i += 2) {
+                        ctaBlock += '<tr>';
+                        
+                        // First column
+                        if (companies[i]) {
+                            ctaBlock += '<td style="width: 50%; background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center; vertical-align: top;">';
+                            if (companies[i].logo) {
+                                // Use the logo directly - it's either base64 or a proper URL
+                                var logoSrc = companies[i].logo;
+                                ctaBlock += '<img src="' + logoSrc + '" style="max-width: 120px; max-height: 80px; margin-bottom: 10px;" alt="' + companies[i].company_name + '">';
+                            } else {
+                                ctaBlock += '<div style="height: 80px; background: #e9ecef; border-radius: 4px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; color: #6c757d;">' + companies[i].company_name + '</div>';
+                            }
+                            ctaBlock += '<h4 style="color: #333; font-size: 16px; margin: 10px 0;">' + companies[i].company_name + '</h4>';
+                            if (companies[i].offer_text) {
+                                ctaBlock += '<p style="color: #666; font-size: 14px; margin: 10px 0; min-height: 40px;">' + companies[i].offer_text + '</p>';
+                            }
+                            ctaBlock += '<a href="https://birthday.gold/enroll/' + companies[i].company_id + '" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;">Claim Reward →</a>';
+                            ctaBlock += '</td>';
+                        } else {
+                            ctaBlock += '<td style="width: 50%;"></td>';
+                        }
+                        
+                        // Second column
+                        if (companies[i + 1]) {
+                            ctaBlock += '<td style="width: 50%; background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center; vertical-align: top;">';
+                            if (companies[i + 1].logo) {
+                                // Use the logo directly - it's either base64 or a proper URL
+                                var logoSrc = companies[i + 1].logo;
+                                ctaBlock += '<img src="' + logoSrc + '" style="max-width: 120px; max-height: 80px; margin-bottom: 10px;" alt="' + companies[i + 1].company_name + '">';
+                            } else {
+                                ctaBlock += '<div style="height: 80px; background: #e9ecef; border-radius: 4px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; color: #6c757d;">' + companies[i + 1].company_name + '</div>';
+                            }
+                            ctaBlock += '<h4 style="color: #333; font-size: 16px; margin: 10px 0;">' + companies[i + 1].company_name + '</h4>';
+                            if (companies[i + 1].offer_text) {
+                                ctaBlock += '<p style="color: #666; font-size: 14px; margin: 10px 0; min-height: 40px;">' + companies[i + 1].offer_text + '</p>';
+                            }
+                            ctaBlock += '<a href="https://birthday.gold/enroll/' + companies[i + 1].company_id + '" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;">Claim Reward →</a>';
+                            ctaBlock += '</td>';
+                        } else {
+                            ctaBlock += '<td style="width: 50%;"></td>';
+                        }
+                        
+                        ctaBlock += '</tr>';
+                    }
+                    
+                    ctaBlock += '</table>';
+                    ctaBlock += '</div>';
+                } else {
+                    ctaBlock = '<div style="border: 2px dashed #ccc; padding: 20px; margin: 20px 0; text-align: center;">' +
+                               '<strong>CTA BLOCK</strong><br>Personalized brand recommendations will appear here</div>';
+                }
+                
+                previewContent = previewContent.replace(/\[\[CTA_BLOCK\]\]/g, ctaBlock);
+                
+                // Display preview with user info header
+                var html = '<div class="alert alert-info mb-3">';
+                html += '<strong>Preview using recipient:</strong> ' + user.first_name + ' ' + user.last_name;
+                html += ' (' + user.email + ') from ' + user.city;
+                if (response.matched_criteria) {
+                    html += ' <span class="badge bg-success ms-2">Matched Criteria</span>';
+                } else {
+                    html += ' <span class="badge bg-warning ms-2">Default User</span>';
+                }
+                html += '</div>';
+                html += '<div class="mb-3"><strong>Subject:</strong> ' + previewSubject + '</div>';
+                html += '<hr>';
+                html += '<div>' + previewContent + '</div>';
+                
+                $("#previewContent").html(html);
+            } else {
+                // No recipients or unable to load - use fallback preview
+                var fallbackContent = content;
+                fallbackContent = fallbackContent.replace(/\[\[first_name\]\]/g, "John");
+                fallbackContent = fallbackContent.replace(/\[\[city\]\]/g, "Seattle");
+                fallbackContent = fallbackContent.replace(/\[\[birthday_month\]\]/g, "January");
+                fallbackContent = fallbackContent.replace(/\[\[CTA_BLOCK\]\]/g, 
+                    "<div style=\"border: 2px dashed #ccc; padding: 20px; margin: 20px 0; text-align: center;\">" +
+                    "<strong>CTA BLOCK</strong><br>Personalized brand recommendations will appear here</div>");
+                
+                var warningMsg = tokens.length === 0 
+                    ? 'No recipients selected. Using default preview values.' 
+                    : 'Unable to load recipient data. Using default values.';
+                
+                $("#previewContent").html(
+                    '<div class="alert alert-warning">' + warningMsg + '</div>' +
+                    '<div class="mb-3"><strong>Subject:</strong> ' + subject + '</div>' +
+                    '<hr>' +
+                    '<div>' + fallbackContent + '</div>'
+                );
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Preview AJAX Error:', {
+                status: status,
+                error: error,
+                responseText: xhr.responseText,
+                tokens: tokens
+            });
+            
+            // Fallback to static preview
+            var fallbackContent = content;
+            fallbackContent = fallbackContent.replace(/\[\[first_name\]\]/g, "John");
+            fallbackContent = fallbackContent.replace(/\[\[city\]\]/g, "Seattle");
+            fallbackContent = fallbackContent.replace(/\[\[birthday_month\]\]/g, "January");
+            fallbackContent = fallbackContent.replace(/\[\[CTA_BLOCK\]\]/g, 
+                "<div style=\"border: 2px dashed #ccc; padding: 20px; margin: 20px 0; text-align: center;\">" +
+                "<strong>CTA BLOCK</strong><br>Personalized brand recommendations will appear here</div>");
+            
+            var errorMsg = 'Unable to fetch recipient data. ';
+            if (xhr.responseText) {
+                errorMsg += 'Error: ' + xhr.responseText;
+            } else {
+                errorMsg += 'Status: ' + status + ', Error: ' + error;
+            }
+            
+            $("#previewContent").html(
+                '<div class="alert alert-warning">' + errorMsg + '</div>' +
+                '<div class="mb-3"><strong>Subject:</strong> ' + subject + '</div>' +
+                '<hr>' +
+                '<div>' + fallbackContent + '</div>'
+            );
+        }
+    });
 }
 
 function sendTestEmail() {

@@ -347,7 +347,7 @@ class Marketing
                        cl.logo_id, cl.logo_filename, cl.logo_url, cl.is_primary,
                        c.reward_description, c.reward_value
                 FROM bg_companies c
-                INNER JOIN bg_company_logos cl ON c.company_id = cl.company_id
+                INNER JOIN bg_companies_logos cl ON c.company_id = cl.company_id
                 WHERE c.status = 'active' 
                 AND c.company_category = :category
                 AND cl.status = 'active'
@@ -492,7 +492,7 @@ class Marketing
             </div>
             <div class="email-footer">
                 <p>&copy; ' . date('Y') . ' Birthday.Gold - Making birthdays special, one celebration at a time.</p>
-                <p><a href="https://birthday.gold/unsubscribe.php">Unsubscribe</a> | <a href="https://birthday.gold/legalhub/privacy.php">Privacy Policy</a></p>
+                <p><a href="https://birthday.gold/unsubscribe">Unsubscribe</a> | <a href="https://birthday.gold/privacy">Privacy Policy</a></p>
             </div>
         </body>
         </html>';
@@ -699,5 +699,607 @@ class Marketing
             'queue_stats' => $queue_stats ?: ['total_queued' => 0, 'pending' => 0, 'processing' => 0, 'sent' => 0, 'errors' => 0],
             'event_stats' => $event_stats ?: []
         ];
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Calculate recipient count based on token criteria (with full parentheses and NOT support)
+     * Uses RPN (Reverse Polish Notation) for complex boolean expressions
+     * @param array $tokens Array of tokens defining recipient criteria
+     * @return int Count of matching recipients
+     */
+    public function getRecipientCount($tokens = [])
+    {
+        if (empty($tokens)) {
+            return 0;
+        }
+
+        // Base WHERE for active users with valid email
+        $baseWhere = "u.status = 'active' AND u.email IS NOT NULL AND u.email != ''";
+
+        // Short-circuit for ALL
+        foreach ($tokens as $t) {
+            if (($t['type'] ?? '') === 'all') {
+                $sql = "SELECT COUNT(DISTINCT u.user_id) AS cnt FROM bg_users u WHERE $baseWhere";
+                $stmt = $this->database->query($sql);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                return (int)($row['cnt'] ?? 0);
+            }
+        }
+
+        // Convert infix tokens to RPN using shunting-yard
+        $rpn = $this->toRPN($tokens);
+        if ($rpn === null) {
+            // Invalid expression (unbalanced parentheses, etc.)
+            return 0;
+        }
+
+        // Evaluate RPN into a single expression tree (sql snippet + params + join flags)
+        $expr = $this->evaluateRPN($rpn);
+        if ($expr === null || empty($expr['sql'])) {
+            return 0;
+        }
+        // FROM clause based on flags
+        $from = 'bg_users u';
+        if (!empty($expr['needs_enroll'])) {
+            $from .= ' LEFT JOIN bg_user_enrollments e ON u.user_id = e.user_id AND e.status = "success"';
+        }
+        if (!empty($expr['needs_business'])) {
+            // Requires enroll join; ensure it's present
+            if (strpos($from, ' bg_user_enrollments ') === false) {
+                $from .= ' LEFT JOIN bg_user_enrollments e ON u.user_id = e.user_id AND e.status = "success"';
+            }
+            $from .= ' LEFT JOIN bg_businesses b ON e.business_id = b.business_id';
+        }
+        $finalWhere = $baseWhere . ' AND (' . $expr['sql'] . ')';
+        $sql = 'SELECT COUNT(DISTINCT u.user_id) AS cnt FROM ' . $from . ' WHERE ' . $finalWhere;
+
+        try {
+            $stmt = $this->database->query($sql, $expr['params'] ?? []);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return (int)($row['cnt'] ?? 0);
+        } catch (Throwable $e) {
+            error_log('Marketing::getRecipientCount error: ' . $e->getMessage());
+            error_log('SQL: ' . $sql);
+            error_log('Params: ' . json_encode($expr['params'] ?? []));
+            return 0;
+        }
+    }
+
+    /**
+     * Get actual recipient data based on token criteria
+     * @param array $tokens Array of tokens defining recipient criteria
+     * @param int $limit Number of recipients to return
+     * @return array Array of user data
+     */
+    public function getRecipients($tokens = [], $limit = 1)
+    {
+        if (empty($tokens)) {
+            return [];
+        }
+
+        // Base WHERE for active users with valid email
+        $baseWhere = "u.status = 'active' AND u.email IS NOT NULL AND u.email != ''";
+
+        // Short-circuit for ALL
+        foreach ($tokens as $t) {
+            if (($t['type'] ?? '') === 'all') {
+                $sql = "SELECT u.user_id, u.first_name, u.last_name, u.email, 
+                        u.city, u.state, u.birthdate,
+                        GROUP_CONCAT(DISTINCT e.company_id) as enrolled_company_ids
+                        FROM bg_users u 
+                        LEFT JOIN bg_user_enrollments e ON u.user_id = e.user_id AND e.enrollment_status = 'A'
+                        WHERE $baseWhere 
+                        GROUP BY u.user_id
+                        LIMIT " . intval($limit);
+                $stmt = $this->database->query($sql);
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+        }
+
+        // Convert infix tokens to RPN using shunting-yard
+        $rpn = $this->toRPN($tokens);
+        if ($rpn === null) {
+            // Invalid expression (unbalanced parentheses, etc.)
+            return [];
+        }
+
+        // Evaluate RPN into a single expression tree (sql snippet + params + join flags)
+        $expr = $this->evaluateRPN($rpn);
+        if ($expr === null || empty($expr['sql'])) {
+            return [];
+        }
+        
+        // FROM clause based on flags
+        $from = 'bg_users u';
+        if (!empty($expr['needs_enroll'])) {
+            $from .= ' LEFT JOIN bg_user_enrollments e ON u.user_id = e.user_id AND e.status = "success"';
+        }
+        if (!empty($expr['needs_business'])) {
+            // Requires enroll join; ensure it's present
+            if (strpos($from, ' bg_user_enrollments ') === false) {
+                $from .= ' LEFT JOIN bg_user_enrollments e ON u.user_id = e.user_id AND e.status = "success"';
+            }
+            $from .= ' LEFT JOIN bg_businesses b ON e.business_id = b.business_id';
+        }
+        
+        $finalWhere = $baseWhere . ' AND (' . $expr['sql'] . ')';
+        
+        // Get params without limit (LIMIT needs special handling)
+        $params = $expr['params'] ?? [];
+        
+        // Always join enrollments to get company IDs
+        if (strpos($from, 'bg_user_enrollments') === false) {
+            $from .= ' LEFT JOIN bg_user_enrollments e ON u.user_id = e.user_id AND e.status = "success"';
+        }
+        
+        // Use subquery to get distinct users first, then join for company IDs
+        $sql = 'SELECT u.user_id, u.first_name, u.last_name, u.email, 
+                u.city, u.state, u.birthdate,
+                GROUP_CONCAT(DISTINCT e.company_id) as enrolled_company_ids
+                FROM (
+                    SELECT DISTINCT u.user_id, u.first_name, u.last_name, u.email, 
+                    u.city, u.state, u.birthdate
+                    FROM ' . $from . ' 
+                    WHERE ' . $finalWhere . ' 
+                    LIMIT ' . intval($limit) . '
+                ) u
+                LEFT JOIN bg_user_enrollments e ON u.user_id = e.user_id AND e.status = "success"
+                GROUP BY u.user_id';
+
+        try {
+            // Debug logging
+            error_log('Marketing::getRecipients SQL: ' . $sql);
+            error_log('Marketing::getRecipients Params: ' . json_encode($params));
+            
+            $stmt = $this->database->query($sql, $params);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log('Marketing::getRecipients Results count: ' . count($results));
+            if (!empty($results)) {
+                error_log('Marketing::getRecipients First result: ' . json_encode($results[0]));
+            }
+            
+            return $results;
+        } catch (Throwable $e) {
+            error_log('Marketing::getRecipients error: ' . $e->getMessage());
+            error_log('SQL: ' . $sql);
+            error_log('Params: ' . json_encode($params));
+            return [];
+        }
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /** @var int Used for generating unique parameter names */
+    private $paramCounter = 0;
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Convert infix tokens to Reverse Polish Notation (supports AND/OR/NOT and parentheses)
+     * @param array $tokens
+     * @return array<int, array>|null
+     */
+    private function toRPN(array $tokens)
+    {
+        $output = [];
+        $ops = [];
+
+        $prec = [
+            'NOT' => 3,
+            'AND' => 2,
+            'OR'  => 1,
+        ];
+
+        $rightAssoc = [
+            'NOT' => true, // unary right-associative
+            'AND' => false,
+            'OR'  => false,
+        ];
+
+        foreach ($tokens as $tok) {
+            $type = $tok['type'] ?? '';
+
+            if ($type === 'operator') {
+                $op = strtoupper(trim($tok['value'] ?? ''));
+                if (!isset($prec[$op])) {
+                    return null; // unknown operator
+                }
+                while (!empty($ops)) {
+                    $top = end($ops);
+                    if (($top['type'] ?? '') !== 'operator') {
+                        break;
+                    }
+                    $topOp = strtoupper($top['value']);
+                    if (!isset($prec[$topOp])) {
+                        break;
+                    }
+                    $cmp = $prec[$topOp] - $prec[$op];
+                    if ($cmp > 0 || ($cmp === 0 && !$rightAssoc[$op])) {
+                        $output[] = array_pop($ops);
+                    } else {
+                        break;
+                    }
+                }
+                $ops[] = ['type' => 'operator', 'value' => $op];
+                continue;
+            }
+
+            if ($type === 'parenthesis') {
+                $val = $tok['value'] ?? '';
+                if ($val === '(') {
+                    $ops[] = ['type' => 'parenthesis', 'value' => '('];
+                } elseif ($val === ')') {
+                    $found = false;
+                    while (!empty($ops)) {
+                        $top = array_pop($ops);
+                        if (($top['type'] ?? '') === 'parenthesis' && ($top['value'] ?? '') === '(') {
+                            $found = true;
+                            break;
+                        }
+                        $output[] = $top;
+                    }
+                    if (!$found) {
+                        return null; // mismatched parenthesis
+                    }
+                } else {
+                    return null; // invalid parenthesis token
+                }
+                continue;
+            }
+
+            if ($type === 'all') {
+                // Should have been short-circuited earlier; ignore here
+                continue;
+            }
+
+            // Criteria token -> push directly to output
+            $output[] = $tok;
+        }
+
+        while (!empty($ops)) {
+            $top = array_pop($ops);
+            if (($top['type'] ?? '') === 'parenthesis') {
+                return null; // mismatched
+            }
+            $output[] = $top;
+        }
+
+        return $output;
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Evaluate RPN into a single SQL expression bundle
+     * @param array $rpn
+     * @return array|null [sql, params, needs_enroll, needs_business]
+     */
+    private function evaluateRPN(array $rpn)
+    {
+        $stack = [];
+
+        foreach ($rpn as $tok) {
+            $type = $tok['type'] ?? '';
+
+            if ($type === 'operator') {
+                $op = strtoupper($tok['value'] ?? '');
+                if ($op === 'NOT') {
+                    $a = array_pop($stack);
+                    if (!$a) { return null; }
+                    $stack[] = [
+                        'sql' => '(NOT ' . $a['sql'] . ')',
+                        'params' => $a['params'] ?? [],
+                        'needs_enroll' => !empty($a['needs_enroll']),
+                        'needs_business' => !empty($a['needs_business']),
+                    ];
+                } else {
+                    $b = array_pop($stack); // right
+                    $a = array_pop($stack); // left
+                    if (!$a || !$b) { return null; }
+                    $bundle = $this->combine($a, $b, $op);
+                    $stack[] = $bundle;
+                }
+                continue;
+            }
+
+            // Criteria -> build leaf expression
+            $leaf = $this->tokenToExpr($tok);
+            if ($leaf === null) { return null; }
+            $stack[] = $leaf;
+        }
+
+        if (count($stack) !== 1) { return null; }
+        return $stack[0];
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Combine two expression bundles with an operator
+     */
+    private function combine(array $a, array $b, string $op): array
+    {
+        $sql = '(' . $a['sql'] . ' ' . $op . ' ' . $b['sql'] . ')';
+        $params = array_merge($a['params'] ?? [], $b['params'] ?? []);
+        return [
+            'sql' => $sql,
+            'params' => $params,
+            'needs_enroll' => (!empty($a['needs_enroll']) || !empty($b['needs_enroll'])),
+            'needs_business' => (!empty($a['needs_business']) || !empty($b['needs_business'])),
+        ];
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Map a single criteria token to an expression bundle
+     * @param array $token
+     * @return array|null
+     */
+    private function tokenToExpr(array $token)
+    {
+        $type = $token['type'] ?? '';
+        $val  = $token['value'] ?? null;
+
+        $cond = '';
+        $params = [];
+        $needsEnroll = false;
+        $needsBiz = false;
+
+        switch ($type) {
+            case 'account_type':
+                // Database uses 'type' field with values 'test' and 'real'
+                if ($val === 'real') {
+                    $cond = "(u.type = 'real' OR u.type IS NULL OR u.type = '')";
+                } elseif ($val === 'test') {
+                    $cond = "u.type = 'test'";
+                } elseif ($val === 'staff') {
+                    // Check account_type field for staff
+                    $cond = "u.account_type = 'staff'";
+                } elseif ($val === 'demo') {
+                    $cond = "u.account_type = 'demo'";
+                }
+                break;
+
+            case 'gender':
+                // Database stores 'male' and 'female' as full words
+                if ($val === 'not_specified') {
+                    $cond = "(u.gender IS NULL OR u.gender = '' OR u.gender = 'U')";
+                } elseif ($val === 'prefer_not') {
+                    $cond = "u.gender = 'U'";
+                } else {
+                    $k = $this->newParam('gender');
+                    $cond = "u.gender = :$k";
+                    // Keep the full value (male/female) instead of just first letter
+                    $params[$k] = (string)$val;
+                }
+                break;
+
+            case 'birthday_month':
+                $k = $this->newParam('month');
+                $cond = "MONTH(u.birthdate) = :$k";
+                $params[$k] = (int)$val;
+                break;
+
+            case 'state':
+                $k = $this->newParam('state');
+                $cond = "u.state = :$k";
+                $params[$k] = (string)$val;
+                break;
+
+            case 'age_range':
+                $value = str_replace('+', '', (string)$val);
+                $parts = explode('-', $value);
+                if (strpos((string)$val, '+') !== false) {
+                    $min = (int)($parts[0] ?? 0);
+                    $cond = 'TIMESTAMPDIFF(YEAR, u.birthdate, CURDATE()) >= ' . $min;
+                } elseif (count($parts) === 2) {
+                    $min = (int)$parts[0];
+                    $max = (int)$parts[1];
+                    $cond = 'TIMESTAMPDIFF(YEAR, u.birthdate, CURDATE()) BETWEEN ' . $min . ' AND ' . $max;
+                }
+                break;
+
+            case 'plan':
+                if ($val === 'free') {
+                    $cond = "(NOT EXISTS (SELECT 1 FROM bg_user_attributes ua 
+                                  WHERE ua.user_id = u.user_id 
+                                  AND ua.type = 'subscription' 
+                                  AND ua.name = 'plan_type' 
+                                  AND ua.value != 'free' 
+                                  AND ua.status = 'A'))";
+                } else {
+                    $k = $this->newParam('plan');
+                    $cond = "EXISTS (SELECT 1 FROM bg_user_attributes ua 
+                                  WHERE ua.user_id = u.user_id 
+                                  AND ua.type = 'subscription' 
+                                  AND ua.name = 'plan_type' 
+                                  AND ua.value = :$k 
+                                  AND ua.status = 'A')";
+                    $params[$k] = (string)$val;
+                }
+                break;
+
+            case 'profile_completeness':
+                if ((string)$val === '100') {
+                    $cond = '(' .
+                        'u.first_name IS NOT NULL AND u.first_name != \'\' AND ' .
+                        'u.last_name  IS NOT NULL AND u.last_name  != \'\' AND ' .
+                        'u.birthdate  IS NOT NULL AND ' .
+                        'u.gender     IS NOT NULL AND u.gender     != \'\' AND ' .
+                        'u.zip_code   IS NOT NULL AND u.zip_code   != \'\' AND ' .
+                        'u.phone_number IS NOT NULL AND u.phone_number != \'\'' .
+                    ')';
+                } else {
+                    $ranges = explode('-', (string)$val);
+                    if (count($ranges) === 2) {
+                        $min = (int)$ranges[0];
+                        $max = (int)$ranges[1];
+                        if ($min === 0 && $max === 25) {
+                            $cond = "(u.first_name IS NULL OR u.first_name = '')";
+                        } elseif ($min === 26 && $max === 50) {
+                            $cond = "(u.first_name IS NOT NULL AND u.first_name != '' AND (u.last_name IS NULL OR u.last_name = ''))";
+                        } elseif ($min === 51 && $max === 75) {
+                            $cond = "(u.first_name IS NOT NULL AND u.first_name != '' AND u.last_name IS NOT NULL AND u.last_name != '' AND u.birthdate IS NOT NULL)";
+                        } elseif ($min === 76 && $max === 99) {
+                            $cond = "(u.first_name IS NOT NULL AND u.first_name != '' AND u.last_name IS NOT NULL AND u.last_name != '' AND u.birthdate IS NOT NULL AND u.gender IS NOT NULL AND u.gender != '')";
+                        }
+                    }
+                }
+                break;
+
+            case 'enrollment_count':
+                $needsEnroll = true;
+                if ((string)$val === '0') {
+                    $cond = '(e.enrollment_id IS NULL)';
+                } elseif (strpos((string)$val, '+') !== false) {
+                    $min = (int)str_replace('+', '', (string)$val);
+                    $cond = '(SELECT COUNT(*) FROM bg_user_enrollments e2 WHERE e2.user_id = u.user_id AND e2.status = "success") >= ' . $min;
+                } else {
+                    $ranges = explode('-', (string)$val);
+                    if (count($ranges) === 2) {
+                        $min = (int)$ranges[0];
+                        $max = (int)$ranges[1];
+                        $cond = '(SELECT COUNT(*) FROM bg_user_enrollments e2 WHERE e2.user_id = u.user_id AND e2.status = "success") BETWEEN ' . $min . ' AND ' . $max;
+                    }
+                }
+                break;
+
+            case 'business_category':
+                $needsEnroll = true;
+                $needsBiz = true;
+                $k = $this->newParam('category');
+                $cond = "b.business_category = :$k";
+                $params[$k] = (string)$val;
+                break;
+
+            default:
+                return null; // unknown criteria
+        }
+
+        if ($cond === '') {
+            return null;
+        }
+
+        return [
+            'sql' => '(' . $cond . ')',
+            'params' => $params,
+            'needs_enroll' => $needsEnroll,
+            'needs_business' => $needsBiz,
+        ];
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Generate a unique parameter key
+     */
+    private function newParam(string $prefix): string
+    {
+        $k = $prefix . '_' . $this->paramCounter;
+        $this->paramCounter++;
+        return $k;
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Get companies with logos for newsletter CTA block
+     * @param string $category Display category to filter by
+     * @param string $mode 'inclusive' or 'exclusive'
+     * @param array $userEnrollments Array of enrolled company IDs
+     * @param int $limit Number of companies to return
+     * @return array Companies with logo information
+     */
+    public function getCompaniesForCTA($category, $mode = 'inclusive', $userEnrollments = [], $limit = 4)
+    {
+        error_log("getCompaniesForCTA called - Category: $category, Mode: $mode, Enrollments: " . implode(',', $userEnrollments));
+        
+        $params = ['category' => $category];
+        $excludeClause = '';
+        
+        if ($mode === 'inclusive' && !empty($userEnrollments)) {
+            // Inclusive: Only show user's enrolled companies
+            $placeholders = array_map(function($i) { return ':company_' . $i; }, array_keys($userEnrollments));
+            foreach ($userEnrollments as $i => $companyId) {
+                $params['company_' . $i] = $companyId;
+            }
+            $includeClause = " AND c.company_id IN (" . implode(',', $placeholders) . ")";
+            
+            // Using the proper query from enrollment-picker.php
+            $sql = "SELECT c.company_id, c.company_name, c.description as offer_text, 
+                           a.description as company_logo
+                    FROM bg_companies c
+                    LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id 
+                        AND a.category = 'company_logos' AND a.`grouping` = 'primary_logo'
+                    WHERE c.status = 'finalized' 
+                    AND c.display_category = :category
+                    $includeClause
+                    ORDER BY RAND()
+                    LIMIT " . intval($limit);
+        } else {
+            // Exclusive mode or no enrollments: Show other companies
+            if ($mode === 'exclusive' && !empty($userEnrollments)) {
+                $excludePlaceholders = array_map(function($i) { return ':exclude_' . $i; }, array_keys($userEnrollments));
+                foreach ($userEnrollments as $i => $companyId) {
+                    $params['exclude_' . $i] = $companyId;
+                }
+                $excludeClause = " AND c.company_id NOT IN (" . implode(',', $excludePlaceholders) . ")";
+            }
+            
+            // Debug: check what categories exist
+            $cat_sql = "SELECT DISTINCT display_category, COUNT(*) as count FROM bg_companies WHERE status = 'finalized' AND display_category IS NOT NULL GROUP BY display_category";
+            $categories_exist = $this->database->getrows($cat_sql);
+            error_log("Available categories: " . json_encode($categories_exist));
+            
+            $sql = "SELECT c.company_id, c.company_name, c.description as offer_text, 
+                           a.description as company_logo
+                    FROM bg_companies c
+                    LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id 
+                        AND a.category = 'company_logos' AND a.`grouping` = 'primary_logo'
+                    WHERE c.status = 'finalized' 
+                    AND c.display_category = :category
+                    $excludeClause
+                    ORDER BY RAND()
+                    LIMIT " . intval($limit);
+        }
+        
+        try {
+            error_log("SQL Query: " . $sql);
+            error_log("SQL Params: " . json_encode($params));
+            
+            $companies = $this->database->getrows($sql, $params);
+            
+            error_log("Companies found: " . count($companies));
+            if (!empty($companies)) {
+                error_log("First company: " . json_encode($companies[0]));
+            }
+            
+            // If no companies found, try without category filter as fallback
+            if (empty($companies)) {
+                error_log("No companies found for category '$category', trying fallback without category filter");
+                $fallback_sql = "SELECT c.company_id, c.company_name, c.description as offer_text, 
+                                       a.description as company_logo
+                        FROM bg_companies c
+                        LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id 
+                            AND a.category = 'company_logos' AND a.grouping = 'primary_logo'
+                        WHERE c.status = 'finalized'
+                        ORDER BY RAND()
+                        LIMIT " . intval($limit);
+                
+                $companies = $this->database->getrows($fallback_sql);
+                error_log("Fallback companies found: " . count($companies));
+            }
+            
+            // Process logo URLs using the same format as discover.php
+            foreach ($companies as &$company) {
+                if (!empty($company['company_logo'])) {
+                    // Format: //cdn.birthday.gold/public/images/company_images/{company_id}/{logo_filename}
+                    $company['logo'] = '//cdn.birthday.gold/public/images/company_images/' . $company['company_id'] . '/' . $company['company_logo'];
+                } else {
+                    $company['logo'] = null; // Will show placeholder
+                }
+            }
+            
+            return $companies;
+        } catch (Exception $e) {
+            error_log("Marketing::getCompaniesForCTA - Error: " . $e->getMessage());
+            return [];
+        }
     }
 }
