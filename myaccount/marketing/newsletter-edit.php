@@ -19,9 +19,17 @@ if ($mk_campaign_id > 0) {
     }
 }
 
-// If editing, load existing campaign
+// If editing, load existing campaign from mk_campaigns
 if ($campaign_id > 0) {
-    $campaign_sql = "SELECT * FROM bg_newsletter_campaigns WHERE campaign_id = :campaign_id";
+    $campaign_sql = "SELECT *, 
+                            campaign_name as title,
+                            email_subject as subject,
+                            campaign_content as body_html,
+                            start_date as send_dt,
+                            newsletter_status as status
+                     FROM mk_campaigns 
+                     WHERE campaign_id = :campaign_id 
+                     AND campaign_type = 'newsletter'";
     $campaign = $database->getrow($campaign_sql, ['campaign_id' => $campaign_id]);
     
     if (!$campaign) {
@@ -29,12 +37,9 @@ if ($campaign_id > 0) {
         exit;
     }
     
-    // Also load the linked marketing campaign if exists
-    if ($campaign['mk_campaign_id']) {
-        $mk_campaign_sql = "SELECT * FROM mk_campaigns WHERE campaign_id = :campaign_id";
-        $mk_campaign = $database->getrow($mk_campaign_sql, ['campaign_id' => $campaign['mk_campaign_id']]);
-        $mk_campaign_id = $campaign['mk_campaign_id'];
-    }
+    // We're already in mk_campaigns, so this IS the marketing campaign
+    $mk_campaign = $campaign;
+    $mk_campaign_id = $campaign_id;
     
     $pagetitle = "Edit Newsletter: " . $campaign['title'];
     
@@ -50,164 +55,74 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $body_html = $_POST['body_html'];
     $cta_category = $_POST['cta_category'];
     $cta_mode = isset($_POST['cta_mode']) ? $_POST['cta_mode'] : 'inclusive';
+    $gen_specific_messaging = isset($_POST['gen_specific_messaging']) ? 1 : 0;
     $send_dt = $_POST['send_date'] . ' ' . $_POST['send_time'] . ':00';
     $status = $_POST['action'] == 'schedule' ? 'scheduled' : 'draft';
     $recipient_criteria = isset($_POST['recipient_criteria']) ? $_POST['recipient_criteria'] : '{"type":"all"}';
     
     if ($campaign_id > 0) {
-        // First get the existing campaign to check for mk_campaign_id
-        $existing_campaign = $database->getrow(
-            "SELECT mk_campaign_id FROM bg_newsletter_campaigns WHERE campaign_id = :campaign_id",
-            ['campaign_id' => $campaign_id]
-        );
+        // Update existing campaign in mk_campaigns
+        $update_sql = "UPDATE mk_campaigns SET 
+            campaign_name = :campaign_name,
+            email_subject = :email_subject,
+            campaign_content = :campaign_content,
+            cta_category = :cta_category,
+            cta_mode = :cta_mode,
+            gen_specific_messaging = :gen_specific_messaging,
+            recipient_criteria = :recipient_criteria,
+            start_date = :start_date,
+            newsletter_status = :newsletter_status,
+            modify_dt = NOW()
+            WHERE campaign_id = :campaign_id
+            AND campaign_type = 'newsletter'";
         
-        // Update existing campaign
-        // Check if columns exist
-        $col_check = $database->getrow("SHOW COLUMNS FROM bg_newsletter_campaigns LIKE 'recipient_criteria'");
-        $cta_mode_check = $database->getrow("SHOW COLUMNS FROM bg_newsletter_campaigns LIKE 'cta_mode'");
-        
-        if ($col_check && $cta_mode_check) {
-            // Both columns exist
-            $update_sql = "UPDATE bg_newsletter_campaigns SET 
-                title = :title,
-                subject = :subject,
-                body_html = :body_html,
-                cta_category = :cta_category,
-                cta_mode = :cta_mode,
-                recipient_criteria = :recipient_criteria,
-                send_dt = :send_dt,
-                status = :status
-                WHERE campaign_id = :campaign_id";
-            
-            $database->query($update_sql, [
-                'title' => $title,
-                'subject' => $subject,
-                'body_html' => $body_html,
-                'cta_category' => $cta_category,
-                'cta_mode' => $cta_mode,
-                'recipient_criteria' => $recipient_criteria,
-                'send_dt' => $send_dt,
-                'status' => $status,
-                'campaign_id' => $campaign_id
-            ]);
-        } elseif ($col_check) {
-            // Only recipient_criteria exists
-            $update_sql = "UPDATE bg_newsletter_campaigns SET 
-                title = :title,
-                subject = :subject,
-                body_html = :body_html,
-                cta_category = :cta_category,
-                recipient_criteria = :recipient_criteria,
-                send_dt = :send_dt,
-                status = :status
-                WHERE campaign_id = :campaign_id";
-            
-            $database->query($update_sql, [
-                'title' => $title,
-                'subject' => $subject,
-                'body_html' => $body_html,
-                'cta_category' => $cta_category,
-                'recipient_criteria' => $recipient_criteria,
-                'send_dt' => $send_dt,
-                'status' => $status,
-                'campaign_id' => $campaign_id
-            ]);
-        } else {
-            // Column doesn't exist yet, skip it
-            $update_sql = "UPDATE bg_newsletter_campaigns SET 
-                title = :title,
-                subject = :subject,
-                body_html = :body_html,
-                cta_category = :cta_category,
-                send_dt = :send_dt,
-                status = :status
-                WHERE campaign_id = :campaign_id";
-            
-            $database->query($update_sql, [
-                'title' => $title,
-                'subject' => $subject,
-                'body_html' => $body_html,
-                'cta_category' => $cta_category,
-                'send_dt' => $send_dt,
-                'status' => $status,
-                'campaign_id' => $campaign_id
-            ]);
-        }
-        
-        // Also update the marketing campaign name if linked
-        if ($existing_campaign && $existing_campaign['mk_campaign_id']) {
-            $update_mk_sql = "UPDATE mk_campaigns SET 
-                campaign_name = :campaign_name,
-                description = :description
-                WHERE campaign_id = :campaign_id";
-            
-            $database->query($update_mk_sql, [
-                'campaign_name' => $title,
-                'description' => 'Newsletter: ' . $subject,
-                'campaign_id' => $existing_campaign['mk_campaign_id']
-            ]);
-        }
+        $database->query($update_sql, [
+            'campaign_name' => $title,
+            'email_subject' => $subject,
+            'campaign_content' => $body_html,
+            'cta_category' => $cta_category,
+            'cta_mode' => $cta_mode,
+            'gen_specific_messaging' => $gen_specific_messaging,
+            'recipient_criteria' => $recipient_criteria,
+            'start_date' => $send_dt,
+            'newsletter_status' => $status,
+            'campaign_id' => $campaign_id
+        ]);
         
         $_SESSION['message'] = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Newsletter updated successfully!</div>';
     } else {
-        // Create new campaign
-        $mk_campaign_id = isset($_POST['mk_campaign_id']) ? intval($_POST['mk_campaign_id']) : 0;
+        // Create new campaign directly in mk_campaigns
+        $company_id = isset($current_user_data['company_id']) ? $current_user_data['company_id'] : 1;
         
-        // Check if recipient_criteria column exists
-        $col_check = $database->getrow("SHOW COLUMNS FROM bg_newsletter_campaigns LIKE 'recipient_criteria'");
+        // Platform ID 1 is typically the Birthday.Gold platform
+        $platform_id = 1;
         
-        if ($col_check) {
-            // Column exists, include it
-            $insert_sql = "INSERT INTO bg_newsletter_campaigns 
-                (title, subject, body_html, cta_category, recipient_criteria, send_dt, status, created_by, created_dt, mk_campaign_id) 
-                VALUES 
-                (:title, :subject, :body_html, :cta_category, :recipient_criteria, :send_dt, :status, :created_by, NOW(), :mk_campaign_id)";
-            
-            $database->query($insert_sql, [
-                'title' => $title,
-                'subject' => $subject,
-                'body_html' => $body_html,
-                'cta_category' => $cta_category,
-                'recipient_criteria' => $recipient_criteria,
-                'send_dt' => $send_dt,
-                'status' => $status,
-                'created_by' => isset($current_user_data['user_id']) ? $current_user_data['user_id'] : 0,
-                'mk_campaign_id' => $mk_campaign_id > 0 ? $mk_campaign_id : null
-            ]);
-        } else {
-            // Column doesn't exist yet, skip it
-            $insert_sql = "INSERT INTO bg_newsletter_campaigns 
-                (title, subject, body_html, cta_category, send_dt, status, created_by, created_dt, mk_campaign_id) 
-                VALUES 
-                (:title, :subject, :body_html, :cta_category, :send_dt, :status, :created_by, NOW(), :mk_campaign_id)";
-            
-            $database->query($insert_sql, [
-                'title' => $title,
-                'subject' => $subject,
-                'body_html' => $body_html,
-                'cta_category' => $cta_category,
-                'send_dt' => $send_dt,
-                'status' => $status,
-                'created_by' => isset($current_user_data['user_id']) ? $current_user_data['user_id'] : 0,
-                'mk_campaign_id' => $mk_campaign_id > 0 ? $mk_campaign_id : null
-            ]);
-        }
+        $insert_sql = "INSERT INTO mk_campaigns 
+            (company_id, platform_id, campaign_type, campaign_name, email_subject, campaign_content, 
+             cta_category, cta_mode, gen_specific_messaging, recipient_criteria, 
+             start_date, newsletter_status, status, create_by, create_dt) 
+            VALUES 
+            (:company_id, :platform_id, 'newsletter', :campaign_name, :email_subject, :campaign_content,
+             :cta_category, :cta_mode, :gen_specific_messaging, :recipient_criteria,
+             :start_date, :newsletter_status, 'active', :create_by, NOW())";
+        
+        $database->query($insert_sql, [
+            'company_id' => $company_id,
+            'platform_id' => $platform_id,
+            'campaign_name' => $title,
+            'email_subject' => $subject,
+            'campaign_content' => $body_html,
+            'cta_category' => $cta_category,
+            'cta_mode' => $cta_mode,
+            'gen_specific_messaging' => $gen_specific_messaging,
+            'recipient_criteria' => $recipient_criteria,
+            'start_date' => $send_dt,
+            'newsletter_status' => $status,
+            'create_by' => isset($current_user_data['user_id']) ? $current_user_data['user_id'] : 0
+        ]);
         
         $campaign_id = $database->lastInsertId();
-        
-        // Update the marketing campaign name if linked
-        if ($mk_campaign_id > 0) {
-            $update_mk_sql = "UPDATE mk_campaigns SET 
-                campaign_name = :campaign_name,
-                description = :description
-                WHERE campaign_id = :campaign_id";
-            
-            $database->query($update_mk_sql, [
-                'campaign_name' => $title,
-                'description' => 'Newsletter: ' . $subject,
-                'campaign_id' => $mk_campaign_id
-            ]);
-        }
+        $mk_campaign_id = $campaign_id; // They're the same now!
         
         // If scheduled, populate the queue
         if ($status == 'scheduled') {
@@ -219,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             // Populate queue
             foreach ($users as $user) {
-                $queue_sql = "INSERT INTO bg_newsletter_queue 
+                $queue_sql = "INSERT INTO mk_newsletter_queue 
                              (campaign_id, user_id, scheduled_dt, status) 
                              VALUES 
                              (:campaign_id, :user_id, :scheduled_dt, 'pending')";
@@ -720,10 +635,33 @@ echo '
         </div>
         
         <div class="card mb-4">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Email Content</h5>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="gen_specific_messaging" name="gen_specific_messaging" 
+                           ' . (isset($campaign['gen_specific_messaging']) && $campaign['gen_specific_messaging'] ? 'checked' : '') . '
+                           onchange="toggleGenSpecificMessaging(this)">
+                    <label class="form-check-label" for="gen_specific_messaging">
+                        <i class="bi bi-people-fill"></i> Gen-Specific Messaging
+                    </label>
+                </div>
             </div>
             <div class="card-body">
+                <div id="genSpecificAlert" class="alert alert-info mb-3" style="display: ' . 
+                    (isset($campaign['gen_specific_messaging']) && $campaign['gen_specific_messaging'] ? 'block' : 'none') . ';">
+                    <i class="bi bi-sparkles"></i> 
+                    <strong>AI Generation-Specific Messaging Enabled</strong><br>
+                    When sending, AI will dynamically generate personalized content for each recipient based on their generation:
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Gen Z</strong> (1997-2012): AI adapts tone for digital natives</li>
+                        <li><strong>Millennials</strong> (1981-1996): AI creates value-focused messaging</li>
+                        <li><strong>Gen X</strong> (1965-1980): AI generates practical, direct content</li>
+                        <li><strong>Boomers</strong> (1946-1964): AI crafts detailed, traditional messaging</li>
+                    </ul>
+                    <div class="mt-2 p-2 bg-warning bg-opacity-10 rounded">
+                        <small><i class="bi bi-exclamation-triangle"></i> <strong>Note:</strong> The base template below will be used as context for AI generation. Each recipient receives uniquely generated content optimized for their age group.</small>
+                    </div>
+                </div>
                 <div class="mb-3">
                     <label for="body_html" class="form-label">Email Body</label>
                     <textarea class="form-control" id="body_html" name="body_html" rows="15">' . 
@@ -771,7 +709,12 @@ echo '
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Email Preview</h5>
+                <div class="d-flex align-items-center">
+                    <h5 class="modal-title mb-0 me-3">Email Preview</h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="refreshPreview()" title="Show different recipient">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Recipient
+                    </button>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="previewContent">
@@ -878,11 +821,12 @@ tinymce.init({
     }
 });
 
-function previewEmail() {
+function previewEmail(randomize) {
     var content = tinymce.get("body_html").getContent();
     var subject = $("#subject").val();
     var ctaCategory = $("#cta_category").val();
     var ctaMode = $("#cta_mode").val() || 'inclusive';
+    var genSpecificMessaging = $("#gen_specific_messaging").is(':checked');
     
     // Get the current recipient tokens
     var tokens = window.recipientTokens || [];
@@ -890,6 +834,7 @@ function previewEmail() {
     console.log('Preview Email - Tokens:', tokens);
     console.log('Preview Email - CTA Category:', ctaCategory);
     console.log('Preview Email - CTA Mode:', ctaMode);
+    console.log('Preview Email - Randomize:', randomize);
     
     // Show loading state
     $("#previewContent").html(
@@ -897,12 +842,15 @@ function previewEmail() {
         '<div class="spinner-border text-primary" role="status">' +
         '<span class="visually-hidden">Loading preview...</span>' +
         '</div>' +
-        '<p class="mt-3">Fetching recipient data for preview...</p>' +
+        '<p class="mt-3">Fetching ' + (randomize ? 'random ' : '') + 'recipient data for preview...</p>' +
         '</div>'
     );
     
-    var modal = new bootstrap.Modal(document.getElementById("previewModal"));
-    modal.show();
+    // Only show modal if not already shown (for refresh)
+    if (!$('#previewModal').hasClass('show')) {
+        var modal = new bootstrap.Modal(document.getElementById("previewModal"));
+        modal.show();
+    }
     
     // Debug the request data
     var requestData = {
@@ -910,7 +858,8 @@ function previewEmail() {
         process: 'single',  // Use 'single' mode for preview
         cta_category: ctaCategory,
         cta_mode: ctaMode,
-        debug: 'true'  // Enable debug mode
+        debug: 'true',  // Enable debug mode
+        randomize: randomize ? 'true' : 'false'  // Enable randomization
     };
     
     console.log('Preview Request Data:', requestData);
@@ -942,13 +891,201 @@ function previewEmail() {
                 var user = response.user;
                 var companies = response.companies || [];
                 
+                // Get the preview user ID (use actual user ID for testing, not 0)
+                var previewUserId = user.user_id || 0;
+                
+                // Generate admin preview token if this is a Birthday Gold admin
+                // The token allows bypass of login for testing
+                var adminToken = '';
+                <?php if (isset($current_user_data['company_id']) && $current_user_data['company_id'] == 1): ?>
+                    // Birthday Gold admin - generate secure preview token
+                    // Token format: hash(campaign_id + user_id + secret + timestamp)
+                    var timestamp = Math.floor(Date.now() / 1000);
+                    adminToken = '&admin_token=<?= md5($campaign_id . '_PREVIEW_' . date('Y-m-d') . '_BG_ADMIN_SECRET') ?>&ts=' + timestamp;
+                    console.log('Admin preview mode enabled');
+                <?php endif; ?>
+                
                 // Replace placeholders with actual user data
                 var previewContent = content;
                 var previewSubject = subject;
                 
+                // Store original content before replacements
+                var originalContent = content;
+                
                 previewContent = previewContent.replace(/\[\[first_name\]\]/g, user.first_name);
                 previewContent = previewContent.replace(/\[\[city\]\]/g, user.city);
                 previewContent = previewContent.replace(/\[\[birthday_month\]\]/g, user.birthday_month);
+                
+                // Add generation-specific banner and content variations if enabled
+                if (genSpecificMessaging) {
+                    // Calculate user's generation based on birth year
+                    var currentYear = new Date().getFullYear();
+                    var userGeneration = 'Unknown';
+                    var generationIcon = '👤';
+                    var generationColor = '#667eea';
+                    var generationStyle = null;
+                    
+                    // Use the age provided by the server
+                    if (user.age) {
+                        var birthYear = currentYear - user.age;
+                        if (birthYear >= 1997 && birthYear <= 2012) {
+                            userGeneration = 'Gen Z';
+                            generationIcon = '📱';
+                            generationColor = '#9333ea';
+                            generationStyle = {
+                                greeting: "Hey " + user.first_name + "! 🎉",
+                                tone: "casual",
+                                emojis: true,
+                                phrases: ["It's giving birthday vibes", "No cap, these deals are fire", "Your birthday is about to be lit"],
+                                cta: "Tap to claim →"
+                            };
+                        } else if (birthYear >= 1981 && birthYear <= 1996) {
+                            userGeneration = 'Millennial';
+                            generationIcon = '💻';
+                            generationColor = '#3b82f6';
+                            generationStyle = {
+                                greeting: "Hi " + user.first_name + "!",
+                                tone: "friendly",
+                                emojis: true,
+                                phrases: ["Treat yourself this birthday", "You deserve this", "Birthday goals achieved"],
+                                cta: "Claim Your Reward"
+                            };
+                        } else if (birthYear >= 1965 && birthYear <= 1980) {
+                            userGeneration = 'Gen X';
+                            generationIcon = '📼';
+                            generationColor = '#ef4444';
+                            generationStyle = {
+                                greeting: "Hello " + user.first_name + ",",
+                                tone: "straightforward",
+                                emojis: false,
+                                phrases: ["Exclusive birthday offers", "Special birthday savings", "Limited-time birthday deals"],
+                                cta: "View Offer"
+                            };
+                        } else if (birthYear >= 1946 && birthYear <= 1964) {
+                            userGeneration = 'Baby Boomer';
+                            generationIcon = '📺';
+                            generationColor = '#f59e0b';
+                            generationStyle = {
+                                greeting: "Dear " + user.first_name + ",",
+                                tone: "formal",
+                                emojis: false,
+                                phrases: ["Celebrate your special day", "Birthday appreciation offers", "Exclusive birthday benefits"],
+                                cta: "Learn More"
+                            };
+                        } else if (birthYear < 1946) {
+                            userGeneration = 'Silent Generation';
+                            generationIcon = '📻';
+                            generationColor = '#6b7280';
+                            generationStyle = {
+                                greeting: "Dear " + user.first_name + ",",
+                                tone: "respectful",
+                                emojis: false,
+                                phrases: ["Birthday greetings and special offers", "Commemorating your birthday", "Special recognition"],
+                                cta: "View Details"
+                            };
+                        } else {
+                            userGeneration = 'Gen Alpha';
+                            generationIcon = '🎮';
+                            generationColor = '#10b981';
+                            generationStyle = {
+                                greeting: "Yo " + user.first_name + "! 🎮",
+                                tone: "playful",
+                                emojis: true,
+                                phrases: ["Level up your birthday", "Epic birthday rewards unlocked", "Birthday achievement unlocked"],
+                                cta: "Get it! 🎁"
+                            };
+                        }
+                    }
+                    
+                    // Don't add a separate banner - we'll include generation info in the recipient header
+                    var generationInfo = ' (Age ' + user.age + ') <span class="badge" style="background: ' + generationColor + '; color: white; margin-left: 8px;">' + 
+                                          generationIcon + ' ' + userGeneration + '</span>';
+                    
+                    // Apply generation-specific content transformations
+                    if (generationStyle) {
+                        // REPLACE THE MAIN CONTENT but preserve CTA block position and footer
+                        // Check if original content has CTA placeholder
+                        var hasCTAPlaceholder = originalContent.indexOf('[[CTA_BLOCK]]') !== -1;
+                        
+                        // Extract footer from original content (look for hr tag or signature patterns)
+                        var footerMatch = originalContent.match(/<hr[^>]*>[\s\S]*$/);
+                        var savedFooter = '';
+                        
+                        if (footerMatch) {
+                            savedFooter = footerMatch[0];
+                            // Apply placeholder replacements to footer
+                            savedFooter = savedFooter.replace(/\[\[first_name\]\]/g, user.first_name);
+                            savedFooter = savedFooter.replace(/\[\[city\]\]/g, user.city);
+                            savedFooter = savedFooter.replace(/\[\[birthday_month\]\]/g, user.birthday_month);
+                        } else {
+                            // Look for signature patterns including Birthday Gold Team
+                            footerMatch = originalContent.match(/(Sincerely|Best regards|Thank you|Regards|Thanks|Cheers|Happy.*Birthday.*Team)[\s\S]*$/i);
+                            if (footerMatch) {
+                                savedFooter = footerMatch[0];
+                                savedFooter = savedFooter.replace(/\[\[first_name\]\]/g, user.first_name);
+                                savedFooter = savedFooter.replace(/\[\[city\]\]/g, user.city);
+                                savedFooter = savedFooter.replace(/\[\[birthday_month\]\]/g, user.birthday_month);
+                            } else {
+                                // Add default signature if none found
+                                savedFooter = '<hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">' +
+                                            '<p style="text-align: center; color: #666; font-size: 14px;">Happy (almost) Birthday!<br>' +
+                                            'The Birthday Gold Team</p>';
+                            }
+                        }
+                        
+                        // Generate completely new content based on generation
+                        var aiGeneratedContent = '';
+                        
+                        if (userGeneration === 'Gen Z') {
+                            aiGeneratedContent = '<h2 style="color: #333; font-size: 24px; margin: 20px 0;">' + generationStyle.greeting + '</h2>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Yooo it\'s your birthday month! 🎉🎂 No cap, ' + user.city + ' has some fire deals waiting for you.</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Your ' + user.birthday_month + ' birthday is about to be legendary! These brands are literally obsessed with making your day special. The vibes? Immaculate. The deals? Absolutely unmatched. 💯</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Don\'t sleep on these exclusive offers - they\'re giving main character energy and they\'re all yours! ✨</p>';
+                        } else if (userGeneration === 'Millennial') {
+                            aiGeneratedContent = '<h2 style="color: #333; font-size: 24px; margin: 20px 0;">' + generationStyle.greeting + '</h2>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Can you believe it\'s almost your birthday? 🎊 We\'ve partnered with amazing ' + user.city + ' businesses to help you celebrate in style!</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Your ' + user.birthday_month + ' birthday deserves to be extra special. You work hard all year - now it\'s time to treat yourself! These local favorites want to be part of your celebration with exclusive birthday perks just for you.</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Because adulting is hard, but birthdays should be easy. You deserve this! 🎁</p>';
+                        } else if (userGeneration === 'Gen X') {
+                            aiGeneratedContent = '<h2 style="color: #333; font-size: 24px; margin: 20px 0;">' + generationStyle.greeting + '</h2>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Your ' + user.birthday_month + ' birthday is approaching, and we\'ve arranged exclusive offers from premium ' + user.city + ' establishments.</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">These participating businesses value your patronage and want to make your birthday memorable with special discounts and complimentary items reserved just for you.</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Take advantage of these limited-time birthday offers - you\'ve earned them.</p>';
+                        } else if (userGeneration === 'Baby Boomer') {
+                            aiGeneratedContent = '<h2 style="color: #333; font-size: 24px; margin: 20px 0;">' + generationStyle.greeting + '</h2>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">As your ' + user.birthday_month + ' birthday approaches, we are pleased to present you with exclusive offers from distinguished ' + user.city + ' establishments.</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">These respected local businesses would like to honor your special day with carefully selected birthday benefits. Each offer has been chosen to provide genuine value and enhance your birthday celebration.</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">We invite you to explore these birthday privileges at your convenience. Thank you for being a valued member of our community.</p>';
+                        } else if (userGeneration === 'Silent Generation') {
+                            aiGeneratedContent = '<h2 style="color: #333; font-size: 24px; margin: 20px 0;">' + generationStyle.greeting + '</h2>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">In recognition of your upcoming ' + user.birthday_month + ' birthday, we are honored to extend these special offers from esteemed ' + user.city + ' establishments.</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">These distinguished businesses wish to commemorate your birthday with their compliments. Each establishment has prepared something special to mark this important occasion.</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Please accept these birthday courtesies with our warmest wishes for your continued health and happiness.</p>';
+                        } else {
+                            aiGeneratedContent = '<h2 style="color: #333; font-size: 24px; margin: 20px 0;">' + generationStyle.greeting + '</h2>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">IT\'S BIRTHDAY TIME! 🎮🎉 Level up your ' + user.birthday_month + ' birthday with epic rewards from ' + user.city + '!</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Achievement unlocked: BIRTHDAY HERO! These awesome places want to give you super cool birthday stuff. It\'s like getting bonus loot in your favorite game! 🏆</p>';
+                            aiGeneratedContent += '<p style="font-size: 16px; line-height: 1.8;">Ready Player One? Your birthday quest starts here! Collect all the rewards! 🎁🎮</p>';
+                        }
+                        
+                        // Add the CTA block placeholder back if it existed
+                        if (hasCTAPlaceholder) {
+                            aiGeneratedContent += '[[CTA_BLOCK]]';
+                        }
+                        
+                        // Add the footer back if it existed
+                        if (savedFooter) {
+                            aiGeneratedContent += savedFooter;
+                        }
+                        
+                        // Replace the preview content with AI version
+                        previewContent = aiGeneratedContent;
+                    }
+                    
+                    console.log('Gen-Specific Messaging enabled for preview');
+                    console.log('User age:', user.age, 'Generation:', userGeneration);
+                    console.log('Generation style:', generationStyle);
+                }
                 
                 previewSubject = previewSubject.replace(/\[\[first_name\]\]/g, user.first_name);
                 previewSubject = previewSubject.replace(/\[\[city\]\]/g, user.city);
@@ -960,12 +1097,39 @@ function previewEmail() {
                 console.log('CTA Category used:', ctaCategory);
                 console.log('CTA Mode used:', ctaMode);
                 
+                /*
+                 * PREVIEW/TEST MODE TRACKING URLS
+                 * ================================
+                 * In preview mode, we use special test values that the tracking system recognizes:
+                 * - Campaign ID: "TEST-PREVIEW" - Special identifier for preview/test mode
+                 * - User ID: "0" - Indicates a test/preview user (no real user)
+                 * - Company ID: Actual company ID for tracking which CTA was clicked
+                 * - Type: "cta" - Indicates this is a CTA click
+                 * 
+                 * The tracking endpoint at m.bd.gold should recognize TEST-PREVIEW as a test
+                 * and either:
+                 * 1. Log it separately as a test click (not counted in real analytics)
+                 * 2. Redirect to a test landing page
+                 * 3. Show a preview confirmation message
+                 * 
+                 * For production emails, these values would be replaced server-side with:
+                 * - Real campaign_id from mk_campaigns
+                 * - Real user_id from the recipient
+                 */
+                
                 // Build CTA block with actual companies (2x2 grid)
                 var ctaBlock = '';
+                var ctaButtonText = 'Claim Reward →'; // Default CTA text
+                
+                // Use generation-specific CTA text if available
+                if (genSpecificMessaging && typeof generationStyle !== 'undefined' && generationStyle && generationStyle.cta) {
+                    ctaButtonText = generationStyle.cta;
+                }
+                
                 if (companies && companies.length > 0) {
                     ctaBlock = '<div style="background: #f8f9fa; padding: 30px; margin: 20px 0; border-radius: 8px;">';
                     ctaBlock += '<h3 style="color: #333; margin-bottom: 20px; text-align: center;">🎁 Your Birthday Rewards Await!</h3>';
-                    ctaBlock += '<table style="width: 100%; border-spacing: 15px;">';
+                    ctaBlock += '<table style="width: 100%; border-collapse: separate; border-spacing: 20px;">';
                     
                     // Create 2x2 grid
                     for (var i = 0; i < companies.length; i += 2) {
@@ -985,7 +1149,11 @@ function previewEmail() {
                             if (companies[i].offer_text) {
                                 ctaBlock += '<p style="color: #666; font-size: 14px; margin: 10px 0; min-height: 40px;">' + companies[i].offer_text + '</p>';
                             }
-                            ctaBlock += '<a href="https://birthday.gold/enroll/' + companies[i].company_id + '" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;">Claim Reward →</a>';
+                            // Use test values for preview mode that the tracking system can recognize
+                            // TEST-PREVIEW is a special campaign ID that the system recognizes as preview mode
+                            // Use actual preview user ID for deeper functionality testing
+                            var trackUrl = 'https://m.bd.gold/TEST-PREVIEW/u=' + previewUserId + '&c=' + companies[i].company_id + '&t=cta' + adminToken;
+                            ctaBlock += '<a href="' + trackUrl + '" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;">' + ctaButtonText + '</a>';
                             ctaBlock += '</td>';
                         } else {
                             ctaBlock += '<td style="width: 50%;"></td>';
@@ -1005,7 +1173,11 @@ function previewEmail() {
                             if (companies[i + 1].offer_text) {
                                 ctaBlock += '<p style="color: #666; font-size: 14px; margin: 10px 0; min-height: 40px;">' + companies[i + 1].offer_text + '</p>';
                             }
-                            ctaBlock += '<a href="https://birthday.gold/enroll/' + companies[i + 1].company_id + '" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;">Claim Reward →</a>';
+                            // Use test values for preview mode that the tracking system can recognize
+                            // TEST-PREVIEW is a special campaign ID that the system recognizes as preview mode
+                            // Use actual preview user ID for deeper functionality testing
+                            var trackUrl = 'https://m.bd.gold/TEST-PREVIEW/u=' + previewUserId + '&c=' + companies[i + 1].company_id + '&t=cta' + adminToken;
+                            ctaBlock += '<a href="' + trackUrl + '" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;">' + ctaButtonText + '</a>';
                             ctaBlock += '</td>';
                         } else {
                             ctaBlock += '<td style="width: 50%;"></td>';
@@ -1027,6 +1199,12 @@ function previewEmail() {
                 var html = '<div class="alert alert-info mb-3">';
                 html += '<strong>Preview using recipient:</strong> ' + user.first_name + ' ' + user.last_name;
                 html += ' (' + user.email + ') from ' + user.city;
+                
+                // Add generation info if gen-specific messaging is enabled
+                if (genSpecificMessaging && typeof generationInfo !== 'undefined') {
+                    html += generationInfo;
+                }
+                
                 if (response.matched_criteria) {
                     html += ' <span class="badge bg-success ms-2">Matched Criteria</span>';
                 } else {
@@ -1092,6 +1270,11 @@ function previewEmail() {
             );
         }
     });
+}
+
+function refreshPreview() {
+    // Call previewEmail with randomize flag set to true
+    previewEmail(true);
 }
 
 function sendTestEmail() {
@@ -1191,7 +1374,35 @@ function copyErrorMessage() {
 }
 
 // Page-specific initialization
+// Toggle Gen-Specific Messaging
+function toggleGenSpecificMessaging(checkbox) {
+    var alert = document.getElementById('genSpecificAlert');
+    if (checkbox.checked) {
+        alert.style.display = 'block';
+        // Add a visual indicator to the email body label
+        var bodyLabel = document.querySelector('label[for="body_html"]');
+        if (bodyLabel && !bodyLabel.querySelector('.gen-badge')) {
+            bodyLabel.innerHTML += ' <span class="gen-badge badge bg-info ms-2"><i class="bi bi-sparkles"></i> AI will personalize per generation</span>';
+        }
+    } else {
+        alert.style.display = 'none';
+        // Remove the visual indicator
+        var genBadge = document.querySelector('.gen-badge');
+        if (genBadge) {
+            genBadge.remove();
+        }
+    }
+}
+
 $(document).ready(function() {
+    
+    // Initialize Gen-Specific Messaging visual indicator if already checked
+    if ($("#gen_specific_messaging").is(':checked')) {
+        var bodyLabel = document.querySelector('label[for="body_html"]');
+        if (bodyLabel && !bodyLabel.querySelector('.gen-badge')) {
+            bodyLabel.innerHTML += ' <span class="gen-badge badge bg-info ms-2"><i class="bi bi-sparkles"></i> AI will personalize per generation</span>';
+        }
+    }
     
     // AI Content Generation
     $("#aiGenerateBtn").on("click", function(e) {

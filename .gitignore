@@ -26,3 +26,7 @@ Thumbs.db
 /claudecode/
 !/claudecode/.gitignore
 !/claudecode/README.md
+
+# Ignore markdown documentation files
+*.md
+!README.md

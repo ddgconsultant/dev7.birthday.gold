@@ -22,6 +22,7 @@ $ctaCategory = isset($_POST['cta_category']) ? $_POST['cta_category'] : '';
 $ctaMode = isset($_POST['cta_mode']) ? $_POST['cta_mode'] : 'inclusive';
 $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 100; // For 'all' mode
 $debug = isset($_POST['debug']) && $_POST['debug'] === 'true';
+$randomize = isset($_POST['randomize']) && $_POST['randomize'] === 'true'; // For getting random user
 
 // Debug logging
 if ($debug) {
@@ -32,17 +33,122 @@ if ($debug) {
     error_log("CTA Mode: " . $ctaMode);
 }
 
-// If no tokens provided, return appropriate empty response
+// If no tokens provided, handle appropriately
 if (empty($tokens)) {
     switch ($process) {
         case 'single':
+            // For preview mode with no tokens, return a default user
+            // This ensures preview always works
+            $orderBy = $randomize ? "ORDER BY RAND()" : "";
+            $defaultUser = $database->getrow("SELECT user_id, first_name, last_name, email, city, state, birthdate 
+                                             FROM bg_users 
+                                             WHERE status = 'active' 
+                                             $orderBy
+                                             LIMIT 1");
+            
+            // Parse birthdate for default user
+            $monthNames = [
+                1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+            ];
+            
+            $defaultBirthdate = $defaultUser['birthdate'] ?? null;
+            $defaultBirthMonth = 1;
+            $defaultBirthDay = 1;
+            $defaultBirthdayMonthName = 'January';
+            $defaultAge = 25; // Default age
+            
+            if ($defaultBirthdate) {
+                $defaultDateTime = new DateTime($defaultBirthdate);
+                $defaultBirthMonth = (int)$defaultDateTime->format('n');
+                $defaultBirthDay = (int)$defaultDateTime->format('j');
+                $defaultBirthdayMonthName = $monthNames[$defaultBirthMonth] ?? 'January';
+                // Calculate age
+                $now = new DateTime();
+                $defaultAge = $now->diff($defaultDateTime)->y;
+            }
+            
+            // Get sample companies for CTA if category specified
+            $companies = [];
+            if ($ctaCategory) {
+                $companies = $marketing->getCompaniesForCTA(
+                    $ctaCategory, 
+                    'exclusive',  // Show all companies when no specific user
+                    [],           
+                    4
+                );
+                
+                // Convert logos to base64 for email embedding
+                foreach ($companies as &$company) {
+                    if (!empty($company['logo'])) {
+                        $logoUrl = $company['logo'];
+                        if (strpos($logoUrl, '//') === 0) {
+                            $logoUrl = 'https:' . $logoUrl;
+                        }
+                        
+                        try {
+                            $imageData = @file_get_contents($logoUrl);
+                            if ($imageData !== false) {
+                                $extension = strtolower(pathinfo($logoUrl, PATHINFO_EXTENSION));
+                                $mimeType = 'image/jpeg';
+                                
+                                switch($extension) {
+                                    case 'png': $mimeType = 'image/png'; break;
+                                    case 'gif': $mimeType = 'image/gif'; break;
+                                    case 'webp': $mimeType = 'image/webp'; break;
+                                }
+                                
+                                $base64 = base64_encode($imageData);
+                                $company['logo'] = 'data:' . $mimeType . ';base64,' . $base64;
+                            }
+                        } catch (Exception $e) {
+                            // Keep original URL if error
+                        }
+                    }
+                }
+            }
+            
+            $response = [
+                'success' => true,
+                'user' => [
+                    'user_id' => $defaultUser['user_id'] ?? 0,
+                    'first_name' => $defaultUser['first_name'] ?: 'John',
+                    'last_name' => $defaultUser['last_name'] ?: 'Doe',
+                    'email' => $defaultUser['email'] ?: 'john.doe@example.com',
+                    'city' => $defaultUser['city'] ?: 'Seattle',
+                    'state' => $defaultUser['state'] ?: 'WA',
+                    'birthdate' => $defaultUser['birthdate'] ?? '2000-01-01',
+                    'birth_month' => $defaultBirthMonth,
+                    'birth_day' => $defaultBirthDay,
+                    'birthday_month' => $defaultBirthdayMonthName,
+                    'age' => $defaultAge,
+                    'enrolled_company_ids' => ''
+                ],
+                'companies' => $companies,
+                'matched_criteria' => false,
+                'count' => 0,
+                'message' => 'No recipient criteria selected - showing preview with sample user'
+            ];
+            
+            if ($debug) {
+                $response['debug'] = [
+                    'reason' => 'No tokens provided, using default user for preview',
+                    'default_user_id' => $defaultUser['user_id'] ?? 0
+                ];
+            }
+            
+            echo json_encode($response);
+            exit;
+            
         case 'all':
             echo json_encode(['success' => true, 'users' => [], 'count' => 0]);
-            break;
+            exit;
+            
         default:
             echo json_encode(['success' => true, 'count' => 0]);
+            exit;
     }
-    exit;
 }
 
 try {
@@ -56,7 +162,15 @@ try {
                 $debugInfo['process_mode'] = $process;
             }
             
-            $users = $marketing->getRecipients($tokens, 1);
+            // Get multiple users if randomizing, otherwise just one
+            $fetchLimit = $randomize ? 10 : 1;
+            $users = $marketing->getRecipients($tokens, $fetchLimit);
+            
+            // If randomizing and we got multiple users, pick a random one
+            if ($randomize && count($users) > 1) {
+                $randomIndex = array_rand($users);
+                $users = [$users[$randomIndex]];
+            }
             
             // Debug logging
             error_log("Preview - Tokens: " . json_encode($tokens));
@@ -185,6 +299,14 @@ try {
                     }
                 }
                 
+                // Calculate age from birthdate
+                $age = null;
+                if ($birthdate) {
+                    $birthDateTime = new DateTime($birthdate);
+                    $now = new DateTime();
+                    $age = $now->diff($birthDateTime)->y;
+                }
+                
                 $response = [
                     'success' => true,
                     'user' => [
@@ -198,6 +320,7 @@ try {
                         'birth_month' => $birthMonth,
                         'birth_day' => $birthDay,
                         'birthday_month' => $birthdayMonthName,
+                        'age' => $age ?: 25, // Default age for generation calculation
                         'enrolled_company_ids' => $previewUser['enrolled_company_ids'] ?: ''
                     ],
                     'companies' => $companies,
@@ -214,9 +337,11 @@ try {
                 // No users match, get a default user
                 error_log("No users found matching criteria, using default");
                 
+                $orderBy = $randomize ? "ORDER BY RAND()" : "";
                 $defaultUser = $database->getrow("SELECT user_id, first_name, last_name, email, city, state, birthdate 
                                                  FROM bg_users 
                                                  WHERE status = 'active' 
+                                                 $orderBy
                                                  LIMIT 1");
                 
                 // Parse birthdate for default user
@@ -237,6 +362,14 @@ try {
                     $debugInfo['default_user'] = $defaultUser;
                 }
                 
+                // Calculate age from birthdate for default user
+                $defaultAge = null;
+                if ($defaultBirthdate) {
+                    $defaultBirthDateTime = new DateTime($defaultBirthdate);
+                    $now = new DateTime();
+                    $defaultAge = $now->diff($defaultBirthDateTime)->y;
+                }
+                
                 $response = [
                     'success' => true,
                     'user' => [
@@ -250,6 +383,7 @@ try {
                         'birth_month' => $defaultBirthMonth,
                         'birth_day' => $defaultBirthDay,
                         'birthday_month' => $defaultBirthdayMonthName,
+                        'age' => $defaultAge ?: 25, // Default age for generation calculation
                         'enrolled_company_ids' => ''
                     ],
                     'companies' => [],

@@ -19,6 +19,35 @@ $campaigns_sql = "SELECT c.*,
                  ORDER BY c.create_dt DESC";
 $campaigns = $database->getrows($campaigns_sql, ['company_id' => $active_company_id]);
 
+// Calculate recipient counts for newsletter campaigns
+foreach ($campaigns as &$campaign) {
+    if ($campaign['campaign_type'] === 'newsletter') {
+        // Parse recipient criteria to get count
+        $recipient_count = 0;
+        
+        if (!empty($campaign['recipient_criteria'])) {
+            $criteria = json_decode($campaign['recipient_criteria'], true);
+            
+            // If it's "all recipients"
+            if (isset($criteria['type']) && $criteria['type'] === 'all') {
+                // Count all active users
+                $count_sql = "SELECT COUNT(*) as count FROM bg_users WHERE status = 'active'";
+                $result = $database->getrow($count_sql);
+                $recipient_count = $result['count'] ?? 0;
+            } else if (!empty($criteria)) {
+                // For now, show estimated count for complex criteria
+                // This would need the full token parsing logic from marketing class
+                $recipient_count = '~100'; // Placeholder
+            }
+        }
+        
+        $campaign['recipient_count'] = $recipient_count;
+    } else {
+        // For non-newsletter campaigns, we might track different metrics
+        $campaign['recipient_count'] = null;
+    }
+}
+
 $additionalstyles = '
 <style>
 body {
@@ -187,7 +216,7 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
 echo '
-<div class="content-header-staff">
+<div class="content-header-dark">
     <div class="container text-center">
         <h1><i class="bi bi-megaphone me-3"></i>Marketing Campaigns</h1>
         <p class="lead">Manage and track your marketing campaigns across all platforms</p>';
@@ -276,9 +305,21 @@ if (empty($campaigns)) {
                                             <strong>' . htmlspecialchars($campaign['campaign_type'] ?? 'Unknown') . '</strong><br>
                                             <small class="text-muted">Type</small>
                                         </div>
-                                        <div class="col-4">
-                                            <strong>$' . number_format($campaign['budget_amount'] ?? 0) . '</strong><br>
-                                            <small class="text-muted">Budget</small>
+                                        <div class="col-4">';
+        
+        // Show recipient count for newsletters, reach for other campaigns
+        if ($campaign['campaign_type'] === 'newsletter' && isset($campaign['recipient_count'])) {
+            echo '
+                                            <strong>' . (is_numeric($campaign['recipient_count']) ? number_format($campaign['recipient_count']) : $campaign['recipient_count']) . '</strong><br>
+                                            <small class="text-muted">Recipients</small>';
+        } else {
+            // For non-newsletter campaigns, show reach or engagement metrics
+            echo '
+                                            <strong>-</strong><br>
+                                            <small class="text-muted">Reach</small>';
+        }
+        
+        echo '
                                         </div>
                                         <div class="col-4">
                                             <strong>' . ($campaign['start_date'] ? date('M j', strtotime($campaign['start_date'])) : 'TBD') . '</strong><br>
@@ -291,23 +332,11 @@ if (empty($campaigns)) {
         
         // Check if this is a newsletter campaign
         if ($campaign['campaign_type'] === 'newsletter') {
-            // For newsletters, we need to find the bg_newsletter_campaigns entry
-            $newsletter_sql = "SELECT campaign_id FROM bg_newsletter_campaigns WHERE mk_campaign_id = :mk_campaign_id";
-            $newsletter = $database->getrow($newsletter_sql, ['mk_campaign_id' => $campaign['campaign_id']]);
-            
-            if ($newsletter) {
-                // Link to newsletter editor with newsletter campaign ID
-                echo '
-                                        <a href="/myaccount/marketing/newsletter-edit.php?id=' . $qik->encodeId($newsletter['campaign_id']) . '" class="btn btn-outline-success btn-sm">
+            // For newsletters, link directly to newsletter editor with mk_campaigns campaign_id
+            echo '
+                                        <a href="/myaccount/marketing/newsletter-edit.php?id=' . $qik->encodeId($campaign['campaign_id']) . '" class="btn btn-outline-success btn-sm">
                                             <i class="bi bi-envelope-paper"></i> Edit Newsletter
                                         </a>';
-            } else {
-                // Fallback: create new newsletter linked to this campaign
-                echo '
-                                        <a href="/myaccount/marketing/newsletter-edit.php?campaign_id=' . $qik->encodeId($campaign['campaign_id']) . '" class="btn btn-outline-success btn-sm">
-                                            <i class="bi bi-envelope-paper"></i> Create Newsletter
-                                        </a>';
-            }
         } else {
             echo '
                                         <a href="/myaccount/marketing/campaign-edit.php?id=' . $qik->encodeId($campaign['campaign_id']) . '" class="btn btn-outline-primary btn-sm">

@@ -409,8 +409,12 @@ class Marketing
      */
     public function generateCampaignPreview($campaign_id, $override_criteria = null)
     {
-        // Get campaign details
-        $campaign_sql = "SELECT * FROM bg_newsletter_campaigns WHERE campaign_id = :campaign_id";
+        // Get campaign details from mk_campaigns
+        $campaign_sql = "SELECT campaign_id, campaign_name as title, email_subject as subject, 
+                        campaign_content as body_html, cta_category, cta_mode, 
+                        recipient_criteria, gen_specific_messaging
+                        FROM mk_campaigns 
+                        WHERE campaign_id = :campaign_id AND campaign_type = 'newsletter'";
         $campaign = $this->database->getrow($campaign_sql, ['campaign_id' => $campaign_id]);
         
         if (!$campaign) {
@@ -541,7 +545,11 @@ class Marketing
      */
     public function queueCampaignForSending($campaign_id, $criteria = null)
     {
-        $campaign_sql = "SELECT * FROM bg_newsletter_campaigns WHERE campaign_id = :campaign_id";
+        $campaign_sql = "SELECT campaign_id, campaign_name as title, email_subject as subject,
+                        campaign_content as body_html, recipient_criteria, start_date as send_dt,
+                        newsletter_status as status
+                        FROM mk_campaigns 
+                        WHERE campaign_id = :campaign_id AND campaign_type = 'newsletter'";
         $campaign = $this->database->getrow($campaign_sql, ['campaign_id' => $campaign_id]);
         
         if (!$campaign) {
@@ -595,10 +603,10 @@ class Marketing
             }
         }
 
-        // Update campaign status
-        $update_sql = "UPDATE bg_newsletter_campaigns 
-                       SET status = 'queued', queued_dt = NOW() 
-                       WHERE campaign_id = :campaign_id";
+        // Update campaign status in mk_campaigns
+        $update_sql = "UPDATE mk_campaigns 
+                       SET newsletter_status = 'queued', queued_dt = NOW() 
+                       WHERE campaign_id = :campaign_id AND campaign_type = 'newsletter'";
         $this->database->query($update_sql, ['campaign_id' => $campaign_id]);
 
         return [
@@ -1270,20 +1278,34 @@ class Marketing
                 error_log("First company: " . json_encode($companies[0]));
             }
             
-            // If no companies found, try without category filter as fallback
+            // If no companies found, DON'T fall back to random companies
+            // This prevents wrong categories from appearing (e.g., Target in Food category)
             if (empty($companies)) {
-                error_log("No companies found for category '$category', trying fallback without category filter");
+                error_log("No companies found for category '$category'");
+                
+                // Option 1: Return empty array (no CTA block shown)
+                // return [];
+                
+                // Option 2: Try to find companies with offers/deals regardless of category
+                // but ONLY if they have actual birthday offers
                 $fallback_sql = "SELECT c.company_id, c.company_name, c.description as offer_text, 
                                        a.description as company_logo
                         FROM bg_companies c
                         LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id 
-                            AND a.category = 'company_logos' AND a.grouping = 'primary_logo'
+                            AND a.category = 'company_logos' AND a.`grouping` = 'primary_logo'
                         WHERE c.status = 'finalized'
+                        AND c.description IS NOT NULL 
+                        AND c.description != ''
+                        AND (c.description LIKE '%birthday%' OR c.description LIKE '%free%' OR c.description LIKE '%discount%')
                         ORDER BY RAND()
                         LIMIT " . intval($limit);
                 
                 $companies = $this->database->getrows($fallback_sql);
-                error_log("Fallback companies found: " . count($companies));
+                if (!empty($companies)) {
+                    error_log("Fallback: Found " . count($companies) . " companies with birthday offers");
+                } else {
+                    error_log("No fallback companies with offers found - CTA block will be empty");
+                }
             }
             
             // Process logo URLs using the same format as discover.php
