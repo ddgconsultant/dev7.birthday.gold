@@ -69,6 +69,111 @@ if (isset($_GET['toggle_staff_mode']) && $account->isstaff()) {
     exit;
 }
 
+// Detect user generation for display (moved here to be available globally)
+$userGeneration = null;
+$generationStyle = null;
+$generationModeEnabled = false;
+
+// Check if generation mode is enabled in config
+$genModeConfig = $database->getrow("SELECT config_value FROM bg_config WHERE config_type = 'ask_goldie' AND config_key = 'generation_mode'");
+if ($genModeConfig && $genModeConfig['config_value'] == '1') {
+    $generationModeEnabled = true;
+    
+    // Check for force generation parameter (staff testing only)
+    if ($account->isstaff() && isset($_GET['force_gen'])) {
+        $forceGen = strtolower($_GET['force_gen']);
+        switch($forceGen) {
+            case 'alpha':
+            case 'gen_alpha':
+                $userGeneration = 'Gen Alpha';
+                $generationStyle = 'simple_fun';
+                break;
+            case 'z':
+            case 'gen_z':
+            case 'genz':
+                $userGeneration = 'Gen Z';
+                $generationStyle = 'casual_trendy';
+                break;
+            case 'millennial':
+            case 'mil':
+                $userGeneration = 'Millennial';
+                $generationStyle = 'friendly_relatable';
+                break;
+            case 'x':
+            case 'gen_x':
+            case 'genx':
+                $userGeneration = 'Gen X';
+                $generationStyle = 'straightforward';
+                break;
+            case 'boomer':
+            case 'baby_boomer':
+                $userGeneration = 'Baby Boomer';
+                $generationStyle = 'professional';
+                break;
+            case 'silent':
+                $userGeneration = 'Silent Generation';
+                $generationStyle = 'formal';
+                break;
+        }
+        
+        // Store forced generation in session
+        if ($userGeneration) {
+            $_SESSION['user_generation'] = $userGeneration . ' (Forced)';
+            $_SESSION['generation_style'] = $generationStyle;
+            $_SESSION['forced_generation'] = true;
+        }
+    }
+    
+    // Only detect from birthdate if not forced
+    if (!isset($_SESSION['forced_generation']) || !$_SESSION['forced_generation']) {
+        // Calculate generation if user is logged in and has birthdate
+        if (!empty($current_user_data['user_id']) && !empty($current_user_data['birthdate'])) {
+            $birthdate = $current_user_data['birthdate'];
+            $birthYear = date('Y', strtotime($birthdate));
+            $age = date('Y') - $birthYear;
+            
+            // Determine generation based on birth year
+            if ($birthYear >= 2013) {
+                $userGeneration = 'Gen Alpha';
+                $generationStyle = 'simple_fun';
+            } elseif ($birthYear >= 1997 && $birthYear <= 2012) {
+                $userGeneration = 'Gen Z';
+                $generationStyle = 'casual_trendy';
+            } elseif ($birthYear >= 1981 && $birthYear <= 1996) {
+                $userGeneration = 'Millennial';
+                $generationStyle = 'friendly_relatable';
+            } elseif ($birthYear >= 1965 && $birthYear <= 1980) {
+                $userGeneration = 'Gen X';
+                $generationStyle = 'straightforward';
+            } elseif ($birthYear >= 1946 && $birthYear <= 1964) {
+                $userGeneration = 'Baby Boomer';
+                $generationStyle = 'professional';
+            } elseif ($birthYear < 1946) {
+                $userGeneration = 'Silent Generation';
+                $generationStyle = 'formal';
+            }
+            
+            // Store in session for use in AI prompts
+            $_SESSION['user_generation'] = $userGeneration;
+            $_SESSION['generation_style'] = $generationStyle;
+            $_SESSION['forced_generation'] = false;
+        }
+    } else {
+        // Use forced generation from session
+        $userGeneration = $_SESSION['user_generation'] ?? null;
+        $generationStyle = $_SESSION['generation_style'] ?? null;
+    }
+    
+    // Add clear forced generation option
+    if (isset($_GET['clear_force_gen']) && $account->isstaff()) {
+        unset($_SESSION['forced_generation']);
+        unset($_SESSION['user_generation']);
+        unset($_SESSION['generation_style']);
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+}
+
 // Option to start new conversation
 if (isset($_GET['new']) && $_GET['new'] == 1) {
     // Clear ALL conversation history to start fresh
@@ -208,13 +313,83 @@ if (($formdata = $app->formposted())) {
                         $firstName = $current_user_data['first_name'] ?? '';
                     }
                     
+                    // Use generation style from session (already detected globally)
+                    $generationStyle = $_SESSION['generation_style'] ?? null;
+                    
+                    // Build generation-specific instructions if enabled
+                    $generationInstructions = '';
+                    if ($generationModeEnabled && $generationStyle) {
+                        // Debug: Log what generation style we're using
+                        error_log("Ask Goldie Generation Mode: Enabled, Style: " . $generationStyle);
+                        
+                        switch ($generationStyle) {
+                            case 'simple_fun':
+                                $generationInstructions = "\n\nIMPORTANT - ADAPT YOUR LANGUAGE FOR GEN ALPHA:
+You MUST use simple, fun, educational language!
+- Be super playful and use gaming references constantly
+- Say things like 'epic', 'legendary', 'let's unlock this info!'
+- Use LOTS of fun emojis 🎮 🏆 ⭐ 🚀 ✨
+- Reference 'leveling up', 'achievement unlocked', 'power-ups'
+- Keep explanations SUPER simple and exciting!
+- Start responses with 'Yo!' or 'Epic question!'
+This is REQUIRED - you must adapt your language style!\n";
+                                break;
+                            case 'casual_trendy':
+                                $generationInstructions = "\n\nCRITICAL - YOU MUST ADAPT FOR GEN Z:
+Your entire response MUST use Gen Z language style!
+- Use trendy slang: 'no cap', 'it's giving', 'slay', 'fire', 'bussin', 'fr fr'
+- Add emojis throughout 🔥 💯 ✨ 😭 🎉
+- Be super energetic and use 'bestie', 'fam'
+- Start with 'Okay bestie!' or 'No cap,' or 'Fr fr,'
+- This is MANDATORY - adapt your entire speaking style!\n";
+                                break;
+                            case 'friendly_relatable':
+                                $generationInstructions = "\n\nMANDATORY - MILLENNIAL LANGUAGE STYLE:
+You MUST speak like a millennial throughout your response!
+- Use phrases: 'you deserve this', 'treat yourself', 'adulting is hard'
+- Reference coffee, wine, and self-care constantly
+- Use emojis moderately 😊 ☕ 🍷 💕
+- Start with 'Hey friend!' or 'Oh hun,'
+- Be supportive: 'You've got this!'\n";
+                                break;
+                            case 'straightforward':
+                                $generationInstructions = "\n\nREQUIRED - GEN X DIRECT STYLE:
+Cut all fluff. Be direct and practical.
+- No unnecessary pleasantries
+- Get straight to the point
+- Focus only on facts and value
+- Skip emojis entirely
+- Start directly with the answer\n";
+                                break;
+                            case 'professional':
+                                $generationInstructions = "\n\nREQUIRED - BABY BOOMER PROFESSIONAL STYLE:
+Use formal, professional language throughout.
+- Address as Mr./Ms. if you know their name
+- Be thorough and detailed
+- Use phrases like 'I would be happy to assist'
+- Focus on reliability and trust
+- No emojis, no slang\n";
+                                break;
+                            case 'formal':
+                                $generationInstructions = "\n\nMANDATORY - SILENT GENERATION FORMAL STYLE:
+Use extremely formal, courteous language.
+- Begin with 'Good day' or 'Greetings'
+- Use 'Sir' or 'Madam' when appropriate
+- Use phrases like 'May I', 'If you would be so kind'
+- Be extremely deferential and respectful
+- Close with 'At your service' or 'With my regards'\n";
+                                break;
+                        }
+                    }
+                    
                     // Check if this is first message in conversation
                     $isFirstMessage = empty($conversationHistory);
                     
                     // Different prompt for staff vs regular users
                     if ($isStaff) {
                         $systemPrompt = "You are Goldie, the AI assistant for Birthday.Gold. You are speaking to a STAFF MEMBER who has elevated access.
-" . (!empty($firstName) ? "\nThe staff member's name is $firstName.\n" : '') . "
+" . (!empty($firstName) ? "\nThe staff member's name is $firstName.\n" : '') . 
+$generationInstructions . "
 STAFF MODE RULES:
 1. You CAN discuss technical details, infrastructure, databases, APIs, and implementation details
 2. You CAN discuss security measures, authentication methods, and system architecture
@@ -229,7 +404,8 @@ QUESTIONS_JSON: [\"Question 1?\", \"Question 2?\", \"Question 3?\", \"Question 4
 Birthday.Gold is a SaaS platform that automates enrollment in birthday reward programs. The codebase uses PHP with a custom MVC framework, MySQL database, and various integrations including Stripe, PHPMailer, and Telegram.";
                     } else {
                         $systemPrompt = "You are Goldie, the friendly AI assistant for Birthday.Gold. You help users understand how Birthday.Gold works, answer questions about enrollment, rewards, features, and general service inquiries.
-" . (!empty($firstName) ? "\nThe user name is $firstName. Address them by name occasionally to make the conversation more personal.\n" : '') . "
+" . (!empty($firstName) ? "\nThe user name is $firstName. Address them by name occasionally to make the conversation more personal.\n" : '') . 
+$generationInstructions . "
 IMPORTANT RULES:
 1. Only answer questions about Birthday.Gold services, features, enrollment, rewards, pricing, and general help
 2. Do NOT provide any technical details about infrastructure, databases, APIs, or implementation
@@ -247,6 +423,15 @@ Birthday.Gold is a service that automatically enrolls users in birthday reward p
                     }
 
                     $userPrompt = "User Question: " . $question;
+                    
+                    // Debug output for staff to see what prompt is being sent
+                    if ($account->isstaff() && isset($_GET['debug_prompt'])) {
+                        echo "<div class='alert alert-info'><h5>Debug: Generation Instructions Being Sent</h5>";
+                        echo "<pre>" . htmlspecialchars($generationInstructions) . "</pre>";
+                        echo "<p>Generation Style: " . ($generationStyle ?: 'None') . "</p>";
+                        echo "<p>Generation Mode Enabled: " . ($generationModeEnabled ? 'Yes' : 'No') . "</p>";
+                        echo "</div>";
+                    }
                     
                     // Process with AI (limited tokens for cost control)
                     $response = $ai->process([
@@ -1321,6 +1506,11 @@ include($dir['core_components'] . '/bg_header.inc');
                         <a href="<?php echo $_SERVER['PHP_SELF']; ?>?toggle_staff_mode=1" class="btn btn-sm <?php echo ($_SESSION['staff_mode_enabled'] ?? true) ? 'btn-warning' : 'btn-outline-warning'; ?> ms-2" style="text-decoration: none;">
                             <i class="bi bi-toggles"></i> Staff Mode <?php echo ($_SESSION['staff_mode_enabled'] ?? true) ? 'ON' : 'OFF'; ?>
                         </a>
+                        <?php if ($generationModeEnabled && $userGeneration): ?>
+                        <span class="badge bg-info ms-2" title="Generation Mode Active">
+                            <i class="bi bi-person-badge"></i> <?php echo htmlspecialchars($userGeneration); ?>
+                        </span>
+                        <?php endif; ?>
                     <?php endif; ?></h1>
                     <p class="lead mb-0">Get answers about Birthday.Gold from our AI assistant<?php if ($account->isstaff() && ($_SESSION['staff_mode_enabled'] ?? true)): ?> - Technical questions enabled<?php endif; ?></p>
                 </div>
