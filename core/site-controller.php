@@ -510,6 +510,10 @@ foreach ($classes as $class) {
         break;
       // -----------------------------------------
       case 'marketing':
+        // Initialize $mail if not already set
+        if (!isset($mail)) {
+            $mail = null;
+        }
         $$className = new $className($database, $qik, $mail);
         break;
       // -----------------------------------------
@@ -577,8 +581,9 @@ foreach ($classes as $class) {
   }
 }
 
-// Claude Code auto-auth (dev only) - file won't exist in production
-@include($_SERVER['DOCUMENT_ROOT'] . '/claudecode/auth/auto-auth.php');
+// Claude Code auto-auth - REMOVED for security reasons
+// Need to implement a better authentication method
+// @include($_SERVER['DOCUMENT_ROOT'] . '/claudecode/auth/auto-auth.php');
 
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 # ## SITE WIDE VARIABLES 
