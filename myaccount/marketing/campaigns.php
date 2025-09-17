@@ -22,10 +22,18 @@ $campaigns = $database->getrows($campaigns_sql, ['company_id' => $active_company
 // Calculate recipient counts for newsletter campaigns
 foreach ($campaigns as &$campaign) {
     if ($campaign['campaign_type'] === 'newsletter') {
-        // Parse recipient criteria to get count
+        // First check if we have a stored count in campaign_config
         $recipient_count = 0;
         
-        if (!empty($campaign['recipient_criteria'])) {
+        if (!empty($campaign['campaign_config'])) {
+            $config = json_decode($campaign['campaign_config'], true);
+            if (json_last_error() === JSON_ERROR_NONE && isset($config['recipient_count'])) {
+                $recipient_count = $config['recipient_count'];
+            }
+        }
+        
+        // If no stored count, try to calculate from criteria (fallback)
+        if ($recipient_count == 0 && !empty($campaign['recipient_criteria'])) {
             $criteria = json_decode($campaign['recipient_criteria'], true);
             
             // If it's "all recipients"
@@ -35,8 +43,7 @@ foreach ($campaigns as &$campaign) {
                 $result = $database->getrow($count_sql);
                 $recipient_count = $result['count'] ?? 0;
             } else if (!empty($criteria)) {
-                // For now, show estimated count for complex criteria
-                // This would need the full token parsing logic from marketing class
+                // For complex criteria without stored count, show placeholder
                 $recipient_count = '~100'; // Placeholder
             }
         }
@@ -104,14 +111,137 @@ body {
     border-radius: 0 0 12px 12px;
 }
 
-/* Status Badge */
+/* Status Badge with distinct colors */
 .status-badge {
-    font-size: 0.75rem;
-    padding: 0.375rem 0.75rem;
-    border-radius: 6px;
-    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 8px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.75px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Custom status badge colors for better differentiation */
+.status-badge.bg-draft {
+    background-color: #6c757d !important;
+    color: white !important;
+}
+
+.status-badge.bg-active {
+    background-color: #28a745 !important;
+    color: white !important;
+    animation: pulse-green 2s infinite;
+}
+
+.status-badge.bg-scheduled {
+    background-color: #17a2b8 !important;
+    color: white !important;
+}
+
+.status-badge.bg-sending {
+    background-color: #fd7e14 !important;
+    color: white !important;
+    animation: pulse-orange 1.5s infinite;
+}
+
+.status-badge.bg-paused {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.status-badge.bg-completed {
+    background-color: #6610f2 !important;
+    color: white !important;
+}
+
+.status-badge.bg-sent {
+    background-color: #28a745 !important;
+    color: white !important;
+}
+
+.status-badge.bg-cancelled {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.status-badge.bg-archived {
+    background-color: #343a40 !important;
+    color: white !important;
+}
+
+/* Pulse animations for active statuses */
+@keyframes pulse-green {
+    0% { box-shadow: 0 2px 4px rgba(40, 167, 69, 0.4); }
+    50% { box-shadow: 0 2px 8px rgba(40, 167, 69, 0.6); }
+    100% { box-shadow: 0 2px 4px rgba(40, 167, 69, 0.4); }
+}
+
+@keyframes pulse-orange {
+    0% { box-shadow: 0 2px 4px rgba(253, 126, 20, 0.4); }
+    50% { box-shadow: 0 2px 8px rgba(253, 126, 20, 0.6); }
+    100% { box-shadow: 0 2px 4px rgba(253, 126, 20, 0.4); }
+}
+
+/* Campaign title styling - make it stand out */
+.campaign-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Card background colors based on status */
+.campaign-card.status-draft {
+    background-color: #f8f9fa !important;
+    border-color: #6c757d !important;
+}
+
+.campaign-card.status-active {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%) !important;
+    border-color: #28a745 !important;
+}
+
+.campaign-card.status-scheduled {
+    background: linear-gradient(135deg, #e7f6fc 0%, #ffffff 100%) !important;
+    border-color: #17a2b8 !important;
+}
+
+.campaign-card.status-sending {
+    background: linear-gradient(135deg, #fff4e6 0%, #ffffff 100%) !important;
+    border-color: #fd7e14 !important;
+}
+
+.campaign-card.status-paused {
+    background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%) !important;
+    border-color: #ffc107 !important;
+}
+
+.campaign-card.status-completed {
+    background: linear-gradient(135deg, #f3f0ff 0%, #ffffff 100%) !important;
+    border-color: #6610f2 !important;
+}
+
+.campaign-card.status-sent {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%) !important;
+    border-color: #28a745 !important;
+}
+
+.campaign-card.status-cancelled {
+    background: linear-gradient(135deg, #fef1f2 0%, #ffffff 100%) !important;
+    border-color: #dc3545 !important;
+}
+
+.campaign-card.status-archived {
+    background: linear-gradient(135deg, #f1f3f5 0%, #ffffff 100%) !important;
+    border-color: #343a40 !important;
+    opacity: 0.9;
 }
 
 /* Buttons - matching createaccount.php */
@@ -274,35 +404,33 @@ if (empty($campaigns)) {
                     <div class="row">';
     
     foreach ($campaigns as $campaign) {
-        $status_colors = [
-            'draft' => 'secondary',
-            'active' => 'success', 
-            'paused' => 'warning',
-            'completed' => 'info',
-            'cancelled' => 'danger',
-            'archived' => 'dark'
-        ];
-        $status_color = $status_colors[$campaign['status']] ?? 'secondary';
-        
+        // Normalize status for CSS class (handle all possible status values)
+        $status_class = strtolower($campaign['status'] ?? 'draft');
+        // Map any additional statuses to our defined CSS classes
+        if ($status_class === 'queued') {
+            $status_class = 'scheduled';
+        }
+        // Keep 'sent' as its own status for green coloring
+
         echo '
                         <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card campaign-card h-100">
+                            <div class="card campaign-card status-' . $status_class . ' h-100">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
                                         <div class="d-flex align-items-center">
                                             <i class="' . htmlspecialchars($campaign['icon_class']) . ' me-2"></i>
                                             <small class="text-muted">' . htmlspecialchars($campaign['platform_name']) . '</small>
                                         </div>
-                                        <span class="badge bg-' . $status_color . ' status-badge">' . 
+                                        <span class="status-badge bg-' . $status_class . '">' .
                                         htmlspecialchars(ucfirst($campaign['status'] ?? 'unknown')) . '</span>
                                     </div>
-                                    
-                                    <h6 class="card-title">' . htmlspecialchars($campaign['campaign_name'] ?? '') . '</h6>
+
+                                    <h5 class="campaign-title">' . htmlspecialchars($campaign['campaign_name'] ?? '') . '</h5>
                                     <p class="card-text text-muted small">' . htmlspecialchars($campaign['description'] ?? '') . '</p>
                                     
                                     <div class="row text-center small mb-3">
                                         <div class="col-4">
-                                            <strong>' . htmlspecialchars($campaign['campaign_type'] ?? 'Unknown') . '</strong><br>
+                                            <strong>' . htmlspecialchars(ucwords(str_replace('_', ' ', $campaign['campaign_type'] ?? 'Unknown'))) . '</strong><br>
                                             <small class="text-muted">Type</small>
                                         </div>
                                         <div class="col-4">';
@@ -332,11 +460,34 @@ if (empty($campaigns)) {
         
         // Check if this is a newsletter campaign
         if ($campaign['campaign_type'] === 'newsletter') {
-            // For newsletters, link directly to newsletter editor with mk_campaigns campaign_id
-            echo '
+            // Check status to determine if it can be edited or needs to be cancelled
+            $editable_statuses = ['draft', 'cancelled'];
+            
+            if (in_array($campaign['status'], $editable_statuses)) {
+                // Show Edit button for draft/cancelled newsletters
+                echo '
                                         <a href="/myaccount/marketing/newsletter-edit.php?id=' . $qik->encodeId($campaign['campaign_id']) . '" class="btn btn-outline-success btn-sm">
                                             <i class="bi bi-envelope-paper"></i> Edit Newsletter
                                         </a>';
+            } else if (in_array($campaign['status'], ['scheduled', 'queued', 'active', 'sending'])) {
+                // Show Cancel button for scheduled/queued/active newsletters
+                echo '
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#cancelModal"
+                                                data-campaign-id="' . $qik->encodeId($campaign['campaign_id']) . '"
+                                                data-campaign-name="' . htmlspecialchars($campaign['campaign_name']) . '"
+                                                data-campaign-status="' . htmlspecialchars($campaign['status']) . '">
+                                            <i class="bi bi-x-circle"></i> Cancel
+                                        </button>';
+            } else {
+                // For completed/sent newsletters, show View only
+                echo '
+                                        <a href="/myaccount/marketing/newsletter-view.php?id=' . $qik->encodeId($campaign['campaign_id']) . '" class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>';
+            }
         } else {
             echo '
                                         <a href="/myaccount/marketing/campaign-edit.php?id=' . $qik->encodeId($campaign['campaign_id']) . '" class="btn btn-outline-primary btn-sm">
@@ -364,6 +515,71 @@ echo '
         </div>
     </div>
 </div>';
+
+// Cancel Newsletter Modal
+echo '
+<!-- Cancel Newsletter Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Cancel Newsletter
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-x-circle text-danger" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="text-center mb-3">Are you sure you want to cancel this newsletter?</h6>
+                <div class="alert alert-warning">
+                    <strong>Newsletter:</strong> <span id="cancelNewsletterName"></span><br>
+                    <strong>Current Status:</strong> <span id="cancelNewsletterStatus" class="text-capitalize"></span>
+                </div>
+                <p class="text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    This action will stop the newsletter from being sent. You can edit and reschedule it later if needed.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i>Keep Scheduled
+                </button>
+                <a href="#" id="confirmCancelBtn" class="btn btn-danger">
+                    <i class="bi bi-x-circle me-1"></i>Yes, Cancel Newsletter
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle cancel modal data
+document.addEventListener("DOMContentLoaded", function() {
+    var cancelModal = document.getElementById("cancelModal");
+    if (cancelModal) {
+        cancelModal.addEventListener("show.bs.modal", function (event) {
+            // Button that triggered the modal
+            var button = event.relatedTarget;
+            
+            // Extract info from data-* attributes
+            var campaignId = button.getAttribute("data-campaign-id");
+            var campaignName = button.getAttribute("data-campaign-name");
+            var campaignStatus = button.getAttribute("data-campaign-status");
+            
+            // Update modal content
+            document.getElementById("cancelNewsletterName").textContent = campaignName;
+            document.getElementById("cancelNewsletterStatus").textContent = campaignStatus;
+            
+            // Update confirmation link
+            var confirmBtn = document.getElementById("confirmCancelBtn");
+            confirmBtn.href = "/myaccount/marketing/newsletter-cancel.php?id=" + campaignId;
+        });
+    }
+});
+</script>
+';
 
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

@@ -37,6 +37,14 @@ if ($campaign_id > 0) {
         exit;
     }
     
+    // Check if newsletter can be edited (only draft status can be edited)
+    $editable_statuses = ['draft', 'cancelled'];
+    if (!in_array($campaign['status'], $editable_statuses)) {
+        $_SESSION['message'] = '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> This newsletter cannot be edited because it is ' . $campaign['status'] . '. Only draft or cancelled newsletters can be edited.</div>';
+        header('Location: /myaccount/marketing/campaigns.php');
+        exit;
+    }
+    
     // We're already in mk_campaigns, so this IS the marketing campaign
     $mk_campaign = $campaign;
     $mk_campaign_id = $campaign_id;
@@ -59,9 +67,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $send_dt = $_POST['send_date'] . ' ' . $_POST['send_time'] . ':00';
     $status = $_POST['action'] == 'schedule' ? 'scheduled' : 'draft';
     $recipient_criteria = isset($_POST['recipient_criteria']) ? $_POST['recipient_criteria'] : '{"type":"all"}';
+    $calculated_recipient_count = isset($_POST['calculated_recipient_count']) ? intval($_POST['calculated_recipient_count']) : 0;
     
     if ($campaign_id > 0) {
+        // Get existing campaign_config
+        $existing_config_sql = "SELECT campaign_config FROM mk_campaigns WHERE campaign_id = :campaign_id";
+        $existing_config_row = $database->getrow($existing_config_sql, ['campaign_id' => $campaign_id]);
+        $campaign_config = json_decode($existing_config_row['campaign_config'] ?? '{}', true);
+        
+        // Update config with recipient count
+        $campaign_config['recipient_count'] = $calculated_recipient_count;
+        $campaign_config['recipient_count_updated'] = date('Y-m-d H:i:s');
+        
         // Update existing campaign in mk_campaigns
+        // Both status fields should be the same for newsletters
+        
         $update_sql = "UPDATE mk_campaigns SET 
             campaign_name = :campaign_name,
             email_subject = :email_subject,
@@ -70,7 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             cta_mode = :cta_mode,
             gen_specific_messaging = :gen_specific_messaging,
             recipient_criteria = :recipient_criteria,
+            campaign_config = :campaign_config,
             start_date = :start_date,
+            status = :status,
             newsletter_status = :newsletter_status,
             modify_dt = NOW()
             WHERE campaign_id = :campaign_id
@@ -84,7 +106,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'cta_mode' => $cta_mode,
             'gen_specific_messaging' => $gen_specific_messaging,
             'recipient_criteria' => $recipient_criteria,
+            'campaign_config' => json_encode($campaign_config),
             'start_date' => $send_dt,
+            'status' => $status,  // Use same status for both
             'newsletter_status' => $status,
             'campaign_id' => $campaign_id
         ]);
@@ -97,14 +121,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Platform ID 1 is typically the Birthday.Gold platform
         $platform_id = 1;
         
+        // Create campaign_config for new campaign
+        $campaign_config = [
+            'recipient_count' => $calculated_recipient_count,
+            'recipient_count_updated' => date('Y-m-d H:i:s')
+        ];
+        
+        // Both status fields should be the same for newsletters
+        
         $insert_sql = "INSERT INTO mk_campaigns 
             (company_id, platform_id, campaign_type, campaign_name, email_subject, campaign_content, 
-             cta_category, cta_mode, gen_specific_messaging, recipient_criteria, 
+             cta_category, cta_mode, gen_specific_messaging, recipient_criteria, campaign_config,
              start_date, newsletter_status, status, create_by, create_dt) 
             VALUES 
             (:company_id, :platform_id, 'newsletter', :campaign_name, :email_subject, :campaign_content,
-             :cta_category, :cta_mode, :gen_specific_messaging, :recipient_criteria,
-             :start_date, :newsletter_status, 'active', :create_by, NOW())";
+             :cta_category, :cta_mode, :gen_specific_messaging, :recipient_criteria, :campaign_config,
+             :start_date, :newsletter_status, :status, :create_by, NOW())";
         
         $database->query($insert_sql, [
             'company_id' => $company_id,
@@ -116,7 +148,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'cta_mode' => $cta_mode,
             'gen_specific_messaging' => $gen_specific_messaging,
             'recipient_criteria' => $recipient_criteria,
+            'campaign_config' => json_encode($campaign_config),
             'start_date' => $send_dt,
+            'status' => $status,  // Use same status for both
             'newsletter_status' => $status,
             'create_by' => isset($current_user_data['user_id']) ? $current_user_data['user_id'] : 0
         ]);
@@ -124,28 +158,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $campaign_id = $database->lastInsertId();
         $mk_campaign_id = $campaign_id; // They're the same now!
         
-        // If scheduled, populate the queue
-        if ($status == 'scheduled') {
-            // Get all active users who are not unsubscribed
-            $users_sql = "SELECT user_id FROM bg_users 
-                         WHERE status = 'active' 
-                         AND user_id NOT IN (SELECT user_id FROM bg_unsubscribes)";
-            $users = $database->getrows($users_sql);
-            
-            // Populate queue
-            foreach ($users as $user) {
-                $queue_sql = "INSERT INTO mk_newsletter_queue 
-                             (campaign_id, user_id, scheduled_dt, status) 
-                             VALUES 
-                             (:campaign_id, :user_id, :scheduled_dt, 'pending')";
-                
-                $database->query($queue_sql, [
-                    'campaign_id' => $campaign_id,
-                    'user_id' => $user['user_id'],
-                    'scheduled_dt' => $send_dt
-                ]);
-            }
-        }
+        // Queue population is now handled by the scheduler
+        // The scheduler (scheduler--mk-newsletter-queue-v2.php) runs every 5 minutes
+        // and automatically creates bg_user_notifications entries for scheduled campaigns
         
         $_SESSION['message'] = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Newsletter created successfully!</div>';
     }
@@ -196,6 +211,13 @@ body {
     .form-section {
         padding: 2.5rem;
     }
+}
+
+/* AI Generate Button Styling */
+#aiGenerateBtn:hover {
+    background-color: rgba(40, 167, 69, 0.25) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
 }
 
 /* Form Controls - matching createaccount.php styling */
@@ -368,7 +390,7 @@ echo '
                         <div class="input-group">
                             <input type="text" class="form-control" id="subject" name="subject" 
                                    value="' . ($campaign ? htmlspecialchars($campaign['subject']) : '') . '" required>
-                            <button type="button" class="btn btn-outline-success" id="aiGenerateBtn" title="AI Generate Content">
+                            <button type="button" class="btn btn-outline-secondary" id="aiGenerateBtn" title="AI Generate Content" style="background-color: rgba(40, 167, 69, 0.15) !important; color: #28a745;">
                                 <i class="bi bi-magic"></i> AI Generate
                             </button>
                         </div>
@@ -629,8 +651,18 @@ echo '
                 $recipientCriteriaValue = isset($campaign['recipient_criteria']) ? $campaign['recipient_criteria'] : '[]';
                 error_log("Hidden field recipient_criteria value: " . $recipientCriteriaValue);
                 
+                // Get stored recipient count from campaign_config
+                $storedRecipientCount = 0;
+                if (isset($campaign['campaign_config'])) {
+                    $config = json_decode($campaign['campaign_config'], true);
+                    if (json_last_error() === JSON_ERROR_NONE && isset($config['recipient_count'])) {
+                        $storedRecipientCount = $config['recipient_count'];
+                    }
+                }
+                
                 echo '
                 <input type="hidden" name="recipient_criteria" id="recipient_criteria" value="'. htmlspecialchars($recipientCriteriaValue) . '">
+                <input type="hidden" name="calculated_recipient_count" id="calculated_recipient_count" value="' . $storedRecipientCount . '">
             </div>
         </div>
         
@@ -1414,20 +1446,20 @@ $(document).ready(function() {
         var sendDate = $("#send_date").val();
         
         if (!title) {
-            alert("Please enter a Campaign Title first");
-            $("#title").focus();
+            // Show modal for missing title
+            $("#campaignTitleModal").modal("show");
             return;
         }
         
         if (!category) {
-            alert("Please select a CTA Category first");
-            $("#cta_category").focus();
+            // Show modal instead of alert
+            $("#ctaCategoryModal").modal("show");
             return;
         }
         
         if (!sendDate) {
-            alert("Please select a Send Date first");
-            $("#send_date").focus();
+            // Show modal for missing send date
+            $("#sendDateModal").modal("show");
             return;
         }
         
@@ -1571,6 +1603,88 @@ $(document).ready(function() {
     });
 });
 </script>
+
+<!-- Campaign Title Modal -->
+<div class="modal fade" id="campaignTitleModal" tabindex="-1" aria-labelledby="campaignTitleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="campaignTitleModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Campaign Title Required
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning mb-3">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>Please enter a Campaign Title first!</strong>
+                </div>
+                <p>The AI generator needs a campaign title to create contextually relevant content for your newsletter.</p>
+                <p class="mb-0">Please enter a descriptive title for your campaign before generating AI content.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="$('#title').focus();">
+                    <i class="bi bi-pencil-square me-1"></i>Enter Title
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Category Selection Modal -->
+<div class="modal fade" id="ctaCategoryModal" tabindex="-1" aria-labelledby="ctaCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="ctaCategoryModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>CTA Category Required
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning mb-3">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>Please select a CTA Category first!</strong>
+                </div>
+                <p>The AI generator needs to know which category of businesses to feature in your newsletter's Call-to-Action section.</p>
+                <p class="mb-0">Please select a category from the dropdown field before generating AI content.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="$('#cta_category').focus();">
+                    <i class="bi bi-arrow-right-circle me-1"></i>Select Category
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Send Date Modal -->
+<div class="modal fade" id="sendDateModal" tabindex="-1" aria-labelledby="sendDateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="sendDateModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Send Date Required
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning mb-3">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>Please select a Send Date first!</strong>
+                </div>
+                <p>The AI generator needs to know when the newsletter will be sent to create timely and relevant content.</p>
+                <p class="mb-0">Please select a send date before generating AI content.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="$('#send_date').focus();">
+                    <i class="bi bi-calendar-date me-1"></i>Select Date
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php
 }
 

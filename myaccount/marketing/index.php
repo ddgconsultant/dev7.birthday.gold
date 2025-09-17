@@ -84,7 +84,7 @@ if ($_POST['switch_company'] ?? false) {
 
 // Get marketing stats for active company
 $stats_sql = "SELECT 
-    (SELECT COUNT(*) FROM mk_platforms WHERE company_id = :company_id AND status = 'active') as platform_count,
+    (SELECT COUNT(*) + 1 FROM mk_platforms WHERE company_id = :company_id AND status = 'active') as platform_count,
     (SELECT COUNT(*) FROM mk_campaigns WHERE company_id = :company_id2) as campaign_count,
     (SELECT COUNT(*) FROM mk_campaigns WHERE company_id = :company_id3 AND status = 'active') as active_campaigns,
     (SELECT SUM(budget_amount) FROM mk_campaigns WHERE company_id = :company_id4 AND status IN ('active', 'paused')) as total_budget";
@@ -176,6 +176,13 @@ body {
     color: #212529;
     border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12);
+    background: #f8f9fa;
 }
 .company-switcher {
     background: #f8f9fa;
@@ -272,36 +279,44 @@ echo '
         <div class="col-lg-8">
             <div class="row mb-4">
                 <div class="col-md-3">
-                    <div class="card stats-card text-center">
-                        <div class="card-body">
-                            <h3>' . ($stats['platform_count'] ?? 0) . '</h3>
-                            <p class="mb-0 text-muted">Platforms</p>
+                    <a href="/myaccount/marketing/platforms.php" class="text-decoration-none">
+                        <div class="card stats-card text-center">
+                            <div class="card-body">
+                                <h3>' . ($stats['platform_count'] ?? 0) . '</h3>
+                                <p class="mb-0 text-muted">Platforms</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-md-3">
-                    <div class="card stats-card text-center">
-                        <div class="card-body">
-                            <h3>' . ($stats['campaign_count'] ?? 0) . '</h3>
-                            <p class="mb-0 text-muted">Campaigns</p>
+                    <a href="/myaccount/marketing/campaigns.php" class="text-decoration-none">
+                        <div class="card stats-card text-center">
+                            <div class="card-body">
+                                <h3>' . ($stats['campaign_count'] ?? 0) . '</h3>
+                                <p class="mb-0 text-muted">Campaigns</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-md-3">
-                    <div class="card stats-card text-center">
-                        <div class="card-body">
-                            <h3>' . ($stats['active_campaigns'] ?? 0) . '</h3>
-                            <p class="mb-0 text-muted">Active</p>
+                    <a href="/myaccount/marketing/campaigns.php?filter=active" class="text-decoration-none">
+                        <div class="card stats-card text-center">
+                            <div class="card-body">
+                                <h3>' . ($stats['active_campaigns'] ?? 0) . '</h3>
+                                <p class="mb-0 text-muted">Active</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 <div class="col-md-3">
-                    <div class="card stats-card text-center">
-                        <div class="card-body">
-                            <h3>$' . number_format($stats['total_budget'] ?? 0) . '</h3>
-                            <p class="mb-0 text-muted">Budget</p>
+                    <a href="/myaccount/marketing/reports.php" class="text-decoration-none">
+                        <div class="card stats-card text-center">
+                            <div class="card-body">
+                                <h3>$' . number_format($stats['total_budget'] ?? 0) . '</h3>
+                                <p class="mb-0 text-muted">Budget</p>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
 
@@ -391,7 +406,35 @@ echo '
                         </a>
                     </div>
                 </div>
-            </div>
+            </div>';
+
+            // Admin Actions Section - only for staff
+            if ($account->isstaff()) {
+                echo '
+            <div class="card mt-3">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-shield-lock-fill me-2"></i>Admin Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/admin_actions/scheduler--mk-newsletter-queue-v2.php" target="_blank" class="btn btn-outline-danger">
+                            <i class="bi bi-play-circle me-2"></i>Run Queue Creator
+                            <small class="d-block text-muted">Creates notifications for scheduled campaigns</small>
+                        </a>
+                        <a href="/admin_actions/scheduler--mk-newsletter-personalizer.php" target="_blank" class="btn btn-outline-danger">
+                            <i class="bi bi-magic me-2"></i>Run Personalizer
+                            <small class="d-block text-muted">Processes pending notifications</small>
+                        </a>
+                        <a href="/admin_actions/scheduler--mk-newsletter-sender.php" target="_blank" class="btn btn-outline-danger">
+                            <i class="bi bi-send me-2"></i>Run Email Sender
+                            <small class="d-block text-muted">Sends personalized emails</small>
+                        </a>
+                    </div>
+                </div>
+            </div>';
+            }
+
+            echo '
 
             <div class="card mt-3">
                 <div class="card-header">
@@ -490,6 +533,19 @@ echo '
         </div>
     </div>
 </div>';
+
+// Add JavaScript for placeholder functions
+?>
+<script>
+function showBestPractices() {
+    alert('Marketing Best Practices guide coming soon!');
+}
+
+function showTemplates() {
+    alert('Campaign Templates library coming soon!');
+}
+</script>
+<?php
 
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
