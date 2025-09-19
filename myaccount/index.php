@@ -695,49 +695,13 @@ echo '
 <div class="col-md-8 ms-0 ps-0">
 ';
 
-
-// -------------------------------------------------------
-// Enrollment Summary Block (hidden by feature flag)
-if ($show_enrollment_summary) {
-    echo '
-    <!-- Enrollments Summary Block -->
-    <div class="content-panel">
-    <div class="d-flex justify-content-between align-items-baseline">
-    <h3 class="text-success fw-bold mb-0" style="border-bottom: none;">Enrollment Summary</h3>
-    <a href="/myaccount/enrollment" class="btn btn-sm btn-outline-secondary ms-auto">Dashboard</a>
-    </div>
-    <hr class="mt-2 mb-3">
-    <p class="summary mt-3">';
-    if ($businessoutput['counts']['remaining'] == 0) {
-      echo '
-    <i class="bi bi-cart-x-fill text-danger me-2"></i>You ran out of enrollments. You\'ll receive ' . $businessoutput['counts']['plan_total'] . ' more in ' . $qik->plural2($tillanniversary['days'], 'day') . '.';
-    } else {
-      echo '<i class="bi bi-cart-plus-fill text-success me-2"></i>You have ' . $qik->plural2($businessoutput['counts']['remaining'], 'enrollment') . ' remaining. ';
-    }
-    
-    echo '</p>
-    <a href="/myaccount/enrollment-history" class="btn btn-sm btn-primary text-decoration-none">View enrollment history</a>
-    </div>
-    ';
-}
-
-// Profile Completion panel (shown when status is success, hidden by feature flag)
-if ($show_profile_completion && $replacements['profilestatus']=='success') {
-    echo $content_profilecompletion;
-}
+// Account Links Card - moved to left column
 echo '
-</div>
-';
-
-
-
-echo '
-<div class="col-md-4 me-0 pe-0">
-    <div class="content-panel mb-1 pb-1">
+    <div class="content-panel mb-3">
         <div class="d-flex justify-content-between align-items-center p-0 m-0">
             <h5 class="card-title mb-0">Account Links
             </h5>
-            
+
         </div>
 
         <div class="list-group no-border">
@@ -792,8 +756,44 @@ if ($current_user_data['account_type'] == 'business') {
 }
 
 echo '        </div>
+    </div>';
+
+// -------------------------------------------------------
+// Enrollment Summary Block (hidden by feature flag)
+if ($show_enrollment_summary) {
+    echo '
+    <!-- Enrollments Summary Block -->
+    <div class="content-panel">
+    <div class="d-flex justify-content-between align-items-baseline">
+    <h3 class="text-success fw-bold mb-0" style="border-bottom: none;">Enrollment Summary</h3>
+    <a href="/myaccount/enrollment" class="btn btn-sm btn-outline-secondary ms-auto">Dashboard</a>
     </div>
+    <hr class="mt-2 mb-3">
+    <p class="summary mt-3">';
+    if ($businessoutput['counts']['remaining'] == 0) {
+      echo '
+    <i class="bi bi-cart-x-fill text-danger me-2"></i>You ran out of enrollments. You\'ll receive ' . $businessoutput['counts']['plan_total'] . ' more in ' . $qik->plural2($tillanniversary['days'], 'day') . '.';
+    } else {
+      echo '<i class="bi bi-cart-plus-fill text-success me-2"></i>You have ' . $qik->plural2($businessoutput['counts']['remaining'], 'enrollment') . ' remaining. ';
+    }
+
+    echo '</p>
+    <a href="/myaccount/enrollment-history" class="btn btn-sm btn-primary text-decoration-none">View enrollment history</a>
+    </div>
+    ';
+}
+
+// Profile Completion panel (shown when status is success, hidden by feature flag)
+if ($show_profile_completion && $replacements['profilestatus']=='success') {
+    echo $content_profilecompletion;
+}
+echo '
 </div>';
+
+
+
+echo '
+<div class="col-md-4 me-0 pe-0">';
 
 
 $additionalstyles .= '
@@ -808,67 +808,73 @@ font-weight: 700 !important;
 </style>
 ';
 
-$linkmode = 'x';
+// Only show Other Features / Links section for staff and admin users
+if ($account->isstaff() || $account->isadmin()) {
+    $linkmode = 'x';
 
-switch ($linkmode) {
-  case 'old':
-    echo '
-<div class="row mt-3 px-0 mx-0">
-<!-- Other Features / Link Block -->
-<div class="content-panel force-no-decoration">
-<h3 class="text-warning fw-bold">Other Features / Links</h3>
-';
-    $accountlinkspresentation = '';
-    include($dir['core_components'] . '/user_accountlinks_old.inc');
+    switch ($linkmode) {
+      case 'old':
+        echo '
+    <div class="row mt-3 px-0 mx-0">
+    <!-- Other Features / Link Block -->
+    <div class="content-panel force-no-decoration">
+    <h3 class="text-warning fw-bold">Other Features / Links</h3>
+    ';
+        $accountlinkspresentation = '';
+        include($dir['core_components'] . '/user_accountlinks_old.inc');
 
-    echo '
-<a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
-</div>
-</div>
-</div>
-</div>
-';
-    break;
+        echo '
+    <a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
+    </div>
+    </div>
+    </div>
+    </div>
+    ';
+        break;
 
-  case '1':
-    $accountlinkspresentation = '';
-    include($dir['core_components'] . '/user_accountlinks1.inc');
-    if ($accountlinks_display !== false) {
+      case '1':
+        $accountlinkspresentation = '';
+        include($dir['core_components'] . '/user_accountlinks1.inc');
+        if ($accountlinks_display !== false) {
 
-      echo '
-<div class="row mt-3 px-0 mx-0">
-<!-- Other Features / Link Block -->
-<div class="content-panel force-no-decoration">
-<h3 class="text-warning fw-bold">Other Features / Links</h3>
-' . $accountlinks_output . '
-<a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
-</div>
-</div>
-';
+          echo '
+    <div class="row mt-3 px-0 mx-0">
+    <!-- Other Features / Link Block -->
+    <div class="content-panel force-no-decoration">
+    <h3 class="text-warning fw-bold">Other Features / Links</h3>
+    ' . $accountlinks_output . '
+    <a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
+    </div>
+    </div>
+    ';
+        }
+        break;
+
+      default:
+        $accountlinkspresentation = '';
+        include($dir['core_components'] . '/user_accountlinks.inc');
+        if ($accountlinks_display !== false) {
+          echo '
+    <div class="row mt-3 px-0 mx-0">
+    <!-- Other Features / Link Block -->
+    <div class="content-panel force-no-decoration">
+    <h3 class="text-warning fw-bold">Other Features / Links</h3>
+
+    ';
+          echo $accountlinks_output;
+          echo '
+    <a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
+    </div>
+    </div>
+    </div>
+    </div>
+    ';
+        }
+        break;
     }
-    break;
-
-  default:
-    $accountlinkspresentation = '';
-    include($dir['core_components'] . '/user_accountlinks.inc');
-    if ($accountlinks_display !== false) {
-      echo '
-<div class="row mt-3 px-0 mx-0">
-<!-- Other Features / Link Block -->
-<div class="content-panel force-no-decoration">
-<h3 class="text-warning fw-bold">Other Features / Links</h3>
-
-';
-      echo $accountlinks_output;
-      echo '
-<a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
-</div>
-</div>
-</div>
-</div>
-';
-    }
-    break;
+} else {
+    // For non-staff users, just close the divs
+    echo '</div></div>';
 }
 
 
