@@ -70,7 +70,15 @@ if (!$isLoggedIn) {
                             ' . htmlspecialchars($userInitials) . '
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/myaccount/"><i class="bi bi-person me-2"></i>Account Home</a></li>
+                            <li><a class="dropdown-item" href="/myaccount/"><i class="bi bi-person me-2"></i>Account Home</a></li>';
+    
+    // Show Marketing for users with a company
+    if (isset($current_user_data['company_id']) && $current_user_data['company_id'] > 0) {
+        echo '
+                            <li><a class="dropdown-item" href="/myaccount/marketing/"><i class="bi bi-megaphone me-2"></i>Marketing</a></li>';
+    }
+    
+    echo '
                             <li><a class="dropdown-item" href="/myaccount/settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
                             <li><a class="dropdown-item" href="/myaccount/preferences"><i class="bi bi-bell me-2"></i>Preferences</a></li>';
     

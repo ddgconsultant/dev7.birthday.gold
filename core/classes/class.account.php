@@ -212,6 +212,37 @@ class Account
 
       // Login successful, store user ID in session
       $this->session->set('current_user_id', $user['user_id']);
+
+
+
+        // Check if user belongs to a company
+      $sql = 'SELECT count(distinct a.company_id) as x FROM mk_company_access a, bg_companies c WHERE a.company_id=c.company_id and c.`company_status`="active" and a.user_id = :input and a.`status`="active"';
+      $params = ['input' =>  $user['user_id']];
+   
+  $stmt = $this->db->prepare($sql);
+  $stmt->execute($params);
+  $user_companyaccess = $stmt->fetch(PDO::FETCH_ASSOC);
+  #breakpoint($user_companyaccess);
+  $user['company_listcount']=$user_companyaccess['x'] ?? 0;
+      /*
+      // Check if user belongs to a company
+      #$company = new Company($this->db, $this->session);
+      $user_companies = $company->getUserCompanies($user['user_id']);
+      if (!empty($user_companies)) {
+        // Set the primary company (first one with owner/admin access, or just the first one)
+        $primary_company = $user_companies[0];
+        foreach ($user_companies as $comp) {
+          if (in_array($comp['access_type'], ['owner', 'admin'])) {
+            $primary_company = $comp;
+            break;
+          }
+        }
+        $user['company_id'] = $primary_company['company_id'];
+        $user['company_name'] = $primary_company['company_name'];
+        $user['company_access_type'] = $primary_company['access_type'];
+      }
+      */
+     # breakpoint($user);
       $this->session->set('current_user_data', $user);
 
       // track the login
@@ -286,6 +317,105 @@ class Account
     }
 
     return true;
+  }
+
+
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+ 
+  public function rememberme($variables) {
+    // Extract variables from the passed array
+    $current_user_data = $variables['current_user_data'];
+    $autologin_days_length = $variables['autologin_days_length'];
+    $userAgent = $variables['userAgent'];
+    $client_ip = $variables['client_ip'];
+    $logintype = $variables['logintype'];
+    $doautologin = $variables['doautologin'];
+    $post_data = $_POST;
+    global $session, $qik, $app;
+    
+
+    session_tracking('rememberme_checkbox_detected', [
+      'user_id' => $current_user_data['user_id'],
+      'rememberme_posted' => isset($_POST['rememberme']) ? 'yes' : 'no',
+      'post_data' => $_POST,
+      'logintype' => $logintype,
+      'doautologin' => $doautologin
+    ]);
+
+    // Get user ID and encode it
+    $userId = $current_user_data['user_id'];
+    $encodedId = $qik->encodeId($userId);
+    $deviceid = $app->deviceid();
+    
+    // Prepare validation data
+    $validatedata = [
+      'rawdata' => $current_user_data['email'],
+      'user_id' => $userId,
+      'validation_rawdata' => $encodedId,
+      'device_id' => $deviceid,
+      'type' => 'bgrememberme_autologin',
+      'invalidate_previouscodes' => true,
+      'status' => 'cookie',
+      'updatestatus' => 'cookie',
+      'expireminutes' => $autologin_days_length * 24 * 60 // $autologin_days_length in minutes
+    ];
+    
+    // Get validation codes
+    $validationcodes = $app->getvalidationcodes($validatedata);
+    
+    if (!empty($validationcodes)) {
+      $validationToken = $validationcodes['long'] ?? '';
+      $expiredt = (time() + ($autologin_days_length * 24 * 60 * 60));
+      
+      // Set cookies
+      setcookie('bgralid', $encodedId, $expiredt, "/"); // $autologin_days_length in seconds
+      setcookie('bgraltoken', $validationToken, $expiredt, "/"); // $autologin_days_length in seconds
+      setcookie('bgdeviceid', $deviceid, time() + (365 * 24 * 60 * 60), "/"); // $autologin_days_length in seconds
+      
+      // Store user attributes
+      $description = [
+        'agent' => $userAgent,
+        'remember_me_device' => $deviceid,
+        'bgralid' => $encodedId,
+        'expire_ts' => $expiredt,
+        'expire_dt' => date('Y-m-d H:i:s', $expiredt),
+        'validation_data' => $validatedata,
+        'validation_codes' => $validationcodes,
+        'client_ip' => $client_ip,
+      ];
+      
+      $input = [
+        'type' => 'bg_rememberme_set',
+        'name' => $deviceid,
+        'status' => 'A',
+        'description' => json_encode($description),
+        'end_dt' => date('Y-m-d H:i:s', $expiredt),
+      ];
+      
+      $this->setUserAttribute($userId, $input);
+      
+      // Session tracking for success
+      session_tracking('bg_rememberme_set_success', array_merge($validatedata, $validationcodes, [
+        'device_id' => $deviceid,
+        'encoded_id' => $encodedId,
+        'expire_dt' => date('Y-m-d H:i:s', $expiredt),
+        'cookies_set' => [
+          'bgralid' => $encodedId,
+          'bgraltoken' => $validationcodes['validation_code'],
+          'bgdeviceid' => $deviceid
+        ]
+      ]));
+      
+      return [
+        'success' => true,
+        'device_id' => $deviceid,
+        'encoded_id' => $encodedId,
+        'expire_dt' => date('Y-m-d H:i:s', $expiredt)
+      ];
+    }
+    
+    return ['success' => false, 'error' => 'Failed to generate validation codes'];
   }
 
 
@@ -407,6 +537,18 @@ if ($row['name'] === 'avatar') {
     $user[$row['name']] = $row['string_value'];
 }
 }
+
+
+  // Check if user belongs to a company
+  $sql = 'SELECT count(distinct a.company_id) as x FROM mk_company_access a, bg_companies c WHERE a.company_id=c.company_id and c.`company_status`="active" and a.user_id = :input and a.`status`="active"';
+  $params = ['input' =>  $user['user_id']];
+
+$stmt = $this->db->prepare($sql);
+$stmt->execute($params);
+$user_companyaccess = $stmt->fetch(PDO::FETCH_ASSOC);
+#breakpoint($user_companyaccess);
+$user['company_listcount']=$user_companyaccess['x'] ?? 0;
+
 
 #$tmpresults=$this->getuseravatar($user);
 #breakpoint($tmpresults);
@@ -1876,6 +2018,78 @@ public function isExistingPhoneNumber($phone, $exclude_user_id = null) {
       }
   }
 
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function getCompanyAttribute($company_id, $attribute_name, $default = false)
+  {
+    $sql = "SELECT `description` FROM `bg_company_attributes` 
+            WHERE `company_id` = :company_id 
+            AND `name` = :name 
+            AND `status` = 'active' 
+            ORDER BY `create_dt` DESC 
+            LIMIT 1";
+    
+    $stmt = $this->db->prepare($sql);
+    $stmt->execute([
+        ':company_id' => $company_id,
+        ':name' => $attribute_name
+    ]);
+    
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($result) {
+        return $result['description'];
+    }
+    
+    return $default;
+  }
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function setCompanyAttribute($company_id, $attribute_name, $value, $type = 'business_plan', $status = 'active')
+  {
+    // Check if attribute already exists
+    $existing_sql = "SELECT `attribute_id` FROM `bg_company_attributes` 
+                     WHERE `company_id` = :company_id 
+                     AND `name` = :name 
+                     AND `status` = 'active'";
+    
+    $stmt = $this->db->prepare($existing_sql);
+    $stmt->execute([
+        ':company_id' => $company_id,
+        ':name' => $attribute_name
+    ]);
+    
+    $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($existing) {
+        // Update existing attribute
+        $update_sql = "UPDATE `bg_company_attributes` 
+                       SET `description` = :value, `modify_dt` = NOW() 
+                       WHERE `attribute_id` = :attribute_id";
+        
+        $stmt = $this->db->prepare($update_sql);
+        $stmt->execute([
+            ':value' => $value,
+            ':attribute_id' => $existing['attribute_id']
+        ]);
+    } else {
+        // Insert new attribute
+        $insert_sql = "INSERT INTO `bg_company_attributes` 
+                       (`company_id`, `type`, `name`, `description`, `status`, `create_dt`, `modify_dt`) 
+                       VALUES (:company_id, :type, :name, :value, :status, NOW(), NOW())";
+        
+        $stmt = $this->db->prepare($insert_sql);
+        $stmt->execute([
+            ':company_id' => $company_id,
+            ':type' => $type,
+            ':name' => $attribute_name,
+            ':value' => $value,
+            ':status' => $status
+        ]);
+    }
+    
+    return true;
+  }
+
 
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1896,6 +2110,21 @@ public function isExistingPhoneNumber($phone, $exclude_user_id = null) {
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function setUserAttribute($user_id, $input)
 {
+    // Check if input is empty or not an array
+    if (empty($input) || !is_array($input)) {
+        return true; // Nothing to update
+    }
+    
+    // Filter out null/empty values
+    $input = array_filter($input, function($value) {
+        return $value !== null && $value !== '';
+    });
+    
+    // Check again after filtering
+    if (empty($input)) {
+        return true; // Nothing to update after filtering
+    }
+
     // Build query parts
     $columnNames = [];
     $valuePlaceholders = [];
@@ -1917,11 +2146,8 @@ public function isExistingPhoneNumber($phone, $exclude_user_id = null) {
     $updateStatementsSql = implode(', ', $updateStatements);
 
     // Construct query
-    $sql = "
-    INSERT INTO bg_user_attributes (user_id, $columnNamesSql, create_dt, modify_dt) 
-    VALUES (:user_id, $valuePlaceholdersSql, NOW(), NOW())
-    ON DUPLICATE KEY UPDATE $updateStatementsSql, modify_dt = NOW()
-    ";
+    $sql = "INSERT INTO bg_user_attributes (user_id, $columnNamesSql, create_dt, modify_dt) 
+    VALUES (:user_id, $valuePlaceholdersSql, NOW(), NOW())   ON DUPLICATE KEY UPDATE $updateStatementsSql, modify_dt = NOW() ";
 
     // Prepare and execute
     $stmt = $this->db->prepare($sql);
@@ -3424,10 +3650,9 @@ id="date'. $display_start_date->format('Y-m-d').'" value="'. $display_start_date
     ]);
     
     // Store tracking record
-    $sql = "INSERT INTO bg_user_attributes (user_id, type, name, description, status, create_dt, modify_dt) 
+    $sql = "INSERT INTO bg_user_attributes (user_id, `type`, `name`, `description`, `status`, create_dt, modify_dt) 
             VALUES (:user_id, 'security', 'password_changed', :password_data, 'active', NOW(), NOW())
-            ON DUPLICATE KEY UPDATE 
-            description = VALUES(description), modify_dt = NOW(), status = 'active'";
+            ON DUPLICATE KEY UPDATE description = VALUES(description), modify_dt = NOW(), `status` = 'active'";
     
     $stmt = $database->prepare($sql);
     $stmt->execute(['user_id' => $user_id, 'password_data' => $password_data]);

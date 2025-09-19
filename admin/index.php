@@ -764,12 +764,12 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
-            <a href="/admin/personality-results.php" class="admin-card">
+            <a href="/admin/personality-summary.php" class="admin-card">
                 <div class="admin-icon icon-user" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     <i class="bi bi-palette"></i>
                 </div>
                 <div class="admin-content">
-                    <h3 class="admin-card-title">Team Personality Results</h3>
+                    <h3 class="admin-card-title">Personality Summary</h3>
                     <p class="admin-card-text">View staff personality test results and team composition</p>
                 </div>
             </a>
@@ -1019,6 +1019,16 @@ $businessHours = $app->bg_businesshours();
                 <div class="admin-content">
                     <h3 class="admin-card-title">Service List</h3>
                     <p class="admin-card-text">View all system services</p>
+                </div>
+            </a>
+            
+            <a href="/system-status" class="admin-card">
+                <div class="admin-icon icon-system">
+                    <i class="bi bi-clipboard-pulse"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">System Status</h3>
+                    <p class="admin-card-text">Overview of system health and service status</p>
                 </div>
             </a>
             

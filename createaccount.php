@@ -333,11 +333,24 @@ if ($app->formposted()) {
             $hashed_password = password_hash($values['password'], PASSWORD_DEFAULT);
             $first_name = ucfirst($values['firstname']);
             $last_name = ucfirst($values['lastname']);
-            $email = !empty($values['email']) ? trim(strtolower($values['email'])) : '';
-            
+
+            // Determine contact method to properly set email/phone
+            $contact_method = $values['contact_method'] ?? 'phone';
+
+            // Only set email if using email method, otherwise leave it truly empty (not empty string)
+            if ($contact_method === 'email') {
+                $email = !empty($values['email']) ? trim(strtolower($values['email'])) : '';
+            } else {
+                $email = ''; // Empty string for phone-only signups
+            }
+
             // Store password for strength tracking (will be used after account creation)
             $password_for_tracking = $values['password'];
             $phone = !empty($values['phone_clean']) ? $values['phone_clean'] : preg_replace('/\D/', '', $values['phone'] ?? '');
+
+            error_log('[CREATENEWACCOUNT] Contact method: ' . $contact_method);
+            error_log('[CREATENEWACCOUNT] Phone processing - phone_clean: ' . ($values['phone_clean'] ?? 'NONE') . ', phone: ' . ($values['phone'] ?? 'NONE') . ', final: ' . ($phone ?? 'NONE'));
+            error_log('[CREATENEWACCOUNT] Email: ' . ($email ?: 'EMPTY'));
             
             // Generate username if not provided
             $username = $values['username'] ?? '';
@@ -443,9 +456,10 @@ if ($app->formposted()) {
                     $userregistrationdata = array_merge($input, ['user_id' => $user_id]);
                     $session->set('userregistrationdata', $userregistrationdata);
                     $session->set('accountcode', $user_id);
-                    
+
                     error_log('[CREATENEWACCOUNT] User created with ID: ' . $user_id);
                     error_log('[CREATENEWACCOUNT] Setting userregistrationdata in session with email: ' . ($userregistrationdata['email'] ?? 'NO EMAIL'));
+                    error_log('[CREATENEWACCOUNT] Setting userregistrationdata in session with phone_number: ' . ($userregistrationdata['phone_number'] ?? 'NO PHONE'));
                     error_log('[CREATENEWACCOUNT] Account verification requirement: ' . ($plandata['account_verification'] ?? 'NOT SET'));
                     
                     // Also ensure signup_process_data is set for checkout

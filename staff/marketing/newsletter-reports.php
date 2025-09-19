@@ -4,7 +4,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 $campaign_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 if ($campaign_id == 0) {
-    header('Location: /staff/newsletter-list.php');
+    header('Location: newsletter-report.php');
     exit;
 }
 
@@ -17,7 +17,7 @@ $campaign_sql = "SELECT c.*, u.first_name, u.last_name
 $campaign = $database->getrow($campaign_sql, ['campaign_id' => $campaign_id]);
 
 if (!$campaign) {
-    header('Location: /staff/newsletter-list.php');
+    header('Location: /staff/marketing/newsletter-report.php');
     exit;
 }
 
@@ -97,7 +97,7 @@ $delivery_rate = $stats['total_recipients'] > 0 ? round(($stats['sent_count'] / 
 echo '
 <div class="content-header-staff">
     <div class="container text-center">
-        <h1><i class="fas fa-envelope"></i> Newsletter System</h1>
+        <h1><i class="bi bi-envelope-fill"></i> Newsletter System</h1>
         <p class="lead">' . htmlspecialchars($campaign['title']) . '</p>
         <div class="stats">
             <div class="stat-item">
@@ -131,7 +131,7 @@ echo '
         </div>
         <div class="col-auto">
             <button onclick="exportReport()" class="btn btn-primary">
-                <i class="fas fa-download"></i> Export CSV
+                <i class="bi bi-download"></i> Export CSV
             </button>
         </div>
     </div>

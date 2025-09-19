@@ -74,15 +74,18 @@ if (!empty($enableadminpageeditor)) {   $admin->admineditor('body-1'); }
                     </div>
                     <div class="card-body">
                         <p class="card-text my-3">Explore our terms to understand our platform's rules. Ensuring clarity and fairness for all users!</p>
-                        <div class="d-md-flex">
+                        <div class="d-md-flex flex-wrap">
                             <div class="mb-2 mb-md-0">
                                 <a href="/legalhub/terms" class="btn btn-dark rounded-pill px-4">Read our Terms</a>
                             </div>
                             <div class="d-none d-md-inline mx-2 mt-1">
                                 -
                             </div>
-                            <div>
+                            <div class="mb-2 mb-md-0">
                                 <a href="/legalhub/terms?full" class="btn btn-sm btn-warning rounded-pill mt-1 fw-semibold">Full Terms and Conditions</a>
+                            </div>
+                            <div class="ms-md-3">
+                                <a href="/eligibility" class="btn btn-sm btn-info rounded-pill mt-1 fw-semibold">Eligibility Guidelines</a>
                             </div>
                         </div>
                     </div>

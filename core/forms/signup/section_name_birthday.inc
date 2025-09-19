@@ -19,18 +19,24 @@ if (isset($process_handlers) && $process_handlers) {
     // First name validation
     if (empty($values['firstname'])) {
         $errors['firstname'] = 'First name is required';
-    } elseif (strlen($values['firstname']) < 2) {
+    } elseif (mb_strlen($values['firstname']) < 2) {
         $errors['firstname'] = 'First name must be at least 2 characters';
-    } elseif (!preg_match('/^[a-zA-Z\s\'-]+$/', $values['firstname'])) {
+    } elseif (mb_strlen($values['firstname']) > 32) {
+        $errors['firstname'] = 'First name must not exceed 32 characters';
+    } elseif (!preg_match('/^[\p{L}\p{M}\s\'\-\.,]+$/u', $values['firstname'])) {
+        // Allow Unicode letters, marks, spaces, apostrophes, hyphens, periods, commas
         $errors['firstname'] = 'First name contains invalid characters';
     }
-    
+
     // Last name validation
     if (empty($values['lastname'])) {
         $errors['lastname'] = 'Last name is required';
-    } elseif (strlen($values['lastname']) < 2) {
+    } elseif (mb_strlen($values['lastname']) < 2) {
         $errors['lastname'] = 'Last name must be at least 2 characters';
-    } elseif (!preg_match('/^[a-zA-Z\s\'-]+$/', $values['lastname'])) {
+    } elseif (mb_strlen($values['lastname']) > 32) {
+        $errors['lastname'] = 'Last name must not exceed 32 characters';
+    } elseif (!preg_match('/^[\p{L}\p{M}\s\'\-\.,]+$/u', $values['lastname'])) {
+        // Allow Unicode letters, marks, spaces, apostrophes, hyphens, periods, commas
         $errors['lastname'] = 'Last name contains invalid characters';
     }
     

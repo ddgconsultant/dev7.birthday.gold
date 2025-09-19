@@ -3,10 +3,10 @@ $addClasses[] = 'mail';
 $addClasses[] = 'marketing';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-$pagetitle = "Create Marketing Platform";
+$pagetitle = "Add External Platform";
 
 // Get user's company context
-$company_id = $current_user_data['company_id'] ?? 0;
+$company_id = $current_user_data['company_id'] ?? 99;
 $active_company_id = $_SESSION['active_company_id'] ?? $company_id;
 
 // Handle form submission
@@ -83,8 +83,8 @@ include($dir['core_components'] . '/bg_header.inc');
 echo '
 <div class="content-header-dark">
     <div class="container text-center">
-        <h1><i class="bi bi-plus-circle me-3"></i>Create Marketing Platform</h1>
-        <p class="lead">Add a new marketing platform to your toolkit</p>';
+        <h1><i class="bi bi-plus-circle me-3"></i>Add External Platform</h1>
+        <p class="lead">Connect a new external marketing platform to extend your reach</p>';
 
 // Show company context
 if ($active_company_id == 0) {

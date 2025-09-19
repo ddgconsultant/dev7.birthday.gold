@@ -7,9 +7,7 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
 
 $nav_tabs = [
     'index' => ['Dashboard', '/myaccount/marketing/', 'bi bi-speedometer2'],
-    'platforms' => ['Platforms', '/myaccount/marketing/platforms.php', 'bi bi-link'],
     'campaigns' => ['Campaigns', '/myaccount/marketing/campaigns.php', 'bi bi-megaphone'],
-    'calendar' => ['Calendar', '/myaccount/marketing/calendar.php', 'bi bi-calendar'],
     'reports' => ['Reports', '/myaccount/marketing/reports.php', 'bi bi-bar-chart']
 ];
 
@@ -32,7 +30,7 @@ foreach ($nav_tabs as $page => $tab_info) {
 echo '
                     </div>
                     <div>
-                        <a href="/myaccount/marketing/settings.php" class="btn btn-outline-secondary btn-sm">
+                        <a href="/myaccount/marketing/settings.php" class="text-muted">
                             <i class="bi bi-gear"></i>
                         </a>
                     </div>

@@ -459,6 +459,30 @@ $additionalstyles .= "
 .spin {
     animation: spin 1s linear infinite;
 }
+
+/* Light tooltip for dark backgrounds */
+.tooltip-light .tooltip-inner {
+    background-color: white !important;
+    color: #333 !important;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.tooltip-light.bs-tooltip-top .tooltip-arrow::before,
+.tooltip-light.bs-tooltip-top .tooltip-arrow::after {
+    border-top-color: white !important;
+}
+.tooltip-light.bs-tooltip-bottom .tooltip-arrow::before,
+.tooltip-light.bs-tooltip-bottom .tooltip-arrow::after {
+    border-bottom-color: white !important;
+}
+.tooltip-light.bs-tooltip-start .tooltip-arrow::before,
+.tooltip-light.bs-tooltip-start .tooltip-arrow::after {
+    border-left-color: white !important;
+}
+.tooltip-light.bs-tooltip-end .tooltip-arrow::before,
+.tooltip-light.bs-tooltip-end .tooltip-arrow::after {
+    border-right-color: white !important;
+}
 </style>
 ";
 
@@ -738,7 +762,7 @@ switch ($display_footertype ?? 'default') {
                             <div class="footer-section">
                                 <h6 class="footer-title">Legal</h6>
                                 <ul class="footer-links">
-                                    <li><a href="/legalhub/terms">Terms of Service</a></li>
+                                    <li><a href="/legalhub/terms">Terms</a></li>
                                     <li><a href="/legalhub/privacy">Privacy Policy</a></li>
                                     <li><a href="/legalhub/cookies">Cookie Policy</a></li>
                                     <li><a href="/legalhub">Legal Hub</a></li>
@@ -771,7 +795,7 @@ switch ($display_footertype ?? 'default') {
                        <!--        <h6 class="footer-title mt-4">For Businesses</h6>
                                 <ul class="footer-links">
                                     <li><a href="/business/partner">Become a Partner</a></li>
-                                    <li><a href="/business/api">API Documentation</a></li>
+                                    <li style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;"><a href="/business/api" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="tooltip-light" title="API Documentation">API Documentation</a></li>
                                 </ul>
                                 -->
                             </div>';
@@ -787,7 +811,7 @@ switch ($display_footertype ?? 'default') {
                                 <h6 class="footer-title mt-4">For Businesses</h6>
                                 <ul class="footer-links">
                                     <li><a href="/business/partner">Become a Partner</a></li>
-                                    <li><a href="/business/api">API Documentation</a></li>
+                                    <li style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;"><a href="/business/api" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="tooltip-light" title="API Documentation">API Documentation</a></li>
                                 </ul>
                             </div>';
             $enableemailjs = true;
@@ -1078,6 +1102,27 @@ if (!$cookiePreferencesSet) {
     include($_SERVER['DOCUMENT_ROOT'] . '/core/components/' . $website['ui_version'] . '/' . $bannerFile);
 }
 
+?>
+
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '784399997505971');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=784399997505971&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+ 
+<?php
 echo '
 </body>
 </html>';

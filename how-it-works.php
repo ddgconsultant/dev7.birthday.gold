@@ -1,6 +1,17 @@
 <?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
+// Handle marketing platform first visit
+if (isset($_GET['marketing']) && $_GET['marketing'] == '1') {
+    // Set the marketing visit attribute so user won't be redirected again
+    $account->setUserAttribute($current_user_data['user_id'], 'first_marketing_visit', 'completed');
+    
+    // You could customize content for marketing users here
+    $marketing_context = true;
+} else {
+    $marketing_context = false;
+}
+
 
 $avg_reward_value = 300; // This can be changed easily
 
@@ -320,7 +331,21 @@ echo '
     <div class="container">
         <h2>Ready to Make Your Birthday Special?</h2>
         <p>Join thousands who celebrate their birthday the Birthday.Gold way</p>
-        <a href="/signup" class="btn-get-started">Get Started Free</a>
+        <a href="/signup" class="btn-get-started">Get Started Free</a>';
+
+if ($marketing_context && $account->isloggedin()) {
+    echo '
+        <div class="mt-4">
+            <a href="/myaccount/marketing/" class="btn btn-lg btn-primary">
+                <i class="bi bi-arrow-right me-2"></i>Continue to Marketing Dashboard
+            </a>
+            <div class="mt-2">
+                <small class="text-white-50">Ready to create your first marketing campaign!</small>
+            </div>
+        </div>';
+}
+
+echo '
     </div>
 </div>
 ';

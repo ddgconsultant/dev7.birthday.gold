@@ -94,7 +94,7 @@ if (!$showBottomNav || $currentPage === 'help' || $currentPage === 'terms' || $c
                     <div class="footer-section">
                         <h6 class="footer-title">Legal</h6>
                         <ul class="footer-links">
-                            <li><a href="/terms">Terms of Service</a></li>
+                            <li><a href="/terms">Terms</a></li>
                             <li><a href="/privacy">Privacy Policy</a></li>
                             <li><a href="/cookies">Cookie Policy</a></li>
                         </ul>

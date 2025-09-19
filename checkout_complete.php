@@ -117,23 +117,19 @@ try {
                 }
             }
             
-            // Update checkout session if table exists
-            if (tableExists($database, 'bg_checkout_sessions')) {
-                try {
-                    $sql = "UPDATE bg_checkout_sessions 
-                            SET status = 'completed',
-                                completed_at = NOW()
-                            WHERE user_id = :user_id 
-                            AND stripe_session_id = :stripe_session_id";
-                    
-                    $database->execute($sql, [
-                        'user_id' => $user_id,
-                        'stripe_session_id' => $payment_intent->id
-                    ]);
-                    error_log('[CHECKOUT_COMPLETE] Checkout session updated');
-                } catch (Exception $e) {
-                    error_log('[CHECKOUT_COMPLETE] Failed to update checkout session: ' . $e->getMessage());
-                }
+            // Track checkout completion using sessiontracking function
+            try {
+                $tracking_data = [
+                    'action' => 'checkout_verified',
+                    'stripe_session_id' => $payment_intent->id,
+                    'user_id' => $user_id,
+                    'amount' => $payment_intent->amount,
+                    'status' => 'completed'
+                ];
+                sessiontracking('checkout_verified', 'checkout', $tracking_data);
+                error_log('[CHECKOUT_COMPLETE] Checkout completion tracked in sessiontracking');
+            } catch (Exception $e) {
+                error_log('[CHECKOUT_COMPLETE] Failed to track checkout completion: ' . $e->getMessage());
             }
             
             // Create payment record if table exists

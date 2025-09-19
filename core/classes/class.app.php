@@ -443,7 +443,34 @@ GROUP BY
         # ##------------- END SWITCH -------------------------------
     }
 
-    return $plans[$plan];
+    // Handle user_free and user_gold which are in the database but not in the plans array
+    if ($plan == 'user_free') {
+        return 'Free';
+    } elseif ($plan == 'user_gold') {
+        return 'Gold';
+    } elseif (isset($plans[$plan])) {
+        return $plans[$plan];
+    } else {
+        // Plan not found - look it up from database
+        global $database, $session;
+        $currentuserdata = $session->get('current_user_data', '');
+        if (isset($currentuserdata['user_id'])) {
+            $sql = "SELECT account_plan FROM bg_users WHERE user_id = :user_id";
+            $stmt = $database->prepare($sql);
+            $stmt->execute(['user_id' => $currentuserdata['user_id']]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($result) {
+                $plan = $result['account_plan'];
+                // Try again with the fetched plan
+                if ($plan == 'user_free') return 'Free';
+                if ($plan == 'user_gold') return 'Gold';
+                if (isset($plans[$plan])) return $plans[$plan];
+            }
+        }
+        // Still not found, log error
+        error_log("Unknown plan type: $plan for user_id: " . ($currentuserdata['user_id'] ?? 'unknown'));
+        return 'Free';
+    }
   }
 
 
@@ -596,7 +623,34 @@ GROUP BY
         # ##------------- END SWITCH -------------------------------
     }
 
-    return $plans[$plan];
+    // Handle user_free and user_gold which are in the database but not in the plans array
+    if ($plan == 'user_free') {
+        return 'Free';
+    } elseif ($plan == 'user_gold') {
+        return 'Gold';
+    } elseif (isset($plans[$plan])) {
+        return $plans[$plan];
+    } else {
+        // Plan not found - look it up from database
+        global $database, $session;
+        $currentuserdata = $session->get('current_user_data', '');
+        if (isset($currentuserdata['user_id'])) {
+            $sql = "SELECT account_plan FROM bg_users WHERE user_id = :user_id";
+            $stmt = $database->prepare($sql);
+            $stmt->execute(['user_id' => $currentuserdata['user_id']]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($result) {
+                $plan = $result['account_plan'];
+                // Try again with the fetched plan
+                if ($plan == 'user_free') return 'Free';
+                if ($plan == 'user_gold') return 'Gold';
+                if (isset($plans[$plan])) return $plans[$plan];
+            }
+        }
+        // Still not found, log error
+        error_log("Unknown plan type: $plan for user_id: " . ($currentuserdata['user_id'] ?? 'unknown'));
+        return 'Free';
+    }
   }
 
 

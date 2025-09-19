@@ -2,7 +2,8 @@
 // Modern device management with compact cards and report functionality
 $output_devices = '';
 $devicelist = [];
-$current_device_id = $_COOKIE['bg_device_id'] ?? null;
+// Get current device ID from remember me cookies (primary) or fallback cookie
+$current_device_id = $_COOKIE['bgdeviceid'] ?? $_COOKIE['bg_device_id'] ?? null;
 $device_count = 0;
 
 // Fetch the device data
@@ -46,9 +47,34 @@ foreach ($device_result as $logrow) {
         $location = array_filter([$city, $state, $country]);
         $locationStr = !empty($location) ? implode(', ', $location) : 'Unknown';
         
-        // Check if this is the current device
-        $is_current = ($logrow['name'] === $current_device_id);
+  // Check if this is the current device using multiple methods
+  $is_current = false;
         
+  // Method 1: Direct device ID match
+  if ($logrow['name'] === $current_device_id) {
+      $is_current = true;
+  }
+  
+  // Method 2: Check against remember me cookies if they exist
+  if (!$is_current && !empty($_COOKIE['bgdeviceid']) && !empty($_COOKIE['bgralid'])) {
+      $remember_device_id = $_COOKIE['bgdeviceid'];
+      if ($logrow['name'] === $remember_device_id) {
+          $is_current = true;
+      }
+  }
+  
+  // Method 3: Check description for device ID match (if stored in JSON)
+  if (!$is_current && $descriptionIsValid && isset($description['remember_me_device'])) {
+      if ($description['remember_me_device'] === $current_device_id) {
+          $is_current = true;
+      }
+  }
+        
+
+
+
+
+
         // Device type icon
         $device_icon = match(strtolower($deviceType)) {
             'mobile' => 'bi-phone',
@@ -78,8 +104,8 @@ foreach ($device_result as $logrow) {
         
         $output_devices .= '
         <div class="device-card">
-            ' . ($is_current ? '<span class="current-badge">Current Device</span>' : '') . '
-            <div class="device-header">
+           ' . ($is_current ? '<span class="current-badge">This Device</span>' : '') . '
+                    <div class="device-header">
                 <div class="device-icon' . ($is_current ? ' current' : '') . '">
                     <i class="' . $device_icon . '"></i>
                 </div>
@@ -115,11 +141,12 @@ foreach ($device_result as $logrow) {
                     onclick="reportDevice(\'' . htmlspecialchars($logrow['name']) . '\', \'' . htmlspecialchars($deviceType . ' - ' . $browser) . '\', \'' . htmlspecialchars($locationStr) . '\')">
                     <i class="bi bi-exclamation-triangle me-1"></i>Report
                 </button>
+                ' : '') . '
                 <button type="button" 
                     class="btn btn-sm btn-warning" 
                     onclick="confirmRemoveDevice(\'' . htmlspecialchars($logrow['name']) . '\', \'' . htmlspecialchars($deviceType . ' - ' . $browser) . '\')">
                     <i class="bi bi-trash me-1"></i>Remove
-                </button>' : '<span class="text-muted">Cannot remove current device</span>') . '
+                </button>
             </div>
         </div>';
     }
@@ -245,14 +272,14 @@ echo '
         </p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Cancel</button>
         <form method="GET" action="/myaccount/loginhistory" style="display: inline;">
           <input type="hidden" name="view" value="devices">
           <input type="hidden" name="act" value="delete">
           <input type="hidden" name="devicelist" id="removeDeviceId" value="">
           <input type="hidden" name="_token" value="' . $display->inputcsrf_token('tokenonly') . '">
-          <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check me-1"></i>Remove Device
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i>Remove Device
           </button>
         </form>
       </div>

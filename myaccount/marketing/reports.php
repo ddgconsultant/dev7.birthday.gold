@@ -6,7 +6,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 $pagetitle = "Marketing Reports";
 
 // Get user's company context
-$company_id = $current_user_data['company_id'] ?? 0;
+$company_id = $current_user_data['company_id'] ?? 99;
 $active_company_id = $_SESSION['active_company_id'] ?? $company_id;
 
 // Get analytics data for active company

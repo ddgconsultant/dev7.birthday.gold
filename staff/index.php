@@ -110,6 +110,7 @@ $additionalstyles = '
     .staff-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        text-decoration: none !important;
     }
     .clock-status {
         font-size: 1.2rem;
@@ -144,6 +145,7 @@ $additionalstyles = '
         color: var(--bs-primary);
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        text-decoration: none !important;
     }
     .quick-link:hover .bi {
         color: var(--bs-primary);
@@ -350,7 +352,7 @@ echo '
     <!-- Additional Staff Tools -->
     <div class="row mb-4">
         <div class="col-md-3 col-sm-6 mb-3">
-            <a href="/staff/marketing/marketing-hub.php" class="quick-link d-block">
+            <a href="/staff/marketing/" class="quick-link d-block">
                 <i class="bi bi-megaphone fs-3 mb-2" style="color: #667eea;"></i>
                 <h6>Marketing Hub</h6>
                 <small class="text-muted">Unified marketing platform</small>

@@ -6,7 +6,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 $pagetitle = "Marketing Calendar";
 
 // Get user's company context
-$company_id = $current_user_data['company_id'] ?? 0;
+$company_id = $current_user_data['company_id'] ?? 99;
 
 // Handle consultant company switching via session
 $active_company_id = $_SESSION['active_company_id'] ?? $company_id;
@@ -111,12 +111,18 @@ foreach ($activities as $activity) {
     if (!isset($activities_by_date[$activity_date])) {
         $activities_by_date[$activity_date] = [];
     }
+    $metadata = json_decode($activity['metadata'], true) ?: [];
+    // Add encoded_id if campaign_id exists in metadata
+    if (isset($metadata['campaign_id'])) {
+        $metadata['encoded_id'] = $qik->encodeId($metadata['campaign_id']);
+    }
+    
     $activities_by_date[$activity_date][] = [
         'id' => $activity['activity_id'],
         'title' => $activity['activity_title'],
         'description' => $activity['activity_description'],
         'activity_type' => $activity['activity_type'],
-        'metadata' => json_decode($activity['metadata'], true) ?: []
+        'metadata' => $metadata
     ];
 }
 
@@ -409,8 +415,8 @@ for ($day = 1; $day <= $days_in_month; $day++) {
                     // Decode metadata if it's from bg_content table
                     $metadata = is_string($activity['metadata']) ? json_decode($activity['metadata'], true) : $activity['metadata'];
                     $metadata = $metadata ?: [];
-                    $company_id = $metadata['company_id'] ?? 0;
-                    $company_name = $company_id == 0 ? 'Birthday Gold' : 'Company #' . $company_id;
+                    $company_id = $metadata['company_id'] ?? 99;
+                    $company_name = $company_id == 99 ? 'Birthday Gold' : 'Company #' . $company_id;
                 }
                 $company_badge = ' (' . $company_name . ')';
             }
@@ -466,17 +472,29 @@ echo '
     
     <div class="row mt-4">
         <div class="col-md-6">
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-header">
                     <h5 class="mb-0">Quick Actions</h5>
                 </div>
-                <div class="card-body d-grid gap-2">
-                    <a href="/myaccount/marketing/platforms.php" class="btn btn-primary">
-                        <i class="bi bi-link me-2"></i>Manage Platforms
-                    </a>
-                    <a href="/myaccount/marketing/campaigns.php" class="btn btn-outline-primary">
-                        <i class="bi bi-plus me-2"></i>Create Campaign
-                    </a>
+                <div class="card-body">
+                    <div class="list-group no-border">
+                        <a href="/myaccount/marketing/campaign-create.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                            <div><i class="bi bi-plus me-2"></i>Create Campaign</div>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        <a href="/myaccount/marketing/campaigns.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                            <div><i class="bi bi-megaphone me-2"></i>View Campaigns</div>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        <a href="/myaccount/marketing/platforms.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                            <div><i class="bi bi-link me-2"></i>Manage Platforms</div>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        <a href="/myaccount/marketing/reports.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                            <div><i class="bi bi-graph-up me-2"></i>Performance Reports</div>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -533,7 +551,7 @@ foreach ($campaigns_by_date as $date => $date_campaigns) {
             'title' => ($campaign['type'] == 'start' ? 'Campaign Start: ' : 'Campaign End: ') . $campaign['name'],
             'description' => 'Campaign ' . ($campaign['type'] == 'start' ? 'begins' : 'ends'),
             'activity_type' => 'campaign_' . $campaign['type'],
-            'metadata' => ['status' => $campaign['status'], 'campaign_id' => $campaign['id']]
+            'metadata' => ['status' => $campaign['status'], 'campaign_id' => $campaign['id'], 'encoded_id' => $qik->encodeId($campaign['id'])]
         ];
     }
 }
@@ -601,12 +619,20 @@ function showDateActivities(dateStr) {
                     break;
             }
             
+            // Check if this is a campaign-related activity and has campaign_id
+            let titleContent = activity.title;
+            if (activity.metadata && activity.metadata.campaign_id) {
+                // Use pre-encoded ID if available, otherwise use the raw ID
+                const campaignId = activity.metadata.encoded_id || activity.metadata.campaign_id;
+                titleContent = `<a href="/myaccount/marketing/campaign-edit.php?id=${campaignId}" class="text-decoration-none">${activity.title}</a>`;
+            }
+            
             content += `
                 <div class="list-group-item">
                     <div class="d-flex w-100 justify-content-between">
                         <h6 class="mb-1">
                             <span class="badge bg-${activityColor} me-2">${activityIcon}</span>
-                            ${activity.title}
+                            ${titleContent}
                         </h6>
                         <small class="text-muted">${activity.activity_type.replace('_', ' ')}</small>
                     </div>

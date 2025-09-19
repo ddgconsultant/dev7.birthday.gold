@@ -57,7 +57,7 @@ if ($success) {
     echo '
             <div class="card">
                 <div class="card-body text-center py-5">
-                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
                     <h2 class="mt-3">Successfully Unsubscribed</h2>
                     <p class="mt-3">You have been unsubscribed from Birthday Gold newsletters.</p>
                     <p>We are sorry to see you go. You will no longer receive promotional emails from us.</p>
@@ -69,7 +69,7 @@ if ($success) {
 } elseif ($error) {
     echo '
             <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle"></i> ' . htmlspecialchars($error) . '
+                <i class="bi bi-exclamation-triangle-fill"></i> ' . htmlspecialchars($error) . '
             </div>
             <div class="text-center">
                 <a href="/support" class="btn btn-primary">Contact Support</a>
@@ -83,7 +83,7 @@ if ($success) {
         echo '
             <div class="card">
                 <div class="card-body text-center py-5">
-                    <i class="fas fa-info-circle text-info" style="font-size: 4rem;"></i>
+                    <i class="bi bi-info-circle-fill text-info" style="font-size: 4rem;"></i>
                     <h2 class="mt-3">Already Unsubscribed</h2>
                     <p class="mt-3">You are already unsubscribed from Birthday Gold newsletters.</p>
                     <p>You unsubscribed on ' . date('F j, Y', strtotime($existing['unsubscribed_dt'])) . '</p>
@@ -117,10 +117,10 @@ if ($success) {
                     <form method="POST">
                         <div class="d-grid gap-2">
                             <button type="submit" name="confirm" value="1" class="btn btn-danger">
-                                <i class="fas fa-times-circle"></i> Yes, Unsubscribe Me
+                                <i class="bi bi-x-circle-fill"></i> Yes, Unsubscribe Me
                             </button>
                             <a href="/" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> No, Keep Me Subscribed
+                                <i class="bi bi-arrow-left"></i> No, Keep Me Subscribed
                             </a>
                         </div>
                     </form>
@@ -130,7 +130,7 @@ if ($success) {
 } else {
     echo '
             <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> Invalid or expired unsubscribe link.
+                <i class="bi bi-exclamation-triangle-fill"></i> Invalid or expired unsubscribe link.
             </div>
             
             <div class="card">

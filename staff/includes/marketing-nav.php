@@ -67,14 +67,14 @@ echo '
 // Campaigns tab
 $isActive = ($current_page == 'marketing-campaigns.php') ? 'active' : '';
 echo '
-        <a href="/staff/marketing-campaigns.php" class="marketing-nav-item ' . $isActive . '">
+        <a href="/staff/marketing/marketing-campaigns.php" class="marketing-nav-item ' . $isActive . '">
             <i class="fas fa-bullhorn"></i>Campaigns
         </a>';
 
 // Create New tab
 $isActive = ($current_page == 'marketing-edit.php' && !isset($_GET['id'])) ? 'active' : '';
 echo '
-        <a href="/staff/marketing-edit.php" class="marketing-nav-item ' . $isActive . '">
+        <a href="/staff/marketing/marketing-edit.php" class="marketing-nav-item ' . $isActive . '">
             <i class="fas fa-plus-circle"></i>Create New
         </a>';
 
@@ -97,21 +97,21 @@ if ($current_page == 'marketing-view.php') {
 // Analytics tab
 $isActive = ($current_page == 'marketing-analytics.php') ? 'active' : '';
 echo '
-        <a href="/staff/marketing-analytics.php" class="marketing-nav-item ' . $isActive . '">
+        <a href="/staff/marketing/marketing-analytics.php" class="marketing-nav-item ' . $isActive . '">
             <i class="fas fa-chart-line"></i>Analytics
         </a>';
 
 // Platforms tab
 $isActive = ($current_page == 'marketing-platforms.php') ? 'active' : '';
 echo '
-        <a href="/staff/marketing-platforms.php" class="marketing-nav-item ' . $isActive . '">
+        <a href="/staff/marketing/marketing-platforms.php" class="marketing-nav-item ' . $isActive . '">
             <i class="fas fa-link"></i>Platforms
         </a>';
 
 // Calendar tab
 $isActive = ($current_page == 'marketing-calendar.php') ? 'active' : '';
 echo '
-        <a href="/staff/marketing-calendar.php" class="marketing-nav-item ' . $isActive . '">
+        <a href="/staff/marketing/marketing-calendar.php" class="marketing-nav-item ' . $isActive . '">
             <i class="fas fa-calendar-alt"></i>Calendar
         </a>';
 

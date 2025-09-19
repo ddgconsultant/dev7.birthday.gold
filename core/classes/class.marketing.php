@@ -1214,12 +1214,15 @@ class Marketing
      * @param int $limit Number of companies to return
      * @return array Companies with logo information
      */
-    public function getCompaniesForCTA($category, $mode = 'inclusive', $userEnrollments = [], $limit = 4)
+    public function getCompaniesForCTA($category, $mode = 'inclusive', $userEnrollments = [], $limit = 4, $user_id = null)
     {
         error_log("getCompaniesForCTA called - Category: $category, Mode: $mode, Enrollments: " . implode(',', $userEnrollments));
         
         $params = ['category' => $category];
         $excludeClause = '';
+        
+        // Use user_id as seed for consistent randomization if provided
+        $orderBy = $user_id ? "ORDER BY RAND(" . intval($user_id) . ")" : "ORDER BY RAND()";
         
         if ($mode === 'inclusive' && !empty($userEnrollments)) {
             // Inclusive: Only show user's enrolled companies
@@ -1231,14 +1234,15 @@ class Marketing
             
             // Using the proper query from enrollment-picker.php
             $sql = "SELECT c.company_id, c.company_name, c.description as offer_text, 
-                           a.description as company_logo
+                           MAX(a.description) as company_logo
                     FROM bg_companies c
                     LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id 
                         AND a.category = 'company_logos' AND a.`grouping` = 'primary_logo'
                     WHERE c.status = 'finalized' 
                     AND c.display_category = :category
                     $includeClause
-                    ORDER BY RAND()
+                    GROUP BY c.company_id, c.company_name, c.description
+                    $orderBy
                     LIMIT " . intval($limit);
         } else {
             // Exclusive mode or no enrollments: Show other companies
@@ -1256,14 +1260,15 @@ class Marketing
             error_log("Available categories: " . json_encode($categories_exist));
             
             $sql = "SELECT c.company_id, c.company_name, c.description as offer_text, 
-                           a.description as company_logo
+                           MAX(a.description) as company_logo
                     FROM bg_companies c
                     LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id 
                         AND a.category = 'company_logos' AND a.`grouping` = 'primary_logo'
                     WHERE c.status = 'finalized' 
                     AND c.display_category = :category
                     $excludeClause
-                    ORDER BY RAND()
+                    GROUP BY c.company_id, c.company_name, c.description
+                    $orderBy
                     LIMIT " . intval($limit);
         }
         
@@ -1322,6 +1327,399 @@ class Marketing
         } catch (Exception $e) {
             error_log("Marketing::getCompaniesForCTA - Error: " . $e->getMessage());
             return [];
+        }
+    }
+    
+    /**
+     * Generate CTA Block HTML for newsletters
+     * Centralized method to create consistent CTA blocks across all newsletter components
+     * 
+     * @param string $category - The CTA category (e.g., 'Retail', 'Food', etc.)
+     * @param string $mode - 'inclusive' or 'exclusive' mode
+     * @param int $user_id - The recipient user ID
+     * @param int $campaign_id - The campaign ID for tracking
+     * @param array $user_data - User data array with first_name, last_name, etc.
+     * @param string $cta_button_text - Custom CTA button text (optional)
+     * @return string HTML for the CTA block
+     */
+    public function generateCTABlockHTML($category, $mode = 'inclusive', $user_id = 0, $campaign_id = 0, $user_data = [], $cta_button_text = 'Claim Reward →')
+    {
+        try {
+            // Get user's enrollments for inclusive/exclusive mode
+            $enrollments_sql = "SELECT company_id FROM bg_user_enrollments 
+                               WHERE user_id = :user_id AND status = 'success'";
+            $enrollments = $this->database->getrows($enrollments_sql, ['user_id' => $user_id]);
+            $user_enrollments = array_column($enrollments, 'company_id');
+            
+            // Get companies using the existing method - pass user_id for consistent randomization
+            $companies = $this->getCompaniesForCTA($category, $mode, $user_enrollments, 4, $user_id);
+            
+            if (empty($companies)) {
+                // Return placeholder if no companies found
+                return '<div style="border: 2px dashed #ccc; padding: 20px; margin: 20px 0; text-align: center;">' .
+                       '<strong>Birthday Rewards</strong><br>No offers available in this category</div>';
+            }
+            
+            // Build the CTA block HTML (2x2 grid)
+            $html = '<div style="background: #f8f9fa; padding: 30px; margin: 20px 0; border-radius: 8px;">';
+            $html .= '<h3 style="color: #333; margin-bottom: 20px; text-align: center;">🎁 Your Birthday Rewards Await!</h3>';
+            $html .= '<table style="width: 100%; border-collapse: separate; border-spacing: 20px;">';
+            
+            // Create 2x2 grid
+            for ($i = 0; $i < count($companies); $i += 2) {
+                $html .= '<tr>';
+                
+                // First column
+                if (isset($companies[$i])) {
+                    $company = $companies[$i];
+                    $html .= '<td style="width: 50%; background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center; vertical-align: top;">';
+                    
+                    // Company logo or placeholder
+                    $logo_displayed = false;
+                    if (!empty($company['logo'])) {
+                        // Check if it's already base64 or needs processing
+                        if (strpos($company['logo'], 'data:image') === 0) {
+                            // Already base64
+                            $logo_src = $company['logo'];
+                            $logo_displayed = true;
+                        } else {
+                            // Try to convert to base64
+                            if (strpos($company['logo'], '//') === 0 || strpos($company['logo'], 'http') === 0) {
+                                $logo_src = $this->convertImageToBase64($company['logo'], 96, 96);
+                            } else {
+                                // Assume it's a relative path
+                                $logo_src = $this->convertImageToBase64('https:' . $company['logo'], 96, 96);
+                            }
+                            
+                            // Check if conversion was successful
+                            if (!empty($logo_src)) {
+                                $logo_displayed = true;
+                            }
+                        }
+                        
+                        if ($logo_displayed) {
+                            $html .= '<img src="' . $logo_src . '" style="max-width: 96px; max-height: 96px; margin-bottom: 10px; border-radius: 4px;" alt="' . htmlspecialchars($company['company_name']) . '">';
+                        }
+                    }
+                    
+                    // Use attractive placeholder if no logo
+                    if (!$logo_displayed) {
+                        // Create initials from company name
+                        $initials = '';
+                        $name_parts = explode(' ', $company['company_name']);
+                        foreach ($name_parts as $part) {
+                            if (!empty($part) && strlen($initials) < 2) {
+                                $initials .= strtoupper(substr($part, 0, 1));
+                            }
+                        }
+                        if (empty($initials)) {
+                            $initials = strtoupper(substr($company['company_name'], 0, 2));
+                        }
+                        
+                        // Generate a consistent color based on company name
+                        $color_hash = substr(md5($company['company_name']), 0, 6);
+                        $bg_color = '#' . $color_hash;
+                        
+                        $html .= '<div style="width: 96px; height: 96px; background: ' . $bg_color . '; border-radius: 8px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; font-family: Arial, sans-serif;">' . htmlspecialchars($initials) . '</div>';
+                    }
+                    
+                    // Company name
+                    $html .= '<h4 style="color: #333; font-size: 16px; margin: 10px 0;">' . htmlspecialchars($company['company_name']) . '</h4>';
+                    
+                    // Offer text
+                    if (!empty($company['offer_text'])) {
+                        $html .= '<p style="color: #666; font-size: 14px; margin: 10px 0; min-height: 40px;">' . htmlspecialchars($company['offer_text']) . '</p>';
+                    }
+                    
+                    // Tracking URL
+                    $track_url = 'https://m.bd.gold/track/cta/' . 
+                                $this->qik->encodeId($campaign_id) . '/' . 
+                                $this->qik->encodeId($user_id) . '/' . 
+                                $this->qik->encodeId($company['company_id']);
+                    
+                    $html .= '<a href="' . $track_url . '" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;">' . htmlspecialchars($cta_button_text) . '</a>';
+                    $html .= '</td>';
+                } else {
+                    $html .= '<td style="width: 50%;"></td>';
+                }
+                
+                // Second column
+                if (isset($companies[$i + 1])) {
+                    $company = $companies[$i + 1];
+                    $html .= '<td style="width: 50%; background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; text-align: center; vertical-align: top;">';
+                    
+                    // Company logo or placeholder
+                    $logo_displayed = false;
+                    if (!empty($company['logo'])) {
+                        // Check if it's already base64 or needs processing
+                        if (strpos($company['logo'], 'data:image') === 0) {
+                            // Already base64
+                            $logo_src = $company['logo'];
+                            $logo_displayed = true;
+                        } else {
+                            // Try to convert to base64
+                            if (strpos($company['logo'], '//') === 0 || strpos($company['logo'], 'http') === 0) {
+                                $logo_src = $this->convertImageToBase64($company['logo'], 96, 96);
+                            } else {
+                                // Assume it's a relative path
+                                $logo_src = $this->convertImageToBase64('https:' . $company['logo'], 96, 96);
+                            }
+                            
+                            // Check if conversion was successful
+                            if (!empty($logo_src)) {
+                                $logo_displayed = true;
+                            }
+                        }
+                        
+                        if ($logo_displayed) {
+                            $html .= '<img src="' . $logo_src . '" style="max-width: 96px; max-height: 96px; margin-bottom: 10px; border-radius: 4px;" alt="' . htmlspecialchars($company['company_name']) . '">';
+                        }
+                    }
+                    
+                    // Use attractive placeholder if no logo
+                    if (!$logo_displayed) {
+                        // Create initials from company name
+                        $initials = '';
+                        $name_parts = explode(' ', $company['company_name']);
+                        foreach ($name_parts as $part) {
+                            if (!empty($part) && strlen($initials) < 2) {
+                                $initials .= strtoupper(substr($part, 0, 1));
+                            }
+                        }
+                        if (empty($initials)) {
+                            $initials = strtoupper(substr($company['company_name'], 0, 2));
+                        }
+                        
+                        // Generate a consistent color based on company name
+                        $color_hash = substr(md5($company['company_name']), 0, 6);
+                        $bg_color = '#' . $color_hash;
+                        
+                        $html .= '<div style="width: 96px; height: 96px; background: ' . $bg_color . '; border-radius: 8px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; font-family: Arial, sans-serif;">' . htmlspecialchars($initials) . '</div>';
+                    }
+                    
+                    // Company name
+                    $html .= '<h4 style="color: #333; font-size: 16px; margin: 10px 0;">' . htmlspecialchars($company['company_name']) . '</h4>';
+                    
+                    // Offer text
+                    if (!empty($company['offer_text'])) {
+                        $html .= '<p style="color: #666; font-size: 14px; margin: 10px 0; min-height: 40px;">' . htmlspecialchars($company['offer_text']) . '</p>';
+                    }
+                    
+                    // Tracking URL
+                    $track_url = 'https://m.bd.gold/track/cta/' . 
+                                $this->qik->encodeId($campaign_id) . '/' . 
+                                $this->qik->encodeId($user_id) . '/' . 
+                                $this->qik->encodeId($company['company_id']);
+                    
+                    $html .= '<a href="' . $track_url . '" style="display: inline-block; background: #28a745; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold;">' . htmlspecialchars($cta_button_text) . '</a>';
+                    $html .= '</td>';
+                } else {
+                    $html .= '<td style="width: 50%;"></td>';
+                }
+                
+                $html .= '</tr>';
+            }
+            
+            $html .= '</table>';
+            $html .= '<div style="text-align: center; margin-top: 20px;">';
+            $html .= '<a href="https://birthday.gold/myaccount" style="color: #007bff; text-decoration: underline; font-size: 14px;">View all your birthday rewards →</a>';
+            $html .= '</div>';
+            $html .= '</div>';
+            
+            return $html;
+            
+        } catch (Exception $e) {
+            error_log("Marketing::generateCTABlockHTML - Error: " . $e->getMessage());
+            // Return placeholder on error
+            return '<div style="border: 2px dashed #ccc; padding: 20px; margin: 20px 0; text-align: center;">' .
+                   '<strong>Birthday Rewards</strong><br>Unable to load offers at this time</div>';
+        }
+    }
+    
+    /**
+     * Convert image URL to base64 data URI with resizing
+     * Enhanced with better error handling and multiple fallback strategies
+     * 
+     * @param string $image_url - The image URL to convert
+     * @param int $width - Target width
+     * @param int $height - Target height
+     * @return string Base64 data URI, fallback URL, or empty string
+     */
+    private function convertImageToBase64($image_url, $width = 96, $height = 96)
+    {
+        try {
+            error_log("convertImageToBase64: Processing logo URL: $image_url");
+            
+            // Clean up the URL
+            $original_url = $image_url;
+            if (strpos($image_url, '//') === 0) {
+                $image_url = 'https:' . $image_url;
+            }
+            
+            // Try multiple methods to fetch the image
+            $image_data = false;
+            
+            // Method 1: Direct file_get_contents with context
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 5,
+                    'user_agent' => 'Mozilla/5.0 (compatible; Birthday Gold Newsletter)',
+                    'follow_location' => true,
+                    'max_redirects' => 3
+                ],
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false
+                ]
+            ]);
+            
+            $image_data = @file_get_contents($image_url, false, $context);
+            
+            // Method 2: Try CURL if file_get_contents failed
+            if (!$image_data) {
+                error_log("convertImageToBase64: file_get_contents failed, trying CURL for: $image_url");
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_URL, $image_url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+                curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (compatible; Birthday Gold Newsletter)');
+                $image_data = curl_exec($ch);
+                $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+                
+                if ($http_code !== 200) {
+                    error_log("convertImageToBase64: CURL failed with HTTP $http_code for: $image_url");
+                    $image_data = false;
+                }
+            }
+            
+            // Method 3: Try local file path if CDN URL
+            if (!$image_data && strpos($image_url, 'cdn.birthday.gold') !== false) {
+                // Extract path from CDN URL and try local file
+                $path_match = preg_match('/cdn\.birthday\.gold(.+)$/', $image_url, $matches);
+                if ($path_match && isset($matches[1])) {
+                    $local_path = $_SERVER['DOCUMENT_ROOT'] . '/../cdn.birthday.gold' . $matches[1];
+                    error_log("convertImageToBase64: Trying local path: $local_path");
+                    if (file_exists($local_path)) {
+                        $image_data = @file_get_contents($local_path);
+                    }
+                }
+            }
+            
+            if (!$image_data) {
+                error_log("convertImageToBase64: All fetch methods failed for: $image_url");
+                return ''; // Return empty string to trigger placeholder
+            }
+            
+            // Detect image type from data
+            $image_info = @getimagesizefromstring($image_data);
+            if (!$image_info) {
+                error_log("convertImageToBase64: Invalid image data from: $image_url");
+                return '';
+            }
+            
+            // Create image resource based on type
+            $source_image = false;
+            switch ($image_info['mime']) {
+                case 'image/jpeg':
+                    $source_image = @imagecreatefromstring($image_data);
+                    break;
+                case 'image/png':
+                    $source_image = @imagecreatefromstring($image_data);
+                    break;
+                case 'image/gif':
+                    $source_image = @imagecreatefromstring($image_data);
+                    break;
+                case 'image/webp':
+                    if (function_exists('imagecreatefromwebp')) {
+                        $source_image = @imagecreatefromstring($image_data);
+                    }
+                    break;
+                default:
+                    error_log("convertImageToBase64: Unsupported image type {$image_info['mime']} for: $image_url");
+                    return '';
+            }
+            
+            if (!$source_image) {
+                error_log("convertImageToBase64: Failed to create image resource from: $image_url");
+                return '';
+            }
+            
+            // Get original dimensions
+            $orig_width = imagesx($source_image);
+            $orig_height = imagesy($source_image);
+            
+            // Skip resizing if already smaller than target
+            if ($orig_width <= $width && $orig_height <= $height) {
+                $new_width = $orig_width;
+                $new_height = $orig_height;
+            } else {
+                // Calculate new dimensions maintaining aspect ratio
+                $ratio = min($width / $orig_width, $height / $orig_height);
+                $new_width = round($orig_width * $ratio);
+                $new_height = round($orig_height * $ratio);
+            }
+            
+            // Create resized image with white background (better for email)
+            $resized_image = imagecreatetruecolor($new_width, $new_height);
+            
+            // Fill with white background first
+            $white = imagecolorallocate($resized_image, 255, 255, 255);
+            imagefill($resized_image, 0, 0, $white);
+            
+            // Then enable alpha blending for transparency support
+            imagealphablending($resized_image, true);
+            imagesavealpha($resized_image, true);
+            
+            // Resize the image
+            imagecopyresampled($resized_image, $source_image, 0, 0, 0, 0, 
+                              $new_width, $new_height, $orig_width, $orig_height);
+            
+            // Capture output as JPEG for smaller size (PNG can be large)
+            ob_start();
+            imagejpeg($resized_image, null, 85); // 85% quality for good balance
+            $jpeg_data = ob_get_clean();
+            
+            // Also try PNG if JPEG is too large
+            if (strlen($jpeg_data) > 50000) {
+                ob_start();
+                imagepng($resized_image, 9); // Maximum compression
+                $png_data = ob_get_clean();
+                
+                if (strlen($png_data) < strlen($jpeg_data)) {
+                    $final_data = $png_data;
+                    $mime_type = 'image/png';
+                } else {
+                    $final_data = $jpeg_data;
+                    $mime_type = 'image/jpeg';
+                }
+            } else {
+                $final_data = $jpeg_data;
+                $mime_type = 'image/jpeg';
+            }
+            
+            // Clean up
+            imagedestroy($source_image);
+            imagedestroy($resized_image);
+            
+            // Convert to base64
+            $base64 = 'data:' . $mime_type . ';base64,' . base64_encode($final_data);
+            
+            // Check if base64 is too large (>75KB for email compatibility)
+            if (strlen($base64) > 75000) {
+                error_log("convertImageToBase64: Base64 too large (" . strlen($base64) . " bytes), returning empty for: $image_url");
+                return ''; // Return empty to use placeholder
+            }
+            
+            error_log("convertImageToBase64: Success! Generated " . strlen($base64) . " byte base64 for: $image_url");
+            return $base64;
+            
+        } catch (Exception $e) {
+            error_log("convertImageToBase64: Exception - " . $e->getMessage() . " for URL: $image_url");
+            return ''; // Return empty string to trigger placeholder
         }
     }
 }

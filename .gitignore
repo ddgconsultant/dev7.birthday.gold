@@ -30,3 +30,7 @@ Thumbs.db
 # Ignore markdown documentation files
 *.md
 !README.md
+
+# Ignore all _CLEANUP_ directories and their contents
+**/_CLEANUP_/
+_CLEANUP_/

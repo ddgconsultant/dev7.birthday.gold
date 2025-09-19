@@ -1,5 +1,13 @@
-<?php include ($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php'); 
+<?php
+$addClasses[] = 'account';
+include ($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 
+// If user has already completed first profile visit, redirect to myaccount
+$first_profile_visit_check = $account->getUserAttribute($current_user_data['user_id'], 'first_profile_visit');
+if ($first_profile_visit_check) {
+    header('Location: /myaccount/');
+    exit;
+}
 
 $additionalstyles.='<link rel="stylesheet" href="/public/css/myaccount.css">
 <style>
@@ -429,6 +437,7 @@ echo '
 ';
 break;
 default:
+// First profile visit already checked at top of page - if we're here, it's their first visit
 echo '
 <div class="min-vh-75 py-5 d-flex align-items-center">
     <div class="container">
@@ -438,7 +447,7 @@ echo '
                 <h1 class="display-4 fw-bold text-dark mb-4">'.$current_user_data['first_name'].', we\'re excited <br>
                 that you\'re part of birthday.gold!</h1>
                 '.$birthdayprioritytag.'
-                <a class="btn btn-get-started btn-lg text-white fw-bold py-3 px-5 mt-4 w-75 f-2" href="/myaccount/">Let\'s Get Started</a>
+                <a class="btn btn-get-started btn-lg text-white fw-bold py-3 px-5 mt-4 w-75 f-2" href="/myaccount/profile">Let\'s Get Started</a>
             </div>
             
             <!-- Right Section - Steps Card -->

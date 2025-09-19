@@ -327,7 +327,7 @@ include($dir['core_components'] . '/bg_header.inc');
 echo '
 <div class="content-header-staff compact">
     <div class="container text-center">
-        <h1><i class="fas fa-calendar-alt"></i> Marketing Calendar</h1>
+        <h1><i class="bi bi-calendar-fill"></i> Marketing Calendar</h1>
         <p class="lead">Campaign schedule overview</p>
     </div>
 </div>';
@@ -343,11 +343,11 @@ echo '
                     <h3>' . date('F Y', $month_time) . '</h3>
                     <div class="calendar-nav">
                         <a href="?month=' . $prev_month . '">
-                            <i class="fas fa-chevron-left"></i> Previous
+                            <i class="bi bi-chevron-left"></i> Previous
                         </a>
                         <a href="?month=' . date('Y-m') . '">Today</a>
                         <a href="?month=' . $next_month . '">
-                            Next <i class="fas fa-chevron-right"></i>
+                            Next <i class="bi bi-chevron-right"></i>
                         </a>
                     </div>
                 </div>
@@ -463,17 +463,17 @@ echo '
                 </div>
                 <div class="card-body">
                     <a href="/staff/marketing/marketing-edit.php" class="btn btn-success w-100 mb-2">
-                        <i class="fas fa-plus"></i> New Campaign
+                        <i class="bi bi-plus-lg"></i> New Campaign
                     </a>
                     <a href="/staff/marketing/marketing-campaigns.php" class="btn btn-outline-primary w-100">
-                        <i class="fas fa-list"></i> All Campaigns
+                        <i class="bi bi-list"></i> All Campaigns
                     </a>
                 </div>
             </div>
             
             <div class="card upcoming-campaigns">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-clock"></i> Upcoming Campaigns</h6>
+                    <h6 class="mb-0"><i class="bi bi-clock-fill"></i> Upcoming Campaigns</h6>
                 </div>
                 <div class="card-body p-0">';
 
@@ -489,7 +489,7 @@ if (empty($upcoming)) {
                             <div>
                                 <strong>' . htmlspecialchars($campaign['display_name']) . '</strong>
                                 <div class="small text-muted">
-                                    <i class="fas fa-calendar"></i> 
+                                    <i class="bi bi-calendar-fill"></i> 
                                     ' . date('M j, Y', strtotime($campaign['publish_dt'])) . '
                                 </div>';
         
@@ -510,7 +510,7 @@ if (empty($upcoming)) {
                             </div>
                             <a href="/staff/marketing-view.php?id=' . $campaign['id'] . '" 
                                class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-eye"></i>
+                                <i class="bi bi-eye-fill"></i>
                             </a>
                         </div>
                     </div>';
@@ -523,7 +523,7 @@ echo '
             
             <div class="card mt-4">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-chart-bar"></i> This Month</h6>
+                    <h6 class="mb-0"><i class="bi bi-bar-chart-fill"></i> This Month</h6>
                 </div>
                 <div class="card-body">';
 

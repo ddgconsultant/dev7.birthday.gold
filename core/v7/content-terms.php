@@ -30,8 +30,12 @@
 <p>You agree not to use the birthday.gold service for any improper, fraudulent, or unlawful purpose. This includes causing intentional disruption to our service or attempting to register false or misleading user identities. Users who violate these terms may have their account terminated.</p>
 
 
-<h5 class="mt-5">Age requirements</h5>
-If you're under the age required to manage your own birthday.gold account, you must have your parent or legal guardian's permission to use a birthday.gold account. Please have your parent or legal guardian read these terms with you.  If you're a parent or legal guardian, and you allow your child to use the services, then these terms apply to you and you're responsible for your child's activity on our service.
+<h5 class="mt-5">Eligibility and Age Requirements</h5>
+<p>Birthday.Gold is designed for users of all ages, but certain restrictions apply. A minimum age of 16 is required to sign up for a paid account. Gift certificates can be enjoyed by users of any age. Parents can sign up their children for our Birthday.Gold service and manage their accounts accordingly.</p>
+
+<p>If you're under the age required to manage your own birthday.gold account, you must have your parent or legal guardian's permission to use a birthday.gold account. Please have your parent or legal guardian read these terms with you. If you're a parent or legal guardian, and you allow your child to use the services, then these terms apply to you and you're responsible for your child's activity on our service.</p>
+
+<p>For complete eligibility guidelines, including information about dietary preferences, honor classes (military, teachers, medical professionals), and geographical limitations, please visit our <a href="/eligibility" class="text-primary">Eligibility Guidelines</a> page.</p>
 
 
 <h5 class="mt-5">Termination</h5>   

@@ -1,6 +1,6 @@
 <?PHP
-$addClasses[] = 'marketing';
 $addClasses[] = 'mail';
+$addClasses[] = 'marketing';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Marketing Hub";
@@ -21,7 +21,7 @@ try {
 
     $newsletter_stats = $database->getrow($newsletter_stats_sql);
 } catch (Exception $e) {
-    // Tables don't exist yet - use default values
+    // Tables do not exist yet - use default values
     $newsletter_stats = [
         'total_campaigns' => 0,
         'draft_campaigns' => 0,
@@ -43,7 +43,7 @@ try {
 
     $queue_stats = $database->getrow($queue_stats_sql);
 } catch (Exception $e) {
-    // Tables don't exist yet - use default values
+    // Tables do not exist yet - use default values
     $queue_stats = [
         'total_queued' => 0,
         'pending' => 0,
@@ -84,27 +84,28 @@ unset($_SESSION['message']);
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-?>
 
+echo '
 <div class="container-fluid">
     <div class="row">
-        <div class="col-12">
-            
-            <?php if ($message): ?>
-                <?= $message ?>
-            <?php endif; ?>
-            
-            <?php if (empty($newsletter_stats) || $newsletter_stats['total_campaigns'] === 0): ?>
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Newsletter System Setup Required</strong><br>
-                    The newsletter database tables need to be created. Please run the SQL schema file:
-                    <code>/core/dbschema/newsletter_tables.sql</code>
-                    <br><small class="text-muted">This will create the required tables for campaign management, queue processing, and analytics.</small>
-                </div>
-            <?php endif; ?>
+        <div class="col-12">';
 
-            <!-- Page Header -->
+if ($message) {
+    echo $message;
+}
+
+if (empty($newsletter_stats) || $newsletter_stats['total_campaigns'] === 0) {
+    echo '
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Newsletter System Setup Required</strong><br>
+                The newsletter database tables need to be created. Please run the SQL schema file:
+                <code>/core/dbschema/newsletter_tables.sql</code>
+                <br><small class="text-muted">This will create the required tables for campaign management, queue processing, and analytics.</small>
+            </div>';
+}
+
+echo '
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1><i class="bi bi-megaphone"></i> Marketing Hub</h1>
@@ -129,17 +130,16 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
             </div>
 
-            <!-- Quick Stats Overview -->
             <div class="row mb-4">
                 <div class="col-lg-3 col-md-6">
                     <div class="card bg-primary text-white h-100">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="text-white-75 small">Total Campaigns (30 days)</div>
-                                <div class="h3 mb-0"><?= $newsletter_stats['total_campaigns'] ?? 0 ?></div>
+                                <div class="h3 mb-0">' . ($newsletter_stats['total_campaigns'] ?? 0) . '</div>
                                 <small class="text-white-75">
-                                    <?= ($newsletter_stats['draft_campaigns'] ?? 0) ?> drafts, 
-                                    <?= ($newsletter_stats['completed_campaigns'] ?? 0) ?> completed
+                                    ' . ($newsletter_stats['draft_campaigns'] ?? 0) . ' drafts, 
+                                    ' . ($newsletter_stats['completed_campaigns'] ?? 0) . ' completed
                                 </small>
                             </div>
                             <div class="align-self-center">
@@ -154,10 +154,10 @@ include($dir['core_components'] . '/bg_header.inc');
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="text-white-75 small">Queue Status (7 days)</div>
-                                <div class="h3 mb-0"><?= $queue_stats['pending'] ?? 0 ?></div>
+                                <div class="h3 mb-0">' . ($queue_stats['pending'] ?? 0) . '</div>
                                 <small class="text-white-75">
-                                    <?= ($queue_stats['sent'] ?? 0) ?> sent, 
-                                    <?= ($queue_stats['errors'] ?? 0) ?> errors
+                                    ' . ($queue_stats['sent'] ?? 0) . ' sent, 
+                                    ' . ($queue_stats['errors'] ?? 0) . ' errors
                                 </small>
                             </div>
                             <div class="align-self-center">
@@ -172,10 +172,10 @@ include($dir['core_components'] . '/bg_header.inc');
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="text-white-75 small">Active Campaigns</div>
-                                <div class="h3 mb-0"><?= ($newsletter_stats['active_campaigns'] ?? 0) + ($newsletter_stats['queued_campaigns'] ?? 0) ?></div>
+                                <div class="h3 mb-0">' . (($newsletter_stats['active_campaigns'] ?? 0) + ($newsletter_stats['queued_campaigns'] ?? 0)) . '</div>
                                 <small class="text-white-75">
-                                    <?= $newsletter_stats['active_campaigns'] ?? 0 ?> sending, 
-                                    <?= $newsletter_stats['queued_campaigns'] ?? 0 ?> queued
+                                    ' . ($newsletter_stats['active_campaigns'] ?? 0) . ' sending, 
+                                    ' . ($newsletter_stats['queued_campaigns'] ?? 0) . ' queued
                                 </small>
                             </div>
                             <div class="align-self-center">
@@ -190,12 +190,13 @@ include($dir['core_components'] . '/bg_header.inc');
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="text-white-75 small">Delivery Rate</div>
-                                <div class="h3 mb-0">
-                                    <?php 
-                                    $total_attempted = ($queue_stats['sent'] ?? 0) + ($queue_stats['errors'] ?? 0);
-                                    $delivery_rate = $total_attempted > 0 ? round((($queue_stats['sent'] ?? 0) / $total_attempted) * 100) : 0;
-                                    echo $delivery_rate;
-                                    ?>%
+                                <div class="h3 mb-0">';
+
+$total_attempted = ($queue_stats['sent'] ?? 0) + ($queue_stats['errors'] ?? 0);
+$delivery_rate = $total_attempted > 0 ? round((($queue_stats['sent'] ?? 0) / $total_attempted) * 100) : 0;
+echo $delivery_rate;
+
+echo '%
                                 </div>
                                 <small class="text-white-75">Last 7 days</small>
                             </div>
@@ -207,9 +208,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
             </div>
 
-            <!-- Main Navigation Grid -->
             <div class="row mb-4">
-                <!-- Newsletter Campaigns Section -->
                 <div class="col-lg-6">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
@@ -220,19 +219,19 @@ include($dir['core_components'] . '/bg_header.inc');
                             <div class="row text-center mb-3">
                                 <div class="col-4">
                                     <div class="border rounded p-2">
-                                        <div class="h4 mb-0 text-primary"><?= $newsletter_stats['draft_campaigns'] ?? 0 ?></div>
+                                        <div class="h4 mb-0 text-primary">' . ($newsletter_stats['draft_campaigns'] ?? 0) . '</div>
                                         <small class="text-muted">Drafts</small>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="border rounded p-2">
-                                        <div class="h4 mb-0 text-warning"><?= $newsletter_stats['queued_campaigns'] ?? 0 ?></div>
+                                        <div class="h4 mb-0 text-warning">' . ($newsletter_stats['queued_campaigns'] ?? 0) . '</div>
                                         <small class="text-muted">Queued</small>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="border rounded p-2">
-                                        <div class="h4 mb-0 text-success"><?= $newsletter_stats['active_campaigns'] ?? 0 ?></div>
+                                        <div class="h4 mb-0 text-success">' . ($newsletter_stats['active_campaigns'] ?? 0) . '</div>
                                         <small class="text-muted">Sending</small>
                                     </div>
                                 </div>
@@ -255,7 +254,6 @@ include($dir['core_components'] . '/bg_header.inc');
                     </div>
                 </div>
 
-                <!-- Marketing Campaigns Section -->
                 <div class="col-lg-6">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
@@ -287,7 +285,6 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
 
             <div class="row mb-4">
-                <!-- Analytics Section -->
                 <div class="col-lg-6">
                     <div class="card h-100">
                         <div class="card-header">
@@ -313,7 +310,6 @@ include($dir['core_components'] . '/bg_header.inc');
                     </div>
                 </div>
 
-                <!-- Calendar Section -->
                 <div class="col-lg-6">
                     <div class="card h-100">
                         <div class="card-header">
@@ -340,89 +336,103 @@ include($dir['core_components'] . '/bg_header.inc');
                 </div>
             </div>
 
-            <!-- Recent Activity & Upcoming -->
             <div class="row">
-                <!-- Recent Campaigns -->
                 <div class="col-lg-6">
                     <div class="card">
                         <div class="card-header">
                             <h6 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h6>
                         </div>
-                        <div class="card-body">
-                            <?php if (empty($recent_campaigns)): ?>
-                                <div class="text-center py-3">
-                                    <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
-                                    <p class="text-muted mt-2">No recent campaigns</p>
-                                    <a href="newsletter-edit.php" class="btn btn-sm btn-primary">Create First Campaign</a>
-                                </div>
-                            <?php else: ?>
-                                <div class="list-group list-group-flush">
-                                    <?php foreach ($recent_campaigns as $campaign): ?>
-                                        <div class="list-group-item border-0 px-0">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-1"><?= htmlspecialchars($campaign['title']) ?></h6>
-                                                    <p class="mb-1 small text-muted"><?= htmlspecialchars(substr($campaign['subject'], 0, 60)) ?><?= strlen($campaign['subject']) > 60 ? '...' : '' ?></p>
-                                                    <small class="text-muted"><?= date('M j, Y g:i A', strtotime($campaign['create_dt'])) ?></small>
-                                                </div>
-                                                <div class="ms-2">
-                                                    <?php
-                                                    $status_class = [
-                                                        'draft' => 'bg-secondary',
-                                                        'scheduled' => 'bg-warning',
-                                                        'queued' => 'bg-warning', 
-                                                        'sending' => 'bg-primary',
-                                                        'completed' => 'bg-success',
-                                                        'paused' => 'bg-info',
-                                                        'cancelled' => 'bg-danger'
-                                                    ][$campaign['status']] ?? 'bg-secondary';
-                                                    ?>
-                                                    <span class="badge <?= $status_class ?>"><?= ucfirst($campaign['status']) ?></span>
-                                                </div>
-                                            </div>
+                        <div class="card-body">';
+
+if (empty($recent_campaigns)) {
+    echo '
+                            <div class="text-center py-3">
+                                <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted mt-2">No recent campaigns</p>
+                                <a href="newsletter-edit.php" class="btn btn-sm btn-primary">Create First Campaign</a>
+                            </div>';
+} else {
+    echo '
+                            <div class="list-group list-group-flush">';
+    
+    foreach ($recent_campaigns as $campaign) {
+        $status_class = [
+            'draft' => 'bg-secondary',
+            'scheduled' => 'bg-warning',
+            'queued' => 'bg-warning', 
+            'sending' => 'bg-primary',
+            'completed' => 'bg-success',
+            'paused' => 'bg-info',
+            'cancelled' => 'bg-danger'
+        ][$campaign['status']] ?? 'bg-secondary';
+        
+        echo '
+                                <div class="list-group-item border-0 px-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">' . htmlspecialchars($campaign['title']) . '</h6>
+                                            <p class="mb-1 small text-muted">' . htmlspecialchars(substr($campaign['subject'], 0, 60)) . (strlen($campaign['subject']) > 60 ? '...' : '') . '</p>
+                                            <small class="text-muted">' . date('M j, Y g:i A', strtotime($campaign['create_dt'])) . '</small>
                                         </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
+                                        <div class="ms-2">
+                                            <span class="badge ' . $status_class . '">' . ucfirst($campaign['status']) . '</span>
+                                        </div>
+                                    </div>
+                                </div>';
+    }
+    
+    echo '
+                            </div>';
+}
+
+echo '
                         </div>
                     </div>
                 </div>
 
-                <!-- Upcoming Scheduled -->
                 <div class="col-lg-6">
                     <div class="card">
                         <div class="card-header">
                             <h6 class="mb-0"><i class="bi bi-calendar-check"></i> Upcoming Campaigns</h6>
                         </div>
-                        <div class="card-body">
-                            <?php if (empty($upcoming_campaigns)): ?>
-                                <div class="text-center py-3">
-                                    <i class="bi bi-calendar-x text-muted" style="font-size: 2rem;"></i>
-                                    <p class="text-muted mt-2">No scheduled campaigns</p>
-                                    <a href="newsletter-edit.php" class="btn btn-sm btn-primary">Schedule Campaign</a>
-                                </div>
-                            <?php else: ?>
-                                <div class="list-group list-group-flush">
-                                    <?php foreach ($upcoming_campaigns as $campaign): ?>
-                                        <div class="list-group-item border-0 px-0">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-1"><?= htmlspecialchars($campaign['title']) ?></h6>
-                                                    <p class="mb-1 small text-muted"><?= htmlspecialchars(substr($campaign['subject'], 0, 60)) ?><?= strlen($campaign['subject']) > 60 ? '...' : '' ?></p>
-                                                </div>
-                                                <div class="ms-2 text-end">
-                                                    <div class="small text-muted">
-                                                        <?= date('M j', strtotime($campaign['send_dt'])) ?>
-                                                    </div>
-                                                    <div class="small text-primary">
-                                                        <?= date('g:i A', strtotime($campaign['send_dt'])) ?>
-                                                    </div>
-                                                </div>
+                        <div class="card-body">';
+
+if (empty($upcoming_campaigns)) {
+    echo '
+                            <div class="text-center py-3">
+                                <i class="bi bi-calendar-x text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted mt-2">No scheduled campaigns</p>
+                                <a href="newsletter-edit.php" class="btn btn-sm btn-primary">Schedule Campaign</a>
+                            </div>';
+} else {
+    echo '
+                            <div class="list-group list-group-flush">';
+    
+    foreach ($upcoming_campaigns as $campaign) {
+        echo '
+                                <div class="list-group-item border-0 px-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">' . htmlspecialchars($campaign['title']) . '</h6>
+                                            <p class="mb-1 small text-muted">' . htmlspecialchars(substr($campaign['subject'], 0, 60)) . (strlen($campaign['subject']) > 60 ? '...' : '') . '</p>
+                                        </div>
+                                        <div class="ms-2 text-end">
+                                            <div class="small text-muted">
+                                                ' . date('M j', strtotime($campaign['send_dt'])) . '
+                                            </div>
+                                            <div class="small text-primary">
+                                                ' . date('g:i A', strtotime($campaign['send_dt'])) . '
                                             </div>
                                         </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
+                                    </div>
+                                </div>';
+    }
+    
+    echo '
+                            </div>';
+}
+
+echo '
                         </div>
                     </div>
                 </div>
@@ -433,3 +443,4 @@ include($dir['core_components'] . '/bg_header.inc');
 
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
+?>

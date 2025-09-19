@@ -64,10 +64,24 @@ if ($lockout_until > $current_time) {
 #-------------------------------------------------------------------------------
 # PROCESS REMEMBER ME ATTEMPT  (caution -- they could be deleted/fake tokens)
 #-------------------------------------------------------------------------------
+
 $device_id = $_COOKIE["bgdeviceid"] ?? '';
 $bgralid = $_COOKIE["bgralid"] ?? '';
 $bgraltoken = $_COOKIE["bgraltoken"] ?? '';
+session_tracking('rememberme_autologin_checking', $device_id.'|'.$bgralid.'|'.(empty($bgraltoken) ? 'no_token' : 'token_present'));
+session_tracking('rememberme_autologin_cookies', $_COOKIE);
 if (!empty($device_id) && !empty($bgralid)  && !empty($bgraltoken)) {
+  session_tracking('rememberme_autologin_attempt', [
+    'device_id' => $device_id,
+    'bgralid' => $bgralid,
+    'bgraltoken_length' => strlen($bgraltoken),
+    'cookies_present' => [
+      'bgdeviceid' => !empty($_COOKIE["bgdeviceid"]),
+      'bgralid' => !empty($_COOKIE["bgralid"]),
+      'bgraltoken' => !empty($_COOKIE["bgraltoken"])
+    ]
+  ]);
+  
   $logintype = 'rememberme||' . $device_id;
   $username = $bgralid;
   $password = $bgraltoken;
@@ -124,6 +138,31 @@ if ($show_captcha && !$app->validateCaptcha()) {
           'login_method' => $login_method,
           'login_type' => $logintype
       ]);
+
+
+
+
+
+
+      if (isset($_POST['rememberme'])) {
+        // Collect all variables needed for the rememberme function
+        $variables = [
+          'current_user_data' => $session->get('current_user_data'),
+          'autologin_days_length' => $autologin_days_length,
+          'userAgent' => $_SERVER['HTTP_USER_AGENT'] ?? $userAgent ?? '',
+          'client_ip' => $client_ip,
+          'logintype' => $logintype,
+          'doautologin' => $doautologin,
+        ];
+        
+        // Call the new rememberme function
+        $account->rememberme($variables);
+      
+          } 
+
+
+
+
 
       // Check if 2FA is enabled for this user
       $current_user_data = $session->get('current_user_data');
@@ -201,6 +240,14 @@ if ($show_captcha && !$app->validateCaptcha()) {
       }
 
       // Handle Remember Me functionality -- set new cookies
+      session_tracking('rememberme_checkbox_detected', [
+        'user_id' => $current_user_data['user_id'],
+        'rememberme_posted' => isset($_POST['rememberme']) ? 'yes' : 'no',
+        'post_data' => $_POST,
+        'logintype' => $logintype,
+        'doautologin' => $doautologin
+      ]);
+      
       if (isset($_POST['rememberme'])) {
         $current_user_data = $session->get('current_user_data');
         $userId =   $current_user_data['user_id'];
@@ -252,7 +299,16 @@ if ($show_captcha && !$app->validateCaptcha()) {
 
           $account->setUserAttribute($userId, $input);
 
-          session_tracking('bg_rememberme_set', array_merge($validatedata, $validationcodes));
+          session_tracking('bg_rememberme_set_success', array_merge($validatedata, $validationcodes, [
+            'device_id' => $deviceid,
+            'encoded_id' => $encodedId,
+            'expire_dt' => date('Y-m-d H:i:s', $expiredt),
+            'cookies_set' => [
+              'bgralid' => $encodedId,
+              'bgraltoken' => $validationcodes['validation_code'],
+              'bgdeviceid' => $deviceid
+            ]
+          ]));
         }
       }
 

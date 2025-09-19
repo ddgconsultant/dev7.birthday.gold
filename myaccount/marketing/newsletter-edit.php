@@ -50,24 +50,59 @@ if ($campaign_id > 0) {
     $mk_campaign_id = $campaign_id;
     
     $pagetitle = "Edit Newsletter: " . $campaign['title'];
-    
-    // Debug recipient criteria
+
+    // Debug loaded campaign data
+    error_log("=== LOADED CAMPAIGN DATA ===");
     error_log("Campaign ID: " . $campaign_id);
+    error_log("Title: " . ($campaign['title'] ?? 'NULL'));
+    error_log("Subject: " . ($campaign['subject'] ?? 'NULL'));
+    error_log("CTA Category: " . ($campaign['cta_category'] ?? 'NULL'));
+    error_log("CTA Mode: " . ($campaign['cta_mode'] ?? 'NULL'));
+    error_log("Start Date: " . ($campaign['start_date'] ?? 'NULL'));
+    error_log("Send DT: " . ($campaign['send_dt'] ?? 'NULL'));
     error_log("Recipient Criteria from DB: " . ($campaign['recipient_criteria'] ?? 'NULL'));
+    error_log("Campaign Config: " . ($campaign['campaign_config'] ?? 'NULL'));
 }
+
+// Debug at the very start
+error_log("newsletter-edit.php loaded - Request Method: " . $_SERVER['REQUEST_METHOD']);
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $title = trim($_POST['title']);
-    $subject = trim($_POST['subject']);
-    $body_html = $_POST['body_html'];
-    $cta_category = $_POST['cta_category'];
+    // Debug: Log all POST data
+    error_log("=== NEWSLETTER FORM SUBMISSION DEBUG ===");
+    error_log("POST data received: " . print_r($_POST, true));
+
+    $title = isset($_POST['title']) ? trim($_POST['title']) : '';
+    $subject = isset($_POST['subject']) ? trim($_POST['subject']) : '';
+    $body_html = isset($_POST['body_html']) ? $_POST['body_html'] : '';
+    $cta_category = isset($_POST['cta_category']) ? $_POST['cta_category'] : '';
     $cta_mode = isset($_POST['cta_mode']) ? $_POST['cta_mode'] : 'inclusive';
     $gen_specific_messaging = isset($_POST['gen_specific_messaging']) ? 1 : 0;
-    $send_dt = $_POST['send_date'] . ' ' . $_POST['send_time'] . ':00';
-    $status = $_POST['action'] == 'schedule' ? 'scheduled' : 'draft';
-    $recipient_criteria = isset($_POST['recipient_criteria']) ? $_POST['recipient_criteria'] : '{"type":"all"}';
+    $send_date = isset($_POST['send_date']) ? $_POST['send_date'] : date('Y-m-d');
+    $send_time = isset($_POST['send_time']) ? $_POST['send_time'] : '09:00';
+    $send_dt = $send_date . ' ' . $send_time . ':00';
+    $status = (isset($_POST['action']) && $_POST['action'] == 'schedule') ? 'scheduled' : 'draft';
+    // Check if recipient_criteria is empty and set default
+    $recipient_criteria = isset($_POST['recipient_criteria']) && !empty($_POST['recipient_criteria']) && $_POST['recipient_criteria'] != '[]'
+        ? $_POST['recipient_criteria']
+        : '[{"type":"all","label":"All Active Users","value":"all"}]';
     $calculated_recipient_count = isset($_POST['calculated_recipient_count']) ? intval($_POST['calculated_recipient_count']) : 0;
+
+    // Debug logging of extracted values
+    error_log("Extracted values:");
+    error_log("  Title: '$title'");
+    error_log("  Subject: '$subject'");
+    error_log("  Body length: " . strlen($body_html));
+    error_log("  CTA Category: '$cta_category'");
+    error_log("  CTA Mode: '$cta_mode'");
+    error_log("  Send Date: '$send_date'");
+    error_log("  Send Time: '$send_time'");
+    error_log("  Status: '$status'");
+    error_log("  Recipient Criteria RAW from POST: '" . ($_POST['recipient_criteria'] ?? 'NOT SET') . "'");
+    error_log("  Recipient Criteria USED: '$recipient_criteria'");
+    error_log("  Calculated Count: $calculated_recipient_count");
+    error_log("  Campaign ID: " . ($campaign_id > 0 ? $campaign_id : 'NEW'));
     
     if ($campaign_id > 0) {
         // Get existing campaign_config
@@ -75,9 +110,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $existing_config_row = $database->getrow($existing_config_sql, ['campaign_id' => $campaign_id]);
         $campaign_config = json_decode($existing_config_row['campaign_config'] ?? '{}', true);
         
-        // Update config with recipient count
+        // Update config with recipient count and send time
         $campaign_config['recipient_count'] = $calculated_recipient_count;
         $campaign_config['recipient_count_updated'] = date('Y-m-d H:i:s');
+        $campaign_config['send_time'] = $send_time;
         
         // Update existing campaign in mk_campaigns
         // Both status fields should be the same for newsletters
@@ -124,7 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Create campaign_config for new campaign
         $campaign_config = [
             'recipient_count' => $calculated_recipient_count,
-            'recipient_count_updated' => date('Y-m-d H:i:s')
+            'recipient_count_updated' => date('Y-m-d H:i:s'),
+            'send_time' => $send_time
         ];
         
         // Both status fields should be the same for newsletters
@@ -138,7 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
              :cta_category, :cta_mode, :gen_specific_messaging, :recipient_criteria, :campaign_config,
              :start_date, :newsletter_status, :status, :create_by, NOW())";
         
-        $database->query($insert_sql, [
+        // Debug what we're about to insert
+        $insert_params = [
             'company_id' => $company_id,
             'platform_id' => $platform_id,
             'campaign_name' => $title,
@@ -153,18 +191,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'status' => $status,  // Use same status for both
             'newsletter_status' => $status,
             'create_by' => isset($current_user_data['user_id']) ? $current_user_data['user_id'] : 0
-        ]);
-        
+        ];
+
+        error_log("INSERT params: " . print_r($insert_params, true));
+
+        $database->query($insert_sql, $insert_params);
+
         $campaign_id = $database->lastInsertId();
+        error_log("New campaign created with ID: $campaign_id");
         $mk_campaign_id = $campaign_id; // They're the same now!
-        
+
         // Queue population is now handled by the scheduler
         // The scheduler (scheduler--mk-newsletter-queue-v2.php) runs every 5 minutes
         // and automatically creates bg_user_notifications entries for scheduled campaigns
-        
+
         $_SESSION['message'] = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Newsletter created successfully!</div>';
     }
-    
+
+    // Always redirect to campaigns list after save (both create and update)
     header('Location: /myaccount/marketing/campaigns.php');
     exit;
 }
@@ -365,7 +409,7 @@ include('nav.inc.php');
 echo '
 <div class="container mt-4">
     
-    <form method="POST" id="campaignForm">';
+    <form method="POST" id="campaignForm" onsubmit="return validateNewsletterForm()">';
 
 if ($mk_campaign_id > 0) {
     echo '<input type="hidden" name="mk_campaign_id" value="' . $mk_campaign_id . '">';
@@ -381,15 +425,15 @@ echo '
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="title" class="form-label">Newsletter Title</label>
-                        <input type="text" class="form-control" id="title" name="title" 
-                               value="' . ($campaign ? htmlspecialchars($campaign['title']) : ($mk_campaign ? htmlspecialchars($mk_campaign['campaign_name']) : 'Grab Dinner with Your Family')) . '" required>
+                        <input type="text" class="form-control" id="title" name="title"
+                               value="' . htmlspecialchars($campaign ? ($campaign['title'] ?? '') : ($mk_campaign ? ($mk_campaign['campaign_name'] ?? '') : '')) . '">
                         <small class="text-muted">Internal reference only - not shown to recipients</small>
                     </div>
                     <div class="col-md-6">
                         <label for="subject" class="form-label">Email Subject</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="subject" name="subject" 
-                                   value="' . ($campaign ? htmlspecialchars($campaign['subject']) : '') . '" required>
+                            <input type="text" class="form-control" id="subject" name="subject"
+                                   value="' . htmlspecialchars($campaign ? ($campaign['subject'] ?? '') : '') . '">
                             <button type="button" class="btn btn-outline-secondary" id="aiGenerateBtn" title="AI Generate Content" style="background-color: rgba(40, 167, 69, 0.15) !important; color: #28a745;">
                                 <i class="bi bi-magic"></i> AI Generate
                             </button>
@@ -401,12 +445,12 @@ echo '
                 <div class="row mb-3">
                     <div class="col-md-3">
                         <label for="cta_category" class="form-label">CTA '.ucwords($website['bizname']).' Category</label>
-                        <select class="form-select" id="cta_category" name="cta_category" required>
+                        <select class="form-select" id="cta_category" name="cta_category">
                             <option value="">Select a category...</option>';
 
 foreach ($categories as $cat) {
-    // Default to 'restaurant' for testing (matches "Grab Dinner with Your Family")
-    $selected = ($campaign && $campaign['cta_category'] == $cat) ? ' selected' : (!$campaign && $cat == 'restaurant' ? ' selected' : '');
+    // Only select if editing an existing campaign
+    $selected = ($campaign && isset($campaign['cta_category']) && $campaign['cta_category'] == $cat) ? ' selected' : '';
     echo '
                             <option value="' . $cat . '"' . $selected . '>' . ucfirst($cat) . '</option>';
 }
@@ -418,22 +462,37 @@ echo '
                     <div class="col-md-3">
                         <label for="cta_mode" class="form-label">'.ucwords($website['biznames']).'</label>
                         <select class="form-select" id="cta_mode" name="cta_mode">
-                            <option value="inclusive" selected>Inclusive - Enrolled</option>
-                            <option value="exclusive">Exclusive - Unenrolled</option>
+                            <option value="inclusive"' . ((!$campaign || $campaign['cta_mode'] == 'inclusive') ? ' selected' : '') . '>Inclusive - Enrolled</option>
+                            <option value="exclusive"' . ($campaign && $campaign['cta_mode'] == 'exclusive' ? ' selected' : '') . '>Exclusive - Unenrolled</option>
                         </select>
                         <small class="text-muted">Use enrolled or unenrolled</small>
                     </div>
                     <div class="col-md-3">
                         <label for="send_date" class="form-label">Send Date</label>
-                        <input type="date" class="form-control" id="send_date" name="send_date" 
-                               value="' . ($campaign ? date('Y-m-d', strtotime($campaign['send_dt'])) : ($mk_campaign && $mk_campaign['start_date'] ? date('Y-m-d', strtotime($mk_campaign['start_date'])) : date('Y-m-d'))) . '" 
-                               min="' . ($mk_campaign && $mk_campaign['start_date'] ? date('Y-m-d', strtotime($mk_campaign['start_date'])) : date('Y-m-d')) . '" required>
+                        <input type="date" class="form-control" id="send_date" name="send_date"
+                               value="' . ($campaign ? date('Y-m-d', strtotime($campaign['send_dt'])) : ($mk_campaign && $mk_campaign['start_date'] ? date('Y-m-d', strtotime($mk_campaign['start_date'])) : date('Y-m-d'))) . '"
+                               min="' . ($mk_campaign && $mk_campaign['start_date'] ? date('Y-m-d', strtotime($mk_campaign['start_date'])) : date('Y-m-d')) . '">
                         ' . ($mk_campaign && $mk_campaign['start_date'] ? '<small class="text-muted">Min: campaign start</small>' : '') . '
                     </div>
                     <div class="col-md-3">
                         <label for="send_time" class="form-label">Send Time</label>
-                        <input type="time" class="form-control" id="send_time" name="send_time" 
-                               value="' . ($campaign ? date('H:i', strtotime($campaign['send_dt'])) : '09:00') . '" required>
+                        <input type="time" class="form-control" id="send_time" name="send_time"
+                               value="';
+// Get send_time from campaign_config if available
+$saved_send_time = '09:00';
+if ($campaign) {
+    if (!empty($campaign['campaign_config'])) {
+        $config = json_decode($campaign['campaign_config'], true);
+        if (isset($config['send_time'])) {
+            $saved_send_time = $config['send_time'];
+        }
+    }
+    // Fallback to extracting from send_dt if it has time
+    if ($saved_send_time == '09:00' && strpos($campaign['send_dt'], ':') !== false) {
+        $saved_send_time = date('H:i', strtotime($campaign['send_dt']));
+    }
+}
+echo $saved_send_time . '">
                     </div>
                 </div>
             </div>
@@ -648,7 +707,9 @@ echo '
                 ';
                 
                 // Debug what we're putting in the hidden field
-                $recipientCriteriaValue = isset($campaign['recipient_criteria']) ? $campaign['recipient_criteria'] : '[]';
+                // For new newsletters, default to "all" token which JavaScript will also set
+                $defaultCriteria = '[{"type":"all","label":"All Active Users","value":"all"}]';
+                $recipientCriteriaValue = isset($campaign['recipient_criteria']) ? $campaign['recipient_criteria'] : $defaultCriteria;
                 error_log("Hidden field recipient_criteria value: " . $recipientCriteriaValue);
                 
                 // Get stored recipient count from campaign_config
@@ -696,8 +757,8 @@ echo '
                 </div>
                 <div class="mb-3">
                     <label for="body_html" class="form-label">Email Body</label>
-                    <textarea class="form-control" id="body_html" name="body_html" rows="15">' . 
-                    ($campaign ? htmlspecialchars($campaign['body_html']) : '') . '</textarea>
+                    <textarea class="form-control" id="body_html" name="body_html" rows="15">' .
+                    htmlspecialchars($campaign ? ($campaign['body_html'] ?? '') : '') . '</textarea>
                     <div class="mt-2">
                         <small class="text-muted">
                             <strong>Available Placeholders:</strong><br>
@@ -715,10 +776,10 @@ echo '
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <button type="submit" name="action" value="draft" class="btn btn-secondary">
+                        <button type="submit" name="action" value="draft" class="btn btn-secondary" onclick="window.newsletterAction=\'draft\'; if(typeof saveTokensToHiddenField !== \'undefined\') saveTokensToHiddenField();">
                             <i class="bi bi-save"></i> Save as Draft
                         </button>
-                        <button type="submit" name="action" value="schedule" class="btn btn-primary">
+                        <button type="submit" name="action" value="schedule" class="btn btn-primary" onclick="window.newsletterAction=\'schedule\'; if(typeof saveTokensToHiddenField !== \'undefined\') saveTokensToHiddenField();">
                             <i class="bi bi-clock-fill"></i> Schedule Newsletter
                         </button>
                     </div>
@@ -818,6 +879,83 @@ echo '
 <script src="/public/js/recipient-token-field-simple.js?v=<?php echo time(); ?>"></script>
 
 <script>
+// Form validation - only check recipient count when scheduling
+function validateNewsletterForm() {
+    // IMPORTANT: Save TinyMCE content back to textarea before form submission
+    if (typeof tinymce !== 'undefined') {
+        tinymce.triggerSave();
+    }
+
+    // IMPORTANT: Save recipient tokens to hidden field before form submission
+    if (typeof saveTokensToHiddenField === 'function') {
+        saveTokensToHiddenField();
+    }
+
+    // Always validate title (required for both draft and schedule)
+    const title = document.getElementById('title').value.trim();
+    if (!title) {
+        alert('Newsletter title is required.');
+        return false;
+    }
+
+    // Check which button was clicked (will be set by button click handlers)
+    if (window.newsletterAction === 'schedule') {
+        // Validate required fields for scheduling
+        const subject = document.getElementById('subject').value.trim();
+        const ctaCategory = document.getElementById('cta_category').value;
+        const bodyHtml = document.getElementById('body_html').value.trim();
+
+        if (!subject) {
+            alert('Email subject is required to schedule the newsletter.');
+            return false;
+        }
+
+        if (!ctaCategory) {
+            alert('CTA category is required to schedule the newsletter.');
+            return false;
+        }
+
+        if (!bodyHtml) {
+            alert('Email body is required to schedule the newsletter.');
+            return false;
+        }
+
+        // Check send date and time for scheduling
+        const sendDate = document.getElementById('send_date').value;
+        const sendTime = document.getElementById('send_time').value;
+
+        if (!sendDate) {
+            alert('Send date is required to schedule the newsletter.');
+            return false;
+        }
+
+        if (!sendTime) {
+            alert('Send time is required to schedule the newsletter.');
+            return false;
+        }
+
+        // Check recipient count
+        const countField = document.getElementById('calculated_recipient_count');
+        if (!countField || countField.value === '' || countField.value === '0') {
+            // Check if we have tokens selected
+            if (window.recipientTokens && window.recipientTokens.length > 0) {
+                // We have recipients but count hasn't been calculated yet
+                alert('Please wait for the recipient count to be calculated before scheduling.');
+                // Trigger count update
+                if (typeof updateRecipientCount === 'function') {
+                    updateRecipientCount();
+                }
+                return false;
+            } else {
+                // No recipients at all
+                alert('You must select at least one recipient to schedule the newsletter.');
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 // Initialize TinyMCE
 tinymce.init({
     selector: "#body_html",

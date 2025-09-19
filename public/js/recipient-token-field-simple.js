@@ -5,6 +5,7 @@
 
 // Global token array
 let tokens = [];
+window.recipientTokens = tokens; // Make tokens globally accessible
 
 // Show validation message using Bootstrap modal if available, otherwise fallback to alert
 function showMessage(title, message) {
@@ -83,9 +84,7 @@ const expandableTokens = {
         icon: 'fas fa-user-check',
         options: [
             { value: 'real', label: 'Real Accounts' },
-            { value: 'test', label: 'Test Accounts' },
-            { value: 'staff', label: 'Staff Accounts' },
-            { value: 'demo', label: 'Demo Accounts' }
+            { value: 'test', label: 'Test Accounts' }
         ]
     },
     gender: {
@@ -93,10 +92,7 @@ const expandableTokens = {
         icon: 'fas fa-venus-mars',
         options: [
             { value: 'male', label: 'Male' },
-            { value: 'female', label: 'Female' },
-            { value: 'other', label: 'Other' },
-            { value: 'prefer_not', label: 'Prefer Not to Say' },
-            { value: 'not_specified', label: 'Not Specified' }
+            { value: 'female', label: 'Female' }
         ]
     },
     age_range: {
@@ -169,57 +165,59 @@ const expandableTokens = {
         label: 'State',
         icon: 'fas fa-map-marker-alt',
         options: [
-            { value: 'AL', label: 'Alabama' },
-            { value: 'AK', label: 'Alaska' },
-            { value: 'AZ', label: 'Arizona' },
-            { value: 'AR', label: 'Arkansas' },
-            { value: 'CA', label: 'California' },
-            { value: 'CO', label: 'Colorado' },
-            { value: 'CT', label: 'Connecticut' },
-            { value: 'DE', label: 'Delaware' },
-            { value: 'DC', label: 'District of Columbia' },
-            { value: 'FL', label: 'Florida' },
-            { value: 'GA', label: 'Georgia' },
-            { value: 'HI', label: 'Hawaii' },
-            { value: 'ID', label: 'Idaho' },
-            { value: 'IL', label: 'Illinois' },
-            { value: 'IN', label: 'Indiana' },
-            { value: 'IA', label: 'Iowa' },
-            { value: 'KS', label: 'Kansas' },
-            { value: 'KY', label: 'Kentucky' },
-            { value: 'LA', label: 'Louisiana' },
-            { value: 'ME', label: 'Maine' },
-            { value: 'MD', label: 'Maryland' },
-            { value: 'MA', label: 'Massachusetts' },
-            { value: 'MI', label: 'Michigan' },
-            { value: 'MN', label: 'Minnesota' },
-            { value: 'MS', label: 'Mississippi' },
-            { value: 'MO', label: 'Missouri' },
-            { value: 'MT', label: 'Montana' },
-            { value: 'NE', label: 'Nebraska' },
-            { value: 'NV', label: 'Nevada' },
-            { value: 'NH', label: 'New Hampshire' },
-            { value: 'NJ', label: 'New Jersey' },
-            { value: 'NM', label: 'New Mexico' },
-            { value: 'NY', label: 'New York' },
-            { value: 'NC', label: 'North Carolina' },
-            { value: 'ND', label: 'North Dakota' },
-            { value: 'OH', label: 'Ohio' },
-            { value: 'OK', label: 'Oklahoma' },
-            { value: 'OR', label: 'Oregon' },
-            { value: 'PA', label: 'Pennsylvania' },
-            { value: 'RI', label: 'Rhode Island' },
-            { value: 'SC', label: 'South Carolina' },
-            { value: 'SD', label: 'South Dakota' },
-            { value: 'TN', label: 'Tennessee' },
-            { value: 'TX', label: 'Texas' },
-            { value: 'UT', label: 'Utah' },
-            { value: 'VT', label: 'Vermont' },
-            { value: 'VA', label: 'Virginia' },
-            { value: 'WA', label: 'Washington' },
-            { value: 'WV', label: 'West Virginia' },
-            { value: 'WI', label: 'Wisconsin' },
-            { value: 'WY', label: 'Wyoming' }
+            // Primary states from database (the ones you provided)
+            { value: 'California', label: 'California' },
+            { value: 'Colorado', label: 'Colorado' },
+            { value: 'Kentucky', label: 'Kentucky' },
+            { value: 'Maryland', label: 'Maryland' },
+            { value: 'Massachusetts', label: 'Massachusetts' },
+            { value: 'Michigan', label: 'Michigan' },
+            { value: 'Mississippi', label: 'Mississippi' },
+            { value: 'Ohio', label: 'Ohio' },
+            { value: 'Pennsylvania', label: 'Pennsylvania' },
+            // Additional states for completeness
+            { value: 'Alabama', label: 'Alabama' },
+            { value: 'Alaska', label: 'Alaska' },
+            { value: 'Arizona', label: 'Arizona' },
+            { value: 'Arkansas', label: 'Arkansas' },
+            { value: 'Connecticut', label: 'Connecticut' },
+            { value: 'Delaware', label: 'Delaware' },
+            { value: 'District of Columbia', label: 'District of Columbia' },
+            { value: 'Florida', label: 'Florida' },
+            { value: 'Georgia', label: 'Georgia' },
+            { value: 'Hawaii', label: 'Hawaii' },
+            { value: 'Idaho', label: 'Idaho' },
+            { value: 'Illinois', label: 'Illinois' },
+            { value: 'Indiana', label: 'Indiana' },
+            { value: 'Iowa', label: 'Iowa' },
+            { value: 'Kansas', label: 'Kansas' },
+            { value: 'Louisiana', label: 'Louisiana' },
+            { value: 'Maine', label: 'Maine' },
+            { value: 'Minnesota', label: 'Minnesota' },
+            { value: 'Missouri', label: 'Missouri' },
+            { value: 'Montana', label: 'Montana' },
+            { value: 'Nebraska', label: 'Nebraska' },
+            { value: 'Nevada', label: 'Nevada' },
+            { value: 'New Hampshire', label: 'New Hampshire' },
+            { value: 'New Jersey', label: 'New Jersey' },
+            { value: 'New Mexico', label: 'New Mexico' },
+            { value: 'New York', label: 'New York' },
+            { value: 'North Carolina', label: 'North Carolina' },
+            { value: 'North Dakota', label: 'North Dakota' },
+            { value: 'Oklahoma', label: 'Oklahoma' },
+            { value: 'Oregon', label: 'Oregon' },
+            { value: 'Rhode Island', label: 'Rhode Island' },
+            { value: 'South Carolina', label: 'South Carolina' },
+            { value: 'South Dakota', label: 'South Dakota' },
+            { value: 'Tennessee', label: 'Tennessee' },
+            { value: 'Texas', label: 'Texas' },
+            { value: 'Utah', label: 'Utah' },
+            { value: 'Vermont', label: 'Vermont' },
+            { value: 'Virginia', label: 'Virginia' },
+            { value: 'Washington', label: 'Washington' },
+            { value: 'West Virginia', label: 'West Virginia' },
+            { value: 'Wisconsin', label: 'Wisconsin' },
+            { value: 'Wyoming', label: 'Wyoming' }
         ]
     }
 };
@@ -241,9 +239,11 @@ function addToken(type, label, value) {
     // Special handling for "all" type - clear other tokens
     if (type === 'all') {
         tokens = [];
+        window.recipientTokens = tokens;
     } else if (tokens.length > 0 && tokens[0].type === 'all') {
         // Remove "all" if adding specific segments
         tokens = [];
+        window.recipientTokens = tokens;
     }
     
     // Add the token
@@ -252,6 +252,7 @@ function addToken(type, label, value) {
         label: label, 
         value: value || type 
     });
+    window.recipientTokens = tokens;
     
     renderTokens();
     updateRecipientCount();
@@ -454,6 +455,9 @@ function addParenthesis(paren) {
 function removeToken(index) {
     tokens.splice(index, 1);
     
+    // Keep window reference in sync
+    window.recipientTokens = tokens;
+    
     // Clean up invalid operators
     cleanupOperators();
     
@@ -464,6 +468,8 @@ function removeToken(index) {
 function clearAllTokens() {
     if (tokens.length > 0) {
         tokens = [];
+        // Keep window reference in sync
+        window.recipientTokens = tokens;
         renderTokens();
         updateRecipientCount();
     }
@@ -504,6 +510,9 @@ function renderTokens() {
     const container = document.getElementById('recipientTokens');
     
     if (!container) return;
+    
+    // Save tokens to hidden field for form submission
+    saveTokensToHiddenField();
     
     if (tokens.length === 0) {
         container.innerHTML = '<span class="text-muted">Click buttons to add recipient segments</span>';
@@ -579,6 +588,11 @@ function updateRecipientCount() {
     // Skip if no tokens
     if (tokens.length === 0) {
         recipientCountEl.innerHTML = '<span class="text-muted">No recipients selected</span>';
+        // Hide preview button when no recipients
+        const previewBtn = document.getElementById('previewEmailBtn');
+        if (previewBtn) {
+            previewBtn.style.display = 'none';
+        }
         return;
     }
     
@@ -588,9 +602,13 @@ function updateRecipientCount() {
     // Show loading state
     recipientCountEl.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Calculating...</span>';
     
-    // Make AJAX call
+    // Make AJAX call - determine correct path based on current location
+    var ajaxUrl = window.location.pathname.includes('/myaccount/') 
+        ? '/myaccount/marketing/ajax/newsletter-recipients-count.php'
+        : '/staff/ajax/newsletter-recipients-count.php';
+    
     $.ajax({
-        url: '/staff/ajax/newsletter-recipients-count.php',
+        url: ajaxUrl,
         type: 'POST',
         data: { 
             query: query,
@@ -598,15 +616,42 @@ function updateRecipientCount() {
         },
         success: function(response) {
             if (response.success) {
-                recipientCountEl.innerHTML = `<strong>${response.count.toLocaleString()}</strong> recipients`;
+                recipientCountEl.innerHTML = `<strong class="text-primary">${response.count.toLocaleString()}</strong> recipients`;
+                recipientCountEl.style.cssText = '';  // Clear any debug styles
+                
+                // Store the recipient count in a hidden field for saving
+                const countField = document.getElementById('calculated_recipient_count');
+                if (countField) {
+                    countField.value = response.count;
+                }
+                
+                // Show/hide preview button based on recipient count
+                const previewBtn = document.getElementById('previewEmailBtn');
+                if (previewBtn) {
+                    if (response.count === 0) {
+                        previewBtn.style.display = 'none';
+                        previewBtn.setAttribute('title', 'No recipients selected');
+                    } else {
+                        previewBtn.style.display = '';
+                        previewBtn.removeAttribute('title');
+                    }
+                }
             } else {
-                // Silently fail - just show calculating message
-                recipientCountEl.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Calculating...</span>';
+                recipientCountEl.innerHTML = '<span class="text-muted">Unable to calculate</span>';
+                // Hide preview button on error
+                const previewBtn = document.getElementById('previewEmailBtn');
+                if (previewBtn) {
+                    previewBtn.style.display = 'none';
+                }
             }
         },
         error: function() {
-            // Silently fail - just show calculating message instead of error
-            recipientCountEl.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Calculating...</span>';
+            recipientCountEl.innerHTML = '<span class="text-muted">Unable to calculate</span>';
+            // Hide preview button on error
+            const previewBtn = document.getElementById('previewEmailBtn');
+            if (previewBtn) {
+                previewBtn.style.display = 'none';
+            }
         }
     });
 }
@@ -663,6 +708,43 @@ function clearTokens() {
     }
 }
 
+// Save tokens to hidden field for form submission
+function saveTokensToHiddenField() {
+    const hiddenField = document.getElementById('recipient_criteria');
+    if (hiddenField) {
+        hiddenField.value = JSON.stringify(tokens);
+    }
+}
+
+// Load tokens from hidden field
+function loadTokensFromHiddenField() {
+    const hiddenField = document.getElementById('recipient_criteria');
+    console.log('Hidden field element:', hiddenField);
+    console.log('Hidden field value:', hiddenField ? hiddenField.value : 'NOT FOUND');
+    
+    if (hiddenField && hiddenField.value) {
+        try {
+            const savedTokens = JSON.parse(hiddenField.value);
+            console.log('Parsed tokens:', savedTokens);
+            
+            if (Array.isArray(savedTokens) && savedTokens.length > 0) {
+                tokens = savedTokens;
+                window.recipientTokens = tokens; // Keep window reference in sync
+                console.log('Successfully loaded tokens from hidden field:', tokens);
+                return true;
+            } else {
+                console.log('Saved tokens is not a valid array or is empty');
+            }
+        } catch (e) {
+            console.log('Could not parse saved tokens:', e);
+            console.log('Raw value was:', hiddenField.value);
+        }
+    } else {
+        console.log('No hidden field or no value in hidden field');
+    }
+    return false;
+}
+
 // Initialize on document ready
 $(document).ready(function() {
     // Make the recipient builder focusable if it exists
@@ -681,13 +763,19 @@ $(document).ready(function() {
         });
     }
     
+    // Try to load saved tokens first
+    const hasLoadedTokens = loadTokensFromHiddenField();
+    
     // Initial render
     renderTokens();
     
-    // For newsletter-edit, initialize with "All Active Users"
+    // For newsletter-edit, initialize with "All Active Users" if no saved tokens
     if (window.location.pathname.includes('newsletter-edit')) {
-        if (tokens.length === 0) {
+        if (!hasLoadedTokens && tokens.length === 0) {
             addToken('all', 'All Active Users');
+        } else if (hasLoadedTokens) {
+            // Update recipient count for loaded tokens
+            updateRecipientCount();
         }
     }
 });

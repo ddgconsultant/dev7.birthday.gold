@@ -115,111 +115,18 @@ if ($app->formposted()) {
         
         $additionalstyles = '
         <style>
-      
-        
-        .success-container {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        
-        /* Mobile: Position below fixed header */
-        @media (max-width: 767px) {
-            .success-container {
-                margin-top: 30px; /* Reduced mobile spacing */
-                margin-bottom: 2rem;
-            }
-            
-            .main-content {
-                padding-top: 0 !important;
-                margin-top: 0 !important;
-            }
-        }
-        
-        .success-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            padding: 3rem 2rem;
-            text-align: center;
-        }
-        
+        /* Keep only essential custom styles that Bootstrap can't handle */
         .success-icon {
             width: 80px;
             height: 80px;
             background: #e8f5e8;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 2rem;
             font-size: 2.5rem;
-            color: var(--bs-primary);
         }
         
-        .success-card h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #212529;
-            margin-bottom: 1rem;
-        }
-        
-        .email-display {
-            background: #f0f9ff;
-            border: 1px solid #cfe2ff;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            color: #0c63e4;
-            display: inline-block;
-            margin-bottom: 1.5rem;
-        }
-        
-        .success-text {
-            font-size: 1.125rem;
-            color: #6c757d;
-            margin-bottom: 1rem;
-            line-height: 1.6;
-        }
-        
-        .tip-box {
-            background: #fff3cd;
-            border: 1px solid #ffecb5;
-            border-radius: 8px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 2rem;
-            color: #664d03;
-            font-size: 0.875rem;
-        }
-        
-        .tip-box i {
-            color: #f0ad4e;
-            margin-right: 0.5rem;
-        }
-        
-        .btn-back {
-            background: var(--bs-primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 2rem;
-            font-size: 1rem;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-back:hover {
-            background: #0b5ed7;
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
-        }
-        
-        @media (min-width: 768px) {
-            .success-card {
-                padding: 4rem 3rem;
+        @media (max-width: 767px) {
+            .main-content {
+                padding-top: 0 !important;
+                margin-top: 0 !important;
             }
         }
         </style>
@@ -230,21 +137,21 @@ if ($app->formposted()) {
         ?>
         
         <div class="main-content">
-            <div class="success-container">
-                <div class="success-card">
-                    <div class="success-icon">
+            <div class="container" style="max-width: 600px;">
+                <div class="card shadow-sm rounded-3 p-4 p-md-5 text-center bg-white mt-4 mt-md-5">
+                    <div class="success-icon rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4 text-primary">
                         <i class="bi bi-<?php echo ($reset_type === 'phone') ? 'phone' : 'envelope-check'; ?>"></i>
                     </div>
                     
-                    <h1><?php echo ($reset_type === 'phone') ? 'Check Your Phone' : 'Check Your Email'; ?></h1>
+                    <h1 class="fs-2 fw-bold text-dark mb-3"><?php echo ($reset_type === 'phone') ? 'Check Your Phone' : 'Check Your Email'; ?></h1>
                     
-                    <p class="success-text">We've sent a password reset link to:</p>
+                    <p class="fs-5 text-muted mb-3">We've sent a password reset link to:</p>
                     
-                    <div class="email-display">
+                    <div class="bg-light border border-primary rounded-2 px-4 py-2 fw-semibold text-primary d-inline-block mb-3">
                         <?php echo $sent_to; ?>
                     </div>
                     
-                    <p class="success-text">
+                    <p class="fs-5 text-muted mb-3">
                         <?php if ($reset_type === 'phone'): ?>
                             Click the link in the text message to reset your password.
                         <?php else: ?>
@@ -252,8 +159,8 @@ if ($app->formposted()) {
                         <?php endif; ?>
                     </p>
                     
-                    <div class="tip-box">
-                        <i class="bi bi-lightbulb"></i>
+                    <div class="alert alert-warning text-start mb-4">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
                         <?php if ($reset_type === 'phone'): ?>
                             <strong>Tip:</strong> The link will expire in 24 hours. If you don't receive the text, check your phone number and try again.
                         <?php else: ?>
@@ -261,7 +168,7 @@ if ($app->formposted()) {
                         <?php endif; ?>
                     </div>
                     
-                    <a href="/login" class="btn-back">Back to Login</a>
+                    <a href="/login" class="btn btn-primary px-4 py-2 fw-semibold">Back to Login</a>
                 </div>
             </div>
         </div>
@@ -280,123 +187,35 @@ if ($app->formposted()) {
 $page_title = "Forgot Password - Birthday Gold";
 $page_description = "Reset your Birthday Gold account password";
 
-// Modern Minimalist CSS - Matching /redeem style
+// Minimal CSS - Using Bootstrap 5 utilities
 $additionalstyles = '
 <style>
-/* Modern Minimalist Forgot Password Styles - Clean & Modern */
-* {
-    box-sizing: border-box !important;
-}
-
-/* Main content wrapper - removed vertical centering to match login */
-.main-content {
-    /* Removed all the extra spacing and centering */
-}
-
-/* Card Container */
+/* Essential custom styles only */
 .forgot-container {
-    width: 100%;
     max-width: 480px;
-    margin: 1rem auto 2rem; /* Match login page exactly */
 }
 
-/* Mobile: Position below fixed header */
 @media (max-width: 767px) {
-    .forgot-container {
-        margin-top: 30px; /* Reduced mobile spacing */
-        margin-bottom: 2rem;
-    }
-    
-    /* Remove any default padding from main content wrapper */
     .main-content {
         padding-top: 0 !important;
         margin-top: 0 !important;
-        min-height: auto;
     }
     
-    /* Mobile - underline style for floating labels */
-    .form-floating .form-control,
-    .form-control {
+    /* Mobile underline style */
+    .form-floating .form-control {
         border: none;
         border-bottom: 2px solid #dee2e6;
         border-radius: 0;
         background-color: transparent;
-        padding-left: 0;
-        padding-right: 0;
     }
     
-    .form-floating .form-control:focus,
-    .form-control:focus {
-        border-bottom-color: #0d6efd;
+    .form-floating .form-control:focus {
+        border-bottom-color: var(--bs-primary);
         box-shadow: none;
-        background-color: transparent;
-    }
-    
-    /* Floating labels adjustment for mobile */
-    .form-floating > label {
-        padding-left: 0;
-    }
-    
-    /* Remove autofill background on mobile with transparent background */
-    input:-webkit-autofill,
-    input:-webkit-autofill:hover,
-    input:-webkit-autofill:focus,
-    input:-webkit-autofill:active {
-        -webkit-box-shadow: 0 0 0 30px transparent inset !important;
-        -webkit-text-fill-color: inherit !important;
     }
 }
 
-.forgot-card {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-}
-
-/* Header Section - Minimal */
-.forgot-header {
-    text-align: center;
-    padding: 2rem 1.5rem 1rem;
-}
-
-.forgot-header h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #212529;
-    margin-bottom: 0.5rem;
-}
-
-.forgot-header p {
-    font-size: 1rem;
-    color: #6c757d;
-    margin: 0;
-}
-
-/* Reset Badge */
-.reset-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #e8f5e8;
-    color: var(--bs-primary);
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-}
-
-.reset-badge i {
-    font-size: 1rem;
-}
-
-/* Form Section */
-.forgot-body {
-    padding: 0 1.5rem 2rem;
-}
-
-/* Tab Switch for Email/Phone */
+/* Tab styles - essential for functionality */
 .reset-tabs {
     display: flex;
     background: #f1f3f5;
@@ -407,19 +226,12 @@ $additionalstyles = '
 
 .reset-tab {
     flex: 1;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem;
     border: none;
     background: transparent;
     border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #6c757d;
     cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+    transition: all 0.2s;
 }
 
 .reset-tab.active {
@@ -428,213 +240,15 @@ $additionalstyles = '
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
-.reset-tab:hover:not(.active) {
-    color: #495057;
-}
-
-.reset-tab i {
-    font-size: 1rem;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-/* Floating Label Styles */
-.form-floating > .form-control:focus ~ label,
-.form-floating > .form-control:not(:placeholder-shown) ~ label,
-.form-floating > .form-select ~ label {
-    transform: scale(0.85) translateY(-0.7rem) translateX(0.15rem);
-}
-
-.form-floating .form-control {
-    height: calc(3.5rem + 2px);
-    line-height: 1.25;
-    padding: 1rem 0.75rem;
-}
-
-.form-floating > label {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    padding: 1rem 0.75rem;
-    overflow: hidden;
-    text-align: start;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    pointer-events: none;
-    border: 1px solid transparent;
-    transform-origin: 0 0;
-    transition: opacity .1s ease-in-out,transform .1s ease-in-out;
-    color: #6c757d;
-}
-
-/* Remove old form-label styles that conflict with floating labels */
-
-/* Email Input Field */
-.form-control {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    background: white;
-    color: #212529;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
-}
-
-.form-control::placeholder {
-    color: transparent;
-}
-
-.form-control:focus::placeholder {
-    color: #adb5bd;
-}
-
-/* Remove Chrome autofill blue background */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
+/* Chrome autofill fix */
+input:-webkit-autofill {
     -webkit-box-shadow: 0 0 0 30px white inset !important;
-    -webkit-text-fill-color: inherit !important;
-    transition: background-color 5000s ease-in-out 0s;
 }
 
-/* For floating label inputs specifically */
-.form-floating input:-webkit-autofill,
-.form-floating input:-webkit-autofill:hover,
-.form-floating input:-webkit-autofill:focus,
-.form-floating input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px white inset !important;
-    -webkit-text-fill-color: inherit !important;
-}
-
-/* Submit Button */
-.btn-submit {
-    width: 100%;
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    background: var(--bs-primary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-submit:hover:not(:disabled) {
-    background: #0b5ed7;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
-}
-
-.btn-submit:active {
-    transform: translateY(0);
-}
-
-.btn-submit:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-    opacity: 0.65;
-}
-
-/* Help Text */
-.help-text {
-    font-size: 0.8125rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
-    padding-left: 0.75rem;
-}
-
-/* Divider - Subtle */
-.divider {
-    margin: 2rem 0;
-    text-align: center;
-    position: relative;
-}
-
-.divider::before {
-    content: "";
-    position: absolute;
-    left: 20%;
-    right: 20%;
-    top: 50%;
-    height: 1px;
-    background: #e9ecef;
-}
-
-.divider span {
-    background: white;
-    padding: 0 0.75rem;
-    position: relative;
-    color: #adb5bd;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Alternative Actions */
-.alt-actions {
-    text-align: center;
-    font-size: 0.875rem;
-    color: #6c757d;
-}
-
-.alt-actions a {
-    color: var(--bs-primary);
-    text-decoration: none;
-    font-weight: 600;
-    transition: color 0.2s ease;
-}
-
-.alt-actions a:hover {
-    color: #0b5ed7;
-    text-decoration: underline;
-}
-
-/* Alert Messages */
-.alert-container {
-    margin-bottom: 1.5rem;
-}
-
-.alert {
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    border: 1px solid transparent;
-}
-
-.alert-danger {
-    background: #f8d7da;
-    color: #842029;
-    border-color: #f5c2c7;
-}
-
-.alert-warning {
-    background: #fff3cd;
-    color: #664d03;
-    border-color: #ffecb5;
-}
-
-/* Loading State */
-.btn-submit.loading {
-    pointer-events: none;
-    min-height: 48px; /* Maintain button height */
+/* Loading spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .btn-submit.loading::after {
@@ -654,152 +268,7 @@ input:-webkit-autofill:active {
 }
 
 .btn-submit.loading span {
-    visibility: hidden; /* Use visibility instead of opacity to maintain space */
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Invalid input state */
-.form-control.is-invalid {
-    border-color: #dc3545;
-}
-
-.form-control.is-invalid:focus {
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
-}
-
-
-/* Tablet & Desktop Styles */
-@media (min-width: 768px) {
-    /* Removed main-content padding to match login */
-    
-    .forgot-container {
-        max-width: 480px;
-        margin: 1.5rem auto 3rem; /* Match login page tablet/desktop spacing */
-    }
-    
-    .forgot-header {
-        padding: 3rem 2rem 1.5rem;
-    }
-    
-    .forgot-header h1 {
-        font-size: 2rem;
-    }
-    
-    .forgot-body {
-        padding: 0 2rem 3rem;
-    }
-    
-    /* Desktop - keep full borders for floating labels */
-    .form-floating .form-control,
-    .form-control {
-        border: 2px solid #dee2e6;
-        border-radius: 8px;
-        background-color: #fff;
-        padding: 1rem 0.75rem;
-    }
-    
-    .form-floating .form-control:focus,
-    .form-control:focus {
-        border-color: #86b7fe;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    }
-}
-
-/* Large Desktop - Enhanced Layout */
-@media (min-width: 992px) {
-    /* Removed main-content padding to match login */
-    
-    .forgot-wrapper {
-        width: 100%;
-        max-width: 1200px;
-        display: grid;
-        grid-template-columns: 1fr 480px;
-        gap: 4rem;
-        align-items: center;
-        padding: 0 2rem;
-        margin: auto;
-    }
-    
-    /* Welcome content for desktop */
-    .welcome-content {
-        color: #212529;
-    }
-    
-    .welcome-content h2 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        line-height: 1.2;
-    }
-    
-    .welcome-content h2 span {
-        color: var(--bs-primary);
-    }
-    
-    .welcome-content p {
-        font-size: 1.25rem;
-        color: #6c757d;
-        margin-bottom: 2rem;
-        line-height: 1.6;
-    }
-    
-    .feature-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-    }
-    
-    .feature-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .feature-icon {
-        flex-shrink: 0;
-        width: 48px;
-        height: 48px;
-        background: #e8f5e8;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--bs-primary);
-        font-size: 1.25rem;
-    }
-    
-    .feature-text h3 {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #212529;
-        margin-bottom: 0.25rem;
-    }
-    
-    .feature-text p {
-        font-size: 0.875rem;
-        color: #6c757d;
-        margin: 0;
-        line-height: 1.4;
-    }
-    
-    .forgot-container {
-        margin: 0;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    }
-}
-
-@media (min-width: 1200px) {
-    .forgot-wrapper {
-        gap: 6rem;
-    }
-    
-    .welcome-content h2 {
-        font-size: 3rem;
-    }
+    visibility: hidden;
 }
 </style>
 ';

@@ -1,13 +1,13 @@
 <?PHP
-$addClasses[] = 'marketing';
 $addClasses[] = 'mail';
+$addClasses[] = 'marketing';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $campaign_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $pagetitle = "Newsletter Preview";
 
 if (!$campaign_id) {
-    header('Location: index.php');
+    header('Location: newsletter-report.php');
     exit;
 }
 

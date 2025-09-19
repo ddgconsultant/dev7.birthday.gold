@@ -226,6 +226,11 @@ if ($isHomePage) {
         
         echo '
                         <li><a class="dropdown-item text-black" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>';
+       # breakpoint($current_user_data);
+          // Show Marketing for users with a company
+          if (!empty($current_user_data['company_listcount'])) {
+            echo '<li><a class="dropdown-item text-black" href="/myaccount/marketing/"><i class="bi bi-megaphone me-3"></i>Marketing</a></li>';
+        }
         
         if (($current_user_data['account_plan'] ?? '') !== 'free') {
             echo '
@@ -269,7 +274,7 @@ if ($isHomePage) {
         echo '
 <!-- TRACE: ENTERING REGULAR HEADER SECTION -->';
     }
-    
+
     echo '
 <header class="top-header '.$navclass.'">
     <div class="container-fluid h-100">
@@ -349,10 +354,16 @@ if ($isHomePage) {
                         <li><hr class="dropdown-divider mt-0"></li>
                         <li><a class="dropdown-item text-black" href="/myaccount/"><i class="bi bi-person me-3"></i>Account Home</a></li>';
         }
-        
+
         // Regular menu items
         echo '
                         <li><a class="dropdown-item text-black" href="/myaccount/settings"><i class="bi bi-gear me-3"></i>Settings</a></li>';
+        
+        // Show Marketing for users with a company
+        if (!empty($current_user_data['company_listcount'])) {
+            echo '<li><a class="dropdown-item text-black" href="/myaccount/marketing/"><i class="bi bi-megaphone me-3"></i>Marketing</a></li>';
+        }
+        
         
         // Only show billing for paid accounts
         if (($current_user_data['account_plan'] ?? '') !== 'free') {

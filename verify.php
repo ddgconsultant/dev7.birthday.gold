@@ -1,7 +1,12 @@
 <?php
+error_log('[VERIFY PAGE] Started loading verify.php');
+
 $addClasses[] = 'Mail';
+$addClasses[] = 'sms';
 #$usemailsender='amazonses';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+
+error_log('[VERIFY PAGE] After site-controller include');
 
 $sendcount = 0;
 $local_validationcode = '';
@@ -17,6 +22,9 @@ $test_error = isset($_GET['error']) ? $_GET['error'] : null;
 
 // Get user registration data from session
 $userregistrationdata = $session->get('userregistrationdata', '');
+
+// Debug log the entire session data
+error_log('[VERIFY] Full userregistrationdata from session: ' . json_encode($userregistrationdata));
 
 // In test mode, create fake registration data if none exists
 if ($test_mode) {
@@ -37,11 +45,24 @@ if ($test_mode) {
 
 // Only redirect to signup if not in test mode
 // Check if we have valid registration data - must have either email or phone_number
-if (!$test_mode && (empty($userregistrationdata) || 
+if (!$test_mode && (empty($userregistrationdata) ||
     (empty($userregistrationdata['email']) && empty($userregistrationdata['phone_number'])))) {
     $session->set('force_error_message', 'No registration data found. Please sign up again.');
     header('location: /signup');
     exit;
+}
+
+// Check if we need to send initial verification code (first time arriving at page)
+// This must come BEFORE the resend block so it can trigger it
+$needs_initial_send = !isset($userregistrationdata['validationemailsent']) &&
+                       !isset($userregistrationdata['validationsmssent']) &&
+                       !isset($_GET['action']) &&
+                       !isset($_POST['ajax']);
+
+if ($needs_initial_send) {
+    error_log('[VERIFY] First time on page - triggering initial verification send');
+    // Set action to trigger the resend logic below
+    $_GET['action'] = 'resend';
 }
 
 // Handle AJAX validation request
@@ -73,12 +94,15 @@ if (isset($_POST['ajax']) && $_POST['ajax'] == 'validate' && isset($_POST['code'
         // Always use real validation (no fake test validation)
         $checkdata = array();
         $checkdata['mini'] = $submitted_code;
+        // Always use 'email' type for validation checking (both email and SMS codes use same type)
         $checkdata['type'] = 'email';
-        
+
         // Add user_id if available
         if (!empty($userregistrationdata['user_id'])) {
             $checkdata['user_id'] = $userregistrationdata['user_id'];
         }
+
+        error_log('[VERIFY] Checking validation code for user: ' . ($userregistrationdata['user_id'] ?? 'unknown'));
         
         $response = $app->checkvalidationcodes($checkdata);
         error_log('[VERIFY] Validation response: ' . print_r($response, true));
@@ -194,12 +218,13 @@ if (isset($_POST['ajax']) && $_POST['ajax'] == 'validate' && isset($_POST['code'
 
 // Handle resend request (both AJAX and GET)
 if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['action']) && $_GET['action'] == 'resend')) {
+    error_log('[VERIFY RESEND] Entering resend block');
     $isAjax = isset($_POST['ajax']);
-    
+
     if ($isAjax) {
         header('Content-Type: application/json');
     }
-    
+
     // Check if test mode is passed via POST or GET
     $ajax_test_mode = (isset($_POST['test']) && $_POST['test'] == '1') || (isset($_GET['test']) && $_GET['test'] == '1');
     
@@ -225,9 +250,14 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
     }
     
     // Determine contact method - email or phone
-    $email = $userregistrationdata['email'] ?? '';
-    $phone = $userregistrationdata['phone_number'] ?? $userregistrationdata['phone'] ?? '';
+    // Important: Keep email as null/empty if not set, don't default to empty string
+    $email = (!empty($userregistrationdata['email'])) ? $userregistrationdata['email'] : '';
+    $phone = (!empty($userregistrationdata['phone_number'])) ? $userregistrationdata['phone_number'] :
+             ((!empty($userregistrationdata['phone'])) ? $userregistrationdata['phone'] : '');
     $fullname = ($userregistrationdata['first_name'] ?? '') . ' ' . ($userregistrationdata['last_name'] ?? '');
+
+    error_log('[VERIFY PAGE] Extracted email: "' . $email . '" (length=' . strlen($email) . ')');
+    error_log('[VERIFY PAGE] Extracted phone: "' . $phone . '" (length=' . strlen($phone) . ')');
     
     // Determine preferred contact method and code type
     // Priority order: 1) Phone (if available), 2) Email
@@ -238,6 +268,11 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
     $contact_value = '';
     $use_numeric_code = false; // Default based on method
     
+    // Debug log contact information
+    error_log('[VERIFY] Email from session: "' . $email . '" (empty=' . (empty($email) ? 'YES' : 'NO') . ')');
+    error_log('[VERIFY] Phone from session: "' . $phone . '" (empty=' . (empty($phone) ? 'YES' : 'NO') . ')');
+    error_log('[VERIFY] Requested method: ' . ($requested_method ?: 'NONE'));
+
     // Determine which contact method to use based on availability and preference
     if ($requested_method === 'email' && !empty($email)) {
         // User specifically requested email
@@ -267,66 +302,158 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
         header('Location: /signup');
         exit;
     }
+
+    error_log('[VERIFY] Selected contact method: ' . $contact_method);
+    error_log('[VERIFY] Contact value: ' . $contact_value);
     
-    // Handle phone verification not yet implemented
+    // Handle phone verification - send SMS with validation code
     if ($contact_method === 'phone') {
-        // TODO: Implement SMS verification
-        $_SESSION['error_message'] = 'Phone verification is not yet implemented. Please use email.';
-        header('Location: /signup');
-        exit;
-    }
-    
-    // Send verification email
-    $message = array();
-    $message['toemail'] = $email;
-    $message['fullname'] = $fullname;
-    
-    // Always use real validation code generation
-    $validatedata = array();
-    $validatedata['rawdata'] = $contact_value;
-    $validatedata['sendcount'] = $sendcount;
-    $validatedata['type'] = 'email'; // Explicitly set type
-    
-    // In test mode, use a numeric user_id for database compatibility
-    if ($test_mode || $ajax_test_mode || (isset($userregistrationdata['account_type']) && $userregistrationdata['account_type'] == 'test')) {
-        // Convert test user_id to a numeric value for database
-        $validatedata['user_id'] = 999999; // Fixed test user_id
-    } else {
+        // Generate validation code for phone
+        // IMPORTANT: Use 'email' type even for phone to maintain compatibility with checkvalidationcodes
+        $validatedata = array();
+        $validatedata['rawdata'] = $contact_value;
+        $validatedata['sendcount'] = $sendcount;
+        $validatedata['type'] = 'email';  // Use email type for compatibility
         $validatedata['user_id'] = $userregistrationdata['user_id'];
+        $validatedata['numeric_only'] = true; // Always use numeric for SMS
+
+        $validationcodes = $app->getvalidationcodes($validatedata);
+
+        // Clean phone number for SMS
+        $clean_phone = preg_replace('/[^0-9]/', '', $contact_value);
+        if (strlen($clean_phone) === 11 && substr($clean_phone, 0, 1) === '1') {
+            $clean_phone = substr($clean_phone, 1); // Remove leading 1
+        }
+
+        error_log('[VERIFY SMS] Sending validation code to phone: ' . $clean_phone);
+        error_log('[VERIFY SMS] Validation code: ' . $validationcodes['mini']);
+
+        // Send SMS using the sms class
+        global $sms;
+        if (!isset($sms) || !is_object($sms)) {
+            error_log('[VERIFY SMS] SMS object not available, cannot send SMS');
+            if (!empty($email)) {
+                // Fall back to email
+                $contact_method = 'email';
+                $contact_value = $email;
+                $use_numeric_code = true;
+            } else {
+                $_SESSION['error_message'] = 'SMS service not available. Please use email verification.';
+                header('Location: /signup');
+                exit;
+            }
+        } else {
+            // Send the SMS
+            $message = "Your Birthday.Gold verification code is: {$validationcodes['mini']}. This code expires in 15 minutes.";
+
+            try {
+                $result = $sms->sendSingleMessage($clean_phone, $message);
+                error_log('[VERIFY SMS] SMS send result: ' . json_encode($result));
+
+                // Check if SMS was sent successfully
+                $sms_sent = false;
+                if (isset($result['ID']) && !empty($result['ID'])) {
+                    // SMS gateway returns an ID when message is queued
+                    $sms_sent = true;
+                    error_log('[VERIFY SMS] SMS queued with ID: ' . $result['ID']);
+                }
+
+                if ($sms_sent) {
+                    // Update session to indicate SMS was sent
+                    $userregistrationdata['validationsmssent'] = date('r');
+                    $userregistrationdata['validationsmssent_count'] = $sendcount;
+                    $userregistrationdata['sent_to_phone'] = true;
+                    $userregistrationdata['used_numeric_code'] = true;
+                    $session->set('userregistrationdata', $userregistrationdata);
+
+                    if ($isAjax) {
+                        echo json_encode(['success' => true, 'message' => 'Verification code sent via SMS.']);
+                        exit;
+                    } else {
+                        $_SESSION['success_message'] = 'Verification code sent via SMS.';
+                        header('Location: /verify');
+                        exit;
+                    }
+                } else {
+                    error_log('[VERIFY SMS] SMS send failed');
+                    if (!empty($email)) {
+                        // Fall back to email
+                        $contact_method = 'email';
+                        $contact_value = $email;
+                        $use_numeric_code = true;
+                    } else {
+                        $_SESSION['error_message'] = 'Failed to send SMS. Please try again.';
+                        header('Location: /signup');
+                        exit;
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('[VERIFY SMS] SMS exception: ' . $e->getMessage());
+                if (!empty($email)) {
+                    $contact_method = 'email';
+                    $contact_value = $email;
+                    $use_numeric_code = true;
+                } else {
+                    $_SESSION['error_message'] = 'SMS service error: ' . $e->getMessage();
+                    header('Location: /signup');
+                    exit;
+                }
+            }
+        }
     }
     
-    // Set code type based on our determination above
-    if ($use_numeric_code) {
-        $validatedata['numeric_only'] = true;
-    }
-    
-    // Allow test mode to explicitly set code type
-    if ($test_code_type === 'numeric') {
-        $validatedata['numeric_only'] = true;
-    } elseif ($test_code_type === 'alphanumeric') {
-        // Allow override to alphanumeric for scaling/testing
-        unset($validatedata['numeric_only']);
-    }
-    
-    $validationcodes = $app->getvalidationcodes($validatedata);
-    
-    // Use verify endpoint instead of validate-account
-    $link = $website['formalurl'] . '/verify?code=' . urlencode($validationcodes['mini']);
-    $message['validatelink'] = $link;
-    $message['validationcode'] = $validationcodes['mini'];
-    
-    // Also provide direct verify link with code pre-filled (same as validatelink now)
-    $direct_verify_link = $link;
-    $message['directverifylink'] = $direct_verify_link;
-    
-    $result = $mail->sendVerificationEmail($message);
-    
-    if ($result) {
-        $userregistrationdata['validationemailsent'] = date('r');
-        $userregistrationdata['validationemailsent_count'] = $sendcount;
-        // Store whether we used numeric code
-        $userregistrationdata['used_numeric_code'] = isset($validatedata['numeric_only']) && $validatedata['numeric_only'];
-        $session->set('userregistrationdata', $userregistrationdata);
+    // Send verification email (only if not already sent via SMS)
+    if ($contact_method === 'email') {
+        $message = array();
+        $message['toemail'] = $email;
+        $message['fullname'] = $fullname;
+
+        // Always use real validation code generation
+        $validatedata = array();
+        $validatedata['rawdata'] = $contact_value;
+        $validatedata['sendcount'] = $sendcount;
+        $validatedata['type'] = 'email'; // Explicitly set type
+
+        // In test mode, use a numeric user_id for database compatibility
+        if ($test_mode || $ajax_test_mode || (isset($userregistrationdata['account_type']) && $userregistrationdata['account_type'] == 'test')) {
+            // Convert test user_id to a numeric value for database
+            $validatedata['user_id'] = 999999; // Fixed test user_id
+        } else {
+            $validatedata['user_id'] = $userregistrationdata['user_id'];
+        }
+
+        // Set code type based on our determination above
+        if ($use_numeric_code) {
+            $validatedata['numeric_only'] = true;
+        }
+
+        // Allow test mode to explicitly set code type
+        if ($test_code_type === 'numeric') {
+            $validatedata['numeric_only'] = true;
+        } elseif ($test_code_type === 'alphanumeric') {
+            // Allow override to alphanumeric for scaling/testing
+            unset($validatedata['numeric_only']);
+        }
+
+        $validationcodes = $app->getvalidationcodes($validatedata);
+
+        // Use verify endpoint instead of validate-account
+        $link = $website['formalurl'] . '/verify?code=' . urlencode($validationcodes['mini']);
+        $message['validatelink'] = $link;
+        $message['validationcode'] = $validationcodes['mini'];
+
+        // Also provide direct verify link with code pre-filled (same as validatelink now)
+        $direct_verify_link = $link;
+        $message['directverifylink'] = $direct_verify_link;
+
+        $result = $mail->sendVerificationEmail($message);
+
+        if ($result) {
+            $userregistrationdata['validationemailsent'] = date('r');
+            $userregistrationdata['validationemailsent_count'] = $sendcount;
+            // Store whether we used numeric code
+            $userregistrationdata['used_numeric_code'] = isset($validatedata['numeric_only']) && $validatedata['numeric_only'];
+            $session->set('userregistrationdata', $userregistrationdata);
         
         if ($isAjax) {
             $message = 'New code sent successfully' . (($test_mode || $ajax_test_mode) ? ' (test mode).' : '.');
@@ -361,6 +488,7 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
             exit;
         }
     }
+    } // End of email sending if block
 }
 
 // Get validation code from URL parameter if provided
@@ -705,7 +833,10 @@ include($dir['core_components'] . '/bg_header.inc');
             // Determine contact method for dynamic title
             $phone = $userregistrationdata['phone_number'] ?? $userregistrationdata['phone'] ?? '';
             $email = $userregistrationdata['email'] ?? '';
-            $using_phone = !empty($phone) && !empty($userregistrationdata['sent_to_phone']);
+            // Determine if we're using phone: either sent_to_phone is set, or phone exists and email is empty
+            $using_phone = !empty($userregistrationdata['sent_to_phone']) || (!empty($phone) && empty($email));
+
+            error_log('[VERIFY DISPLAY] Phone: "' . $phone . '", Email: "' . $email . '", Using phone: ' . ($using_phone ? 'YES' : 'NO'));
             ?>
             <h1 class="verification-title">Check your <?php echo $using_phone ? 'phone' : 'email'; ?></h1>
             <p class="verification-subtitle">
@@ -798,6 +929,12 @@ include($dir['core_components'] . '/bg_header.inc');
                 echo '<!-- Cypress test: Email=' . htmlspecialchars($debug_email) . ', IsBdtest=' . $is_bdtest . ' -->';
             }
             ?>
+
+            <div class="resend-container" style="margin-top: 1.5rem; text-align: center;">
+                <p class="help-text" style="margin-bottom: 0.5rem;">
+                    Didn't receive a code? <a href="?action=resend" class="resend-link" style="color: var(--primary); text-decoration: underline;">Resend code</a>
+                </p>
+            </div>
 
             <p class="help-text">
                 Having trouble? <a href="/contact">Contact support</a>
@@ -925,6 +1062,11 @@ include($dir['core_components'] . '/bg_header.inc');
                 // Auto-advance to next input
                 if (value && index < this.inputs.length - 1) {
                     this.inputs[index + 1].focus();
+                } else if (value && index === this.inputs.length - 1) {
+                    // Auto-submit when last digit is entered and code is complete
+                    if (this.isCodeComplete()) {
+                        setTimeout(() => this.verifyCode(), 100);
+                    }
                 }
 
                 this.updateVerifyButton();
@@ -968,6 +1110,10 @@ include($dir['core_components'] . '/bg_header.inc');
                     this.inputs[lastFilledIndex + 1].focus();
                 } else {
                     this.inputs[this.inputs.length - 1].focus();
+                    // Auto-submit if complete code was pasted
+                    if (this.isCodeComplete()) {
+                        setTimeout(() => this.verifyCode(), 100);
+                    }
                 }
 
                 this.clearError();

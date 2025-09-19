@@ -147,7 +147,7 @@ include($dir['core_components'] . '/bg_header.inc');
 echo '
 <div class="content-header-staff compact">
     <div class="container text-center">
-        <h1><i class="fas fa-link"></i> Marketing Platforms</h1>
+        <h1><i class="bi bi-link-45deg"></i> Marketing Platforms</h1>
         <p class="lead">Manage quick access links to marketing platforms</p>
     </div>
 </div>';
@@ -283,23 +283,23 @@ echo '
                         <div class="col-md-6">
                             <h6>Social Media</h6>
                             <ul class="list-unstyled">
-                                <li><i class="fab fa-facebook text-primary"></i> Facebook Ads Manager</li>
-                                <li><i class="fab fa-instagram text-danger"></i> Instagram Business</li>
-                                <li><i class="fab fa-twitter text-info"></i> Twitter Ads</li>
-                                <li><i class="fab fa-linkedin text-primary"></i> LinkedIn Campaign Manager</li>
-                                <li><i class="fab fa-tiktok"></i> TikTok Ads Manager</li>
-                                <li><i class="fab fa-youtube text-danger"></i> YouTube Studio</li>
+                                <li><i class="bi bi-facebook text-primary"></i> Facebook Ads Manager</li>
+                                <li><i class="bi bi-instagram text-danger"></i> Instagram Business</li>
+                                <li><i class="bi bi-twitter text-info"></i> Twitter Ads</li>
+                                <li><i class="bi bi-linkedin text-primary"></i> LinkedIn Campaign Manager</li>
+                                <li><i class="bi bi-tiktok"></i> TikTok Ads Manager</li>
+                                <li><i class="bi bi-youtube text-danger"></i> YouTube Studio</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
                             <h6>Advertising & Analytics</h6>
                             <ul class="list-unstyled">
-                                <li><i class="fab fa-google text-primary"></i> Google Ads</li>
-                                <li><i class="fas fa-chart-line text-success"></i> Google Analytics</li>
-                                <li><i class="fas fa-mail-bulk text-info"></i> Mailchimp</li>
-                                <li><i class="fas fa-envelope text-warning"></i> Constant Contact</li>
-                                <li><i class="fas fa-bullhorn text-danger"></i> HubSpot</li>
-                                <li><i class="fas fa-chart-bar text-primary"></i> Hootsuite</li>
+                                <li><i class="bi bi-google text-primary"></i> Google Ads</li>
+                                <li><i class="bi bi-graph-up text-success"></i> Google Analytics</li>
+                                <li><i class="bi bi-envelope-fill text-info"></i> Mailchimp</li>
+                                <li><i class="bi bi-envelope-fill text-warning"></i> Constant Contact</li>
+                                <li><i class="bi bi-megaphone-fill text-danger"></i> HubSpot</li>
+                                <li><i class="bi bi-bar-chart-fill text-primary"></i> Hootsuite</li>
                             </ul>
                         </div>
                     </div>

@@ -1,4 +1,5 @@
 <?php
+$addClasses[] = 'accessmanager';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Create New Marketing Platform";
@@ -26,27 +27,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (!empty($username) && !empty($password)) {
             global $accessmanager;
             
-            $parsed_url = parse_url($url);
-            $host = $parsed_url['host'] ?? $url;
-            
-            $credential_input = [
-                'type' => 'platform_credentials',
-                'name' => 'marketing_' . strtolower(str_replace(' ', '_', $display_name)),
-                'host' => $host,
-                'host_link_type' => 'website',
-                'category' => 'marketing',
-                'grouping' => 'marketing_platforms',
-                'username' => $username,
-                'password' => $password,
-                'notes' => $credential_notes,
-                'datatype' => 'username_password',
-                'strength' => ['score' => 0]
-            ];
-            
-            try {
-                $credential_id = $accessmanager->create_record($credential_input);
-            } catch (Exception $e) {
-                // Continue without credentials, will show warning later
+            if (isset($accessmanager) && is_object($accessmanager)) {
+                $parsed_url = parse_url($url);
+                $host = $parsed_url['host'] ?? $url;
+                
+                $credential_input = [
+                    'user_id' => $account->getuser('user_id'),
+                    'company_id' => 0,
+                    'type' => 'platform_credentials',
+                    'data_type' => 'username_password',
+                    'name' => 'marketing_' . strtolower(str_replace(' ', '_', $display_name)),
+                    'host' => $host,
+                    'username' => $username,
+                    'password' => $password,
+                    'notes' => $credential_notes,
+                    'category' => 'marketing',
+                    'grouping' => 'marketing_platforms',
+                    'datatype' => 'username_password',
+                    'creator_id' => $account->getuser('user_id')
+                ];
+                
+                try {
+                    $credential_id = $accessmanager->create_record($credential_input);
+                } catch (Exception $e) {
+                    // Continue without credentials, will show warning later
+                }
             }
         }
         
@@ -55,27 +60,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (!empty($api_key)) {
             global $accessmanager;
             
-            $parsed_url = parse_url($url);
-            $host = $parsed_url['host'] ?? $url;
-            
-            $api_credential_input = [
-                'type' => 'api_credentials',
-                'name' => 'api_' . strtolower(str_replace(' ', '_', $display_name)),
-                'host' => $host,
-                'host_link_type' => 'api',
-                'category' => 'marketing',
-                'grouping' => 'marketing_api',
-                'username' => $api_key,
-                'password' => $api_secret,
-                'notes' => 'API credentials for ' . $display_name,
-                'datatype' => 'api_key',
-                'strength' => ['score' => 0]
-            ];
-            
-            try {
-                $api_credential_id = $accessmanager->create_record($api_credential_input);
-            } catch (Exception $e) {
-                // Continue without API credentials
+            if (isset($accessmanager) && is_object($accessmanager)) {
+                $parsed_url = parse_url($url);
+                $host = $parsed_url['host'] ?? $url;
+                
+                $api_credential_input = [
+                    'user_id' => $account->getuser('user_id'),
+                    'company_id' => 0,
+                    'type' => 'api_credentials',
+                    'data_type' => 'api_key',
+                    'name' => 'api_' . strtolower(str_replace(' ', '_', $display_name)),
+                    'host' => $host,
+                    'username' => $api_key,
+                    'password' => $api_secret,
+                    'notes' => 'API credentials for ' . $display_name,
+                    'category' => 'marketing',
+                    'grouping' => 'marketing_api',
+                    'datatype' => 'api_key',
+                    'creator_id' => $account->getuser('user_id')
+                ];
+                
+                try {
+                    $api_credential_id = $accessmanager->create_record($api_credential_input);
+                } catch (Exception $e) {
+                    // Continue without API credentials
+                }
             }
         }
         
@@ -109,22 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'rank' => $rank
             ]);
             
-            // Show appropriate success message
-            if ($credential_id && $api_credential_id) {
-                $system->addmessage('success', 'Platform created with login and API credentials');
-            } elseif ($credential_id) {
-                $system->addmessage('success', 'Platform created with login credentials');
-            } elseif ($api_credential_id) {
-                $system->addmessage('success', 'Platform created with API credentials');
-            } else {
-                $system->addmessage('success', 'Platform created successfully');
-            }
             
             header('Location: /staff/marketing/marketing-platforms.php');
             exit;
             
         } catch (Exception $e) {
-            $system->addmessage('error', 'Failed to create platform: ' . $e->getMessage());
         }
     }
 }

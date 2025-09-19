@@ -8,7 +8,7 @@
 // Output HTML header for better formatting in browser
 echo '<pre style="font-family: monospace; font-size: 12px; line-height: 1.4; background: #f5f5f5; padding: 20px;">';
 
-$pagename = 'newsletter-sender'; // Set pagename for CLI script
+$pagename = 'mk-newsletter-sender'; // Set pagename for CLI script
 $addClasses[] = 'mail';
 $addClasses[] = 'marketing';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
@@ -19,18 +19,31 @@ echo date('Y-m-d H:i:s') . " - Starting newsletter sender\n";
 $batch_size = 50; // Process 50 emails per run to avoid timeouts
 $rate_limit_delay = 100000; // 100ms between emails (10 emails/second)
 
-// Get pending newsletter notifications
+// Get newsletters ready to send (status = 'notsent' after personalization)
 $notifications_sql = "SELECT * FROM bg_user_notifications 
                      WHERE type = 'newsletter' 
-                     AND status = 'pending'
-                     AND sent_to = 'email'
+                     AND status = 'notsent'
+                     AND sent_to IS NOT NULL
+                     AND sent_to != ''
                      ORDER BY create_dt ASC
                      LIMIT :batch_size";
 
 $notifications = $database->getrows($notifications_sql, ['batch_size' => $batch_size]);
 
 if (empty($notifications)) {
-    echo "No pending newsletters to send\n";
+    echo "No newsletters ready to send (status='notsent')\n";
+    
+    // Check other statuses for debugging
+    $status_check = "SELECT status, COUNT(*) as count FROM bg_user_notifications 
+                    WHERE type = 'newsletter' GROUP BY status";
+    $statuses = $database->getrows($status_check);
+    
+    if (!empty($statuses)) {
+        echo "\nCurrent newsletter status breakdown:\n";
+        foreach ($statuses as $status) {
+            echo "  - {$status['status']}: {$status['count']} notifications\n";
+        }
+    }
     exit;
 }
 
@@ -44,103 +57,34 @@ $error_count = 0;
 
 foreach ($notifications as $notification) {
     try {
-        // Decode the message data
-        $message_data = json_decode($notification['message'], true);
+        // The personalizer already created the final HTML in the message field
+        // and the subject in the title field
+        $email_subject = $notification['title'];
+        $final_html = $notification['message'];
         
-        if (empty($message_data)) {
-            throw new Exception("Invalid message data");
+        // Validate we have content
+        if (empty($email_subject) || empty($final_html)) {
+            throw new Exception("Missing email subject or content");
         }
         
-        $campaign_data = $message_data;
-        $user_data = $message_data['user_data'];
-        $generation = $message_data['user_generation'] ?? 'millennial';
+        // The HTML is already complete from the personalizer
+        // No need to process placeholders, CTA blocks, or add footer - it's all done
         
-        // Start with the base content
-        $email_subject = $campaign_data['email_subject'];
-        $email_content = $campaign_data['campaign_content'];
+        // Use email from sent_to field (already populated by queue creator)
+        $user_email = $notification['sent_to'];
         
-        // Apply generation-specific messaging if enabled
-        if (!empty($campaign_data['gen_specific_messaging'])) {
-            $gen_messaging = json_decode($campaign_data['gen_specific_messaging'], true);
-            
-            if (!empty($gen_messaging) && isset($gen_messaging[$generation])) {
-                $gen_content = $gen_messaging[$generation];
-                
-                // Replace generation-specific subject if provided
-                if (!empty($gen_content['subject'])) {
-                    $email_subject = $gen_content['subject'];
-                }
-                
-                // Replace generation-specific greeting
-                if (!empty($gen_content['greeting'])) {
-                    $email_content = str_replace('{{GEN_GREETING}}', $gen_content['greeting'], $email_content);
-                }
-                
-                // Apply generation-specific content modifications
-                if (!empty($gen_content['content'])) {
-                    // This could be more sophisticated - for now, prepend gen-specific content
-                    $email_content = $gen_content['content'] . "\n\n" . $email_content;
-                }
-            }
+        if (empty($user_email)) {
+            throw new Exception("User email not found in sent_to field");
         }
         
-        // Replace standard placeholders
-        $email_subject = $marketing->replacePlaceholders($email_subject, $user_data);
-        $email_content = $marketing->replacePlaceholders($email_content, $user_data);
+        // Get user name for the To field (optional, can use email only if needed)
+        $user_sql = "SELECT first_name, last_name FROM bg_users WHERE user_id = :user_id";
+        $user = $database->getrow($user_sql, ['user_id' => $notification['user_id']]);
+        $user_name = !empty($user) ? $user['first_name'] . ' ' . $user['last_name'] : '';
         
-        // Generate CTA block if needed
-        if (!empty($campaign_data['cta_category']) && strpos($email_content, '{{CTA_BLOCK}}') !== false) {
-            $cta_html = generateCTABlock(
-                $campaign_data['cta_category'],
-                $campaign_data['cta_mode'] ?? 'exclusive',
-                $notification['user_id'],
-                $campaign_data['campaign_id'],
-                $user_data,
-                $database,
-                $qik
-            );
-            
-            $email_content = str_replace('{{CTA_BLOCK}}', $cta_html, $email_content);
-        }
-        
-        // Add tracking pixel
-        $tracking_pixel = '<img src="https://birthday.gold/track/newsletter/' . 
-                         $qik->encodeId($campaign_data['campaign_id']) . '/' . 
-                         $qik->encodeId($notification['user_id']) . 
-                         '" width="1" height="1" style="display:none;" alt="">';
-        
-        // Add unsubscribe footer
-        $unsubscribe_url = 'https://birthday.gold/unsubscribe/' . 
-                          $qik->encodeId($notification['user_id']);
-        
-        $footer = '
-        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9ecef; font-size: 12px; color: #6c757d; text-align: center;">
-            <p style="margin: 5px 0;">Birthday Gold - Automated Birthday Rewards</p>
-            <p style="margin: 5px 0;">
-                <a href="' . $unsubscribe_url . '" style="color: #6c757d; text-decoration: underline;">Unsubscribe</a> | 
-                <a href="https://birthday.gold/support" style="color: #6c757d; text-decoration: underline;">Support</a> | 
-                <a href="https://birthday.gold/privacy" style="color: #6c757d; text-decoration: underline;">Privacy Policy</a>
-            </p>
-        </div>';
-        
-        // Wrap content in HTML template
-        $final_html = '<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>' . htmlspecialchars($email_subject) . '</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    ' . $email_content . '
-    ' . $tracking_pixel . '
-    ' . $footer . '
-</body>
-</html>';
-        
-        // Prepare email details
+        // Prepare email details with the pre-personalized content
         $email_details = [
-            'to' => [$user_data['email'], $user_data['first_name'] . ' ' . $user_data['last_name']],
+            'to' => [$user_email, $user_name],
             'subject' => $email_subject,
             'body' => $final_html,
             'from' => ['hello@birthday.gold', 'Birthday Gold'],
@@ -161,15 +105,20 @@ foreach ($notifications as $notification) {
             $database->query($update_sql, ['notification_id' => $notification['notification_id']]);
             
             $sent_count++;
-            echo "Sent newsletter to " . $user_data['email'] . " (User: " . $notification['user_id'] . ")\n";
+            echo "Sent newsletter to " . $user_email . " (User: " . $notification['user_id'] . ")\n";
             
             // Log activity
             try {
-                session_tracking('newsletter_sent', 'marketing', [
-                    'campaign_id' => $campaign_data['campaign_id'],
-                    'user_id' => $notification['user_id'],
-                    'generation' => $generation
-                ]);
+                // Extract campaign_id from category field if present
+                $campaign_id = null;
+                if (preg_match('/campaign_(\d+)/', $notification['category'], $matches)) {
+                    $campaign_id = $matches[1];
+                }
+                
+                session_tracking('newsletter_sent', [
+                    'campaign_id' => $campaign_id,
+                    'user_id' => $notification['user_id']
+                ], 'mk-newsletter-sender');
             } catch (Exception $e) {
                 // Logging error is not critical
             }
@@ -232,11 +181,11 @@ foreach ($completed as $c) {
 }
 
 // Log summary
-session_tracking('newsletter_batch_complete', 'marketing', [
+session_tracking('newsletter_batch_complete', [
     'sent' => $sent_count,
     'errors' => $error_count,
     'timestamp' => date('Y-m-d H:i:s')
-]);
+], 'mk-newsletter-sender');
 
 echo date('Y-m-d H:i:s') . " - Newsletter sender finished\n";
 

@@ -1,4 +1,4 @@
-<?php
+<?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Marketing Campaigns";
@@ -77,202 +77,236 @@ $platforms = $database->getrows($platforms_sql);
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-?>
 
+echo '
 <div class="content-header-staff compact">
     <div class="container text-center">
-        <h1><i class="fas fa-bullhorn"></i> Marketing Campaign Manager</h1>
+        <h1><i class="bi bi-megaphone-fill"></i> Marketing Campaign Manager</h1>
         <p class="lead">Create and manage marketing campaigns across all platforms</p>
     </div>
-</div>
+</div>';
 
-<?php include('../includes/marketing-nav.php'); ?>
+include('../includes/marketing-nav.php');
 
+echo '
 <div class="container mt-4 mb-5 pb-5">
     <div class="row">
-        <!-- Left Column - Campaign List -->
         <div class="col-lg-9">
-            <!-- Filters -->
             <div class="card mb-4">
                 <div class="card-body">
                     <form method="GET" class="row g-3">
                         <div class="col-md-3">
                             <select class="form-select" name="status" onchange="this.form.submit()">
-                                <option value="all" <?= $filter_status == 'all' ? 'selected' : '' ?>>All Campaigns</option>
-                                <option value="active" <?= $filter_status == 'active' ? 'selected' : '' ?>>Active</option>
-                                <option value="scheduled" <?= $filter_status == 'scheduled' ? 'selected' : '' ?>>Scheduled</option>
-                                <option value="expired" <?= $filter_status == 'expired' ? 'selected' : '' ?>>Expired</option>
+                                <option value="all"' . ($filter_status == 'all' ? ' selected' : '') . '>All Campaigns</option>
+                                <option value="active"' . ($filter_status == 'active' ? ' selected' : '') . '>Active</option>
+                                <option value="scheduled"' . ($filter_status == 'scheduled' ? ' selected' : '') . '>Scheduled</option>
+                                <option value="expired"' . ($filter_status == 'expired' ? ' selected' : '') . '>Expired</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <input type="text" class="form-control" name="search" placeholder="Search campaigns..." 
-                                   value="<?= htmlspecialchars($search) ?>">
+                                   value="' . htmlspecialchars($search) . '">
                         </div>
                         <div class="col-md-3">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search"></i> Search
+                                <i class="bi bi-search"></i> Search
                             </button>
                             <a href="/staff/marketing-edit.php" class="btn btn-success">
-                                <i class="fas fa-plus"></i> New Campaign
+                                <i class="bi bi-plus-lg"></i> New Campaign
                             </a>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <!-- Campaign List -->
-            <div class="row">
-                <?php if (empty($campaigns)): ?>
-                    <div class="col-12">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No campaigns found. 
-                            <a href="/staff/marketing-edit.php">Create your first campaign</a>
-                        </div>
+            <div class="row">';
+
+if (empty($campaigns)) {
+    echo '
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill"></i> No campaigns found. 
+                        <a href="/staff/marketing-edit.php">Create your first campaign</a>
                     </div>
-                <?php else: ?>
-                    <?php foreach ($campaigns as $campaign): ?>
-                        <div class="col-md-6 mb-4">
-                            <div class="card h-100">
-                                <?php if (!empty($campaign['data']['primary_image'])): ?>
-                                    <img src="<?= htmlspecialchars($campaign['data']['primary_image']) ?>" 
-                                         class="card-img-top" style="height: 200px; object-fit: cover;">
-                                <?php else: ?>
-                                    <div class="card-img-top bg-gradient" style="height: 200px; 
-                                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                                         display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-bullhorn text-white" style="font-size: 4rem;"></i>
-                                    </div>
-                                <?php endif; ?>
-                                
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <h5 class="card-title mb-0">
-                                            <?= htmlspecialchars($campaign['display_name']) ?>
-                                        </h5>
-                                        <span class="badge bg-<?= $campaign['status_color'] ?>">
-                                            <?= ucfirst($campaign['campaign_status']) ?>
-                                        </span>
-                                    </div>
-                                    
-                                    <p class="card-text small text-muted">
-                                        <?= htmlspecialchars(substr($campaign['description'], 0, 100)) ?>
-                                        <?= strlen($campaign['description']) > 100 ? '...' : '' ?>
-                                    </p>
-                                    
-                                    <div class="small mb-3">
-                                        <?php if (!empty($campaign['data']['platforms'])): ?>
-                                            <div class="mb-2">
-                                                <?php foreach ($campaign['data']['platforms'] as $platform): ?>
-                                                    <span class="badge bg-light text-dark me-1">
-                                                        <?= htmlspecialchars($platform) ?>
-                                                    </span>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        <?php endif; ?>
-                                        
-                                        <div class="text-muted">
-                                            <i class="fas fa-calendar"></i> 
-                                            <?= date('M j, Y', strtotime($campaign['publish_dt'])) ?>
-                                            <?php if ($campaign['expire_dt']): ?>
-                                                - <?= date('M j, Y', strtotime($campaign['expire_dt'])) ?>
-                                            <?php endif; ?>
-                                        </div>
-                                        
-                                        <?php if (!empty($campaign['data']['budget'])): ?>
-                                            <div class="text-muted">
-                                                <i class="fas fa-dollar-sign"></i> 
-                                                Budget: $<?= number_format($campaign['data']['budget'], 0) ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <div class="btn-group w-100" role="group">
-                                        <a href="/staff/marketing-view.php?id=<?= $campaign['id'] ?>" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
-                                        <a href="/staff/marketing-edit.php?id=<?= $campaign['id'] ?>" 
-                                           class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </a>
-                                        <button class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteCampaign(<?= $campaign['id'] ?>)">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
-                                    </div>
-                                </div>
+                </div>';
+} else {
+    foreach ($campaigns as $campaign) {
+        echo '
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">';
+        
+        if (!empty($campaign['data']['primary_image'])) {
+            echo '
+                        <img src="' . htmlspecialchars($campaign['data']['primary_image']) . '" 
+                             class="card-img-top" style="height: 200px; object-fit: cover;">';
+        } else {
+            echo '
+                        <div class="card-img-top bg-gradient" style="height: 200px; 
+                             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                             display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-megaphone-fill text-white" style="font-size: 4rem;"></i>
+                        </div>';
+        }
+        
+        echo '
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">
+                                    ' . htmlspecialchars($campaign['display_name']) . '
+                                </h5>
+                                <span class="badge bg-' . $campaign['status_color'] . '">
+                                    ' . ucfirst($campaign['campaign_status']) . '
+                                </span>
+                            </div>
+                            
+                            <p class="card-text small text-muted">
+                                ' . htmlspecialchars(substr($campaign['description'], 0, 100)) . 
+                                (strlen($campaign['description']) > 100 ? '...' : '') . '
+                            </p>
+                            
+                            <div class="small mb-3">';
+        
+        if (!empty($campaign['data']['platforms'])) {
+            echo '
+                                <div class="mb-2">';
+            foreach ($campaign['data']['platforms'] as $platform) {
+                echo '
+                                    <span class="badge bg-light text-dark me-1">
+                                        ' . htmlspecialchars($platform) . '
+                                    </span>';
+            }
+            echo '
+                                </div>';
+        }
+        
+        echo '
+                                <div class="text-muted">
+                                    <i class="bi bi-calendar-fill"></i> 
+                                    ' . date('M j, Y', strtotime($campaign['publish_dt']));
+        
+        if ($campaign['expire_dt']) {
+            echo ' - ' . date('M j, Y', strtotime($campaign['expire_dt']));
+        }
+        
+        echo '
+                                </div>';
+        
+        if (!empty($campaign['data']['budget'])) {
+            echo '
+                                <div class="text-muted">
+                                    <i class="bi bi-currency-dollar"></i> 
+                                    Budget: $' . number_format($campaign['data']['budget'], 0) . '
+                                </div>';
+        }
+        
+        echo '
+                            </div>
+                            
+                            <div class="btn-group w-100" role="group">
+                                <a href="/staff/marketing-view.php?id=' . $campaign['id'] . '" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye-fill"></i> View
+                                </a>
+                                <a href="/staff/marketing-edit.php?id=' . $campaign['id'] . '" 
+                                   class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil-fill"></i> Edit
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" 
+                                        onclick="deleteCampaign(' . $campaign['id'] . ')">
+                                    <i class="bi bi-trash-fill"></i> Delete
+                                </button>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                    </div>
+                </div>';
+    }
+}
+
+echo '
             </div>
         </div>
 
-        <!-- Right Column - Platform Links -->
         <div class="col-lg-3">
             <div class="card sticky-top" style="top: 20px;">
                 <div class="card-header bg-primary text-white">
-                    <h6 class="mb-0 text-white"><i class="fas fa-link"></i> Marketing Platforms</h6>
+                    <h6 class="mb-0 text-white"><i class="bi bi-link-45deg"></i> Marketing Platforms</h6>
                 </div>
-                <div class="card-body">
-                    <?php if (empty($platforms)): ?>
-                        <p class="text-muted small">No platform links configured.</p>
-                    <?php else: ?>
-                        <div class="list-group list-group-flush">
-                            <?php foreach ($platforms as $platform): ?>
-                                <?php $platform_data = json_decode($platform['tags'], true) ?: []; ?>
-                                <a href="<?= htmlspecialchars($platform_data['url'] ?? '#') ?>" 
-                                   target="_blank" 
-                                   class="list-group-item list-group-item-action d-flex align-items-center">
-                                    <?php if (!empty($platform_data['icon'])): ?>
-                                        <i class="<?= htmlspecialchars($platform_data['icon']) ?> me-2"></i>
-                                    <?php else: ?>
-                                        <i class="fas fa-external-link-alt me-2"></i>
-                                    <?php endif; ?>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-bold small"><?= htmlspecialchars($platform['display_name']) ?></div>
-                                        <?php if ($platform['description']): ?>
-                                            <div class="text-muted" style="font-size: 0.75rem;">
-                                                <?= htmlspecialchars($platform['description']) ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                </a>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                    
+                <div class="card-body">';
+
+if (empty($platforms)) {
+    echo '
+                    <p class="text-muted small">No platform links configured.</p>';
+} else {
+    echo '
+                    <div class="list-group list-group-flush">';
+    
+    foreach ($platforms as $platform) {
+        $platform_data = json_decode($platform['tags'], true) ?: [];
+        echo '
+                        <a href="' . htmlspecialchars($platform_data['url'] ?? '#') . '" 
+                           target="_blank" 
+                           class="list-group-item list-group-item-action d-flex align-items-center">';
+        
+        if (!empty($platform_data['icon'])) {
+            echo '
+                            <i class="' . htmlspecialchars($platform_data['icon']) . ' me-2"></i>';
+        } else {
+            echo '
+                            <i class="bi bi-box-arrow-up-right me-2"></i>';
+        }
+        
+        echo '
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small">' . htmlspecialchars($platform['display_name']) . '</div>';
+        
+        if ($platform['description']) {
+            echo '
+                                <div class="text-muted" style="font-size: 0.75rem;">
+                                    ' . htmlspecialchars($platform['description']) . '
+                                </div>';
+        }
+        
+        echo '
+                            </div>
+                        </a>';
+    }
+    
+    echo '
+                    </div>';
+}
+
+echo '
                     <div class="mt-3">
                         <a href="/staff/marketing-platforms.php" class="btn btn-sm btn-outline-primary w-100">
-                            <i class="fas fa-cog"></i> Manage Platforms
+                            <i class="bi bi-gear-fill"></i> Manage Platforms
                         </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Quick Stats -->
             <div class="card mt-3">
                 <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Campaign Stats</h6>
+                    <h6 class="mb-0"><i class="bi bi-pie-chart-fill"></i> Campaign Stats</h6>
                 </div>
-                <div class="card-body">
-                    <?php
-                    $active_count = count(array_filter($campaigns, fn($c) => $c['campaign_status'] == 'active'));
-                    $scheduled_count = count(array_filter($campaigns, fn($c) => $c['campaign_status'] == 'scheduled'));
-                    $total_budget = array_sum(array_column(array_column($campaigns, 'data'), 'budget'));
-                    ?>
+                <div class="card-body">';
+
+$active_count = count(array_filter($campaigns, fn($c) => $c['campaign_status'] == 'active'));
+$scheduled_count = count(array_filter($campaigns, fn($c) => $c['campaign_status'] == 'scheduled'));
+$total_budget = array_sum(array_column(array_column($campaigns, 'data'), 'budget'));
+
+echo '
                     <div class="small">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Active Campaigns:</span>
-                            <strong><?= $active_count ?></strong>
+                            <strong>' . $active_count . '</strong>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Scheduled:</span>
-                            <strong><?= $scheduled_count ?></strong>
+                            <strong>' . $scheduled_count . '</strong>
                         </div>
                         <div class="d-flex justify-content-between">
                             <span>Total Budget:</span>
-                            <strong>$<?= number_format($total_budget, 0) ?></strong>
+                            <strong>$' . number_format($total_budget, 0) . '</strong>
                         </div>
                     </div>
                 </div>
@@ -283,21 +317,20 @@ include($dir['core_components'] . '/bg_header.inc');
 
 <script>
 function deleteCampaign(id) {
-    if (confirm('Are you sure you want to delete this campaign?')) {
-        $.post('/staff/ajax/marketing-delete.php', {
+    if (confirm("Are you sure you want to delete this campaign?")) {
+        $.post("/staff/ajax/marketing-delete.php", {
             campaign_id: id
         }, function(response) {
             if (response.success) {
                 location.reload();
             } else {
-                alert('Error: ' + response.message);
+                alert("Error: " + response.message);
             }
-        }, 'json');
+        }, "json");
     }
 }
-</script>
+</script>';
 
-<?php
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

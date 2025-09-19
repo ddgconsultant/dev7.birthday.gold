@@ -34,14 +34,8 @@ if ($app->formposted()) {
 #-------------------------------------------------------------------------------
 # DISPLAY PAGE
 #-------------------------------------------------------------------------------
-switch ($p_displaylength) {
-    case 'all':
-        $userlimitsql = '';
-        break;
-    default:
-        $userlimitsql = " and u.create_dt >= CURDATE() - INTERVAL $p_displaylength DAY";
-        break;
-}
+// This variable is no longer used - we'll handle it in the main query
+$userlimitsql = '';
 
 // Clean, Professional User Management CSS
 $additionalstyles .= '
@@ -582,20 +576,32 @@ $header_flush = true; // Ensure header content is flush with admin header
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
-// Get initial stats
-$totalUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE type='real'");
+// Get initial stats - now includes both real and test users by default
+// Filter based on typeFilter if provided
+$typeFilterForStats = $_GET['typeFilter'] ?? '';
+$typeClause = '';
+if ($typeFilterForStats === 'real') {
+    $typeClause = "type='real'";
+} elseif ($typeFilterForStats === 'test') {
+    $typeClause = "type='test'";
+} elseif (empty($typeFilterForStats) || in_array($typeFilterForStats, ['individual', 'business', 'parental'])) {
+    // Default to real users for stats unless specifically filtering for test
+    $typeClause = "type='real'";
+}
+
+$totalUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE $typeClause");
 $totalUsers->execute();
 $totalUsersCount = $totalUsers->fetch(PDO::FETCH_ASSOC)['total'];
 
-$activeUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE type='real' AND status='active'");
+$activeUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE $typeClause AND status='active'");
 $activeUsers->execute();
 $activeUsersCount = $activeUsers->fetch(PDO::FETCH_ASSOC)['total'];
 
-$newUsersToday = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE type='real' AND DATE(create_dt) = CURDATE()");
+$newUsersToday = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE $typeClause AND DATE(create_dt) = CURDATE()");
 $newUsersToday->execute();
 $newUsersTodayCount = $newUsersToday->fetch(PDO::FETCH_ASSOC)['total'];
 
-$paidUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE type='real' AND account_plan != 'free'");
+$paidUsers = $database->prepare("SELECT COUNT(*) as total FROM bg_users WHERE $typeClause AND account_plan != 'free'");
 $paidUsers->execute();
 $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
 ?>
@@ -694,6 +700,8 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                             <div class="col-md-3">
                                 <select class="form-select" name="typeFilter" id="typeFilter" onchange="this.form.submit()">
                                     <option value="">All Types</option>
+                                    <option value="real" <?php echo ($_GET['typeFilter'] ?? '') === 'real' ? 'selected' : ''; ?>>Real Users</option>
+                                    <option value="test" <?php echo ($_GET['typeFilter'] ?? '') === 'test' ? 'selected' : ''; ?>>Test Users</option>
                                     <option value="individual" <?php echo ($_GET['typeFilter'] ?? '') === 'individual' ? 'selected' : ''; ?>>Individual</option>
                                     <option value="business" <?php echo ($_GET['typeFilter'] ?? '') === 'business' ? 'selected' : ''; ?>>Business</option>
                                     <option value="parental" <?php echo ($_GET['typeFilter'] ?? '') === 'parental' ? 'selected' : ''; ?>>Parental</option>
@@ -774,14 +782,27 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             $searchParams[':plan'] = $planFilter;
         }
         
+        // Handle user type filter - distinguish between real/test users and account types
         if (!empty($typeFilter)) {
-            $searchWhere .= " AND u.account_type = :type";
-            $searchParams[':type'] = $typeFilter;
+            if ($typeFilter === 'real' || $typeFilter === 'test') {
+                // Filter by user type (real vs test)
+                $searchWhere .= " AND u.type = :usertype";
+                $searchParams[':usertype'] = $typeFilter;
+            } else {
+                // Filter by account type (individual/business/parental)
+                $searchWhere .= " AND u.account_type = :type";
+                $searchParams[':type'] = $typeFilter;
+            }
+        } else {
+            // Default to showing only real users when no filter is specified
+            $searchWhere .= " AND u.type = 'real'";
         }
-        
-        if ($dayFilter !== 'all' && is_numeric($dayFilter)) {
+
+        // Fix the day filter to properly handle 'all' option
+        if ($dayFilter !== 'all' && !empty($dayFilter) && is_numeric($dayFilter)) {
             $searchWhere .= " AND u.create_dt >= DATE_SUB(CURDATE(), INTERVAL " . intval($dayFilter) . " DAY)";
         }
+        // When $dayFilter === 'all', we don't add any date restriction
         
         $initialUsersSql = "
             SELECT 
@@ -803,7 +824,7 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                 AND a.name = 'avatar' 
                 AND a.category = 'primary' 
                 AND a.status = 'active'
-            WHERE u.type = 'real' $searchWhere
+            WHERE 1=1 $searchWhere
             ORDER BY u.create_dt DESC
             LIMIT 50
         ";

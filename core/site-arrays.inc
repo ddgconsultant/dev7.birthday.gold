@@ -301,3 +301,60 @@ $bg_systemdata_useragents_desktop = [
 ];
 
 $bge_companydir='/admin/bgrab';
+
+
+
+#-------------------------------------------------------------------------------
+# TRUE COLORS PERSONALITY SYSTEM
+#-------------------------------------------------------------------------------
+// Consistent color order and definitions across all personality pages
+$true_colors = [
+    'orange' => [
+        'name' => 'Orange',
+        'title' => 'Action-Oriented Leader',
+        'color' => '#FF6B35',
+        'description' => 'Spontaneous, flexible, thrives on variety and challenge. Prefers direct communication and quick results.',
+        'strengths' => ['High energy and enthusiasm', 'Quick decision making', 'Adaptable to change', 'Natural risk-taker', 'Results-focused'],
+        'communication' => 'Be direct, allow freedom, focus on results not rigid rules',
+        'motivation' => 'Variety, challenge, recognition for quick wins',
+        'delegation' => 'Short-term, high-energy projects',
+        'stress_response' => 'May become disorganized or impulsive'
+    ],
+    'gold' => [
+        'name' => 'Gold', 
+        'title' => 'Organized Stabilizer',
+        'color' => '#FFD700',
+        'description' => 'Values structure, dependability, and clear processes. Thorough and responsible in approach.',
+        'strengths' => ['Highly organized', 'Reliable and punctual', 'Detail-oriented', 'Follows procedures', 'Quality-focused'],
+        'communication' => 'Give clear instructions and timelines',
+        'motivation' => 'Stability, clear structure, recognition for responsibility',
+        'delegation' => 'Procedures, quality control, planning tasks',
+        'stress_response' => 'May become rigid or overly critical'
+    ],
+    'blue' => [
+        'name' => 'Blue',
+        'title' => 'People-Focused Collaborator',
+        'color' => '#4A90E2', 
+        'description' => 'Compassionate, cooperative, values relationships. Works best in harmonious team environments.',
+        'strengths' => ['Strong interpersonal skills', 'Empathetic and caring', 'Team-oriented', 'Conflict resolver', 'Supportive of others'],
+        'communication' => 'Show empathy, value their input',
+        'motivation' => 'Harmony, team connection, appreciation for efforts',
+        'delegation' => 'Team-building roles, customer/patient interactions',
+        'stress_response' => 'May take criticism personally, avoid conflict'
+    ],
+    'green' => [
+        'name' => 'Green',
+        'title' => 'Analytical Problem-Solver',
+        'color' => '#50C878',
+        'description' => 'Logical, independent, prefers to work with facts and data. Values competence and expertise.',
+        'strengths' => ['Logical and analytical', 'Independent worker', 'Problem-solving skills', 'Data-driven decisions', 'High standards'],
+        'communication' => 'Present facts, give space to think',
+        'motivation' => 'Autonomy, opportunities for mastery, problem-solving challenges',
+        'delegation' => 'Research, data analysis, technical projects',
+        'stress_response' => 'May withdraw, overanalyze, become perfectionistic'
+    ]
+];
+
+// Display order for consistent presentation
+$true_colors_order = ['orange', 'gold', 'blue', 'green'];
+

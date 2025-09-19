@@ -6,19 +6,20 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 #-------------------------------------------------------------------------------
 # PREP VARIABLES PAGE
 #-------------------------------------------------------------------------------
-$pagetitle = 'Color Personality Test';
+$pagetitle = 'True Colors Team Style Assessment';
 
 // Check if user has already taken the test
 $existing_sql = "SELECT * FROM bg_user_attributes 
                 WHERE user_id = :user_id 
-                AND type = 'personality_test' 
+                AND type = 'true_colors_test' 
                 AND status = 'active'
                 ORDER BY create_dt DESC 
                 LIMIT 1";
 $existing_result = $database->getrow($existing_sql, ['user_id' => $current_user_data['user_id']]);
 
-// Show results if requested
-$show_results = isset($_GET['results']) || $existing_result;
+// Check if showing completion message or retaking
+$show_completed = isset($_GET['completed']);
+$retaking = isset($_GET['retake']);
 
 #-------------------------------------------------------------------------------
 # HANDLE PAGE ACTIONS
@@ -26,15 +27,17 @@ $show_results = isset($_GET['results']) || $existing_result;
 if ($app->formposted() && isset($_POST['submit_test'])) {
     $answers = $_POST['answers'] ?? [];
     
-    // Calculate scores for each color
+    // Calculate scores for each color based on True Colors mapping
+    // A = Orange, B = Gold, C = Blue, D = Green
     $scores = [
-        'red' => 0,
+        'orange' => 0,
+        'gold' => 0,
         'blue' => 0,
-        'green' => 0,
-        'yellow' => 0
+        'green' => 0
     ];
     
-    foreach ($answers as $answer) {
+    // Process answers - each answer contributes to its color
+    foreach ($answers as $question_num => $answer) {
         if (isset($scores[$answer])) {
             $scores[$answer]++;
         }
@@ -46,15 +49,13 @@ if ($app->formposted() && isset($_POST['submit_test'])) {
     $primary_color = $colors[0];
     $secondary_color = $colors[1];
     
-    // Prepare result data
+    // Prepare result data with individual answers
     $result_data = [
-        'scores' => $scores,
         'primary_color' => $primary_color,
         'secondary_color' => $secondary_color,
-        'primary_score' => $scores[$primary_color],
-        'secondary_score' => $scores[$secondary_color],
-        'test_date' => date('Y-m-d H:i:s'),
-        'answers' => $answers
+        'scores' => $scores,
+        'answers' => $answers, // Store individual question answers
+        'test_date' => date('Y-m-d H:i:s')
     ];
     
     // Deactivate old results
@@ -65,136 +66,206 @@ if ($app->formposted() && isset($_POST['submit_test'])) {
         );
     }
     
-    // Store new results - use description field for JSON, value for primary score
-    $insert_sql = "INSERT INTO bg_user_attributes 
-                  (user_id, type, name, value, description, string_value, status, create_dt) 
-                  VALUES 
-                  (:user_id, 'personality_test', 'color_personality', :value, :description, :string_value, 'active', NOW())";
+    // Save results to database - use description field for JSON, value for primary score
+    $save_sql = "INSERT INTO bg_user_attributes 
+                 (user_id, type, name, value, description, string_value, status, create_dt) 
+                 VALUES 
+                 (:user_id, 'true_colors_test', 'true_colors_personality', :value, :description, :string_value, 'active', NOW())";
     
-    $database->query($insert_sql, [
+    $database->query($save_sql, [
         'user_id' => $current_user_data['user_id'],
         'value' => $scores[$primary_color], // Store primary color score as integer
         'description' => json_encode($result_data), // Store full JSON in description
         'string_value' => "Primary: {$primary_color}, Secondary: {$secondary_color}" // Summary in string_value
     ]);
     
-    // Redirect to results
-    header('Location: /staff/personality-test.php?results=1');
+    // Assessment completed - Stacey can check results in admin interface
+    
+    // Redirect to completion page instead of showing results
+    header('Location: /staff/personality-test.php?completed=1');
     exit;
 }
 
-#-------------------------------------------------------------------------------
-# DISPLAY PAGE
-#-------------------------------------------------------------------------------
-$additionalstyles .= '
+// Color profiles for results
+$color_profiles = [
+    'orange' => [
+        'name' => 'Orange',
+        'title' => 'Action-Oriented Leader',
+        'description' => 'You are spontaneous, flexible, and thrive on variety and challenge. You prefer direct communication and quick results.',
+        'strengths' => ['High energy and enthusiasm', 'Quick decision making', 'Adaptable to change', 'Natural risk-taker', 'Results-focused'],
+        'communication' => 'Be direct, allow freedom, focus on results not rigid rules',
+        'motivation' => 'Variety, challenge, recognition for quick wins',
+        'delegation' => 'Short-term, high-energy projects',
+        'stress_response' => 'May become disorganized or impulsive',
+        'color' => '#FF6B35'
+    ],
+    'gold' => [
+        'name' => 'Gold', 
+        'title' => 'Organized Stabilizer',
+        'description' => 'You value structure, dependability, and clear processes. You are thorough and responsible in your approach.',
+        'strengths' => ['Highly organized', 'Reliable and punctual', 'Detail-oriented', 'Follows procedures', 'Quality-focused'],
+        'communication' => 'Give clear instructions and timelines',
+        'motivation' => 'Stability, clear structure, recognition for responsibility',
+        'delegation' => 'Procedures, quality control, planning tasks',
+        'stress_response' => 'May become rigid or overly critical',
+        'color' => '#FFD700'
+    ],
+    'blue' => [
+        'name' => 'Blue',
+        'title' => 'People-Focused Collaborator', 
+        'description' => 'You are compassionate, cooperative, and value relationships. You work best in harmonious team environments.',
+        'strengths' => ['Strong interpersonal skills', 'Empathetic and caring', 'Team-oriented', 'Conflict resolver', 'Supportive of others'],
+        'communication' => 'Show empathy, value their input',
+        'motivation' => 'Harmony, team connection, appreciation for efforts',
+        'delegation' => 'Team-building roles, customer/patient interactions',
+        'stress_response' => 'May take criticism personally, avoid conflict',
+        'color' => '#4A90E2'
+    ],
+    'green' => [
+        'name' => 'Green',
+        'title' => 'Analytical Problem-Solver',
+        'description' => 'You are logical, independent, and prefer to work with facts and data. You value competence and expertise.',
+        'strengths' => ['Logical and analytical', 'Independent worker', 'Problem-solving skills', 'Data-driven decisions', 'High standards'],
+        'communication' => 'Present facts, give space to think',
+        'motivation' => 'Autonomy, opportunities for mastery, problem-solving challenges',
+        'delegation' => 'Research, data analysis, technical projects',
+        'stress_response' => 'May withdraw, overanalyze, become perfectionistic',
+        'color' => '#50C878'
+    ]
+];
+
+// Define questions in existing format style
+$questions = [
+    1 => [
+        'question' => 'When starting new tasks, I prefer to:',
+        'answers' => [
+            'orange' => 'Act on a moment\'s notice and jump right in',
+            'gold' => 'Plan with organized, structured approach', 
+            'blue' => 'Collaborate with others and work in teams',
+            'green' => 'Think through problems logically first'
+        ]
+    ],
+    2 => [
+        'question' => 'My natural approach to work is:',
+        'answers' => [
+            'orange' => 'Flexible and able to improvise as needed',
+            'gold' => 'Following rules and respecting established authority',
+            'blue' => 'Valuing harmony and maintaining close relationships', 
+            'green' => 'Being curious and always seeking more knowledge'
+        ]
+    ],
+    3 => [
+        'question' => 'In challenging situations, I tend to:',
+        'answers' => [
+            'orange' => 'Take risks and seek adventure',
+            'gold' => 'Stay dependable and punctual',
+            'blue' => 'Remain compassionate and loyal',
+            'green' => 'Be analytical and objective'
+        ]
+    ],
+    4 => [
+        'question' => 'What energizes me most at work:',
+        'answers' => [
+            'orange' => 'Variety and excitement in my tasks',
+            'gold' => 'Stability and clear expectations',
+            'blue' => 'Being empathetic and supportive of others',
+            'green' => 'Independent, in-depth work projects'
+        ]
+    ],
+    5 => [
+        'question' => 'My colleagues would describe me as:',
+        'answers' => [
+            'orange' => 'Energetic and competitive', 
+            'gold' => 'Responsible and thorough',
+            'blue' => 'Caring and focused on connection',
+            'green' => 'Someone who values facts and logic'
+        ]
+    ]
+];
+
+$additionalstyles = '
 <style>
 .personality-test {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
-    padding-bottom: 100px; /* Add bottom padding */
 }
+
 .question-card {
-    margin-bottom: 25px;
-    border-left: 4px solid #0d6efd;
-    transition: all 0.3s ease;
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid var(--bs-primary);
 }
-.question-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+
+.question-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
 }
+
 .answer-option {
-    padding: 12px;
-    margin: 8px 0;
+    background: #f8f9fa;
     border: 2px solid #e9ecef;
     border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 0.75rem;
     cursor: pointer;
-    transition: all 0.2s ease;
-}
-.answer-option:hover {
-    background: #f8f9fa;
-    border-color: #0d6efd;
-}
-.answer-option input[type="radio"] {
-    margin-right: 10px;
-}
-.answer-option.selected {
-    background: #e7f3ff;
-    border-color: #0d6efd;
-}
-
-/* Color badges */
-.color-badge {
-    display: inline-block;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.color-badge.red {
-    background: #ff4444;
-    color: white;
-}
-.color-badge.blue {
-    background: #0088ff;
-    color: white;
-}
-.color-badge.green {
-    background: #00c851;
-    color: white;
-}
-.color-badge.yellow {
-    background: #ffbb33;
-    color: #333;
-}
-
-/* Results section */
-.result-card {
-    border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 20px;
-}
-.primary-result {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-.trait-list {
-    list-style: none;
-    padding: 0;
-}
-.trait-list li {
-    padding: 8px 0;
-    padding-left: 25px;
+    transition: all 0.3s ease;
     position: relative;
 }
-.trait-list li:before {
-    content: "✓";
-    position: absolute;
-    left: 0;
-    font-weight: bold;
+
+.answer-option:hover {
+    border-color: var(--bs-primary);
+    background: #e3f2fd;
 }
 
-.progress-indicator {
-    margin-bottom: 30px;
+.answer-option.selected {
+    border-color: var(--bs-primary);
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
 }
-.progress-step {
-    flex: 1;
-    text-align: center;
-    padding: 10px;
-    background: #f8f9fa;
-    margin: 0 2px;
-    border-radius: 8px;
-    font-size: 14px;
-    transition: all 0.3s ease;
-}
-.progress-step.active {
-    background: #0d6efd;
+
+.color-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
     color: white;
-    transform: scale(1.05);
+    font-weight: bold;
+    margin: 0.25rem;
 }
-.progress-step.completed {
-    background: #28a745;
-    color: white;
+
+.color-badge.orange { background: #FF6B35; }
+.color-badge.gold { background: #FFD700; color: #333; }
+.color-badge.blue { background: #4A90E2; }
+.color-badge.green { background: #50C878; }
+
+.result-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-left: 6px solid var(--color);
+}
+
+.color-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.color-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--color);
+    margin-right: 1rem;
+}
+
+.score-bars {
+    margin-top: 2rem;
 }
 
 .color-score-bar {
@@ -207,6 +278,7 @@ $additionalstyles .= '
     color: white;
     font-weight: bold;
 }
+
 </style>';
 
 // No additionalscripts here - will add inline after jQuery loads
@@ -219,398 +291,162 @@ include($dir['core_components'] . '/bg_header.inc');
 echo '
 <div class="content-header-staff">
     <div class="container text-center">
-        <h1><i class="fas fa-palette"></i> Color Personality Test</h1>
-        <p class="lead">Discover your personality color and understand your work style</p>
+        <h1><i class="bi bi-palette"></i> True Colors Team Style Assessment</h1>
+        <p class="lead">Discover your work style and communication preferences</p>
     </div>
 </div>';
 
 echo '<div class="container mt-4 personality-test">';
 
-if (!$show_results) {
+if ($show_completed) {
+    // Show completion message
+    echo '
+    <div class="text-center">
+        <div class="card">
+            <div class="card-body py-5">
+                <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                <h2 class="mt-3">Assessment Completed!</h2>
+                <p class="lead">Thank you for completing the True Colors Team Style Assessment.</p>
+                <p class="text-muted">Your results have been submitted and will be reviewed personally with you.</p>
+                <div class="mt-4">
+                    <a href="/staff/" class="btn btn-primary">Return to Staff Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>';
+    
+} else if (!$existing_result || $retaking) {
     // Show the test
     echo '
     <div class="card mb-4">
         <div class="card-body">
-            <h5>About This Test</h5>
-            <p>This quick personality test will help you understand your dominant personality traits based on four colors:</p>
-            <div class="row text-center mb-3">
-                <div class="col-md-3">
-                    <span class="color-badge red">Red</span>
-                    <p class="mt-2 small">Action-oriented, decisive</p>
-                </div>
-                <div class="col-md-3">
-                    <span class="color-badge blue">Blue</span>
-                    <p class="mt-2 small">Analytical, precise</p>
-                </div>
-                <div class="col-md-3">
-                    <span class="color-badge green">Green</span>
-                    <p class="mt-2 small">Supportive, patient</p>
-                </div>
-                <div class="col-md-3">
-                    <span class="color-badge yellow">Yellow</span>
-                    <p class="mt-2 small">Creative, enthusiastic</p>
-                </div>
-            </div>
-            <p class="text-muted">Answer honestly for the most accurate results. There are no right or wrong answers!</p>
+            <h5>About This Assessment</h5>';
+            
+    if ($retaking) {
+        echo '
+            <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle"></i> You are retaking the True Colors Team Style Assessment. Your new results will replace your previous assessment.
+            </div>';
+    }
+    
+    echo '
+            <p>This assessment will help explore the different ways you approach work, communication, and problem-solving.</p>
+            <p class="text-muted">Choose the option that best describes you for each question. Answer honestly for the most accurate results!</p>
         </div>
     </div>
     
     <!-- Progress Bar -->
-    <div class="progress mb-4" style="height: 25px;">
-        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+    <div id="progress-container" class="bg-white p-3 mb-4 shadow-sm border rounded">
+        <div class="progress" style="height: 25px;">
+            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+        </div>
+        <p class="text-center text-muted mt-2" id="progress-text">0 of 5 questions answered</p>
     </div>
-    <p class="text-center text-muted" id="progress-text">0 of 12 questions answered</p>
     
     <form method="POST" id="personality-test-form">
         ' . $display->input_csrftoken();
         
-        $questions = [
-            1 => [
-                'question' => 'When starting a new project, I prefer to:',
-                'answers' => [
-                    'red' => 'Jump right in and figure it out as I go',
-                    'blue' => 'Research thoroughly and create a detailed plan',
-                    'green' => 'Collaborate with others and ensure everyone is comfortable',
-                    'yellow' => 'Brainstorm creative ideas and explore possibilities'
-                ]
-            ],
-            2 => [
-                'question' => 'In meetings, I am most likely to:',
-                'answers' => [
-                    'red' => 'Push for quick decisions and action items',
-                    'blue' => 'Ask detailed questions and analyze data',
-                    'green' => 'Ensure everyone has a chance to contribute',
-                    'yellow' => 'Share enthusiasm and inspire the team'
-                ]
-            ],
-            3 => [
-                'question' => 'When facing a conflict, I tend to:',
-                'answers' => [
-                    'red' => 'Address it directly and resolve it quickly',
-                    'blue' => 'Analyze the situation objectively and find logical solutions',
-                    'green' => 'Seek harmony and find compromises',
-                    'yellow' => 'Use humor and optimism to diffuse tension'
-                ]
-            ],
-            4 => [
-                'question' => 'My ideal work environment is:',
-                'answers' => [
-                    'red' => 'Fast-paced with clear goals and challenges',
-                    'blue' => 'Organized, quiet, and focused',
-                    'green' => 'Collaborative and supportive',
-                    'yellow' => 'Dynamic, fun, and social'
-                ]
-            ],
-            5 => [
-                'question' => 'I feel most productive when:',
-                'answers' => [
-                    'red' => 'I have control and can make quick decisions',
-                    'blue' => 'I have all the information and time to think',
-                    'green' => 'The team is working well together',
-                    'yellow' => 'I am working on something creative and exciting'
-                ]
-            ],
-            6 => [
-                'question' => 'Others would describe me as:',
-                'answers' => [
-                    'red' => 'Direct, confident, and results-driven',
-                    'blue' => 'Logical, thorough, and detail-oriented',
-                    'green' => 'Patient, reliable, and supportive',
-                    'yellow' => 'Enthusiastic, optimistic, and fun'
-                ]
-            ],
-            7 => [
-                'question' => 'When learning something new, I prefer:',
-                'answers' => [
-                    'red' => 'Practical, hands-on experience',
-                    'blue' => 'Detailed documentation and structured learning',
-                    'green' => 'Group learning and discussion',
-                    'yellow' => 'Interactive and engaging activities'
-                ]
-            ],
-            8 => [
-                'question' => 'My communication style is:',
-                'answers' => [
-                    'red' => 'Brief, direct, and to the point',
-                    'blue' => 'Detailed, precise, and factual',
-                    'green' => 'Warm, friendly, and considerate',
-                    'yellow' => 'Animated, expressive, and storytelling'
-                ]
-            ],
-            9 => [
-                'question' => 'I am motivated by:',
-                'answers' => [
-                    'red' => 'Competition, challenges, and achievements',
-                    'blue' => 'Accuracy, quality, and expertise',
-                    'green' => 'Helping others and team success',
-                    'yellow' => 'Recognition, variety, and new experiences'
-                ]
-            ],
-            10 => [
-                'question' => 'Under stress, I tend to:',
-                'answers' => [
-                    'red' => 'Become more demanding and impatient',
-                    'blue' => 'Withdraw and overthink details',
-                    'green' => 'Avoid confrontation and become indecisive',
-                    'yellow' => 'Become scattered and overly optimistic'
-                ]
-            ],
-            11 => [
-                'question' => 'In my free time, I enjoy:',
-                'answers' => [
-                    'red' => 'Competitive sports or challenging activities',
-                    'blue' => 'Reading, puzzles, or strategic games',
-                    'green' => 'Spending quality time with family and friends',
-                    'yellow' => 'Social events, parties, or creative hobbies'
-                ]
-            ],
-            12 => [
-                'question' => 'My approach to deadlines is:',
-                'answers' => [
-                    'red' => 'Get it done fast and move on to the next task',
-                    'blue' => 'Plan carefully to ensure quality and accuracy',
-                    'green' => 'Work steadily and ask for help if needed',
-                    'yellow' => 'Work best under pressure with bursts of creativity'
-                ]
-            ]
-        ];
-        
-        foreach ($questions as $num => $q) {
+        foreach ($questions as $q_num => $q_data) {
             echo '
-            <div class="card question-card">
-                <div class="card-body">
-                    <h5 class="card-title text-muted" style="font-size: 0.9rem; font-weight: 400;">Question ' . $num . ' of 12</h5>
-                    <p class="card-text fw-bold">' . $q['question'] . '</p>
-                    <div class="answer-options">';
-            
-            // Randomize answer order
-            $answers = $q['answers'];
-            $keys = array_keys($answers);
-            shuffle($keys);
-            
-            foreach ($keys as $color) {
+            <div class="question-card" data-question="' . $q_num . '">
+                <div class="question-title">
+                    <span class="badge bg-primary me-2">' . $q_num . '</span>
+                    ' . $q_data['question'] . '
+                </div>
+                <div class="answers-container">';
+                
+                foreach ($q_data['answers'] as $color => $answer_text) {
+                    echo '
+                    <div class="answer-option" data-color="' . $color . '">
+                        <input type="radio" name="answers[' . $q_num . ']" value="' . $color . '" id="q' . $q_num . '_' . $color . '" style="display: none;">
+                        <label for="q' . $q_num . '_' . $color . '" style="cursor: pointer; margin: 0; width: 100%;">
+                            ' . $answer_text . '
+                        </label>
+                    </div>';
+                }
+                
                 echo '
-                        <div class="answer-option d-flex align-items-center">
-                            <input type="radio" name="answers[' . $num . ']" value="' . $color . '" required>
-                            <span class="ms-2">' . $answers[$color] . '</span>
-                        </div>';
-            }
-            
-            echo '
-                    </div>
                 </div>
             </div>';
         }
         
         echo '
-        <div class="text-center mt-4">
-            <button type="submit" name="submit_test" id="submit-btn" class="btn btn-lg btn-secondary" disabled>
-                <i class="fas fa-check-circle"></i> Submit Test
+        <div class="text-center mb-5">
+            <button type="submit" name="submit_test" class="btn btn-primary btn-lg" id="submit-btn" disabled>
+                <i class="bi bi-check-circle"></i> Submit Assessment
             </button>
         </div>
     </form>';
     
 } else {
-    // Show results
-    if ($existing_result) {
-        $result_data = json_decode($existing_result['description'], true); // Read JSON from description field
-        $primary_color = $result_data['primary_color'];
-        $secondary_color = $result_data['secondary_color'];
-        $scores = $result_data['scores'];
-        
-        // Color descriptions
-        $color_info = [
-            'red' => [
-                'title' => 'Red - The Director',
-                'description' => 'You are action-oriented, decisive, and results-driven. You thrive on challenges and competition.',
-                'strengths' => [
-                    'Natural leader',
-                    'Quick decision maker',
-                    'Goal-oriented',
-                    'Direct communicator',
-                    'Takes initiative'
-                ],
-                'work_style' => 'You prefer a fast-paced environment where you can take charge and see immediate results. You value efficiency and getting things done.',
-                'tips' => 'Remember to slow down occasionally to consider others perspectives and build stronger relationships with your team.'
-            ],
-            'blue' => [
-                'title' => 'Blue - The Analyst',
-                'description' => 'You are analytical, precise, and detail-oriented. You value accuracy and quality in everything you do.',
-                'strengths' => [
-                    'Attention to detail',
-                    'Systematic thinker',
-                    'Quality focused',
-                    'Problem solver',
-                    'Organized and methodical'
-                ],
-                'work_style' => 'You excel in environments that allow for careful planning and thorough analysis. You prefer having all the facts before making decisions.',
-                'tips' => 'Try to balance perfectionism with practical deadlines and remember that sometimes good enough is perfectly acceptable.'
-            ],
-            'green' => [
-                'title' => 'Green - The Supporter',
-                'description' => 'You are patient, reliable, and team-oriented. You value harmony and helping others succeed.',
-                'strengths' => [
-                    'Great listener',
-                    'Team player',
-                    'Patient and calm',
-                    'Loyal and dependable',
-                    'Consensus builder'
-                ],
-                'work_style' => 'You thrive in collaborative environments where you can support others and build strong relationships. You prefer stability and clear expectations.',
-                'tips' => 'Do not be afraid to assert yourself and share your valuable ideas. Your perspective is important to the team success.'
-            ],
-            'yellow' => [
-                'title' => 'Yellow - The Socializer',
-                'description' => 'You are enthusiastic, creative, and people-oriented. You bring energy and optimism to everything you do.',
-                'strengths' => [
-                    'Creative thinker',
-                    'Excellent communicator',
-                    'Inspiring and motivating',
-                    'Adaptable and flexible',
-                    'Builds rapport easily'
-                ],
-                'work_style' => 'You excel in dynamic environments that offer variety and social interaction. You bring creativity and enthusiasm to your work.',
-                'tips' => 'Focus on follow-through and attention to detail. Channel your enthusiasm into completing projects, not just starting them.'
-            ]
-        ];
-        
-        echo '
-        <div class="row mb-4">
-            <div class="col-md-8 mx-auto">
-                <div class="card result-card primary-result">
-                    <h2 class="mb-3">Your Primary Color</h2>
-                    <h3><span class="color-badge ' . $primary_color . '">' . $primary_color . '</span></h3>
-                    <h4 class="mt-3">' . $color_info[$primary_color]['title'] . '</h4>
-                    <p class="lead">' . $color_info[$primary_color]['description'] . '</p>
+    // Already completed - show message with retake option
+    echo '
+    <div class="text-center">
+        <div class="card">
+            <div class="card-body py-5">
+                <i class="bi bi-clipboard-check text-info" style="font-size: 4rem;"></i>
+                <h2 class="mt-3">Assessment Already Completed</h2>
+                <p class="lead">You have already completed the True Colors Team Style Assessment.</p>
+                <p class="text-muted">Your results have been submitted for personal review.</p>
+                <div class="mt-4">
+                    <a href="/staff/personality-test.php?retake=1" class="btn btn-warning me-2">
+                        <i class="bi bi-arrow-clockwise"></i> Retake Assessment
+                    </a>
+                    <a href="/staff/" class="btn btn-primary">Return to Staff Dashboard</a>
+                    <a href="/staff/detailed-color-test.php" class="btn btn-outline-secondary">Try Detailed Color Test</a>
                 </div>
             </div>
         </div>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5><i class="fas fa-star text-warning"></i> Your Strengths</h5>
-                        <ul class="trait-list">';
-                        foreach ($color_info[$primary_color]['strengths'] as $strength) {
-                            echo '<li>' . $strength . '</li>';
-                        }
-                        echo '</ul>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h5><i class="fas fa-briefcase text-primary"></i> Your Work Style</h5>
-                        <p>' . $color_info[$primary_color]['work_style'] . '</p>
-                        <hr>
-                        <p class="text-muted small"><strong>Tip:</strong> ' . $color_info[$primary_color]['tips'] . '</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mt-4">
-            <div class="card-body">
-                <h5>Your Complete Color Profile</h5>
-                <p class="text-muted">This shows how strongly you align with each personality color:</p>';
-                
-                $max_score = max($scores);
-                foreach ($scores as $color => $score) {
-                    $percentage = $max_score > 0 ? ($score / $max_score) * 100 : 0;
-                    $bg_color = $color == 'red' ? '#ff4444' : 
-                               ($color == 'blue' ? '#0088ff' : 
-                               ($color == 'green' ? '#00c851' : '#ffbb33'));
-                    echo '
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span class="text-uppercase fw-bold">' . $color . '</span>
-                        <span>' . $score . ' points</span>
-                    </div>
-                    <div class="progress" style="height: 25px;">
-                        <div class="progress-bar" 
-                             style="width: ' . $percentage . '%; background-color: ' . $bg_color . '">
-                        </div>
-                    </div>
-                </div>';
-                }
-                
-                echo '
-                <hr>
-                <p class="text-muted">
-                    <strong>Secondary Color:</strong> 
-                    <span class="color-badge ' . $secondary_color . '">' . $secondary_color . '</span>
-                    - ' . $color_info[$secondary_color]['title'] . '
-                </p>
-            </div>
-        </div>
-        
-        <div class="text-center mt-4 mb-5">
-            <a href="/staff/personality-test.php" class="btn btn-primary">
-                <i class="fas fa-redo"></i> Retake Test
-            </a>
-            <button onclick="window.print()" class="btn btn-secondary">
-                <i class="fas fa-print"></i> Print Results
-            </button>
-        </div>';
-    }
+    </div>';
 }
 
-echo '</div>'; // Close container
+echo '</div>';
 
-// Add JavaScript here after content
+// Add JavaScript for form interactions
 echo '
 <script>
 $(document).ready(function() {
-    // Make entire answer option clickable
-    $(document).on("click", ".answer-option", function(e) {
-        // Prevent double-firing if clicking directly on radio
-        if (e.target.type !== "radio") {
-            const radio = $(this).find("input[type=radio]");
-            radio.prop("checked", true);
-            radio.trigger("change");
-        }
-    });
+    let totalQuestions = 5;
+    let answeredQuestions = 0;
     
-    // Handle radio button change event  
-    $(document).on("change", "input[type=radio]", function() {
-        // Remove selected class from all options in this question
-        $(this).closest(".answer-options").find(".answer-option").removeClass("selected");
-        // Add selected class to the parent option
-        $(this).closest(".answer-option").addClass("selected");
+    // Handle answer selection
+    $(".answer-option").click(function() {
+        let questionCard = $(this).closest(".question-card");
+        let questionNum = questionCard.data("question");
+        
+        // Remove selected state from all options in this question
+        questionCard.find(".answer-option").removeClass("selected");
+        questionCard.find("input[type=radio]").prop("checked", false);
+        
+        // Add selected state to clicked option
+        $(this).addClass("selected");
+        $(this).find("input[type=radio]").prop("checked", true);
+        
         // Update progress
         updateProgress();
     });
     
     function updateProgress() {
-        const totalQuestions = $(".question-card").length;
-        const answeredQuestions = $("input[type=radio]:checked").length;
-        const progress = Math.round((answeredQuestions / totalQuestions) * 100);
+        answeredQuestions = $("input[type=radio]:checked").length;
+        let percentage = (answeredQuestions / totalQuestions) * 100;
         
-        console.log("Questions:", totalQuestions, "Answered:", answeredQuestions, "Progress:", progress);
-        
-        $("#progress-bar").css("width", progress + "%").attr("aria-valuenow", progress);
+        $("#progress-bar").css("width", percentage + "%");
         $("#progress-text").text(answeredQuestions + " of " + totalQuestions + " questions answered");
         
+        // Enable submit button when all questions answered
         if (answeredQuestions === totalQuestions) {
-            $("#submit-btn").removeClass("btn-secondary disabled").addClass("btn-success").prop("disabled", false);
+            $("#submit-btn").prop("disabled", false);
         } else {
-            $("#submit-btn").removeClass("btn-success").addClass("btn-secondary disabled").prop("disabled", true);
+            $("#submit-btn").prop("disabled", true);
         }
     }
     
-    // Initial progress check
+    // Initialize progress
     updateProgress();
-    
-    // Also update on direct radio click
-    $("input[type=radio]").on("click", function() {
-        updateProgress();
-    });
 });
 </script>';
 
+$display_footertype = 'min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

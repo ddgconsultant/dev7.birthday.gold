@@ -6,7 +6,7 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 $pagetitle = "Marketing Platforms";
 
 // Get user's company context with staff override capability
-$company_id = $current_user_data['company_id'] ?? 0;
+$company_id = $current_user_data['company_id'] ?? 99;
 $active_company_id = $_SESSION['active_company_id'] ?? $company_id;
 
 // Get platforms for active company using new schema
@@ -61,7 +61,7 @@ echo '
 <div class="content-header-dark">
     <div class="container text-center">
         <h1><i class="bi bi-link me-3"></i>Marketing Platforms</h1>
-        <p class="lead">Manage your marketing platform connections and credentials</p>';
+        <p class="lead">Manage all your marketing platforms and integrations</p>';
 
 // Show company context
 if ($active_company_id == 0) {
@@ -85,13 +85,56 @@ include('nav.inc.php');
 
 echo '
 <div class="container mb-5">
+    <!-- Info Alert about External vs Internal -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Platform Overview:</strong> Birthday.Gold provides an integrated marketing platform, plus you can connect external platforms to expand your reach. 
+                The Birthday.Gold platform includes newsletters, tracking, and analytics built-in.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Birthday.Gold Internal Platform Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Birthday.Gold Marketing Platform</h5>
+                    <span class="badge bg-success">Active</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p class="mb-2">The integrated Birthday.Gold marketing platform includes:</p>
+                            <ul class="mb-0">
+                                <li>Newsletter campaigns with rich editor</li>
+                                <li>Advanced tracking and analytics</li>
+                                <li>Automated birthday campaigns</li>
+                                <li>Built-in subscriber management</li>
+                                <li>Custom tracking URLs (m.bd.gold)</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <a href="/myaccount/marketing/campaigns.php" class="btn btn-primary">
+                                <i class="bi bi-megaphone me-2"></i>Manage Campaigns
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- External Platforms -->
     <div class="row">
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Platform Links</h5>
+                    <h5 class="mb-0">External Platform Connections</h5>
                     <a href="/myaccount/marketing/platform-create.php" class="btn btn-primary">
-                        <i class="bi bi-plus me-2"></i>Create Platform
+                        <i class="bi bi-plus me-2"></i>Add External Platform
                     </a>
                 </div>
                 <div class="card-body">';
@@ -100,10 +143,10 @@ if (empty($platforms)) {
     echo '
                     <div class="text-center py-4">
                         <i class="bi bi-link display-4 text-muted"></i>
-                        <h5 class="mt-3 text-muted">No platforms configured</h5>
-                        <p class="text-muted">Add your first marketing platform to get started</p>
+                        <h5 class="mt-3 text-muted">No external platforms connected</h5>
+                        <p class="text-muted">Connect your external marketing platforms to expand your reach beyond Birthday.Gold</p>
                         <a href="/myaccount/marketing/platform-create.php" class="btn btn-primary">
-                            <i class="bi bi-plus me-2"></i>Create Platform
+                            <i class="bi bi-plus me-2"></i>Add External Platform
                         </a>
                     </div>';
 } else {
@@ -113,7 +156,7 @@ if (empty($platforms)) {
                             <thead>
                                 <tr>
                                     <th width="40">Icon</th>
-                                    <th>Platform <small class="text-muted">(click to manage)</small></th>
+                                    <th>External Platform <small class="text-muted">(click to manage)</small></th>
                                     <th>Type</th>
                                     <th>Description</th>
                                     <th width="100">Credentials</th>
@@ -130,7 +173,7 @@ if (empty($platforms)) {
                                         <i class="' . htmlspecialchars($platform['icon_class']) . ' fa-lg"></i>
                                     </td>
                                     <td>
-                                        <a href="/myaccount/marketing/platform-manage.php?platform_id=' . $platform['platform_id'] . '" class="text-decoration-none">
+                                        <a href="/myaccount/marketing/platform-manage.php?platform_id=' . $qik->encodeId($platform['platform_id']) . '" class="text-decoration-none">
                                             <strong>' . htmlspecialchars($platform['platform_name']) . '</strong>
                                         </a><br>
                                         <small class="text-muted">

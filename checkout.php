@@ -75,15 +75,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     error_log('[CHECKOUT_API] bg_transactions table does not exist, skipping transaction update');
                 }
                 
-                // Check if bg_checkout_sessions table exists and update it
-                if (tableExists($database, 'bg_checkout_sessions')) {
-                    $sql = "UPDATE bg_checkout_sessions 
-                            SET status = 'completed', completed_at = NOW()
-                            WHERE user_id = :user_id AND status = 'pending'
-                            ORDER BY created_at DESC LIMIT 1";
-                    $database->query($sql, ['user_id' => $user_id]);
-                    error_log('[CHECKOUT_API] Checkout session updated');
-                }
+                // Track checkout completion using sessiontracking function
+                $tracking_data = [
+                    'action' => 'checkout_completed',
+                    'payment_intent_id' => $payment_intent_id,
+                    'amount' => $payment_intent->amount,
+                    'status' => 'completed'
+                ];
+                sessiontracking('checkout_complete', 'checkout', $tracking_data);
+                error_log('[CHECKOUT_API] Checkout completion tracked in sessiontracking');
                 
                 // Create payment record if table exists
                 if (tableExists($database, 'bg_payments')) {
@@ -326,34 +326,20 @@ try {
     
     error_log('[CHECKOUT_API] Payment intent created: ' . $payment_intent->id);
     
-    // Create checkout session record if table exists
-    if (tableExists($database, 'bg_checkout_sessions')) {
-        $session_id = bin2hex(random_bytes(32));
-        $recovery_token = bin2hex(random_bytes(32));
-        
-        $sql = "INSERT INTO bg_checkout_sessions 
-                (session_id, stripe_session_id, user_id, product_id, amount, recovery_token, session_data, status)
-                VALUES 
-                (:session_id, :stripe_session_id, :user_id, :product_id, :amount, :recovery_token, :session_data, 'pending')";
-        
-        $session_data = json_encode([
-            'promo_code' => $promo_code ?? '',
-            'user_email' => $user_data['email'] ?? '',
-            'account_type' => $user_data['account_type']
-        ]);
-        
-        $database->query($sql, [
-            'session_id' => $session_id,
-            'stripe_session_id' => $payment_intent->id,
-            'user_id' => $user_id,
-            'product_id' => $user_data['account_product_id'] ?? 0,
-            'amount' => $amount,
-            'recovery_token' => $recovery_token,
-            'session_data' => $session_data
-        ]);
-        
-        error_log('[CHECKOUT_API] Checkout session created: ' . $session_id);
-    }
+    // Track checkout session start using sessiontracking function
+    $tracking_data = [
+        'action' => 'checkout_started',
+        'stripe_session_id' => $payment_intent->id,
+        'user_id' => $user_id,
+        'product_id' => $user_data['account_product_id'] ?? 0,
+        'amount' => $amount,
+        'promo_code' => $promo_code ?? '',
+        'user_email' => $user_data['email'] ?? '',
+        'account_type' => $user_data['account_type'],
+        'status' => 'pending'
+    ];
+    sessiontracking('checkout_start', 'checkout', $tracking_data);
+    error_log('[CHECKOUT_API] Checkout session tracked in sessiontracking');
     
 } catch (\Stripe\Exception\ApiErrorException $e) {
     error_log('[CHECKOUT_API] Stripe API error: ' . $e->getMessage());

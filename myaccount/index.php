@@ -39,9 +39,13 @@ if (!$response && $current_user_data['account_type'] != 'minor') {
       header('location: /setup-giftcertificate');
       break;
 
-
     default:
-      header('location: /myaccount/myaccount_actions/setup-individual'); #/myaccount-welcome');
+      // Only send paid plans to createemail flow, free plans go to profile
+      if (in_array($current_user_data['account_plan'], ['free', 'user_free'])) {
+        header('location: /myaccount/profile');
+      } else {
+        header('location: /myaccount/myaccount_actions/setup-individual'); #/myaccount-welcome');
+      }
       exit;
   }
 }

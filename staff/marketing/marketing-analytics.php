@@ -1,10 +1,10 @@
-<?php
+<?PHP
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $pagetitle = "Marketing Analytics";
 
 // Get date range
-$start_date = $_GET['start_date'] ?? date('Y-m-01'); // Default to start of month
+$start_date = $_GET['start_date'] ?? date('Y-m-01');
 $end_date = $_GET['end_date'] ?? date('Y-m-d');
 
 // Get campaign statistics
@@ -168,129 +168,133 @@ body {
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
-?>
 
+echo '
 <div class="content-header-staff compact">
     <div class="container text-center">
-        <h1><i class="fas fa-chart-line"></i> Marketing Analytics</h1>
+        <h1><i class="bi bi-graph-up"></i> Marketing Analytics</h1>
         <p class="lead">Campaign performance and insights</p>
     </div>
-</div>
+</div>';
 
-<?php include('../includes/marketing-nav.php'); ?>
+include('../includes/marketing-nav.php');
 
+echo '
 <div class="container mt-4 mb-5 pb-5">
-    <!-- Date Range Filter -->
     <div class="card mb-4">
         <div class="card-body">
             <form method="GET" class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label for="start_date" class="form-label">Start Date</label>
                     <input type="date" class="form-control" id="start_date" name="start_date" 
-                           value="<?= htmlspecialchars($start_date) ?>">
+                           value="' . htmlspecialchars($start_date) . '">
                 </div>
                 <div class="col-md-4">
                     <label for="end_date" class="form-label">End Date</label>
                     <input type="date" class="form-control" id="end_date" name="end_date" 
-                           value="<?= htmlspecialchars($end_date) ?>">
+                           value="' . htmlspecialchars($end_date) . '">
                 </div>
                 <div class="col-md-4">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-filter"></i> Apply Filter
+                        <i class="bi bi-funnel-fill"></i> Apply Filter
                     </button>
                     <a href="/staff/marketing-analytics.php" class="btn btn-outline-secondary">
-                        <i class="fas fa-redo"></i> Reset
+                        <i class="bi bi-arrow-clockwise"></i> Reset
                     </a>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Overview Stats -->
     <div class="row">
         <div class="col-md-3 col-sm-6">
             <div class="stat-card">
-                <div class="stat-number"><?= number_format($stats['total_campaigns'] ?? 0) ?></div>
+                <div class="stat-number">' . number_format($stats['total_campaigns'] ?? 0) . '</div>
                 <div class="stat-label">Total Campaigns</div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
             <div class="stat-card green">
-                <div class="stat-number"><?= number_format($stats['active_campaigns'] ?? 0) ?></div>
+                <div class="stat-number">' . number_format($stats['active_campaigns'] ?? 0) . '</div>
                 <div class="stat-label">Active Campaigns</div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
             <div class="stat-card blue">
-                <div class="stat-number">$<?= number_format($total_budget ?? 0, 0) ?></div>
+                <div class="stat-number">$' . number_format($total_budget ?? 0, 0) . '</div>
                 <div class="stat-label">Total Budget</div>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
             <div class="stat-card orange">
-                <div class="stat-number"><?= number_format($stats['total_views'] ?? 0) ?></div>
+                <div class="stat-number">' . number_format($stats['total_views'] ?? 0) . '</div>
                 <div class="stat-label">Total Views</div>
             </div>
         </div>
     </div>
 
     <div class="row mt-4">
-        <!-- Platform Distribution -->
         <div class="col-lg-6">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-share-alt"></i> Platform Distribution</h5>
+                    <h5 class="mb-0"><i class="bi bi-share-fill"></i> Platform Distribution</h5>
                 </div>
-                <div class="card-body">
-                    <?php if (empty($budget_by_platform)): ?>
-                        <p class="text-muted">No platform data available</p>
-                    <?php else: ?>
-                        <?php 
-                        $max_budget = max(array_column($budget_by_platform, 'budget'));
-                        foreach ($budget_by_platform as $platform => $data): 
-                            $width = $max_budget > 0 ? ($data['budget'] / $max_budget) * 100 : 0;
-                        ?>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="fw-bold"><?= htmlspecialchars($platform) ?></span>
-                                    <span class="text-muted">
-                                        <?= $data['count'] ?> campaign<?= $data['count'] != 1 ? 's' : '' ?> 
-                                        ($<?= number_format($data['budget'], 0) ?>)
-                                    </span>
-                                </div>
-                                <div class="progress" style="height: 25px;">
-                                    <div class="progress-bar bg-primary" role="progressbar" 
-                                         style="width: <?= $width ?>%">
-                                    </div>
-                                </div>
+                <div class="card-body">';
+
+if (empty($budget_by_platform)) {
+    echo '
+                    <p class="text-muted">No platform data available</p>';
+} else {
+    $max_budget = max(array_column($budget_by_platform, 'budget'));
+    foreach ($budget_by_platform as $platform => $data) {
+        $width = $max_budget > 0 ? ($data['budget'] / $max_budget) * 100 : 0;
+        echo '
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="fw-bold">' . htmlspecialchars($platform) . '</span>
+                            <span class="text-muted">
+                                ' . $data['count'] . ' campaign' . ($data['count'] != 1 ? 's' : '') . ' 
+                                ($' . number_format($data['budget'], 0) . ')
+                            </span>
+                        </div>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                 style="width: ' . $width . '%">
                             </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                        </div>
+                    </div>';
+    }
+}
+
+echo '
                 </div>
             </div>
         </div>
 
-        <!-- Campaign Timeline -->
         <div class="col-lg-6">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Campaign Timeline</h5>
+                    <h5 class="mb-0"><i class="bi bi-calendar-fill"></i> Campaign Timeline</h5>
                 </div>
-                <div class="card-body">
-                    <?php if (empty($campaigns_by_month)): ?>
-                        <p class="text-muted">No timeline data available</p>
-                    <?php else: ?>
-                        <canvas id="timelineChart" height="250"></canvas>
-                    <?php endif; ?>
+                <div class="card-body">';
+
+if (empty($campaigns_by_month)) {
+    echo '
+                    <p class="text-muted">No timeline data available</p>';
+} else {
+    echo '
+                    <canvas id="timelineChart" height="250"></canvas>';
+}
+
+echo '
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Top Performing Campaigns -->
     <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-trophy"></i> Top Performing Campaigns</h5>
+            <h5 class="mb-0"><i class="bi bi-trophy-fill"></i> Top Performing Campaigns</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -306,98 +310,112 @@ include($dir['core_components'] . '/bg_header.inc');
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <?php 
-                        $top_campaigns = array_slice($campaigns, 0, 10);
-                        foreach ($top_campaigns as $campaign): 
-                            $now = time();
-                            $start = strtotime($campaign['publish_dt']);
-                            $end = $campaign['expire_dt'] ? strtotime($campaign['expire_dt']) : null;
-                            
-                            if ($campaign['status'] == 'inactive') {
-                                $status = '<span class="badge bg-secondary">Draft</span>';
-                            } elseif ($now < $start) {
-                                $status = '<span class="badge bg-info">Scheduled</span>';
-                            } elseif ($end && $now > $end) {
-                                $status = '<span class="badge bg-danger">Expired</span>';
-                            } else {
-                                $status = '<span class="badge bg-success">Active</span>';
-                            }
-                        ?>
-                            <tr <?= $campaign['views'] > 100 ? 'class="top-performer"' : '' ?>>
-                                <td>
-                                    <strong><?= htmlspecialchars($campaign['display_name']) ?></strong>
-                                    <?php if ($campaign['description']): ?>
-                                        <br><small class="text-muted">
-                                            <?= htmlspecialchars(substr($campaign['description'], 0, 50)) ?>...
-                                        </small>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?= $status ?></td>
-                                <td>
-                                    <?php if (!empty($campaign['data']['platforms'])): ?>
-                                        <?php foreach ($campaign['data']['platforms'] as $platform): ?>
-                                            <span class="badge bg-light text-dark me-1">
-                                                <?= htmlspecialchars($platform) ?>
-                                            </span>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <span class="text-muted">-</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if (!empty($campaign['data']['budget'])): ?>
-                                        $<?= number_format($campaign['data']['budget'], 0) ?>
-                                    <?php else: ?>
-                                        <span class="text-muted">-</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <strong><?= number_format($campaign['views']) ?></strong>
-                                </td>
-                                <td><?= date('M j, Y', strtotime($campaign['publish_dt'])) ?></td>
-                                <td>
-                                    <a href="/staff/marketing-view.php?id=<?= $campaign['id'] ?>" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
+                    <tbody>';
+
+$top_campaigns = array_slice($campaigns, 0, 10);
+foreach ($top_campaigns as $campaign) {
+    $now = time();
+    $start = strtotime($campaign['publish_dt']);
+    $end = $campaign['expire_dt'] ? strtotime($campaign['expire_dt']) : null;
+    
+    if ($campaign['status'] == 'inactive') {
+        $status = '<span class="badge bg-secondary">Draft</span>';
+    } elseif ($now < $start) {
+        $status = '<span class="badge bg-info">Scheduled</span>';
+    } elseif ($end && $now > $end) {
+        $status = '<span class="badge bg-danger">Expired</span>';
+    } else {
+        $status = '<span class="badge bg-success">Active</span>';
+    }
+    
+    echo '
+                        <tr' . ($campaign['views'] > 100 ? ' class="top-performer"' : '') . '>
+                            <td>
+                                <strong>' . htmlspecialchars($campaign['display_name']) . '</strong>';
+    
+    if ($campaign['description']) {
+        echo '
+                                <br><small class="text-muted">
+                                    ' . htmlspecialchars(substr($campaign['description'], 0, 50)) . '...
+                                </small>';
+    }
+    
+    echo '
+                            </td>
+                            <td>' . $status . '</td>
+                            <td>';
+    
+    if (!empty($campaign['data']['platforms'])) {
+        foreach ($campaign['data']['platforms'] as $platform) {
+            echo '
+                                <span class="badge bg-light text-dark me-1">
+                                    ' . htmlspecialchars($platform) . '
+                                </span>';
+        }
+    } else {
+        echo '
+                                <span class="text-muted">-</span>';
+    }
+    
+    echo '
+                            </td>
+                            <td>';
+    
+    if (!empty($campaign['data']['budget'])) {
+        echo '$' . number_format($campaign['data']['budget'], 0);
+    } else {
+        echo '<span class="text-muted">-</span>';
+    }
+    
+    echo '
+                            </td>
+                            <td>
+                                <strong>' . number_format($campaign['views']) . '</strong>
+                            </td>
+                            <td>' . date('M j, Y', strtotime($campaign['publish_dt'])) . '</td>
+                            <td>
+                                <a href="/staff/marketing-view.php?id=' . $campaign['id'] . '" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+                            </td>
+                        </tr>';
+}
+
+echo '
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Metrics Summary -->
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Performance Metrics</h5>
+            <h5 class="mb-0"><i class="bi bi-bar-chart-fill"></i> Performance Metrics</h5>
         </div>
         <div class="card-body">
-            <div class="row">
-                <?php
-                // Calculate average metrics
-                $total_impressions_goal = 0;
-                $total_clicks_goal = 0;
-                $total_conversions_goal = 0;
-                $campaigns_with_goals = 0;
-                
-                foreach ($campaigns as $campaign) {
-                    if (!empty($campaign['data']['metrics'])) {
-                        $campaigns_with_goals++;
-                        $total_impressions_goal += $campaign['data']['metrics']['impressions_goal'] ?? 0;
-                        $total_clicks_goal += $campaign['data']['metrics']['clicks_goal'] ?? 0;
-                        $total_conversions_goal += $campaign['data']['metrics']['conversions_goal'] ?? 0;
-                    }
-                }
-                ?>
-                
+            <div class="row">';
+
+// Calculate average metrics
+$total_impressions_goal = 0;
+$total_clicks_goal = 0;
+$total_conversions_goal = 0;
+$campaigns_with_goals = 0;
+
+foreach ($campaigns as $campaign) {
+    if (!empty($campaign['data']['metrics'])) {
+        $campaigns_with_goals++;
+        $total_impressions_goal += $campaign['data']['metrics']['impressions_goal'] ?? 0;
+        $total_clicks_goal += $campaign['data']['metrics']['clicks_goal'] ?? 0;
+        $total_conversions_goal += $campaign['data']['metrics']['conversions_goal'] ?? 0;
+    }
+}
+
+echo '
                 <div class="col-md-3">
                     <div class="metric-box">
                         <div class="metric-value text-info">
-                            <?= number_format($total_impressions_goal) ?>
+                            ' . number_format($total_impressions_goal) . '
                         </div>
                         <div class="metric-label">Target Impressions</div>
                     </div>
@@ -405,7 +423,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <div class="col-md-3">
                     <div class="metric-box">
                         <div class="metric-value text-primary">
-                            <?= number_format($total_clicks_goal) ?>
+                            ' . number_format($total_clicks_goal) . '
                         </div>
                         <div class="metric-label">Target Clicks</div>
                     </div>
@@ -413,7 +431,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <div class="col-md-3">
                     <div class="metric-box">
                         <div class="metric-value text-success">
-                            <?= number_format($total_conversions_goal) ?>
+                            ' . number_format($total_conversions_goal) . '
                         </div>
                         <div class="metric-label">Target Conversions</div>
                     </div>
@@ -421,7 +439,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <div class="col-md-3">
                     <div class="metric-box">
                         <div class="metric-value text-warning">
-                            <?= $total_budget > 0 ? number_format(($stats['total_views'] ?? 0) / ($total_budget / 1000), 2) : '0' ?>
+                            ' . ($total_budget > 0 ? number_format(($stats['total_views'] ?? 0) / ($total_budget / 1000), 2) : '0') . '
                         </div>
                         <div class="metric-label">Views per $1K Spent</div>
                     </div>
@@ -431,20 +449,21 @@ include($dir['core_components'] . '/bg_header.inc');
     </div>
 </div>
 
-<!-- Chart.js for Timeline -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-<?php if (!empty($campaigns_by_month)): ?>
-const ctx = document.getElementById('timelineChart').getContext('2d');
+<script>';
+
+if (!empty($campaigns_by_month)) {
+    echo '
+const ctx = document.getElementById("timelineChart").getContext("2d");
 const timelineChart = new Chart(ctx, {
-    type: 'line',
+    type: "line",
     data: {
-        labels: <?= json_encode(array_keys($campaigns_by_month)) ?>,
+        labels: ' . json_encode(array_keys($campaigns_by_month)) . ',
         datasets: [{
-            label: 'Campaigns',
-            data: <?= json_encode(array_values($campaigns_by_month)) ?>,
-            borderColor: 'rgb(102, 126, 234)',
-            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            label: "Campaigns",
+            data: ' . json_encode(array_values($campaigns_by_month)) . ',
+            borderColor: "rgb(102, 126, 234)",
+            backgroundColor: "rgba(102, 126, 234, 0.1)",
             tension: 0.3
         }]
     },
@@ -465,11 +484,12 @@ const timelineChart = new Chart(ctx, {
             }
         }
     }
-});
-<?php endif; ?>
-</script>
+});';
+}
 
-<?php
+echo '
+</script>';
+
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>

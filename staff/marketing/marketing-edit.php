@@ -194,7 +194,7 @@ include($dir['core_components'] . '/bg_header.inc');
 echo '
 <div class="content-header-staff compact">
     <div class="container text-center">
-        <h1><i class="fas fa-bullhorn"></i> Marketing Campaign Manager</h1>
+        <h1><i class="bi bi-megaphone-fill"></i> Marketing Campaign Manager</h1>
         <p class="lead">' . ($campaign ? 'Edit Campaign' : 'Create New Campaign') . '</p>
     </div>
 </div>';
@@ -279,7 +279,7 @@ echo '
                     </div>
                     <div class="card-body">
                         <div id="assetDropZone">
-                            <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-muted"></i>
+                            <i class="bi bi-cloud-upload fa-3x mb-3 text-muted"></i>
                             <p class="mb-0">Drag and drop files here or click to browse</p>
                             <small class="text-muted">Supports images, videos, PDFs (Max 10MB per file)</small>
                             <input type="file" id="assetUpload" multiple accept="image/*,video/*,.pdf" style="display: none;">
@@ -301,14 +301,14 @@ if (!empty($campaign_data['assets'])) {
         } else {
             echo '
                                 <div class="p-3">
-                                    <i class="fas fa-file-pdf fa-2x"></i>
+                                    <i class="bi bi-file-pdf-fill fa-2x"></i>
                                     <p>' . htmlspecialchars($asset['name']) . '</p>
                                 </div>';
         }
         
         echo '
                                 <button type="button" class="asset-remove" onclick="removeAsset(' . $index . ')">
-                                    <i class="fas fa-times"></i>
+                                    <i class="bi bi-x-lg"></i>
                                 </button>
                             </div>';
     }
@@ -447,11 +447,11 @@ echo '
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <a href="/staff/marketing-campaigns.php" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Cancel
+                        <i class="bi bi-arrow-left"></i> Cancel
                     </a>
                     <div>
                         <button type="submit" name="action" value="save" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Save Campaign
+                            <i class="bi bi-save"></i> Save Campaign
                         </button>
                     </div>
                 </div>
@@ -549,12 +549,12 @@ function updateAssetPreview() {
         } else if (asset.type.startsWith("video")) {
             content = `<video controls><source src="${asset.url}"></video>`;
         } else {
-            content = `<div class="p-3"><i class="fas fa-file-pdf fa-2x"></i><p>${asset.name}</p></div>`;
+            content = `<div class="p-3"><i class="bi bi-file-pdf-fill fa-2x"></i><p>${asset.name}</p></div>`;
         }
         
         div.innerHTML = content + `
             <button type="button" class="asset-remove" onclick="removeAsset(${index})">
-                <i class="fas fa-times"></i>
+                <i class="bi bi-x-lg"></i>
             </button>
         `;
         

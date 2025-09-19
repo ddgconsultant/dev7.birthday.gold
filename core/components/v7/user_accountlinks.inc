@@ -43,22 +43,31 @@ $additionalstyles.='
 //-----------------------------------------------------------
 // List of Account LINKS
     $accountlinks_display = 0;
+    
+    // Build links array
+    $links_array = [];
+    
+    // Add Marketing link if user has a company
+    if (isset($current_user_data['company_id']) && $current_user_data['company_id'] > 0) {
+        $links_array[] = ['text' => 'Marketing', 'url' => '/myaccount/marketing/', 'icon' => 'bi bi-megaphone'];
+    }
+    
+    // Add standard links
+    $links_array[] = ['text' => 'Login History', 'url' => '/myaccount/loginhistory', 'icon' => 'bi bi-clock-history'];
+    $links_array[] = ['text' => 'Notifications', 'url' => '/myaccount/notifications', 'icon' => 'bi bi-bell'];
+    $links_array[] = [
+        'text' => 'Profile Images',
+        'url' => '/myaccount/profile-images',
+        'icon' => 'bi bi-image',
+        'tooltip_icon' => 'bi bi-info-circle',
+        'tooltip_attributes' => 'data-bs-toggle="tooltip" data-bs-placement="top" title="Change your profile avatar and cover image'
+    ];
+    $links_array[] = ['text' => 'Security Settings', 'url' => '/myaccount/security-settings', 'icon' => 'bi bi-shield-lock'];
+    $links_array[] = ['text' => 'BGInbox Settings', 'url' => '/myaccount/manage-mail', 'icon' => 'bi bi-envelope'];
+    
     $account_links['account'] = [
         'title' => 'More Account Links',
-        'links' => [
-            ['text' => 'Login History', 'url' => '/myaccount/loginhistory', 'icon' => 'bi bi-clock-history'],
-            ['text' => 'Trusted Devices', 'url' => '/myaccount/loginhistory?view=devices', 'icon' => 'bi bi-tablet'],
-            ['text' => 'Notifications', 'url' => '/myaccount/notifications', 'icon' => 'bi bi-bell'],
-            [
-                'text' => 'Profile Images',
-                'url' => '/myaccount/profile-images',
-                'icon' => 'bi bi-image',
-                'tooltip_icon' => 'bi bi-info-circle',
-                'tooltip_attributes' => 'data-bs-toggle="tooltip" data-bs-placement="top" title="Change your profile avatar and cover image'
-            ],
-            ['text' => 'Security Settings', 'url' => '/myaccount/security-settings', 'icon' => 'bi bi-shield-lock'],
-            ['text' => 'BGInbox Settings', 'url' => '/myaccount/manage-mail', 'icon' => 'bi bi-envelope'],
-        ]
+        'links' => $links_array
     ];
 
     $device_result = $account->user_activedevices($current_user_data['user_id']);

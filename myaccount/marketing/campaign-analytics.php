@@ -23,7 +23,7 @@ if (!$campaign) {
 }
 
 // Get user's company context and verify access
-$company_id = $current_user_data['company_id'] ?? 0;
+$company_id = $current_user_data['company_id'] ?? 99;
 $active_company_id = $_SESSION['active_company_id'] ?? $company_id;
 
 // Verify access to this campaign

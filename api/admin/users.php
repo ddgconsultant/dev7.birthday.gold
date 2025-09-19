@@ -36,13 +36,30 @@ $type = $_GET['type'] ?? '';
 $days = $_GET['days'] ?? '180';
 
 // Build query conditions
-$conditions = ["u.type = 'real'"];
+$conditions = [];
 $params = [];
 
+// Enhanced search functionality - search across more fields
 if ($search) {
     $searchLike = "%$search%";
-    $conditions[] = "(u.first_name LIKE :search OR u.last_name LIKE :search OR u.username LIKE :search OR u.email LIKE :search)";
-    $params[':search'] = $searchLike;
+    $searchConditions = [];
+
+    // Search across multiple fields
+    $searchFields = ['first_name', 'last_name', 'username', 'email', 'city', 'state', 'zip_code', 'status', 'account_plan', 'account_type'];
+    for ($i = 0; $i < count($searchFields); $i++) {
+        $searchConditions[] = "u.{$searchFields[$i]} LIKE :search$i";
+        $params[":search$i"] = $searchLike;
+    }
+
+    // Add date-based searches
+    $searchConditions[] = "DATE_FORMAT(u.birthdate, '%M %d') LIKE :search_bd";
+    $searchConditions[] = "DATE_FORMAT(u.create_dt, '%M %d %Y') LIKE :search_cd";
+    $searchConditions[] = "DATE_FORMAT(u.create_dt, '%Y-%m-%d') LIKE :search_cd2";
+    $params[':search_bd'] = $searchLike;
+    $params[':search_cd'] = $searchLike;
+    $params[':search_cd2'] = $searchLike;
+
+    $conditions[] = '(' . implode(' OR ', $searchConditions) . ')';
 }
 
 if ($status) {
@@ -55,17 +72,30 @@ if ($plan) {
     $params[':plan'] = $plan;
 }
 
+// Handle user type filter - distinguish between real/test users and account types
 if ($type) {
-    $conditions[] = "u.account_type = :type";
-    $params[':type'] = $type;
+    if ($type === 'real' || $type === 'test') {
+        // Filter by user type (real vs test)
+        $conditions[] = "u.type = :usertype";
+        $params[':usertype'] = $type;
+    } else {
+        // Filter by account type (individual/business/parental)
+        $conditions[] = "u.account_type = :type";
+        $params[':type'] = $type;
+    }
+} else {
+    // Default to showing only real users when no filter is specified
+    $conditions[] = "u.type = 'real'";
 }
 
-if ($days !== 'all') {
+// Fix the day filter to properly handle 'all' option
+if ($days !== 'all' && !empty($days) && is_numeric($days)) {
     $conditions[] = "u.create_dt >= CURDATE() - INTERVAL :days DAY";
     $params[':days'] = (int)$days;
 }
+// When $days === 'all', we don't add any date restriction
 
-$whereClause = implode(' AND ', $conditions);
+$whereClause = !empty($conditions) ? implode(' AND ', $conditions) : '1=1';
 
 // Get users
 $sql = "
@@ -82,6 +112,7 @@ $sql = "
         u.account_plan,
         u.account_type,
         u.account_admin,
+        u.type,
         u.create_dt,
         u.modify_dt,
         a.description as avatar,
@@ -116,7 +147,10 @@ try {
     
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    $stmt->execute();
+
+    if (!$stmt->execute()) {
+        throw new Exception('Query execution failed');
+    }
     
     $users = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

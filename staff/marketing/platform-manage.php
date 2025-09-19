@@ -14,7 +14,6 @@ $platform_sql = "SELECT * FROM bg_content WHERE id = :id AND type = 'platform_li
 $platform = $database->getrow($platform_sql, ['id' => $platform_id]);
 
 if (!$platform) {
-    $system->addmessage('error', 'Platform not found');
     header('Location: /staff/marketing/marketing-platforms.php');
     exit;
 }
@@ -46,50 +45,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     'tags' => json_encode($platform_data)
                 ]);
                 
-                $system->addmessage('success', 'Credentials deleted successfully');
             } catch (Exception $e) {
-                $system->addmessage('error', 'Failed to delete credentials: ' . $e->getMessage());
             }
         } elseif (!empty($username) && !empty($password)) {
             global $accessmanager;
             
-            $parsed_url = parse_url($platform_data['url'] ?? '');
-            $host = $parsed_url['host'] ?? 'unknown';
-            
-            $credential_input = [
-                'type' => 'platform_credentials',
-                'name' => 'marketing_' . strtolower(str_replace(' ', '_', $platform['display_name'])),
-                'host' => $host,
-                'host_link_type' => 'website',
-                'category' => 'marketing',
-                'grouping' => 'marketing_platforms',
-                'username' => $username,
-                'password' => $password,
-                'notes' => $credential_notes,
-                'datatype' => 'username_password',
-                'strength' => ['score' => 0]
-            ];
-            
-            try {
-                if ($credential_id) {
-                    // Update existing credentials
-                    $accessmanager->update_record($credential_id, $credential_input);
-                } else {
-                    // Create new credentials
-                    $credential_id = $accessmanager->create_record($credential_input);
-                    
-                    // Update platform to reference the new credential
-                    $platform_data['credential_id'] = $credential_id;
-                    $update_sql = "UPDATE bg_content SET tags = :tags WHERE id = :id";
-                    $database->query($update_sql, [
-                        'id' => $platform_id,
-                        'tags' => json_encode($platform_data)
-                    ]);
-                }
+            if (!isset($accessmanager) || !is_object($accessmanager)) {
+            } else {
+                $parsed_url = parse_url($platform_data['url'] ?? '');
+                $host = $parsed_url['host'] ?? 'unknown';
                 
-                $system->addmessage('success', 'Credentials saved successfully');
-            } catch (Exception $e) {
-                $system->addmessage('error', 'Failed to save credentials: ' . $e->getMessage());
+                $credential_input = [
+                    'user_id' => $account->getuser('user_id'),
+                    'company_id' => 0,
+                    'type' => 'platform_credentials',
+                    'data_type' => 'username_password',
+                    'name' => 'marketing_' . strtolower(str_replace(' ', '_', $platform['display_name'])),
+                    'host' => $host,
+                    'username' => $username,
+                    'password' => $password,
+                    'notes' => $credential_notes,
+                    'category' => 'marketing',
+                    'grouping' => 'marketing_platforms',
+                    'datatype' => 'username_password',
+                    'creator_id' => $account->getuser('user_id')
+                ];
+                
+                try {
+                    if ($credential_id) {
+                        // Update existing credentials
+                        $accessmanager->update_record($credential_id, $credential_input);
+                    } else {
+                        // Create new credentials
+                        $credential_id = $accessmanager->create_record($credential_input);
+                        
+                        // Update platform to reference the new credential
+                        $platform_data['credential_id'] = $credential_id;
+                        $update_sql = "UPDATE bg_content SET tags = :tags WHERE id = :id";
+                        $database->query($update_sql, [
+                            'id' => $platform_id,
+                            'tags' => json_encode($platform_data)
+                        ]);
+                    }
+                    
+                } catch (Exception $e) {
+                }
             }
         }
         
@@ -120,9 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'rank' => $rank
             ]);
             
-            $system->addmessage('success', 'Platform updated successfully');
         } catch (Exception $e) {
-            $system->addmessage('error', 'Failed to update platform: ' . $e->getMessage());
         }
         
         header("Location: /staff/marketing/platform-manage.php?platform_id=" . $platform_id);
@@ -164,9 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 'status' => $status
             ]);
             
-            $system->addmessage('success', 'Campaign created successfully');
         } catch (Exception $e) {
-            $system->addmessage('error', 'Failed to create campaign: ' . $e->getMessage());
         }
         
         header("Location: /staff/marketing/platform-manage.php?platform_id=" . $platform_id);
@@ -176,7 +172,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($action == 'delete_campaign') {
         $campaign_id = intval($_POST['campaign_id']);
         $database->query("DELETE FROM bg_content WHERE id = :id AND type = 'campaign'", ['id' => $campaign_id]);
-        $system->addmessage('success', 'Campaign deleted successfully');
         
         header("Location: /staff/marketing/platform-manage.php?platform_id=" . $platform_id);
         exit;
@@ -184,14 +179,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     if ($action == 'inactivate_platform') {
         $database->query("UPDATE bg_content SET status = 'inactive' WHERE id = :id AND type = 'platform_link'", ['id' => $platform_id]);
-        $system->addmessage('success', 'Platform inactivated successfully');
         header('Location: /staff/marketing/marketing-platforms.php');
         exit;
     }
     
     if ($action == 'activate_platform') {
         $database->query("UPDATE bg_content SET status = 'active' WHERE id = :id AND type = 'platform_link'", ['id' => $platform_id]);
-        $system->addmessage('success', 'Platform activated successfully');
         header("Location: /staff/marketing/platform-manage.php?platform_id=" . $platform_id);
         exit;
     }
@@ -214,7 +207,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Delete the platform itself
         $database->query("DELETE FROM bg_content WHERE id = :id AND type = 'platform_link'", ['id' => $platform_id]);
         
-        $system->addmessage('success', 'Platform and all associated data deleted successfully');
         header('Location: /staff/marketing/marketing-platforms.php');
         exit;
     }
@@ -269,7 +261,7 @@ include($dir['core_components'] . '/bg_header.inc');
 echo '
 <div class="content-header-staff compact">
     <div class="container text-center">
-        <h1><i class="' . ($platform_data['icon'] ?? 'bi bi-link') . '"></i> ' . htmlspecialchars($platform['display_name']) . '</h1>
+        <h1><i class="' . ($platform_data['icon'] ?? 'bi bi-link') . ' me-3"></i>' . htmlspecialchars($platform['display_name']) . '</h1>
         <p class="lead">Campaign Management & Analytics</p>
     </div>
 </div>';
@@ -281,7 +273,7 @@ echo '
     <div class="row mb-3">
         <div class="col-12 text-end">
             <a href="/staff/marketing/marketing-platforms.php" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Platforms
+                <i class="bi bi-arrow-left me-2"></i>Back to Platforms
             </a>
         </div>
     </div>
@@ -291,14 +283,14 @@ echo '
             <div class="platform-header">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        <h3 class="mb-1"><i class="' . ($platform_data['icon'] ?? 'bi bi-link') . '"></i> ' . htmlspecialchars($platform['display_name']) . '</h3>
+                        <h3 class="mb-1"><i class="' . ($platform_data['icon'] ?? 'bi bi-link') . ' me-3"></i>' . htmlspecialchars($platform['display_name']) . '</h3>
                         <p class="mb-2">' . htmlspecialchars($platform['description']) . '</p>
                         <div class="btn-group">
                             <a href="' . htmlspecialchars($platform_data['url'] ?? '#') . '" target="_blank" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-box-arrow-up-right"></i> Open Platform
+                                <i class="bi bi-box-arrow-up-right me-2"></i>Open Platform
                             </a>
                             <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editPlatformModal">
-                                <i class="bi bi-pencil"></i> Edit Platform
+                                <i class="bi bi-pencil me-2"></i>Edit Platform
                             </button>
                         </div>
                     </div>
@@ -307,12 +299,12 @@ echo '
 if ($credential_info) {
     echo '
                         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#viewCredentialsModal">
-                            <i class="bi bi-key"></i> View Credentials
+                            <i class="bi bi-key me-2"></i>View Credentials
                         </button>';
 } else {
     echo '
                         <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#credentialsModal">
-                            <i class="bi bi-plus"></i> Add Credentials
+                            <i class="bi bi-plus me-2"></i>Add Credentials
                         </button>';
 }
 
@@ -328,9 +320,9 @@ echo '
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Campaigns</h5>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCampaignModal">
-                        <i class="bi bi-plus"></i> Create Campaign
-                    </button>
+                    <a href="/staff/marketing/campaign-create.php?platform_id=' . $platform_id . '" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus me-2"></i>Create Campaign
+                    </a>
                 </div>
                 <div class="card-body">';
 
@@ -340,9 +332,9 @@ if (empty($campaigns)) {
                         <i class="bi bi-megaphone display-4 text-muted"></i>
                         <h5 class="mt-3 text-muted">No campaigns yet</h5>
                         <p class="text-muted">Create your first campaign to get started</p>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCampaignModal">
-                            <i class="bi bi-plus"></i> Create Campaign
-                        </button>
+                        <a href="/staff/marketing/campaign-create.php?platform_id=' . $platform_id . '" class="btn btn-primary">
+                            <i class="bi bi-plus me-2"></i>Create Campaign
+                        </a>
                     </div>';
 } else {
     echo '
@@ -435,21 +427,21 @@ echo '
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="' . htmlspecialchars($platform_data['url'] ?? '#') . '" target="_blank" class="btn btn-outline-primary">
-                            <i class="bi bi-box-arrow-up-right"></i> Open Platform
+                            <i class="bi bi-box-arrow-up-right me-2"></i>Open Platform
                         </a>';
 
 if ($credential_info) {
     echo '
                         <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewCredentialsModal">
-                            <i class="bi bi-eye"></i> View Credentials
+                            <i class="bi bi-eye me-2"></i>View Credentials
                         </button>
                         <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#credentialsModal">
-                            <i class="bi bi-key"></i> Edit Credentials
+                            <i class="bi bi-key me-2"></i>Edit Credentials
                         </button>';
 } else {
     echo '
                         <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#credentialsModal">
-                            <i class="bi bi-key"></i> Add Credentials
+                            <i class="bi bi-key me-2"></i>Add Credentials
                         </button>';
 }
 
@@ -458,17 +450,17 @@ echo '
                         <form method="POST" onsubmit="return confirm(\'Inactivate this platform?\');">
                             <input type="hidden" name="action" value="inactivate_platform">
                             <button type="submit" class="btn btn-outline-warning w-100">
-                                <i class="bi bi-pause"></i> Inactivate Platform
+                                <i class="bi bi-pause me-2"></i>Inactivate Platform
                             </button>
                         </form>' : '
                         <form method="POST">
                             <input type="hidden" name="action" value="activate_platform">
                             <button type="submit" class="btn btn-outline-success w-100">
-                                <i class="bi bi-play"></i> Activate Platform
+                                <i class="bi bi-play me-2"></i>Activate Platform
                             </button>
                         </form>') . '
                         <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePlatformModal">
-                            <i class="bi bi-trash"></i> Delete Platform
+                            <i class="bi bi-trash me-2"></i>Delete Platform
                         </button>
                     </div>
                 </div>
@@ -495,80 +487,6 @@ echo '
     </div>
 </div>
 
-<!-- Add Campaign Modal -->
-<div class="modal fade" id="addCampaignModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create Campaign</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="POST">
-                <div class="modal-body">
-                    <input type="hidden" name="action" value="add_campaign">
-                    
-                    <div class="mb-3">
-                        <label for="campaign_name" class="form-label">Campaign Name *</label>
-                        <input type="text" class="form-control" id="campaign_name" name="campaign_name" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="campaign_type" class="form-label">Campaign Type *</label>
-                        <select class="form-control" id="campaign_type" name="campaign_type" required>
-                            <option value="">Select type...</option>
-                            <option value="awareness">Brand Awareness</option>
-                            <option value="traffic">Website Traffic</option>
-                            <option value="engagement">Engagement</option>
-                            <option value="leads">Lead Generation</option>
-                            <option value="conversions">Conversions</option>
-                            <option value="app_installs">App Installs</option>
-                            <option value="video_views">Video Views</option>
-                            <option value="reach">Reach</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="budget" class="form-label">Budget ($)</label>
-                        <input type="number" class="form-control" id="budget" name="budget" min="0" step="0.01">
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="start_date" class="form-label">Start Date</label>
-                                <input type="date" class="form-control" id="start_date" name="start_date">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="end_date" class="form-label">End Date</label>
-                                <input type="date" class="form-control" id="end_date" name="end_date">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Status</label>
-                        <select class="form-control" id="status" name="status">
-                            <option value="draft">Draft</option>
-                            <option value="active">Active</option>
-                            <option value="paused">Paused</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Campaign</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <script>
 function editCampaign(campaignId) {
@@ -879,7 +797,7 @@ echo '                    <li>Platform configuration and settings will be lost</
                 <form method="POST" style="display: inline;">
                     <input type="hidden" name="action" value="delete_platform">
                     <button type="submit" class="btn btn-danger" id="deleteButton" disabled onclick="return validateDelete()">
-                        <i class="bi bi-trash"></i> Delete Platform
+                        <i class="bi bi-trash me-2"></i>Delete Platform
                     </button>
                 </form>
             </div>

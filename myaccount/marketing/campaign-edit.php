@@ -3,8 +3,8 @@ $addClasses[] = 'mail';
 $addClasses[] = 'marketing';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-$campaign_id = intval($_GET['id'] ?? 0);
-$company_id = $current_user_data['company_id'] ?? 0;
+$campaign_id = isset($_GET['id']) ? $qik->decodeId($_GET['id']) : 0;
+$company_id = $current_user_data['company_id'] ?? 99;
 $active_company_id = $_SESSION['active_company_id'] ?? $company_id;
 
 if (!$campaign_id) {
@@ -25,6 +25,25 @@ $campaign = $database->getrow($campaign_sql, [
 if (!$campaign) {
     header('Location: /myaccount/marketing/campaigns.php');
     exit;
+}
+
+// Check if this is a newsletter campaign and redirect to newsletter editor
+if ($campaign['campaign_type'] === 'newsletter') {
+    // Find the associated newsletter
+    $newsletter_sql = "SELECT campaign_id FROM bg_newsletter_campaigns WHERE mk_campaign_id = :mk_campaign_id LIMIT 1";
+    $newsletter = $database->getrow($newsletter_sql, ['mk_campaign_id' => $campaign_id]);
+    
+    if ($newsletter) {
+        // Redirect to newsletter edit page with encoded ID
+        $newsletter_id = $qik->encodeId($newsletter['campaign_id']);
+        header('Location: /myaccount/marketing/newsletter-edit.php?id=' . $newsletter_id);
+        exit;
+    } else {
+        // No newsletter created yet, redirect to create one
+        $encoded_campaign_id = $qik->encodeId($campaign_id);
+        header('Location: /myaccount/marketing/newsletter-edit.php?campaign_id=' . $encoded_campaign_id);
+        exit;
+    }
 }
 
 $pagetitle = "Edit Campaign - " . ($campaign['campaign_name'] ?? 'Unknown');
@@ -49,8 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Generate tracking URL if not already exists
     $generated_tracking_url = $campaign['generated_tracking_url'];
     if (empty($generated_tracking_url)) {
-        // Generate a unique tracking URL - could be /track/campaign/{encoded_campaign_id}
-        $generated_tracking_url = 'https://dev7.birthday.gold/track/campaign/' . base64_encode($campaign_id);
+        // Generate a unique tracking URL using short bd.gold domain
+        $generated_tracking_url = 'https://m.bd.gold/?' . base64_encode($campaign_id);
     }
     
     $update_sql = "UPDATE mk_campaigns SET 
@@ -369,7 +388,7 @@ echo '
                                 <label class="form-label">Your Tracking Link</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="generated_tracking_url" 
-                                           value="' . htmlspecialchars($campaign['generated_tracking_url'] ?? 'https://dev7.birthday.gold/track/campaign/' . base64_encode($campaign_id)) . '" readonly>
+                                           value="' . htmlspecialchars($campaign['generated_tracking_url'] ?? 'https://m.bd.gold/?' . base64_encode($campaign_id)) . '" readonly>
                                     <button class="btn btn-outline-secondary" type="button" onclick="copyTrackingLink()">
                                         <i class="bi bi-clipboard"></i> Copy
                                     </button>

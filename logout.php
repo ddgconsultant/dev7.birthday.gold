@@ -2,8 +2,6 @@
 
 $transferpagedata=$qik->startpostpage();
 
-// Clear rememberme cookies before destroying session
-$account->clearRememberMeCookies();
 
 // Destroy the session
 $session->destroy();

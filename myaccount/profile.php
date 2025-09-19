@@ -1,4 +1,5 @@
 <?PHP
+$addClasses[]='enrollment';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 
@@ -110,25 +111,15 @@ exit;
     
     // Mark eligibility for refresh if profile changed
     if ($userdata_beforehash != $userdata_afterhash) {
-        require_once($installpath . 'core/classes/class.enrollment.php');
-        $enrollment = new Enrollment();
         $enrollment->markMemberEligibilityStale($current_user_data['user_id']);
         session_tracking('ELIGIBILITY', 'Marked user eligibility stale after profile update');
     }
-
-  if (
-    isset($updatefields['username']) && $updatefields['username'] != $userdata_before['username'] ||
-    isset($updatefields['email']) && $updatefields['email'] != $userdata_before['email']
-  ) {
-    session_tracking('relogin user');
-    header('location: /logout?_relogin');
-    exit;
-  }
   }
 
   if ($current_user_data['profile_phone_number'] == '') $messages[] = '<i class="fas fa-exclamation-triangle"></i> You should provide a mobile number.  We use it to send links to download apps to the businesses you selected';
 
   if ($userdata_beforehash != $userdata_afterhash) {
+    // Profile was changed
     if ($current_user_data['profile_agree_terms'] == '') $messages[] = 'By having your "Agree To Terms" off, you more than likely cannot be successfully enrolled for businesses you select.  We recommend having this on';
     if ($current_user_data['profile_allergy_gluten'] != '') {
       $messages[] = 'By having your "Gluten Allergy" enabled, our service will automatically suppress businesses that are identified as providing gluten products.';
@@ -175,6 +166,43 @@ exit;
 
     #$jstag_openinstructions="$('#profileupdate').modal('show');";
 
+    // Check if this is the first profile save
+    $first_profile_save = $account->getUserAttribute($current_user_data['user_id'], 'first_profile_save');
+    $is_first_save = empty($first_profile_save);
+
+    // Mark first save if needed
+    if ($is_first_save) {
+      $input = [
+        'name' => 'first_profile_save',
+        'description' => date('Y-m-d H:i:s')
+      ];
+      $account->setUserAttribute($current_user_data['user_id'], $input);
+    }
+
+    // Create success message
+    $successmessage = '<div class="alert alert-success alert-dismissible fade show" role="alert">';
+    $successmessage .= '<i class="bi bi-check-circle-fill me-2"></i> ';
+    $successmessage .= '<strong>Profile Saved!</strong> Your enrollment information has been updated.';
+    $successmessage .= '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+    $successmessage .= '</div>';
+
+    // Redirect based on first save or not
+    $transferpagedata['message'] = $successmessage;
+    $transferpagedata['url'] = $is_first_save ? '/myaccount/enrollment-picker' : '/myaccount/';
+    $system->endpostpage($transferpagedata);
+    exit;
+  } else {
+    // No changes were made
+    $infomessage = '<div class="alert alert-info alert-dismissible fade show" role="alert">';
+    $infomessage .= '<i class="bi bi-info-circle-fill me-2"></i> ';
+    $infomessage .= 'No changes were made to your profile.';
+    $infomessage .= '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+    $infomessage .= '</div>';
+
+    $transferpagedata['message'] = $infomessage;
+    $transferpagedata['url'] = '/myaccount/';
+    $system->endpostpage($transferpagedata);
+    exit;
   }
 }
 
@@ -1009,17 +1037,13 @@ echo '
 and loyalty programs with the businesses you select.</p> <p>Please fill out your profile accurately and completely to 
 ensure you can take full advantage of the birthday fun!</p> 
 
-<h5 class="mt-5">Key Details:</h5> 
-<ul> 
-<li>Your name should match your legal identification for loyalty program registrations.  Some business may ask for ID that should match your account.</li>
-<li>Provide your full mailing address for any physical mailings.</li>
-<li>Add your email and phone number so businesses can contact you.</li>
-<li>Specify any food allergies or diet preferences to receive appropriate options.</li>
-<li>Agree to the terms, texts, and emails to get all the deals.</li> 
+<h5 class="mt-5">Quick Tips:</h5>
+<ul>
+<li>Use your legal name for reward programs (some places check ID)</li>
+<li>Include your complete address for any birthday mail</li>
+<li>Add dietary preferences to get offers you can actually enjoy</li>
 </ul>
-<p>Once we enroll you into the business you select, birthday.gold cannot directly change any registration details. 
-Please ensure everything is correct!</p>
-<p>We are excited to use your profile to maximize the birthday fun!</p> 
+<p><strong>Good to know:</strong> After enrollment, you\'ll have direct access to each reward account to update your info anytime.</p> 
 </div>
 <div class="modal-footer">
 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

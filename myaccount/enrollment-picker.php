@@ -1032,7 +1032,9 @@ $output .= '
     </div>
 </div>';
 
-// DEBUG PANEL - Show debug messages if in business detail mode or has debug messages
+// DEBUG PANEL - Only show in development or when business detail mode is ACTIVE
+// Comment out for production - shows debug info for business-detail enrollment feature
+/*
 if (!empty($debug_messages) || $business_detail_mode) {
     $output .= '
     <div class="container mt-3">
@@ -1040,11 +1042,11 @@ if (!empty($debug_messages) || $business_detail_mode) {
             <h5><i class="bi bi-bug"></i> DEBUG MODE - Business Detail Enrollment</h5>
             <hr>
             <div style="font-family: monospace; font-size: 12px;">';
-    
+
     foreach ($debug_messages as $msg) {
         $output .= '<div>• ' . htmlspecialchars($msg) . '</div>';
     }
-    
+
     $output .= '
             </div>
             <hr>
@@ -1056,6 +1058,7 @@ if (!empty($debug_messages) || $business_detail_mode) {
         </div>
     </div>';
 }
+*/
 
 $output .= '
 <div class="main-content py-3">

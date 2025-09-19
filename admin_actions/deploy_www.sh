@@ -1,21 +1,48 @@
 #!/bin/bash
 
-# Default value for source_subdomain
+# Default values
 source_subdomain="dev4"
 source_version="v2"
-# Parse command-line options and positional arguments
-while getopts ":s:" opt; do
+config_only=false
+
+# Function to show usage
+show_usage() {
+  echo "Usage: $0 [-s source_subdomain] [-c] [source_subdomain]"
+  echo ""
+  echo "Options:"
+  echo "  -s SOURCE    Specify source subdomain (e.g., dev4, dev7)"
+  echo "  -c           Config-only mode: sync deploy_www.sh and ENV_CONFIG files only"
+  echo "  -h           Show this help message"
+  echo ""
+  echo "Examples:"
+  echo "  $0              # Full deployment from dev4"
+  echo "  $0 -s dev7      # Full deployment from dev7"
+  echo "  $0 -c           # Only sync config files and deploy script"
+  echo "  $0 -c -s dev7   # Only sync config files from dev7"
+}
+
+# Parse command-line options
+while getopts ":s:ch" opt; do
   case $opt in
     s)
       source_subdomain="$OPTARG"
       source_version="v3"
       ;;
+    c)
+      config_only=true
+      ;;
+    h)
+      show_usage
+      exit 0
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
+      show_usage
       exit 1
       ;;
     :)
       echo "Option -$OPTARG requires an argument." >&2
+      show_usage
       exit 1
       ;;
   esac
@@ -74,17 +101,36 @@ case "$MESSAGE_PLATFORM" in
         ;;
 esac
 
-# DEPLOY PRODUCTION BIRTHDAY GOLD
-##########################################################
-echo "Starting Deployment Process..."
-
 # Set the working directory to the base path
 pathprefix="/var/www/BIRTHDAY_SERVER/"
 cd "${pathprefix}" || { echo "Failed to change directory to ${pathprefix}. Exiting..."; exit 1; }
 
 subdomain=www
-figlet "Deploy: ${subdomain}"
-echo "$(date)"
+
+# CONFIG-ONLY MODE
+##########################################################
+if [ "$config_only" = true ]; then
+    echo "=========================================="
+    echo "CONFIG-ONLY MODE: Syncing configuration files only"
+    echo "Source: ${source_subdomain}.birthday.gold"
+    echo "Date: $(date)"
+    echo "=========================================="
+    echo ""
+
+    # Skip the full deployment, jump to the end where config sync happens
+    # We'll use a goto-like pattern with a function
+    skip_to_config_sync=true
+else
+    # FULL DEPLOYMENT MODE
+    ##########################################################
+    echo "Starting Full Deployment Process..."
+    figlet "Deploy: ${subdomain}"
+    echo "$(date)"
+    skip_to_config_sync=false
+fi
+
+# Main deployment logic - only run if not in config-only mode
+if [ "$skip_to_config_sync" != true ]; then
 
 # Retrieve the GitHub token securely
 # Ensure GITHUB_TOKEN is set in a secure manner outside of this script
@@ -186,8 +232,10 @@ latest_commit_msg=$(cat "$latest_commit_msg_file")
 latest_commit_msg_post=$(head -n 1 "$latest_commit_msg_file")
 message_body="❇️ Deployment completed successfully for BIRTHDAY GOLD on $hostname - $(date '+%Y-%m-%d %H:%M:%S') with [SOURCE: $source_subdomain / BRANCH:  $latest_commit_msg_post]"
 
-# Handle different platforms
-case "$MESSAGE_PLATFORM" in
+# Only send deployment notifications in full mode
+if [ "$config_only" != true ]; then
+    # Handle different platforms
+    case "$MESSAGE_PLATFORM" in
     'element')
         # Obtain Matrix access token
         echo "Obtaining Matrix access token..."
@@ -231,32 +279,185 @@ case "$MESSAGE_PLATFORM" in
 esac
 
 # Check the response status
-if [ "$curl_response" -eq 200 ]; then
-    echo "Deployment notification sent successfully to $MESSAGE_PLATFORM."
-else
-    echo "Failed to send deployment notification. HTTP status code: $curl_response"
-fi
+    if [ "$curl_response" -eq 200 ]; then
+        echo "Deployment notification sent successfully to $MESSAGE_PLATFORM."
+    else
+        echo "Failed to send deployment notification. HTTP status code: $curl_response"
+    fi
+fi # End of notification block (only in full mode)
+
+fi # End of main deployment block (skip_to_config_sync check)
+
+# CONFIG SYNC SECTION - Always runs (both full and config-only modes)
+##########################################################
+echo ""
+echo "=========================================="
+echo "Starting Configuration Sync"
+echo "=========================================="
 
 # Check for an updated deploy_www.sh script
 ##########################################################
-new_deploy_script="${pathprefix}${subdomain}.birthday.gold/admin_actions/deploy_www.sh"
+echo "Checking for deploy_www.sh updates..."
+
+# In config-only mode, we need to fetch the script differently
+if [ "$config_only" = true ]; then
+    # Try to download the deploy_www.sh directly from the source
+    temp_deploy_script="/tmp/deploy_www_temp.sh"
+    echo "Fetching deploy_www.sh from ${source_subdomain}.birthday.gold..."
+
+    # First, try to get it via curl from the dev server
+    if curl -s -f "https://${source_subdomain}.birthday.gold/admin_actions/deploy_www.sh" -o "$temp_deploy_script" 2>/dev/null; then
+        new_deploy_script="$temp_deploy_script"
+    else
+        # Fallback: try to get it from GitHub if curl fails
+        echo "Could not fetch from web, trying GitHub..."
+        if curl -s -f -H "Authorization: token $GITHUB_TOKEN" \
+            "https://raw.githubusercontent.com/ddgconsultant/${source_subdomain}.birthday.gold/main/admin_actions/deploy_www.sh" \
+            -o "$temp_deploy_script" 2>/dev/null; then
+            new_deploy_script="$temp_deploy_script"
+        else
+            echo "Could not fetch deploy_www.sh from ${source_subdomain}.birthday.gold"
+            new_deploy_script=""
+        fi
+    fi
+else
+    # In full deployment mode, use the cloned file
+    new_deploy_script="${pathprefix}${subdomain}.birthday.gold/admin_actions/deploy_www.sh"
+fi
+
 current_deploy_script="/root/deploy_www.sh"
 
-if [ -f "$new_deploy_script" ]; then
+if [ -f "$new_deploy_script" ] && [ ! -z "$new_deploy_script" ]; then
     new_sha1=$(sha1sum "$new_deploy_script" | awk '{ print $1 }')
     current_sha1=$(sha1sum "$current_deploy_script" | awk '{ print $1 }')
-    
+
     if [ "$new_sha1" != "$current_sha1" ]; then
         cp "$new_deploy_script" "$current_deploy_script"
         dos2unix "$current_deploy_script"
-        echo "deploy_www.sh has been updated from ${new_deploy_script}."
+        echo "deploy_www.sh has been updated from ${source_subdomain}.birthday.gold."
+
+        # Clean up temp file if used
+        [ "$new_deploy_script" = "$temp_deploy_script" ] && rm -f "$temp_deploy_script"
     else
         echo "No update needed for deploy_www.sh."
+        # Clean up temp file if used
+        [ "$new_deploy_script" = "$temp_deploy_script" ] && rm -f "$temp_deploy_script"
     fi
 else
-    echo "No deploy_www.sh found in ${pathprefix}${subdomain}.birthday.gold/admin_actions/. Skipping update."
+    echo "No deploy_www.sh found. Skipping update."
 fi
 
-# End of the script
+# Check for ENV_CONFIG updates from dev.birthday.gold
+##########################################################
+echo "Checking ENV_CONFIG files for updates..."
 
+# Define local ENV_CONFIG path
+ENV_CONFIG_PATH="/var/www/BIRTHDAY_SERVER/ENV_CONFIGS"
+
+# Array of config files to check
+config_files=("config-main-production.inc" "config-ai.inc")
+
+# Try multiple methods to sync config files
+sync_successful=false
+
+# Method 1: Try the new sync endpoint
+echo "Attempting to sync ENV_CONFIG files via web endpoint..."
+# Use the source_subdomain variable to determine which server to sync from
+remote_sync_response=$(curl -s -m 10 "https://${source_subdomain}.birthday.gold/admin_actions/deploy_env_sync.php?action=checksums&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
+
+if [ $? -eq 0 ] && [ ! -z "$remote_sync_response" ]; then
+    status=$(echo "$remote_sync_response" | jq -r '.status' 2>/dev/null)
+
+    if [ "$status" == "success" ]; then
+        for config_file in "${config_files[@]}"; do
+            local_config_file="$ENV_CONFIG_PATH/$config_file"
+
+            # Get remote checksum from JSON
+            remote_checksum=$(echo "$remote_sync_response" | jq -r ".checksums.\"$config_file\"" 2>/dev/null)
+
+            if [ "$remote_checksum" != "null" ] && [ ! -z "$remote_checksum" ]; then
+                # Calculate local checksum if file exists
+                if [ -f "$local_config_file" ]; then
+                    local_checksum=$(sha1sum "$local_config_file" | awk '{ print $1 }')
+                else
+                    local_checksum=""
+                fi
+
+                # Compare checksums
+                if [ "$local_checksum" != "$remote_checksum" ]; then
+                    echo "Updating $config_file (checksum mismatch)..."
+
+                    # Try to get file content via web endpoint
+                    file_content=$(curl -s -m 10 "https://${source_subdomain}.birthday.gold/admin_actions/deploy_env_sync.php?action=get_file&file=$config_file&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
+
+                    if [ $? -eq 0 ] && [ ! -z "$file_content" ]; then
+                        # Extract and decode the content
+                        encoded_content=$(echo "$file_content" | jq -r '.content' 2>/dev/null)
+                        if [ ! -z "$encoded_content" ] && [ "$encoded_content" != "null" ]; then
+                            echo "$encoded_content" | base64 -d > "$local_config_file"
+                            echo "$config_file updated successfully via web sync."
+                            sync_successful=true
+                        else
+                            echo "Failed to decode content for $config_file"
+                        fi
+                    else
+                        echo "Failed to fetch $config_file via web endpoint"
+                    fi
+                else
+                    echo "$config_file is up to date."
+                    sync_successful=true
+                fi
+            else
+                echo "Remote checksum not available for $config_file"
+            fi
+        done
+    else
+        echo "Web endpoint returned non-success status"
+    fi
+else
+    echo "Could not connect to ${source_subdomain}.birthday.gold web endpoint"
+fi
+
+# Method 2: Fallback to direct file copy if web sync failed
+if [ "$sync_successful" != "true" ]; then
+    echo "Falling back to direct file copy method..."
+
+    # In config-only mode, we don't have a cloned repository
+    if [ "$config_only" = true ]; then
+        echo "Config-only mode: Cannot use repository fallback. Please ensure web endpoint is accessible."
+        echo "Alternatively, run a full deployment to sync config files."
+    else
+        # Copy from the staging directory we just cloned
+        if [ -d "${pathprefix}${subdomain}.birthday.gold/ENV_CONFIGS" ]; then
+            echo "Copying ENV_CONFIGS from cloned repository..."
+            for config_file in "${config_files[@]}"; do
+                source_file="${pathprefix}${subdomain}.birthday.gold/ENV_CONFIGS/$config_file"
+                dest_file="$ENV_CONFIG_PATH/$config_file"
+
+                if [ -f "$source_file" ]; then
+                    cp "$source_file" "$dest_file"
+                    echo "$config_file copied from repository."
+                else
+                    echo "$config_file not found in repository."
+                fi
+            done
+        else
+            echo "ENV_CONFIGS directory not found in cloned repository."
+        fi
+    fi
+fi
+
+# Final completion message
+echo ""
+echo "=========================================="
+if [ "$config_only" = true ]; then
+    echo "CONFIG-ONLY SYNC COMPLETED"
+    echo "Source: ${source_subdomain}.birthday.gold"
+    echo "Updated: deploy_www.sh and ENV_CONFIG files"
+else
+    echo "FULL DEPLOYMENT COMPLETED"
+fi
+echo "=========================================="
+
+# End of the script
 cd

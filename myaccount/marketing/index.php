@@ -412,22 +412,22 @@ echo '
             if ($account->isstaff()) {
                 echo '
             <div class="card mt-3">
-                <div class="card-header bg-danger text-white">
+                <div class="card-header">
                     <h5 class="mb-0"><i class="bi bi-shield-lock-fill me-2"></i>Admin Actions</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="/admin_actions/scheduler--mk-newsletter-queue-v2.php" target="_blank" class="btn btn-outline-danger">
-                            <i class="bi bi-play-circle me-2"></i>Run Queue Creator
-                            <small class="d-block text-muted">Creates notifications for scheduled campaigns</small>
+                    <div class="list-group no-border">
+                        <a href="/admin_actions/scheduler--mk-newsletter-queue.php" target="_blank" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                            <div><i class="bi bi-inbox-fill me-2"></i>Newsletter Queue</div>
+                            <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/admin_actions/scheduler--mk-newsletter-personalizer.php" target="_blank" class="btn btn-outline-danger">
-                            <i class="bi bi-magic me-2"></i>Run Personalizer
-                            <small class="d-block text-muted">Processes pending notifications</small>
+                        <a href="/admin_actions/scheduler--mk-newsletter-personalizer.php" target="_blank" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                            <div><i class="bi bi-magic me-2"></i>Newsletter Personalizer</div>
+                            <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/admin_actions/scheduler--mk-newsletter-sender.php" target="_blank" class="btn btn-outline-danger">
-                            <i class="bi bi-send me-2"></i>Run Email Sender
-                            <small class="d-block text-muted">Sends personalized emails</small>
+                        <a href="/admin_actions/scheduler--mk-newsletter-sender.php" target="_blank" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                            <div><i class="bi bi-send-fill me-2"></i>Email Sender</div>
+                            <i class="bi bi-chevron-right"></i>
                         </a>
                     </div>
                 </div>

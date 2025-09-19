@@ -324,19 +324,44 @@ body {
     font-size: 1.1rem;
 }
 
+/* Table view styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+    border-bottom-width: 2px;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Status badge works in both card and table views */
+.table .status-badge {
+    display: inline-block;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .card-header {
         padding: 1rem;
     }
-    
+
     .btn {
         padding: 0.6rem 1.2rem;
         font-size: 0.9rem;
     }
-    
+
     .campaign-card .card-body {
         padding: 1rem;
+    }
+
+    /* Hide less important columns on mobile */
+    .table .d-none-mobile {
+        display: none;
     }
 }
 </style>
@@ -399,7 +424,109 @@ if (empty($campaigns)) {
                             <i class="bi bi-plus me-2"></i>Create Your First Campaign
                         </a>
                     </div>';
+} else if (count($campaigns) > 6) {
+    // Table view for more than 6 campaigns
+    echo '
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Campaign</th>
+                                    <th scope="col">Platform</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col" class="text-center">Status</th>
+                                    <th scope="col" class="text-center">Recipients</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col" class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>';
+
+    foreach ($campaigns as $campaign) {
+        // Normalize status for CSS class
+        $status_class = strtolower($campaign['status'] ?? 'draft');
+        if ($status_class === 'queued') {
+            $status_class = 'scheduled';
+        } else if ($status_class === 'sent') {
+            $status_class = 'sent';
+        }
+
+        echo '
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">' . htmlspecialchars($campaign['campaign_name'] ?? '') . '</div>
+                                        <small class="text-muted">' . htmlspecialchars(substr($campaign['description'] ?? '', 0, 50)) .
+                                        (strlen($campaign['description'] ?? '') > 50 ? '...' : '') . '</small>
+                                    </td>
+                                    <td>
+                                        <i class="' . htmlspecialchars($campaign['icon_class']) . ' me-1"></i>
+                                        <small>' . htmlspecialchars($campaign['platform_name']) . '</small>
+                                    </td>
+                                    <td>' . htmlspecialchars(ucwords(str_replace('_', ' ', $campaign['campaign_type'] ?? 'Unknown'))) . '</td>
+                                    <td class="text-center">
+                                        <span class="status-badge bg-' . $status_class . '">' .
+                                        htmlspecialchars(ucfirst($campaign['status'] ?? 'unknown')) . '</span>
+                                    </td>
+                                    <td class="text-center">';
+
+        if ($campaign['campaign_type'] === 'newsletter' && isset($campaign['recipient_count'])) {
+            echo is_numeric($campaign['recipient_count']) ? number_format($campaign['recipient_count']) : $campaign['recipient_count'];
+        } else {
+            echo '-';
+        }
+
+        echo '</td>
+                                    <td>' . ($campaign['start_date'] ? date('M j, Y', strtotime($campaign['start_date'])) : 'TBD') . '</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">';
+
+        // Action buttons based on campaign type and status
+        if ($campaign['campaign_type'] === 'newsletter') {
+            $editable_statuses = ['draft', 'cancelled'];
+
+            if (in_array($campaign['status'], $editable_statuses)) {
+                echo '
+                                            <a href="/myaccount/marketing/newsletter-edit.php?id=' . $qik->encodeId($campaign['campaign_id']) . '"
+                                               class="btn btn-outline-success" title="Edit Newsletter">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>';
+            } else if (in_array($campaign['status'], ['scheduled', 'queued', 'active', 'sending'])) {
+                echo '
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#cancelModal"
+                                                    data-campaign-id="' . $qik->encodeId($campaign['campaign_id']) . '"
+                                                    data-campaign-name="' . htmlspecialchars($campaign['campaign_name']) . '"
+                                                    data-campaign-status="' . htmlspecialchars($campaign['status']) . '"
+                                                    title="Cancel">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>';
+            }
+        } else {
+            echo '
+                                            <a href="/myaccount/marketing/campaign-edit.php?id=' . $qik->encodeId($campaign['campaign_id']) . '"
+                                               class="btn btn-outline-primary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>';
+        }
+
+        echo '
+                                            <a href="/myaccount/marketing/campaign-analytics.php?id=' . $qik->encodeId($campaign['campaign_id']) . '"
+                                               class="btn btn-outline-info" title="Analytics">
+                                                <i class="bi bi-bar-chart"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>';
+    }
+
+    echo '
+                            </tbody>
+                        </table>
+                    </div>';
 } else {
+    // Card view for 6 or fewer campaigns
     echo '
                     <div class="row">';
     
