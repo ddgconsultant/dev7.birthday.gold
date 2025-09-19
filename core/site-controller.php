@@ -884,6 +884,30 @@ VALUES (:ip, DATE_ADD(NOW(), INTERVAL :duration MINUTE), :sessionid, NOW(), NOW(
   }
 }
 
+#-------------------------------------------------------------------------------
+# SESSIONTRACKING ALIAS FUNCTION
+# Alias for session_tracking() to match CLAUDE.md documentation
+#-------------------------------------------------------------------------------
+function sessiontracking($name = '', $type = '', $data = array())
+{
+  // Call the original session_tracking function
+  // Note: session_tracking expects ($name, $trackingdata, $pagename)
+  // But sessiontracking is called with ($name, $type, $data)
+  // The $type parameter can be passed as part of the tracking data
+
+  if (!empty($type)) {
+    // Add type to the data array if provided
+    if (is_array($data)) {
+      $data['type'] = $type;
+    } else {
+      // If data is not an array, convert it
+      $data = array('type' => $type, 'data' => $data);
+    }
+  }
+
+  return session_tracking($name, $data);
+}
+
 
 
 // ===========================================================================
