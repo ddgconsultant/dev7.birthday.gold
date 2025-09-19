@@ -740,3 +740,13 @@ function showFirstPickerHelp() {
     }, 300); // 300ms delay for cart animation
 }
 
+// Expose functions globally for onclick handlers
+window.addToBasket = addToBasket;
+window.removeFromBasket = removeFromBasket;
+window.removeTrackedItem = removeTrackedItem;
+window.clearBasket = clearBasket;
+window.toggleBasketDetails = toggleBasketDetails;
+window.confirmEnrollments = confirmEnrollments;
+window.redirectToMyAccount = redirectToMyAccount;
+window.showFirstPickerHelp = showFirstPickerHelp;
+
