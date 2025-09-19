@@ -24,9 +24,88 @@ $alive = $app->calculateage($current_user_data['birthdate']);
 $accountstats = $account->account_getstats();
 $plandatafeatures = $app->plandetail('details_id', $current_user_data['account_product_id']);
 
+// Check profile completion for enrollment success
+$profilecompletion = $account->profilecompletionratio($current_user_data);
+$profile_is_incomplete = count($profilecompletion['required_fields_notcompleted']) > 0;
+$profile_completion_percentage = $profilecompletion['required_percentage'] ?? 100;
+
 // Get selection lists from session
 $selectionList = $session->get('goldmine_selectionList', []);
 $existingList = $session->get('goldmine_existingList', []);
+
+// Initialize variables for business-detail exception mode
+$business_detail_mode = false;
+$pending_company_id = null;
+$pending_company_data = null;
+$debug_messages = [];
+
+// Check if we're receiving a POST from business-detail page - SPECIAL EXCEPTION MODE
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'enroll_from_detail') {
+    $debug_messages[] = "POST received from business-detail with action=enroll_from_detail";
+    $pending_company_id = intval($_POST['company_id'] ?? 0);
+    $debug_messages[] = "Company ID from POST: " . $pending_company_id;
+    $debug_messages[] = "POST data received: " . json_encode($_POST);
+    
+    if ($pending_company_id > 0) {
+        // Enable special exception mode for business-detail enrollment
+        $business_detail_mode = true;
+        $debug_messages[] = "BUSINESS DETAIL MODE ACTIVATED!";
+        
+        // Get full company details from database for the modal
+        $company_details = $database->getrow("
+            SELECT c.*, 
+                   a.description as logo_filename
+            FROM bg_companies c
+            LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id 
+                AND a.category = 'company_logos' AND a.`grouping` = 'primary_logo'
+            WHERE c.company_id = :company_id
+            AND c.status = 'finalized'
+        ", ['company_id' => $pending_company_id]);
+        
+        if ($company_details) {
+            $debug_messages[] = "Company found in database: " . $company_details['company_name'];
+            
+            // Build logo URL if exists
+            $logo_url = '';
+            if (!empty($company_details['logo_filename'])) {
+                $logo_url = '//cdn.birthday.gold/public/images/company_images/' . $pending_company_id . '/' . $company_details['logo_filename'];
+                $debug_messages[] = "Logo URL: " . $logo_url;
+            } else {
+                $debug_messages[] = "No logo found in database";
+            }
+            
+            // Store company data for JavaScript modal
+            $pending_company_data = [
+                'id' => $pending_company_id,
+                'name' => $company_details['company_name'] ?? $_POST['company_name'] ?? '',
+                'logo' => $logo_url ?: ($_POST['logo_url'] ?? ''),
+                'description' => $company_details['description'] ?? ''
+            ];
+            
+            $debug_messages[] = "Company data prepared: " . json_encode($pending_company_data);
+            
+            // Debug output
+            error_log("BUSINESS-DETAIL MODE: Activating exception handler for company_id: $pending_company_id - " . $pending_company_data['name']);
+        } else {
+            $debug_messages[] = "Company NOT found in database - using POST data fallback";
+            
+            // Fallback to POST data if database lookup fails
+            $pending_company_data = [
+                'id' => $pending_company_id,
+                'name' => $_POST['company_name'] ?? '',
+                'logo' => $_POST['logo_url'] ?? ''
+            ];
+            
+            $debug_messages[] = "Fallback data: " . json_encode($pending_company_data);
+        }
+    } else {
+        $debug_messages[] = "ERROR: Invalid company ID received: " . $pending_company_id;
+    }
+} else {
+    $debug_messages[] = "Normal page load - no POST from business-detail";
+    $debug_messages[] = "REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD'];
+    $debug_messages[] = "POST action: " . ($_POST['action'] ?? 'not set');
+}
 
 // Also get user_owned companies (tracked as "I Already Have This")
 $tracked_sql = "SELECT company_id FROM bg_user_enrollments 
@@ -463,6 +542,38 @@ $additionalstyles .= '
 /* Ensure success color is defined */
 :root {
     --success-color: #28a745;
+}
+
+/* Company name link styling */
+.company-name a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.company-name a:hover {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+/* Pulse animation for confirm button */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
 }
 
 /* Selected buttons - regular green for newly picked items */
@@ -921,9 +1032,34 @@ $output .= '
     </div>
 </div>';
 
+// DEBUG PANEL - Show debug messages if in business detail mode or has debug messages
+if (!empty($debug_messages) || $business_detail_mode) {
+    $output .= '
+    <div class="container mt-3">
+        <div class="alert alert-warning" style="background: #fffbf0; border: 2px solid #ffc107;">
+            <h5><i class="bi bi-bug"></i> DEBUG MODE - Business Detail Enrollment</h5>
+            <hr>
+            <div style="font-family: monospace; font-size: 12px;">';
+    
+    foreach ($debug_messages as $msg) {
+        $output .= '<div>• ' . htmlspecialchars($msg) . '</div>';
+    }
+    
+    $output .= '
+            </div>
+            <hr>
+            <div style="font-weight: bold;">
+                Business Detail Mode: <span style="color: ' . ($business_detail_mode ? 'green">ACTIVE' : 'red">INACTIVE') . '</span><br>
+                Company ID: ' . ($pending_company_id ?: 'None') . '<br>
+                Company Name: ' . (isset($pending_company_data['name']) ? htmlspecialchars($pending_company_data['name']) : 'None') . '
+            </div>
+        </div>
+    </div>';
+}
+
 $output .= '
 <div class="main-content py-3">
-    <div class="container-fluid px-0 px-md-3">
+    <div class="container-fluid px-2 px-md-3">
         <div class="enrollment-container mx-auto" style="max-width: 1400px;">';
 
 // Sticky Header
@@ -1150,6 +1286,37 @@ $buildFilterUrl = function($params, $key, $value) {
 
 $output .= '</div>'; // Close enrollment-header
 
+// Profile Completion Warning - Display after header
+if ($profile_is_incomplete && $profile_completion_percentage < 80) {
+    $output .= '
+<div class="container mt-3">
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <div class="d-flex align-items-start">
+            <i class="bi bi-exclamation-triangle-fill me-3 mt-1" style="font-size: 1.25rem;"></i>
+            <div class="flex-grow-1">
+                <strong>Complete Your Profile for Best Results!</strong>
+                <div class="mt-1">
+                    Your enrollment profile is only <strong>' . intval($profile_completion_percentage) . '% complete</strong>.
+                    Businesses require certain information to process enrollments successfully.
+                    <a href="/myaccount/profile" class="alert-link">Complete your profile now</a> to ensure smooth enrollment.
+                </div>';
+
+    // Show missing fields if there are just a few
+    if (count($profilecompletion['required_fields_notcompleted_strings']) > 0 && count($profilecompletion['required_fields_notcompleted_strings']) <= 3) {
+        $output .= '
+                <div class="mt-2 small">
+                    <strong>Missing:</strong> ' . implode(', ', $profilecompletion['required_fields_notcompleted_strings']) . '
+                </div>';
+    }
+
+    $output .= '
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
+</div>';
+}
+
 // Warning Messages
 $containermargin = '';
 if ($allocation_warning) {
@@ -1229,7 +1396,12 @@ if (empty($companies)) {
         // Company Info
         $output .= '
             <div class="company-info">
-                <h3 class="company-name">' . htmlspecialchars($company['company_name']) . '</h3>';
+                <h3 class="company-name">
+                    <a href="/myaccount/business-detail.php?id=' . $company['company_id'] . '" 
+                       class="text-decoration-none text-dark">
+                        ' . htmlspecialchars($company['company_name']) . '
+                    </a>
+                </h3>';
         
         if (!empty($company['reward_preview'])) {
             $output .= '
@@ -1641,8 +1813,51 @@ window.userData = {
     hasEnrollments: ' . ((($accountstats['business_success'] ?? 0) + ($accountstats['business_pending'] ?? 0)) > 0 ? 'true' : 'false') . ',
     forceShowHelp: ' . (isset($_GET['showhelp']) ? 'true' : 'false') . '
 };
-';
+
+// BUSINESS-DETAIL ENROLLMENT HANDLER
+' . ($business_detail_mode && $pending_company_id && $pending_company_data ? '
+// Company data from business-detail POST
+const businessDetailCompany = ' . json_encode($pending_company_data) . ';
+console.log("BUSINESS-DETAIL MODE: Active for company", businessDetailCompany);
+
+// Wait for DOM and enrollment-basket.js to load
+window.addEventListener("load", function() {
+    console.log("BUSINESS-DETAIL: Page loaded, starting enrollment flow");
+    
+    // Add company to basket
+    setTimeout(function() {
+        console.log("BUSINESS-DETAIL: Adding to basket");
+        
+        // Add to sessionStorage basket
+        let basket = JSON.parse(sessionStorage.getItem("enrollmentBasket") || "[]");
+        if (!basket.find(item => item.id == businessDetailCompany.id)) {
+            basket.push({
+                id: businessDetailCompany.id,
+                name: businessDetailCompany.name,
+                logo: businessDetailCompany.logo || ""
+            });
+            sessionStorage.setItem("enrollmentBasket", JSON.stringify(basket));
+            console.log("BUSINESS-DETAIL: Added to basket");
+        }
+        
+        // Update UI if function exists
+        if (typeof updateBasketUI === "function") {
+            updateBasketUI();
+        }
+        
+        // Show modal
+        setTimeout(function() {
+            console.log("BUSINESS-DETAIL: Opening modal");
+            const modal = new bootstrap.Modal(document.getElementById("basketModal"));
+            modal.show();
+        }, 500);
+    }, 500);
+});
+' : '');
+
+
 ?>
+
 // Define hasMoreCompanies variable for enrollment-picker.js
 window.hasMoreCompanies = false; // Set to true if there are more companies to load
 
@@ -1894,7 +2109,7 @@ document.addEventListener("DOMContentLoaded", function() {
             trigger: 'hover'
         });
     });
-    
+});
     let lastScrollTop = 0;
     const header = document.querySelector(".enrollment-header");
     const searchBar = document.querySelector(".search-bar");
@@ -2027,7 +2242,8 @@ function clearSearch() {
 }
 </script>
 
-<?PHP
+<?php
 $display_footertype='min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
+?>

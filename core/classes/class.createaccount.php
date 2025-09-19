@@ -327,19 +327,26 @@ function isemailaccountavailable($email)
     session_tracking('create user SQLtest-function', $sql);
 
 } else {
-    // Standard user SQL
+    // Standard user SQL - now includes phone_number
     $sql = "INSERT INTO bg_users (
-        first_name, last_name, username, email, `password`, birthdate, `status`, 
+        first_name, last_name, username, email, `password`, birthdate, `status`,
         city, `state`, zip_code,
         account_product_id, account_plan, account_type, account_cost, account_verification, `type`,
+        phone_number, profile_phone_type,
         create_dt, modify_dt
     ) VALUES (
         :first_name, :last_name, :username, :email, :hashed_password, :birthday, 'pending',
         :city, :state, :zip_code,
         :product_id, :account_plan, :account_type, :account_cost, :account_validation, :type,
+        :phone_number, :profile_phone_type,
         now(), now()
     )";
-     session_tracking('create user SQLreal-function', $sql);
+
+    // Add phone params for standard users too
+    $params[':phone_number'] = $input['phone_number'] ?? null;
+    $params[':profile_phone_type'] = $input['profile_phone_type'] ?? 'unknown';
+
+    session_tracking('create user SQLreal-function', $sql);
 
 }
 
@@ -350,6 +357,10 @@ function isemailaccountavailable($email)
     $lastId = $this->db->lastInsertId();
 
     session_tracking('create user USERID', $lastId);
+
+    // Create initial allocations for the user based on their plan
+    $this->createInitialAllocations($lastId, $input);
+
     // Create user attributes for all profile columns
     $attributes = [
         'profile_first_name' => $input['first_name'] ?? '',
@@ -445,6 +456,84 @@ return $lastId;
 
 }
 
+/**
+ * Create initial allocations for a new user based on their plan
+ */
+private function createInitialAllocations($user_id, $input) {
+    global $app;
+
+    // Get plan details
+    $account_plan = $input['account_plan'] ?? 'free';
+    $product_id = $input['product_id'] ?? null;
+
+    // Get allocation amount from product features - ALL plans, including free
+    $allocation_amount = 0;
+
+    if ($product_id) {
+        // Get from product features - this is the only source of truth
+        $sql = "SELECT value FROM bg_product_features
+                WHERE product_id = :product_id
+                AND name = 'max_business_select'
+                AND status = 'active'";
+        $result = $this->db->getrow($sql, ['product_id' => $product_id]);
+        if ($result && isset($result['value'])) {
+            $allocation_amount = intval($result['value']);
+            error_log('Product ' . $product_id . ' has max_business_select = ' . $allocation_amount);
+        } else {
+            // Log if product doesn't have max_business_select defined
+            error_log('Product ' . $product_id . ' does not have max_business_select defined in bg_product_features');
+        }
+    } else {
+        error_log('No product_id provided for user ' . $user_id . ' - no allocations created');
+    }
+
+    // Only create allocation record if amount > 0
+    if ($allocation_amount > 0) {
+        $current_year = date('Y');
+
+        $sql = "INSERT INTO bg_user_allocations (
+                    user_id,
+                    allocation_type,
+                    allocation_year,
+                    amount,
+                    amount_used,
+                    allocation_comment,
+                    reference_type,
+                    status,
+                    is_recurring,
+                    created_at,
+                    created_by
+                ) VALUES (
+                    :user_id,
+                    'plan',
+                    :year,
+                    :amount,
+                    0,
+                    :comment,
+                    'account_creation',
+                    'active',
+                    1,
+                    NOW(),
+                    :user_id
+                )";
+
+        $params = [
+            'user_id' => $user_id,
+            'year' => $current_year,
+            'amount' => $allocation_amount,
+            'comment' => ucfirst($account_plan) . ' plan initial allocation'
+        ];
+
+        try {
+            $this->db->query($sql, $params);
+            session_tracking('create_initial_allocations', 'Created ' . $allocation_amount . ' allocations for user ' . $user_id);
+        } catch (Exception $e) {
+            error_log('Failed to create initial allocations for user ' . $user_id . ': ' . $e->getMessage());
+        }
+    } else {
+        session_tracking('create_initial_allocations', 'No allocations created for free plan user ' . $user_id);
+    }
+}
 
 
 }
