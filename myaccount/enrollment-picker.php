@@ -1796,16 +1796,10 @@ $output .= '
 // Output the built HTML
 echo $output;
 
-// Load required scripts first
-echo '
-<script src="/public/js/enrollment-picker.js"></script>
-<script src="/public/js/enrollment-basket.js"></script>
-';
-
-// JavaScript section
+// JavaScript section - Initialize user data BEFORE loading scripts
 echo '
 <script>
-// Initialize user data
+// Initialize user data first (before loading other scripts)
 window.userData = {
     userId: ' . $user_id . ',
     availableAllocations: ' . $balance['available_allocations'] . ',
@@ -1816,6 +1810,19 @@ window.userData = {
     hasEnrollments: ' . ((($accountstats['business_success'] ?? 0) + ($accountstats['business_pending'] ?? 0)) > 0 ? 'true' : 'false') . ',
     forceShowHelp: ' . (isset($_GET['showhelp']) ? 'true' : 'false') . '
 };
+console.log("userData initialized:", window.userData);
+</script>
+';
+
+// Load required scripts AFTER userData is defined
+echo '
+<script src="/public/js/enrollment-picker.js"></script>
+<script src="/public/js/enrollment-basket.js"></script>
+';
+
+// Continue with other JavaScript
+echo '
+<script>
 
 // BUSINESS-DETAIL ENROLLMENT HANDLER
 ' . ($business_detail_mode && $pending_company_id && $pending_company_data ? '

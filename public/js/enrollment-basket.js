@@ -148,6 +148,8 @@ function updateCompanyCard(companyId, enrolled) {
 
 // Add company to basket
 function addToBasket(companyId, companyName, companyLogo) {
+    console.log('addToBasket called with:', companyId, companyName, companyLogo);
+
     // Check if already in basket
     if (selectionBasket.find(item => item.id === companyId)) {
         showError('This company is already in your selection basket');
@@ -741,6 +743,7 @@ function showFirstPickerHelp() {
 }
 
 // Expose functions globally for onclick handlers
+console.log('Exposing functions globally...');
 window.addToBasket = addToBasket;
 window.removeFromBasket = removeFromBasket;
 window.removeTrackedItem = removeTrackedItem;
@@ -749,4 +752,5 @@ window.toggleBasketDetails = toggleBasketDetails;
 window.confirmEnrollments = confirmEnrollments;
 window.redirectToMyAccount = redirectToMyAccount;
 window.showFirstPickerHelp = showFirstPickerHelp;
+console.log('Functions exposed. window.addToBasket =', typeof window.addToBasket);
 
