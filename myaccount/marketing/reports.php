@@ -123,10 +123,10 @@ echo '
                         <h5 class="mt-3 text-muted">Advanced Reports Coming Soon</h5>
                         <p class="text-muted">Detailed analytics, ROI tracking, and performance insights will be available here</p>
                         <div class="btn-group">
-                            <a href="/myaccount/marketing/campaigns.php" class="btn btn-outline-primary">
+                            <a href="/myaccount/marketing/campaigns" class="btn btn-outline-primary">
                                 <i class="bi bi-megaphone me-2"></i>View Campaigns
                             </a>
-                            <a href="/myaccount/marketing/calendar.php" class="btn btn-outline-info">
+                            <a href="/myaccount/marketing/calendar" class="btn btn-outline-info">
                                 <i class="bi bi-calendar me-2"></i>Marketing Calendar
                             </a>
                         </div>

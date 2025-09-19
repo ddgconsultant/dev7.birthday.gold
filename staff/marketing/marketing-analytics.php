@@ -198,7 +198,7 @@ echo '
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-funnel-fill"></i> Apply Filter
                     </button>
-                    <a href="/staff/marketing-analytics.php" class="btn btn-outline-secondary">
+                    <a href="/staff/marketing-analytics" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-clockwise"></i> Reset
                     </a>
                 </div>

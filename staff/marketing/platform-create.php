@@ -284,7 +284,7 @@ echo '
                         <hr>
                         
                         <div class="d-flex justify-content-between">
-                            <a href="/staff/marketing/marketing-platforms.php" class="btn btn-outline-secondary">
+                            <a href="/staff/marketing/marketing-platforms" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left"></i> Cancel
                             </a>
                             <button type="submit" class="btn btn-primary btn-lg">

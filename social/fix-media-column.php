@@ -54,6 +54,6 @@ echo "Table structure fixed!\n";
 echo "</pre>";
 
 echo '<div style="margin: 20px;">';
-echo '<a href="/social/seed-birthday-posts.php" class="btn btn-primary">Now Create Birthday Posts</a>';
+echo '<a href="/social/seed-birthday-posts" class="btn btn-primary">Now Create Birthday Posts</a>';
 echo '</div>';
 ?>

@@ -117,5 +117,5 @@ try {
 }
 
 echo "</pre>\n";
-echo '<p><a href="/admin_actions/add_upgradeable_features.php">Run the upgrade feature setup</a></p>';
+echo '<p><a href="/admin_actions/add_upgradeable_features">Run the upgrade feature setup</a></p>';
 ?>

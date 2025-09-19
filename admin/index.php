@@ -744,7 +744,7 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
-            <a href="/admin/ai-dashboard.php" class="admin-card">
+            <a href="/admin/ai-dashboard" class="admin-card">
                 <div class="admin-icon icon-user">
                     <i class="bi bi-robot"></i>
                 </div>
@@ -754,7 +754,7 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
-            <a href="/admin/allocation-dashboard.php" class="admin-card">
+            <a href="/admin/allocation-dashboard" class="admin-card">
                 <div class="admin-icon icon-user">
                     <i class="bi bi-coin"></i>
                 </div>
@@ -764,7 +764,7 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
-            <a href="/admin/personality-summary.php" class="admin-card">
+            <a href="/admin/personality-summary" class="admin-card">
                 <div class="admin-icon icon-user" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     <i class="bi bi-palette"></i>
                 </div>
@@ -782,7 +782,7 @@ $businessHours = $app->bg_businesshours();
         </div>
         
         <div class="admin-grid">
-            <a href="/admin/plan_editor.php" class="admin-card">
+            <a href="/admin/plan_editor" class="admin-card">
                 <div class="admin-icon icon-plans">
                     <i class="bi bi-tag"></i>
                 </div>
@@ -792,7 +792,7 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
-            <a href="/admin/promo_editor.php" class="admin-card">
+            <a href="/admin/promo_editor" class="admin-card">
                 <div class="admin-icon icon-plans">
                     <i class="bi bi-ticket-perforated"></i>
                 </div>
@@ -802,7 +802,7 @@ $businessHours = $app->bg_businesshours();
                 </div>
             </a>
             
-            <a href="/admin/manage_plan_cards.php" class="admin-card">
+            <a href="/admin/manage_plan_cards" class="admin-card">
                 <div class="admin-icon icon-plans">
                     <i class="bi bi-grid-3x3-gap"></i>
                 </div>
@@ -1132,7 +1132,7 @@ $businessHours = $app->bg_businesshours();
         </div>
         
         <div class="admin-grid">
-            <a href="/admin/hr_handler.php" class="admin-card">
+            <a href="/admin/hr_handler" class="admin-card">
                 <div class="admin-icon icon-admin">
                     <i class="bi bi-cash-stack"></i>
                 </div>

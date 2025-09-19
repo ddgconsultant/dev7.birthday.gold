@@ -85,10 +85,10 @@ echo '
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-envelope-paper"></i> Newsletter Management</h2>
                 <div>
-                    <a href="newsletter-edit.php" class="btn btn-primary">
+                    <a href="newsletter-edit" class="btn btn-primary">
                         <i class="bi bi-plus-lg"></i> Create New Newsletter
                     </a>
-                    <a href="newsletter-report.php" class="btn btn-outline-secondary">
+                    <a href="newsletter-report" class="btn btn-outline-secondary">
                         <i class="bi bi-list"></i> All Newsletters
                     </a>
                 </div>
@@ -176,7 +176,7 @@ if (empty($campaigns)) {
                         <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
                         <h4 class="text-muted mt-3">No Newsletters Found</h4>
                         <p class="text-muted">Create your first newsletter to get started.</p>
-                        <a href="newsletter-edit.php" class="btn btn-primary">
+                        <a href="newsletter-edit" class="btn btn-primary">
                             <i class="bi bi-plus-lg"></i> Create Newsletter
                         </a>
                     </div>';

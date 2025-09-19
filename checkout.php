@@ -58,9 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $database->query($sql, ['user_id' => $user_id]);
                 error_log('[CHECKOUT_API] User status updated to active');
                 
-                // Log user in immediately
-                $session->set('user_id', $user_id);
-                $session->set('logged_in', true);
+                // Log user in using proper account login method (matches free account flow)
+                $account->login($user_id, $sitesettings['app']['APP_AUTOLOGIN'], 'user_id');
                 
                 // Check if bg_transactions table exists before updating
                 if (tableExists($database, 'bg_transactions')) {
@@ -310,11 +309,11 @@ if (empty($stripe_key) || empty($stripe_secret)) {
 \Stripe\Stripe::setApiKey($stripe_secret);
 
 try {
-    // Create payment intent with additional metadata
+    // Create payment intent with additional metadata and explicit payment methods
     $payment_intent = \Stripe\PaymentIntent::create([
         'amount' => $amount,
         'currency' => 'usd',
-        'automatic_payment_methods' => ['enabled' => true],
+        'payment_method_types' => ['card', 'cashapp', 'link'],
         'metadata' => [
             'user_id' => $user_id,
             'account_type' => $user_data['account_type'],
@@ -774,6 +773,66 @@ $additionalstyles = '
     box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
 }
 
+/* Skeleton Loading Animation */
+.payment-skeleton {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1rem;
+    min-height: 200px;
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+.skeleton-line {
+    height: 20px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+.skeleton-line.medium {
+    width: 80%;
+}
+
+.skeleton-line.long {
+    width: 100%;
+}
+
+.skeleton-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.skeleton-tab {
+    height: 40px;
+    width: 80px;
+    border-radius: 6px;
+}
+
+.skeleton-input {
+    height: 44px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
 /* Tablet & Desktop Styles */
 @media (min-width: 768px) {
     .checkout-container {
@@ -802,13 +861,15 @@ $additionalstyles = '
         display: grid;
         grid-template-columns: 1fr 480px;
         gap: 4rem;
-        align-items: center;
+        align-items: start;
         padding: 0 2rem;
     }
     
     /* Welcome content for desktop */
     .welcome-content {
         color: #212529;
+        margin-top: -2rem;
+        padding-top: 1rem;
     }
     
     .welcome-content h2 {
@@ -1158,7 +1219,21 @@ include($dir['core_components'] . '/bg_header.inc');
                         
                         <div class="form-group">
                             <label class="form-label">Payment Method</label>
-                            <div id="payment-element"></div>
+
+                            <!-- Skeleton loader shown initially -->
+                            <div id="payment-skeleton" class="payment-skeleton">
+                                <div class="skeleton-tabs">
+                                    <div class="skeleton skeleton-tab"></div>
+                                    <div class="skeleton skeleton-tab"></div>
+                                    <div class="skeleton skeleton-tab"></div>
+                                </div>
+                                <div class="skeleton skeleton-input skeleton-line long"></div>
+                                <div class="skeleton skeleton-input skeleton-line medium"></div>
+                                <div class="skeleton skeleton-line short"></div>
+                            </div>
+
+                            <!-- Actual payment element (hidden initially) -->
+                            <div id="payment-element" style="display: none;"></div>
                         </div>
                         
                         <div id="error-message" class="alert alert-danger d-none mt-3"></div>
@@ -1176,7 +1251,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     
                     <!-- Alternative Actions -->
                     <div class="alt-actions">
-                        <a href="/createaccount.php">← Back to account details</a>
+                        <a href="/createaccount">← Back to account details</a>
                         <br>
                         Questions? <a href="/contact">Contact support</a>
                     </div>
@@ -1187,10 +1262,28 @@ include($dir['core_components'] . '/bg_header.inc');
 </div>
 
 <?php
-$footerattribute['postfooter'] = '
+// Ensure payment intent exists before generating JavaScript
+if (!isset($payment_intent) || !$payment_intent) {
+    error_log('[CHECKOUT] Payment intent not set when generating JavaScript');
+    $footerattribute['postfooter'] = '<script>console.error("[CHECKOUT] Payment system not properly initialized");</script>';
+} else {
+    $footerattribute['postfooter'] = '
+<link rel="preconnect" href="https://js.stripe.com">
+<link rel="dns-prefetch" href="https://api.stripe.com">
 <script src="https://js.stripe.com/v3/"></script>
 <script>
+// Check if Stripe is loaded
+if (typeof Stripe === \'undefined\') {
+    console.error(\'[CHECKOUT] Stripe.js not loaded!\');
+    document.getElementById(\'error-message\').textContent = \'Payment system not loaded. Please refresh the page.\';
+    document.getElementById(\'error-message\').classList.remove(\'d-none\');
+    throw new Error(\'Stripe.js not loaded\');
+}
+
 const stripe = Stripe(\'' . $stripe_key . '\');
+console.log(\'[CHECKOUT] Stripe initialized with key:\', \'' . substr($stripe_key, 0, 10) . '...\');
+
+// Immediately start creating elements to reduce loading time
 const elements = stripe.elements({
     clientSecret: \'' . $payment_intent->client_secret . '\',
     appearance: {
@@ -1208,9 +1301,12 @@ const elements = stripe.elements({
     }
 });
 
-// Use payment element with tabs layout for more compact but trustworthy form
+// Use payment element with tabs layout and optimized settings
 const paymentElement = elements.create(\'payment\', {
     layout: \'tabs\',
+    business: {
+        name: \'Birthday.Gold\'
+    },
     defaultValues: {
         billingDetails: {
             name: \'' . addslashes($user_data['first_name'] . ' ' . $user_data['last_name']) . '\',
@@ -1228,7 +1324,44 @@ const paymentElement = elements.create(\'payment\', {
         }
     }
 });
+
+// Mount immediately for fastest loading
+console.log(\'[CHECKOUT] Mounting payment element immediately...\');
 paymentElement.mount(\'#payment-element\');
+
+// Add event listener for when the payment element is ready
+paymentElement.on(\'ready\', () => {
+    console.log(\'[CHECKOUT] Payment element is ready\');
+    // Hide skeleton and show actual payment element once loaded
+    const skeleton = document.getElementById(\'payment-skeleton\');
+    const paymentEl = document.getElementById(\'payment-element\');
+
+    if (skeleton) skeleton.style.display = \'none\';
+    if (paymentEl) paymentEl.style.display = \'block\';
+
+    console.log(\'[CHECKOUT] Payment element displayed, skeleton hidden\');
+});
+
+// Handle loading state changes
+paymentElement.on(\'loaderstart\', () => {
+    console.log(\'[CHECKOUT] Payment element loader started\');
+});
+
+paymentElement.on(\'loaderend\', () => {
+    console.log(\'[CHECKOUT] Payment element loader ended\');
+});
+
+// Fallback timeout in case the ready event doesn\'t fire
+setTimeout(() => {
+    const skeleton = document.getElementById(\'payment-skeleton\');
+    const paymentEl = document.getElementById(\'payment-element\');
+
+    if (skeleton && skeleton.style.display !== \'none\') {
+        console.log(\'[CHECKOUT] Fallback: Hiding skeleton after 3 seconds\');
+        skeleton.style.display = \'none\';
+        if (paymentEl) paymentEl.style.display = \'block\';
+    }
+}, 3000);
 
 const form = document.getElementById(\'checkoutForm\');
 const submitButton = document.getElementById(\'submitBtn\');
@@ -1243,12 +1376,23 @@ form.addEventListener(\'submit\', async (e) => {
     errorMessage.classList.add(\'d-none\');
     
     console.log(\'[CHECKOUT] Starting payment confirmation\');
-    
+    console.log(\'[CHECKOUT] Stripe object:\', typeof stripe, stripe);
+    console.log(\'[CHECKOUT] Elements object:\', typeof elements, elements);
+
     try {
         const {error} = await stripe.confirmPayment({
             elements,
             confirmParams: {
                 return_url: window.location.origin + \'/checkout_complete.php?user_id=' . $encoded_user_id . '\',
+                payment_method_data: {
+                    billing_details: {
+                        name: \'' . addslashes($user_data['first_name'] . ' ' . $user_data['last_name']) . '\',
+                        email: \'' . addslashes($user_data['email'] ?? '') . '\',
+                        address: {
+                            country: \'US\'
+                        }
+                    }
+                }
             },
             redirect: \'if_required\'
         });
@@ -1423,6 +1567,7 @@ window.addEventListener(\'beforeunload\', () => {
 });
 </script>
 ';
+}  // End of else block for payment intent check
 
 ?>
 

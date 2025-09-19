@@ -18,7 +18,7 @@ if ($test_mode) {
     // Look up product details from bg_products
     $sql = "SELECT * FROM bg_products WHERE id = :product_id AND status = 'active'";
     $product_info = $database->getrow($sql, ['product_id' => $test_product_id]);
-    $test_plan = $product_info['plan'] ?? 'user_gold';
+    $test_plan = $product_info['account_plan'] ?? 'user_gold';
     
     $user_data = [
         'user_id' => $test_uid,
@@ -77,50 +77,56 @@ if (!$test_mode && $user_id) {
     $session->unset('celebration_data');
 }
 
-// Get product-specific messaging from bg_product_features using product_id
+// Load ProductManager to get proper product data and features
+if (!class_exists('ProductManager')) {
+    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+}
+$productManager = new ProductManager($database, $qik);
+
+// Get product-specific messaging from bg_product_features using ProductManager
 $celebration_messages = [];
+$product_data = null;
 
 // First try to get product_id if not already set
 if (!$product_id && $user_data && isset($user_data['account_plan'])) {
-    // Look up product_id from plan for existing users
-    $sql = "SELECT id FROM bg_products WHERE plan = :plan AND status = 'active' LIMIT 1";
+    // Look up product_id from account_plan for existing users
+    $sql = "SELECT id, account_name FROM bg_products WHERE account_plan = :plan AND status = 'active' LIMIT 1";
     $product_info = $database->getrow($sql, ['plan' => $user_data['account_plan']]);
     $product_id = $product_info['id'] ?? null;
 }
 
 if ($product_id) {
-    // Fetch product-specific celebration messages using product_id
-    $sql = "SELECT name, value FROM bg_product_features 
-            WHERE product_id = :product_id 
-            AND status = 'active' 
-            AND name LIKE 'celebration_%'
-            ORDER BY name";
-    $messages = $database->getrows($sql, ['product_id' => $product_id]);
-    
-    foreach ($messages as $message) {
-        $celebration_messages[$message['name']] = $message['value'];
+    // Get product data with features using ProductManager
+    $product_data = $productManager->getProduct($product_id);
+
+    if ($product_data && isset($product_data['features'])) {
+        foreach ($product_data['features'] as $feature) {
+            if (strpos($feature['name'], 'celebration_') === 0) {
+                $celebration_messages[$feature['name']] = $feature['value'];
+            }
+        }
     }
 }
 
 // If no product-specific messages found, try 'default' plan as fallback
 if (empty($celebration_messages)) {
-    $sql = "SELECT name, value FROM bg_product_features 
-            WHERE plan = 'default' 
-            AND status = 'active' 
+    $sql = "SELECT name, value FROM bg_product_features
+            WHERE plan = 'default'
+            AND status = 'active'
             AND name LIKE 'celebration_%'
             ORDER BY name";
     $messages = $database->getrows($sql, []);
-    
+
     foreach ($messages as $message) {
         $celebration_messages[$message['name']] = $message['value'];
     }
 }
 
-// Default messages if none found in database
+// Default messages if none found in database - with correct branding
 if (empty($celebration_messages)) {
     $celebration_messages = [
-        'celebration_title' => 'Welcome to Birthday Gold!',
-        'celebration_subtitle' => 'Your payment was successful{NAME}!',
+        'celebration_title' => 'Welcome to Birthday.Gold!',
+        'celebration_subtitle' => 'Your account is ready{NAME}!',
         'celebration_message' => 'You\'re all set to start receiving amazing birthday rewards from hundreds of businesses. We\'ll automatically enroll you in birthday programs as your special day approaches.',
         'celebration_next_steps_title' => 'Your Next Steps:',
         'celebration_button_text' => 'Go to Your Dashboard'
@@ -128,8 +134,8 @@ if (empty($celebration_messages)) {
 }
 
 // Page setup
-$pagetitle = $celebration_messages['celebration_title'] ?? 'Welcome to Birthday Gold!';
-$page_title = $celebration_messages['celebration_title'] ?? 'Welcome to Birthday Gold!';
+$pagetitle = $celebration_messages['celebration_title'] ?? 'Welcome to Birthday.Gold!';
+$page_title = $celebration_messages['celebration_title'] ?? 'Welcome to Birthday.Gold!';
 
 // Add celebration-specific styles in $additionalstyles
 $additionalstyles = '
@@ -269,7 +275,7 @@ $additionalstyles = '
 }
 
 .celebration-button::before {
-    content: '';
+    content: \'\';
     position: absolute !important;
     top: -5px !important;
     left: -5px !important;

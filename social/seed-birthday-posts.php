@@ -177,6 +177,6 @@ echo "✅ Added social interactions\n\n";
 echo "</pre>";
 echo '<div style="margin: 20px;">';
 echo '<a href="/social/" class="btn btn-primary btn-lg">View Social Feed</a> ';
-echo '<a href="/social/activity.php" class="btn btn-secondary btn-lg">View Your Activity</a>';
+echo '<a href="/social/activity" class="btn btn-secondary btn-lg">View Your Activity</a>';
 echo '</div>';
 ?>

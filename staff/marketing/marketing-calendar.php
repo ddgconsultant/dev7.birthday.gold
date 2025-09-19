@@ -462,10 +462,10 @@ echo '
                     <h6 class="mb-0 text-white">Quick Actions</h6>
                 </div>
                 <div class="card-body">
-                    <a href="/staff/marketing/marketing-edit.php" class="btn btn-success w-100 mb-2">
+                    <a href="/staff/marketing/marketing-edit" class="btn btn-success w-100 mb-2">
                         <i class="bi bi-plus-lg"></i> New Campaign
                     </a>
-                    <a href="/staff/marketing/marketing-campaigns.php" class="btn btn-outline-primary w-100">
+                    <a href="/staff/marketing/marketing-campaigns" class="btn btn-outline-primary w-100">
                         <i class="bi bi-list"></i> All Campaigns
                     </a>
                 </div>

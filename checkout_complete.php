@@ -85,13 +85,34 @@ try {
         
         // Update user status to active
         if ($user_id) {
-            $sql = "UPDATE bg_users 
-                    SET status = 'active', 
+            $sql = "UPDATE bg_users
+                    SET status = 'active',
                         modify_dt = NOW()
                     WHERE user_id = :user_id";
-            
+
             $database->execute($sql, ['user_id' => $user_id]);
             error_log('[CHECKOUT_COMPLETE] User activated: ' . $user_id);
+
+            // Also activate any child accounts for parental accounts
+            try {
+                $child_sql = "UPDATE bg_users
+                             SET status = 'active',
+                                 modify_dt = NOW()
+                             WHERE feature_parent_id = :parent_id
+                             AND account_type = 'minor'
+                             AND status = 'pending'";
+
+                $stmt = $database->prepare($child_sql);
+                $stmt->execute(['parent_id' => $user_id]);
+                $activated_children = $stmt->rowCount();
+                if ($activated_children > 0) {
+                    error_log('[CHECKOUT_COMPLETE] Activated ' . $activated_children . ' child accounts for parent: ' . $user_id);
+                } else {
+                    error_log('[CHECKOUT_COMPLETE] No pending child accounts found to activate for parent: ' . $user_id);
+                }
+            } catch (Exception $e) {
+                error_log('[CHECKOUT_COMPLETE] Failed to activate child accounts: ' . $e->getMessage());
+            }
             
             // Update transaction record if table exists
             if (tableExists($database, 'bg_transactions')) {
@@ -316,7 +337,7 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/v7/header.inc');
             <a href="<?php echo $dashboard_url; ?>" class="btn btn-success btn-lg">
                 <i class="bi bi-speedometer2"></i> Go to Dashboard
             </a>
-            <a href="/myaccount/enrollment.php" class="btn btn-outline-primary btn-lg">
+            <a href="/myaccount/enrollment" class="btn btn-outline-primary btn-lg">
                 <i class="bi bi-gift"></i> View Enrollments
             </a>
         </div>

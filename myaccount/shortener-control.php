@@ -141,7 +141,7 @@ if (empty($recent)) {
 
 <h2>Test Links</h2>
 <ul>
-    <li><a href="/myaccount/test-shortener-simple.php">Simple Shortener Test</a></li>
-    <li><a href="/myaccount/test-shortener-email.php">Email Shortener Test</a></li>
-    <li><a href="/myaccount/test-url-shortener.php">Original URL Shortener Test</a></li>
+    <li><a href="/myaccount/test-shortener-simple">Simple Shortener Test</a></li>
+    <li><a href="/myaccount/test-shortener-email">Email Shortener Test</a></li>
+    <li><a href="/myaccount/test-url-shortener">Original URL Shortener Test</a></li>
 </ul>

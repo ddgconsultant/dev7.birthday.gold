@@ -478,19 +478,19 @@ echo '
                 </div>
                 <div class="card-body">
                     <div class="list-group no-border">
-                        <a href="/myaccount/marketing/campaign-create.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/campaign-create" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-plus me-2"></i>Create Campaign</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/myaccount/marketing/campaigns.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/campaigns" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-megaphone me-2"></i>View Campaigns</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/myaccount/marketing/platforms.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/platforms" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-link me-2"></i>Manage Platforms</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/myaccount/marketing/reports.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/reports" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-graph-up me-2"></i>Performance Reports</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>

@@ -30,7 +30,7 @@ foreach ($nav_tabs as $page => $tab_info) {
 echo '
                     </div>
                     <div>
-                        <a href="/myaccount/marketing/settings.php" class="text-muted">
+                        <a href="/myaccount/marketing/settings" class="text-muted">
                             <i class="bi bi-gear"></i>
                         </a>
                     </div>

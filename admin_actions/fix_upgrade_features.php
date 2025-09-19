@@ -70,5 +70,5 @@ try {
 }
 
 echo "</pre>\n";
-echo '<p><a href="/admin_actions/check_products_for_upgrade.php">Check products again</a></p>';
+echo '<p><a href="/admin_actions/check_products_for_upgrade">Check products again</a></p>';
 ?>

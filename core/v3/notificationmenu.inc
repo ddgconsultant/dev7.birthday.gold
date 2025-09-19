@@ -137,7 +137,7 @@ echo '
         </div>
       </div>
     </div>
-    <div class="card-footer text-center border-top"><a class="card-link d-block" href="/app/social/notifications.php">View all</a></div>
+    <div class="card-footer text-center border-top"><a class="card-link d-block" href="/app/social/notifications">View all</a></div>
   </div>
 </div>
 
@@ -245,7 +245,7 @@ echo '
                       </div>
                     </div>
                   </div>
-                  <div class="card-footer text-center border-top"><a class="card-link d-block" href="/app/social/notifications.php">View all</a></div>
+                  <div class="card-footer text-center border-top"><a class="card-link d-block" href="/app/social/notifications">View all</a></div>
                 </div>
               </div>
 

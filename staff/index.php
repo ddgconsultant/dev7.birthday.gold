@@ -397,7 +397,7 @@ echo '
             </a>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">
-            <a href="/staff/personality-test.php" class="quick-link d-block">
+            <a href="/staff/personality-test" class="quick-link d-block">
                 <i class="bi bi-palette fs-3 mb-2" style="color: #667eea;"></i>
                 <h6>Personality Test</h6>
                 <small class="text-muted">Discover your work style</small>
@@ -465,7 +465,7 @@ echo '
                 </div>
                 <div class="card-body">
                     <div class="list-group list-group-flush">
-                        <a href="/staff/newsletter-list.php" class="list-group-item list-group-item-action">
+                        <a href="/staff/newsletter-list" class="list-group-item list-group-item-action">
                             <i class="bi bi-envelope me-2"></i> Newsletter System
                         </a>
                         <a href="/staff/companylogos" class="list-group-item list-group-item-action">

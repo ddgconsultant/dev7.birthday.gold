@@ -393,7 +393,7 @@ if ($show_completed) {
                         <i class="bi bi-arrow-clockwise"></i> Retake Assessment
                     </a>
                     <a href="/staff/" class="btn btn-primary">Return to Staff Dashboard</a>
-                    <a href="/staff/detailed-color-test.php" class="btn btn-outline-secondary">Try Detailed Color Test</a>
+                    <a href="/staff/detailed-color-test" class="btn btn-outline-secondary">Try Detailed Color Test</a>
                 </div>
             </div>
         </div>

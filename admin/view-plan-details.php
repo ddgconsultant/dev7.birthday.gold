@@ -224,7 +224,7 @@ echo '</div>';
 // Admin tools sidebar
 echo '<div class="admin-tools d-none d-lg-block">';
 echo '<h6>Admin Tools</h6>';
-echo '<a href="/admin/plan_editor.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Editor</a>';
+echo '<a href="/admin/plan_editor" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Editor</a>';
 echo '<a href="/admin/manage_plan_cards.php?selected_plan=' . $view_product_id . '" class="btn btn-sm btn-outline-primary"><i class="bi bi-gear"></i> Manage Cards</a>';
 echo '<a href="/myaccount/plan-details.php?product_id=' . $view_product_id . '" class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i> User View</a>';
 echo '<hr>';

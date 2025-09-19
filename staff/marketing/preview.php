@@ -67,7 +67,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <h2><i class="bi bi-eye"></i> Newsletter Preview</h2>
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="index.php">Campaigns</a></li>
+                            <li class="breadcrumb-item"><a href="index">Campaigns</a></li>
                             <li class="breadcrumb-item active">Preview: <?= htmlspecialchars($campaign['title']) ?></li>
                         </ol>
                     </nav>

@@ -76,14 +76,14 @@ echo '
 // Campaigns tab
 $isActive = ($current_page == 'newsletter-list.php') ? 'active' : '';
 echo '
-        <a href="/staff/marketing/newsletter-list.php" class="nav-tab-item ' . $isActive . '">
+        <a href="/staff/marketing/newsletter-list" class="nav-tab-item ' . $isActive . '">
             <i class="fas fa-list"></i>Campaigns
         </a>';
 
 // Create New tab
 $isActive = ($current_page == 'newsletter-edit.php' && !isset($_GET['id'])) ? 'active' : '';
 echo '
-        <a href="/staff/marketing/newsletter-edit.php" class="nav-tab-item ' . $isActive . '">
+        <a href="/staff/marketing/newsletter-edit" class="nav-tab-item ' . $isActive . '">
             <i class="fas fa-plus-circle"></i>Create New
         </a>';
 

@@ -279,7 +279,7 @@ echo '
         <div class="col-lg-8">
             <div class="row mb-4">
                 <div class="col-md-3">
-                    <a href="/myaccount/marketing/platforms.php" class="text-decoration-none">
+                    <a href="/myaccount/marketing/platforms" class="text-decoration-none">
                         <div class="card stats-card text-center">
                             <div class="card-body">
                                 <h3>' . ($stats['platform_count'] ?? 0) . '</h3>
@@ -289,7 +289,7 @@ echo '
                     </a>
                 </div>
                 <div class="col-md-3">
-                    <a href="/myaccount/marketing/campaigns.php" class="text-decoration-none">
+                    <a href="/myaccount/marketing/campaigns" class="text-decoration-none">
                         <div class="card stats-card text-center">
                             <div class="card-body">
                                 <h3>' . ($stats['campaign_count'] ?? 0) . '</h3>
@@ -309,7 +309,7 @@ echo '
                     </a>
                 </div>
                 <div class="col-md-3">
-                    <a href="/myaccount/marketing/reports.php" class="text-decoration-none">
+                    <a href="/myaccount/marketing/reports" class="text-decoration-none">
                         <div class="card stats-card text-center">
                             <div class="card-body">
                                 <h3>$' . number_format($stats['total_budget'] ?? 0) . '</h3>
@@ -323,7 +323,7 @@ echo '
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Recent Activity</h5>
-                    <a href="/myaccount/marketing/calendar.php" class="btn btn-outline-primary btn-sm">
+                    <a href="/myaccount/marketing/calendar" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-calendar me-2"></i>View Calendar
                     </a>
                 </div>
@@ -337,10 +337,10 @@ if (empty($recent_activities)) {
                         <p class="text-muted">You have access to the Birthday.Gold Marketing Platform.<br>
                         Create your first campaign or add external platforms to expand your reach.</p>
                         <div class="btn-group">
-                            <a href="/myaccount/marketing/campaign-create.php" class="btn btn-primary">
+                            <a href="/myaccount/marketing/campaign-create" class="btn btn-primary">
                                 <i class="bi bi-plus me-2"></i>Create First Campaign
                             </a>
-                            <a href="/myaccount/marketing/how-it-works.php" class="btn btn-outline-info">
+                            <a href="/myaccount/marketing/how-it-works" class="btn btn-outline-info">
                                 <i class="bi bi-question-circle me-2"></i>How It Works
                             </a>
                         </div>
@@ -365,7 +365,7 @@ if (empty($recent_activities)) {
     if (count($recent_activities) > 8) {
         echo '
                     <div class="text-center">
-                        <a href="/myaccount/marketing/activities.php" class="btn btn-outline-secondary btn-sm">
+                        <a href="/myaccount/marketing/activities" class="btn btn-outline-secondary btn-sm">
                             View All Activities
                         </a>
                     </div>';
@@ -384,23 +384,23 @@ echo '
                 </div>
                 <div class="card-body">
                     <div class="list-group no-border">
-                        <a href="/myaccount/marketing/campaign-create.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/campaign-create" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-plus me-2"></i>Create Campaign</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/myaccount/marketing/campaigns.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/campaigns" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-megaphone me-2"></i>View Campaigns</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/myaccount/marketing/newsletter-report.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/newsletter-report" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-envelope-paper me-2"></i>Manage Newsletters</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/myaccount/marketing/platforms.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/platforms" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-link me-2"></i>Platforms</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/myaccount/marketing/calendar.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/calendar" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-calendar me-2"></i>Marketing Calendar</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
@@ -417,15 +417,15 @@ echo '
                 </div>
                 <div class="card-body">
                     <div class="list-group no-border">
-                        <a href="/admin_actions/scheduler--mk-newsletter-queue.php" target="_blank" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/admin_actions/scheduler--mk-newsletter-queue" target="_blank" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-inbox-fill me-2"></i>Newsletter Queue</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/admin_actions/scheduler--mk-newsletter-personalizer.php" target="_blank" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/admin_actions/scheduler--mk-newsletter-personalizer" target="_blank" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-magic me-2"></i>Newsletter Personalizer</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/admin_actions/scheduler--mk-newsletter-sender.php" target="_blank" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/admin_actions/scheduler--mk-newsletter-sender" target="_blank" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-send-fill me-2"></i>Email Sender</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
@@ -442,7 +442,7 @@ echo '
                 </div>
                 <div class="card-body">
                     <div class="list-group no-border">
-                        <a href="/myaccount/marketing/how-it-works.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/how-it-works" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-play-circle me-2"></i>How It Works</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
@@ -454,7 +454,7 @@ echo '
                             <div><i class="bi bi-bookmark me-2"></i>Campaign Templates</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/myaccount/marketing/reports.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/reports" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-graph-up me-2"></i>Performance Insights</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
@@ -470,7 +470,7 @@ echo '
                 <div class="card-body">
                     <div class="mb-3">
                         <h6 class="text-primary mb-2">' . htmlspecialchars($plan_name) . '</h6>
-                        <a href="/myaccount/marketing/plan-details.php" class="btn btn-sm btn-outline-primary">
+                        <a href="/myaccount/marketing/plan-details" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-info-circle me-1"></i>View Plan Details
                         </a>
                     </div>

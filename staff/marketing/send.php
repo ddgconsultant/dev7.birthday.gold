@@ -154,7 +154,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <h2><i class="bi bi-send"></i> Queue Campaign for Sending</h2>
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="index.php">Campaigns</a></li>
+                            <li class="breadcrumb-item"><a href="index">Campaigns</a></li>
                             <li class="breadcrumb-item active">Send: <?= htmlspecialchars($campaign['title']) ?></li>
                         </ol>
                     </nav>
@@ -163,7 +163,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <a href="preview.php?id=<?= $campaign_id ?>" class="btn btn-outline-secondary">
                         <i class="bi bi-eye"></i> Preview
                     </a>
-                    <a href="index.php" class="btn btn-outline-primary">
+                    <a href="index" class="btn btn-outline-primary">
                         <i class="bi bi-arrow-left"></i> Back to Campaigns
                     </a>
                 </div>

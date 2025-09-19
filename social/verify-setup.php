@@ -82,11 +82,11 @@ if (!empty($current_user_data['user_id']) && isset($social)) {
 <h3>Actions</h3>
 <ul>
     <?php if (empty($current_user_data['user_id'])): ?>
-        <li><a href="/login.php?redirect=/social/verify-setup.php">Login to run full tests</a></li>
+        <li><a href="/login.php?redirect=/social/verify-setup">Login to run full tests</a></li>
     <?php else: ?>
         <li><a href="/social/">Go to Social Feed</a></li>
-        <li><a href="/social/test-create-posts.php">Create Sample Posts</a></li>
-        <li><a href="/social/test-db.php">Run Database Tests</a></li>
+        <li><a href="/social/test-create-posts">Create Sample Posts</a></li>
+        <li><a href="/social/test-db">Run Database Tests</a></li>
     <?php endif; ?>
 </ul>
 </body>

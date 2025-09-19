@@ -15,6 +15,6 @@ try {
 }
 
 echo "<hr>";
-echo '<a href="/social/index-improved.php">View Improved Social Feed</a><br>';
+echo '<a href="/social/index-improved">View Improved Social Feed</a><br>';
 echo '<a href="/social/">View Original Social Feed</a>';
 ?>

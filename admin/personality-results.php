@@ -156,7 +156,7 @@ if ($view_user && $result_data) {
     <div class="container mt-4 mb-5">
         <div class="row mb-3">
             <div class="col-12 text-end">
-                <a href="/admin/personality-summary.php" class="btn btn-outline-secondary">
+                <a href="/admin/personality-summary" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Summary
                 </a>
             </div>
@@ -291,7 +291,7 @@ if ($view_user && $result_data) {
     <div class="text-center">
         <div class="alert alert-info">
             <i class="bi bi-info-circle"></i> 
-            Please select a staff member from the <a href="/admin/personality-summary.php">Personality Summary</a> to view their results.
+            Please select a staff member from the <a href="/admin/personality-summary">Personality Summary</a> to view their results.
         </div>
     </div>';
 }

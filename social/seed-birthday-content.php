@@ -232,7 +232,7 @@ echo "</div>";
 
             <div class="mt-4">
                 <a href="/social/" class="btn btn-primary btn-lg">View Social Feed</a>
-                <a href="/social/seed-birthday-content.php" class="btn btn-secondary">Run Again</a>
+                <a href="/social/seed-birthday-content" class="btn btn-secondary">Run Again</a>
             </div>
         </div>
     </div>

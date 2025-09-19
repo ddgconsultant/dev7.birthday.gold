@@ -588,15 +588,8 @@ $plandatafeatures = $app->plandetail('details_id', $current_user_data['account_p
 $plan_allocations = $businessoutput['counts']['plan_total'] ?? $plandatafeatures['max_business_select'] ?? 0;
 $used_allocations = ($plan_allocations - $businessoutput['counts']['remaining']);
 
-// Get user's plan name - use the global array for consistency
-global $bg_users_accountplans;
-$plan_key = $current_user_data['account_plan'] ?? 'free';
-$plan_name = $bg_users_accountplans[$plan_key] ?? ucfirst($plan_key);
-
-// For newer plans, try to get from product features
-if ($plandatafeatures && isset($plandatafeatures['plan']['value']) && !empty($plandatafeatures['plan']['value'])) {
-    $plan_name = ucfirst($plandatafeatures['plan']['value']);
-}
+// Get user's plan name from Product class
+$plan_name = $product->getProduct($current_user_data['account_product_id'], 'id')['account_name'];
 
 // Try to get bonus allocations from AllocationManager if available
 $bonus_allocations = 0;
@@ -695,7 +688,11 @@ echo '
 <div class="col-md-8 ms-0 ps-0">
 ';
 
-// Account Links Card - moved to left column
+// Account Links Card - moved to separate row below
+// (Account Links card removed from here - see below)
+
+// Temporarily hide the Account Links from this section
+if (true) {
 echo '
     <div class="content-panel mb-3">
         <div class="d-flex justify-content-between align-items-center p-0 m-0">
@@ -757,6 +754,7 @@ if ($current_user_data['account_type'] == 'business') {
 
 echo '        </div>
     </div>';
+} // End of Account Links section (moved below)
 
 // -------------------------------------------------------
 // Enrollment Summary Block (hidden by feature flag)
@@ -792,8 +790,6 @@ echo '
 
 
 
-echo '
-<div class="col-md-4 me-0 pe-0">';
 
 
 $additionalstyles .= '
@@ -808,87 +804,140 @@ font-weight: 700 !important;
 </style>
 ';
 
-// Only show Other Features / Links section for staff and admin users
-if ($account->isstaff() || $account->isadmin()) {
-    $linkmode = 'x';
-
-    switch ($linkmode) {
-      case 'old':
-        echo '
-    <div class="row mt-3 px-0 mx-0">
-    <!-- Other Features / Link Block -->
-    <div class="content-panel force-no-decoration">
-    <h3 class="text-warning fw-bold">Other Features / Links</h3>
-    ';
-        $accountlinkspresentation = '';
-        include($dir['core_components'] . '/user_accountlinks_old.inc');
-
-        echo '
-    <a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
-    </div>
-    </div>
-    </div>
-    </div>
-    ';
-        break;
-
-      case '1':
-        $accountlinkspresentation = '';
-        include($dir['core_components'] . '/user_accountlinks1.inc');
-        if ($accountlinks_display !== false) {
-
-          echo '
-    <div class="row mt-3 px-0 mx-0">
-    <!-- Other Features / Link Block -->
-    <div class="content-panel force-no-decoration">
-    <h3 class="text-warning fw-bold">Other Features / Links</h3>
-    ' . $accountlinks_output . '
-    <a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
-    </div>
-    </div>
-    ';
-        }
-        break;
-
-      default:
-        $accountlinkspresentation = '';
-        include($dir['core_components'] . '/user_accountlinks.inc');
-        if ($accountlinks_display !== false) {
-          echo '
-    <div class="row mt-3 px-0 mx-0">
-    <!-- Other Features / Link Block -->
-    <div class="content-panel force-no-decoration">
-    <h3 class="text-warning fw-bold">Other Features / Links</h3>
-
-    ';
-          echo $accountlinks_output;
-          echo '
-    <a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
-    </div>
-    </div>
-    </div>
-    </div>
-    ';
-        }
-        break;
-    }
-} else {
-    // For non-staff users, just close the divs
-    echo '</div></div>';
-}
-
-
 echo '
 </div>
 </div>
 </div>
-</div>
-
-</div>
-</div>
-</div>
-</div>
 ';
+/*
+<!-- Account Links in separate row -->
+<div class="row mx-0 px-0 g-0 g-md-4 pt-0 mt-0 mb-1 pb-1">
+    <div class="col-12">
+        <div class="content-panel">
+            <div class="d-flex justify-content-between align-items-center p-0 m-0">
+                <h5 class="card-title mb-0">Account Settings/Links</h5>
+            </div>
+
+            <div class="list-group no-border">
+                <a href="/myaccount/account" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                    <div><i class="bi bi-pencil-square me-2"></i>Settings</div>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+
+                <a href="/myaccount/notifications" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                    <div><i class="bi bi-bell me-2"></i>Notifications</div>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+
+                <a href="/myaccount/security-settings" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                    <div><i class="bi bi-shield-lock me-2"></i>Security Settings</div>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+
+                <a href="/myaccount/parental-mode" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                    <div><i class="bi bi-person me-2"></i>Parental Mode</div>
+                    <i class="bi bi-chevron-right"></i>
+                </a>';
+
+// Add marketing link for staff members
+if ($account->isstaff()) {
+    echo '
+                <a href="/myaccount/marketing/" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                    <div><i class="bi bi-megaphone me-2"></i>Marketing Platform</div>
+                    <i class="bi bi-chevron-right"></i>
+                </a>';
+}
+
+echo '
+                <a href="/myaccount/invite" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                    <div><i class="bi bi-hand-thumbs-up me-2"></i>Invite Friends</div>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+
+                <a href="/myaccount/recommend-business" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                    <div><i class="bi bi-building-add me-2"></i>Recommend Business</div>
+                    <i class="bi bi-chevron-right"></i>
+                </a>';
+
+// Show Claim Business link for business accounts
+if ($current_user_data['account_type'] == 'business') {
+    echo '
+                <a href="/myaccount/claim-business" class="list-group-item-action d-flex justify-content-between align-items-center py-1">
+                    <div><i class="bi bi-building-check me-2"></i>Claim a Business</div>
+                    <i class="bi bi-chevron-right"></i>
+                </a>';
+}
+*/
+
+// Only show Other Features / Links section for staff and admin users
+if ($account->isstaff() || $account->isadmin()) {
+  $linkmode = 'x';
+
+  switch ($linkmode) {
+    case 'old':
+      echo '
+  <div class="row mt-3 px-0 mx-0">
+  <!-- Other Features / Link Block -->
+  <div class="content-panel force-no-decoration">
+  <h3 class="text-warning fw-bold">Other Features / Links</h3>
+  ';
+      $accountlinkspresentation = '';
+      include($dir['core_components'] . '/user_accountlinks_old.inc');
+
+      echo '
+  <a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
+  </div>
+  </div>
+  </div>
+  </div>
+  ';
+      break;
+
+    case '1':
+      $accountlinkspresentation = '';
+      include($dir['core_components'] . '/user_accountlinks1.inc');
+      if ($accountlinks_display !== false) {
+
+        echo '
+  <div class="row mt-3 px-0 mx-0">
+  <!-- Other Features / Link Block -->
+  <div class="content-panel force-no-decoration">
+  <h3 class="text-warning fw-bold">Other Features / Links</h3>
+  ' . $accountlinks_output . '
+  <a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
+  </div>
+  </div>
+  ';
+      }
+      break;
+
+    default:
+      $accountlinkspresentation = '';
+      include($dir['core_components'] . '/user_accountlinks.inc');
+      if ($accountlinks_display !== false) {
+        echo '
+  <div class="row mt-3 px-0 mx-0">
+  <!-- Other Features / Link Block -->
+  <div class="content-panel force-no-decoration">
+  <h3 class="text-warning fw-bold">Other Features / Links</h3>
+
+  ';
+        echo $accountlinks_output;
+        echo '
+  <a href="/myaccount/account"  class="btn btn-sm btn-primary text-decoration-none">Go to account settings</a>
+  </div>
+  </div>
+  </div>
+  </div>
+  ';
+      }
+      break;
+  }
+} else {
+  // For non-staff users, just close the divs
+  echo '</div></div>';
+}
+
 
 
 $footerattribute['bottomfooter'] = '

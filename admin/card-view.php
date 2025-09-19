@@ -92,7 +92,7 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-center" id="table-ticket-replace-element">
                         <div class="dropdown">
                           <button class="btn btn-sm btn-falcon-default dropdown-toggle dropdown-caret-none" type="button" id="ticket-layout" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="d-none d-sm-inline-block d-xl-none d-xxl-inline-block me-1">Card View</span><span class="fas fa-chevron-down" data-fa-transform="shrink-3 down-1"></span></button>
-                          <div class="dropdown-menu dropdown-toggle-item dropdown-menu-end border py-2" aria-labelledby="ticket-layout"><a class="dropdown-item" href="/app/support-desk/table-view.php">Table View</a><a class="dropdown-item active" href="/app/support-desk/card-view.php">Card View</a></div>
+                          <div class="dropdown-menu dropdown-toggle-item dropdown-menu-end border py-2" aria-labelledby="ticket-layout"><a class="dropdown-item" href="/app/support-desk/table-view">Table View</a><a class="dropdown-item active" href="/app/support-desk/card-view">Card View</a></div>
                         </div>
                         <button class="btn btn-falcon-default btn-sm mx-2" type="button"><span class="bi bi-plus" data-fa-transform="shrink-3"></span><span class="d-none d-sm-inline-block d-xl-none d-xxl-inline-block ms-1">New</span></button>
                         <button class="btn btn-falcon-default btn-sm" type="button"><span class="fas fa-external-link-alt" data-fa-transform="shrink-3"></span><span class="d-none d-sm-inline-block d-xl-none d-xxl-inline-block ms-1">Export</span></button>
@@ -115,16 +115,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-0" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>EW</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Synapse Design #1125</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Synapse Design #1125</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Emma Watson</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Emma Watson</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-success false">Recent</small>
                             </div>
@@ -157,16 +157,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-1" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>L</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Change of refund my last buy | Order #125631</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Change of refund my last buy | Order #125631</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Luke</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Luke</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-danger false">Overdue</small>
                             </div>
@@ -199,17 +199,17 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-2" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <img class="rounded-circle" src="/public/assets/img/team/1-thumb.png" alt="" />
 
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">I need your help #2256</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">I need your help #2256</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Finley</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Finley</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-warning false">Remaining</small>
                             </div>
@@ -242,16 +242,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-3" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>PG</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">I need your help #2256</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">I need your help #2256</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Peter Gill</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Peter Gill</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-info false">Responded</small>
                             </div>
@@ -284,17 +284,17 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-4" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <img class="rounded-circle" src="/public/assets/img/team/25-thumb.png" alt="" />
 
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Contact Froms #3264</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Contact Froms #3264</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Freya</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Freya</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-secondary dark__bg-1000">Closed</small>
                             </div>
@@ -327,16 +327,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-5" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>M</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">I need your help #2256</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">I need your help #2256</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Morrison</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Morrison</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-info false">Responded</small>
                             </div>
@@ -369,16 +369,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-6" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>MB</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">I need your help #2256</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">I need your help #2256</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Morrison Banneker</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Morrison Banneker</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-secondary dark__bg-1000">Closed</small>
                             </div>
@@ -411,17 +411,17 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-7" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <img class="rounded-circle" src="/public/assets/img/team/14-thumb.png" alt="" />
 
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Regarding Falcon Theme #3262</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Regarding Falcon Theme #3262</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Aar Kay</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Aar Kay</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-success false">Recent</small>
                             </div>
@@ -454,16 +454,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-8" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>FB</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">i would like to buy theme #3261</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">i would like to buy theme #3261</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Fadil Badr</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Fadil Badr</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-secondary dark__bg-1000">Closed</small>
                             </div>
@@ -496,17 +496,17 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-9" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <img class="rounded-circle" src="/public/assets/img/team/3-thumb.png" alt="" />
 
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Theme info (icons) #3260</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Theme info (icons) #3260</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Regina Kempt</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Regina Kempt</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-secondary dark__bg-1000">Closed</small>
                             </div>
@@ -539,16 +539,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-10" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>C</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Phishing link #3259</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Phishing link #3259</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Caleb</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Caleb</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-success false">Recent</small>
                             </div>
@@ -581,16 +581,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-11" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>FB</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">i would like to buy theme #3261</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">i would like to buy theme #3261</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Fadil Badr</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Fadil Badr</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-secondary dark__bg-1000">Closed</small>
                             </div>
@@ -623,17 +623,17 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-12" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <img class="rounded-circle" src="/public/assets/img/team/3-thumb.png" alt="" />
 
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Theme info (icons) #3260</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Theme info (icons) #3260</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Regina Kempt</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Regina Kempt</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-secondary dark__bg-1000">Closed</small>
                             </div>
@@ -666,16 +666,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-13" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>C</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Phishing link #3259</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Phishing link #3259</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Caleb</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Caleb</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-success false">Recent</small>
                             </div>
@@ -708,16 +708,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-14" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>EW</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Synapse Design #1125</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Synapse Design #1125</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Emma Watson</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Emma Watson</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-success false">Recent</small>
                             </div>
@@ -750,16 +750,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-15" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>L</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Change of refund my last buy | Order #125631</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Change of refund my last buy | Order #125631</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Luke</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Luke</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-danger false">Overdue</small>
                             </div>
@@ -792,17 +792,17 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-16" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <img class="rounded-circle" src="/public/assets/img/team/1-thumb.png" alt="" />
 
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">I need your help #2256</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">I need your help #2256</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Finley</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Finley</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-warning false">Remaining</small>
                             </div>
@@ -835,16 +835,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-17" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>PG</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">I need your help #2256</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">I need your help #2256</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Peter Gill</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Peter Gill</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-info false">Responded</small>
                             </div>
@@ -877,17 +877,17 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-18" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <img class="rounded-circle" src="/public/assets/img/team/25-thumb.png" alt="" />
 
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">Contact Froms #3264</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">Contact Froms #3264</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Freya</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Freya</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-secondary dark__bg-1000">Closed</small>
                             </div>
@@ -920,16 +920,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-19" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>M</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">I need your help #2256</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">I need your help #2256</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Morrison</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Morrison</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-info false">Responded</small>
                             </div>
@@ -962,16 +962,16 @@ include($_SERVER['DOCUMENT_ROOT'].'/core/'.$website['ui_version'].'/topnav.inc')
                       <div class="d-flex align-items-start align-items-sm-center">
                         <div class="form-check me-2 me-xxl-3 mb-0">
                           <input class="form-check-input" type="checkbox" id="card-view-tickets-20" data-bulk-select-row="data-bulk-select-row" />
-                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details.php">
+                        </div><a class="d-none d-sm-block" href="/app/support-desk/contact-details">
                           <div class="avatar avatar-xl avatar-3xl">
                             <div class="avatar-name rounded-circle"><span>MB</span></div>
                           </div>
                         </a>
                         <div class="ms-1 ms-sm-3">
-                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview.php">I need your help #2256</a></p>
+                          <p class="fw-semi-bold mb-3 mb-sm-2"><a href="/app/support-desk/tickets-preview">I need your help #2256</a></p>
                           <div class="row align-items-center gx-0 gy-2">
                             <div class="col-auto me-2">
-                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details.php"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Morrison Banneker</span></a></h6>
+                              <h6 class="client mb-0"><a class="text-800 d-flex align-items-center gap-1" href="/app/support-desk/contact-details"><span class="fas fa-user" data-fa-transform="shrink-3 up-1"></span><span>Morrison Banneker</span></a></h6>
                             </div>
                             <div class="col-auto lh-1 me-3"><small class="badge rounded badge-subtle-secondary dark__bg-1000">Closed</small>
                             </div>

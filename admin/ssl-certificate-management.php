@@ -88,7 +88,7 @@ systemctl restart haproxy</code></pre>
                     <h5>🚀 Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <a href="/admin_actions/deploy-ssl-certificates.php" class="btn btn-primary btn-sm mb-2 d-block">Deploy to All Servers</a>
+                    <a href="/admin_actions/deploy-ssl-certificates" class="btn btn-primary btn-sm mb-2 d-block">Deploy to All Servers</a>
                     <a href="/.claude/ssl/" class="btn btn-info btn-sm mb-2 d-block">View Certificate Files</a>
                     <button class="btn btn-warning btn-sm mb-2 d-block" onclick="checkCertExpiry()">Check Certificate Status</button>
                 </div>

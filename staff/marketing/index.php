@@ -139,7 +139,7 @@ echo '
     </div>
     
     <div class="admin-grid">
-        <a href="newsletter-edit.php" class="admin-card">
+        <a href="newsletter-edit" class="admin-card">
             <div class="admin-icon icon-newsletter">
                 <i class="bi bi-plus-lg"></i>
             </div>
@@ -149,7 +149,7 @@ echo '
             </div>
         </a>
         
-        <a href="newsletter-report.php" class="admin-card">
+        <a href="newsletter-report" class="admin-card">
             <div class="admin-icon icon-newsletter">
                 <i class="bi bi-list-ul"></i>
             </div>
@@ -159,7 +159,7 @@ echo '
             </div>
         </a>
         
-        <a href="newsletter-reports.php" class="admin-card">
+        <a href="newsletter-reports" class="admin-card">
             <div class="admin-icon icon-newsletter">
                 <i class="bi bi-graph-up"></i>
             </div>
@@ -169,7 +169,7 @@ echo '
             </div>
         </a>
         
-        <a href="newsletter-unsubscribe.php" class="admin-card">
+        <a href="newsletter-unsubscribe" class="admin-card">
             <div class="admin-icon icon-newsletter">
                 <i class="bi bi-person-x"></i>
             </div>
@@ -186,7 +186,7 @@ echo '
     </div>
     
     <div class="admin-grid">
-        <a href="marketing-edit.php" class="admin-card">
+        <a href="marketing-edit" class="admin-card">
             <div class="admin-icon icon-marketing">
                 <i class="bi bi-plus-lg"></i>
             </div>
@@ -196,7 +196,7 @@ echo '
             </div>
         </a>
         
-        <a href="marketing-campaigns.php" class="admin-card">
+        <a href="marketing-campaigns" class="admin-card">
             <div class="admin-icon icon-marketing">
                 <i class="bi bi-list-ul"></i>
             </div>
@@ -206,7 +206,7 @@ echo '
             </div>
         </a>
         
-        <a href="marketing-calendar.php" class="admin-card">
+        <a href="marketing-calendar" class="admin-card">
             <div class="admin-icon icon-marketing">
                 <i class="bi bi-calendar3"></i>
             </div>
@@ -216,7 +216,7 @@ echo '
             </div>
         </a>
         
-        <a href="marketing-platforms.php" class="admin-card">
+        <a href="marketing-platforms" class="admin-card">
             <div class="admin-icon icon-marketing">
                 <i class="bi bi-link-45deg"></i>
             </div>
@@ -233,7 +233,7 @@ echo '
     </div>
     
     <div class="admin-grid">
-        <a href="marketing-analytics.php" class="admin-card">
+        <a href="marketing-analytics" class="admin-card">
             <div class="admin-icon icon-analytics">
                 <i class="bi bi-graph-up"></i>
             </div>
@@ -243,7 +243,7 @@ echo '
             </div>
         </a>
         
-        <a href="newsletter-track.php" class="admin-card">
+        <a href="newsletter-track" class="admin-card">
             <div class="admin-icon icon-analytics">
                 <i class="bi bi-cursor"></i>
             </div>
@@ -260,7 +260,7 @@ echo '
     </div>
     
     <div class="admin-grid">
-        <a href="marketing-hub.php" class="admin-card">
+        <a href="marketing-hub" class="admin-card">
             <div class="admin-icon icon-tools">
                 <i class="bi bi-house-door"></i>
             </div>

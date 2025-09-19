@@ -272,7 +272,7 @@ echo '
 <div class="container mt-4 mb-5 pb-5">
     <div class="row mb-3">
         <div class="col-12 text-end">
-            <a href="/staff/marketing/marketing-platforms.php" class="btn btn-outline-secondary">
+            <a href="/staff/marketing/marketing-platforms" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-2"></i>Back to Platforms
             </a>
         </div>

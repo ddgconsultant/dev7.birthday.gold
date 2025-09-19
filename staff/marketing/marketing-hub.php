@@ -116,14 +116,14 @@ echo '
                         <i class="bi bi-plus-lg"></i> Quick Create
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="newsletter-edit.php">
+                        <li><a class="dropdown-item" href="newsletter-edit">
                             <i class="bi bi-envelope"></i> New Newsletter Campaign
                         </a></li>
-                        <li><a class="dropdown-item" href="marketing-edit.php">
+                        <li><a class="dropdown-item" href="marketing-edit">
                             <i class="bi bi-bullhorn"></i> New Marketing Campaign
                         </a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="marketing-analytics.php">
+                        <li><a class="dropdown-item" href="marketing-analytics">
                             <i class="bi bi-graph-up"></i> View Analytics
                         </a></li>
                     </ul>
@@ -213,7 +213,7 @@ echo '%
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="bi bi-envelope-paper text-primary"></i> Newsletter Campaigns</h5>
-                            <a href="index.php" class="btn btn-sm btn-outline-primary">View All</a>
+                            <a href="index" class="btn btn-sm btn-outline-primary">View All</a>
                         </div>
                         <div class="card-body">
                             <div class="row text-center mb-3">
@@ -238,14 +238,14 @@ echo '%
                             </div>
                             
                             <div class="d-grid gap-2">
-                                <a href="newsletter-edit.php" class="btn btn-primary">
+                                <a href="newsletter-edit" class="btn btn-primary">
                                     <i class="bi bi-plus-lg"></i> Create Newsletter Campaign
                                 </a>
                                 <div class="btn-group">
-                                    <a href="index.php" class="btn btn-outline-secondary">
+                                    <a href="index" class="btn btn-outline-secondary">
                                         <i class="bi bi-list"></i> Manage Newsletters
                                     </a>
-                                    <a href="newsletter-reports.php" class="btn btn-outline-secondary">
+                                    <a href="newsletter-reports" class="btn btn-outline-secondary">
                                         <i class="bi bi-graph-up"></i> Reports
                                     </a>
                                 </div>
@@ -258,23 +258,23 @@ echo '%
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="bi bi-bullhorn text-warning"></i> Marketing Campaigns</h5>
-                            <a href="marketing-campaigns.php" class="btn btn-sm btn-outline-warning">View All</a>
+                            <a href="marketing-campaigns" class="btn btn-sm btn-outline-warning">View All</a>
                         </div>
                         <div class="card-body">
                             <p class="text-muted">Manage cross-platform marketing campaigns, social media integration, and promotional activities.</p>
                             
                             <div class="d-grid gap-2">
-                                <a href="marketing-edit.php" class="btn btn-warning">
+                                <a href="marketing-edit" class="btn btn-warning">
                                     <i class="bi bi-plus-lg"></i> Create Marketing Campaign
                                 </a>
                                 <div class="btn-group">
-                                    <a href="marketing-campaigns.php" class="btn btn-outline-secondary">
+                                    <a href="marketing-campaigns" class="btn btn-outline-secondary">
                                         <i class="bi bi-list"></i> All Campaigns
                                     </a>
-                                    <a href="marketing-platforms.php" class="btn btn-outline-secondary">
+                                    <a href="marketing-platforms" class="btn btn-outline-secondary">
                                         <i class="bi bi-share"></i> Platforms
                                     </a>
-                                    <a href="marketing-view.php" class="btn btn-outline-secondary">
+                                    <a href="marketing-view" class="btn btn-outline-secondary">
                                         <i class="bi bi-eye"></i> Resources
                                     </a>
                                 </div>
@@ -294,14 +294,14 @@ echo '%
                             <p class="text-muted">Track performance, engagement metrics, and ROI across all marketing channels.</p>
                             
                             <div class="d-grid gap-2">
-                                <a href="marketing-analytics.php" class="btn btn-success">
+                                <a href="marketing-analytics" class="btn btn-success">
                                     <i class="bi bi-bar-chart"></i> View Analytics Dashboard
                                 </a>
                                 <div class="btn-group">
-                                    <a href="newsletter-track.php" class="btn btn-outline-secondary">
+                                    <a href="newsletter-track" class="btn btn-outline-secondary">
                                         <i class="bi bi-cursor"></i> Email Tracking
                                     </a>
-                                    <a href="engagement-reports.php" class="btn btn-outline-secondary">
+                                    <a href="engagement-reports" class="btn btn-outline-secondary">
                                         <i class="bi bi-people"></i> Engagement
                                     </a>
                                 </div>
@@ -319,14 +319,14 @@ echo '%
                             <p class="text-muted">Plan and coordinate campaigns, schedule content, and track marketing activities.</p>
                             
                             <div class="d-grid gap-2">
-                                <a href="marketing-calendar.php" class="btn btn-info">
+                                <a href="marketing-calendar" class="btn btn-info">
                                     <i class="bi bi-calendar-plus"></i> Open Marketing Calendar
                                 </a>
                                 <div class="btn-group">
-                                    <a href="schedule-campaign.php" class="btn btn-outline-secondary">
+                                    <a href="schedule-campaign" class="btn btn-outline-secondary">
                                         <i class="bi bi-clock"></i> Schedule
                                     </a>
-                                    <a href="content-planner.php" class="btn btn-outline-secondary">
+                                    <a href="content-planner" class="btn btn-outline-secondary">
                                         <i class="bi bi-journal-text"></i> Content Plan
                                     </a>
                                 </div>
@@ -349,7 +349,7 @@ if (empty($recent_campaigns)) {
                             <div class="text-center py-3">
                                 <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
                                 <p class="text-muted mt-2">No recent campaigns</p>
-                                <a href="newsletter-edit.php" class="btn btn-sm btn-primary">Create First Campaign</a>
+                                <a href="newsletter-edit" class="btn btn-sm btn-primary">Create First Campaign</a>
                             </div>';
 } else {
     echo '
@@ -402,7 +402,7 @@ if (empty($upcoming_campaigns)) {
                             <div class="text-center py-3">
                                 <i class="bi bi-calendar-x text-muted" style="font-size: 2rem;"></i>
                                 <p class="text-muted mt-2">No scheduled campaigns</p>
-                                <a href="newsletter-edit.php" class="btn btn-sm btn-primary">Schedule Campaign</a>
+                                <a href="newsletter-edit" class="btn btn-sm btn-primary">Schedule Campaign</a>
                             </div>';
 } else {
     echo '

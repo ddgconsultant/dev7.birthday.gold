@@ -458,7 +458,7 @@ if (!$has_celebrated_birthday) {
                         <p>What would you like to do next?</p>
                         <div class="d-flex flex-wrap justify-content-center gap-3 mt-3">
                             <a href="/myaccount/" class="btn btn-outline-secondary px-4">View My Dashboard</a>
-                            <a href="/myaccount/enrollment.php" class="btn btn-warning px-4">Enroll With a New Business</a>
+                            <a href="/myaccount/enrollment" class="btn btn-warning px-4">Enroll With a New Business</a>
                         </div>
                     </div>
                 </div>

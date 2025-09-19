@@ -30,13 +30,25 @@ $additionalstyles = '<link href="/public/css/v7/bg_theme.css" rel="stylesheet">'
 $currentUserId = $current_user_data['user_id'];
 
 // Get additional product info for the user's plan
-$sql = "SELECT p.account_name as plan_name, p.price as plan_price
-        FROM bg_products p
-        WHERE p.account_plan = :account_plan 
-        AND p.status = 'active'
-        LIMIT 1";
+// First try to match by product_id (most accurate), then fall back to account_plan
+if (!empty($current_user_data['account_product_id'])) {
+    $sql = "SELECT p.account_name as plan_name, p.price as plan_price
+            FROM bg_products p
+            WHERE p.id = :product_id
+            AND p.status = 'active'
+            LIMIT 1";
 
-$productData = $database->getrow($sql, ['account_plan' => $current_user_data['account_plan']]);
+    $productData = $database->getrow($sql, ['product_id' => $current_user_data['account_product_id']]);
+} else {
+    // Fallback to account_plan matching if no product_id
+    $sql = "SELECT p.account_name as plan_name, p.price as plan_price
+            FROM bg_products p
+            WHERE p.account_plan = :account_plan
+            AND p.status = 'active'
+            LIMIT 1";
+
+    $productData = $database->getrow($sql, ['account_plan' => $current_user_data['account_plan']]);
+}
 
 // Debug output (uncomment to see what is happening)
 /*
@@ -267,7 +279,38 @@ include($dir['core_components'] . '/bg_header.inc');
                 <h3>Current Plan</h3>
                 <h2 class="mb-3">
                     <?php 
-                    $planName = $productData['plan_name'] ?? $current_user_data['account_plan'] ?? 'Unknown Plan';
+                    // Better plan name logic with proper fallbacks
+                    $planName = $productData['plan_name'] ?? null;
+
+                    // If no plan name from product, create a user-friendly name from account_plan
+                    if (!$planName) {
+                        $account_plan = $current_user_data['account_plan'] ?? '';
+                        switch ($account_plan) {
+                            case 'family_free':
+                                $planName = 'Family Free';
+                                break;
+                            case 'family_gold':
+                                $planName = 'Family Gold';
+                                break;
+                            case 'user_free':
+                                $planName = 'Free Plan';
+                                break;
+                            case 'user_gold':
+                                $planName = 'Gold Plan';
+                                break;
+                            case 'gold':
+                                $planName = 'Gold Plan';
+                                break;
+                            case 'free':
+                                $planName = 'Free Plan';
+                                break;
+                            case 'life':
+                                $planName = 'Lifetime Plan';
+                                break;
+                            default:
+                                $planName = ucfirst(str_replace('_', ' ', $account_plan)) ?: 'Unknown Plan';
+                        }
+                    }
                     echo htmlspecialchars($planName);
                     ?>
                 </h2>

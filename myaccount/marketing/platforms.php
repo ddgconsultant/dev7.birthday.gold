@@ -117,7 +117,7 @@ echo '
                             </ul>
                         </div>
                         <div class="col-md-4 text-md-end">
-                            <a href="/myaccount/marketing/campaigns.php" class="btn btn-primary">
+                            <a href="/myaccount/marketing/campaigns" class="btn btn-primary">
                                 <i class="bi bi-megaphone me-2"></i>Manage Campaigns
                             </a>
                         </div>
@@ -133,7 +133,7 @@ echo '
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">External Platform Connections</h5>
-                    <a href="/myaccount/marketing/platform-create.php" class="btn btn-primary">
+                    <a href="/myaccount/marketing/platform-create" class="btn btn-primary">
                         <i class="bi bi-plus me-2"></i>Add External Platform
                     </a>
                 </div>
@@ -145,7 +145,7 @@ if (empty($platforms)) {
                         <i class="bi bi-link display-4 text-muted"></i>
                         <h5 class="mt-3 text-muted">No external platforms connected</h5>
                         <p class="text-muted">Connect your external marketing platforms to expand your reach beyond Birthday.Gold</p>
-                        <a href="/myaccount/marketing/platform-create.php" class="btn btn-primary">
+                        <a href="/myaccount/marketing/platform-create" class="btn btn-primary">
                             <i class="bi bi-plus me-2"></i>Add External Platform
                         </a>
                     </div>';

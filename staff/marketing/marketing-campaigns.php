@@ -111,7 +111,7 @@ echo '
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-search"></i> Search
                             </button>
-                            <a href="/staff/marketing-edit.php" class="btn btn-success">
+                            <a href="/staff/marketing-edit" class="btn btn-success">
                                 <i class="bi bi-plus-lg"></i> New Campaign
                             </a>
                         </div>
@@ -126,7 +126,7 @@ if (empty($campaigns)) {
                 <div class="col-12">
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle-fill"></i> No campaigns found. 
-                        <a href="/staff/marketing-edit.php">Create your first campaign</a>
+                        <a href="/staff/marketing-edit">Create your first campaign</a>
                     </div>
                 </div>';
 } else {
@@ -277,7 +277,7 @@ if (empty($platforms)) {
 
 echo '
                     <div class="mt-3">
-                        <a href="/staff/marketing-platforms.php" class="btn btn-sm btn-outline-primary w-100">
+                        <a href="/staff/marketing-platforms" class="btn btn-sm btn-outline-primary w-100">
                             <i class="bi bi-gear-fill"></i> Manage Platforms
                         </a>
                     </div>

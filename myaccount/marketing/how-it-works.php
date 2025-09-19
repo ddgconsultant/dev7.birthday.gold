@@ -139,7 +139,7 @@ echo '
                 <a href="/myaccount/marketing/" class="btn btn-primary btn-lg">
                     <i class="bi bi-arrow-right me-2"></i>Go to Marketing Dashboard
                 </a>
-                <a href="/myaccount/marketing/campaign-create.php" class="btn btn-outline-primary btn-lg">
+                <a href="/myaccount/marketing/campaign-create" class="btn btn-outline-primary btn-lg">
                     <i class="bi bi-plus me-2"></i>Create Your First Campaign
                 </a>
             </div>

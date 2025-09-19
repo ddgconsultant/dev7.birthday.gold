@@ -310,19 +310,19 @@ $additionalstyles .= '
                         <i class="bi bi-house-door-fill text-dark"></i>
                         <div class="icon-title">Home</div>
                     </a>
-                    <a href="/social/search.php" title="Search">
+                    <a href="/social/search" title="Search">
                         <i class="bi bi-search text-dark"></i>
                         <div class="icon-title">Search</div>
                     </a>
-                    <a href="/social/create.php" title="Create Post">
+                    <a href="/social/create" title="Create Post">
                         <i class="bi bi-plus-circle-fill text-dark"></i>
                         <div class="icon-title">Create</div>
                     </a>
-                    <a href="/social/activity.php" title="Activity">
+                    <a href="/social/activity" title="Activity">
                         <i class="bi bi-bookmark-fill text-dark"></i>
                         <div class="icon-title">Activity</div>
                     </a>
-                    <a href="/social/settings.php" title="Settings">
+                    <a href="/social/settings" title="Settings">
                         <i class="bi bi-gear-fill text-dark"></i>
                         <div class="icon-title">Settings</div>
                     </a>
@@ -452,7 +452,7 @@ $additionalstyles .= '
                 <i class="bi bi-inbox display-1 text-muted"></i>
                 <h3 class="mt-3">No posts yet</h3>
                 <p class="text-muted">Be the first to share something!</p>
-                <a href="/social/create.php" class="btn btn-primary">
+                <a href="/social/create" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Create First Post
                 </a>
             </div>

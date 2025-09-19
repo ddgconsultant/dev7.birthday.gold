@@ -404,10 +404,10 @@ echo '
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">All Campaigns</h5>
                     <div>
-                        <a href="/myaccount/marketing/campaign-create.php" class="btn btn-primary me-2">
+                        <a href="/myaccount/marketing/campaign-create" class="btn btn-primary me-2">
                             <i class="bi bi-plus me-2"></i>Create Campaign
                         </a>
-                        <a href="/myaccount/marketing/platforms.php" class="btn btn-outline-secondary">
+                        <a href="/myaccount/marketing/platforms" class="btn btn-outline-secondary">
                             <i class="bi bi-link me-2"></i>Manage Platforms
                         </a>
                     </div>
@@ -420,7 +420,7 @@ if (empty($campaigns)) {
                         <i class="bi bi-megaphone display-4 text-muted"></i>
                         <h5 class="mt-3 text-muted">No campaigns yet</h5>
                         <p class="text-muted">Create your first marketing campaign to get started</p>
-                        <a href="/myaccount/marketing/campaign-create.php" class="btn btn-primary">
+                        <a href="/myaccount/marketing/campaign-create" class="btn btn-primary">
                             <i class="bi bi-plus me-2"></i>Create Your First Campaign
                         </a>
                     </div>';

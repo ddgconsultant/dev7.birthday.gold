@@ -254,7 +254,7 @@ echo '</select>';
 echo '<span class="text-muted">Select a plan to see cards with overrides applied</span>';
 echo '</div>';
 echo '<div>';
-echo '<a href="/admin/manage_plan_cards.php" class="btn btn-outline-secondary me-2" title="Reset to default view">';
+echo '<a href="/admin/manage_plan_cards" class="btn btn-outline-secondary me-2" title="Reset to default view">';
 echo '<i class="bi bi-arrow-clockwise me-2"></i>Reset View</a>';
 echo '<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createCardModal">';
 echo '<i class="bi bi-plus-circle me-2"></i>Create New Card</button>';

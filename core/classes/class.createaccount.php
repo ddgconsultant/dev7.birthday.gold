@@ -459,7 +459,7 @@ return $lastId;
 /**
  * Create initial allocations for a new user based on their plan
  */
-private function createInitialAllocations($user_id, $input) {
+public function createInitialAllocations($user_id, $input) {
     global $app;
 
     // Get plan details
@@ -514,14 +514,15 @@ private function createInitialAllocations($user_id, $input) {
                     'active',
                     1,
                     NOW(),
-                    :user_id
+                    :created_by
                 )";
 
         $params = [
             'user_id' => $user_id,
             'year' => $current_year,
             'amount' => $allocation_amount,
-            'comment' => ucfirst($account_plan) . ' plan initial allocation'
+            'comment' => ucfirst($account_plan) . ' plan initial allocation',
+            'created_by' => $user_id
         ];
 
         try {

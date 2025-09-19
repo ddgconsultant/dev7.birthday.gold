@@ -118,7 +118,7 @@ if (!empty($destination_url) && filter_var($destination_url, FILTER_VALIDATE_URL
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2><i class="bi bi-bar-chart"></i> Email Performance Analytics</h2>
                     <div>
-                        <a href="/staff/marketing/newsletter-report.php" class="btn btn-outline-primary">
+                        <a href="/staff/marketing/newsletter-report" class="btn btn-outline-primary">
                             <i class="bi bi-envelope-paper"></i> Newsletter Management
                         </a>
                         <a href="/staff/marketing/" class="btn btn-outline-secondary">
@@ -235,7 +235,7 @@ if (!empty($destination_url) && filter_var($destination_url, FILTER_VALIDATE_URL
                                     <tr>
                                         <td colspan="9" class="text-center text-muted py-4">
                                             <i class="bi bi-inbox"></i> No newsletters found. 
-                                            <a href="/staff/marketing/newsletter-edit.php">Create your first newsletter</a>
+                                            <a href="/staff/marketing/newsletter-edit">Create your first newsletter</a>
                                         </td>
                                     </tr>';
     } else {

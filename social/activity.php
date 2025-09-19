@@ -117,7 +117,7 @@ body .main-content {
             <div class="card mt-3">
                 <div class="card-body text-center">
                     <h6 class="card-title">Quick Actions</h6>
-                    <a href="/social/create.php" class="btn btn-primary btn-sm w-100 mb-2">
+                    <a href="/social/create" class="btn btn-primary btn-sm w-100 mb-2">
                         <i class="bi bi-plus-circle"></i> Create Post
                     </a>
                     <a href="/social/" class="btn btn-outline-primary btn-sm w-100">
@@ -138,7 +138,7 @@ body .main-content {
                     <div class="text-center py-5">
                         <i class="bi bi-inbox display-1 text-muted"></i>
                         <p class="text-muted mt-3">No activity yet. Start by creating your first post!</p>
-                        <a href="/social/create.php" class="btn btn-primary">
+                        <a href="/social/create" class="btn btn-primary">
                             <i class="bi bi-plus-circle"></i> Create Your First Post
                         </a>
                     </div>

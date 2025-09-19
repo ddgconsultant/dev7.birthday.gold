@@ -446,7 +446,7 @@ echo '
         <div class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
-                    <a href="/staff/marketing-campaigns.php" class="btn btn-secondary">
+                    <a href="/staff/marketing-campaigns" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Cancel
                     </a>
                     <div>

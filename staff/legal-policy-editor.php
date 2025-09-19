@@ -510,7 +510,7 @@ if (!$policy) {
     
     echo '<div class="d-flex justify-content-between">';
     echo '<div>';
-    echo '<a href="/staff/redirect_legalpolicyeditor.php" class="btn btn-secondary">';
+    echo '<a href="/staff/redirect_legalpolicyeditor" class="btn btn-secondary">';
     echo '<i class="fas fa-arrow-left me-2"></i>Back to List';
     echo '</a>';
     echo '</div>';

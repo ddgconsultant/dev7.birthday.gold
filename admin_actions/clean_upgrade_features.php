@@ -134,5 +134,5 @@ try {
 }
 
 echo "</pre>\n";
-echo '<p><a href="/admin_actions/setup_upgrade_features.php">Set up upgrade features properly</a></p>';
+echo '<p><a href="/admin_actions/setup_upgrade_features">Set up upgrade features properly</a></p>';
 ?>

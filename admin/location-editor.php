@@ -201,7 +201,7 @@ include($dir['core_components'] . '/bg_header.inc');
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/admin/">Admin</a></li>
-                <li class="breadcrumb-item"><a href="/admin/brands.php">Brands</a></li>
+                <li class="breadcrumb-item"><a href="/admin/brands">Brands</a></li>
                 <li class="breadcrumb-item"><a href="/admin/company-editor-main.php?cid=<?php echo htmlspecialchars($company_id); ?>">
                     <?php echo htmlspecialchars($company_name); ?>
                 </a></li>

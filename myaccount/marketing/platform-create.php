@@ -111,7 +111,7 @@ echo '
     <div class="row">
         <div class="col-12 mb-3">
             <div class="d-flex justify-content-end">
-                <a href="/myaccount/marketing/platforms.php" class="btn btn-outline-secondary">
+                <a href="/myaccount/marketing/platforms" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>Back to Platforms
                 </a>
             </div>
@@ -248,7 +248,7 @@ echo '
                         <hr>
                         
                         <div class="d-flex justify-content-between">
-                            <a href="/myaccount/marketing/platforms.php" class="btn btn-outline-secondary">
+                            <a href="/myaccount/marketing/platforms" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-2"></i>Cancel
                             </a>
                             <button type="submit" class="btn btn-primary btn-lg">

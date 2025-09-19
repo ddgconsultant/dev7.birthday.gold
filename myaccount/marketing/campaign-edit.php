@@ -160,7 +160,7 @@ echo '
                     </div>
                 </div>
                 <div>
-                    <a href="/myaccount/marketing/campaigns.php" class="btn btn-outline-secondary">
+                    <a href="/myaccount/marketing/campaigns" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-2"></i>Back to Campaigns
                     </a>
                 </div>
@@ -400,7 +400,7 @@ echo '
                         <hr>
                         
                         <div class="d-flex justify-content-between">
-                            <a href="/myaccount/marketing/campaigns.php" class="btn btn-outline-secondary">
+                            <a href="/myaccount/marketing/campaigns" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-2"></i>Cancel
                             </a>
                             <button type="submit" class="btn btn-primary btn-lg">

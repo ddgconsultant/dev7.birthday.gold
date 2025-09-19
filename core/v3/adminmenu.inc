@@ -56,7 +56,7 @@ echo '
             <div class="col-4"><a class="d-block hover-bg-200 px-2 py-3 rounded-3 text-center text-decoration-none" href="/company/status" target="_blank"><img class="rounded" src="/public/images/icon/002-status.png" alt="" width="40" height="40" />
             <p class="mb-0 fw-medium text-800 text-truncate fs-11 pt-1">Status</p>
           </a></div>
-            <div class="col-4"><a class="d-block hover-bg-200 px-2 py-3 rounded-3 text-center text-decoration-none" href="/admin/reports/companies.php" target="_blank"><img class="rounded" src="/public/images/icon/online-shop.png" alt="" width="40" height="40" />
+            <div class="col-4"><a class="d-block hover-bg-200 px-2 py-3 rounded-3 text-center text-decoration-none" href="/admin/reports/companies" target="_blank"><img class="rounded" src="/public/images/icon/online-shop.png" alt="" width="40" height="40" />
                 <p class="mb-0 fw-medium text-800 text-truncate fs-11 pt-1">Businesses</p>
               </a></div>
             <div class="col-4"><a class="d-block hover-bg-200 px-2 py-3 rounded-3 text-center text-decoration-none" href="/admin/reports/stats" target="_blank"><img class="rounded" src="/public/images/icon/003-revenue.png" alt="" width="40" height="40" />
@@ -75,7 +75,7 @@ echo '
 ';
 
 if ($account->isadmin() ) { echo '
-            <div class="col-4"><a class="d-block hover-bg-200 px-2 py-3 rounded-3 text-center text-decoration-none" href="/app/events/event-detail.php" target="_blank">
+            <div class="col-4"><a class="d-block hover-bg-200 px-2 py-3 rounded-3 text-center text-decoration-none" href="/app/events/event-detail" target="_blank">
             <img class="rounded" src="/public/images/icon/vecteezy_june-26-calendar-date-icon_.jpg" alt="" width="40" height="40" />
               
                 <p class="mb-0 fw-medium text-800 text-truncate fs-11">Events</p>

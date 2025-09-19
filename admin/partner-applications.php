@@ -124,7 +124,7 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="/admin/partner-applications.php" class="btn btn-secondary ms-2">Reset</a>
+                <a href="/admin/partner-applications" class="btn btn-secondary ms-2">Reset</a>
             </div>
         </form>
     </div>

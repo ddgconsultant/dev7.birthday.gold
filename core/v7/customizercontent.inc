@@ -37,7 +37,7 @@
           <div class="d-flex align-items-start"><img class="me-2" src="/public/assets/img/icons/left-arrow-from-left.svg" width="20" alt="" />
             <div class="flex-1">
               <h5 class="fs-9">RTL Mode</h5>
-              <p class="fs-10 mb-0">Switch your language direction </p><a class="fs-10" href="/documentation/customization/configuration.php">RTL Documentation</a>
+              <p class="fs-10 mb-0">Switch your language direction </p><a class="fs-10" href="/documentation/customization/configuration">RTL Documentation</a>
             </div>
           </div>
           <div class="form-check form-switch">
@@ -49,7 +49,7 @@
           <div class="d-flex align-items-start"><img class="me-2" src="/public/assets/img/icons/arrows-h.svg" width="20" alt="" />
             <div class="flex-1">
               <h5 class="fs-9">Fluid Layout</h5>
-              <p class="fs-10 mb-0">Toggle container layout system </p><a class="fs-10" href="/documentation/customization/configuration.php">Fluid Documentation</a>
+              <p class="fs-10 mb-0">Toggle container layout system </p><a class="fs-10" href="/documentation/customization/configuration">Fluid Documentation</a>
             </div>
           </div>
           <div class="form-check form-switch">

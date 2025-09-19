@@ -577,7 +577,7 @@ echo '
                             <div><i class="bi bi-speedometer2 me-2"></i>Back to Dashboard</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/myaccount/marketing/settings.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/myaccount/marketing/settings" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-gear me-2"></i>Marketing Settings</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
@@ -585,7 +585,7 @@ echo '
                             <div><i class="bi bi-credit-card me-2"></i>Billing & Plans</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
-                        <a href="/support/contact.php" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
+                        <a href="/support/contact" class="list-group-item-action d-flex justify-content-between align-items-center py-2">
                             <div><i class="bi bi-headset me-2"></i>Contact Support</div>
                             <i class="bi bi-chevron-right"></i>
                         </a>
@@ -600,7 +600,7 @@ echo '
                     <p class="small text-muted mb-2">
                         Our support team is here to help you make the most of your marketing plan.
                     </p>
-                    <a href="/support/marketing-guide.php" class="btn btn-sm btn-outline-secondary w-100">
+                    <a href="/support/marketing-guide" class="btn btn-sm btn-outline-secondary w-100">
                         View Marketing Guide
                     </a>
                 </div>

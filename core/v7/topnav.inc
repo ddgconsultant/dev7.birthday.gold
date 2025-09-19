@@ -39,7 +39,7 @@ if ($indexpage) {
 
 ?>
 
-            <a class="navbar-brand me-1 me-sm-3" href="/index.php">
+            <a class="navbar-brand me-1 me-sm-3" href="/index">
               <div class="d-flex align-items-center"><img class="me-2" src="/public/assets/img/icons/spot-illustrations/<?= $local_logoimg; ?>" alt="">
               </div>
             </a>
