@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     'amount' => $payment_intent->amount,
                     'status' => 'completed'
                 ];
-                sessiontracking('checkout_complete', 'checkout', $tracking_data);
+                session_tracking('checkout_complete', $tracking_data);
                 error_log('[CHECKOUT_API] Checkout completion tracked in sessiontracking');
                 
                 // Create payment record if table exists
@@ -338,7 +338,7 @@ try {
         'account_type' => $user_data['account_type'],
         'status' => 'pending'
     ];
-    sessiontracking('checkout_start', 'checkout', $tracking_data);
+    session_tracking('checkout_start', $tracking_data);
     error_log('[CHECKOUT_API] Checkout session tracked in sessiontracking');
     
 } catch (\Stripe\Exception\ApiErrorException $e) {

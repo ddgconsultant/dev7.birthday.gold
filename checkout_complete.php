@@ -126,7 +126,7 @@ try {
                     'amount' => $payment_intent->amount,
                     'status' => 'completed'
                 ];
-                sessiontracking('checkout_verified', 'checkout', $tracking_data);
+                session_tracking('checkout_verified', $tracking_data);
                 error_log('[CHECKOUT_COMPLETE] Checkout completion tracked in sessiontracking');
             } catch (Exception $e) {
                 error_log('[CHECKOUT_COMPLETE] Failed to track checkout completion: ' . $e->getMessage());
