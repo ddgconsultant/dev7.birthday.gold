@@ -1722,4 +1722,166 @@ class Marketing
             return ''; // Return empty string to trigger placeholder
         }
     }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Generate a tracking URL for newsletter/campaign links
+     * Supports both general links and company-specific CTA links
+     *
+     * @param int $campaign_id Campaign ID
+     * @param int $user_id User ID
+     * @param string $destination_url The final destination URL
+     * @param int|null $company_id Optional company ID for CTA tracking
+     * @param string $tracking_type Type of tracking ('click', 'cta', 'view')
+     * @return string The tracking URL
+     */
+    public function generateTrackingUrl($campaign_id, $user_id, $destination_url, $company_id = null, $tracking_type = 'click')
+    {
+        // Build tracking URL parameters
+        $tracking_params = [
+            'c' => $this->qik->encodeId($campaign_id),
+            'u' => $this->qik->encodeId($user_id),
+            'url' => urlencode($destination_url)
+        ];
+
+        // Add company ID if this is a CTA link
+        if ($company_id) {
+            $tracking_params['b'] = $this->qik->encodeId($company_id);
+
+            // For company CTAs, ensure the destination is the business detail page
+            if ($tracking_type == 'cta' && strpos($destination_url, 'business-detail.php') === false) {
+                $destination_url = 'https://birthday.gold/myaccount/business-detail.php?id=' . $company_id;
+                $tracking_params['url'] = urlencode($destination_url);
+            }
+        }
+
+        // Build the tracking URL
+        $base_url = 'https://birthday.gold/staff/marketing/newsletter-track.php';
+        $tracking_url = $base_url . '?' . http_build_query($tracking_params);
+
+        return $tracking_url;
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Generate a CTA tracking URL specifically for company enrollment links
+     * This is a convenience method for generating company-specific tracking URLs
+     *
+     * @param int $campaign_id Campaign ID
+     * @param int $user_id User ID
+     * @param int $company_id Company ID
+     * @param string $action The CTA action ('enroll', 'view', 'details')
+     * @return string The tracking URL that redirects to business-detail page
+     */
+    public function generateCompanyCTAUrl($campaign_id, $user_id, $company_id, $action = 'enroll')
+    {
+        // The destination should be the business detail page
+        $destination_url = 'https://birthday.gold/myaccount/business-detail.php?id=' . $company_id;
+
+        // Add action parameter if needed
+        if ($action && $action != 'view') {
+            $destination_url .= '&action=' . $action;
+        }
+
+        return $this->generateTrackingUrl($campaign_id, $user_id, $destination_url, $company_id, 'cta');
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Record a tracking event for newsletters/campaigns
+     *
+     * @param int $campaign_id Campaign ID
+     * @param int $user_id User ID
+     * @param string $event_type Event type ('open', 'click', 'cta_click', 'enroll')
+     * @param array $extra_data Additional data to store with the event
+     * @return bool Success status
+     */
+    public function recordTrackingEvent($campaign_id, $user_id, $event_type, $extra_data = [])
+    {
+        try {
+            // Check if we should use bg_newsletter_events or mk_activities
+            $use_mk_tables = false;
+
+            // Check if this campaign exists in mk_campaigns
+            $mk_check = $this->database->getrow(
+                "SELECT campaign_id FROM mk_campaigns WHERE campaign_id = :campaign_id",
+                ['campaign_id' => $campaign_id]
+            );
+
+            if ($mk_check) {
+                $use_mk_tables = true;
+            }
+
+            if ($use_mk_tables) {
+                // Use mk_activities table
+                $sql = "INSERT INTO mk_activities
+                       (campaign_id, user_id, activity_type, activity_data, activity_dt)
+                       VALUES
+                       (:campaign_id, :user_id, :event_type, :extra_data, NOW())";
+            } else {
+                // Use legacy bg_newsletter_events table
+                $sql = "INSERT INTO bg_newsletter_events
+                       (campaign_id, user_id, event_type, event_dt, extra)
+                       VALUES
+                       (:campaign_id, :user_id, :event_type, NOW(), :extra_data)";
+            }
+
+            $params = [
+                'campaign_id' => $campaign_id,
+                'user_id' => $user_id,
+                'event_type' => $event_type,
+                'extra_data' => json_encode($extra_data)
+            ];
+
+            $this->database->query($sql, $params);
+
+            // Update user engagement metrics if this is a click or enrollment
+            if (in_array($event_type, ['click', 'cta_click', 'enroll'])) {
+                $this->updateUserEngagement($user_id, $event_type);
+            }
+
+            return true;
+
+        } catch (Exception $e) {
+            error_log("Marketing::recordTrackingEvent - Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    /**
+     * Update user engagement metrics
+     *
+     * @param int $user_id User ID
+     * @param string $action The engagement action
+     * @return void
+     */
+    private function updateUserEngagement($user_id, $action)
+    {
+        try {
+            // Update last engagement timestamp
+            $sql = "UPDATE bg_users
+                   SET last_engagement_dt = NOW()
+                   WHERE user_id = :user_id";
+
+            $this->database->query($sql, ['user_id' => $user_id]);
+
+            // Log engagement in user attributes if needed
+            $attribute_sql = "INSERT INTO bg_user_attributes
+                            (user_id, category, description, value)
+                            VALUES
+                            (:user_id, 'engagement', :action, NOW())
+                            ON DUPLICATE KEY UPDATE
+                            value = NOW()";
+
+            $this->database->query($attribute_sql, [
+                'user_id' => $user_id,
+                'action' => 'last_' . $action
+            ]);
+
+        } catch (Exception $e) {
+            // Non-critical error, just log it
+            error_log("Marketing::updateUserEngagement - Error: " . $e->getMessage());
+        }
+    }
 }

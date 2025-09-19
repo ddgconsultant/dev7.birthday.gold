@@ -196,6 +196,8 @@ echo '</pre>';
  * Generate CTA block with company offers
  */
 function generateCTABlock($category, $mode, $user_id, $campaign_id, $user_data, $database, $qik) {
+    // Get marketing instance for tracking URLs
+    global $marketing;
     // Build query based on mode
     if ($mode == 'inclusive') {
         // Show companies the user IS enrolled in
@@ -250,13 +252,23 @@ function generateCTABlock($category, $mode, $user_id, $campaign_id, $user_data, 
     foreach ($companies as $company) {
         // Get company logo
         $logo_url = 'https://birthday.gold/images/companies/' . $company['company_id'] . '/logo.png';
-        
-        // Create tracking URL
-        $track_url = 'https://birthday.gold/track/cta/' . 
-                    $qik->encodeId($campaign_id) . '/' . 
-                    $qik->encodeId($user_id) . '/' . 
-                    $qik->encodeId($company['company_id']);
-        
+
+        // Create tracking URL using marketing class method
+        // This will properly track clicks and redirect to business-detail page
+        if ($marketing) {
+            $action = ($mode == 'inclusive' ? 'view' : 'enroll');
+            $track_url = $marketing->generateCompanyCTAUrl($campaign_id, $user_id, $company['company_id'], $action);
+        } else {
+            // Fallback if marketing class not available
+            $destination_url = 'https://birthday.gold/myaccount/business-detail.php?id=' . $company['company_id'];
+            $track_url = 'https://birthday.gold/staff/marketing/newsletter-track.php?' . http_build_query([
+                'c' => $qik->encodeId($campaign_id),
+                'u' => $qik->encodeId($user_id),
+                'b' => $qik->encodeId($company['company_id']),
+                'url' => urlencode($destination_url)
+            ]);
+        }
+
         $cta_html .= '
             <div style="text-align: center; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <img src="' . $logo_url . '" 
