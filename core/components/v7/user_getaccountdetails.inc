@@ -40,7 +40,7 @@ global $bg_users_accountplans;
 if (!isset($bg_users_accountplans)) {
     include_once($dir['core'] . '/site-arrays.inc');
 }
-$userplanname=$bg_users_accountplans[$component_user_data['account_plan']] ?? 'Unknown Plan';
+$userplanname = $product->getProduct($component_user_data['account_product_id'], 'id')['account_name'];
 $user_planddetails=$app->plandetail('details_id', $component_user_data['account_product_id']);
 
 $enabledHonorFlags = $account->getEnabledFlags();

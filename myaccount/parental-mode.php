@@ -208,9 +208,6 @@ if ($is_first_visit) {
 // Always show action buttons (right-aligned)
 echo '
     <div class="d-flex gap-2 justify-content-end mb-4">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#parentalGuideModal">
-            <i class="bi bi-book me-2"></i>View Full Guide
-        </button>
         <a href="/myaccount/profile" class="btn btn-outline-primary">
             <i class="bi bi-person-circle me-2"></i>Manage My Profile
         </a>
@@ -410,7 +407,7 @@ foreach ($childaccount_records as $row) {
             <div class="d-flex gap-2 flex-wrap">
                 <a href="/myaccount/myaccount_actions/child-edit?id=' . $cid . '&_token=' . $display->inputcsrf_token('tokenonly') . '" 
                    class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-pencil me-1 d-none d-md-inline"></i><span class="d-md-none">Edit</span><span class="d-none d-md-inline">Edit Profile</span>
+                    <i class="bi bi-pencil me-1 d-none d-md-inline"></i><span class="d-md-none">Edit</span><span class="d-none d-md-inline">Edit Account Details</span>
                 </a>
                 <a href="/myaccount/myaccount_actions/child-password-reset?id=' . $cid . '&_token=' . $display->inputcsrf_token('tokenonly') . '" 
                    class="btn btn-sm btn-outline-warning">

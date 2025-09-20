@@ -192,7 +192,7 @@ $birth_day = $birthday_parts[2] ?? '';
     <div class="container">
         <div class="text-center">
             <h1 class="mb-3"><i class="bi bi-pencil me-3"></i>Edit Child Account</h1>
-            <p class="lead mb-0">Update <?php echo htmlspecialchars($child_data['first_name'] . ' ' . $child_data['last_name']); ?>'s profile information</p>
+            <p class="lead mb-0">Update <?php echo htmlspecialchars($child_data['first_name'] . ' ' . $child_data['last_name']); ?>'s account information</p>
         </div>
     </div>
 </div>
@@ -200,6 +200,11 @@ $birth_day = $birthday_parts[2] ?? '';
 <div class="container my-5 pt-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
+            <div class="text-end mb-3">
+                <a href="/myaccount/parental-mode" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Parental Mode
+                </a>
+            </div>
             <div class="card">
                 <div class="card-header bg-light">
                     <h5 class="mb-0"><i class="bi bi-person-circle me-2"></i>Child Account Details</h5>

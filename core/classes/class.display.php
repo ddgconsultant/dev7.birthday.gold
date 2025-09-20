@@ -200,6 +200,25 @@ function smoothScrollToTop(duration) {
     global $database;
 
     switch ($style) {
+      case 'child':
+        // Child-friendly options
+        $seeds = ['Kiki', 'Angel', 'Misty', 'Willow', 'Sunny', 'Happy'];
+        $backgroundTypes = ['solid'];
+        $eyeTypes = ['cute', 'love', 'plain', 'stars', 'wink'];
+        $mouthTypes = ['cute', 'lilSmile', 'smileTeeth']; // More child-appropriate smiles, smileTeeth for "one tooth" look
+        // Brighter, more playful colors for children
+        $backgroundColors = [
+          '#f9f3dd', '#f2e6bb', '#edd9aa', '#e8d097', '#e5c28c',
+          '#d6e1c8', '#d1ebdb', '#c5e3d2', '#b8dbc9', '#9ac7a8',
+          '#b2c9c9', '#a5bcc1', '#97aeb8', '#cdc0d6', '#b8b1cf'
+        ];
+        // Select random options
+        $seed = $seeds[array_rand($seeds)];
+        $backgroundColor = str_replace('#', '', $backgroundColors[array_rand($backgroundColors)]);
+        $backgroundType = $backgroundTypes[array_rand($backgroundTypes)];
+        $eyes = $eyeTypes[array_rand($eyeTypes)];
+        $mouth = $mouthTypes[array_rand($mouthTypes)];
+        break;
       default:
         // Possible options for each attribute
         $seeds = ['Bob', 'Kiki', 'Ginger', 'Angel', 'Misty', 'Willow', 'Loki'];

@@ -354,7 +354,7 @@ if ($app->formposted()) {
             
             // Generate username if not provided
             $username = $values['username'] ?? '';
-            if (empty($username) && $account_type == 'user') {
+            if (empty($username)) {
                 $username = $createaccount->generate_username($first_name, $last_name, $values['birthday']);
             }
             
@@ -446,8 +446,63 @@ if ($app->formposted()) {
                     if (($account_type === 'parental' || $account_type === 'family') && !empty($values['children'])) {
                         foreach ($values['children'] as $child) {
                             if (!empty($child['firstname']) && !empty($child['lastname']) && !empty($child['birthday'])) {
-                                // Add child account logic here
-                                // This would typically involve creating linked child accounts
+                                // Create child user account linked to parent
+                                $child_input = [
+                                    'first_name' => ucfirst(trim($child['firstname'])),
+                                    'last_name' => ucfirst(trim($child['lastname'])),
+                                    'username' => $createaccount->generate_username($child['firstname'], $child['lastname'], $child['birthday']),
+                                    'email' => '', // Children don't have email
+                                    'phone_number' => '', // Children don't have phone
+                                    'profile_first_name' => ucfirst(trim($child['firstname'])),
+                                    'profile_last_name' => ucfirst(trim($child['lastname'])),
+                                    'profile_username' => '',
+                                    'profile_email' => '',
+                                    'profile_phone_type' => 'unknown',
+                                    'hashed_password' => '', // Children don't have passwords
+                                    'birthday' => $child['birthday'],
+                                    'birthday_month' => date('m', strtotime($child['birthday'])),
+                                    'city' => $city,
+                                    'state' => $state,
+                                    'zip_code' => $zip_code,
+                                    'city2' => $city,
+                                    'state2' => $state,
+                                    'zip_code2' => $zip_code,
+                                    'type' => 'real',
+                                    'product_id' => $product_details['product_id'], // Use parent's product
+                                    'account_plan' => 'child',
+                                    'account_type' => 'minor',
+                                    'account_cost' => 0,
+                                    'account_validation' => 'notrequired',
+                                    'avatar_file' => '',
+                                    'feature_parent_id' => $user_id // Link to parent
+                                ];
+
+                                // Generate child-friendly avatar
+                                try {
+                                    $child_avatar_url = $display->generateAvatarUrl($fileuploader, [], 'child');
+                                    if (is_string($child_avatar_url)) {
+                                        $child_input['avatar_file'] = $child_avatar_url;
+                                    }
+                                } catch (Exception $e) {
+                                    // If child avatar generation fails, continue with empty avatar
+                                    session_tracking('child_avatar_generation_error', $e->getMessage());
+                                }
+
+                                try {
+                                    $child_user_id = $createaccount->create_user($child_input);
+
+                                    if ($child_user_id) {
+                                        error_log('[CREATENEWACCOUNT] Created child user: ' . $child_user_id . ' for parent: ' . $user_id);
+
+                                        // Create parent-child relationship record if needed
+                                        // This could be in a separate table like bg_user_relationships
+
+                                    } else {
+                                        error_log('[CREATENEWACCOUNT] Failed to create child user for parent: ' . $user_id);
+                                    }
+                                } catch (Exception $e) {
+                                    error_log('[CREATENEWACCOUNT] Error creating child user: ' . $e->getMessage());
+                                }
                             }
                         }
                     }

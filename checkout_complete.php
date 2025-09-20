@@ -90,25 +90,41 @@ try {
                         modify_dt = NOW()
                     WHERE user_id = :user_id";
 
-            $database->execute($sql, ['user_id' => $user_id]);
+            $stmt = $database->prepare($sql);
+            $stmt->execute(['user_id' => $user_id]);
             error_log('[CHECKOUT_COMPLETE] User activated: ' . $user_id);
 
             // Also activate any child accounts for parental accounts
             try {
-                $child_sql = "UPDATE bg_users
-                             SET status = 'active',
-                                 modify_dt = NOW()
+                // First check if there are any child accounts
+                $check_sql = "SELECT COUNT(*) as child_count FROM bg_users
                              WHERE feature_parent_id = :parent_id
-                             AND account_type = 'minor'
-                             AND status = 'pending'";
+                             AND account_type = 'minor'";
+                $check_stmt = $database->prepare($check_sql);
+                $check_stmt->execute(['parent_id' => $user_id]);
+                $check_result = $check_stmt->fetch(PDO::FETCH_ASSOC);
+                $total_children = $check_result['child_count'] ?? 0;
 
-                $stmt = $database->prepare($child_sql);
-                $stmt->execute(['parent_id' => $user_id]);
-                $activated_children = $stmt->rowCount();
-                if ($activated_children > 0) {
-                    error_log('[CHECKOUT_COMPLETE] Activated ' . $activated_children . ' child accounts for parent: ' . $user_id);
-                } else {
-                    error_log('[CHECKOUT_COMPLETE] No pending child accounts found to activate for parent: ' . $user_id);
+                error_log('[CHECKOUT_COMPLETE] Found ' . $total_children . ' total child accounts for parent: ' . $user_id);
+
+                if ($total_children > 0) {
+                    // Now activate pending children
+                    $child_sql = "UPDATE bg_users
+                                 SET status = 'active',
+                                     modify_dt = NOW()
+                                 WHERE feature_parent_id = :parent_id
+                                 AND account_type = 'minor'
+                                 AND status = 'pending'";
+
+                    $stmt = $database->prepare($child_sql);
+                    $stmt->execute(['parent_id' => $user_id]);
+                    $activated_children = $stmt->rowCount();
+
+                    error_log('[CHECKOUT_COMPLETE] Activated ' . $activated_children . ' of ' . $total_children . ' child accounts for parent: ' . $user_id);
+
+                    // Log the actual SQL for debugging
+                    $debug_sql = str_replace(':parent_id', $user_id, $child_sql);
+                    error_log('[CHECKOUT_COMPLETE] SQL executed: ' . $debug_sql);
                 }
             } catch (Exception $e) {
                 error_log('[CHECKOUT_COMPLETE] Failed to activate child accounts: ' . $e->getMessage());

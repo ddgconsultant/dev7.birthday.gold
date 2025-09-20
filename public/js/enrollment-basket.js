@@ -700,7 +700,7 @@ function showFirstPickerHelp() {
     setTimeout(() => {
         // Initialize Bootstrap popover and store globally
         activePopover = new bootstrap.Popover(counter, {
-            content: 'Great choice! Click here to review and confirm your selections.',
+            content: '🎉 Great choice! Click here to review and confirm your selections.',
             placement: 'left',
             trigger: 'manual',
             customClass: 'first-picker-popover',

@@ -308,43 +308,45 @@ function isemailaccountavailable($email)
    if ($input['type'] === 'test') {
     // Add test-specific fields to both SQL and params
     $sql = "INSERT INTO bg_users (
-        first_name, last_name, username, email, `password`, birthdate, `status`, 
+        first_name, last_name, username, email, `password`, birthdate, `status`,
         city, `state`, zip_code,
         account_product_id, account_plan, account_type, account_cost, account_verification, `type`,
-        phone_number, profile_phone_type, 
+        phone_number, profile_phone_type, feature_parent_id,
         create_dt, modify_dt
     ) VALUES (
         :first_name, :last_name, :username, :email, :hashed_password, :birthday, 'pending',
         :city, :state, :zip_code,
         :product_id, :account_plan, :account_type, :account_cost, :account_validation, :type,
-        :phone_number, :profile_phone_type,  
+        :phone_number, :profile_phone_type, :feature_parent_id,
         now(), now()
     )";
 
     // Add test-specific params
     $params[':phone_number'] = $input['phone_number'] ?? null;
     $params[':profile_phone_type'] = $input['profile_phone_type'] ?? null;
+    $params[':feature_parent_id'] = $input['feature_parent_id'] ?? null;
     session_tracking('create user SQLtest-function', $sql);
 
 } else {
-    // Standard user SQL - now includes phone_number
+    // Standard user SQL - now includes phone_number and feature_parent_id
     $sql = "INSERT INTO bg_users (
         first_name, last_name, username, email, `password`, birthdate, `status`,
         city, `state`, zip_code,
         account_product_id, account_plan, account_type, account_cost, account_verification, `type`,
-        phone_number, profile_phone_type,
+        phone_number, profile_phone_type, feature_parent_id,
         create_dt, modify_dt
     ) VALUES (
         :first_name, :last_name, :username, :email, :hashed_password, :birthday, 'pending',
         :city, :state, :zip_code,
         :product_id, :account_plan, :account_type, :account_cost, :account_validation, :type,
-        :phone_number, :profile_phone_type,
+        :phone_number, :profile_phone_type, :feature_parent_id,
         now(), now()
     )";
 
     // Add phone params for standard users too
     $params[':phone_number'] = $input['phone_number'] ?? null;
     $params[':profile_phone_type'] = $input['profile_phone_type'] ?? 'unknown';
+    $params[':feature_parent_id'] = $input['feature_parent_id'] ?? null;
 
     session_tracking('create user SQLreal-function', $sql);
 

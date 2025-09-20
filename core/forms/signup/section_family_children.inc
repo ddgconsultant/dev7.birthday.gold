@@ -191,9 +191,33 @@ $children = $values['children'] ?? [];
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('children-container');
     const addButton = document.getElementById('add-child');
-    
+    const parentLastNameField = document.getElementById('lastname');
+
     let childCount = <?php echo count($children); ?>;
-    
+
+    // Function to auto-populate child last names with parent's last name
+    function updateChildLastNames() {
+        if (!parentLastNameField) return;
+
+        const parentLastName = parentLastNameField.value.trim();
+        const childLastNameFields = container.querySelectorAll('input[name*="[lastname]"]');
+
+        childLastNameFields.forEach(field => {
+            // Only auto-populate if the child's last name field is empty
+            if (field.value.trim() === '' && parentLastName !== '') {
+                field.value = parentLastName;
+            }
+        });
+    }
+
+    // Auto-populate when parent's last name loses focus (finished typing)
+    if (parentLastNameField) {
+        parentLastNameField.addEventListener('blur', updateChildLastNames);
+
+        // Initial population if parent already has a last name
+        updateChildLastNames();
+    }
+
     addButton.addEventListener('click', function() {
         const newIndex = childCount;
         const newChild = document.createElement('div');
@@ -238,7 +262,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         container.appendChild(newChild);
         childCount++;
-        
+
+        // Auto-populate the new child's last name with parent's last name
+        const newChildLastNameField = newChild.querySelector('input[name*="[lastname]"]');
+        if (newChildLastNameField && parentLastNameField && parentLastNameField.value.trim() !== '') {
+            newChildLastNameField.value = parentLastNameField.value.trim();
+        }
+
         // Add event listener to new remove button
         newChild.querySelector('.remove-child').addEventListener('click', function() {
             newChild.remove();

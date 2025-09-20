@@ -1014,6 +1014,43 @@ button.category-pill.active {
 .modal-header .btn-close:hover {
     opacity: 1;
 }
+
+/* First selection popover with yellow background */
+.first-picker-popover {
+    --bs-popover-bg: #ffc107 !important;
+    --bs-popover-border-color: #f0ad4e !important;
+    --bs-popover-header-bg: #ffc107 !important;
+    --bs-popover-body-color: #212529 !important;
+    font-weight: 600 !important;
+}
+
+.first-picker-popover .popover-body {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 1rem !important;
+}
+
+.first-picker-popover .popover-arrow::after {
+    border-left-color: #ffc107 !important;
+}
+
+/* Add animation to draw attention */
+@keyframes popoverGlow {
+    0% {
+        box-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.8), 0 0 30px rgba(255, 193, 7, 0.6);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+    }
+}
+
+.first-picker-popover {
+    animation: popoverGlow 2s ease-in-out infinite;
+}
 </style>';
 
 // Include header
