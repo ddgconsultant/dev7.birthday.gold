@@ -11,16 +11,22 @@ $additionalstyles .= '
     list-style: none;
 }
 .file-tree li {
-    padding: 4px 0;
+    padding: 2px 0;
 }
 .file-tree .directory {
     font-weight: bold;
     cursor: pointer;
     color: #444;
+    font-size: 0.85rem;
 }
 .file-tree .file {
     cursor: pointer;
     color: #666;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
 }
 .file-tree .file:hover {
     color: #007bff;
@@ -30,6 +36,10 @@ $additionalstyles .= '
     border-radius: 4px;
     overflow: hidden;
     background: #fff;
+}
+#heatmapInner {
+    overflow: hidden;
+    position: relative;
 }
 .metadata-grid {
     display: grid;
@@ -41,6 +51,32 @@ $additionalstyles .= '
     background: #f8f9fa;
     padding: 1rem;
     border-radius: 4px;
+}
+.card-body p.small {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.card-body h6 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+/* Custom scrollbar for Session Data */
+.card-body::-webkit-scrollbar {
+    width: 6px;
+}
+.card-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+.card-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+.card-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 </style>
 ';
@@ -147,12 +183,19 @@ if (isset($_GET['action'])) {
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 
-echo '    
-<div class=" main-content mt-5 pt-0">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Mouse Tracking Data Viewer</h2>
-        <a href="/admin" class="btn btn-sm btn-outline-secondary">Back to Admin</a>
+echo '
+<!-- Admin Header Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <h1 class="mb-3"><i class="bi bi-cursor me-3"></i>Mouse Tracking Data Viewer</h1>
     </div>
+</div>
+
+<div class="main-content mt-3">
+    <div class="container">
+        <div class="d-flex justify-content-end mb-3">
+            <a href="/admin" class="btn btn-sm btn-outline-secondary">Back to Admin</a>
+        </div>
 ';
 
 echo '
@@ -164,7 +207,7 @@ echo '
                         <div class="card-header">
                             <h5 class="card-title mb-0">Session Data</h5>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body" style="max-height: 1000px; overflow-y: auto;">
                             <div id="fileTree" class="file-tree"></div>
                         </div>
                     </div>
@@ -182,6 +225,7 @@ echo '
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>';
 
@@ -253,23 +297,40 @@ class TrackingViewer {
 
     async loadScreenshot() {
         if (!this.currentPath || !this.container) return;
-        
+
         this.screenshotLoaded = false;
         const img = new Image();
-        
+
         try {
             await new Promise((resolve, reject) => {
                 img.onload = () => {
                     this.screenshotLoaded = true;
+
+                    // Calculate the natural aspect ratio from the loaded image
+                    const imgAspectRatio = img.height / img.width;
+                    const containerWidth = this.container.offsetWidth;
+                    const containerHeight = containerWidth * imgAspectRatio;
+
+                    // Set the container height to maintain aspect ratio
+                    this.container.style.height = `${containerHeight}px`;
+
+                    // Calculate scale factor for mouse coordinates
+                    this.imageScale = containerWidth / img.width;
+
                     if (this.showScreenshot) {
                         this.container.style.backgroundImage = `url("/admin/mouse-tracker_getscreenshot.php?path=${encodeURIComponent(this.currentPath)}")`;
                         this.container.style.backgroundSize = '100% 100%';
                     }
+
+                    // Re-render points with proper scaling
+                    this.renderAllPoints();
                     resolve();
                 };
                 img.onerror = (e) => {
                     console.error('Failed to load screenshot:', e);
                     this.container.style.backgroundColor = '#fff';
+                    // Set a default height if image fails
+                    this.container.style.height = '600px';
                     reject(e);
                 };
                 img.src = `/admin/mouse-tracker_getscreenshot.php?path=${encodeURIComponent(this.currentPath)}`;
@@ -332,10 +393,10 @@ class TrackingViewer {
                     <div class="card">
                         <div class="card-body">
                             <h6>Session Info</h6>
-                            <p class="mb-1">Session ID: ${data.sessionId}</p>
-                            <p class="mb-1">Page: ${data.metadata.url}</p>
-                            <p class="mb-1">Screen: ${data.metadata.screenWidth}x${data.metadata.screenHeight}</p>
-                            <p class="mb-1">Viewport: ${data.metadata.viewportWidth}x${data.metadata.viewportHeight}</p>
+                            <p class="mb-1 small">Session ID: ${data.sessionId}</p>
+                            <p class="mb-1 small">Page: ${data.metadata.url}</p>
+                            <p class="mb-1 small">Screen: ${data.metadata.screenWidth}x${data.metadata.screenHeight}</p>
+                            <p class="mb-1 small">Viewport: ${data.metadata.viewportWidth}x${data.metadata.viewportHeight}</p>
                         </div>
                     </div>
                 </div>
@@ -343,10 +404,10 @@ class TrackingViewer {
                     <div class="card">
                         <div class="card-body">
                             <h6>Stats</h6>
-                            <p class="mb-1">Total Points: ${data.points.length}</p>
-                            <p class="mb-1">First Action: ${new Date(data.points[0]?.timestamp).toLocaleString()}</p>
-                            <p class="mb-1">Last Action: ${new Date(data.points[data.points.length-1]?.timestamp).toLocaleString()}</p>
-                            <p class="mb-1">Duration: ${Math.round((data.points[data.points.length-1]?.timestamp - data.points[0]?.timestamp) / 1000)}s</p>
+                            <p class="mb-1 small">Total Points: ${data.points.length}</p>
+                            <p class="mb-1 small">First Action: ${new Date(data.points[0]?.timestamp).toLocaleString()}</p>
+                            <p class="mb-1 small">Last Action: ${new Date(data.points[data.points.length-1]?.timestamp).toLocaleString()}</p>
+                            <p class="mb-1 small">Duration: ${Math.round((data.points[data.points.length-1]?.timestamp - data.points[0]?.timestamp) / 1000)}s</p>
                         </div>
                     </div>
                 </div>
@@ -390,12 +451,23 @@ class TrackingViewer {
         `;
 
         const heatmapInner = document.getElementById('heatmapInner');
+
+        // Calculate scale to fit the width of the card
+        const maxWidth = heatmapInner.parentElement.offsetWidth - 40; // Account for padding
+        const scale = Math.min(maxWidth / data.metadata.viewportWidth, 1); // Scale to fit width, but don't scale up
+
         const container = document.createElement('div');
-        container.style.width = `${data.metadata.viewportWidth}px`;
-        container.style.height = `${data.metadata.viewportHeight}px`;
+        container.style.width = '100%';  // Fill the width of the parent
         container.style.position = 'relative';
-        container.style.transform = 'scale(0.8)';
-        container.style.transformOrigin = 'top left';
+        container.style.backgroundSize = 'contain';
+        container.style.backgroundPosition = 'top left';
+        container.style.backgroundRepeat = 'no-repeat';
+
+        // Let the image determine the height naturally
+        // We'll set this after the image loads
+        this.originalWidth = data.metadata.viewportWidth;
+        this.originalHeight = data.metadata.viewportHeight;
+        this.scale = scale;
 
         this.points = data.points;
         this.currentPoint = 0;
@@ -418,23 +490,28 @@ class TrackingViewer {
 
     renderPoint(point) {
         if (!point.x || !point.y || !this.container) return;
-        
+
+        // Scale the mouse coordinates to match the scaled container/image
+        const scale = this.imageScale || 1;
+        const adjustedX = point.x * scale;
+        const adjustedY = point.y * scale;
+
         const dotSize = this.getDotSize(point.type);
         const dot = document.createElement('div');
         dot.style.position = 'absolute';
-        dot.style.left = `${point.x}px`;
-        dot.style.top = `${point.y}px`;
+        dot.style.left = `${adjustedX}px`;
+        dot.style.top = `${adjustedY}px`;
         dot.style.width = `${dotSize}px`;
         dot.style.height = `${dotSize}px`;
         dot.style.borderRadius = '50%';
-        dot.style.backgroundColor = point.type === 'click' ? 
+        dot.style.backgroundColor = point.type === 'click' ?
             'rgba(255, 0, 0, 0.8)' : 'rgba(0, 128, 255, 0.4)';
         dot.style.transform = 'translate(-50%, -50%)';
-        
+
         if (point.targetElement) {
             dot.title = `${point.type}: ${point.targetElement}`;
         }
-        
+
         this.container.appendChild(dot);
     }
 
@@ -474,7 +551,7 @@ class TrackingViewer {
     toggleScreenshot(show) {
         this.showScreenshot = show;
         if (!this.container) return;
-        
+
         if (show && this.screenshotLoaded) {
             this.container.style.backgroundImage = `url("/admin/mouse-tracker_getscreenshot.php?path=${encodeURIComponent(this.currentPath)}")`;
             this.container.style.backgroundSize = '100% 100%';
