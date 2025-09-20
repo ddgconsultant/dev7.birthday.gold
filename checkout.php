@@ -476,24 +476,28 @@ $additionalstyles = '
 
 /* Submit Button */
 .btn-submit {
-    width: 100%;
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
     font-weight: 600;
-    background: var(--bs-primary);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
 }
 
 .btn-submit:hover:not(:disabled) {
-    background: #0b5ed7;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+    animation: none;
 }
 
 .btn-submit:active {
@@ -501,9 +505,7 @@ $additionalstyles = '
 }
 
 .btn-submit:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-    opacity: 0.65;
+    animation: none;
 }
 
 /* Divider - Subtle */
@@ -1238,8 +1240,8 @@ include($dir['core_components'] . '/bg_header.inc');
                         
                         <div id="error-message" class="alert alert-danger d-none mt-3"></div>
                         
-                        <button type="submit" class="btn-submit" id="submitBtn">
-                            <span>Complete Purchase</span>
+                        <button type="submit" class="btn btn-success btn-lg w-100 btn-submit" id="submitBtn">
+                            <span>Complete Payment</span>
                         </button>
                         
                     </form>
@@ -1328,6 +1330,25 @@ const paymentElement = elements.create(\'payment\', {
 // Mount immediately for fastest loading
 console.log(\'[CHECKOUT] Mounting payment element immediately...\');
 paymentElement.mount(\'#payment-element\');
+
+// Track selected payment method and update button text
+let selectedPaymentMethod = \'card\';
+
+// Listen for payment method changes
+paymentElement.on(\'change\', (event) => {
+    console.log(\'[CHECKOUT] Payment method change event:\', event);
+    const submitButton = document.getElementById(\'submitBtn\');
+    const buttonText = submitButton.querySelector(\'span\');
+
+    // Check if Cash App is selected
+    if (event.value && event.value.type === \'cashapp\') {
+        selectedPaymentMethod = \'cashapp\';
+        buttonText.textContent = \'Show QR Code to Pay\';
+    } else {
+        selectedPaymentMethod = event.value ? event.value.type : \'card\';
+        buttonText.textContent = \'Complete Payment\';
+    }
+});
 
 // Add event listener for when the payment element is ready
 paymentElement.on(\'ready\', () => {
