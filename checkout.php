@@ -1,25 +1,14 @@
 <?php
+#$allowpaymentgatewayoverride = true;
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 
 // Load Composer autoloader for Stripe
 require_once($_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php');
 
-// Enable error logging for debugging
-error_log('[CHECKOUT_API] Script started');
+// Track checkout page load
+session_tracking('checkout_page_loaded', 'Script started');
 
-#-------------------------------------------------------------------------------
-# HELPER FUNCTION TO CHECK IF TABLE EXISTS
-#-------------------------------------------------------------------------------
-function tableExists($database, $tableName) {
-    try {
-        $sql = "SHOW TABLES LIKE :table";
-        $result = $database->getrow($sql, ['table' => $tableName]);
-        return !empty($result);
-    } catch (Exception $e) {
-        error_log('[CHECKOUT_API] Error checking table existence: ' . $e->getMessage());
-        return false;
-    }
-}
+
 
 #-------------------------------------------------------------------------------
 # HANDLE AJAX PAYMENT REQUEST
@@ -32,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $stripe_secret = $STRIPECONFIG['STRIPE_SECRET'] ?? '';
     
     if (empty($stripe_secret)) {
-        error_log('[CHECKOUT_API] Missing Stripe secret key');
+        session_tracking('checkout_stripe_config_error', 'Missing Stripe secret key');
         echo json_encode(['error' => 'Payment configuration error']);
         exit();
     }
@@ -43,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $payment_intent_id = $_POST['payment_intent_id'] ?? '';
         $user_id = $_POST['user_id'] ?? '';
         
-        error_log('[CHECKOUT_API] Confirming payment - Intent: ' . $payment_intent_id . ', User: ' . $user_id);
+        session_tracking('checkout_payment_confirming', ['payment_intent_id' => $payment_intent_id, 'user_id' => $user_id]);
         
         try {
             // Retrieve payment intent
@@ -54,26 +43,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             
             if ($is_payment_successful) {
                 // Update user to active
-                $sql = "UPDATE bg_users SET status = 'active', modify_dt = NOW() WHERE user_id = :user_id";
+                $sql = "UPDATE bg_users SET `status` = 'active', modify_dt = NOW() WHERE user_id = :user_id ";
                 $database->query($sql, ['user_id' => $user_id]);
-                error_log('[CHECKOUT_API] User status updated to active');
+                session_tracking('checkout_user_activated', ['user_id' => $user_id, 'status' => 'active']);
                 
-                // Log user in using proper account login method (matches free account flow)
-                $account->login($user_id, $sitesettings['app']['APP_AUTOLOGIN'], 'user_id');
+               //  update any minor accounts linked to this parent account
+                $sql = "UPDATE bg_users SET `status` = 'active', modify_dt = NOW() WHERE feature_parent_id = :user_id and `status` = 'pending' and account_type = 'minor'";
+                $rows_updated = $database->query($sql, ['user_id' => $user_id]);
+                session_tracking('checkout_minor_accounts_activated', ['parent_id' => $user_id, 'rows_updated' => $rows_updated]);
                 
-                // Check if bg_transactions table exists before updating
-                if (tableExists($database, 'bg_transactions')) {
+                
                     // Update transaction
-                    $sql = "UPDATE bg_transactions 
-                            SET status = 'completed', stripe_payment_intent = :pi_id, completed_at = NOW()
-                            WHERE user_id = :user_id AND status = 'pending'
-                            ORDER BY created_at DESC LIMIT 1";
+                    $sql = "UPDATE bg_transactions
+                            SET transaction_status = 'completed', payment_status = 'succeeded',
+                                stripe_payment_intent_id = :pi_id, modify_dt = NOW()
+                            WHERE user_id = :user_id AND transaction_status = 'pending'
+                            ORDER BY create_dt DESC LIMIT 1";
                     $database->query($sql, ['user_id' => $user_id, 'pi_id' => $payment_intent_id]);
-                    error_log('[CHECKOUT_API] Transaction updated');
-                } else {
-                    error_log('[CHECKOUT_API] bg_transactions table does not exist, skipping transaction update');
-                }
+                    session_tracking('checkout_transaction_updated', ['user_id' => $user_id, 'payment_intent_id' => $payment_intent_id]);
+       
                 
+
                 // Track checkout completion using sessiontracking function
                 $tracking_data = [
                     'action' => 'checkout_completed',
@@ -82,10 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     'status' => 'completed'
                 ];
                 session_tracking('checkout_complete', $tracking_data);
-                error_log('[CHECKOUT_API] Checkout completion tracked in sessiontracking');
+                // Already tracked above with session_tracking
                 
                 // Create payment record if table exists
-                if (tableExists($database, 'bg_payments')) {
+           
                     try {
                         $sql = "INSERT INTO bg_payments 
                                 (user_id, amount, stripe_payment_intent, status, payment_method, metadata, created_at) 
@@ -98,16 +88,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             'payment_method' => $payment_intent->payment_method_types[0] ?? 'card',
                             'metadata' => json_encode($payment_intent->metadata ?? [])
                         ]);
-                        error_log('[CHECKOUT_API] Payment record created');
+                        session_tracking('checkout_payment_record_created', ['user_id' => $user_id, 'amount' => $payment_intent->amount]);
                     } catch (Exception $e) {
-                        error_log('[CHECKOUT_API] Failed to create payment record: ' . $e->getMessage());
+                        session_tracking('checkout_payment_record_error', ['error' => $e->getMessage(), 'user_id' => $user_id]);
                     }
-                }
                 
+                
+
                 // Clear signup session data
                 $session->unset('signup_process_data');
                 $session->unset('userregistrationdata');
                 
+                
+                // Log user in using proper account login method (matches free account flow)
+                $account->login($user_id, $sitesettings['app']['APP_AUTOLOGIN'], 'user_id');
+
+
+
                 // Determine redirect based on account type
                 $user_sql = "SELECT account_type FROM bg_users WHERE user_id = :user_id";
                 $user_data = $database->getrow($user_sql, ['user_id' => $user_id]);
@@ -122,18 +119,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 // Redirect to celebration page
                 $redirect_url = '/checkout_celebration.php';
                 
-                error_log('[CHECKOUT_API] Payment successful, redirecting to celebration page');
+                session_tracking('checkout_payment_successful', ['user_id' => $user_id, 'redirect' => $redirect_url]);
                 echo json_encode(['success' => true, 'redirect' => $redirect_url]);
             } else {
-                error_log('[CHECKOUT_API] Payment status not succeeded: ' . $payment_intent->status);
+                session_tracking('checkout_payment_not_succeeded', ['status' => $payment_intent->status, 'user_id' => $user_id]);
                 echo json_encode(['error' => 'Payment not completed. Status: ' . $payment_intent->status]);
             }
         } catch (\Stripe\Exception\ApiErrorException $e) {
-            error_log('[CHECKOUT_API] Stripe API error: ' . $e->getMessage());
+            session_tracking('checkout_stripe_api_error', ['error' => $e->getMessage(), 'user_id' => $user_id]);
             // Check if this is just a retrieval error but payment might have succeeded
             echo json_encode(['error' => 'Unable to verify payment status. If payment was deducted, please refresh the page or contact support.']);
         } catch (Exception $e) {
-            error_log('[CHECKOUT_API] General error: ' . $e->getMessage());
+            session_tracking('checkout_general_error', ['error' => $e->getMessage(), 'user_id' => $user_id]);
             echo json_encode(['error' => 'Unable to verify payment. If payment was deducted, please refresh the page or contact support.']);
         }
         exit();
@@ -165,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     // Re-fetch user data
                     $user_data = $database->getrow("SELECT status, account_type FROM bg_users WHERE user_id = :user_id", ['user_id' => $user_id]);
                     
-                    error_log('[CHECKOUT_API] User activated via heartbeat check');
+                    session_tracking('checkout_user_activated_heartbeat', ['user_id' => $user_id, 'payment_intent_id' => $payment_intent_id]);
                 }
                 
                 // Store celebration data in session
@@ -198,16 +195,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 #-------------------------------------------------------------------------------
 $encoded_user_id = $_REQUEST['u'] ?? '';
 if (empty($encoded_user_id)) {
-    error_log('[CHECKOUT_API] No user ID provided, redirecting to signup complete');
+    session_tracking('checkout_no_user_id', 'No user ID provided, redirecting to signup');
     header('Location: /signup.php');
     exit();
 }
 
 try {
     $user_id = $qik->decodeId($encoded_user_id);
-    error_log('[CHECKOUT_API] Processing checkout for user: ' . $user_id);
+    session_tracking('checkout_processing', ['user_id' => $user_id]);
 } catch (Exception $e) {
-    error_log('[CHECKOUT_API] Invalid user ID encoding: ' . $encoded_user_id);
+    session_tracking('checkout_invalid_user_encoding', ['encoded_user_id' => $encoded_user_id]);
     header('Location: /signup.php');
     exit();
 }
@@ -220,12 +217,52 @@ $sql = "SELECT u.*, p.*
 $user_data = $database->getrow($sql, ['user_id' => $user_id]);
 
 if (!$user_data) {
-    error_log('[CHECKOUT_API] User not found: ' . $user_id);
+    session_tracking('checkout_user_not_found', ['user_id' => $user_id]);
     header('Location: /signup.php');
     exit();
 }
 
-error_log('[CHECKOUT_API] User data loaded - Type: ' . $user_data['account_type'] . ', Product: ' . $user_data['account_product_id']);
+$stripe_key = $STRIPECONFIG['STRIPE_KEY'] ?? '';
+$stripe_secret = $STRIPECONFIG['STRIPE_SECRET'] ?? '';
+
+if (empty($stripe_key) || empty($stripe_secret)) {
+    session_tracking('checkout_stripe_missing_config', 'Missing Stripe key or secret');
+    die('Payment configuration error. Please contact support.');
+}
+
+session_tracking('checkout_user_data_loaded', ['user_id' => $user_id, 'account_type' => $user_data['account_type'], 'product_id' => $user_data['account_product_id']]);
+
+// Check for duplicate billing scenarios
+// User should NOT be on checkout if they have completed transactions and no pending ones
+$sql_check_transactions = "SELECT
+        COUNT(CASE WHEN transaction_status = 'completed' OR payment_status = 'succeeded' THEN 1 END) as completed_count,
+        COUNT(CASE WHEN transaction_status = 'pending' AND payment_status = 'pending' THEN 1 END) as pending_count,
+        COUNT(*) as total_count
+    FROM bg_transactions
+    WHERE user_id = :user_id";
+
+$transaction_counts = $database->getrow($sql_check_transactions, ['user_id' => $user_id]);
+
+session_tracking('checkout_transaction_check', [
+    'user_id' => $user_id,
+    'completed_count' => $transaction_counts['completed_count'] ?? 0,
+    'pending_count' => $transaction_counts['pending_count'] ?? 0,
+    'total_count' => $transaction_counts['total_count'] ?? 0
+]);
+
+// If user has at least one completed transaction AND no pending transactions, they shouldn't be here
+if (($transaction_counts['completed_count'] ?? 0) > 0 && ($transaction_counts['pending_count'] ?? 0) == 0) {
+    session_tracking('checkout_duplicate_billing_prevented', [
+        'user_id' => $user_id,
+        'account_plan' => $user_data['account_plan'],
+        'completed_transactions' => $transaction_counts['completed_count'],
+        'reason' => 'User has completed transactions and no pending ones'
+    ]);
+
+    // Redirect to myaccount
+    header('Location: /myaccount/');
+    exit();
+}
 
 // Load ProductManager
 if (!class_exists('ProductManager')) {
@@ -239,8 +276,10 @@ $productManager = new ProductManagerPromo($database, $qik);
 $signup_data = $session->get('signup_process_data', []);
 $promo_code = $signup_data['promo_code'] ?? '';
 
-// Debug promo code
-error_log('[CHECKOUT_API] Promo code from session: ' . $promo_code);
+// Track promo code usage
+if (!empty($promo_code)) {
+    session_tracking('checkout_promo_code', ['promo_code' => $promo_code, 'user_id' => $user_id]);
+}
 
 if ($user_data && !empty($user_data['account_product_id'])) {
     // First check if product exists and allows promos
@@ -248,11 +287,19 @@ if ($user_data && !empty($user_data['account_product_id'])) {
     
     if ($promo_code && $product && (!isset($product['allow_promo']) || $product['allow_promo'] != 'yes')) {
         // Try to apply promo anyway for now
-        error_log('[CHECKOUT_API] Product does not have allow_promo=yes, but trying promo anyway');
+        session_tracking('checkout_promo_override', ['product_id' => $user_data['account_product_id'], 'promo_code' => $promo_code]);
     }
     
     $pricing = $productManager->calculatePrice($user_data['account_product_id'], $promo_code);
-    $amount = $pricing['final_price'] ?? $pricing['original_price'] ?? 2900;
+    $amount = $pricing['final_price'] ?? $pricing['original_price'] ?? null;
+
+    // Validate amount was determined
+    if ($amount === null || $amount < 0) {
+        $errormessage = 'Unable to determine checkout amount. Please contact support.';
+        $transferpagedata['message'] = $errormessage;
+        $transferpagedata['url'] = '/myaccount/';
+        $transferpagedata = $system->endpostpage($transferpagedata);
+    }
     
     // Show promo validation message
     $promo_message = '';
@@ -260,8 +307,11 @@ if ($user_data && !empty($user_data['account_product_id'])) {
         $promo_message = $pricing['promo_validation']['message'] ?? '';
     }
 } else {
-    $amount = 2900; // Default $29
-    $promo_message = '';
+    // No valid product ID - redirect with error
+    $errormessage = 'Unable to determine checkout amount. Please select a plan from your account page.';
+    $transferpagedata['message'] = $errormessage;
+    $transferpagedata['url'] = '/myaccount/';
+    $transferpagedata = $system->endpostpage($transferpagedata);
 }
 
 #-------------------------------------------------------------------------------
@@ -271,11 +321,11 @@ if ($user_data && !empty($user_data['account_product_id'])) {
 $is_free_account = false;
 if ($amount == 0 || $amount === 0 || $user_data['account_plan'] == 'free') {
     $is_free_account = true;
-    error_log('[CHECKOUT_API] Free account detected - amount: ' . $amount . ', plan: ' . $user_data['account_plan']);
+    session_tracking('checkout_free_account_detected', ['amount' => $amount, 'plan' => $user_data['account_plan'], 'user_id' => $user_id]);
 }
 
 if ($is_free_account) {
-    error_log('[CHECKOUT_API] Processing free account activation for user: ' . $user_id);
+    session_tracking('checkout_free_account_processing', ['user_id' => $user_id]);
     
     // Update user to active status
     $sql = "UPDATE bg_users SET status = 'active', modify_dt = NOW() WHERE user_id = :user_id";
@@ -289,7 +339,7 @@ if ($is_free_account) {
     $session->unset('userregistrationdata');
     
     // Redirect to welcome page
-    error_log('[CHECKOUT_API] Free account activated, redirecting to welcome');
+    session_tracking('checkout_free_account_activated', ['user_id' => $user_id, 'redirect' => '/myaccount/welcome']);
     header('Location: /myaccount/welcome');
     exit();
 }
@@ -297,54 +347,161 @@ if ($is_free_account) {
 #-------------------------------------------------------------------------------
 # CREATE PAYMENT INTENT
 #-------------------------------------------------------------------------------
-$STRIPECONFIG = $sitesettings['paymentgateway-stripe-live'] ?? [];
-$stripe_key = $STRIPECONFIG['STRIPE_KEY'] ?? '';
-$stripe_secret = $STRIPECONFIG['STRIPE_SECRET'] ?? '';
 
 if (empty($stripe_key) || empty($stripe_secret)) {
-    error_log('[CHECKOUT_API] Missing Stripe configuration');
+    session_tracking('checkout_stripe_missing_config', 'Missing Stripe key or secret');
     die('Payment configuration error. Please contact support.');
 }
 
 \Stripe\Stripe::setApiKey($stripe_secret);
 
+// Check if user has an existing pending transaction we should reuse
+$sql_pending = "SELECT transaction_id, payment_intent_id, stripe_payment_intent_id, amount
+                FROM bg_transactions
+                WHERE user_id = :user_id
+                AND transaction_status = 'pending'
+                AND payment_status = 'pending'
+                ORDER BY create_dt DESC
+                LIMIT 1";
+
+$existing_pending_transaction = $database->getrow($sql_pending, ['user_id' => $user_id]);
+$payment_intent = null; // Initialize to null
+$reusable_payment_intent = false; // Track if we have a reusable payment intent
+
 try {
-    // Create payment intent with additional metadata and explicit payment methods
-    $payment_intent = \Stripe\PaymentIntent::create([
-        'amount' => $amount,
-        'currency' => 'usd',
-        'payment_method_types' => ['card', 'cashapp', 'link'],
-        'metadata' => [
+    // Check if we can reuse an existing payment intent
+    if ($existing_pending_transaction && !empty($existing_pending_transaction['stripe_payment_intent_id'])) {
+        try {
+            $payment_intent = \Stripe\PaymentIntent::retrieve($existing_pending_transaction['stripe_payment_intent_id']);
+
+            // Check if the payment intent is still usable
+            if (in_array($payment_intent->status, ['requires_payment_method', 'requires_confirmation', 'requires_action'])) {
+                $reusable_payment_intent = true;
+                session_tracking('checkout_reusing_payment_intent', [
+                    'payment_intent_id' => $payment_intent->id,
+                    'transaction_id' => $existing_pending_transaction['transaction_id'],
+                    'user_id' => $user_id
+                ]);
+            } else {
+                // Payment intent exists but is not reusable
+                session_tracking('checkout_intent_not_reusable', [
+                    'payment_intent_id' => $payment_intent->id,
+                    'status' => $payment_intent->status,
+                    'user_id' => $user_id
+                ]);
+                $payment_intent = null;
+            }
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            // Could not retrieve payment intent from Stripe
+            session_tracking('checkout_existing_intent_retrieval_failed', [
+                'error' => $e->getMessage(),
+                'payment_intent_id' => $existing_pending_transaction['stripe_payment_intent_id'],
+                'user_id' => $user_id
+            ]);
+            $payment_intent = null;
+        }
+    }
+
+    // If we don't have a reusable payment intent, create a new one
+    if (!$reusable_payment_intent) {
+        // Determine if we need to create a new transaction or use existing one
+        if (!$existing_pending_transaction) {
+            // FIRST: Create a new pending transaction record in our database
+        $sql = "INSERT INTO bg_transactions (
+                user_id,
+                product_id,
+                product_name,
+                amount,
+                currency,
+                payment_status,
+                transaction_status,
+                create_dt
+            ) VALUES (
+                :user_id,
+                :product_id,
+                :product_name,
+                :amount,
+                'usd',
+                'pending',
+                'pending',
+                NOW()
+            )";
+
+        $params = [
             'user_id' => $user_id,
+            'product_id' => $user_data['account_product_id'] ?? null,
+            'product_name' => $user_data['account_name'] ?? ucfirst($user_data['account_type']) . ' Account',
+            'amount' => $amount / 100  // Convert cents to dollars for database
+        ];
+
+            $database->query($sql, $params);
+            $transaction_id = $database->lastInsertId();
+            session_tracking('checkout_transaction_created', ['transaction_id' => $transaction_id, 'user_id' => $user_id, 'amount' => $amount]);
+        } else {
+            // Use the existing transaction
+            $transaction_id = $existing_pending_transaction['transaction_id'];
+            session_tracking('checkout_reusing_transaction', ['transaction_id' => $transaction_id, 'user_id' => $user_id]);
+        }
+
+        // SECOND: Create payment intent with Stripe
+        $payment_intent = \Stripe\PaymentIntent::create([
+            'amount' => $amount,
+            'currency' => 'usd',
+            'payment_method_types' => ['card', 'cashapp', 'link'],
+            'metadata' => [
+                'user_id' => $user_id,
+                'transaction_id' => $transaction_id,
+                'account_type' => $user_data['account_type'],
+                'product_id' => $user_data['account_product_id'] ?? '',
+                'email' => $user_data['email'] ?? ''
+            ],
+            'description' => 'Birthday.Gold ' . ucfirst($user_data['account_type']) . ' Account'
+        ]);
+
+        session_tracking('checkout_payment_intent_created', ['payment_intent_id' => $payment_intent->id, 'transaction_id' => $transaction_id, 'amount' => $amount, 'user_id' => $user_id]);
+
+        // THIRD: Update the transaction with the Stripe payment intent ID
+        $sql_update = "UPDATE bg_transactions
+                       SET payment_intent_id = :payment_intent_id,
+                           stripe_payment_intent_id = :stripe_payment_intent_id,
+                           amount = :amount,
+                           modify_dt = NOW()
+                       WHERE transaction_id = :transaction_id";
+
+        $database->query($sql_update, [
+            'payment_intent_id' => $payment_intent->id,
+            'stripe_payment_intent_id' => $payment_intent->id,
+            'transaction_id' => $transaction_id,
+            'amount' => $amount / 100  // Update amount in case it changed
+        ]);
+
+        session_tracking('checkout_transaction_updated_with_intent', ['transaction_id' => $transaction_id, 'payment_intent_id' => $payment_intent->id]);
+    }
+
+    // Track checkout session start using sessiontracking function (only if we have a payment intent)
+    if ($payment_intent && isset($payment_intent->id)) {
+        $tracking_data = [
+            'action' => 'checkout_started',
+            'stripe_session_id' => $payment_intent->id,
+            'user_id' => $user_id,
+            'product_id' => $user_data['account_product_id'] ?? 0,
+            'amount' => $amount,
+            'promo_code' => $promo_code ?? '',
+            'user_email' => $user_data['email'] ?? '',
             'account_type' => $user_data['account_type'],
-            'product_id' => $user_data['account_product_id'] ?? '',
-            'email' => $user_data['email'] ?? ''
-        ],
-        'description' => 'Birthday.Gold ' . ucfirst($user_data['account_type']) . ' Account'
-    ]);
-    
-    error_log('[CHECKOUT_API] Payment intent created: ' . $payment_intent->id);
-    
-    // Track checkout session start using sessiontracking function
-    $tracking_data = [
-        'action' => 'checkout_started',
-        'stripe_session_id' => $payment_intent->id,
-        'user_id' => $user_id,
-        'product_id' => $user_data['account_product_id'] ?? 0,
-        'amount' => $amount,
-        'promo_code' => $promo_code ?? '',
-        'user_email' => $user_data['email'] ?? '',
-        'account_type' => $user_data['account_type'],
-        'status' => 'pending'
-    ];
-    session_tracking('checkout_start', $tracking_data);
-    error_log('[CHECKOUT_API] Checkout session tracked in sessiontracking');
+            'status' => 'pending'
+        ];
+        session_tracking('checkout_start', $tracking_data);
+    } else {
+        session_tracking('checkout_no_payment_intent', ['user_id' => $user_id, 'reason' => 'Payment intent not created or retrieved']);
+        throw new Exception('Unable to initialize payment system. Please try again.');
+    }
     
 } catch (\Stripe\Exception\ApiErrorException $e) {
-    error_log('[CHECKOUT_API] Stripe API error: ' . $e->getMessage());
+    session_tracking('checkout_stripe_api_error', ['error' => $e->getMessage(), 'user_id' => $user_id]);
     die('Unable to create payment: ' . $e->getMessage() . ' Please try again later.');
 } catch (Exception $e) {
-    error_log('[CHECKOUT_API] General error creating payment: ' . $e->getMessage());
+    session_tracking('checkout_payment_creation_error', ['error' => $e->getMessage(), 'user_id' => $user_id]);
     die('Unable to create payment. Please contact support.');
 }
 
@@ -1175,8 +1332,8 @@ include($dir['core_components'] . '/bg_header.inc');
                     </p>
                     <p class="small text-muted mb-0">
                         <i class="bi bi-person-check text-primary me-2"></i>
-                        Billing as <strong><?php echo htmlspecialchars($user_data['first_name'] . ' ' . $user_data['last_name']); ?></strong> • <?php echo ucfirst($user_data['account_type']); ?> account
-                    </p>
+                        Billed as: <strong>BdayGold <?php echo htmlspecialchars(ucfirst($user_data['account_type']). ' - ' . $user_data['last_name']); ?></strong>
+                       </p>
                 </div>
             </div>
         </div>
@@ -1266,7 +1423,7 @@ include($dir['core_components'] . '/bg_header.inc');
 <?php
 // Ensure payment intent exists before generating JavaScript
 if (!isset($payment_intent) || !$payment_intent) {
-    error_log('[CHECKOUT] Payment intent not set when generating JavaScript');
+    session_tracking('checkout_payment_intent_not_set', 'Payment intent missing when generating JavaScript');
     $footerattribute['postfooter'] = '<script>console.error("[CHECKOUT] Payment system not properly initialized");</script>';
 } else {
     $footerattribute['postfooter'] = '

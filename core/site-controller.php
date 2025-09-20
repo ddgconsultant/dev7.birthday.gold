@@ -104,7 +104,6 @@ function cssUrl($path)
 
 // Make it available globally
 $cssCacheBuster = getCssCacheBuster();
-$devversion = 'dev7';
 $cookiebannerversion = 2;
 $cookieinfolink = 'https://consumer.ftc.gov/articles/how-websites-and-apps-collect-and-use-your-information';
 
@@ -115,7 +114,7 @@ if ($errormode === 'showerrors') {
   ini_set('display_errors', 1);
   ini_set('display_startup_errors', 1);
   ini_set('log_errors', 1);
-  ini_set('error_log', 'W:/BIRTHDAY_SERVER/_logs_/' . $devversion . '_PHP_errors.log');
+  ini_set('error_log', 'W:/BIRTHDAY_SERVER/_logs_/' . $site . '_PHP_errors.log');
   error_reporting(E_ALL);
 } else { // 'prod' mode
   ini_set('display_errors', 0);
@@ -170,8 +169,12 @@ if (php_sapi_name() != 'cli') {
       exit;
     }
   }
-}
-
+} 
+// else {
+// Claude Code auto-auth - REMOVED for security reasons
+// Need to implement a better authentication method
+// @include($_SERVER['DOCUMENT_ROOT'] . '/claudecode/auth/auto-auth.php');
+// }
 
 #-------------------------------------------------------------------------------
 # SET UP OUTPUT BUFFERING HANDLING
@@ -210,61 +213,6 @@ $website['ui_version'] = 'v7';
 $website['plan_version'] = 'v7';
 $additionalstyles = '';
 $logBuffer = [];
-
-#-------------------------------------------------------------------------------
-# TRUE COLORS PERSONALITY SYSTEM
-#-------------------------------------------------------------------------------
-// Consistent color order and definitions across all personality pages
-$true_colors = [
-    'orange' => [
-        'name' => 'Orange',
-        'title' => 'Action-Oriented Leader',
-        'color' => '#FF6B35',
-        'description' => 'Spontaneous, flexible, thrives on variety and challenge. Prefers direct communication and quick results.',
-        'strengths' => ['High energy and enthusiasm', 'Quick decision making', 'Adaptable to change', 'Natural risk-taker', 'Results-focused'],
-        'communication' => 'Be direct, allow freedom, focus on results not rigid rules',
-        'motivation' => 'Variety, challenge, recognition for quick wins',
-        'delegation' => 'Short-term, high-energy projects',
-        'stress_response' => 'May become disorganized or impulsive'
-    ],
-    'gold' => [
-        'name' => 'Gold', 
-        'title' => 'Organized Stabilizer',
-        'color' => '#FFD700',
-        'description' => 'Values structure, dependability, and clear processes. Thorough and responsible in approach.',
-        'strengths' => ['Highly organized', 'Reliable and punctual', 'Detail-oriented', 'Follows procedures', 'Quality-focused'],
-        'communication' => 'Give clear instructions and timelines',
-        'motivation' => 'Stability, clear structure, recognition for responsibility',
-        'delegation' => 'Procedures, quality control, planning tasks',
-        'stress_response' => 'May become rigid or overly critical'
-    ],
-    'blue' => [
-        'name' => 'Blue',
-        'title' => 'People-Focused Collaborator',
-        'color' => '#4A90E2', 
-        'description' => 'Compassionate, cooperative, values relationships. Works best in harmonious team environments.',
-        'strengths' => ['Strong interpersonal skills', 'Empathetic and caring', 'Team-oriented', 'Conflict resolver', 'Supportive of others'],
-        'communication' => 'Show empathy, value their input',
-        'motivation' => 'Harmony, team connection, appreciation for efforts',
-        'delegation' => 'Team-building roles, customer/patient interactions',
-        'stress_response' => 'May take criticism personally, avoid conflict'
-    ],
-    'green' => [
-        'name' => 'Green',
-        'title' => 'Analytical Problem-Solver',
-        'color' => '#50C878',
-        'description' => 'Logical, independent, prefers to work with facts and data. Values competence and expertise.',
-        'strengths' => ['Logical and analytical', 'Independent worker', 'Problem-solving skills', 'Data-driven decisions', 'High standards'],
-        'communication' => 'Present facts, give space to think',
-        'motivation' => 'Autonomy, opportunities for mastery, problem-solving challenges',
-        'delegation' => 'Research, data analysis, technical projects',
-        'stress_response' => 'May withdraw, overanalyze, become perfectionistic'
-    ]
-];
-
-// Display order for consistent presentation
-$true_colors_order = ['orange', 'gold', 'blue', 'green'];
-
 
 
 #-------------------------------------------------------------------------------
@@ -346,7 +294,7 @@ breakpoint ($dir);
 $dir['bge'] = '/admin/bgreb_v3';
 $dir['bge_dir'] = $dir['base'] . $dir['bge'];
 $dir['bge_web'] = 'https://' . $site . '.birthday.gold' . $dir['bge'];
-$dir['bge_raw'] = 'W:/BIRTHDAY_SERVER/' . $devversion . '.birthday.gold' . $dir['bge'];
+$dir['bge_raw'] = 'W:/BIRTHDAY_SERVER/' . $site . '.birthday.gold' . $dir['bge'];
 $dir['bge_webA'] = 'https://' . $site . '.birthday.gold' . $dir['bge'];
 $website['bge_extensionversion'] = 'v4';
 
@@ -398,14 +346,25 @@ ini_set('session.cookie_domain', $website['domain']);
 #-------------------------------------------------------------------------------
 # READ IN ENVIRONMENT FILE
 #-------------------------------------------------------------------------------
-$configfile = $dir['configs'] . '/config-main-' . $mode . '7.inc';
+$configadditional = '';
+if ($mode=='dev' && $site=='dev7') {
+  $configadditional = '7';
+}
+$configfile = $dir['configs'] . '/config-main-' . $mode . $configadditional. '.inc';
 if (!file_exists($configfile)) {
   die("CRITICAL: Configuration file does not exist: $configfile");
 }
 
 $config = file_get_contents($configfile);
 $sitesettings = parse_ini_string($config, true);
-$STRIPECONFIG = $sitesettings['paymentgateway-stripe-live'];
+
+
+  $STRIPECONFIG = $sitesettings['paymentgateway-stripe-test'];
+
+
+if ($mode=='production' || !empty($allowpaymentgatewayoverride)) {
+  $STRIPECONFIG = $sitesettings['paymentgateway-stripe-live'];
+} 
 
 
 
@@ -581,9 +540,6 @@ foreach ($classes as $class) {
   }
 }
 
-// Claude Code auto-auth - REMOVED for security reasons
-// Need to implement a better authentication method
-// @include($_SERVER['DOCUMENT_ROOT'] . '/claudecode/auth/auto-auth.php');
 
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 # ## SITE WIDE VARIABLES 

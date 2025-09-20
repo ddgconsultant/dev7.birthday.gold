@@ -21,13 +21,13 @@ class ProductManager {
      */
     public function getProductsWithFeatures($accountType = 'user', $version = 'v7') {
         // Get products
-        $sql = "SELECT p.* 
-                FROM bg_products p 
-                WHERE p.account_type = :account_type 
-                AND p.version = :version 
-                AND p.status = 'active' 
+        $sql = "SELECT p.*
+                FROM bg_products p
+                WHERE p.account_type = :account_type
+                AND p.version = :version
+                AND p.status = 'active'
                 AND p.display_grouping_status = 'active'
-                ORDER BY p.price ASC";
+                ORDER BY p.display_order ASC, p.price ASC";
         
         $params = [
             'account_type' => $accountType,
@@ -101,57 +101,94 @@ class ProductManager {
      * @param string $version Version to check (v2, v3, v7)
      * @param bool $includeInactive Include inactive types (for admin)
      * @return array Account types with display info
-     */
+     */    
     public function getAvailableAccountTypes($version = 'v7', $includeInactive = false) {
-        // Build WHERE clause based on whether we include inactive
-        $whereClause = "WHERE p.version = :version";
-        if (!$includeInactive) {
-            $whereClause .= " AND p.status = 'active' AND p.display_grouping_status = 'active'";
-        }
-        
-        // First get account types from products
-        $sql = "SELECT p.account_type, COUNT(*) as plan_count
-                FROM bg_products p
-                $whereClause
-                GROUP BY p.account_type";
-        
-        $accountTypes = $this->database->getrows($sql, ['version' => $version]);
-        
-        // Try to join with account types table for display info
         try {
-            $atStatusClause = $includeInactive ? "" : " AND at.status = 'active'";
-            
-            $sql = "SELECT 
-                    p.account_type, 
-                    COUNT(*) as plan_count,
-                    COALESCE(at.display_name, CONCAT(UPPER(SUBSTRING(p.account_type,1,1)), SUBSTRING(p.account_type,2))) as display_name,
-                    COALESCE(at.short_label, p.account_type) as short_label,
-                    COALESCE(at.description, '') as description,
-                    COALESCE(at.icon, 'bi-tag') as icon,
-                    COALESCE(at.display_order, 999) as display_order,
-                    p.display_grouping_status,
-                    at.status as type_status
+            // Build the complete SQL query with proper concatenation
+            $sql = "
+                SELECT
+                    p.account_type,
+                    COUNT(DISTINCT p.id) AS plan_count,
+                    COALESCE(at.display_name, CONCAT(UPPER(SUBSTRING(p.account_type,1,1)), SUBSTRING(p.account_type,2))) AS display_name,
+                    COALESCE(at.short_label, p.account_type) AS short_label,
+                    COALESCE(at.description, '') AS description,
+                    COALESCE(at.icon, 'bi-tag') AS icon,
+                    COALESCE(at.display_order, 999) AS display_order,
+                    at.`status` AS type_status
                 FROM bg_products p
-                LEFT JOIN bg_account_types at ON p.account_type = at.account_type AND at.version = :version $atStatusClause
-                $whereClause
-                GROUP BY p.account_type
-                ORDER BY display_order, p.account_type";
+                LEFT JOIN bg_account_types at 
+                    ON at.account_type = p.account_type
+                    AND at.version = :version1";
+            
+            // Add status condition for account_types if needed
+            if (!$includeInactive) {
+                $sql .= " AND at.`status` = 'active'";
+            }
+            
+            // Add WHERE clause
+            $sql .= " WHERE p.version = :version2";
+            
+            // Add product status conditions if needed
+            if (!$includeInactive) {
+                $sql .= " AND p.`status` = 'active' AND p.display_grouping_status = 'active'";
+            }
+            
+            // Add GROUP BY
+            $sql .= "
+                GROUP BY 
+                    p.account_type,
+                    at.display_name,
+                    at.short_label,
+                    at.description,
+                    at.icon,
+                    at.display_order,
+                    at.`status`";
+            
+            // Add ORDER BY
+            $sql .= "
+                ORDER BY 
+                    COALESCE(at.display_order, 999),
+                    p.account_type";
+            
+            $params = ['version1' => $version, 'version2' => $version];
+           #breakpoint($sql);
+            $accountTypes = $this->database->getrows($sql, $params);
+            
+            // Add display_grouping_status after the query if not including inactive
+            if (!$includeInactive) {
+                foreach ($accountTypes as &$type) {
+                    $type['display_grouping_status'] = 'active';
+                }
+            }
+            
+        } catch (Exception $e) {
+            // Fallback query
+            $sql = "SELECT p.account_type, COUNT(*) as plan_count
+                    FROM bg_products p
+                    WHERE p.version = :version";
+            
+            if (!$includeInactive) {
+                $sql .= " AND p.status = 'active' AND p.display_grouping_status = 'active'";
+            }
+            
+            $sql .= " GROUP BY p.account_type ORDER BY p.account_type";
             
             $accountTypes = $this->database->getrows($sql, ['version' => $version]);
-        } catch (Exception $e) {
-            // If join fails (table doesn't exist), add display info manually
+            
+            // Enrich with config data
             foreach ($accountTypes as &$type) {
                 $config = $this->getAccountTypeConfig($type['account_type']);
-                $type['display_name'] = $config['label'];
-                $type['short_label'] = $config['short_label'];
-                $type['description'] = $config['description'];
-                $type['icon'] = $config['icon'];
+                $type['display_name']  = $config['label'];
+                $type['short_label']   = $config['short_label'];
+                $type['description']   = $config['description'];
+                $type['icon']          = $config['icon'];
+                $type['display_order'] = 999; // Default display order
+                $type['process_alert'] = 'sqlfailed_productmanager-getAvailableAccountTypes';
             }
         }
         
         return $accountTypes;
     }
-    
     /**
      * Get recommended plan for an account type
      * @param string $accountType Account type

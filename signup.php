@@ -29,7 +29,6 @@ $selectedAccountType = $_REQUEST['account_type'] ?? 'user';
 
 // Get the product version from site configuration
 // This determines which version of products to show
-global $website;
 $selectedVersion = $_REQUEST['version'] ?? $website['plan_version']; // Uses site's plan version, allow override for testing
 
 // Check if we're coming back from createaccount (back button)
@@ -693,6 +692,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                 <!-- Tab Radio Buttons (hidden) placed first -->
                 <?php
                 $isFirst = true;
+                session_tracking('selected_account_type', $accountTypes);
                 foreach ($accountTypes as $accountType) {
                     $isChecked = ($accountType['account_type'] == $selectedAccountType) ? ' checked' : '';
                     

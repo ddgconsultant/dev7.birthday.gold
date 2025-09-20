@@ -40,6 +40,13 @@ global $bg_users_accountplans;
 if (!isset($bg_users_accountplans)) {
     include_once($dir['core'] . '/site-arrays.inc');
 }
+
+// Initialize Product object if not already available
+if (!isset($product) || !is_object($product)) {
+    require_once($dir['classes'] . '/class.product.php');
+    $product = new Product($database, $qik);
+}
+
 $userplanname = $product->getProduct($component_user_data['account_product_id'], 'id')['account_name'];
 $user_planddetails=$app->plandetail('details_id', $component_user_data['account_product_id']);
 

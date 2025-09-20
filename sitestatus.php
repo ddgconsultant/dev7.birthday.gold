@@ -506,19 +506,24 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
         
         <!-- Right Panel - Service Status -->
-        <div class="col-lg-5  p-3 mb-5">
+        <div class="col-lg-5 mb-5">
             <div class="card shadow h-100 pb-0">
                 <h2 class="mb-3 d-flex align-items-center p-3"><i class="bi bi-hdd-stack-fill text-success me-3"></i>Service Status</h2>
                 
                 <div class="p-2 px-5">
                 <?php if (!empty($statusData['individual_services'])): ?>
                     <!-- Real monitor data from Uptime Kuma -->
-                    <?php foreach ($statusData['individual_services'] as $service): 
+                    <?php foreach ($statusData['individual_services'] as $service):
+                        // Skip BG JOB entries
+                        if (strpos($service['original_name'], 'BG JOB') === 0) {
+                            continue;
+                        }
+
                         $statusClass = $service['status'] === 'operational' ? 'active' : 'error';
                         $badgeClass = $service['status'] === 'operational' ? 'bg-success' : 'bg-danger';
                         $badgeText = $service['status'] === 'operational' ? 'OPERATIONAL' : 'DOWN';
                         $uptimeText = $service['uptime'] !== null ? $service['uptime'] . '%' : 'N/A';
-                        
+
                     ?>
                     <div class="bg-white rounded border mb-1 position-relative overflow-hidden service-status-card py-1 ps-3 pe-2">
                         <div class="d-flex align-items-center">
