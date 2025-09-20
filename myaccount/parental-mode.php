@@ -1,11 +1,34 @@
 <?php
 $addClasses[] = 'fileuploader';
+$addClasses[] = 'account';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 $bodycontentclass='';
 
 // Add v7 theme CSS
 $additionalstyles = '<link rel="stylesheet" href="/public/css/v7/bg_theme.css">';
+
+// Reload user data to ensure we have the latest information (including avatar)
+$current_user_data = $account->getuserdata($current_user_data['user_id'], 'user_id');
+
+// Check if this is the first visit to parental mode
+$userId = $current_user_data['user_id'];
+
+// Check for first parental visit attribute
+$stmt = $database->prepare("SELECT * FROM bg_user_attributes WHERE user_id = :user_id AND name = 'first_parental_visit' AND status = 'active' LIMIT 1");
+$stmt->execute([':user_id' => $userId]);
+$first_visit_record = $stmt->fetch(PDO::FETCH_ASSOC);
+$is_first_visit = empty($first_visit_record);
+
+// If it's first visit, mark it
+if ($is_first_visit) {
+    $stmt = $database->prepare("INSERT INTO bg_user_attributes (user_id, type, name, string_value, status, create_dt, modify_dt)
+                                VALUES (:user_id, 'system', 'first_parental_visit', :timestamp, 'active', NOW(), NOW())");
+    $stmt->execute([
+        ':user_id' => $userId,
+        ':timestamp' => date('Y-m-d H:i:s')
+    ]);
+}
 
 include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
@@ -144,7 +167,7 @@ $additionalstyles .= '
 }
 </style>';
 
-$userId = $current_user_data['user_id'];
+// $userId already defined above at line 12
 $query = $database->prepare("SELECT * FROM bg_users WHERE feature_parent_id = :parent_id and `status`='active' and `account_type`='minor'");
 $query->bindParam(':parent_id', $userId, PDO::PARAM_INT);
 $query->execute();
@@ -152,13 +175,60 @@ $childaccount_records = $query->fetchAll(PDO::FETCH_ASSOC);
 $minorcount = count($childaccount_records);
 
 echo '
-<div class="container my-5 pt-5">
+<div class="container my-5 pt-5">';
+
+// Show first visit welcome message
+if ($is_first_visit) {
+    $children_remaining = 6 - $minorcount;
+    $children_message = '';
+    if ($children_remaining > 0) {
+        $children_message = ' (you can add ' . $children_remaining . ' more)';
+    } elseif ($children_remaining == 0) {
+        $children_message = ' (maximum reached)';
+    }
+
+    echo '
+    <div class="alert alert-primary alert-dismissible fade show mb-4" role="alert">
+        <div class="d-flex align-items-start">
+            <i class="bi bi-info-circle-fill fs-4 me-3 mt-1"></i>
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-2">Welcome to Parental Mode!</h5>
+                <p class="mb-3 text-muted">As a parent, you can manage birthday rewards for your children and yourself. Here\'s what you can do:</p>
+                <ul class="mb-0 text-muted">
+                    <li>Add Child Accounts: Create profiles for children 16 and younger' . $children_message . '</li>
+                    <li>Manage Your Own Profile: Don\'t forget to set up birthday rewards for yourself too!</li>
+                    <li>Switch Between Accounts: Easily switch to manage enrollments for each family member</li>
+                </ul>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>';
+}
+
+// Always show action buttons (right-aligned)
+echo '
+    <div class="d-flex gap-2 justify-content-end mb-4">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#parentalGuideModal">
+            <i class="bi bi-book me-2"></i>View Full Guide
+        </button>
+        <a href="/myaccount/profile" class="btn btn-outline-primary">
+            <i class="bi bi-person-circle me-2"></i>Manage My Profile
+        </a>
+    </div>';
+
+echo '
     <div class="card mb-3 mb-lg-0">
         <div class="parental-card-header">
             <div class="parental-card-title">
                 <i class="bi bi-people-fill parental-card-icon"></i>
                 <div>
-                    <h5 class="mb-0">Child Accounts</h5>
+                    <h5 class="mb-0">Child Accounts
+                        <i class="bi bi-info-circle text-muted ms-2"
+                           style="font-size: 1rem; cursor: pointer;"
+                           data-bs-toggle="modal"
+                           data-bs-target="#parentalGuideModal"
+                           title="View parental guide"></i>
+                    </h5>
                     <span class="badge badge-square bg-secondary mt-1" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $minorcount . ' Child Accounts">' . $minorcount . ' Active</span>
                 </div>
             </div>
@@ -167,19 +237,16 @@ echo '
                 <i class="bi bi-plus-circle"></i>
                 Add Child
             </a>' : '
-            <button class="btn-add-child" disabled data-bs-toggle="tooltip" data-bs-placement="left" title="Max 6 minor accounts reached">
+            <button class="btn-add-child" disabled data-bs-toggle="tooltip" data-bs-placement="left" title="You have reached the maximum number of child accounts. Each family plan includes up to 6 children.">
                 <i class="bi bi-x-circle"></i>
-                Maximum Reached
+                Max. 6 Reached
             </button>') . '
         </div>
         ';
 
         if ($minorcount >= 6){
 
-echo '  <div class="card-body">
-            <div class="alert alert-warning mb-4">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>You have reached the maximum number of allowed child accounts (6).
-            </div>';
+echo '  <div class="card-body">';
 
 
         } else {
@@ -429,6 +496,14 @@ document.addEventListener('DOMContentLoaded', function() {
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
+    <?php if ($is_first_visit): ?>
+    // Auto-show the parental guide modal on first visit
+    setTimeout(function() {
+        var guideModal = new bootstrap.Modal(document.getElementById('parentalGuideModal'));
+        guideModal.show();
+    }, 1000);
+    <?php endif; ?>
     
     const form = document.getElementById('addnewminor');
     const emailCheckbox = document.getElementById('useCustomEmail');
@@ -632,6 +707,73 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php
+// Add the parental guide modal (always available since button is always shown)
+echo '
+<!-- Parental Guide Modal -->
+<div class="modal fade" id="parentalGuideModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary">
+                <h5 class="modal-title text-white"><i class="bi bi-book me-2"></i>Parent Guide: Getting Started</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <h5 class="text-primary fw-bold mb-2"><i class="bi bi-person-circle me-2"></i>Manage Your Profile</h5>
+                    <p class="small">Update your own birthday information and preferences:</p>
+                    <ul style="font-size: 0.85rem;">
+                        <li>Click <strong>"Manage My Profile"</strong> to edit your information</li>
+                        <li>Update your birthday, contact details, and preferences</li>
+                        <li>You\'ll get birthday rewards too!</li>
+                    </ul>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="text-primary fw-bold mb-2"><i class="bi bi-people me-2"></i>Add Your Children</h5>
+                    <p class="small">Create accounts for children 16 and younger:</p>
+                    <ul style="font-size: 0.85rem;">
+                        <li>Click the <strong>"Add Child"</strong> button above</li>
+                        <li>Enter their information (name, birthdate, gender)</li>
+                        <li>You can add up to 6 children total</li>
+                    </ul>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="text-primary fw-bold mb-2"><i class="bi bi-arrow-left-right me-2"></i>Switch Between Accounts</h5>
+                    <p class="small">Easily manage each family member:</p>
+                    <ul style="font-size: 0.85rem;">
+                        <li>Use <strong>"Switch Account"</strong> to access each profile</li>
+                        <li>Update information as your children grow</li>
+                        <li>Monitor activity for each account</li>
+                    </ul>
+                </div>
+
+                <div class="mb-4 border border-primary rounded p-3 bg-light">
+                    <h5 class="text-primary fw-bold mb-2"><i class="bi bi-gift-fill me-2"></i>Pick Birthday Enrollments (Do This Last!)</h5>
+                    <p class="small mb-2">After setting up profiles, choose birthday reward programs:</p>
+                    <ul style="font-size: 0.85rem;" class="mb-0">
+                        <li>Switch to each family member\'s account</li>
+                        <li>Visit <strong>"Enrollment Picker"</strong> to select businesses</li>
+                        <li>Choose age-appropriate restaurants, stores, and services</li>
+                        <li>Each family member can have their own selections</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    <strong>Remember:</strong> These are flexible flows - you can do them in any order that works for you, but save enrollment picking for last!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="/myaccount/profile" class="btn btn-primary">
+                    <i class="bi bi-person-circle me-2"></i>Manage My Profile Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>';
+
 echo '</div>';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
