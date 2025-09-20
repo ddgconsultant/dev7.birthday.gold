@@ -129,7 +129,7 @@ if (empty($celebration_messages)) {
         'celebration_subtitle' => 'Your account is ready{NAME}!',
         'celebration_message' => 'You\'re all set to start receiving amazing birthday rewards from hundreds of businesses. We\'ll automatically enroll you in birthday programs as your special day approaches.',
         'celebration_next_steps_title' => 'Your Next Steps:',
-        'celebration_button_text' => 'Go to Your Dashboard'
+        'celebration_button_text' => 'Let\'s get started'
     ];
 }
 
@@ -413,13 +413,13 @@ include($dir['core_components'] . '/bg_header.inc');
         <?php
         // Determine redirect URL
         $redirect_url = '/myaccount/';
-        if ($user_data && $user_data['account_type'] === 'parental') {
+        if ($user_data && ($user_data['account_type'] === 'parental' || $user_data['account_type'] === 'family')) {
             $redirect_url = '/myaccount/parental-mode.php';
         }
         ?>
         
         <a href="<?php echo $redirect_url; ?>" class="celebration-button">
-            <?php echo htmlspecialchars($celebration_messages['celebration_button_text'] ?? 'Go to Your Dashboard'); ?> <i class="bi bi-arrow-right-circle ms-2"></i>
+            <?php echo htmlspecialchars($celebration_messages['celebration_button_text'] ?? 'Let\'s get started'); ?> <i class="bi bi-arrow-right-circle ms-2"></i>
         </a>
     </div>
 </div>
