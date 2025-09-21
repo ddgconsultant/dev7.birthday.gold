@@ -1,8 +1,8 @@
 api/mobileapps/birthday_gold.apk
 api/mobileapps/older_google/birthday_gold.apk
-# Ignore node modules or vendor packages
+# Ignore node modules but NOT vendor (needed for deployments)
 node_modules/
-vendor/
+# vendor/ - REMOVED: vendor directory is needed for deployments
 
 # Ignore sensitive or environment files
 .env
