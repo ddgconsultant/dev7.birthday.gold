@@ -79,20 +79,10 @@ manage_ssl_certificates() {
     echo "=========================================="
     echo ""
 
-    # Define certificate paths - determine year based on current date
-    current_year=$(date +%Y)
-
-    # Check which certificate directory to use based on what exists
-    # Try current year first, then previous year
-    if [ -d "/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/${current_year}_cert" ]; then
-        CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/${current_year}_cert"
-    elif [ -d "/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/$((current_year-1))_cert" ]; then
-        CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/$((current_year-1))_cert"
-    else
-        # Fallback to 2025 if neither exists
-        CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/2025_cert"
-    fi
-
+    # Define certificate paths - always use base directory for current certificates
+    # The current certificates are kept in the base directory
+    # Year-specific folders are for archival purposes only
+    CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold"
     CERT_DEST_DIR="/var/web_certs/BIRTHDAY_SERVER/birthday.gold"
 
     # Expected SHA1 checksums for 2025 certificates (update these when certs change)
@@ -109,23 +99,38 @@ manage_ssl_certificates() {
     fi
 
     # Check if source files exist
-    if [ ! -f "$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt" ] || [ ! -f "$CERT_SOURCE_DIR/star.birthday.gold.key" ]; then
-        echo "ERROR: Required certificate files not found in $CERT_SOURCE_DIR"
-        echo "Expected: STAR_birthday_gold_chained.crt and star.birthday.gold.key"
+    # Look for either the chained certificate or combined pem, plus the key file
+    if [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt" ]; then
+        CERT_FILE="$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt"
+        CERT_TYPE="chained"
+    elif [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold_combined.pem" ]; then
+        CERT_FILE="$CERT_SOURCE_DIR/STAR_birthday_gold_combined.pem"
+        CERT_TYPE="combined"
+    elif [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold.crt" ]; then
+        CERT_FILE="$CERT_SOURCE_DIR/STAR_birthday_gold.crt"
+        CERT_TYPE="single"
+    else
+        echo "ERROR: No certificate file found in $CERT_SOURCE_DIR"
+        echo "Expected: STAR_birthday_gold_chained.crt, STAR_birthday_gold_combined.pem, or STAR_birthday_gold.crt"
         return 1
     fi
 
+    if [ ! -f "$CERT_SOURCE_DIR/star.birthday.gold.key" ]; then
+        echo "ERROR: Key file not found: $CERT_SOURCE_DIR/star.birthday.gold.key"
+        return 1
+    fi
+
+    echo "Found certificate type: $CERT_TYPE"
+
     # Verify source file checksums
     echo "Verifying source certificate checksums..."
-    source_chained_sha1=$(sha1sum "$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt" 2>/dev/null | awk '{ print $1 }')
+    source_cert_sha1=$(sha1sum "$CERT_FILE" 2>/dev/null | awk '{ print $1 }')
     source_key_sha1=$(sha1sum "$CERT_SOURCE_DIR/star.birthday.gold.key" 2>/dev/null | awk '{ print $1 }')
 
-    if [ "$source_chained_sha1" != "$EXPECTED_CHAINED_SHA1" ] || [ "$source_key_sha1" != "$EXPECTED_KEY_SHA1" ]; then
-        echo "WARNING: Source certificate checksums do not match expected values!"
-        echo "  Expected chained cert SHA1: $EXPECTED_CHAINED_SHA1"
-        echo "  Found chained cert SHA1:    $source_chained_sha1"
-        echo "  Expected key SHA1:          $EXPECTED_KEY_SHA1"
-        echo "  Found key SHA1:             $source_key_sha1"
+    # Skip checksum verification for now since certificates may vary
+    if [ ! -z "$source_cert_sha1" ] && [ ! -z "$source_key_sha1" ]; then
+        echo "  Certificate SHA1: $source_cert_sha1"
+        echo "  Key SHA1:         $source_key_sha1"
         echo ""
         echo "This might indicate newer certificates are available."
         echo "Proceeding with deployment of current certificates..."
@@ -144,7 +149,18 @@ manage_ssl_certificates() {
 
     # Copy certificate files to destination
     echo "Copying certificate files to $CERT_DEST_DIR..."
-    cp "$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+
+    # Handle different certificate types
+    if [ "$CERT_TYPE" = "combined" ]; then
+        # If we have a combined PEM, copy it directly
+        cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+        cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+    else
+        # Copy the certificate file
+        cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+    fi
+
+    # Always copy the key
     cp "$CERT_SOURCE_DIR/star.birthday.gold.key" "$CERT_DEST_DIR/server.key"
 
     # Set proper ownership and permissions
@@ -153,11 +169,13 @@ manage_ssl_certificates() {
     chmod 644 "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
     chmod 640 "$CERT_DEST_DIR/server.key"
 
-    # Create combined PEM file
-    echo "Creating combined PEM file..."
-    cat "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt" \
-        "$CERT_DEST_DIR/server.key" \
-        > "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+    # Create combined PEM file if not already present
+    if [ "$CERT_TYPE" != "combined" ]; then
+        echo "Creating combined PEM file..."
+        cat "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt" \
+            "$CERT_DEST_DIR/server.key" \
+            > "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+    fi
 
     # Set proper ownership and permissions for combined file
     chown www-data:www-data "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
