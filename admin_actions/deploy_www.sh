@@ -588,15 +588,23 @@ if [ -f "$new_deploy_script" ] && [ ! -z "$new_deploy_script" ]; then
 
     if [ "$new_sha1" != "$current_sha1" ]; then
         cp "$new_deploy_script" "$current_deploy_script"
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to copy new deploy script"
+            return 1
+        fi
         dos2unix "$current_deploy_script"
         echo "deploy_www.sh has been updated from ${source_subdomain}.birthday.gold."
 
         # Clean up temp file if used
-        [ "$new_deploy_script" = "$temp_deploy_script" ] && rm -f "$temp_deploy_script"
+        if [ "$new_deploy_script" = "$temp_deploy_script" ]; then
+            rm -f "$temp_deploy_script"
+        fi
     else
         echo "No update needed for deploy_www.sh."
         # Clean up temp file if used
-        [ "$new_deploy_script" = "$temp_deploy_script" ] && rm -f "$temp_deploy_script"
+        if [ "$new_deploy_script" = "$temp_deploy_script" ]; then
+            rm -f "$temp_deploy_script"
+        fi
     fi
 else
     echo "No deploy_www.sh found. Skipping update."
