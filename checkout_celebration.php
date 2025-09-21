@@ -1,4 +1,5 @@
 <?php
+$addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 
 // Testing flag - add ?test=1 to bypass user authentication
@@ -77,11 +78,7 @@ if (!$test_mode && $user_id) {
     $session->unset('celebration_data');
 }
 
-// Load ProductManager to get proper product data and features
-if (!class_exists('ProductManager')) {
-    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
-}
-$productManager = new ProductManager($database, $qik);
+// ProductManager is auto-instantiated as $productmanager by site-controller
 
 // Get product-specific messaging from bg_product_features using ProductManager
 $celebration_messages = [];
@@ -97,7 +94,7 @@ if (!$product_id && $user_data && isset($user_data['account_plan'])) {
 
 if ($product_id) {
     // Get product data with features using ProductManager
-    $product_data = $productManager->getProduct($product_id);
+    $product_data = $productmanager->getProduct($product_id);
 
     if ($product_data && isset($product_data['features'])) {
         foreach ($product_data['features'] as $feature) {

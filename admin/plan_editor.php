@@ -2,13 +2,11 @@
 // Start output buffering to prevent any accidental output
 ob_start();
 
+$addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
 
 // Admin access is managed by site-controller
-
-// Initialize ProductManager
-$productManager = new ProductManager($database, $qik);
+// ProductManager is auto-instantiated as $productmanager by site-controller
 
 // Get current version (default to v7)
 $current_version = $_GET['version'] ?? 'v7';
@@ -91,7 +89,7 @@ if (isset($_POST['ajax_action'])) {
                     ]);
                 } else {
                     // Get product info for new feature
-                    $product = $productManager->getProduct($product_id);
+                    $product = $productmanager->getProduct($product_id);
                     
                     // Insert new feature
                     $sql = "INSERT INTO bg_product_features 
@@ -175,7 +173,7 @@ if (isset($_POST['ajax_action'])) {
 }
 
 // Get all account types (including inactive ones for admin)
-$accountTypes = $productManager->getAvailableAccountTypes($current_version, true);
+$accountTypes = $productmanager->getAvailableAccountTypes($current_version, true);
 
 // Get all products for current version (including inactive ones for admin visibility)
 $sql = "SELECT * FROM bg_products WHERE version = :version ORDER BY account_type, price";
@@ -490,7 +488,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     <?php 
                     $typeProducts = $productsByType[$type['account_type']] ?? [];
                     foreach ($typeProducts as $product): 
-                        $features = $productManager->getProductFeatures($product['id'], false, 'all');
+                        $features = $productmanager->getProductFeatures($product['id'], false, 'all');
                     ?>
                     <div class="col-md-6 col-lg-4">
                         <div class="plan-card <?php echo $product['display_grouping_status'] === 'inactive' ? 'grouping-inactive' : ''; ?>" 

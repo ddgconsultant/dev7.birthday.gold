@@ -4,9 +4,9 @@
  * Handles the return from Stripe and processes the upgrade
  */
 
+$addClasses[] = 'productmanager';
+$addClasses[] = 'upgrademanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.upgrademanager.php');
 
 // Check if user is logged in
 if (!$account->isactive()) {
@@ -40,9 +40,9 @@ if ($upgradeSession['status'] === 'completed') {
 require_once($_SERVER['DOCUMENT_ROOT'] . '/../ENV_CONFIGS/vendor/autoload.php');
 \Stripe\Stripe::setApiKey($STRIPECONFIG['stripe_secret_key']);
 
-// Initialize managers
-$productManager = new ProductManager($database, $qik);
-$upgradeManager = new UpgradeManager($database, $account, $productManager, $session, $qik);
+// Managers are auto-instantiated by site-controller
+// Note: upgrademanager requires productmanager in its constructor
+// Site-controller handles this dependency
 
 // Process based on redirect status
 if ($redirectStatus === 'succeeded' && $paymentIntent) {
@@ -61,7 +61,7 @@ if ($redirectStatus === 'succeeded' && $paymentIntent) {
         }
         
         // Process the upgrade
-        $result = $upgradeManager->processUpgrade($upgradeSessionId, $paymentIntent);
+        $result = $upgrademanager->processUpgrade($upgradeSessionId, $paymentIntent);
         
         if ($result['success']) {
             // Clear the session to prevent reprocessing

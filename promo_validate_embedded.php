@@ -3,6 +3,7 @@
  * Embedded promo validation - returns JavaScript function
  * This approach avoids AJAX entirely
  */
+$addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 
 // Set JavaScript content type
@@ -12,13 +13,8 @@ header('Content-Type: application/javascript');
 $signup_process = $session->get('signup_process_data', []);
 $productId = $signup_process['account_plan_id'] ?? 0;
 
-// Load ProductManager
-if (!class_exists('ProductManager')) {
-    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
-}
-include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
 
-$productManager = new ProductManagerPromo($database, $qik);
+// ProductManager is auto-instantiated as $productmanager by site-controller
 
 // Pre-validate common promo codes
 $commonPromos = ['80off', 'TEST50', 'BETA', 'SAVE20', 'GOLD50'];
@@ -26,9 +22,9 @@ $promoData = [];
 
 foreach ($commonPromos as $code) {
     if ($productId) {
-        $validation = $productManager->validatePromoCode($code, $productId);
+        $validation = $productmanager->validatePromoCode($code, $productId);
         if ($validation['valid']) {
-            $pricing = $productManager->calculatePrice($productId, $code);
+            $pricing = $productmanager->calculatePrice($productId, $code);
             $promoData[strtoupper($code)] = [
                 'valid' => true,
                 'message' => $validation['message'] ?? 'Promo code applied!',
@@ -66,6 +62,3 @@ window.promoValidation = {
         localStorage.setItem('promo_validation', JSON.stringify(validation));
     }
 };
-
-console.log('[PROMO] Embedded validation loaded for product:', window.promoValidation.productId);
-console.log('[PROMO] Available promos:', Object.keys(window.promoValidation.promos));

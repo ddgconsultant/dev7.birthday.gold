@@ -486,8 +486,12 @@ foreach ($classes as $class) {
         $productmanager = new ProductManager($database, $qik);
         break;
       // -----------------------------------------
-      case 'productmanager_promo':
-        $productManager = new ProductManagerPromo($database, $qik);
+      case 'upgrademanager':
+        // UpgradeManager requires productmanager, so ensure it's loaded first
+        if (!isset($productmanager)) {
+            $productmanager = new ProductManager($database, $qik);
+        }
+        $upgrademanager = new UpgradeManager($database, $account, $productmanager, $session, $qik);
         break;
       // -----------------------------------------
       case 'sms':

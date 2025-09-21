@@ -1,5 +1,6 @@
 <?php
 #$allowpaymentgatewayoverride = true;
+$addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 
 // Load Composer autoloader for Stripe
@@ -9,6 +10,10 @@ require_once($_SERVER['DOCUMENT_ROOT'].'/vendor/autoload.php');
 session_tracking('checkout_page_loaded', 'Script started');
 
 
+$STRIPECONFIG = $sitesettings['paymentgateway-stripe-live'] ?? [];
+$stripe_secret = $STRIPECONFIG['STRIPE_SECRET'] ?? '';
+$stripe_key = $STRIPECONFIG['STRIPE_KEY'] ?? '';
+
 
 #-------------------------------------------------------------------------------
 # HANDLE AJAX PAYMENT REQUEST
@@ -17,8 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
     
     // Get Stripe configuration
-    $STRIPECONFIG = $sitesettings['paymentgateway-stripe-live'] ?? [];
-    $stripe_secret = $STRIPECONFIG['STRIPE_SECRET'] ?? '';
+
     
     if (empty($stripe_secret)) {
         session_tracking('checkout_stripe_config_error', 'Missing Stripe secret key');
@@ -222,8 +226,6 @@ if (!$user_data) {
     exit();
 }
 
-$stripe_key = $STRIPECONFIG['STRIPE_KEY'] ?? '';
-$stripe_secret = $STRIPECONFIG['STRIPE_SECRET'] ?? '';
 
 if (empty($stripe_key) || empty($stripe_secret)) {
     session_tracking('checkout_stripe_missing_config', 'Missing Stripe key or secret');
@@ -264,13 +266,7 @@ if (($transaction_counts['completed_count'] ?? 0) > 0 && ($transaction_counts['p
     exit();
 }
 
-// Load ProductManager
-if (!class_exists('ProductManager')) {
-    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
-}
-// Use standalone version that handles promo codes properly
-include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
-$productManager = new ProductManagerPromo($database, $qik);
+// ProductManager is auto-instantiated as $productmanager by site-controller
 
 // Get pricing
 $signup_data = $session->get('signup_process_data', []);
@@ -283,14 +279,14 @@ if (!empty($promo_code)) {
 
 if ($user_data && !empty($user_data['account_product_id'])) {
     // First check if product exists and allows promos
-    $product = $productManager->getProduct($user_data['account_product_id']);
+    $product = $productmanager->getProduct($user_data['account_product_id']);
     
     if ($promo_code && $product && (!isset($product['allow_promo']) || $product['allow_promo'] != 'yes')) {
         // Try to apply promo anyway for now
         session_tracking('checkout_promo_override', ['product_id' => $user_data['account_product_id'], 'promo_code' => $promo_code]);
     }
     
-    $pricing = $productManager->calculatePrice($user_data['account_product_id'], $promo_code);
+    $pricing = $productmanager->calculatePrice($user_data['account_product_id'], $promo_code);
     $amount = $pricing['final_price'] ?? $pricing['original_price'] ?? null;
 
     // Validate amount was determined
@@ -1332,7 +1328,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     </p>
                     <p class="small text-muted mb-0">
                         <i class="bi bi-person-check text-primary me-2"></i>
-                        Billed as: <strong>BdayGold <?php echo htmlspecialchars(ucfirst($user_data['account_type']). ' - ' . $user_data['last_name']); ?></strong>
+                        Billed as: <strong class="ms-2">BdayGold <?php echo htmlspecialchars(ucfirst($user_data['account_type']). ' - ' . $user_data['last_name']); ?></strong>
                        </p>
                 </div>
             </div>

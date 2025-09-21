@@ -29,6 +29,9 @@ class ProductManagerPromo {
         throw new Exception("Method $method not found");
     }
     
+
+
+
     /**
      * Get product - delegates to original
      */
@@ -42,6 +45,11 @@ class ProductManagerPromo {
         return $this->database->getrow($sql, ['identifier' => $identifier]);
     }
     
+
+
+
+
+
     /**
      * Validate promo code with bg_product_features support
      */
@@ -107,6 +115,12 @@ class ProductManagerPromo {
         error_log('[ProductManagerPromo] Promo code not found or invalid');
         return ['valid' => false, 'message' => 'Invalid or expired promo code'];
     }
+    
+
+
+
+
+
     
     /**
      * Calculate price with promo code

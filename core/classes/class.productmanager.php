@@ -7,12 +7,34 @@
 class ProductManager {
     private $database;
     private $qik;
-    
+    private $debugMode = false;
+
     public function __construct($database, $qik = null) {
         $this->database = $database;
         $this->qik = $qik;
+        // Enable debug mode in development environments
+        $this->debugMode = (isset($GLOBALS['mode']) && $GLOBALS['mode'] == 'dev');
+    }
+
+
+
+    
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Log debug messages if debug mode is enabled
+     */
+    private function debugLog($message) {
+        if ($this->debugMode) {
+            error_log('[ProductManager] ' . $message);
+        }
     }
     
+
+
+    
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
     /**
      * Get all active products with features for a specific account type
      * @param string $accountType Account type (user, parental, business, giftcertificate)
@@ -46,6 +68,8 @@ class ProductManager {
     }
     
     
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
     /**
      * Get all active products with features regardless of account type
      * @param string $version Version (v2, v3, v7)
@@ -72,6 +96,13 @@ class ProductManager {
         
         return $products;
     }
+
+
+
+
+    
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
     
     /**
      * Get single product by ID or plan name
@@ -95,7 +126,13 @@ class ProductManager {
         
         return $product;
     }
+
+
+
+
     
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
     /**
      * Get available account types with plan counts
      * @param string $version Version to check (v2, v3, v7)
@@ -162,89 +199,189 @@ class ProductManager {
             }
             
         } catch (Exception $e) {
-            // Fallback query
-            $sql = "SELECT p.account_type, COUNT(*) as plan_count
-                    FROM bg_products p
-                    WHERE p.version = :version";
-            
-            if (!$includeInactive) {
-                $sql .= " AND p.status = 'active' AND p.display_grouping_status = 'active'";
+            // Database error - track and forward to error page
+            $error_data = [
+                'error_type' => 'database_error',
+                'error_message' => $e->getMessage(),
+                'method' => 'getAvailableAccountTypes',
+                'class' => 'ProductManager',
+                'version' => $version,
+                'include_inactive' => $includeInactive
+            ];
+
+            // Track the error
+            if (function_exists('session_tracking')) {
+                session_tracking('productmanager_database_error', $error_data);
             }
-            
-            $sql .= " GROUP BY p.account_type ORDER BY p.account_type";
-            
-            $accountTypes = $this->database->getrows($sql, ['version' => $version]);
-            
-            // Enrich with config data
-            foreach ($accountTypes as &$type) {
-                $config = $this->getAccountTypeConfig($type['account_type']);
-                $type['display_name']  = $config['label'];
-                $type['short_label']   = $config['short_label'];
-                $type['description']   = $config['description'];
-                $type['icon']          = $config['icon'];
-                $type['display_order'] = 999; // Default display order
-                $type['process_alert'] = 'sqlfailed_productmanager-getAvailableAccountTypes';
-            }
+
+            // Log for debugging
+            $this->debugLog('Database error in getAvailableAccountTypes: ' . $e->getMessage());
+            error_log('[ProductManager] Database error: ' . json_encode($error_data));
+
+            // Redirect to error page
+            $encoded = base64_encode(json_encode($error_data));
+            header('Location: /error?e=' . urlencode($encoded));
+            exit();
         }
         
         return $accountTypes;
     }
+
+
+
+    
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
     /**
      * Get recommended plan for an account type
      * @param string $accountType Account type
      * @return array|false Recommended product or false
      */
     public function getRecommendedPlan($accountType = 'user') {
-        // Logic to determine recommended plan
-        // For now, let us recommend 'gold' plans
-        $recommendedPlans = [
-            'user' => 'gold',
-            'parental' => 'family_gold',
-            'business' => 'business_pro',
-            'giftcertificate' => 'gift_gold'
-        ];
-        
-        $planName = $recommendedPlans[$accountType] ?? 'gold';
-        return $this->getProduct($planName, 'plan_name');
+        try {
+            // Query database for recommended plan configuration
+            $sql = "SELECT recommended_plan FROM bg_account_types
+                    WHERE account_type = :account_type
+                    AND status = 'active'
+                    AND version = 'v7'
+                    LIMIT 1";
+
+            $result = $this->database->fetchOne($sql, ['account_type' => $accountType]);
+
+            if ($result && !empty($result['recommended_plan'])) {
+                // Get the recommended product by plan name
+                return $this->getProduct($result['recommended_plan'], 'plan_name');
+            }
+
+            // If no recommended plan found, try to find any gold/premium plan for this account type
+            $sql = "SELECT * FROM bg_products
+                    WHERE account_type = :account_type
+                    AND version = 'v7'
+                    AND status = 'active'
+                    AND (account_plan LIKE '%gold%' OR account_plan LIKE '%premium%')
+                    ORDER BY price DESC
+                    LIMIT 1";
+
+            $product = $this->database->getrow($sql, ['account_type' => $accountType]);
+
+            if ($product) {
+                $product['features'] = $this->getProductFeatures($product['id']);
+                $product['encoded_id'] = $this->qik ? $this->qik->encodeId($product['id']) : $product['id'];
+                return $product;
+            }
+
+            // No recommended plan found
+            return false;
+
+        } catch (Exception $e) {
+            // Log error but don't crash - return false to indicate no recommendation available
+            $this->debugLog('Error getting recommended plan for ' . $accountType . ': ' . $e->getMessage());
+
+            if (function_exists('session_tracking')) {
+                session_tracking('productmanager_warning', [
+                    'warning_type' => 'recommended_plan_error',
+                    'account_type' => $accountType,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            return false;
+        }
     }
+
+
+
+
+
+
     
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
     /**
-     * Validate promo code for a product
+     * Validate promo code for a product with advanced features support
      * @param string $promoCode Promo code
      * @param int $productId Product ID
      * @return array Validation result
      */
     public function validatePromoCode($promoCode, $productId) {
-        // First check if product allows promo codes
+        $this->debugLog('Validating promo code: ' . $promoCode . ' for product: ' . $productId);
+
+        // Backward compatibility: check old-style allow_promo field
         $product = $this->getProduct($productId, 'id');
-        if (!$product || $product['allow_promo'] != 'yes') {
+        if ($product && isset($product['allow_promo']) && $product['allow_promo'] != 'yes') {
             return ['valid' => false, 'message' => 'Promo codes not allowed for this plan'];
         }
-        
-        // Check promo code validity
-        $sql = "SELECT * FROM bg_promocodes 
-                WHERE code = :code 
+
+        // Check if product has specific promo allowlist via bg_product_features
+        $sql = "SELECT value FROM bg_product_features
+                WHERE product_id = :product_id
+                AND name = 'allowed_promos'
+                AND status = 'active'
+                LIMIT 1";
+
+        $feature = $this->database->getrow($sql, ['product_id' => $productId]);
+
+        if ($feature) {
+            $allowedPromos = $feature['value'];
+            $this->debugLog('Product has allowed_promos: ' . $allowedPromos);
+
+            // Check if promo is allowed
+            if ($allowedPromos !== 'all') {
+                // Check if it's JSON array
+                if (strpos($allowedPromos, '[') === 0) {
+                    $allowedList = json_decode($allowedPromos, true);
+                } else {
+                    // Assume comma-separated list
+                    $allowedList = array_map('trim', explode(',', $allowedPromos));
+                }
+
+                // Case-insensitive check
+                $allowedList = array_map('strtoupper', $allowedList);
+                if (!in_array(strtoupper($promoCode), $allowedList)) {
+                    return ['valid' => false, 'message' => 'Promo code not valid for this product'];
+                }
+            }
+        } else {
+            // No promo feature found - allow all promos for backward compatibility
+            $this->debugLog('No allowed_promos feature found for product ' . $productId . ', allowing all promos');
+        }
+
+        // Check promo code validity in bg_promocodes (case-insensitive)
+        $sql = "SELECT * FROM bg_promocodes
+                WHERE UPPER(code) = UPPER(:code)
+                AND status = 'active'
                 AND (start_dt IS NULL OR start_dt <= NOW())
                 AND (end_dt IS NULL OR end_dt >= NOW())
                 AND (limit_count IS NULL OR tracking_count < limit_count)
                 LIMIT 1";
-        
-        $promo = $this->database->getrow($sql, ['code' => $promoCode]);
-        
+
+        $promo = $this->database->getrow($sql, ['code' => strtoupper($promoCode)]);
+
         if ($promo) {
+            $this->debugLog('Promo code found: ' . $promo['code']);
             return [
                 'valid' => true,
                 'discount_method' => $promo['discountmethod'],
                 'amount' => $promo['amount'],
-                'message' => 'Promo code applied successfully'
+                'message' => $promo['successmessage'] ?? 'Promo code applied successfully',
+                'promo_data' => $promo
             ];
         }
-        
+
+        $this->debugLog('Promo code not found or invalid');
         return ['valid' => false, 'message' => 'Invalid or expired promo code'];
     }
     
+
+
+
+
+
+
+
+
     /**
-     * Calculate final price with promo code
+     * Calculate final price with promo code - supports multiple discount methods
      * @param int $productId Product ID
      * @param string $promoCode Promo code
      * @return array Price details
@@ -254,49 +391,80 @@ class ProductManager {
         if (!$product) {
             return ['error' => 'Product not found'];
         }
-        
-        $originalPrice = $product['price'];
+
+        $originalPrice = $product['price'] ?? 2900; // Default to $29 if price missing
         $finalPrice = $originalPrice;
         $discount = 0;
-        
+        $promoValidation = null;
+
         if ($promoCode) {
             $promoValidation = $this->validatePromoCode($promoCode, $productId);
             if ($promoValidation['valid']) {
-                if ($promoValidation['discount_method'] == 'percentage') {
+                // Handle different discount methods
+                $discountMethod = strtolower($promoValidation['discount_method'] ?? 'percentage');
+
+                if ($discountMethod == 'percentage') {
+                    $discount = ($originalPrice * $promoValidation['amount']) / 100;
+                } elseif ($discountMethod == 'amount') {
+                    // For amount discount, check if it's in dollars or cents
+                    $promoAmount = $promoValidation['amount'];
+                    if ($promoAmount < 100) {
+                        // Likely in dollars, convert to cents
+                        $discount = $promoAmount * 100;
+                    } else {
+                        // Already in cents
+                        $discount = $promoAmount;
+                    }
+                } elseif ($discountMethod == 'count') {
+                    // Count-based discount - assume it's a percentage (e.g., 80 = 80% off)
                     $discount = ($originalPrice * $promoValidation['amount']) / 100;
                 } else {
-                    $discount = $promoValidation['amount'];
+                    // Default to percentage if method unclear
+                    $discount = ($originalPrice * $promoValidation['amount']) / 100;
                 }
-                $finalPrice = max(0, $originalPrice - $discount);
+
+                // Ensure minimum price of 50 cents
+                $finalPrice = max(50, $originalPrice - $discount);
+
+                $this->debugLog('Price calculation - Original: ' . $originalPrice . ', Discount: ' . $discount . ', Final: ' . $finalPrice);
             }
         }
-        
+
         return [
             'original_price' => $originalPrice,
-            'discount' => $discount,
             'final_price' => $finalPrice,
+            'discount' => $discount,
             'formatted_original' => '$' . number_format($originalPrice / 100, 2),
+            'formatted_final' => '$' . number_format($finalPrice / 100, 2),
             'formatted_discount' => '$' . number_format($discount / 100, 2),
-            'formatted_final' => '$' . number_format($finalPrice / 100, 2)
+            'promo_validation' => $promoValidation
         ];
     }
     
+
+
+
+
+
+
+
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
     /**
      * Get account type details
      * @param string $accountType Account type
      * @return array Account type configuration
      */
     public function getAccountTypeConfig($accountType) {
-        // First try to get from database
         try {
-            $sql = "SELECT * FROM bg_account_types 
-                    WHERE account_type = :account_type 
-                    AND status = 'active' 
+            $sql = "SELECT * FROM bg_account_types
+                    WHERE account_type = :account_type
+                    AND status = 'active'
                     AND version = 'v7'
                     LIMIT 1";
-            
+
             $result = $this->database->fetchOne($sql, ['account_type' => $accountType]);
-            
+
             if ($result) {
                 // Map database fields to expected array keys
                 return [
@@ -306,52 +474,62 @@ class ProductManager {
                     'description' => $result['description'] ?? 'Birthday rewards account',
                     'context_text' => $result['description'] ?? 'Choose the plan that best fits your needs'
                 ];
+            } else {
+                // No data found for this account type
+                $error_data = [
+                    'error_type' => 'missing_account_type_config',
+                    'account_type' => $accountType,
+                    'version' => 'v7',
+                    'method' => 'getAccountTypeConfig',
+                    'class' => 'ProductManager'
+                ];
+
+                // Track the error
+                if (function_exists('session_tracking')) {
+                    session_tracking('productmanager_error', $error_data);
+                }
+
+                // Log for debugging
+                $this->debugLog('Account type config not found for: ' . $accountType);
+                error_log('[ProductManager] Missing account type config: ' . json_encode($error_data));
+
+                // Redirect to error page
+                $encoded = base64_encode(json_encode($error_data));
+                header('Location: /error?e=' . urlencode($encoded));
+                exit();
             }
         } catch (Exception $e) {
-            // If table doesn't exist or query fails, fall back to hardcoded
+            // Database error - track and forward to error page
+            $error_data = [
+                'error_type' => 'database_error',
+                'error_message' => $e->getMessage(),
+                'account_type' => $accountType,
+                'method' => 'getAccountTypeConfig',
+                'class' => 'ProductManager',
+                'table' => 'bg_account_types'
+            ];
+
+            // Track the error
+            if (function_exists('session_tracking')) {
+                session_tracking('productmanager_database_error', $error_data);
+            }
+
+            // Log for debugging
+            $this->debugLog('Database error in getAccountTypeConfig: ' . $e->getMessage());
+            error_log('[ProductManager] Database error: ' . json_encode($error_data));
+
+            // Redirect to error page
+            $encoded = base64_encode(json_encode($error_data));
+            header('Location: /error?e=' . urlencode($encoded));
+            exit();
         }
-        
-        // Fallback to hardcoded values if database lookup fails
-        $configs = [
-            'user' => [
-                'icon' => 'bi-person',
-                'label' => 'Individual',
-                'short_label' => 'Just me',
-                'description' => 'Perfect for individuals who want to celebrate their birthday with exclusive rewards',
-                'context_text' => 'Choose the plan that works best for your personal birthday rewards'
-            ],
-            'parental' => [
-                'icon' => 'bi-people',
-                'label' => 'Family',
-                'short_label' => 'My family',
-                'description' => 'Manage birthday rewards for your entire family in one account',
-                'context_text' => 'Select a family plan to manage birthday rewards for multiple family members'
-            ],
-            'business' => [
-                'icon' => 'bi-building',
-                'label' => 'Business',
-                'short_label' => 'Business',
-                'description' => 'Employee birthday management and rewards for your organization',
-                'context_text' => 'Choose a business plan to manage employee birthdays and boost morale'
-            ],
-            'giftcertificate' => [
-                'icon' => 'bi-gift',
-                'label' => 'Gift Certificate',
-                'short_label' => 'As a gift',
-                'description' => 'Give the gift of birthday rewards to someone special',
-                'context_text' => 'Select a gift certificate to surprise someone with a year of birthday rewards'
-            ]
-        ];
-        
-        return $configs[$accountType] ?? [
-            'icon' => 'bi-tag',
-            'label' => ucfirst($accountType),
-            'short_label' => ucfirst($accountType),
-            'description' => 'Birthday rewards account',
-            'context_text' => 'Choose the plan that best fits your needs'
-        ];
     }
     
+
+
+    
+# ##--------------------------------------------------------------------------------------------------------------------------------------------------
+
     /**
      * Get product features including system features
      * @param int $productId Product ID

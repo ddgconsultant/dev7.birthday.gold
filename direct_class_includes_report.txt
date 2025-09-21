@@ -1,0 +1,443 @@
+# Direct Class File Includes/Requires Report
+# Generated: Thu Sep 18 10:56:11 MDT 2025
+
+Files that directly include/require class files instead of using $addClasses[]:
+===============================================================================
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/_CLEANUP_/avatars/avatarmaker.php
+8:require_once("avatarmaker.class.php");
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/_CLEANUP_/createaccount_OLD.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.createaccount.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/_CLEANUP_/createaccount_modular.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+4:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.createaccount.php');
+5:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/_CLEANUP_/createnewmodaccount.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+4:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.createaccount.php');
+5:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/_CLEANUP_/profile-imagesO.php
+54:            include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.fileuploader_ui.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/_CLEANUP_/test-addition-handler.php
+14:include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/_CLEANUP_/test-addition.php
+8:include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/_CLEANUP_/test_gift_flow.php
+9:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin/_CLEANUP_/testleantime.php
+15:include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.leantime.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin/bgreb_v3/member-enroller.php
+177:                    require_once $dir['core'] . '/classes/class.mail.php';
+248:                    require_once $dir['core'] . '/classes/class.mail.php';
+318:                    require_once $dir['core'] . '/classes/class.mail.php';
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin/plan_editor.php
+6:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin/promo_editor.php
+5:#include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+7:#    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/abo/abo_aienhance.php
+8:    require_once($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.ai.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/debug_upgrade_system.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+9:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.upgrademanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/scheduler--ocrmessageextract.php
+185:    require_once($dir['classes']. '/class.stringsanitizer.php');    
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/scheduler--process_eligibility.php
+36:    require_once($installpath . 'core/classes/class.enrollment.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/scheduler--verify-social-shares.php
+11:include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/ajax_promo_validate.php
+31:    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+33:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/api/api_coordinator.php
+16:        include($dir['base'] . '/core/classes/class.api.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/api/enroll.php
+10:include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/checkout.php
+233:    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+236:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/_CLEANUP_/checkout_api.php
+221:    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+224:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/_CLEANUP_/checkout_embedded.php
+65:    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/_CLEANUP_/checkout_improved.php
+125:    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/_CLEANUP_/checkout_simple.php
+65:    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/account_type_display_setup.php
+198:        include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/ajax_promo_validate.php
+31:    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+33:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/admin/allocation-dashboard.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/api/enroll-final.php
+10:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/api/enroll-fixed.php
+10:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/api/enroll.php
+10:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/enrollment-picker-final.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/enrollment-picker-fixed.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/enrollment-picker-simple.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+9:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.configmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/enrollment-picker-updated.php
+11:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/enrollment-picker.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+9:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.configmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/claudecode/enrollment_allocations/test_categories.php
+4:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.configmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/createaccount.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+4:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.createaccount.php');
+5:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/createaccount_v2.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+4:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.createaccount.php');
+5:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.formmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/createaccount_v3.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+4:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.createaccount.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/createaccount_v4.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+4:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.createaccount.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/admin/allocation-dashboard.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/api/enroll-final.php
+10:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/api/enroll-fixed.php
+10:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/api/enroll.php
+10:include($_SERVER['DOCUMENT_ROOT'] . '/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/enrollment-picker-final.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/enrollment-picker-fixed.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/enrollment-picker-simple.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+9:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.configmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/enrollment-picker-updated.php
+11:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/enrollment-picker.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.allocationmanager.php');
+9:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.configmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_allocations/test_categories.php
+4:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_allocations/classes/class.configmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/admin/company_discontinuation_handler.php
+14:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_bonus/classes/class.enrollmentmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/admin/enrollment_admin.php
+7:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_bonus/classes/class.enrollmentmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/admin/scheduler--process_discontinued_companies.php
+15:include('/mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/classes/class.enrollmentmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/frontend/businessselect_updated.php
+7:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_bonus/classes/class.enrollmentmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/frontend/enrollment_dashboard.php
+10:// include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_bonus/classes/class.enrollmentmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/frontend/enrollment_history.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_bonus/classes/class.enrollmentmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/sql/migrate_enrollment_data.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_bonus/classes/class.enrollmentmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/enrollment_bonus/tests/test_enrollment_system.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/enrollment_bonus/classes/class.enrollmentmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/newsignup_complete.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/claudecode/promo_validate_embedded.php
+17:    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+19:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/applications/emailqueue/api/index.php
+10:    include_once dirname(__FILE__)."/../scripts/emailqueue_inject.class.php"; // Include Emailqueue's emailqueue_inject class.
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/applications/emailqueue/common.inc.php
+33:	require("classes/out.class.php");
+37:	require("classes/html.class.php");
+41:	require("classes/utils.class.php");
+45:	require("classes/messages.class.php");
+49:	require("classes/logger.class.php");
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/applications/emailqueue/example_local.php
+13:    include_once EMAILQUEUE_DIR."scripts/emailqueue_inject.class.php"; // Include Emailqueue's emailqueue_inject class.
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/applications/emailqueue/frontend/index.php
+25:			include_once dirname(__FILE__)."/../classes/home.class.php";
+31:            include_once dirname(__FILE__)."/../classes/manager.class.php";
+37:			include_once dirname(__FILE__)."/../classes/servicetools.class.php";
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/classes/class.twofactorauth.php
+324:                    include_once($dir['core_classes'] . '/class.mail.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/hr/filetest.php
+15:include_once rtrim($_SERVER['DOCUMENT_ROOT'], DIRECTORY_SEPARATOR) . '/core/applications/phpformbuilder/plugins/fileuploader/server/class.fileuploader.php';
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/hr/form_onboarding.php
+15:include_once rtrim($_SERVER['DOCUMENT_ROOT'], DIRECTORY_SEPARATOR) . '/core/applications/phpformbuilder/plugins/fileuploader/server/class.fileuploader.php';
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/_CLEANUP_/debug-allocations.php
+8:include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/ajax/check-eligibility.php
+8:include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.enrollment.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/billing.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/earn-enrollments.php
+8:include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/enrollment-picker-old.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.allocationmanager.php');
+9:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.configmanager.php');
+10:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.enrollment.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/index.php
+601:    include_once($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/module_images/profile-images.php
+54:            include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.fileuploader_ui.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/rewards.php
+6:include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.allocationmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/upgrade-plan.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+9:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.upgrademanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/upgrade-process.php
+8:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+9:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.upgrademanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/newsignup.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/promo_validate_embedded.php
+17:    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+19:include($_SERVER['DOCUMENT_ROOT'].'/claudecode/class.productmanager_promo.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/assets/vendors/phpformbuilder/plugins/filemanager/include/FtpException.php
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/assets/vendors/phpformbuilder/plugins/filemanager/include/php_image_magician.php
+3740: *      include("classes/resize_class.php");
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/assets/vendors/phpformbuilder/plugins/fileuploader/default/php/ajax_upload_file.php
+11:include('../../server/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/assets/vendors/phpformbuilder/plugins/fileuploader/drag-and-drop/php/ajax_upload_file.php
+7:include('../../server/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/assets/vendors/phpformbuilder/plugins/fileuploader/image-upload/php/ajax_resize_file.php
+4:include('../../server/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/assets/vendors/phpformbuilder/plugins/fileuploader/image-upload/php/ajax_upload_file.php
+7:include_once '../../server/class.fileuploader.php';
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/add-more/php/form_upload.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/avatar/index.php
+47:			include('../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/avatar/php/ajax_upload_file.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/boxafter/php/ajax_upload_file.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/default-upload/php/ajax_upload_file.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/drag-drop-form/php/form_upload.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/drag-drop/php/ajax_upload_file.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/gallery/php/ajax.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/image-editor/client-side/php/ajax_upload_file.php
+2:    include('../../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/image-editor/default/php/form_upload.php
+2:    include('../../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/image-editor/upload/php/ajax_resize_file.php
+2:	include('../../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/image-editor/upload/php/ajax_upload_file.php
+2:    include('../../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/one-button/php/form_upload.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/pdf/php/form_upload.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/php-generated-input/php/included_upload.php
+3:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/preloaded-files/index.php
+52:				include('../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/preloaded-files/php/form_upload.php
+3:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/sorter/default/php/form_upload.php
+2:    include('../../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/sorter/upload/php/ajax_upload_file.php
+2:    include('../../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/thirdparty/s3/php/index.php
+50:                require '../../../../src/php/class.fileuploader.php';
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/thirdparty/s3/php/php/form_upload.php
+4:    require '../../../../../src/php/class.fileuploader.php';
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/thumbnails/php/form_upload.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/_OLD_/fileuploader/examples/thumbnails/php/upload_file.php
+2:    include('../../../src/php/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/fileuploader_ui/examples/default/php/form_upload.php
+2:    #include('../../../src/php/class.fileuploader.php');
+3:	include($_SERVER['DOCUMENT_ROOT'] . '/core/classes/class.fileuploader_ui.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/plugins/filemanager/include/FtpException.php
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/plugins/filemanager/include/php_image_magician.php
+3740: *      include("classes/resize_class.php");
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/plugins/fileuploader/default/php/ajax_upload_file.php
+11:include('../../server/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/plugins/fileuploader/drag-and-drop/php/ajax_upload_file.php
+7:include('../../server/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/plugins/fileuploader/image-upload/php/ajax_resize_file.php
+4:include('../../server/class.fileuploader.php');
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/public/js/plugins/fileuploader/image-upload/php/ajax_upload_file.php
+7:include_once '../../server/class.fileuploader.php';
+
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/signup.php
+3:include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
+
+
+SUMMARY
+=======
+
+Total files with direct class includes: 117
+
+Most commonly directly included classes from core/classes/:
+     26 productmanager
+      9 allocationmanager
+      7 createaccount
+      3 upgrademanager
+      3 fileuploader_ui
+      3 enrollment
+      2 productmanager_promo
+      1 twofactorauth
+      1 leantime
+      1 configmanager
+      1 api
+      1 ai
+
+ACTIVE FILES REQUIRING ATTENTION (excluding _CLEANUP_, claudecode, and examples):
+=================================================================================
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin/bgreb_v3/member-enroller.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin/plan_editor.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin/promo_editor.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/abo/abo_aienhance.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/debug_upgrade_system.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/scheduler--ocrmessageextract.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/scheduler--process_eligibility.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/scheduler--verify-social-shares.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/ajax_promo_validate.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/api/api_coordinator.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/api/enroll.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/checkout.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/applications/emailqueue/api/index.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/applications/emailqueue/common.inc.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/applications/emailqueue/example_local.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/applications/emailqueue/frontend/index.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/core/classes/class.twofactorauth.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/hr/filetest.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/hr/form_onboarding.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/ajax/check-eligibility.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/billing.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/earn-enrollments.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/enrollment-picker-old.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/index.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/module_images/profile-images.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/rewards.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/upgrade-plan.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/myaccount/upgrade-process.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/newsignup.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/promo_validate_embedded.php
+FILE: /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/signup.php

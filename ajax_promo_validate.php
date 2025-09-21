@@ -7,6 +7,7 @@
 // Start output buffering to prevent any accidental output
 ob_start();
 
+$addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 
 // Clear any output that might have been generated
@@ -26,13 +27,7 @@ if (empty($signup_process) || empty($signup_process['account_plan_id'])) {
     exit;
 }
 
-// Load ProductManager
-if (!class_exists('ProductManager')) {
-    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
-}
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager_promo.php');
-
-$productManager = new ProductManagerPromo($database, $qik);
+// ProductManager is auto-instantiated as $productmanager by site-controller
 
 // Get parameters
 $promoCode = $_REQUEST['promo_code'] ?? '';
@@ -43,11 +38,11 @@ error_log('[AJAX_PROMO] Validating promo: ' . $promoCode . ' for product: ' . $p
 
 try {
     if ($productId && $promoCode) {
-        $validation = $productManager->validatePromoCode($promoCode, $productId);
+        $validation = $productmanager->validatePromoCode($promoCode, $productId);
         
         if ($validation['valid']) {
             // Calculate new price
-            $pricing = $productManager->calculatePrice($productId, $promoCode);
+            $pricing = $productmanager->calculatePrice($productId, $promoCode);
             $validation['new_price'] = $pricing['formatted_final'] ?? '';
             $validation['discount_amount'] = $pricing['formatted_discount'] ?? '';
             

@@ -4,9 +4,9 @@
  * Allows users to upgrade their current plan to a higher tier
  */
 
+$addClasses[] = 'productmanager';
+$addClasses[] = 'upgrademanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.upgrademanager.php');
 
 // Check if user is logged in
 if (!$account->isactive()) {
@@ -14,12 +14,11 @@ if (!$account->isactive()) {
     exit();
 }
 
-// Initialize managers
-$productManager = new ProductManager($database, $qik);
-$upgradeManager = new UpgradeManager($database, $account, $productManager, $session, $qik);
+// Managers are auto-instantiated by site-controller
+// productmanager and upgrademanager are available as lowercase variables
 
 // Get upgrade options
-$upgradeData = $upgradeManager->getUpgradeOptions();
+$upgradeData = $upgrademanager->getUpgradeOptions();
 
 // Handle different response types
 if (isset($upgradeData['error'])) {
@@ -46,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $promoCode = $_POST['promo_code'] ?? '';
         $upgradeSessionId = $_POST['upgrade_session_id'] ?? '';
         
-        $result = $upgradeManager->applyPromoCode($promoCode, $upgradeSessionId);
+        $result = $upgrademanager->applyPromoCode($promoCode, $upgradeSessionId);
         
         if ($result['success']) {
             $messages[] = 'Promo code applied successfully!';
@@ -60,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $upgradeToken = $_POST['upgrade_token'] ?? '';
         
         // Validate token
-        $tokenValidation = $upgradeManager->validateUpgradeToken($upgradeToken);
+        $tokenValidation = $upgrademanager->validateUpgradeToken($upgradeToken);
         if (!$tokenValidation['valid']) {
             $errormessage = $tokenValidation['error'];
             $session->set('errormessage', $errormessage);
@@ -69,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Initialize session
-        $upgradeSessionId = $upgradeManager->initializeUpgradeSession($toProductId);
+        $upgradeSessionId = $upgrademanager->initializeUpgradeSession($toProductId);
         
         // Get the selected product details
         $selectedProduct = null;
@@ -89,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // If no payment required, process immediately
         if ($selectedProduct['pricing']['total_due'] <= 0) {
-            $result = $upgradeManager->processUpgrade($upgradeSessionId);
+            $result = $upgrademanager->processUpgrade($upgradeSessionId);
             if ($result['success']) {
                 header('Location: /myaccount/upgrade-complete?id=' . $result['confirmation_id']);
                 exit();

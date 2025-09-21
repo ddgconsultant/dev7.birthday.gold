@@ -1,16 +1,10 @@
 <?php
-$addClasses[] = 'productmanager_promo';
+$addClasses[] = 'productmanager';
 
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-#include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
-#if (file_exists($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager_promo.php')) {
-#    include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager_promo.php');
-#}
 
 // Admin access is managed by site-controller
-
-// Initialize ProductManager for promo validation
-#$productManager = new ProductManager($database, $qik);
+// ProductManager is auto-instantiated as $productmanager by site-controller
 
 #-------------------------------------------------------------------------------
 # HANDLE AJAX REQUESTS
@@ -194,15 +188,10 @@ if (isset($_GET['ajax']) || isset($_POST['ajax'])) {
             case 'test':
                 $code = trim($_GET['code'] ?? $_POST['code'] ?? '');
                 $product_id = intval($_GET['product_id'] ?? $_POST['product_id'] ?? 0);
-                
-                // Use ProductManagerPromo if available, otherwise ProductManager
-               # if (class_exists('ProductManagerPromo')) {
-              #      $promoManager = new ProductManagerPromo($database, $qik);
-             #       $result = $promoManager->validatePromoCode($code, $product_id);
-           #     } else {
-                    $result = $product->validatePromoCode($code, $product_id);
-           #     }
-                
+
+                // Use auto-instantiated productmanager for validation
+                $result = $productmanager->validatePromoCode($code, $product_id);
+
                 ob_clean();
                 echo json_encode($result);
                 break;

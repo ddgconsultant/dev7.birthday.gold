@@ -1,7 +1,6 @@
 <?php 
 $addClasses[] = 'createaccount';
 $addClasses[] = 'productmanager';
-$addClasses[] = 'productmanager_promo';
 $addClasses[] = 'fileuploader';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
 
@@ -201,13 +200,13 @@ if (isset($_REQUEST['ajax_action'])) {
                 error_log('[CREATENEWACCOUNT] Validating promo: ' . $promoCode . ' for product: ' . $productId);
                 
                 if ($productId && $promoCode) {
-                    $validation = $productManager->validatePromoCode($promoCode, $productId);
+                    $validation = $productmanager->validatePromoCode($promoCode, $productId);
                     
                     error_log('[CREATENEWACCOUNT] Validation result: ' . json_encode($validation));
                     
                     if ($validation['valid']) {
                         // Calculate new price
-                        $pricing = $productManager->calculatePrice($productId, $promoCode);
+                        $pricing = $productmanager->calculatePrice($productId, $promoCode);
                         $validation['new_price'] = $pricing['formatted_final'] ?? '';
                         $validation['discount_amount'] = $pricing['formatted_discount'] ?? '';
                         
@@ -564,7 +563,7 @@ $page_description = "Complete your Birthday.Gold account setup";
 # ADDITIONAL STYLES
 #-------------------------------------------------------------------------------
 $additionalstyles .= '
-<link href="/claudecode/createaccount_styles.css" rel="stylesheet">
+<link href="/public/css/createaccount_styles.css" rel="stylesheet">
 <style>
 /* Responsive headline sizing - matching signup.php */
 .header h1 {
@@ -1648,7 +1647,7 @@ window.DYNAMIC_DATE_VALIDATION = <?php
 
 <!-- Load embedded promo validation to avoid 403 errors -->
 <script src="/promo_validate_embedded.php"></script>
-<script src="/claudecode/createaccount_flow.js"></script>
+<script src="/public/js/createaccount_flow.js"></script>
 
 <?php
 $display_footertype='mobilenonemin';

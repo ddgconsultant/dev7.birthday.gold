@@ -1,14 +1,13 @@
 /* Main Content Container */
 .main-content {
-    max-width: 1200px; /* Increased from 800px */
     margin: 2rem auto;
-    padding: 0 1rem;
+    padding: 0 2rem;
 }
 
 /* Large screens - even wider */
 @media (min-width: 1400px) {
     .main-content {
-        max-width: 1400px;
+        padding: 0 4rem;
     }
 }
 
@@ -88,7 +87,7 @@
     align-items: flex-start;
     margin-top: 1.5rem;
     position: relative;
-    padding: 0 40px; /* More padding for better spacing */
+    padding: 0 0px; /* More padding for better spacing */
 }
 
 /* Individual step container */
@@ -171,15 +170,28 @@
     background: white;
     border: 1px solid #e9ecef;
     border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 1.5rem;
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+}
+
+/* More padding on large screens */
+@media (min-width: 768px) {
+    .form-section {
+        padding: 2.5rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .form-section {
+        padding: 3rem;
+    }
 }
 
 .section-title {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: 600;
     color: #212529;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     padding-bottom: 0.75rem;
     border-bottom: 2px solid #e9ecef;
 }
@@ -200,8 +212,21 @@
 }
 
 .form-control:focus {
-    border-color: #198754;
-    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Placeholder text color consistency */
+.form-control::placeholder {
+    color: #adb5bd;
+    opacity: 1;
+}
+
+/* Ensure all form fields have white background */
+.form-control, 
+.form-control:focus,
+.password-input-group .form-control {
+    background-color: #ffffff !important;
 }
 
 /* Password Input Group */
@@ -214,6 +239,13 @@
     border-right: none;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+    background-color: #ffffff !important;
+    border-color: #e9ecef !important;
+}
+
+.password-input-group .form-control:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
 }
 
 .password-input-group .btn {
@@ -223,6 +255,10 @@
     border-bottom-left-radius: 0;
     background: white;
     color: #6c757d;
+}
+
+.password-input-group .form-control:focus ~ .btn {
+    border-color: #0d6efd;
 }
 
 .password-input-group .btn:hover {
@@ -235,6 +271,7 @@
     background: #e9ecef;
     border-radius: 2px;
     overflow: hidden;
+    margin-top: 0.5rem;
 }
 
 .strength-bar {
@@ -271,6 +308,12 @@
 
 .promo-input-group .btn {
     white-space: nowrap;
+}
+
+/* Disabled state for code buttons */
+.code-input-group .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 #promoMessage {
@@ -421,7 +464,13 @@
     }
     
     .form-section {
-        padding: 1.5rem;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
     }
     
     .step-nav {
@@ -440,6 +489,18 @@
     
     .step-indicator i {
         font-size: 1.5rem;
+    }
+    
+    /* Stack contact toggle buttons on very small screens */
+    @media (max-width: 480px) {
+        .contact-toggle .btn-group {
+            flex-direction: column;
+        }
+        
+        .contact-toggle .btn {
+            border-radius: 8px !important;
+            margin-bottom: 0.5rem;
+        }
     }
 }
 

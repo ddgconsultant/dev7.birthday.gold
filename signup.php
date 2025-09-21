@@ -1,9 +1,8 @@
-<?php 
+<?php
+$addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
 
-// Initialize ProductManager
-$productManager = new ProductManager($database, $qik);
+// ProductManager is auto-instantiated as $productmanager by site-controller
 
 #-------------------------------------------------------------------------------
 # HANDLE FOREIGN COUNTRIES
@@ -80,7 +79,7 @@ if (isset($_REQUEST['ajax_action'])) {
     switch ($_REQUEST['ajax_action']) {
         case 'get_plans':
             $accountType = $_REQUEST['account_type'] ?? 'user';
-            $plans = $productManager->getProductsWithFeatures($accountType, $selectedVersion);
+            $plans = $productmanager->getProductsWithFeatures($accountType, $selectedVersion);
             
             // Format for frontend
             $response = [];
@@ -105,7 +104,7 @@ if (isset($_REQUEST['ajax_action'])) {
             $productId = $qik->decodeId($_REQUEST['product_id'] ?? '');
             
             if ($productId && $promoCode) {
-                $validation = $productManager->validatePromoCode($promoCode, $productId);
+                $validation = $productmanager->validatePromoCode($promoCode, $productId);
                 echo json_encode($validation);
             } else {
                 echo json_encode(['valid' => false, 'message' => 'Invalid request']);
@@ -117,7 +116,7 @@ if (isset($_REQUEST['ajax_action'])) {
             $promoCode = $_REQUEST['promo_code'] ?? null;
             
             if ($productId) {
-                $pricing = $productManager->calculatePrice($productId, $promoCode);
+                $pricing = $productmanager->calculatePrice($productId, $promoCode);
                 echo json_encode($pricing);
             } else {
                 echo json_encode(['error' => 'Invalid product']);
@@ -128,7 +127,7 @@ if (isset($_REQUEST['ajax_action'])) {
             $accountType = $_REQUEST['account_type'] ?? '';
             
             if ($accountType) {
-                $config = $productManager->getAccountTypeConfig($accountType);
+                $config = $productmanager->getAccountTypeConfig($accountType);
                 echo json_encode([
                     'success' => true,
                     'context_text' => $config['context_text'] ?? '',
@@ -155,7 +154,7 @@ if ($app->formposted() && empty($signup_process['account_plan'])) {
 # HANDLE PLAN LINKS (for direct linking to plans)
 #-------------------------------------------------------------------------------
 if (isset($_REQUEST['plan'])) {
-    $planbynamedata = $productManager->getProduct($_REQUEST['plan'], 'plan_name');
+    $planbynamedata = $productmanager->getProduct($_REQUEST['plan'], 'plan_name');
     if ($planbynamedata) {
         $signup_process['account_plan'] = $planbynamedata['encoded_id'];
         $selectedAccountType = $planbynamedata['account_type'];
@@ -174,7 +173,7 @@ if ($app->formposted() && !empty($signup_process['account_plan'])) {
         // Clear old data but preserve the new data we're building
         $new_signup_data = [];
         $new_signup_data['account_plan_id'] = $planid;
-        $plandata = $productManager->getProduct($planid, 'id');
+        $plandata = $productmanager->getProduct($planid, 'id');
         
         // Security validation: Ensure product is valid for current version and account type
         if ($plandata && 
@@ -229,12 +228,12 @@ if ($app->formposted() && !empty($signup_process['account_plan'])) {
 #-------------------------------------------------------------------------------
 # GET DYNAMIC DATA
 #-------------------------------------------------------------------------------
-$accountTypes = $productManager->getAvailableAccountTypes($selectedVersion);
+$accountTypes = $productmanager->getAvailableAccountTypes($selectedVersion);
 
 // Load ALL plans for ALL account types upfront to eliminate AJAX delays
 $allPlansByType = [];
 foreach ($accountTypes as $accountType) {
-    $typePlans = $productManager->getProductsWithFeatures($accountType['account_type'], $selectedVersion);
+    $typePlans = $productmanager->getProductsWithFeatures($accountType['account_type'], $selectedVersion);
     $allPlansByType[$accountType['account_type']] = $typePlans;
 }
 
@@ -253,7 +252,7 @@ if ($urlPlanId) {
 
 // Get plans for the currently selected account type
 $availablePlans = $allPlansByType[$selectedAccountType] ?? [];
-$accountTypeConfig = $productManager->getAccountTypeConfig($selectedAccountType);
+$accountTypeConfig = $productmanager->getAccountTypeConfig($selectedAccountType);
 $planCount = count($availablePlans);
 
 #-------------------------------------------------------------------------------
@@ -713,7 +712,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                 <div class="nav-tabs-modern" id="accountTypeTabs">
                     <?php
                     foreach ($accountTypes as $accountType) {
-                        $config = $productManager->getAccountTypeConfig($accountType['account_type']);
+                        $config = $productmanager->getAccountTypeConfig($accountType['account_type']);
                         echo '<label for="tab-' . $accountType['account_type'] . '" class="nav-tab-item">
                                 <i class="bi ' . $config['icon'] . ' me-2"></i>' . $config['short_label'] . '
                               </label>';
@@ -983,7 +982,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                     $displayedInModal = 0;
                     foreach ($accountTypes as $accountType) {
                         if ($displayedInModal >= 3) { // Skip first 3 that are already displayed
-                            $config = $productManager->getAccountTypeConfig($accountType['account_type']);
+                            $config = $productmanager->getAccountTypeConfig($accountType['account_type']);
                             echo '<button type="button" class="list-group-item list-group-item-action d-flex align-items-center" data-account-type="' . $accountType['account_type'] . '">
                                     <div class="me-3">
                                         <i class="bi ' . $config['icon'] . ' fs-4 text-primary"></i>
@@ -1024,7 +1023,7 @@ $byline = "Choose your account type and plan below. Takes less than 60 seconds!"
                 <div class="account-type-details">
                     <?php
                     foreach ($accountTypes as $accountType) {
-                        $config = $productManager->getAccountTypeConfig($accountType['account_type']);
+                        $config = $productmanager->getAccountTypeConfig($accountType['account_type']);
                         echo '<div class="mb-4">
                                 <h6><i class="bi ' . $config['icon'] . ' me-2"></i>' . $config['label'] . '</h6>
                                 <p>' . $config['description'] . '</p>

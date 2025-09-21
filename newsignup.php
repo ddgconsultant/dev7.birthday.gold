@@ -1,9 +1,8 @@
-<?php 
+<?php
+$addClasses[] = 'productmanager';
 include($_SERVER['DOCUMENT_ROOT'].'/core/site-controller.php');
-include($_SERVER['DOCUMENT_ROOT'].'/core/classes/class.productmanager.php');
 
-// Initialize ProductManager
-$productManager = new ProductManager($database, $qik);
+// ProductManager is auto-instantiated as $productmanager by site-controller
 
 #-------------------------------------------------------------------------------
 # HANDLE FOREIGN COUNTRIES
@@ -37,7 +36,7 @@ if (isset($_REQUEST['ajax_action'])) {
     switch ($_REQUEST['ajax_action']) {
         case 'get_plans':
             $accountType = $_REQUEST['account_type'] ?? 'user';
-            $plans = $productManager->getProductsWithFeatures($accountType, $selectedVersion);
+            $plans = $productmanager->getProductsWithFeatures($accountType, $selectedVersion);
             
             // Format for frontend
             $response = [];
@@ -62,7 +61,7 @@ if (isset($_REQUEST['ajax_action'])) {
             $productId = $qik->decodeId($_REQUEST['product_id'] ?? '');
             
             if ($productId && $promoCode) {
-                $validation = $productManager->validatePromoCode($promoCode, $productId);
+                $validation = $productmanager->validatePromoCode($promoCode, $productId);
                 echo json_encode($validation);
             } else {
                 echo json_encode(['valid' => false, 'message' => 'Invalid request']);
@@ -74,7 +73,7 @@ if (isset($_REQUEST['ajax_action'])) {
             $promoCode = $_REQUEST['promo_code'] ?? null;
             
             if ($productId) {
-                $pricing = $productManager->calculatePrice($productId, $promoCode);
+                $pricing = $productmanager->calculatePrice($productId, $promoCode);
                 echo json_encode($pricing);
             } else {
                 echo json_encode(['error' => 'Invalid product']);
@@ -97,7 +96,7 @@ if ($app->formposted() && empty($signup_process['account_plan'])) {
 # HANDLE PLAN LINKS (for direct linking to plans)
 #-------------------------------------------------------------------------------
 if (isset($_REQUEST['plan'])) {
-    $planbynamedata = $productManager->getProduct($_REQUEST['plan'], 'plan_name');
+    $planbynamedata = $productmanager->getProduct($_REQUEST['plan'], 'plan_name');
     if ($planbynamedata) {
         $signup_process['account_plan'] = $planbynamedata['encoded_id'];
         $selectedAccountType = $planbynamedata['account_type'];
@@ -114,7 +113,7 @@ if ($app->formposted() && !empty($signup_process['account_plan'])) {
     
     if ($planid) {
         $signup_process['account_plan_id'] = $planid;
-        $plandata = $productManager->getProduct($planid, 'id');
+        $plandata = $productmanager->getProduct($planid, 'id');
         
         if ($plandata) {
             $signup_process['plandata'] = $plandata;
@@ -126,7 +125,7 @@ if ($app->formposted() && !empty($signup_process['account_plan'])) {
             
             // Apply promo code if provided
             if (!empty($signup_process['promo_code'])) {
-                $pricing = $productManager->calculatePrice($planid, $signup_process['promo_code']);
+                $pricing = $productmanager->calculatePrice($planid, $signup_process['promo_code']);
                 $signup_process['account_cost'] = $pricing['final_price'];
                 $signup_process['original_cost'] = $pricing['original_price'];
                 $signup_process['discount_applied'] = $pricing['discount'];
@@ -152,9 +151,9 @@ if ($app->formposted() && !empty($signup_process['account_plan'])) {
 #-------------------------------------------------------------------------------
 # GET DYNAMIC DATA
 #-------------------------------------------------------------------------------
-$accountTypes = $productManager->getAvailableAccountTypes($selectedVersion);
-$availablePlans = $productManager->getProductsWithFeatures($selectedAccountType, $selectedVersion);
-$accountTypeConfig = $productManager->getAccountTypeConfig($selectedAccountType);
+$accountTypes = $productmanager->getAvailableAccountTypes($selectedVersion);
+$availablePlans = $productmanager->getProductsWithFeatures($selectedAccountType, $selectedVersion);
+$accountTypeConfig = $productmanager->getAccountTypeConfig($selectedAccountType);
 
 #-------------------------------------------------------------------------------
 # HANDLE SIGNUP MODE
@@ -210,7 +209,7 @@ $additionalstyles .= '
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
 <style>
 /* Include all the CSS from the original file */
-' . file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/claudecode/signup_styles.css') . '
+' . file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/public/css/signup_styles.css') . '
 </style>
 ';
 
@@ -255,7 +254,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <?php
                 $displayedTypes = 0;
                 foreach ($accountTypes as $accountType) {
-                    $config = $productManager->getAccountTypeConfig($accountType['account_type']);
+                    $config = $productmanager->getAccountTypeConfig($accountType['account_type']);
                     $isActive = ($accountType['account_type'] == $selectedAccountType) ? 'active' : '';
                     
                     // Only show first 3 types directly, rest go in "Other" modal
@@ -473,7 +472,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     $displayedInModal = 0;
                     foreach ($accountTypes as $accountType) {
                         if ($displayedInModal >= 3) { // Skip first 3 that are already displayed
-                            $config = $productManager->getAccountTypeConfig($accountType['account_type']);
+                            $config = $productmanager->getAccountTypeConfig($accountType['account_type']);
                             echo '<button type="button" class="list-group-item list-group-item-action d-flex align-items-center" data-account-type="' . $accountType['account_type'] . '">
                                     <div class="me-3">
                                         <i class="bi ' . $config['icon'] . ' fs-4 text-primary"></i>
@@ -514,7 +513,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <div class="account-type-details">
                     <?php
                     foreach ($accountTypes as $accountType) {
-                        $config = $productManager->getAccountTypeConfig($accountType['account_type']);
+                        $config = $productmanager->getAccountTypeConfig($accountType['account_type']);
                         echo '<div class="mb-4">
                                 <h6><i class="bi ' . $config['icon'] . ' me-2"></i>' . $config['label'] . '</h6>
                                 <p>' . $config['description'] . '</p>
@@ -545,7 +544,7 @@ const pageData = {
 
 // Include the enhanced JavaScript
 </script>
-<script src="/claudecode/signup_flow_dynamic.js"></script>
+<script src="/public/js/signup_flow_dynamic.js"></script>
 
 <?php
 include($dir['core_components'] . '/bg_footer.inc');
