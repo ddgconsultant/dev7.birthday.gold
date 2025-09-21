@@ -79,22 +79,39 @@ manage_ssl_certificates() {
     echo "=========================================="
     echo ""
 
-    # Define certificate paths - always use base directory for current certificates
-    # The current certificates are kept in the base directory
-    # Year-specific folders are for archival purposes only
-    CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold"
+    # Define certificate paths - use relative path from deployment directory
+    # The current certificates are kept in the base _CERTS_ directory
+    # This works on both WSL development and production environments
+
+    # Check multiple possible locations for certificates
+    if [ -d "${pathprefix}_CERTS_/birthday.gold" ]; then
+        # Certificates are at same level as www.birthday.gold (e.g., /var/www/BIRTHDAY_SERVER/_CERTS_/)
+        CERT_SOURCE_DIR="${pathprefix}_CERTS_/birthday.gold"
+    elif [ -d "${pathprefix}../_CERTS_/birthday.gold" ]; then
+        # Certificates are one level up (e.g., /var/www/_CERTS_/)
+        CERT_SOURCE_DIR="${pathprefix}../_CERTS_/birthday.gold"
+    else
+        # Fallback to expected production path
+        CERT_SOURCE_DIR="/var/www/BIRTHDAY_SERVER/_CERTS_/birthday.gold"
+    fi
+
     CERT_DEST_DIR="/var/web_certs/BIRTHDAY_SERVER/birthday.gold"
+
+    # Resolve to absolute path for clearer error messages
+    CERT_SOURCE_DIR_ABS=$(realpath "$CERT_SOURCE_DIR" 2>/dev/null || echo "$CERT_SOURCE_DIR")
 
     # Expected SHA1 checksums for 2025 certificates (update these when certs change)
     EXPECTED_CHAINED_SHA1="eb84bb1e2dd085bbdeb863432599e59dfd9cf3ea"
     EXPECTED_KEY_SHA1="b7343e7d0cf08db902fd1d8d305765c6e177e8ea"
 
     # Show which certificate directory is being used
-    echo "Using certificate source directory: $CERT_SOURCE_DIR"
+    echo "Using certificate source directory: $CERT_SOURCE_DIR_ABS"
 
     # Check if source directory exists
     if [ ! -d "$CERT_SOURCE_DIR" ]; then
-        echo "ERROR: Source certificate directory not found: $CERT_SOURCE_DIR"
+        echo "ERROR: Source certificate directory not found: $CERT_SOURCE_DIR_ABS"
+        echo "  Relative path: $CERT_SOURCE_DIR"
+        echo "  Working directory: $(pwd)"
         return 1
     fi
 
