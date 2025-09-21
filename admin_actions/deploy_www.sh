@@ -79,106 +79,162 @@ manage_ssl_certificates() {
     echo "=========================================="
     echo ""
 
-    # Define certificate paths - use relative path from deployment directory
-    # The current certificates are kept in the base _CERTS_ directory
-    # This works on both WSL development and production environments
-
-    # Check multiple possible locations for certificates
-    if [ -d "${pathprefix}_CERTS_/birthday.gold" ]; then
-        # Certificates are at same level as www.birthday.gold (e.g., /var/www/BIRTHDAY_SERVER/_CERTS_/)
-        CERT_SOURCE_DIR="${pathprefix}_CERTS_/birthday.gold"
-    elif [ -d "${pathprefix}../_CERTS_/birthday.gold" ]; then
-        # Certificates are one level up (e.g., /var/www/_CERTS_/)
-        CERT_SOURCE_DIR="${pathprefix}../_CERTS_/birthday.gold"
-    else
-        # Fallback to expected production path
-        CERT_SOURCE_DIR="/var/www/BIRTHDAY_SERVER/_CERTS_/birthday.gold"
-    fi
-
     CERT_DEST_DIR="/var/web_certs/BIRTHDAY_SERVER/birthday.gold"
 
-    # Resolve to absolute path for clearer error messages
-    CERT_SOURCE_DIR_ABS=$(realpath "$CERT_SOURCE_DIR" 2>/dev/null || echo "$CERT_SOURCE_DIR")
+    # Determine source - either fetch from PHP endpoint or use local files
+    USE_PHP_ENDPOINT=false
 
-    # Expected SHA1 checksums for 2025 certificates (update these when certs change)
-    EXPECTED_CHAINED_SHA1="eb84bb1e2dd085bbdeb863432599e59dfd9cf3ea"
-    EXPECTED_KEY_SHA1="b7343e7d0cf08db902fd1d8d305765c6e177e8ea"
-
-    # Show which certificate directory is being used
-    echo "Using certificate source directory: $CERT_SOURCE_DIR_ABS"
-
-    # Check if source directory exists
-    if [ ! -d "$CERT_SOURCE_DIR" ]; then
-        echo "ERROR: Source certificate directory not found: $CERT_SOURCE_DIR_ABS"
-        echo "  Relative path: $CERT_SOURCE_DIR"
-        echo "  Working directory: $(pwd)"
-        return 1
-    fi
-
-    # Check if source files exist
-    # Look for either the chained certificate or combined pem, plus the key file
-    if [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt" ]; then
-        CERT_FILE="$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt"
-        CERT_TYPE="chained"
-    elif [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold_combined.pem" ]; then
-        CERT_FILE="$CERT_SOURCE_DIR/STAR_birthday_gold_combined.pem"
-        CERT_TYPE="combined"
-    elif [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold.crt" ]; then
-        CERT_FILE="$CERT_SOURCE_DIR/STAR_birthday_gold.crt"
-        CERT_TYPE="single"
+    # Check multiple possible locations for local certificates
+    if [ -d "${pathprefix}_CERTS_/birthday.gold" ]; then
+        CERT_SOURCE_DIR="${pathprefix}_CERTS_/birthday.gold"
+    elif [ -d "${pathprefix}../_CERTS_/birthday.gold" ]; then
+        CERT_SOURCE_DIR="${pathprefix}../_CERTS_/birthday.gold"
+    elif [ -d "/var/www/BIRTHDAY_SERVER/_CERTS_/birthday.gold" ]; then
+        CERT_SOURCE_DIR="/var/www/BIRTHDAY_SERVER/_CERTS_/birthday.gold"
     else
-        echo "ERROR: No certificate file found in $CERT_SOURCE_DIR"
-        echo "Expected: STAR_birthday_gold_chained.crt, STAR_birthday_gold_combined.pem, or STAR_birthday_gold.crt"
-        return 1
+        # No local certificates found - must fetch from PHP endpoint
+        USE_PHP_ENDPOINT=true
+        echo "Local certificate directory not found. Will fetch from remote endpoint."
     fi
 
-    if [ ! -f "$CERT_SOURCE_DIR/star.birthday.gold.key" ]; then
-        echo "ERROR: Key file not found: $CERT_SOURCE_DIR/star.birthday.gold.key"
-        return 1
-    fi
-
-    echo "Found certificate type: $CERT_TYPE"
-
-    # Verify source file checksums
-    echo "Verifying source certificate checksums..."
-    source_cert_sha1=$(sha1sum "$CERT_FILE" 2>/dev/null | awk '{ print $1 }')
-    source_key_sha1=$(sha1sum "$CERT_SOURCE_DIR/star.birthday.gold.key" 2>/dev/null | awk '{ print $1 }')
-
-    # Skip checksum verification for now since certificates may vary
-    if [ ! -z "$source_cert_sha1" ] && [ ! -z "$source_key_sha1" ]; then
-        echo "  Certificate SHA1: $source_cert_sha1"
-        echo "  Key SHA1:         $source_key_sha1"
-        echo ""
-        echo "This might indicate newer certificates are available."
-        echo "Proceeding with deployment of current certificates..."
-    else
-        echo "Source certificate checksums verified successfully."
+    # If we have a local directory but it's empty, also use PHP endpoint
+    if [ "$USE_PHP_ENDPOINT" = false ] && [ ! -f "$CERT_SOURCE_DIR/star.birthday.gold.key" ]; then
+        USE_PHP_ENDPOINT=true
+        echo "Local certificate directory exists but missing key file. Will fetch from remote endpoint."
     fi
 
     # Create destination directory structure if it doesn't exist
     echo "Ensuring destination directory exists: $CERT_DEST_DIR"
     mkdir -p "$CERT_DEST_DIR"
-
-    # Set proper permissions on parent directories
     chmod 750 /var/web_certs 2>/dev/null
     chmod 750 /var/web_certs/BIRTHDAY_SERVER 2>/dev/null
     chmod 750 "$CERT_DEST_DIR"
 
-    # Copy certificate files to destination
-    echo "Copying certificate files to $CERT_DEST_DIR..."
+    if [ "$USE_PHP_ENDPOINT" = true ]; then
+        # Fetch certificates from PHP endpoint
+        echo "Fetching certificates from remote endpoint..."
 
-    # Handle different certificate types
-    if [ "$CERT_TYPE" = "combined" ]; then
-        # If we have a combined PEM, copy it directly
-        cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
-        cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+        # Determine which dev server to use
+        cert_source_url="https://${source_subdomain:-dev7}.birthday.gold/admin_actions/deploy_cert_sync.php"
+
+        # First, get list of available certificates and their checksums
+        echo "Getting certificate checksums from $cert_source_url..."
+        remote_checksums=$(curl -s "${cert_source_url}?action=checksums&token=DEPLOY_CERT_SECRET_2025")
+
+        if [ $? -ne 0 ] || [ -z "$remote_checksums" ]; then
+            echo "ERROR: Failed to fetch certificate checksums from remote endpoint"
+            return 1
+        fi
+
+        # Parse the JSON response to check if it was successful
+        status=$(echo "$remote_checksums" | jq -r '.status' 2>/dev/null)
+        if [ "$status" != "success" ]; then
+            echo "ERROR: Remote endpoint returned error: $remote_checksums"
+            return 1
+        fi
+
+        # Define files we need to fetch
+        cert_files=("STAR_birthday_gold.crt" "star.birthday.gold.key")
+
+        # Check and fetch each certificate file if needed
+        for cert_file in "${cert_files[@]}"; do
+            dest_file="$CERT_DEST_DIR/$cert_file"
+
+            # Get remote SHA1 for this file
+            remote_sha1=$(echo "$remote_checksums" | jq -r ".checksums.\"$cert_file\"" 2>/dev/null)
+
+            if [ -z "$remote_sha1" ] || [ "$remote_sha1" = "null" ]; then
+                echo "WARNING: $cert_file not available on remote endpoint"
+                continue
+            fi
+
+            # Calculate local SHA1 if file exists
+            local_sha1=""
+            if [ -f "$dest_file" ]; then
+                local_sha1=$(sha1sum "$dest_file" | awk '{ print $1 }')
+            fi
+
+            # Compare checksums and fetch if different or missing
+            if [ "$local_sha1" != "$remote_sha1" ]; then
+                echo "Fetching $cert_file (SHA1 mismatch or missing)..."
+
+                # Fetch the file content
+                file_response=$(curl -s "${cert_source_url}?action=get&file=$cert_file&token=DEPLOY_CERT_SECRET_2025")
+
+                if [ $? -ne 0 ] || [ -z "$file_response" ]; then
+                    echo "ERROR: Failed to fetch $cert_file"
+                    return 1
+                fi
+
+                # Extract and decode the content
+                file_content=$(echo "$file_response" | jq -r '.content' 2>/dev/null)
+                if [ -z "$file_content" ] || [ "$file_content" = "null" ]; then
+                    echo "ERROR: Failed to extract content for $cert_file"
+                    return 1
+                fi
+
+                # Decode and write the file
+                echo "$file_content" | base64 -d > "$dest_file"
+
+                # Verify the SHA1 after writing
+                new_sha1=$(sha1sum "$dest_file" | awk '{ print $1 }')
+                if [ "$new_sha1" != "$remote_sha1" ]; then
+                    echo "ERROR: SHA1 verification failed for $cert_file"
+                    return 1
+                fi
+
+                echo "  Successfully fetched and verified $cert_file"
+            else
+                echo "  $cert_file is up to date (SHA1: $local_sha1)"
+            fi
+        done
+
+        # Rename files to expected names
+        if [ -f "$CERT_DEST_DIR/STAR_birthday_gold.crt" ]; then
+            cp "$CERT_DEST_DIR/STAR_birthday_gold.crt" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+        fi
+        if [ -f "$CERT_DEST_DIR/star.birthday.gold.key" ]; then
+            cp "$CERT_DEST_DIR/star.birthday.gold.key" "$CERT_DEST_DIR/server.key"
+        fi
+
     else
-        # Copy the certificate file
-        cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
-    fi
+        # Use local certificates
+        echo "Using local certificate directory: $CERT_SOURCE_DIR"
 
-    # Always copy the key
-    cp "$CERT_SOURCE_DIR/star.birthday.gold.key" "$CERT_DEST_DIR/server.key"
+        # Check if source files exist
+        if [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt" ]; then
+            CERT_FILE="$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt"
+            CERT_TYPE="chained"
+        elif [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold_combined.pem" ]; then
+            CERT_FILE="$CERT_SOURCE_DIR/STAR_birthday_gold_combined.pem"
+            CERT_TYPE="combined"
+        elif [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold.crt" ]; then
+            CERT_FILE="$CERT_SOURCE_DIR/STAR_birthday_gold.crt"
+            CERT_TYPE="single"
+        else
+            echo "ERROR: No certificate file found in $CERT_SOURCE_DIR"
+            return 1
+        fi
+
+        if [ ! -f "$CERT_SOURCE_DIR/star.birthday.gold.key" ]; then
+            echo "ERROR: Key file not found: $CERT_SOURCE_DIR/star.birthday.gold.key"
+            return 1
+        fi
+
+        echo "Found certificate type: $CERT_TYPE"
+
+        # Copy certificate files to destination
+        echo "Copying certificate files to $CERT_DEST_DIR..."
+
+        if [ "$CERT_TYPE" = "combined" ]; then
+            cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+            cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+        else
+            cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+        fi
+
+        cp "$CERT_SOURCE_DIR/star.birthday.gold.key" "$CERT_DEST_DIR/server.key"
+    fi
 
     # Set proper ownership and permissions
     chown www-data:www-data "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
