@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Default values
-source_subdomain="dev"
+source_subdomain="dev7"  # For repository cloning
 source_version="v3"
 config_only=false
 ssl_only=false
@@ -17,11 +17,11 @@ show_usage() {
   echo "  -h           Show this help message"
   echo ""
   echo "Examples:"
-  echo "  $0              # Full deployment from dev.birthday.gold"
-  echo "  $0 -s dev7      # Full deployment from specific dev7 server"
-  echo "  $0 -c           # Only sync config files and deploy script from dev"
-  echo "  $0 -c -s dev7   # Only sync config files from specific dev7"
-  echo "  $0 -ssl         # Only check and update SSL certificates from dev"
+  echo "  $0              # Full deployment from dev7 (configs/certs from dev.birthday.gold)"
+  echo "  $0 -s dev4      # Full deployment from dev4 (configs/certs from dev.birthday.gold)"
+  echo "  $0 -c           # Only sync config files and deploy script"
+  echo "  $0 -c -s dev4   # Only sync config from dev.birthday.gold, script from dev4"
+  echo "  $0 -ssl         # Only update SSL certificates from dev.birthday.gold"
 }
 
 # Parse command-line options - handle -ssl specially since it starts with 's'
@@ -114,8 +114,8 @@ manage_ssl_certificates() {
         # Fetch certificates from PHP endpoint
         echo "Fetching certificates from remote endpoint..."
 
-        # Determine which dev server to use
-        cert_source_url="https://${source_subdomain:-dev7}.birthday.gold/admin_actions/deploy_cert_sync.php"
+        # Always use dev.birthday.gold for certificate endpoint (current dev environment)
+        cert_source_url="https://dev.birthday.gold/admin_actions/deploy_cert_sync.php"
 
         # First, get list of available certificates and their checksums
         echo "Getting certificate checksums from $cert_source_url..."
@@ -617,8 +617,8 @@ sync_successful=false
 
 # Method 1: Try the new sync endpoint
 echo "Attempting to sync ENV_CONFIG files via web endpoint..."
-# Use the source_subdomain variable to determine which server to sync from
-remote_sync_response=$(curl -s -m 10 "https://${source_subdomain}.birthday.gold/admin_actions/deploy_env_sync.php?action=checksums&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
+# Always use dev.birthday.gold for config endpoint (current dev environment)
+remote_sync_response=$(curl -s -m 10 "https://dev.birthday.gold/admin_actions/deploy_env_sync.php?action=checksums&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
 
 if [ $? -eq 0 ] && [ ! -z "$remote_sync_response" ]; then
     status=$(echo "$remote_sync_response" | jq -r '.status' 2>/dev/null)
@@ -643,7 +643,7 @@ if [ $? -eq 0 ] && [ ! -z "$remote_sync_response" ]; then
                     echo "Updating $config_file (checksum mismatch)..."
 
                     # Try to get file content via web endpoint
-                    file_content=$(curl -s -m 10 "https://${source_subdomain}.birthday.gold/admin_actions/deploy_env_sync.php?action=get_file&file=$config_file&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
+                    file_content=$(curl -s -m 10 "https://dev.birthday.gold/admin_actions/deploy_env_sync.php?action=get_file&file=$config_file&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
 
                     if [ $? -eq 0 ] && [ ! -z "$file_content" ]; then
                         # Extract and decode the content
