@@ -267,7 +267,16 @@ if (!isset($userregistrationdata['validationemailsent']) || isset($_GET['adminse
   # print_r($message);
   $result = $mail->sendVerificationEmail($message);
 
-  $userregistrationdata['validationemailsent'] = date('r');
+  // Track result of sending validation email
+  if ($result) {
+    session_tracking('validation_email_sent', ['to' => $email, 'count' => $sendcount]);
+    $userregistrationdata['validationemailsent'] = date('r');
+  } else {
+    session_tracking('validation_email_failed_stored', ['to' => $email, 'count' => $sendcount, 'message' => 'Email failed but stored for retry']);
+    // Still mark as sent so user sees the validation page
+    $userregistrationdata['validationemailsent'] = date('r') . ' (pending retry)';
+  }
+
   $userregistrationdata['validationemailsent_count'] = $sendcount;
 
   $session->set('userregistrationdata', $userregistrationdata);

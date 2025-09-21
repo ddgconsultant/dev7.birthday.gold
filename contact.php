@@ -179,7 +179,16 @@ if ($subject!='') $subject='<br>SUBJECT: '.$subject;
 $messageinput['body']='DATE: '.date('r').'<br>ID: '.session_id().$subject.'<hr>'.$message;
 $messageinput['notification']='DATE: '.date('r')."\n".'ID: '.session_id().$subject."\n".$message;
 $result=$mail->sendOnlineContactForm($messageinput);
-$errormessage = '<div class="alert alert-success alert-dismissible fade show p-3 mb-4" role="alert"><i class="bi bi-check-circle-fill me-2"></i><strong>Success!</strong> Your message was sent to our customer service team. We\'ll respond within 24-48 hours.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+
+// Check if mail was actually sent
+if ($result && (is_array($result) ? ($result['status'] ?? false) : $result)) {
+  $errormessage = '<div class="alert alert-success alert-dismissible fade show p-3 mb-4" role="alert"><i class="bi bi-check-circle-fill me-2"></i><strong>Success!</strong> Your message was sent to our customer service team. We\'ll respond within 24-48 hours.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+  session_tracking('contact-mail-sent-successfully', ['to' => $messageinput['toemail'], 'subject' => $messageinput['notification']]);
+} else {
+  // Mail failed but was stored for retry
+  $errormessage = '<div class="alert alert-warning alert-dismissible fade show p-3 mb-4" role="alert"><i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Message received!</strong> We\'re experiencing a temporary issue, but your message has been saved and will be sent shortly. We\'ll respond within 24-48 hours.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+  session_tracking('contact-mail-failed-stored-retry', ['to' => $messageinput['toemail'], 'subject' => $messageinput['notification']]);
+}
 
 // Track successful submission
 $successTrackingData = [

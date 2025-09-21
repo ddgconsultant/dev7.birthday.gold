@@ -15,6 +15,11 @@ class Mail
   protected $mail;
   protected $incomingmailserversdb;
 
+  // Test mode flag - set to true to simulate mail failures
+  // Can be set via: $mail->setTestFailureMode(true) or environment variable MAIL_TEST_FAILURE=1
+  protected $testFailureMode = false;
+  protected $testFailureRate = 100; // Percentage of emails to fail in test mode (0-100)
+
   public function __construct($mailConfig)
   {
 
@@ -33,6 +38,24 @@ class Mail
     }
     $this->mail->Port = $mailConfig['MAIL_PORT'];
 
+    // Check for test configuration file (for testing only)
+    $testConfigFile = $_SERVER['DOCUMENT_ROOT'] . '/admin_actions/mail-test-config.php';
+    if (file_exists($testConfigFile)) {
+      include_once($testConfigFile);
+    }
+
+    // Check environment variable for test mode
+    if (getenv('MAIL_TEST_FAILURE') === '1' || getenv('MAIL_TEST_FAILURE') === 'true') {
+      $this->testFailureMode = true;
+      session_tracking('mail_test_mode_enabled', ['source' => 'environment_variable']);
+    }
+
+    // Check for failure rate in environment
+    $failureRate = getenv('MAIL_TEST_FAILURE_RATE');
+    if ($failureRate !== false && is_numeric($failureRate)) {
+      $this->testFailureRate = min(100, max(0, (int)$failureRate));
+    }
+
     
 
     // Ddfine list of incoming mail servers
@@ -45,6 +68,33 @@ class Mail
     ];
 
 
+  }
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Enable or disable test failure mode
+   * @param bool $enabled Whether to enable test mode
+   * @param int $failureRate Optional failure rate (0-100)
+   */
+  public function setTestFailureMode($enabled, $failureRate = null) {
+    $this->testFailureMode = (bool)$enabled;
+    if ($failureRate !== null) {
+      $this->testFailureRate = min(100, max(0, (int)$failureRate));
+    }
+    session_tracking('mail_test_mode_changed', [
+      'enabled' => $this->testFailureMode,
+      'failure_rate' => $this->testFailureRate
+    ]);
+  }
+
+  /**
+   * Get current test mode status
+   */
+  public function getTestModeStatus() {
+    return [
+      'enabled' => $this->testFailureMode,
+      'failure_rate' => $this->testFailureRate
+    ];
   }
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
@@ -95,7 +145,36 @@ class Mail
       $this->mail->Subject =  $subject; #'Here is the subject';
       $this->mail->Body    = $body; #'This is the HTML message body <b>in bold!</b>';
 
+      // Check if we're in test failure mode
+      if ($this->testFailureMode) {
+        // Determine if this email should fail based on failure rate
+        $shouldFail = (rand(1, 100) <= $this->testFailureRate);
+
+        if ($shouldFail) {
+          // Simulate failure
+          $result = false;
+          session_tracking('mail_test_failure_simulated', [
+            'to' => $to[0],
+            'subject' => $subject,
+            'failure_rate' => $this->testFailureRate,
+            'test_mode' => true
+          ]);
+
+          // Store the failed email for retry
+          $this->storeFailedEmail($details);
+
+          // Set mail_sent to false for proper handling
+          $results = ['mail_sent' => false, 'test_failure' => true];
+          return $results;
+        }
+      }
+
       $result = $this->mail->send();
+
+      // Store failed email for retry if sending failed
+      if (!$result) {
+        $this->storeFailedEmail($details);
+      }
 
       #echo 'Message has been sent';
     } catch (Exception $e) {
@@ -201,11 +280,82 @@ Cheers!<br>birthday.gold
     $message['body'] = str_replace('{{MESSAGE_CONTENT}}', $message['body'], $output);
     $message['body'] = str_replace('{{TO_EMAIL}}', $message['toemail'], $message['body']);
 
-    $this->sendmail($message);
+    $result = $this->sendmail($message);
+
+    // Log if mail sending failed (already stored by sendmail)
+    if (!$result || (is_array($result) && isset($result['mail_sent']) && !$result['mail_sent'])) {
+      session_tracking('verification_email_failed_retry', ['to' => $message['toemail'] ?? '', 'subject' => $message['subject'] ?? '']);
+    }
+
     return $output;
   }
 
 
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Store failed email in bg_user_notifications for retry
+   * Uses user_id=0 for system emails (not belonging to any user)
+   */
+  function storeFailedEmail($details) {
+    global $database;
+
+    // Prepare email details for storage
+    $to = is_array($details['to']) ? $details['to'] : [$details['to'], $details['to']];
+    $from = isset($details['from']) ? (is_array($details['from']) ? $details['from'] : [$details['from'], $details['from']]) : ['noreply@birthday.gold', 'birthday.gold'];
+
+    // Get the actual email address (prefer toemail over to[0])
+    $recipient_email = $details['toemail'] ?? (is_array($to) ? $to[0] : $to);
+    // If to[0] is not a valid email, try to extract from array
+    if (!filter_var($recipient_email, FILTER_VALIDATE_EMAIL) && is_array($to)) {
+      // Check if any element in the array is a valid email
+      foreach ($to as $email) {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+          $recipient_email = $email;
+          break;
+        }
+      }
+    }
+
+    // Build notification record
+    $notification = [
+      'user_id' => 0, // System email, not belonging to any user
+      'type' => 'failed_email',
+      'title' => $details['subject'] ?? 'Failed Email',
+      'message' => $details['body'] ?? '',
+      'status' => 'notsent',
+      'sent_to' => $recipient_email, // Use actual email address
+      'category' => 'failed_email_retry',
+      'priority' => 'high',
+      'options' => json_encode([
+        'original_to' => $to,
+        'original_from' => $from,
+        'attachment' => $details['attachment'] ?? null,
+        'failed_at' => date('Y-m-d H:i:s'),
+        'retry_count' => 0,
+        'toemail' => $details['toemail'] ?? $to[0]
+      ]),
+      'start_dt' => date('Y-m-d H:i:s'), // Retry immediately
+      'end_dt' => date('Y-m-d H:i:s', strtotime('+7 days')) // Expire after 7 days if not sent
+    ];
+
+    // Insert into bg_user_notifications
+    try {
+      $query = "INSERT INTO bg_user_notifications
+                (user_id, type, title, message, status, sent_to, category, priority, options, start_dt, end_dt, create_dt, modify_dt)
+                VALUES
+                (:user_id, :type, :title, :message, :status, :sent_to, :category, :priority, :options, :start_dt, :end_dt, NOW(), NOW())";
+
+      $stmt = $database->prepare($query);
+      $stmt->execute($notification);
+
+      // Log the failed email storage
+      session_tracking('failed_email_stored', ['to' => $to[0], 'subject' => $details['subject'] ?? 'Unknown', 'notification_id' => $database->lastInsertId()]);
+
+    } catch (Exception $e) {
+      session_tracking('failed_email_storage_error', ['error' => $e->getMessage(), 'to' => $to[0]]);
+    }
+  }
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   function sendOnlineContactForm($input)
@@ -258,6 +408,12 @@ An online message:
     #$message['body']=str_replace($search,$replace, $message['body']);
 
     $result = $this->sendmail($message);
+
+    // Log if mail sending failed (already stored by sendmail)
+    if (!$result || (is_array($result) && isset($result['mail_sent']) && !$result['mail_sent'])) {
+      session_tracking('contact_form_email_failed_retry', ['to' => $message['toemail'] ?? '', 'subject' => $message['subject'] ?? '']);
+    }
+
     $results['status'] = $result;
     $results['output'] = $output;
     return $results;

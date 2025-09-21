@@ -137,16 +137,22 @@ $details['notificationid'] = $insertednotificationId;
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
 function retry_unsent_notifications() {
     global $database, $mail, $qik, $counters, $config;
-    
+
     $qik->logmessage('<h3>Starting retry of unsent notifications...</h3>', 1);
-    
-    // Query for notifications with "notsent" status
-    $query = "SELECT n.*, u.first_name, u.last_name, u.email 
+
+    // Query for notifications with "notsent" status - including user_id=0 for system emails
+    // Only process notifications where start_dt has passed (or is NULL)
+    $query = "SELECT n.*,
+              CASE WHEN n.user_id = 0 THEN 'System' ELSE u.first_name END as first_name,
+              CASE WHEN n.user_id = 0 THEN 'Email' ELSE u.last_name END as last_name,
+              CASE WHEN n.user_id = 0 THEN n.sent_to ELSE u.email END as email
               FROM bg_user_notifications n
-              JOIN bg_users u ON n.user_id = u.user_id
-              WHERE n.status = 'notsent' 
+              LEFT JOIN bg_users u ON n.user_id = u.user_id
+              WHERE n.status = 'notsent'
+              AND (n.start_dt IS NULL OR n.start_dt <= NOW())
+              AND (n.end_dt IS NULL OR n.end_dt >= NOW())
               AND n.create_dt > DATE_SUB(NOW(), INTERVAL 7 DAY)
-              ORDER BY n.create_dt ASC";
+              ORDER BY n.priority DESC, n.create_dt ASC";
               
     $stmt = $database->prepare($query);
     $stmt->execute();
@@ -175,13 +181,46 @@ function retry_unsent_notifications() {
         }
         
         if ($config['actualsend']) {
+            // Check if this is a system email (user_id=0) with additional options
+            if ($notification['user_id'] == 0 && !empty($notification['options'])) {
+                $options = json_decode($notification['options'], true);
+
+                // For system emails, try to get the actual email from options
+                if (!empty($options['toemail']) && filter_var($options['toemail'], FILTER_VALIDATE_EMAIL)) {
+                    $recipient_email = $options['toemail'];
+                }
+
+                // Use original email details if available
+                if (!empty($options['original_to'])) {
+                    $to_details = $options['original_to'];
+                    // Ensure the first element is a valid email
+                    if (!filter_var($to_details[0], FILTER_VALIDATE_EMAIL)) {
+                        $to_details[0] = $recipient_email;
+                    }
+                } else {
+                    $to_details = [$recipient_email, $notification['first_name'] . ' ' . $notification['last_name']];
+                }
+
+                // Use original from if available
+                if (!empty($options['original_from'])) {
+                    $from_details = $options['original_from'];
+                }
+            } else {
+                $to_details = [$recipient_email, $notification['first_name'] . ' ' . $notification['last_name']];
+            }
+
             // Format the 'to' details for addAddress
             $details = [
-                'to' => [$recipient_email, $notification['first_name'] . ' ' . $notification['last_name']],
+                'to' => $to_details,
                 'subject' => $notification['title'],
                 'body' => $notification['message'],
                 'notificationid' => $notification['notification_id']
             ];
+
+            // Add from if specified
+            if (!empty($from_details)) {
+                $details['from'] = $from_details;
+            }
             
             // Log detailed info about what we're trying to send
             $qik->logmessage("RETRY ATTEMPT: Sending email with the following details:", 1);
@@ -191,7 +230,15 @@ function retry_unsent_notifications() {
             
             // Check if recipient email is valid
             if (!filter_var($recipient_email, FILTER_VALIDATE_EMAIL)) {
-                $qik->logmessage("RETRY ERROR: Invalid email address format: " . $recipient_email, 1);
+                $qik->logmessage("RETRY ERROR: Invalid or missing email address: '" . $recipient_email . "' for notification ID: " . $notification['notification_id'], 1);
+
+                // Log more details about why this failed
+                if (empty($recipient_email)) {
+                    $qik->logmessage("  - Email is empty/missing for user_id: " . $notification['user_id'], 1);
+                } else {
+                    $qik->logmessage("  - Email format is invalid: " . $recipient_email, 1);
+                }
+
                 $retry_failure++;
                 continue;
             }
@@ -222,19 +269,39 @@ function retry_unsent_notifications() {
             } else {
                 // Extract error message if available
                 $error_message = isset($result['error']) ? $result['error'] : 'No specific error returned';
-                
-                $qik->logmessage("RETRY: Email sending failed! - " . 
-                    $notification['title'] . ' for ' . $notification['user_id'] . 
+
+                $qik->logmessage("RETRY: Email sending failed! - " .
+                    $notification['title'] . ' for ' . $notification['user_id'] .
                     " - Error: " . $error_message, 1);
-                
-                // Just update the modification date to show we tried
-                $update_query = "UPDATE bg_user_notifications SET 
-                                 modify_dt = NOW()
+
+                // Update the retry count and next retry time in options
+                $options = !empty($notification['options']) ? json_decode($notification['options'], true) : [];
+                $retry_count = isset($options['retry_count']) ? $options['retry_count'] + 1 : 1;
+                $options['retry_count'] = $retry_count;
+                $options['last_retry'] = date('Y-m-d H:i:s');
+
+                // Calculate next retry time with exponential backoff
+                // 5 mins, 15 mins, 1 hour, 4 hours, 12 hours, 24 hours, then stop
+                $retry_delays = [5, 15, 60, 240, 720, 1440];
+                $delay_index = min($retry_count - 1, count($retry_delays) - 1);
+                $delay_minutes = $retry_delays[$delay_index];
+
+                // Update with new retry time and increment count
+                $update_query = "UPDATE bg_user_notifications SET
+                                 modify_dt = NOW(),
+                                 start_dt = DATE_ADD(NOW(), INTERVAL :delay MINUTE),
+                                 options = :options
                                  WHERE notification_id = :notification_id";
-                                 
+
                 $update_stmt = $database->prepare($update_query);
-                $update_stmt->execute(['notification_id' => $notification['notification_id']]);
-                
+                $update_stmt->execute([
+                    'notification_id' => $notification['notification_id'],
+                    'delay' => $delay_minutes,
+                    'options' => json_encode($options)
+                ]);
+
+                $qik->logmessage("  Next retry in $delay_minutes minutes (retry #$retry_count)", 1);
+
                 $retry_failure++;
             }
         }
