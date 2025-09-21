@@ -87,21 +87,41 @@ function logError($url, $message='')
 // Function to check for different types of PHP errors in HTML content
 function checkForErrors($content)
 {
+    // More specific patterns to avoid false positives from regular HTML content
     $errorPatterns = [
-        'Parse error' => 'Parse error:',   // Detects syntax errors
-        'Notice error' => 'Notice:',       // Detects notice errors
-        'Warning error' => 'Warning:',     // Detects warning errors
-        'Fatal error' => 'Fatal error:',   // Detects fatal errors
-        'Uncaught Exception' => 'Uncaught', // Detects uncaught exceptions
+        'Parse error' => '/<b>Parse error<\/b>:|Parse error:.*?in.*?on line/i',
+        'Notice error' => '/<b>Notice<\/b>:|Notice:.*?in.*?on line/i',
+        'Warning error' => '/<b>Warning<\/b>:|Warning:.*?in.*?on line/i',
+        'Fatal error' => '/<b>Fatal error<\/b>:|Fatal error:.*?in.*?on line/i',
+        'Uncaught Exception' => '/<b>Fatal error<\/b>:.*?Uncaught|Fatal error:.*?Uncaught/i',
     ];
 
+    $foundErrors = [];
+
     foreach ($errorPatterns as $errorType => $pattern) {
-        if (strpos($content, $pattern) !== false) {
-            return true; // Error found
+        if (preg_match($pattern, $content)) {
+            // Extract the actual error message and line number
+            preg_match_all($pattern . '.*?(?:on line|in .*? on line) (\d+)/i', $content, $matches);
+            if (!empty($matches[0])) {
+                foreach ($matches[0] as $index => $match) {
+                    $foundErrors[] = [
+                        'type' => $errorType,
+                        'message' => strip_tags($match),
+                        'line' => $matches[1][$index] ?? 'unknown'
+                    ];
+                }
+            } else {
+                // Fallback if pattern doesn't match expected format
+                $foundErrors[] = [
+                    'type' => $errorType,
+                    'message' => 'Error detected but details could not be extracted',
+                    'line' => 'unknown'
+                ];
+            }
         }
     }
 
-    return false; // No errors found
+    return $foundErrors; // Return array of errors or empty array
 }
 
 
@@ -128,10 +148,12 @@ function crawlWebsite($baseUrl, $files, $exclude)
     $checkedFiles[] = $file;
     $url = $baseUrl . $relativePath;
     $content = getHtmlContent($url);
-    if (checkForErrors($content)) {
+    $errors = checkForErrors($content);
+    if (!empty($errors)) {
       $errorsFound[] = [
         'file' => $url,
-        'content' => $content
+        'content' => $content,
+        'errors' => $errors
       ];
     }
   }
@@ -242,16 +264,34 @@ if (empty($result['list_of_files_with_errors'])) {
   $errorMessage = "📛 Errors found on the following pages: " . implode(' ', array_column($result['list_of_files_with_errors'], 'file'));
   if ($DEBUG) echo 'Sending error message: ' . $errorMessage . '<br>';
   
-  $logDirectory = '/var/www/BIRTHDAY_SERVER/www.birthday.gold/_logs_/';
+  // Determine log directory based on environment
+  global $mode;
+  if ($mode === 'dev') {
+    $logDirectory = '/mnt/w/BIRTHDAY_SERVER/_logs_/';
+  } else {
+    $logDirectory = '/var/www/BIRTHDAY_SERVER/www.birthday.gold/_logs_/';
+  }
+
   if (!is_dir($logDirectory)) {
     mkdir($logDirectory, 0755, true);
   }
   $logFile = $logDirectory . 'sitechecker_errors_' . date('YmdHis') . '.log';
 
   $logContent = "";
+  $errorSummary = "\n\n=== ERROR SUMMARY ===\n";
+
   foreach ($result['list_of_files_with_errors'] as $error) {
     $logContent .= $error['file'] . "\n" . $error['content'] . "\n\n";
+
+    // Add to error summary
+    $errorSummary .= "\nFile: " . $error['file'] . "\n";
+    foreach ($error['errors'] as $errorDetail) {
+      $errorSummary .= "  - [Line " . $errorDetail['line'] . "] " . $errorDetail['message'] . "\n";
+    }
   }
+
+  // Append error summary at the end of the log
+  $logContent .= $errorSummary;
 
   file_put_contents($logFile, $logContent);
   
