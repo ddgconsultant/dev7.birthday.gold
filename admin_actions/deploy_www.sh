@@ -648,7 +648,7 @@ if [ $? -eq 0 ] && [ ! -z "$remote_sync_response" ]; then
 
                 # Compare checksums
                 if [ "$local_checksum" != "$remote_checksum" ]; then
-                    echo "Updating $config_file (checksum mismatch)..."
+                    echo "Updating $config_file - checksum mismatch..."
 
                     # Try to get file content via web endpoint
                     file_content=$(curl -s -m 10 "https://dev.birthday.gold/admin_actions/deploy_env_sync.php?action=get_file&file=$config_file&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
