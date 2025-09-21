@@ -609,8 +609,8 @@ echo "Checking ENV_CONFIG files for updates..."
 # Define local ENV_CONFIG path
 ENV_CONFIG_PATH="/var/www/BIRTHDAY_SERVER/ENV_CONFIGS"
 
-# Array of config files to check
-config_files=("config-main-production.inc" "config-ai.inc")
+# Config files to check (space-separated list to avoid array issues)
+config_files="config-main-production.inc config-ai.inc"
 
 # Try multiple methods to sync config files
 sync_successful=false
@@ -624,7 +624,7 @@ if [ $? -eq 0 ] && [ ! -z "$remote_sync_response" ]; then
     status=$(echo "$remote_sync_response" | jq -r '.status' 2>/dev/null)
 
     if [ "$status" == "success" ]; then
-        for config_file in "${config_files[@]}"; do
+        for config_file in $config_files; do
             local_config_file="$ENV_CONFIG_PATH/$config_file"
 
             # Get remote checksum from JSON
@@ -685,7 +685,7 @@ if [ "$sync_successful" != "true" ]; then
         # Copy from the staging directory we just cloned
         if [ -d "${pathprefix}${subdomain}.birthday.gold/ENV_CONFIGS" ]; then
             echo "Copying ENV_CONFIGS from cloned repository..."
-            for config_file in "${config_files[@]}"; do
+            for config_file in $config_files; do
                 source_file="${pathprefix}${subdomain}.birthday.gold/ENV_CONFIGS/$config_file"
                 dest_file="$ENV_CONFIG_PATH/$config_file"
 
