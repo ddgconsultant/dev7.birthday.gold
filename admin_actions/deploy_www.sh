@@ -79,13 +79,28 @@ manage_ssl_certificates() {
     echo "=========================================="
     echo ""
 
-    # Define certificate paths
-    CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/2025_cert"
+    # Define certificate paths - determine year based on current date
+    current_year=$(date +%Y)
+
+    # Check which certificate directory to use based on what exists
+    # Try current year first, then previous year
+    if [ -d "/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/${current_year}_cert" ]; then
+        CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/${current_year}_cert"
+    elif [ -d "/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/$((current_year-1))_cert" ]; then
+        CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/$((current_year-1))_cert"
+    else
+        # Fallback to 2025 if neither exists
+        CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/2025_cert"
+    fi
+
     CERT_DEST_DIR="/var/web_certs/BIRTHDAY_SERVER/birthday.gold"
 
     # Expected SHA1 checksums for 2025 certificates (update these when certs change)
     EXPECTED_CHAINED_SHA1="eb84bb1e2dd085bbdeb863432599e59dfd9cf3ea"
     EXPECTED_KEY_SHA1="b7343e7d0cf08db902fd1d8d305765c6e177e8ea"
+
+    # Show which certificate directory is being used
+    echo "Using certificate source directory: $CERT_SOURCE_DIR"
 
     # Check if source directory exists
     if [ ! -d "$CERT_SOURCE_DIR" ]; then
