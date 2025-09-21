@@ -509,14 +509,14 @@ if [ "$config_only" != true ]; then
         api_endpoint="${MESSAGING_URL}/_matrix/client/r0/rooms/$MESSAGE_ROOM_ID/send/m.room.message?access_token=$MATRIX_ACCESS_TOKEN"
         curl_response=$(curl -s -w "%{http_code}" -o /dev/null -X POST -d "{\"msgtype\":\"m.text\", \"body\":\"$message_body\"}" -H "Content-Type: application/json" $api_endpoint)
         ;;
- 'rocketchat')
+    'rocketchat')
         # Post the message to the Rocket.Chat room
-       curl_response=$(curl -s -o ~/response.txt -w "%{http_code}" -X POST \
+        curl_response=$(curl -s -o ~/response.txt -w "%{http_code}" -X POST \
             -H 'Content-Type: application/json' \
             --data "{
                 \"text\": \"$message_body\"
             }" \
-            ${ROCKETCHAT_URL}/${ROCKETCHAT_USER}/${ROCKETCHAT_PASSWORD})
+            "${ROCKETCHAT_URL}/${ROCKETCHAT_USER}/${ROCKETCHAT_PASSWORD}")
 
 
         # Check if the message was sent successfully
