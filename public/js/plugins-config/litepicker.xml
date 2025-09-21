@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css></css>
+            <js>
+                <file>litepicker/litepicker.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[    if (typeof(litePickers) === "undefined") {
+        window.litePickers = [];
+    }
+    var dataStringToArray = function(stringArray) {
+        return JSON.parse(stringArray.replace(/\'/g, '"'));
+    }
+    var getLitepickerDropdowns = function(dataAttr) {
+        return {
+            "minYear":dataAttr.dropdownMinYear === undefined?1990:dataAttr.dropdownMinYear,
+            "maxYear":dataAttr.dropdownMaxYear === undefined?null:dataAttr.dropdownMaxYear,
+            "months":dataAttr.dropdownMonths === undefined?false:dataAttr.dropdownMonths === 'true',
+            "years":dataAttr.dropdownYears === undefined?false:dataAttr.dropdownYears === 'true',
+        };
+    }
+
+    document.querySelectorAll("%selector%").forEach(el => {
+        let inputId                       = el.getAttribute('id'),
+            dataAttr                      = el.dataset,
+            dataAllowRepick               = dataAttr.allowRepick === undefined?false:dataAttr.allowRepick === 'true',
+            dataAutoApply                 = dataAttr.autoApply === undefined?true:dataAttr.autoApply !== 'false',
+            dataAutoRefresh               = dataAttr.autoRefresh === undefined?false:dataAttr.autoRefresh === 'true',
+            dataDelimiter                 = dataAttr.delimiter === undefined?'-':dataAttr.delimiter,
+            dataDropdowns                 = getLitepickerDropdowns(dataAttr),
+            dataDisallowLockDaysInRange   = dataAttr.disallowLockDaysInRange === undefined?false:dataAttr.disallowLockDaysInRange === 'true',
+            dataElementEnd                = dataAttr.elementEnd === undefined?null:document.getElementById(dataAttr.elementEnd),
+            dataEndDate                   = dataAttr.endDate === undefined?null:dataAttr.endDate,
+            dataFirstDay                  = dataAttr.firstDay === undefined?1:dataAttr.firstDay,
+            dataFormat                    = dataAttr.format === undefined?'YYYY-MM-DD':dataAttr.format,
+            dataHighlightedDays           = dataAttr.highlightedDays === undefined?[]:dataAttr.highlightedDays,
+            dataHighlightedDaysFormat     = dataAttr.highlightedDaysFormat === undefined?'YYYY-MM-DD':dataAttr.highlightedDaysFormat,
+            dataInlineMode                = dataAttr.inlineMode === undefined?false:dataAttr.inlineMode === 'true',
+            dataLang                      = dataAttr.lang === undefined?'en-US':dataAttr.lang,
+            dataLockDays                  = dataAttr.lockDays === undefined?[]:dataAttr.lockDays,
+            dataLockDaysFormat            = dataAttr.lockDaysFormat === undefined?'YYYY-MM-DD':dataAttr.lockDaysFormat,
+            dataLockDaysInclusivity       = dataAttr.lockDaysInclusivity === undefined?[]:dataAttr.lockDaysInclusivity,
+            dataMaxDate                   = dataAttr.maxDate === undefined?null:dataAttr.maxDate,
+            dataMaxDays                   = dataAttr.maxDays === undefined?null:dataAttr.maxDays,
+            dataMinDate                   = dataAttr.minDate === undefined?null:dataAttr.minDate,
+            dataMinDays                   = dataAttr.minDays === undefined?null:dataAttr.minDays,
+            dataNumberOfColumns           = dataAttr.numberOfColumns === undefined?1:parseInt(dataAttr.numberOfColumns),
+            dataNumberOfMonths            = dataAttr.numberOfMonths === undefined?1:parseInt(dataAttr.numberOfMonths),
+            dataParentEl                  = dataAttr.parentEl === undefined?null:document.getElementById(dataAttr.parentEl),
+            dataPosition                  = dataAttr.position === undefined?'auto':dataAttr.position,
+            dataResetButton               = dataAttr.resetButton === undefined?false:dataAttr.resetButton === 'true',
+            dataScrollToDate              = dataAttr.scrollToDate === undefined?true:dataAttr.scrollToDate !== 'false',
+            dataSelectBackward            = dataAttr.selectBackward === undefined?false:dataAttr.selectBackward === 'true',
+            dataSelectForward             = dataAttr.selectForward === undefined?false:dataAttr.selectForward === 'true',
+            dataShowTooltip               = dataAttr.showTooltip === undefined?true:dataAttr.showTooltip !== 'false',
+            dataShowWeekNumbers           = dataAttr.showWeekNumbers === undefined?false:dataAttr.showWeekNumbers === 'true',
+            dataSingleMode                = dataAttr.singleMode === undefined?true:dataAttr.singleMode !== 'false',
+            dataSplitView                 = dataAttr.splitView === undefined?false:dataAttr.splitView === 'true',
+            dataStartDate                 = dataAttr.startDate === undefined?null:dataAttr.startDate,
+            dataSwitchingMonths           = dataAttr.switchingMonths === undefined?null:dataAttr.switchingMonths,
+            dataTooltipText               = dataAttr.tooltipText === undefined?{"one":"day","other":"days"}:dataStringToArray(dataAttr.tooltipText),
+            dataZIndex                    = dataAttr.zIndex === undefined?9999:dataAttr.zIndex;
+
+        let lpk = new Litepicker({
+            element                  : document.getElementById(inputId),
+            allowRepick              : dataAllowRepick,
+            autoApply                : dataAutoApply,
+            autoRefresh              : dataAutoRefresh,
+            delimiter                : dataDelimiter,
+            dropdowns                : dataDropdowns,
+            disallowLockDaysInRange  : dataDisallowLockDaysInRange,
+            elementEnd               : dataElementEnd,
+            endDate                  : dataEndDate,
+            firstDay                 : dataFirstDay,
+            format                   : dataFormat,
+            highlightedDays          : dataHighlightedDays,
+            highlightedDaysFormat    : dataHighlightedDaysFormat,
+            inlineMode               : dataInlineMode,
+            lang                     : dataLang,
+            lockDays                 : dataLockDays,
+            lockDaysFormat           : dataLockDaysFormat,
+            lockDaysInclusivity      : dataLockDaysInclusivity,
+            maxDate                  : dataMaxDate,
+            maxDays                  : dataMaxDays,
+            minDate                  : dataMinDate,
+            minDays                  : dataMinDays,
+            numberOfColumns          : dataNumberOfColumns,
+            numberOfMonths           : dataNumberOfMonths,
+            parentEl                 : dataParentEl,
+            position                 : dataPosition,
+            resetButton              : dataResetButton,
+            scrollToDate             : dataScrollToDate,
+            selectBackward           : dataSelectBackward,
+            selectForward            : dataSelectForward,
+            showTooltip              : dataShowTooltip,
+            showWeekNumbers          : dataShowWeekNumbers,
+            singleMode               : dataSingleMode,
+            splitView                : dataSplitView,
+            startDate                : dataStartDate,
+            switchingMonths          : dataSwitchingMonths,
+            tooltipText              : dataTooltipText,
+            zIndex                   : dataZIndex,
+            setup: (picker) => {
+
+                picker.on('hide', () => {
+                    var formId = document.getElementById(inputId).closest('form').getAttribute('id');
+                    var form   = forms[formId];
+                    if (typeof(form.fv) == 'object' && inputId in form.fv.elements) {
+                        form.fv.revalidateField(inputId);
+                    }
+                    // required for Material to hide the placeholder label
+                    picker.options.element.focus();
+                    var event = document.createEvent('HTMLEvents');
+                    event.initEvent('change', true, false);
+                    picker.options.element.dispatchEvent(event);
+                });
+            }
+        });
+        litePickers[inputId] = lpk;
+    });]]>
+        </js_code>
+    </default>
+</root>

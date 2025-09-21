@@ -1,0 +1,366 @@
+<?php
+// scheduler--process-abo-tasks.php - Process pending ABO (Automated Business Onboarding) tasks
+// Runs every 3 minutes to find and execute the next pending task
+// URL: /admin_actions/scheduler--process-abo-tasks.php
+
+include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+
+// Set execution limits
+set_time_limit(300); // 5 minutes max
+ini_set('memory_limit', '256M');
+
+// Output as JSON for monitoring
+header('Content-Type: application/json');
+
+$result = [
+    'status' => 'success',
+    'timestamp' => date('Y-m-d H:i:s'),
+    'task_processed' => false,
+    'company_id' => null,
+    'task_name' => null,
+    'errors' => []
+];
+
+try {
+    // Check if specific company requested
+    $specific_company_id = isset($_GET['company_id']) ? intval($_GET['company_id']) : null;
+    
+    // Get tracking from bg_config to avoid stuck tasks
+    $tracking_sql = "SELECT config_value, config_data 
+                     FROM bg_config 
+                     WHERE config_type = 'abo_tracking' 
+                     AND config_key = 'last_processed'";
+    $tracking_stmt = $database->query($tracking_sql);
+    $tracking = $tracking_stmt->fetch(PDO::FETCH_ASSOC);
+    
+    $last_processed = null;
+    if ($tracking) {
+        $tracking_data = json_decode($tracking['config_data'], true);
+        $last_processed = [
+            'company_id' => $tracking_data['company_id'] ?? null,
+            'task_name' => $tracking_data['task_name'] ?? null,
+            'timestamp' => $tracking_data['timestamp'] ?? null
+        ];
+        
+        // Skip if same task was processed within last 10 minutes (stuck prevention)
+        if ($last_processed['timestamp'] && 
+            strtotime($last_processed['timestamp']) > strtotime('-10 minutes')) {
+            $skip_company = $last_processed['company_id'];
+            $skip_task = $last_processed['task_name'];
+        }
+    }
+    
+    // Get all automation processors in order
+    $processors_sql = "SELECT config_key, config_value, config_data, display_order 
+                       FROM bg_config 
+                       WHERE config_type = 'automation_processor' 
+                       AND `status` = 'active' 
+                       ORDER BY display_order";
+    $processors_stmt = $database->query($processors_sql);
+    $processors = $processors_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Find next pending task
+    $task_sql = "
+        SELECT 
+            c.company_id,
+            c.company_name,
+            c.status as company_status,
+            p.config_key as task_name,
+            p.config_value as task_display_name,
+            p.config_data as task_config,
+            p.display_order,
+            COALESCE(ca.description, 'pending') as task_status,
+            ca.modify_dt as last_update
+        FROM bg_companies c
+        CROSS JOIN (
+            SELECT * FROM bg_config 
+            WHERE config_type = 'automation_processor' 
+            AND `status` = 'active'
+        ) p
+        LEFT JOIN bg_company_attributes ca ON 
+            c.company_id = ca.company_id 
+            AND ca.type = 'onboarding_progress'
+            AND ca.name COLLATE utf8mb4_unicode_ci = p.config_key
+            AND ca.status = 'active'
+        WHERE 
+            c.status IN ('pending_review', 'processing', 'active', 'approved_pending_data')
+            AND c.source = 'user_recommendation'
+            AND (ca.description IS NULL OR ca.description = 'pending' OR ca.description = 'error' OR ca.description = 'attempted')
+            " . ($specific_company_id ? "AND c.company_id = :specific_company_id" : "") . "
+            " . (isset($skip_company) && !$specific_company_id ? "AND NOT (c.company_id = :skip_company AND p.config_key = :skip_task)" : "") . "
+        ORDER BY 
+            c.create_dt ASC,  -- Process older companies first
+            p.display_order ASC  -- Process tasks in order
+        " . (!$specific_company_id ? "LIMIT 1" : "");
+    
+    $params = [];
+    if ($specific_company_id) {
+        $params['specific_company_id'] = $specific_company_id;
+    } elseif (isset($skip_company)) {
+        $params = [
+            'skip_company' => $skip_company,
+            'skip_task' => $skip_task
+        ];
+    }
+    
+    $task_stmt = $database->query($task_sql, $params);
+    
+    // For specific company, get all tasks; otherwise get one
+    if ($specific_company_id) {
+        $tasks = $task_stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($tasks)) {
+            $result['message'] = "No pending tasks found for company ID: $specific_company_id";
+            $result['company_id'] = $specific_company_id;
+            echo json_encode($result);
+            exit(0);
+        }
+    } else {
+        $task = $task_stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$task) {
+            $result['message'] = 'No pending tasks found';
+            echo json_encode($result);
+            exit(0);
+        }
+        $tasks = [$task]; // Make it an array for uniform processing
+    }
+    
+    // Process all tasks
+    $processed_count = 0;
+    $success_count = 0;
+    $error_count = 0;
+    
+    foreach ($tasks as $task) {
+        try {
+            $processed_count++;
+            
+            // Update tracking
+            $database->beginTransaction();
+    
+    $tracking_data = [
+        'company_id' => $task['company_id'],
+        'task_name' => $task['task_name'],
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+    
+    $update_tracking_sql = "INSERT INTO bg_config 
+                            (config_type, config_key, config_value, config_data, `status`)
+                            VALUES 
+                            ('abo_tracking', 'last_processed', :value, :data, 'active')
+                            ON DUPLICATE KEY UPDATE
+                            config_value = VALUES(config_value),
+                            config_data = VALUES(config_data),
+                            updated_at = CURRENT_TIMESTAMP";
+    
+    $database->query($update_tracking_sql, [
+        'value' => "{$task['company_name']} - {$task['task_display_name']}",
+        'data' => json_encode($tracking_data)
+    ]);
+    
+    // Mark task as in_progress
+    $progress_sql = "INSERT INTO bg_company_attributes 
+                     (company_id, type, name, description, status, create_dt)
+                     VALUES 
+                     (:company_id, 'onboarding_progress', :task_name, 'in_progress', 'active', NOW())
+                     ON DUPLICATE KEY UPDATE
+                     description = 'in_progress',
+                     modify_dt = NOW()";
+    
+    $database->query($progress_sql, [
+        'company_id' => $task['company_id'],
+        'task_name' => $task['task_name']
+    ]);
+    
+    $database->commit();
+    
+            // Process the task
+            if (!$specific_company_id) {
+                // For single task mode, set these in the result
+                $result['task_processed'] = true;
+                $result['company_id'] = $task['company_id'];
+                $result['task_name'] = $task['task_name'];
+                $result['company_name'] = $task['company_name'];
+            }
+    
+    // Get task configuration
+    $task_config = json_decode($task['task_config'], true);
+    $scheduler_file = $task_config['scheduler_file'] ?? null;
+    
+    if (!$scheduler_file) {
+        throw new Exception("No scheduler file configured for task: {$task['task_name']}");
+    }
+    
+    // Execute the specific task processor
+    $processor_path = __DIR__ . '/abo/' . $scheduler_file;
+    if (!file_exists($processor_path)) {
+        throw new Exception("Processor file not found: $scheduler_file");
+    }
+    
+    // Set parameters for the processor
+    $_GET['company_id'] = $task['company_id'];
+    $_GET['task_name'] = $task['task_name'];
+    $_GET['auto_mode'] = true;
+    
+    // Use cURL to call the processor via HTTP to maintain proper environment
+    $processor_url = sprintf(
+        'https://dev7.birthday.gold/admin_actions/abo/%s?rawid=%d',
+        basename($processor_path),
+        $task['company_id']
+    );
+    
+    $ch = curl_init($processor_url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    
+    $processor_output = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    // Check for success in JSON response
+    $processor_json = json_decode($processor_output, true);
+    $processor_result = ($http_code == 200 && 
+                        (strpos($processor_output, 'STATUS: SUCCESS') !== false || 
+                         (isset($processor_json['status']) && $processor_json['status'] === 'success')));
+    
+    // Check if task completed successfully
+    if ($processor_result === true) {
+        // Mark task as completed
+        $complete_sql = "UPDATE bg_company_attributes 
+                         SET description = 'completed', modify_dt = NOW()
+                         WHERE company_id = :company_id 
+                         AND type = 'onboarding_progress'
+                         AND name = :task_name";
+        
+        $database->query($complete_sql, [
+            'company_id' => $task['company_id'],
+            'task_name' => $task['task_name']
+        ]);
+        
+        $result['task_status'] = 'completed';
+        $success_count++;
+        if (!$specific_company_id) {
+            $result['message'] = "Successfully processed {$task['task_display_name']} for {$task['company_name']}";
+        }
+        
+    } else {
+        // Mark task as error
+        $error_sql = "UPDATE bg_company_attributes 
+                      SET description = 'error', modify_dt = NOW()
+                      WHERE company_id = :company_id 
+                      AND type = 'onboarding_progress'
+                      AND name = :task_name";
+        
+        $database->query($error_sql, [
+            'company_id' => $task['company_id'],
+            'task_name' => $task['task_name']
+        ]);
+        
+        // Store error details
+        $error_detail_sql = "INSERT INTO bg_company_attributes 
+                             (company_id, type, name, description, status, create_dt)
+                             VALUES 
+                             (:company_id, 'onboarding_error', :error_name, :error_desc, 'active', NOW())";
+        
+        $database->query($error_detail_sql, [
+            'company_id' => $task['company_id'],
+            'error_name' => $task['task_name'] . '_error',
+            'error_desc' => substr($processor_output, 0, 500)
+        ]);
+        
+                $result['task_status'] = 'error';
+                $error_count++;
+            }
+            
+        } catch (Exception $taskException) {
+            // Rollback this task's transaction if needed
+            try {
+                $database->rollBack();
+            } catch (Exception $rollbackException) {
+                // Ignore
+            }
+            
+            // Check if it's a deadlock error
+            if (strpos($taskException->getMessage(), '1213 Deadlock') !== false) {
+                // Retry once after a short delay
+                sleep(2); // Wait 2 seconds
+                
+                try {
+                    // Retry the task by setting it back to pending
+                    $retry_sql = "UPDATE bg_company_attributes 
+                                  SET description = 'pending', modify_dt = NOW()
+                                  WHERE company_id = :company_id 
+                                  AND type = 'onboarding_progress'
+                                  AND name = :task_name";
+                    
+                    $database->query($retry_sql, [
+                        'company_id' => $task['company_id'],
+                        'task_name' => $task['task_name']
+                    ]);
+                    
+                    $result['errors'][] = "Task {$task['task_name']} encountered deadlock - set for retry";
+                } catch (Exception $retryException) {
+                    $error_count++;
+                    $result['errors'][] = "Task {$task['task_name']} error: " . $taskException->getMessage();
+                }
+            } else {
+                $error_count++;
+                $result['errors'][] = "Task {$task['task_name']} error: " . $taskException->getMessage();
+            }
+        }
+        
+        // For single task mode (cron), break after first task
+        if (!$specific_company_id) {
+            break;
+        } else {
+            // Add small delay between tasks to reduce deadlock chances
+            usleep(500000); // 0.5 second delay
+        }
+    } // End foreach tasks
+    
+    // Update result summary
+    if ($specific_company_id) {
+        $result['task_processed'] = $processed_count > 0;
+        $result['processed_count'] = $processed_count;
+        $result['success_count'] = $success_count;
+        $result['error_count'] = $error_count;
+        $result['message'] = "Processed $processed_count tasks for company ID $specific_company_id: $success_count successful, $error_count failed";
+    }
+    
+} catch (Exception $e) {
+    // Try to rollback if we have an active transaction
+    try {
+        $database->rollBack();
+    } catch (Exception $rollbackException) {
+        // Transaction might not have been started, ignore
+    }
+    
+    $result['status'] = 'error';
+    $result['errors'][] = $e->getMessage();
+    session_tracking("ABO task processor error" , $e->getMessage());
+    
+    // Try to mark task as error if we have task info
+    if (isset($task['company_id']) && isset($task['task_name'])) {
+        try {
+            $error_sql = "UPDATE bg_company_attributes 
+                          SET description = 'error', modify_dt = NOW()
+                          WHERE company_id = :company_id 
+                          AND type = 'onboarding_progress'
+                          AND name = :task_name";
+            
+            $database->query($error_sql, [
+                'company_id' => $task['company_id'],
+                'task_name' => $task['task_name']
+            ]);
+        } catch (Exception $e2) {
+            // Ignore secondary errors
+        }
+    }
+}
+
+// Output result
+echo json_encode($result, JSON_PRETTY_PRINT);
+
+// Exit with appropriate code for monitoring
+exit($result['status'] === 'success' ? 0 : 1);
+?>

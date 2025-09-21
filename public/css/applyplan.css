@@ -1,0 +1,38 @@
+.row {
+    display: flex;
+    justify-content: center;
+  }
+  
+  #payment-form {
+    padding: 20px;
+  }
+  
+  #card-element {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px; 
+  }
+  
+  #submit {
+    display: block; 
+    width: 100%;
+    padding: 10px;
+    font-size: 20px;
+    margin-top: 20px; 
+  }
+
+  #payment-form {
+    
+    width: 100%;
+  }
+
+  #card-element {
+    font-size: 24px;
+    border: 2px solid #333;
+    width: 90%;
+    margin: 0 auto;
+  }
+  
+  #card-element input {
+    font-size: 24px;
+  }

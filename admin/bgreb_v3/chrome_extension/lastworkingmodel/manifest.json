@@ -1,0 +1,51 @@
+{
+    "manifest_version": 3,
+    "name": "BGREB Extension",
+    "version": "3.2024.08.1814",
+    "description": "The birthday.gold Reward Enrollment Bar Chrome extension that BG Staff uses to enroll its users in brand reward programs",
+    "icons": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    },
+    "permissions": [
+      "storage",
+      "webNavigation",
+      "tabs"
+    ],
+    "host_permissions": [
+      "https://bgreb.birthday.gold/*"
+    ],
+    "background": {
+      "service_worker": "js/background.js",
+      "type": "module"
+    },
+    "content_scripts": [
+      {
+        "matches": [
+          "<all_urls>"
+        ],
+        "js": [
+          "js/content.js"
+        ],
+        "css": [
+          "css/bgreb_styles.css"
+        ]
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "images/*",
+          "manifest.json",
+          "popup.html"
+        ],
+        "matches": [
+          "<all_urls>"
+        ]
+      }
+    ],
+    "action": {
+      "default_popup": "popup.html"
+    }
+  }

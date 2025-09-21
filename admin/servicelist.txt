@@ -1,0 +1,132 @@
+<pre>
+=========================================================================================
+=========================================================================================
+CODE CANYON
+=================================================
+
+codecanyon-9nbIH8Fx-connect-live-class-meeting-webinar-online-training-web-conference
+
+codecanyon-QHqzDgQy-helpdesk-3-the-professional-support-solution
+
+codecanyon-V09IXD11-mingle-saas-social-auto-poster-scheduler-php-script
+
+
+=========================================================================================
+=========================================================================================
+OPEN SOURCE
+=================================================
+STATUS PAGE
+Uptime Kuma
+self-hosted monitoring tool
+https://uptime.kuma.pet/
+http://june01.bday.gold:3001/add
+https://github.com/louislam/uptime-kuma/wiki/%F0%9F%94%A7-How-to-Install
+
+
+
+HAPROXY
+https://www.haproxy.org/
+https://docs.google.com/document/d/1J1_sUxuDLNiCc9MsnJL-0Pn4vKUlxUgbFueAF8gCZF4/edit
+https://docs.google.com/document/d/1K7kj2YgaXBID3ry1xB1K_HkmJJBoI_i4hNihYkEs4gM/edit
+
+
+** ANALYTICS
+https://github.com/umami-software/umami
+
+
+APACHE
+Web Server Version 2.4
+https://www.apache.org/
+
+
+
+** Meet
+Video Conferencing
+https://www.plugnmeet.org/docs/installation/
+https://github.com/mynaparrot/plugNmeet-server
+
+
+PHP
+Scripting Language Version 8.2
+https://www.php.net/
+
+
+
+MYSQL
+Database Version 8.0
+https://www.mysql.com/
+
+
+
+
+LOCUST
+Performance/load testing tool Version 2.24.0
+https://docs.locust.io/en/stable/what-is-locust.html
+
+
+
+WHIMSICAL
+Org Chart
+https://whimsical.com/
+
+
+
+MONITOROR
+https://monitoror.com/
+https://github.com/monitoror/monitoror
+
+
+
+BOOTSTRAP
+https://getbootstrap.com/
+
+
+
+PlantUML 
+https://plantuml.com/
+
+
+=========================================================================================
+=========================================================================================
+VENDOR
+=================================================
+Hostinger
+Hosting services
+https://www.hostinger.com/
+
+
+
+JH Software
+simpledns
+https://simpledns.plus/
+
+
+
+CheapSSLshop
+https://www.cheapsslshop.com/
+
+
+
+NameCheap
+Domain Names
+https://www.namecheap.com/
+
+
+
+Google
+google api
+https://google.com
+
+
+
+PayPal
+paypal
+https://paypal.com
+
+
+
+VanDyke Software 
+SecureCRT 9.5
+https://www.vandyke.com/products/securecrt/windows.html
+
+

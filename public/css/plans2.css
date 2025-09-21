@@ -1,0 +1,21 @@
+
+  .price {
+    line-height: 48px; 
+    font-weight: bold;
+  }
+  .oldprice {
+    text-decoration: line-through;
+  }
+  .newprice {
+    position: relative;
+    font-size: 26px;
+  }
+  
+  .discount {
+    position: absolute;
+    top: -50px; 
+    left: 50%;
+    transform: translateX(-50%);
+  
+    animation: drop 1s ease-in-out forwards;
+  }

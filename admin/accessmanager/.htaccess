@@ -1,0 +1,9 @@
+# <IfModule mod_headers.c>
+#     # Match any origin ending in "birthday.gold"
+#     SetEnvIf Origin "^https?://([a-z0-9-]+\.)*birthday\.gold(:[0-9]+)?$" is_allowed_origin
+
+#     # Set the CORS headers only for matching origins
+#     Header always set Access-Control-Allow-Origin "%{HTTP_ORIGIN}e" env=is_allowed_origin
+#     Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS"
+#     Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+# </IfModule>

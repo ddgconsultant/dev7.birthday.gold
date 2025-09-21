@@ -1,0 +1,110 @@
+/* Custom Bootstrap Overrides */
+
+/* Root Variables */
+:root {
+  --bs-primary: #003366;
+  --bs-secondary: #FFC700;
+  --bs-success: #28a745;
+  --bs-info: #17a2b8;
+  --bs-warning: #ffc107;
+  --bs-danger: #dc3545;
+  --bs-light: #f8f9fa;
+  --bs-dark: #343a40;
+
+  /* Text Colors */
+  --bs-primary-text: #003366;
+  --bs-secondary-text: #FFC700;
+  
+  /* Font weight variables */
+  --custom-font-weight: 600;
+  --footer-font-weight: 400;
+}
+
+/* Typography Adjustments */
+body, h1, h2, h3, h4, h5, h6, p, li, a {
+  font-size: 120%;  /* 20% larger text */
+  font-weight: var(--custom-font-weight);
+}
+
+/* Custom class for condensed uppercase text */
+.condensed-uppercase {
+  text-transform: uppercase;      /* Uppercase text */
+  font-stretch: condensed;        /* Condensed width */
+  letter-spacing: 0.05em;         /* Adjust letter spacing as needed */
+  font-weight: 600;               /* Slightly bolder font */
+}
+
+/* Override Bootstrap button colors */
+.btn-primary {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  font-weight: var(--custom-font-weight);
+}
+
+.btn-secondary {
+  background-color: var(--bs-secondary);
+  border-color: var(--bs-secondary);
+  font-weight: var(--custom-font-weight);
+}
+
+/* Additional custom button styles */
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-color: #00294c; /* Slightly darker navy */
+  border-color: #00294c;
+}
+
+.btn-secondary:hover, .btn-secondary:focus, .btn-secondary:active {
+  background-color: #e6b000; /* Slightly darker gold */
+  border-color: #e6b000;
+}
+
+/* Override link button colors */
+.btn-link {
+  color: var(--bs-primary);
+  font-weight: var(--custom-font-weight);
+}
+
+.btn-link:hover, .btn-link:focus, .btn-link:active {
+  color: var(--bs-secondary);
+}
+
+/* Text color adjustments */
+a, h1, h2, h3, h4, h5, h6, p, li {
+  color: var(--bs-primary-text);
+}
+
+a:hover, h1:hover, h2:hover, h3:hover, h4:hover, h5:hover, h6:hover, p:hover, li:hover {
+  color: var(--bs-secondary-text);
+}
+
+/* Background color adjustments */
+.bg-primary {
+  background-color: var(--bs-primary) !important;
+}
+
+.bg-secondary {
+  background-color: var(--bs-secondary) !important;
+}
+
+.text-primary {
+  color: var(--bs-primary) !important;
+}
+
+.text-secondary {
+  color: var(--bs-secondary) !important;
+}
+
+/* Additional classes for consistency */
+.text-primary-hover:hover {
+  color: var(--bs-primary) !important;
+}
+
+.text-secondary-hover:hover {
+  color: var(--bs-secondary) !important;
+}
+
+/* Footer specific font weight */
+footer {
+  font-size: 70%;  
+  font-weight: var(--footer-font-weight);
+}

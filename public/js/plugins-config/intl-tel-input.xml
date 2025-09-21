@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <js>
+                <file>intl-tel-input/js/intlTelInput.min.js</file>
+                <file>intl-tel-input/js/utils.js</file>
+            </js>
+            <css>
+                <file>intl-tel-input/css/intlTelInput.min.css</file>
+                <file>intl-tel-input/css/frameworks/%FRAMEWORK%.min.css</file>
+            </css>
+        </includes>
+        <js_code><![CDATA[    if (typeof(phpfbIntlInput) == "undefined") {
+        window.phpfbIntlInput  = [];
+        window.intlInputName   = [];
+        window.intlDataAttr    = [];
+        window.intlAllInputs   = [];
+        window.iti             = [];
+    }
+    phpfbIntlInput["%selector%"] = document.querySelector("%selector%");
+    intlDataAttr["%selector%"] = document.querySelector("%selector%").dataset;
+    intlInputName["%selector%"] = phpfbIntlInput["%selector%"].getAttribute("name");
+
+    // restore intl full-phone posted value
+    if (document.querySelector('input[name="' + intlInputName["%selector%"] + '-full-phone"]')) {
+        let intlValue = document.querySelector('input[name="' + intlInputName["%selector%"] + '-full-phone"]').value;
+        if (intlValue !== '') {
+            phpfbIntlInput["%selector%"].value = intlValue;
+        }
+    }
+    iti["%selector%"] = intlTelInput(phpfbIntlInput["%selector%"], {
+        allowDropdown: intlDataAttr["%selector%"].allowDropdown === undefined?true:intlDataAttr["%selector%"].allowDropdown !== 'false',
+        excludeCountries: intlDataAttr["%selector%"].excludeCountries === undefined?[]:intlDataAttr["%selector%"].excludeCountries.split(','),
+        initialCountry: intlDataAttr["%selector%"].initialCountry === undefined?'auto':intlDataAttr["%selector%"].initialCountry,
+        onlyCountries: intlDataAttr["%selector%"].onlyCountries === undefined?[]:intlDataAttr["%selector%"].onlyCountries.split(','),
+        preferredCountries: intlDataAttr["%selector%"].preferredCountries === undefined?[]:intlDataAttr["%selector%"].preferredCountries.split(','),
+        utilsScript: '%PLUGINS_URL%intl-tel-input/js/utils.js',
+        geoIpLookup: function(success, failure) {
+            // ?token=$TOKEN
+            fetch("https://ipinfo.io/json?token=f74a26e7e85008").then(
+                (response) => response.json()
+            ).then(
+                (jsonResponse) => {
+                    var countryCode = (jsonResponse && jsonResponse.country) ? jsonResponse.country : "";
+                    success(countryCode);
+                })
+        }
+    });
+
+    ['change', 'keyup'].forEach(function(evt) {
+        phpfbIntlInput["%selector%"].addEventListener(evt, function(e) {
+            let iti = window.intlTelInputGlobals.getInstance(phpfbIntlInput["%selector%"]);
+            if (iti.isValidNumber()) {
+                document.querySelector('input[name="' + intlInputName["%selector%"] + '-full-phone"]').value = iti.getNumber();
+            }
+        });
+    });
+
+    phpfbIntlInput["%selector%"].addEventListener('countrychange', function(e) {
+        var formId = e.target.closest('form').getAttribute('id');
+        var form   = forms[formId];
+        if (typeof(form.fv) == 'object' && e.target.getAttribute('data-fv-intphonenumber') == 'true') {
+            var fieldName = e.target.getAttribute('name');
+            form.fv.updateFieldStatus(fieldName, 'NotValidated', 'intphonenumber');
+        }
+        const evt = new Event('change', { bubbles: true });
+        phpfbIntlInput["%selector%"].dispatchEvent(evt);
+    });
+
+    // material label animation
+    if (phpfbIntlInput["%selector%"].closest('.material-form') && document.querySelector('label[for="' + intlInputName["%selector%"] + '"]')) {
+        setTimeout(() =>{
+            let $label = document.querySelector('label[for="' + intlInputName["%selector%"] + '"]'),
+                originalPlaceholder = phpfbIntlInput["%selector%"].placeholder;
+            phpfbIntlInput["%selector%"].placeholder = '';
+            phpfbIntlInput["%selector%"].addEventListener('focus', () => {
+                $label.classList.add('active');
+                phpfbIntlInput["%selector%"].placeholder = originalPlaceholder;
+            });
+            phpfbIntlInput["%selector%"].addEventListener('blur', function() {
+                $label.classList.remove('active');
+                phpfbIntlInput["%selector%"].placeholder = '';
+            });
+        }, 600);
+    }]]>
+        </js_code>
+    </default>
+</root>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons+Outlined">
+    <link rel="stylesheet" href="fileUpload.css">
+    <link rel="stylesheet" href="style.css">
+    <title>Small Custom Drag'n'drop File Upload Plugin Example</title>
+</head>
+
+<body>
+    
+    <div class="parent-div">
+        <h1>Small Custom Drag'n'drop File Upload Plugin Example</h1>
+        <style>
+.download{ padding: 1.25rem; border:0; border-radius:3px; background-color:#4F46E5; color:#fff;cursor:pointer; text-decoration:none;}
+.download:hover{color: #fff}
+#carbonads{display:block;overflow:hidden;max-width:728px;position:relative;font-size:22px;box-sizing:content-box}
+#carbonads>span{display:block}#carbonads a{color:#4F46E5;text-decoration:none}#carbonads a:hover{color:#4F46E5}
+.carbon-wrap{display:flex;align-items:center}.carbon-img{display:block;margin:0;line-height:1}
+.carbon-img img{display:block;height:90px;width:auto}.carbon-text{display:block;padding:0 1em;line-height:1.35;text-align:left}
+.carbon-poweredby{display:block;position:absolute;bottom:0;right:0;padding:6px 10px;text-align:center;text-transform:uppercase;letter-spacing:.5px;font-weight:600;font-size:8px;border-top-left-radius:4px;line-height:1;color:#aaa!important}
+@media only screen and (min-width:320px) and (max-width:759px){.carbon-text{font-size:14px}}
+</style>
+<div><div id="carbon-block"></div>
+
+<!-- jQuery_Replace_Demo -->
+
+    </div>
+
+        <p>A small jQuery plugin that improves your file uploading experience for users. Implement drag and drop, file previews and deletion.</p>
+        <div id="fileUpload"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="fileUpload.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("#fileUpload").fileUpload();
+        });
+    </script>
+
+<?php
+
+
+foreach ($_FILES['file']['tmp_name'] as $index => $tmpName) {
+    $fileType = mime_content_type($tmpName);
+
+    if (!in_array($fileType, $allowedMimeTypes)) {
+        echo json_encode(['error' => 'Invalid file type: ' . $fileType]);
+        exit;
+    }
+
+    // Process the valid file...
+}
+?>
+
+
+</body>
+
+
+</html>

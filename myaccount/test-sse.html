@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test SSE Endpoint</title>
+</head>
+<body>
+    <h1>Test SSE Endpoint</h1>
+    <button onclick="testMinimal()">Test Minimal Endpoint</button>
+    <button onclick="testFull()">Test Full Endpoint</button>
+    <button onclick="testDebug()">Test with Debug</button>
+    <div id="output" style="white-space: pre; font-family: monospace; background: #f0f0f0; padding: 10px; margin-top: 20px; height: 400px; overflow-y: auto;"></div>
+
+    <script>
+    const output = document.getElementById('output');
+    
+    function log(message) {
+        output.textContent += new Date().toISOString() + ' - ' + message + '\n';
+        output.scrollTop = output.scrollHeight;
+    }
+    
+    async function testMinimal() {
+        output.textContent = '';
+        log('Testing minimal endpoint...');
+        
+        try {
+            const response = await fetch('/myaccount/ajax/mail-goldie-process-test.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ days: 7 })
+            });
+            
+            log('Response status: ' + response.status);
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                buffer += chunk;
+                
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            log('Event: ' + JSON.stringify(data));
+                        } catch (e) {
+                            log('Parse error: ' + e.message);
+                        }
+                    }
+                }
+            }
+            
+            log('Stream complete');
+            
+        } catch (error) {
+            log('Error: ' + error.message);
+        }
+    }
+    
+    async function testFull() {
+        output.textContent = '';
+        log('Testing full endpoint...');
+        
+        try {
+            const response = await fetch('/myaccount/ajax/mail-goldie-process.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ days: 7, forceRefresh: false })
+            });
+            
+            log('Response status: ' + response.status);
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let eventCount = 0;
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                buffer += chunk;
+                
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            eventCount++;
+                            log('Event #' + eventCount + ': ' + JSON.stringify(data));
+                        } catch (e) {
+                            log('Parse error: ' + e.message);
+                        }
+                    }
+                }
+            }
+            
+            log('Stream complete - Total events: ' + eventCount);
+            
+        } catch (error) {
+            log('Error: ' + error.message);
+        }
+    }
+    
+    async function testDebug() {
+        output.textContent = '';
+        log('Testing with debug mode...');
+        
+        try {
+            const response = await fetch('/myaccount/ajax/mail-goldie-process.php?debug=1', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ days: 7, forceRefresh: false })
+            });
+            
+            log('Response status: ' + response.status);
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                buffer += chunk;
+                
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            log('Event: ' + JSON.stringify(data));
+                        } catch (e) {
+                            log('Parse error: ' + e.message);
+                        }
+                    }
+                }
+            }
+            
+            log('Stream complete');
+            
+        } catch (error) {
+            log('Error: ' + error.message);
+        }
+    }
+    </script>
+</body>
+</html>

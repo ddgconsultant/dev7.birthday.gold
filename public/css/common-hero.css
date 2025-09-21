@@ -1,0 +1,142 @@
+/* Common Hero Section Styles - Used across multiple pages */
+/* Dark gradient hero style used in About, FAQ, Contact, and How-it-works pages */
+
+.hero-dark {
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
+    color: white;
+    padding: 4rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animated background effect */
+.hero-dark::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 0.5; }
+}
+
+/* Hero heading styles */
+.hero-dark h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+/* Hero paragraph/lead text */
+.hero-dark p,
+.hero-dark .lead {
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin-bottom: 2rem;
+    color: #fff;
+    position: relative;
+    z-index: 1;
+    opacity: 1;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .hero-dark h1 {
+        font-size: 2rem;
+    }
+    
+    .hero-dark p,
+    .hero-dark .lead {
+        font-size: 1.2rem;
+    }
+}
+
+/* Additional hero-specific classes for backwards compatibility */
+/* These classes use the same styles as .hero-dark */
+.about-hero,
+.faq-hero,
+.contact-hero,
+.how-hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 50%, #16213e 100%);
+    color: white;
+    padding: 4rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.about-hero::before,
+.faq-hero::before,
+.contact-hero::before,
+.how-hero::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+.about-hero h1,
+.faq-hero h1,
+.contact-hero h1,
+.how-hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+.about-hero p,
+.about-hero .lead,
+.faq-hero p,
+.faq-hero .lead,
+.contact-hero p,
+.contact-hero .lead,
+.how-hero p,
+.how-hero .lead {
+    font-size: 1.5rem;
+    font-weight: 400;
+    margin-bottom: 2rem;
+    color: #fff;
+    position: relative;
+    z-index: 1;
+    opacity: 1;
+}
+
+/* Mobile Responsive for hero-specific classes */
+@media (max-width: 768px) {
+    .about-hero h1,
+    .faq-hero h1,
+    .contact-hero h1,
+    .how-hero h1 {
+        font-size: 2rem;
+    }
+    
+    .about-hero p,
+    .about-hero .lead,
+    .faq-hero p,
+    .faq-hero .lead,
+    .contact-hero p,
+    .contact-hero .lead,
+    .how-hero p,
+    .how-hero .lead {
+        font-size: 1.2rem;
+    }
+}

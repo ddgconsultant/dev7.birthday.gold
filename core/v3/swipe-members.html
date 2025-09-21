@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="./css/main.css" />
+    <link rel="stylesheet" href="./css/splide.min.css" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+      @font-face {
+        font-family: "gwangi";
+        src: url("./fonts/gwangi.ttf");
+      }
+    </style>
+    <title>Document</title>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <div
+          class="custom-bg-purple"
+          style="position: fixed; top: 0; left: 0; width: 100vw; z-index: 999"
+        >
+          <div class="container-fluid">
+            <div class="row custom-header-h align-items-center">
+              <!-- logo -->
+              <div class="col-2 h-100 d-flex align-items-center px-0">
+                <a href="/" id="nav-logo">
+                  <img
+                    src="https://community.gwangi-theme.com/wp-content/uploads/sites/2/2019/08/logo_community.png"
+                    alt=""
+                  />
+                </a>
+              </div>
+
+              <!-- nav links -->
+              <div
+                class="col-1 d-lg-none d-block ms-auto me-sm-0 me-2 d-flex align-items-center justify-content-sm-center justify-content-start px-0"
+              >
+                <button id="nav-toggler" class="d-flex flex-column btn p-0">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </button>
+              </div>
+
+              <div class="col-10 d-none d-lg-block h-full">
+                <div class="row h-full pe-3 nav-links-container">
+                  <div class="col-10 h-full">
+                    <ul
+                      class="list-unstyled h-full d-flex align-items-center justify-content-center gap-1 w-100"
+                    >
+                      <li id="home-link" class="h-full position-relative">
+                        <a
+                          href="/"
+                          class="custom-links text-decoration-none fw-normal"
+                          ><span>Home</span>
+                          <i
+                            style="font-size: 8px; margin-left: 1px"
+                            class="fa-solid fa-chevron-down"
+                          ></i
+                        ></a>
+                        <div class="custom-bg-purple" id="custom-home-submenu">
+                          <a href="/">Home 1</a>
+                          <a href="/">Home 2</a>
+                        </div>
+                      </li>
+                      <li
+                        class="h-full position-relative custom-community-link"
+                      >
+                        <a
+                          href="/"
+                          class="custom-links text-decoration-none active fw-normal"
+                          ><span>Community</span>
+                          <i
+                            style="font-size: 8px; margin-left: 1px"
+                            class="fa-solid fa-chevron-down"
+                          ></i
+                        ></a>
+                        <div id="community-link-menu" class="d-flex">
+                          <div class="custom-col">
+                            <h6 class="mb-2 px-3 py-2">MEMBERS</h6>
+                            <ul
+                              class="list-unstyled px-0 text-white d-flex flex-column gap-2"
+                            >
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >Members Directory</a
+                                >
+                              </li>
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >Swipe Members ></a
+                                >
+                              </li>
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >Member Profile</a
+                                >
+                              </li>
+                            </ul>
+                          </div>
+                          <div class="custom-col">
+                            <h6 class="mb-2 px-3 py-2">Groups</h6>
+                            <ul
+                              class="list-unstyled p-2 px-0 text-white d-flex flex-column gap-2"
+                            >
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >Groups Directory</a
+                                >
+                              </li>
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >Group Profile</a
+                                >
+                              </li>
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >+Create Group</a
+                                >
+                              </li>
+                            </ul>
+                          </div>
+                          <div class="custom-col">
+                            <h6 class="mb-2 px-3 py-2">OTHERRS</h6>
+                            <ul
+                              class="list-unstyled p-2 px-0 text-white d-flex flex-column gap-2"
+                            >
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >Social Wall</a
+                                >
+                              </li>
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >Forums</a
+                                >
+                              </li>
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >Log In</a
+                                >
+                              </li>
+                              <li>
+                                <a
+                                  class="d-block text-decoration-none px-3 py-2 rounded mb-1"
+                                  href="/"
+                                  >Register</a
+                                >
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="h-full">
+                        <a
+                          href="/"
+                          class="custom-links text-decoration-none fw-normal"
+                          ><span>Blog</span>
+                        </a>
+                      </li>
+                      <li id="pages-link-menu" class="h-full position-relative">
+                        <a
+                          href="/"
+                          class="custom-links text-decoration-none fw-normal"
+                          ><span>Pages</span>
+                          <i
+                            style="font-size: 8px; margin-left: 1px"
+                            class="fa-solid fa-chevron-down"
+                          ></i
+                        ></a>
+                        <div class=" " id="custom-pages-links">
+                          <a href="/">Members Lists</a>
+                          <a href="/">Group Lists</a>
+                          <a href="/">About Us</a>
+                          <a href="/">Coming Soon</a>
+                        </div>
+                      </li>
+                      <li class="h-full">
+                        <a
+                          href="/"
+                          class="custom-links text-decoration-none fw-normal"
+                          ><span>Shop</span></a
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                  <div
+                    class="ms-auto col-1 d-flex align-items-center justify-content-end"
+                  >
+                    <a href="./register.html">
+                      <button
+                        style="height: 40px"
+                        class="btn custom-btn-login me-1"
+                      >
+                        Login
+                      </button>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Menu for screen lesser than 769 -->
+          <div id="sub-menu" class="custom-sub-menu col-12 px-3 h-0">
+            <div class="custom-menu-scroller">
+              <button
+                style="width: 100%; height: 40px"
+                class="btn custom-btn-login"
+              >
+                Login
+              </button>
+              <div class="pt-5 ps-3">
+                <ul class="list-unstyled d-flex flex-column">
+                  <li>
+                    <a href="/" class="d-block custom-sub-menu-links main mb-1"
+                      >Home</a
+                    >
+                  </li>
+                  <li>
+                    <a href="/" class="d-block custom-sub-menu-links">Home 1</a>
+                  </li>
+                  <li>
+                    <a href="/" class="d-block custom-sub-menu-links">Home 2</a>
+                  </li>
+                </ul>
+                <ul class="list-unstyled d-flex flex-column">
+                  <li>
+                    <a href="/" class="d-block custom-sub-menu-links main"
+                      >Community</a
+                    >
+                  </li>
+                  <li>
+                    <a href="/" class="d-block custom-sub-menu-links"
+                      >Members</a
+                    >
+                    <ul
+                      class="list-unstyled ps-2 pt-2 d-flex flex-column gap-2"
+                    >
+                      <li>
+                        <a href="/" class="custom-sub-menu-links"
+                          >Members Directory</a
+                        >
+                      </li>
+                      <li>
+                        <a href="/" class="custom-sub-menu-links"
+                          >Swipe Members</a
+                        >
+                        <ul
+                          class="list-unstyled ps-2 pt-2 d-flex flex-column gap-2"
+                        >
+                          <li>
+                            <a href="/" class="custom-sub-menu-links"
+                              >All Members</a
+                            >
+                          </li>
+                          <li>
+                            <a href="/" class="custom-sub-menu-links"
+                              >Only New York</a
+                            >
+                          </li>
+                        </ul>
+                      </li>
+                      <li>
+                        <a href="/" class="custom-sub-menu-links"
+                          >Member Profile</a
+                        >
+                      </li>
+                    </ul>
+                  </li>
+
+                  <li>
+                    <a href="/" class="custom-sub-menu-links">Groups</a>
+                    <ul
+                      class="list-unstyled ps-2 pt-2 d-flex flex-column gap-2"
+                    >
+                      <li>
+                        <a href="/" class="custom-sub-menu-links"
+                          >Groups Directory</a
+                        >
+                      </li>
+                      <li>
+                        <a href="/" class="custom-sub-menu-links"
+                          >Group Profile</a
+                        >
+                      </li>
+                      <li>
+                        <a href="/" class="custom-sub-menu-links"
+                          >+Create Group</a
+                        >
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="" class="custom-sub-menu-links">Others</a>
+                    <ul
+                      class="list-unstyled ps-2 pt-2 d-flex flex-column gap-2"
+                    >
+                      <li>
+                        <a href="/" class="custom-sub-menu-links"
+                          >Social Wall</a
+                        >
+                      </li>
+                      <li>
+                        <a href="/" class="custom-sub-menu-links">Forums</a>
+                      </li>
+                      <li>
+                        <a href="/" class="custom-sub-menu-links">Login</a>
+                      </li>
+                      <li>
+                        <a href="/" class="custom-sub-menu-links">Register</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <a href="/" class="custom-sub-menu-links main">Blog</a>
+                  </li>
+                  <li>
+                    <a href="/" class="custom-sub-menu-links main">Pages</a>
+                  </li>
+
+                  <li>
+                    <a href="/" class="custom-sub-menu-links">Members Lists</a>
+                  </li>
+                  <li>
+                    <a href="/" class="custom-sub-menu-links">Group Lists</a>
+                  </li>
+                  <li>
+                    <a href="/" class="custom-sub-menu-links">About Us</a>
+                  </li>
+                  <li>
+                    <a href="/" class="custom-sub-menu-links">Coming Soon</a>
+                  </li>
+
+                  <li>
+                    <a href="/" class="custom-sub-menu-links main">Shop</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="swipe-members">
+      <div class="container swipe-container">
+        <div class="row swipe-row">
+          <div class="col-12 swipe-col">
+            <div class="swipe-header">
+              <h1>Swipe Members</h1>
+            </div>
+          </div>
+          <div class="col-12 swipe-col position-relative">
+            <div id="swipe-slider" class="splide">
+              <div class="splide__track">
+                <div class="splide__list">
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-1.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Ralph Fiennes
+                              <span class="verified-badge"
+                                ><i class="fa-solid fa-check"></i
+                              ></span>
+                            </a>
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">44</div>
+                              <div class="swipe-card-state position-relative">
+                                Philadelphia
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-2.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Stephania Milovic</a
+                            >
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">31</div>
+                              <div class="swipe-card-state position-relative">
+                                Los Angeles
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 4 months, 3 weeks ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-3.png"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Scott Pringston
+                              <span class="verified-badge"
+                                ><i class="fa-solid fa-check"></i></span
+                            ></a>
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age"></div>
+                              <div class="swipe-card-state position-relative">
+                                New York
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 19 minutes ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-4.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Vernon Dahmer</a
+                            >
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">41</div>
+                              <div class="swipe-card-state position-relative">
+                                San Diego
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-5.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Cecelio Cichan
+                              <span class="verified-badge"
+                                ><i class="fa-solid fa-check"></i></span
+                            ></a>
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">65</div>
+                              <div class="swipe-card-state position-relative">
+                                New York
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-6.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Michellie Jones
+                              <span class="verified-badge"
+                                ><i class="fa-solid fa-check"></i></span
+                            ></a>
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">27</div>
+                              <div class="swipe-card-state position-relative">
+                                Boston
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-7.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Marthy Berg</a
+                            >
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">28</div>
+                              <div class="swipe-card-state position-relative">
+                                San Diego
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-8.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Montal Ellis
+                              <span class="verified-badge"
+                                ><i class="fa-solid fa-check"></i></span
+                            ></a>
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">31</div>
+                              <div class="swipe-card-state position-relative">
+                                New York
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-9.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Jhon Caius
+                              <span class="verified-badge"
+                                ><i class="fa-solid fa-check"></i></span
+                            ></a>
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">38</div>
+                              <div class="swipe-card-state position-relative">
+                                Pheonix
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-10.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Wynonn Judd</a
+                            >
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age"></div>
+                              <div class="swipe-card-state position-relative">
+                                Washington
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-11.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Rick Cuyler
+                              <span class="verified-badge"
+                                ><i class="fa-solid fa-check"></i></span
+                            ></a>
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">68</div>
+                              <div class="swipe-card-state position-relative">
+                                Los Angeles
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-12.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Melanie Cheney
+                              <span class="verified-badge"
+                                ><i class="fa-solid fa-check"></i></span
+                            ></a>
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">27</div>
+                              <div class="swipe-card-state position-relative">
+                                New York
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-13.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Keir Pati</a
+                            >
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">25</div>
+                              <div class="swipe-card-state position-relative">
+                                Philadelphia
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="splide__slide">
+                    <div class="swipe-card-container">
+                      <div class="bg-white swipe-card transition-3 mx-auto">
+                        <div
+                          class="swipe-card-avatar w-100 position-relative overflow-hidden"
+                        >
+                          <img
+                            src="./Images/swipe-members/swipe-card-14.jpg"
+                            style="transition: all 0.3s"
+                            width="100%"
+                            height="342.844px"
+                            alt=""
+                          />
+                        </div>
+                        <div
+                          class="swipe-card-body w-100"
+                          style="height: 130px"
+                        >
+                          <div class="swipe-card__title">
+                            <a class="text-decoration-none" href="#"
+                              >Justin Duchscherer</a
+                            >
+                          </div>
+                          <div class="swipe-card__meta">
+                            <div
+                              class="swipe-card-meta__first d-flex justify-content-center"
+                            >
+                              <div class="swipe-card-age">25</div>
+                              <div class="swipe-card-state position-relative">
+                                Philadelphia
+                              </div>
+                            </div>
+                            <div class="swipe-card-meta__second text-center">
+                              <span data-livestamp="2020-08-05T16:14:38+0000"
+                                >Active 3 years, 11 months ago</span
+                              >
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="profile-bg-banner">
+      <div class="container-fluid" id="join-community">
+        <div
+          class="mx-auto text-white d-flex flex-column align-items-center justify-content-center gap-2"
+        >
+          <h2>Join the Best Community</h2>
+          <p>Subscribe to Gwangi now and find your Life Partner!</p>
+          <a href="/" class="btn custom-register-btn">Register Now for free</a>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="footer">
+        <div class="container-fluid">
+          <div class="row py-0 px-0 justify-content-between">
+            <div class="col-md-3 first">
+              <h2 class="widget-title">GWANGI COMMUNITY</h2>
+              <ul
+                class="list-unstyled custom-footer-links d-flex flex-column"
+                style="gap: 10px"
+              >
+                <li><a href="#">Social Wall</a></li>
+                <li><a href="#">Swipe Members</a></li>
+                <li><a href="#">All Members</a></li>
+                <li><a href="#">Community Groups</a></li>
+                <li><a href="#">Forums</a></li>
+              </ul>
+            </div>
+            <div class="col-md-3">
+              <h2 class="widget-title">GWANGI STORIES</h2>
+              <ul
+                class="list-unstyled custom-footer-links d-flex flex-column"
+                style="gap: 10px"
+              >
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">Coming Soon</a></li>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Terms & Conditions</a></li>
+              </ul>
+            </div>
+            <div class="col-md-3">
+              <h2 class="widget-title">FOLLOW US</h2>
+              <ul
+                class="list-unstyled custom-footer-links d-flex flex-column flex-wrap"
+                style="gap: 10px"
+              >
+                <li>
+                  <a href="#" class="d-flex gap-3 align-items-center"
+                    ><i style="width: 20px" class="fa-brands fa-instagram"></i>
+                    <span>gwangi_community</span></a
+                  >
+                </li>
+                <li>
+                  <a href="#" class="d-flex gap-3 align-items-center"
+                    ><i style="width: 20px" class="fa-brands fa-twitter"></i>
+                    <span>gwangi</span></a
+                  >
+                </li>
+                <li>
+                  <a href="#" class="d-flex gap-3 align-items-center"
+                    ><i style="width: 20px" class="fa-brands fa-facebook-f"></i>
+                    <span>gwangi</span></a
+                  >
+                </li>
+                <li>
+                  <a href="#" class="d-flex gap-3 align-items-center"
+                    ><i style="width: 20px" class="fa-brands fa-youtube"></i>
+                    <span>gwangi_tv</span></a
+                  >
+                </li>
+                <li>
+                  <a href="#" class="d-flex gap-3 align-items-center"
+                    ><i style="width: 20px" class="fa-brands fa-snapchat"></i>
+                    <span>gwangi_community</span></a
+                  >
+                </li>
+              </ul>
+            </div>
+            <div class="col-md-3 px-0">
+              <h2 class="widget-title mb-4">REGISTER TO GWANGI</h2>
+              <ul
+                class="list-unstyled custom-footer-links d-flex flex-column gap-4"
+              >
+                <h5 class="pb-1">
+                  Meet lots of people on Gwangi and Have amazing time!
+                </h5>
+
+                <a href="/" class="btn custom-register-btn button"
+                  >Register Now</a
+                >
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="footer-bottom d-flex align-items-center justify-content-center"
+      >
+        © 2024 GWANGI. All rights reserved.
+      </div>
+    </footer>
+
+    <script src="./js/splide.min.js"></script>
+
+    <script>
+      var splide = new Splide(".splide");
+      splide.mount();
+      // nav js
+      let sub_menu = document.getElementById("sub-menu");
+      let nav_toggler = document.getElementById("nav-toggler");
+      nav_toggler.addEventListener("click", () => {
+        if (sub_menu.classList.contains("h-0")) {
+          sub_menu.classList.remove("h-0");
+          sub_menu.classList.add("h-95vh");
+          nav_toggler.classList.add("toggled");
+          document.body.style.overflow = "hidden";
+        } else {
+          sub_menu.classList.remove("h-95vh");
+          sub_menu.classList.add("h-0");
+          nav_toggler.classList.remove("toggled");
+          document.body.style.overflow = "";
+        }
+      });
+    </script>
+  </body>
+</html>

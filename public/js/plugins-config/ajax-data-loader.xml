@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <css></css>
+            <js>
+                <file>ajax-data-loader/ajax-data-loader.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[]]></js_code>
+    </default>
+</root>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file>colorpicker/themes/%theme%.min.css</file>
+            </css>
+            <js>
+                <file>colorpicker/pickr.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   if (typeof(phpfbColorpicker) == "undefined") {
+        window.phpfbColorpicker = [];
+        window.cpDataAttr = [];
+    }
+    cpDataAttr["%selector%"] = document.querySelector("%selector%").dataset;
+    phpfbColorpicker["%selector%"] = Pickr.create({
+        el: "%selector%",
+        useAsButton: true,
+        theme: cpDataAttr["%selector%"].theme === undefined?'classic':cpDataAttr["%selector%"].theme,
+        swatches: null,
+        defaultRepresentation: cpDataAttr["%selector%"].outputFormat === undefined?'HEX':cpDataAttr["%selector%"].outputFormat,
+        lockOpacity: cpDataAttr["%selector%"].lockOpacity !== 'true'?false:true,
+        position: cpDataAttr["%selector%"].position === undefined?'bottom-middle':cpDataAttr["%selector%"].position,
+
+        components: {
+
+            // Main components
+            preview: cpDataAttr["%selector%"].preview !== 'false'?true:false,
+            hue: cpDataAttr["%selector%"].hue !== 'false'?true:false,
+            opacity: cpDataAttr["%selector%"].lockOpacity !== 'true'?true:false,
+
+            // Input / output Options
+            interaction: {
+                hex: cpDataAttr["%selector%"].interactionHex !== 'true'?false:true,
+                rgba: cpDataAttr["%selector%"].interactionRgba !== 'true'?false:true,
+                hsla: cpDataAttr["%selector%"].interactionHsla !== 'true'?false:true,
+                hsva: cpDataAttr["%selector%"].interactionHsva !== 'true'?false:true,
+                cmyk: cpDataAttr["%selector%"].interactionCmyk !== 'true'?false:true,
+                input: cpDataAttr["%selector%"].interactionInput !== 'true'?false:true,
+                clear: cpDataAttr["%selector%"].interactionClear !== 'true'?false:true,
+                save: cpDataAttr["%selector%"].interactionSave !== 'false'?true:false
+            }
+        },
+
+        // Translations, these are the default values.
+        i18n: {
+
+            // Strings visible in the UI
+            'ui:dialog': 'color picker dialog',
+            'btn:toggle': 'toggle color picker dialog',
+            'btn:swatch': 'color swatch',
+            'btn:last-color': 'use previous color',
+            'btn:save': 'Save',
+            'btn:cancel': 'Cancel',
+            'btn:clear': 'Clear',
+
+            // Strings used for aria-labels
+            'aria:btn:save': 'save and close',
+            'aria:btn:cancel': 'cancel and close',
+            'aria:btn:clear': 'clear and close',
+            'aria:input': 'color input field',
+            'aria:palette': 'color selection area',
+            'aria:hue': 'hue selection slider',
+            'aria:opacity': 'selection slider'
+        }
+    });
+
+    phpfbColorpicker["%selector%"].on('save', color => {
+        let outputColor,
+            outputFormat = phpfbColorpicker["%selector%"].getColorRepresentation();
+        if (outputFormat === 'HEXA') {
+            outputColor = color.toHEXA().toString(0);
+        } else if (outputFormat === 'RGBA') {
+            outputColor = color.toRGBA().toString(0);
+        } else if (outputFormat === 'HSVA') {
+            outputColor = color.toHSVA().toString(0);
+        } else if (outputFormat === 'HSLA') {
+            outputColor = color.toHSLA().toString(0);
+        } else {
+            outputColor = color.toCMYK().toString(0);
+        }
+        document.querySelector("%selector%").value = outputColor;
+        phpfbColorpicker["%selector%"].hide();
+    });
+
+    if (cpDataAttr["%selector%"].interactionSave === 'false') {
+        phpfbColorpicker["%selector%"].on('change', color => {
+            let outputColor,
+            outputFormat = phpfbColorpicker["%selector%"].getColorRepresentation();
+            if (outputFormat === 'HEXA') {
+                outputColor = color.toHEXA().toString(0);
+            } else if (outputFormat === 'RGBA') {
+                outputColor = color.toRGBA().toString(0);
+            } else if (outputFormat === 'HSVA') {
+                outputColor = color.toHSVA().toString(0);
+            } else if (outputFormat === 'HSLA') {
+                outputColor = color.toHSLA().toString(0);
+            } else {
+                outputColor = color.toCMYK().toString(0);
+            }
+            document.querySelector("%selector%").value = outputColor;
+        });
+    }]]>
+        </js_code>
+    </default>
+</root>

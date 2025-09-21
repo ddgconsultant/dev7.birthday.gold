@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSlides Example</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/webslides/static/css/webslides.css">
+  <style>
+    .slide { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      text-align: center; 
+    }
+  </style>
+</head>
+<body>
+
+<main role="main">
+  <article id="webslides" class="horizontal">
+    <!-- Slide 1 -->
+    <section class="slide fadeIn">
+      <div>
+        <h1>Welcome to WebSlides</h1>
+        <p>Use left/right arrows to navigate horizontally.</p>
+      </div>
+    </section>
+
+    <!-- Slide 2 -->
+    <section class="slide fadeIn">
+      <div>
+        <h2>Slide 2</h2>
+        <p>This is the second slide. Use up/down arrows to navigate vertically.</p>
+      </div>
+    </section>
+
+    <!-- Slide 3 -->
+    <section class="slide fadeIn">
+      <div>
+        <h2>Slide 3</h2>
+        <p>This is the third slide. Continue using arrows to navigate.</p>
+      </div>
+    </section>
+
+    <!-- Slide 4 -->
+    <section class="slide fadeIn">
+      <div>
+        <h2>Slide 4</h2>
+        <p>Last slide in this example.</p>
+      </div>
+    </section>
+  </article>
+</main>
+
+<script src="https://unpkg.com/webslides/static/js/webslides.js"></script>
+<script>
+  window.ws = new WebSlides();
+</script>
+
+</body>
+</html>

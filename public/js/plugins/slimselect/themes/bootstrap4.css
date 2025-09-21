@@ -1,0 +1,58 @@
+.fv-plugins-icon-container.has-success .ss-arrow,
+.fv-plugins-icon-container.has-error .ss-arrow {
+    display: none;
+}
+
+.fv-plugins-icon-container.has-success .ss-deselect,
+.fv-plugins-icon-container.has-error .ss-deselect {
+    position: relative;
+    right: 24px;
+}
+
+.ss-main .placeholder {
+    cursor: pointer !important;
+    background: transparent;
+    opacity: 1;
+}
+
+.ss-main .placeholder .ss-disabled {
+    color: #aaa !important;
+}
+
+.ss-option.flag {
+    padding-bottom: 0 !important;
+    padding-left: 42px !important;
+    padding-top: 0 !important;
+}
+
+.ss-main.form-control {
+    line-height: 1.5;
+    height: auto;
+}
+
+.ss-main.form-control .ss-single-selected span {
+    line-height: 1.5;
+}
+
+.ss-main.form-control .ss-single-selected,
+.ss-main.form-control .ss-multi-selected {
+    width: calc(100% + 1.5rem);
+    height: auto;
+    line-height: 1.5;
+    border: none !important;
+    background-color: transparent;
+    margin: -0.375rem -.9rem -0.375rem -.75em;
+    padding: 0.375rem 0.375rem 0.375rem .75rem;
+}
+
+select[data-slimselect="true"]:disabled~.ss-main {
+    background-color: #e9ecef;
+}
+
+select[data-slimselect="true"]:disabled~.ss-main .ss-deselect {
+    display: none;
+}
+
+.ss-main .ss-single-selected.ss-disabled {
+    background: transparent;
+}

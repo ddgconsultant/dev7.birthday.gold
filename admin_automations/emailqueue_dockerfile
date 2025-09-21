@@ -1,0 +1,75 @@
+# Use the PHP Apache image
+FROM php:7.3-apache
+
+# Move PHP ini configuration
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+
+# Additional PHP packages
+RUN docker-php-ext-install mysqli opcache
+
+# Install git
+RUN apt-get update && \
+    apt-get install \
+    git \
+    -y
+
+# Ensure the directory exists and clone the specified emailqueue repository
+RUN mkdir -p /var/www/BIRTHDAY_GOLD/emailqueue && \
+    git clone https://github.com/ddgconsultant/emailqueue.git /var/www/BIRTHDAY_GOLD/emailqueue
+
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php -- \
+    --install-dir=/usr/local/bin --filename=composer
+
+# Get composer packages
+RUN composer --working-dir=/var/www/BIRTHDAY_GOLD/emailqueue update
+
+# Setup apache serving paths
+ENV APACHE_DOCUMENT_ROOT /var/www/BIRTHDAY_GOLD/emailqueue
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Configure PHP to use a specific timezone
+RUN printf '[PHP]\ndate.timezone = "UTC"\n' > /usr/local/etc/php/conf.d/tzone.ini
+
+# Create db configuration file
+RUN echo "<?php\n" \
+    "namespace Emailqueue;\n" \
+    "define(\"EMAILQUEUE_DB_HOST\", \"emailqueue-mysql\");\n" \
+    "define(\"EMAILQUEUE_DB_UID\", \"root\");\n" \
+    "define(\"EMAILQUEUE_DB_PWD\", false);\n" \
+    "define(\"EMAILQUEUE_DB_DATABASE\", \"emailqueue\");\n" \
+    "?>" > /var/www/BIRTHDAY_GOLD/emailqueue/config/db.config.inc.php
+
+# Install cron
+RUN apt-get update && apt-get -y install cron
+
+# Add crontab file in the cron directory
+ADD apache/cronjobs /etc/cron.d/cronjobs
+
+# Give execution rights on the cron job
+RUN chmod u=rwx,g=rx,o=rx /etc/cron.d/cronjobs
+
+# Add crontab
+RUN crontab -u root /etc/cron.d/cronjobs
+
+# Create the log file to be able to run tail
+RUN touch /var/log/cron.log
+
+# Create a startup script to dynamically set server_id and create users
+RUN echo "#!/bin/bash\n" \
+    "numeric_part=\$(hostname | grep -o -E '[0-9]+')\n" \
+    "server_id=3\${numeric_part}\n" \
+    "echo -e \"[mysqld]\\nserver_id=\${server_id}\\nlog_bin=mysql-bin\\ngtid_mode=ON\\nenforce-gtid-consistency=ON\\nbinlog-format=ROW\\nport=3306\\nbind-address=0.0.0.0\" > /etc/mysql/conf.d/replication.cnf\n" \
+    "service mysql start\n" \
+    "until mysqladmin ping -hlocalhost --silent; do\n" \
+    "    sleep 1\n" \
+    "done\n" \
+    "mysql -uroot -e \"CREATE USER 'bgdbreplicator1'@'%' IDENTIFIED BY 'change_this_password'; GRANT REPLICATION SLAVE ON *.* TO 'bgdbreplicator1'@'%';\"\n" \
+    "mysql -uroot -e \"CREATE USER 'birthday_gold_admin'@'%' IDENTIFIED BY 'change_this_password'; GRANT ALL ON *.* TO 'birthday_gold_admin'@'%' WITH GRANT OPTION;\"\n" \
+    "service mysql stop\n" > /usr/local/bin/setup_mysql.sh
+
+RUN chmod +x /usr/local/bin/setup_mysql.sh
+
+# Run the startup script and start Apache
+CMD /usr/local/bin/setup_mysql.sh && ( cron -f & ) && apache2-foreground

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file></file>
+            </css>
+            <js>
+                <file>bootstrap-input-spinner/bootstrap5-input-spinner.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   $("%selector%").each(function() {
+        var dataAttr = $(this).data();
+
+        var dataDecrementButton = dataAttr.decrementButton === undefined?'<strong>&minus;</strong>':dataAttr.decrementButton, // button text
+            dataIncrementButton = dataAttr.incrementButton === undefined?'<strong>&plus;</strong>':dataAttr.incrementButton, // ..
+            dataGroupClazz = dataAttr.groupClazz === undefined?'':dataAttr.groupClazz, // css class of the resulting input-group
+            dataButtonsClazz = dataAttr.buttonsClazz === undefined?'btn-outline-secondary':dataAttr.buttonsClazz,
+            dataButtonsWidth = dataAttr.buttonsWidth === undefined?'2.5rem':dataAttr.buttonsWidth,
+            dataTextAlign = dataAttr.textAlign === undefined?'center':dataAttr.textAlign, // alignment of the entered number
+            dataAutoDelay = dataAttr.autoDelay === undefined?500:dataAttr.autoDelay, // ms threshold before auto value change
+            dataAutoInterval = dataAttr.autoInterval === undefined?50:dataAttr.autoInterval, // speed of auto value change
+            dataButtonsOnly = dataAttr.buttonsOnly === undefined?false:dataAttr.buttonsOnly, // set this `true` to disable the possibility to enter or paste the number via keyboard
+            dataLocale = dataAttr.locale === undefined?navigator.language:dataAttr.locale;
+
+        $(this).inputSpinner({
+            decrementButton: dataDecrementButton,
+            incrementButton: dataIncrementButton,
+            groupClass: dataGroupClazz,
+            buttonsClass: dataButtonsClazz,
+            buttonsWidth: dataButtonsWidth,
+            textAlign: dataTextAlign,
+            autoDelay: dataAutoDelay,
+            autoInterval: dataAutoInterval,
+            buttonsOnly: dataButtonsOnly,
+            locale: dataLocale
+        });
+    });]]>
+        </js_code>
+    </default>
+    <bs4>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file></file>
+            </css>
+            <js>
+                <file>bootstrap-input-spinner/bootstrap4-input-spinner.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   $("%selector%").each(function() {
+        var dataAttr = $(this).data();
+
+        var dataDecrementButton = dataAttr.decrementButton === undefined?'<strong>&minus;</strong>':dataAttr.decrementButton, // button text
+            dataIncrementButton = dataAttr.incrementButton === undefined?'<strong>&plus;</strong>':dataAttr.incrementButton, // ..
+            dataGroupClazz = dataAttr.groupClazz === undefined?'':dataAttr.groupClazz, // css class of the resulting input-group
+            dataButtonsClazz = dataAttr.buttonsClazz === undefined?'btn-outline-secondary':dataAttr.buttonsClazz,
+            dataButtonsWidth = dataAttr.buttonsWidth === undefined?'2.5rem':dataAttr.buttonsWidth,
+            dataTextAlign = dataAttr.textAlign === undefined?'center':dataAttr.textAlign, // alignment of the entered number
+            dataAutoDelay = dataAttr.autoDelay === undefined?500:dataAttr.autoDelay, // ms threshold before auto value change
+            dataAutoInterval = dataAttr.autoInterval === undefined?50:dataAttr.autoInterval, // speed of auto value change
+            dataButtonsOnly = dataAttr.buttonsOnly === undefined?false:dataAttr.buttonsOnly, // set this `true` to disable the possibility to enter or paste the number via keyboard
+            dataLocale = dataAttr.locale === undefined?navigator.language:dataAttr.locale;
+
+        $(this).inputSpinner({
+            decrementButton: dataDecrementButton,
+            incrementButton: dataIncrementButton,
+            groupClass: dataGroupClazz,
+            buttonsClass: dataButtonsClazz,
+            buttonsWidth: dataButtonsWidth,
+            textAlign: dataTextAlign,
+            autoDelay: dataAutoDelay,
+            autoInterval: dataAutoInterval,
+            buttonsOnly: dataButtonsOnly,
+            locale: dataLocale
+        });
+    });]]>
+        </js_code>
+    </bs4>
+</root>

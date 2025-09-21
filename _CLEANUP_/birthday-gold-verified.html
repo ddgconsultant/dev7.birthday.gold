@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday.Gold - Account Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 20px;
+            color: #2d3748;
+            text-decoration: none;
+        }
+        
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        
+        .nav a {
+            color: #4a5568;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .nav a:hover {
+            color: #2d3748;
+        }
+        
+        /* Main Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+        
+        /* Profile Card */
+        .profile-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            position: sticky;
+            top: 104px;
+        }
+        
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #718096;
+            position: relative;
+        }
+        
+        .verification-badge {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 36px;
+            height: 36px;
+            background: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+            display: none;
+        }
+        
+        .verification-badge.active {
+            display: flex;
+        }
+        
+        .profile-name {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .profile-info {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        
+        .profile-stats {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Content Area */
+        .content {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #1a202c;
+        }
+        
+        .page-subtitle {
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+        
+        /* Progress Section */
+        .progress-section {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 40px;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .progress-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .progress-percentage {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f59e0b;
+        }
+        
+        .progress-bar {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .checklist {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .checklist-item {
+            background: white;
+            border-radius: 8px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s;
+        }
+        
+        .checklist-item:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .checklist-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .checklist-icon.completed {
+            background: #10b981;
+            color: white;
+        }
+        
+        .checklist-icon.pending {
+            background: #e2e8f0;
+            color: #a0aec0;
+        }
+        
+        .checklist-content {
+            flex: 1;
+        }
+        
+        .checklist-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        
+        .checklist-description {
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        .checklist-action {
+            color: #f59e0b;
+            font-weight: 500;
+            font-size: 14px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .checklist-action:hover {
+            color: #d97706;
+        }
+        
+        /* Benefits Section */
+        .section {
+            margin-bottom: 48px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        
+        .benefit-card {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.2s;
+        }
+        
+        .benefit-card:hover {
+            background: #edf2f7;
+            transform: translateY(-2px);
+        }
+        
+        .benefit-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .benefit-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .benefit-description {
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        /* CTA Button */
+        .cta-button {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+        
+        .cta-button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* FAQ Section */
+        .faq-item {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 24px 0;
+        }
+        
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+        
+        .faq-question {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .faq-answer {
+            color: #718096;
+            font-size: 15px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-card {
+                position: static;
+            }
+            
+            .nav {
+                display: none;
+            }
+            
+            .content {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <div class="logo-icon">🎂</div>
+                <span>birthday.gold</span>
+            </a>
+            <nav class="nav">
+                <a href="/how-it-works">How it Works</a>
+                <a href="/rewards">Browse Rewards</a>
+                <a href="/help">Help</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="main-grid">
+           
+
+            <!-- Main Content Area -->
+            <main class="content">
+                <h1 class="page-title">Account Verification</h1>
+                <p class="page-subtitle">Join our trusted community and unlock exclusive rewards by verifying your account</p>
+
+                <!-- Progress Section -->
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <h3 class="progress-title">Verification Progress</h3>
+                        <span class="progress-percentage">75%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%"></div>
+                    </div>
+                    <div class="checklist">
+                        <div class="checklist-item">
+                            <div class="checklist-icon completed">✓</div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Profile Details</div>
+                                <div class="checklist-description">Your profile is complete with name, phone number, and email</div>
+                            </div>
+                        </div>
+                        <div class="checklist-item">
+                            <div class="checklist-icon completed">✓</div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Profile Picture</div>
+                                <div class="checklist-description">You've uploaded a clear profile photo</div>
+                            </div>
+                        </div>
+                        <div class="checklist-item">
+                            <div class="checklist-icon completed">✓</div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Identity Verification</div>
+                                <div class="checklist-description">Your government-issued ID has been verified</div>
+                            </div>
+                        </div>
+                        <div class="checklist-item">
+                            <div class="checklist-icon pending">○</div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Community Activity</div>
+                                <div class="checklist-description">Engage with 8 posts to show you're an active member</div>
+                            </div>
+                            <a href="#" class="checklist-action">Complete →</a>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 32px;">
+                        <button class="cta-button" disabled>
+                            <span>Apply for Verification</span>
+                            <span>🔒</span>
+                        </button>
+                        <p style="margin-top: 12px; font-size: 14px; color: #718096;">Complete all requirements to apply</p>
+                    </div>
+                </div>
+
+                <!-- Benefits Section -->
+                <section class="section">
+                    <h2 class="section-title">Benefits of Being Verified</h2>
+                    <div class="benefits-grid">
+                        <div class="benefit-card">
+                            <div class="benefit-icon">🎁</div>
+                            <h3 class="benefit-title">Exclusive Birthday Rewards</h3>
+                            <p class="benefit-description">Get priority access to premium birthday rewards, promotions, and special events</p>
+                        </div>
+                        <div class="benefit-card">
+                            <div class="benefit-icon">⭐</div>
+                            <h3 class="benefit-title">Enhanced Trust</h3>
+                            <p class="benefit-description">A verified badge builds credibility and makes it easier to engage with brands</p>
+                        </div>
+                        <div class="benefit-card">
+                            <div class="benefit-icon">👁️</div>
+                            <h3 class="benefit-title">Increased Visibility</h3>
+                            <p class="benefit-description">Your profile appears more prominently, giving you more exposure to brands</p>
+                        </div>
+                        <div class="benefit-card">
+                            <div class="benefit-icon">💰</div>
+                            <h3 class="benefit-title">100 Bonus Credits</h3>
+                            <p class="benefit-description">Receive 100 enrollment credits to get started with even more rewards</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FAQ Section -->
+                <section class="section">
+                    <h2 class="section-title">Frequently Asked Questions</h2>
+                    <div class="faq-item">
+                        <h3 class="faq-question">How long does the verification process take?</h3>
+                        <p class="faq-answer">We typically process verification applications within a few business days. You'll receive an email notification once your application has been reviewed.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3 class="faq-question">Can I lose my verification status?</h3>
+                        <p class="faq-answer">Yes, accounts that engage in suspicious behavior or violate Birthday.Gold's guidelines may have their verification revoked.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h3 class="faq-question">What information is required for verification?</h3>
+                        <p class="faq-answer">We require basic identification such as your full name, email address, and a government-issued photo ID. This helps us confirm your identity and protect the integrity of our platform.</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Simulate dynamic checklist updates
+        function updateProgress() {
+            const checklistItems = document.querySelectorAll('.checklist-item');
+            const completedItems = document.querySelectorAll('.checklist-icon.completed').length;
+            const totalItems = checklistItems.length;
+            const percentage = Math.round((completedItems / totalItems) * 100);
+            
+            document.querySelector('.progress-percentage').textContent = percentage + '%';
+            document.querySelector('.progress-fill').style.width = percentage + '%';
+            
+            // Enable/disable CTA button
+            const ctaButton = document.querySelector('.cta-button');
+            if (percentage === 100) {
+                ctaButton.disabled = false;
+                document.querySelector('.verification-badge').classList.add('active');
+            } else {
+                ctaButton.disabled = true;
+                document.querySelector('.verification-badge').classList.remove('active');
+            }
+        }
+        
+        // Call on page load
+        updateProgress();
+        
+        // Simulate completing a task
+        document.querySelectorAll('.checklist-action').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const item = e.target.closest('.checklist-item');
+                const icon = item.querySelector('.checklist-icon');
+                icon.classList.remove('pending');
+                icon.classList.add('completed');
+                icon.textContent = '✓';
+                e.target.style.display = 'none';
+                updateProgress();
+            });
+        });
+    </script>
+</body>
+</html>

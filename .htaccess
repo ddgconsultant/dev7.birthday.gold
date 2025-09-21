@@ -1,0 +1,51 @@
+# Enable Rewrite Engine
+RewriteEngine On
+
+# Remove .php extension
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+# Remove index.php 
+DirectoryIndex index.php
+RewriteCond %{THE_REQUEST} /index\.php [NC]
+RewriteRule ^index\.php$ / [L,R=301,NC]
+
+RewriteRule ^getplan/([^/]*)$ getplan.php?plan=$1 [L,QSA]
+
+# Block access to .git directory and redirect to custom 499 page
+RewriteRule ^\.git(/|$) /499 [R=302,L]
+
+# Normal 403 error page
+ErrorDocument 403 /403
+
+# Other normal error pages
+ErrorDocument 401 /401
+ErrorDocument 404 /404
+ErrorDocument 500 /500
+ErrorDocument 503 /503
+
+
+# Set an environment variable for dev and beta subdomains
+SetEnvIf Host ^(dev|beta)[a-zA-Z0-9-]*\.birthday\.gold$ dev_subdomain
+
+
+# Enable Rewrite Engine
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Redirect only search engine bots to birthday.gold
+RewriteCond %{HTTP_HOST} ^july(0[2-9]|1[0-9])\.(bday|birthday)\.gold$ [NC]
+RewriteCond %{HTTP_USER_AGENT} ^.*(googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|teoma|facebookexternalhit).* [NC]
+RewriteRule ^(.*)$ https://birthday.gold/$1 [R=301,L]
+
+# Block bots if the dev_subdomain environment variable is set
+RewriteCond %{ENV:dev_subdomain} ^1$
+RewriteCond %{HTTP_USER_AGENT} ^.*(AhrefsBot|SemrushBot|DotBot|MJ12bot|Baiduspider|YandexBot|Sogou|PetalBot|MegaIndex|BLEXBot|SEOkicks|Archive\.org_bot|Exabot|spbot|HTTrack|WebCopier|DataForSeoBot|CliqzBot|NetcraftSurveyAgent|Googlebot|bingbot|AdsBot-Google|Google-Structured-Data-Testing-Tool|Google-Read-Aloud|Google-Image|Googlebot-Video|Googlebot-Mobile|360Spider|AspiegelBot|FacebookExternalHit|Python-urllib|Java|libwww-perl|Go-http-client|sqlmap|Zgrab|CensysInspect|Nmap).* [NC]
+RewriteRule .* - [F,L]
+
+# Block Empty User-Agents if the dev_subdomain environment variable is set
+RewriteCond %{ENV:dev_subdomain} ^1$
+RewriteCond %{HTTP_USER_AGENT} ^-?$ [NC]
+RewriteRule .* - [F,L]
+</IfModule>

@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file>autocomplete/css/autoComplete-phpfb.css</file>
+            </css>
+            <js>
+                <file>autocomplete/autoComplete.min.js</file>
+                <file>dompurify/purify.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[    if (typeof(phpfbAutocomplete) == "undefined") {
+        window.phpfbAutocomplete = [];
+        window.acDataAttr = [];
+    }
+    acDataAttr["%selector%"] = document.querySelector("%selector%").dataset;
+    phpfbAutocomplete["%selector%"] = new autoComplete({
+        selector: "%selector%",
+        data: {
+            src: %src%
+        },
+        debounce: acDataAttr["%selector%"].debounce === undefined?0:acDataAttr["%selector%"].debounce,
+        threshold: acDataAttr["%selector%"].threshold === undefined?0:acDataAttr["%selector%"].threshold,
+        query: (input) => {
+            if (acDataAttr["%selector%"].multipleChoices === 'true') {
+                // Split query into array
+                const querySplit = input.split(",");
+                // Get last query value index
+                const lastQuery = querySplit.length - 1;
+                // Trim new query
+                const newQuery = querySplit[lastQuery].trim();
+
+                return DOMPurify.sanitize(newQuery);
+            }
+            return DOMPurify.sanitize(input);
+        },
+        resultsList: {
+            element: (list, data) => {
+            const info = document.createElement("p");
+            info.classList.add("autoComplete_result_list_info");
+            if (data.results.length > 0) {
+                info.innerHTML = `Displaying <strong>${data.results.length}</strong> out of <strong>${data.matches.length}</strong> results`;
+            } else {
+                info.innerHTML = `Found <strong>${data.matches.length}</strong> matching results for <strong>"${data.query}"</strong>`;
+            }
+            list.prepend(info);
+            },
+            noResults: true,
+            maxResults: acDataAttr["%selector%"].maxResults === undefined?15:acDataAttr["%selector%"].maxResults,
+            tabSelect: true
+        },
+        resultItem: {
+            highlight: {
+                render: true
+            }
+        },
+        events: {
+            input: {
+                focus: () => {
+                    if (phpfbAutocomplete["%selector%"].input.value.length) phpfbAutocomplete["%selector%"].start();
+                },
+                selection(event) {
+                    if (acDataAttr["%selector%"].multipleChoices === 'true') {
+                        const feedback = event.detail;
+                        const input = phpfbAutocomplete["%selector%"].input;
+                        // Trim selected Value
+                        const selection = feedback.selection.value.trim();
+                        // Split query into array and trim each value
+                        const query = input.value.split(",").map(item => item.trim());
+                        // Remove last query
+                        query.pop();
+                        // Add selected value
+                        query.push(selection);
+                        // Replace Input value with the new query
+                        input.value = query.join(", ") + ", ";
+                    } else {
+                        const feedback = event.detail;
+                        phpfbAutocomplete["%selector%"].input.blur();
+                        const selection = feedback.selection.value;
+                        phpfbAutocomplete["%selector%"].input.value = selection;
+                    }
+                }
+            }
+        }
+    });
+
+    if (document.querySelector("%selector%").dataset.startWith) {
+        phpfbAutocomplete["%selector%"].data.filter = (list) => {
+            const results = list.filter((item) => {
+                const inputValue = phpfbAutocomplete["%selector%"].input.value.toLowerCase();
+                const itemValue = item.value.toLowerCase();
+
+                if (itemValue.startsWith(inputValue)) {
+                    return item.value;
+                }
+            });
+
+            return results;
+        }
+    }]]>
+        </js_code>
+    </default>
+    <ajax>
+        <js_code><![CDATA[    if (typeof(phpfbAutocomplete) == "undefined") {
+        window.phpfbAutocomplete = [];
+        window.acDataAttr = [];
+    }
+    acDataAttr["%selector%"] = document.querySelector("%selector%").dataset;
+    let maxResults = acDataAttr["%selector%"].maxResults === undefined?15:acDataAttr["%selector%"].maxResults
+    phpfbAutocomplete["%selector%"] = new autoComplete({
+        selector: "%selector%",
+        data: {
+            src: async (query) => {
+                try {
+                    const source = await fetch(`%src%?search=${query}&max_results=${maxResults}`);
+                    // Data is array of `Objects` | `Strings`
+                    const data = await source.json();
+
+                    return data;
+                } catch (error) {
+                    return error;
+                }
+            }
+        },
+        debounce: acDataAttr["%selector%"].debounce === undefined?0:acDataAttr["%selector%"].debounce,
+        threshold: acDataAttr["%selector%"].threshold === undefined?0:acDataAttr["%selector%"].threshold,
+        query: (input) => {
+            if (acDataAttr["%selector%"].multipleChoices === 'true') {
+                // Split query into array
+                const querySplit = input.split(",");
+                // Get last query value index
+                const lastQuery = querySplit.length - 1;
+                // Trim new query
+                const newQuery = querySplit[lastQuery].trim();
+
+                return DOMPurify.sanitize(newQuery);
+            }
+            return DOMPurify.sanitize(input);
+        },
+        resultsList: {
+            element: (list, data) => {
+            const info = document.createElement("p");
+            info.classList.add("autoComplete_result_list_info");
+            if (data.results.length > 0) {
+                info.innerHTML = `Displaying <strong>${data.results.length}</strong> out of <strong>${data.matches.length}</strong> results`;
+            } else {
+                info.innerHTML = `Found <strong>${data.matches.length}</strong> matching results for <strong>"${data.query}"</strong>`;
+            }
+            list.prepend(info);
+            },
+            noResults: true,
+            maxResults: maxResults,
+            tabSelect: true
+        },
+        resultItem: {
+            highlight: {
+                render: true
+            }
+        },
+        events: {
+            input: {
+                focus: () => {
+                   if (phpfbAutocomplete["%selector%"].input.value.length) phpfbAutocomplete["%selector%"].start();
+                },
+                selection(event) {
+                    if (acDataAttr["%selector%"].multipleChoices === 'true') {
+                        const feedback = event.detail;
+                        const input = phpfbAutocomplete["%selector%"].input;
+                        // Trim selected Value
+                        const selection = feedback.selection.value.trim();
+                        // Split query into array and trim each value
+                        const query = input.value.split(",").map(item => item.trim());
+                        // Remove last query
+                        query.pop();
+                        // Add selected value
+                        query.push(selection);
+                        // Replace Input value with the new query
+                        input.value = query.join(", ") + ", ";
+                    } else {
+                        const feedback = event.detail;
+                        phpfbAutocomplete["%selector%"].input.blur();
+                        const selection = feedback.selection.value;
+                        phpfbAutocomplete["%selector%"].input.value = selection;
+                    }
+                }
+            }
+        }
+    });
+
+    if (document.querySelector("%selector%").dataset.startWith) {
+        phpfbAutocomplete["%selector%"].data.filter = (list) => {
+            const results = list.filter((item) => {
+                const inputValue = phpfbAutocomplete["%selector%"].input.value.toLowerCase();
+                const itemValue = item.value.toLowerCase();
+
+                if (itemValue.startsWith(inputValue)) {
+                    return item.value;
+                }
+            });
+
+            return results;
+        }
+    }]]>
+        </js_code>
+    </ajax>
+    <custom>
+        <!--
+            If you need differents includes for your custom code,
+            copy the default '<includes>' structure and put the needed files into '<file>' nodes.
+            You can add several files nodes if necessary.
+        -->
+        <js_code>
+            <!-- your custom code here -->
+        </js_code>
+    </custom>
+</root>

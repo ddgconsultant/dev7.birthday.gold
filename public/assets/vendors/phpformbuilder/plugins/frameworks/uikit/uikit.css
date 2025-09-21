@@ -1,0 +1,100 @@
+.form-horizontal .uk-form-label {
+    margin-top: 7px;
+}
+
+.fv-plugins-icon-container {
+    flex-wrap: wrap;
+}
+
+.uk-form-icon {
+    max-height: 2.625rem;
+}
+
+.uk-form-label.icheck-label,
+.uk-flex-inline input[type="checkbox"]~label,
+.uk-flex-inline input[type="radio"]~label {
+    margin-top: 0;
+}
+
+.uk-button.addon-before {
+    margin-right: 10px;
+}
+
+.uk-button.addon-after {
+    margin-left: 10px;
+}
+
+.form-horizontal .uk-form-label.main-label-inline {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.icheck-item {
+    margin: 0 10px 0 0 !important;
+}
+
+.uk-form-icon~.fv-plugins-message-container {
+    width: 100%;
+}
+
+.fv-plugins-uikit .fv-plugins-icon {
+    top: 0 !important;
+    margin-top: -2px;
+}
+
+.lcs_wrap~label {
+    margin-bottom: 7px;
+}
+
+.uk-form-stacked.fv-plugins-uikit .fv-plugins-icon {
+    top: auto !important;
+}
+
+.hidden-wrapper+.uk-grid,
+.uk-grid+.hidden-wrapper {
+    margin-top: 30px;
+}
+
+.phpfb-centered.uk-grid {
+    position: relative;
+    left: -30px;
+}
+
+.phpfb-centered-stacked label {
+    margin-bottom: 7px;
+}
+
+.pretty {
+    margin-bottom: .85rem;
+}
+
+.main-label.uk-form-label {
+    padding-right: 1rem;
+}
+
+.uk-align-center.h-captcha {
+    margin-bottom: 0;
+}
+
+.uk-form-icon {
+    display: inline-flex !important;
+    z-index: 1;
+}
+
+.uk-form-error .uk-select,
+.uk-form-success .uk-select {
+    background-image: none !important;
+}
+
+.uk-form-icon~.uk-select {
+    padding-left: 2.5rem;
+}
+
+select.uk-select {
+    width: auto;
+    flex-grow: 1;
+}
+
+select.has-icon-after~.uk-form-icon {
+    right: 10px;
+}

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="msapplication-TileColor" content="#000000"/>
+
+  <!-- https://developers.google.com/search/docs/guides/intro-structured-data?visit_id=1-636469869938440355-3537083777&hl=en&rd=1 -->
+  <!-- Test with https://search.google.com/structured-data/testing-tool#url=https%3A%2F%2Fcloudron.io -->
+
+  <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "Organization",
+        "url": "https://www.cloudron.io",
+        "name": "Cloudron",
+        "email": "webmaster@cloudron.io",
+        "logo": "/img/logo.png",
+        "address": {
+          "addressCountry": "Germany",
+          "addressLocality": "Ergoldsbach",
+          "postalCode": "84061",
+          "streetAddress": "Ziegelstrasse 6"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "info@cloudron.io",
+          "contactType": "Customer service",
+          "url": "https://forum.cloudron.io"
+        }
+      }
+  </script>
+
+  <meta name="description" content="Cloudron is a complete solution for running apps on your server and keeping them up-to-date and secure.">
+  <meta name="msapplication-TileImage" content="/img/logo.png"/>
+
+  <title>Cloudron - Complete solution for self-hosting web apps</title>
+
+  <!-- Open Graph tags -->
+  <meta property="og:title" content="Cloudron - Complete solution for self-hosting" />
+  <meta property="og:description" content="Cloudron the best platform for self-hosting web apps.">
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Cloudron" />
+  <meta property="og:image" content="https://cloudron.io/img/social_hero.png" />
+
+  <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "Product",
+        "url": "https://www.cloudron.io",
+        "name": "Cloudron",
+        "logo": "/img/logo.png",
+        "description": "Complete solution for running apps on your own server",
+        "image": "/img/screenshots/cloudron-hero.png",
+        "brand": "Cloudron",
+        "offers": [{
+          "@type": "Offer",
+          "url": "/pricing.html",
+          "price": "15.00",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
+        }]
+      }
+  </script>
+  <!--
+      Prevent angular templates being visible until angular is ready
+      https://docs.angularjs.org/api/ng/directive/ngCloak
+  -->
+  <style>
+      [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+          display: none !important;
+      }
+  </style>
+
+  <link href="/img/favicon.png" rel="shortcut icon" type="image/png" />
+
+  <link rel="alternate" type="application/rss" title="Cloudron.io Blog" href="https://blog.cloudron.io/rss/" />
+  <link rel="alternate" type="application/rss+xml" title="Cloudron.io Blog" href="https://blog.cloudron.io/rss/" />
+
+  <!-- Bootstrap Core CSS -->
+  <link href="/3rdparty/bootstrap.min.css" rel="stylesheet" type="text/css">
+
+  <!-- Custom Theme CSS -->
+  <link href="/css/index.min.css" rel="stylesheet" type="text/css">
+
+  <!-- Fonts -->
+  <link href="/3rdparty/font-awesome/css/all.css" rel="stylesheet" type="text/css" />
+  <link href="/3rdparty/fontsource-roboto/latin-300.css" rel="stylesheet" type="text/css" />
+  <link href="/3rdparty/fontsource-maven-pro/index.css" rel="stylesheet" type="text/css" />
+
+  <!-- jQuery Version 1.11.0 -->
+  <script src="/3rdparty/jquery-1.11.0.js"></script>
+
+  <!-- Bootstrap Core JavaScript -->
+  <script src="/3rdparty/bootstrap.min.js"></script>
+
+  <!-- slick -->
+  <link href="/3rdparty/slick.css" rel="stylesheet" type="text/css"/>
+  <script src="/3rdparty/slick.js" type="text/javascript"></script>
+
+  <!-- angularjs scripts -->
+  <script src="/3rdparty/angular.min.js"></script>
+  <script src="/3rdparty/angular-loader.min.js"></script>
+  <script src="/3rdparty/angular-route.min.js"></script>
+  <script src="/3rdparty/angular-base64.min.js"></script>
+
+  <script type="text/javascript">
+
+    window.config = {
+        apiServer: 'https://api.cloudron.io'
+    };
+
+  </script>
+
+
+  <!-- Piwik -->
+  <script type="text/javascript">
+    var _paq = _paq || [];
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+      var u="//analytics.cloudron.io/";
+      _paq.push(['setTrackerUrl', u+'piwik.php']);
+      _paq.push(['setSiteId', 2]);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+    })();
+  </script>
+  <noscript><p><img src="//analytics.cloudron.io/piwik.php?idsite=2" style="border:0;" alt="" /></p></noscript>
+  <!-- End Piwik Code -->
+
+  <meta name="google-site-verification" content="tFsic6qXMtvH8oJ1rVvLxy_ft_5s1yvaBm1jNa84XH0" />
+  <meta name="msvalidate.01" content="2662CB7598D12C455743E9F92C0A1D3E" />
+</head>
+
+<body>
+
+  <!-- Modal demo -->
+  <div class="modal fade" id="demoModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog demo">
+      <div class="modal-content">
+        <div class="modal-body text-center">
+          <h2>Demo Cloudron</h2>
+          <br/>
+          <p>
+            Username: <b>cloudron</b><br/>
+            Password: <b>cloudron</b><br/>
+          </p>
+          <br/>
+          <a class="btn btn-success btn-block" href="https://my.demo.cloudron.io" target="_blank">Go to the Demo Cloudron</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="navbar navbar-fixed-top shadow" role="navigation" id="navBar">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-main-collapse">
+          <i class="fa fa-bars"></i>
+        </button>
+        <a class="navbar-brand" style="max-height: 50px;" href="/index.html">
+          <img src="/img/logo.png" alt="Cloudron logo"/> Cloudron
+        </a>
+      </div>
+
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse navbar-right navbar-main-collapse">
+        <ul class="nav navbar-nav">
+          <li data-toggle="tooltip" data-placement="left" title="Try out now!" id="demoButton">
+            <a class="navbar-text" href="" data-toggle="modal" data-target="#demoModal">Demo</a>
+          </li>
+          <li>
+            <a class="navbar-text" href="/store/index.html">Apps</a>
+          </li>
+          <li>
+            <a class="navbar-text" href="https://docs.cloudron.io">Docs</a>
+          </li>
+          <li>
+            <a class="navbar-text" href="https://forum.cloudron.io">Forum</a>
+          </li>
+          <li>
+            <a class="navbar-text" href="/pricing.html">Pricing</a>
+          </li>
+          <li>
+            <a class="navbar-text highlight" href="/get.html">Install</a>
+          </li>
+          <li>
+            <a class="navbar-text" href="https://console.cloudron.io">My Account</a>
+          </li>
+        </ul>
+      </div>
+      <!-- /.navbar-collapse -->
+    </div>
+  </nav>
+
+  <div class="site-wrapper">
+
+
+<section class="notfound">
+  <div>
+    <h1>Nothing to be found here</h1>
+    <br/>
+    <br/>
+    <a class="btn btn-primary" href="/get.html">Install Cloudron</a>
+  </div>
+</section>
+
+
+  <!-- closing site-wrapper -->
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <center>
+      <div class="collection">
+        <div class="list">
+          <h3>About</h3>
+          <a href="/about.html">Story</a>
+          <a href="/opensource.html">Open Source</a>
+          <a href="/referral.html">Referral</a>
+          <a href="/imprint.html">Imprint</a>
+          <a href="/brand-assets.html">Brand Assets</a>
+          <a href="/legal/privacy.html">Privacy</a>
+          <a href="/legal/terms.html">Terms</a>
+          <a href="mailto:info@cloudron.io">Contact us</a>
+        </div>
+        <div class="list">
+          <h3>Resources</h3>
+          <a href="https://blog.cloudron.io">Blog</a>
+          <a href="https://docs.cloudron.io">Documentation</a>
+          <a href="https://forum.cloudron.io">Forum</a>
+          <a href="/partners.html">Partners</a>
+          <a href="/store/index.html">Apps</a>
+          <a href="/appstatus.html">App Status</a>
+          <a href="/security.html">Security</a>
+          <a href="https://status.cloudron.io">Status</a>
+        </div>
+        <div class="list">
+          <h3>Follow us</h3>
+          <a href="https://forum.cloudron.io" target="_blank">Forum</a>
+          <a href="https://social.cloudron.io/@cloudron" target="_blank">Mastodon</a>
+          <a href="https://blog.cloudron.io/rss/" target="_blank">RSS</a>
+        </div>
+      </div>
+    </center>
+
+    <br/>
+    <br/>
+    <br/>
+
+    <div style="padding:5px">
+      <span class="text-muted">Copyright &copy; Cloudron 2014 - 2024  </span>
+    </div>
+  </footer>
+
+  <script>
+
+    $(document).ready(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    });
+
+  </script>
+
+  <!-- mastodon account validation -->
+  <a rel="me" style="display: none" href="https://mastodon.nebulon.de/@nebulon">Mastodon</a>
+  <a rel="me" style="display: none" href="https://social.cloudron.io/@cloudron">Mastodon</a>
+
+</body>
+
+</html>
+

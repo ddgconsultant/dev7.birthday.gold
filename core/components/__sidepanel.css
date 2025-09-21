@@ -1,0 +1,14 @@
+<style >
+/* ADMINLEFTPANEL styles ======================================== */
+.main-content { flex: 1; overflow-y: auto; padding: 20px; }
+.border-right { border-right: 1px solid lightgrey; }
+.title-wrapper { display: flex; align-items: center; margin-bottom: 5px;     /* Adjust to your needs */ }
+.title-wrapper h4 { margin: 0; white-space: nowrap; padding-right: 10px;     /* Adjust space between text and line */ }
+.title-wrapper .title-line { flex-grow: 1; height: 1px; background-color: #000;     /* Adjust color of the line */ }
+.list-unstyled.list-userdetail li { padding: 5px 0; font-size: .9rem;     /* Adjust font size */ }
+.list-unstyled.list-userdetail li i { margin-left: 10px;     /* Add right margin to icons */ margin-right: 10px;     /* Add right margin to icons */ }
+.placeholder { background: none !important;     /* Remove the background */ display: inline-block;     /* Ensure it displays correctly inline */ margin-left: 5px; cursor: text !important; }
+a:hover .placeholder { cursor: pointer !important;     /* Change the cursor to pointer on hover */ }
+.toggle-btn { background: none; border: none; font-size: 1.2rem; margin-left: 10px; cursor: pointer; display: flex; align-items: center; }
+.toggle-btn i { font-size: 1.2rem;     /* Adjust the size of the caret icon */ }
+</style >

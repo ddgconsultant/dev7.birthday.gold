@@ -1,0 +1,79 @@
+// out: badger-accordion.css, compress: false, autoprefixer: last 5 versions
+
+// ==========================================================================
+//
+// ACCORDION
+//
+// Description: Base accordion styles that are ESSENTIAL for the accordion
+//
+// ==========================================================================
+
+// ==========================================================================
+// # BASE
+// ==========================================================================
+
+// .badger-accordion {}
+
+.badger-accordion__panel {
+    max-height: 75vh;
+    overflow: hidden;
+
+    // scss-lint:disable ImportantRule
+    &.-ba-is-hidden {
+        max-height: 0 !important;
+        visibility: hidden;
+    }
+
+    // transition is added via `badger-accordion--initalised` to stop animation on initalition
+    .badger-accordion--initialized & {
+        transition: max-height ease-in-out 0.2s;
+    }
+}
+
+// ==========================================================================
+// # STYLES
+// ==========================================================================
+
+.js-badger-accordion h1,
+.js-badger-accordion h2,
+.js-badger-accordion h3,
+.js-badger-accordion h4,
+.js-badger-accordion h5,
+.js-badger-accordion h6 {
+    margin-bottom: -1px;
+}
+
+.js-badger-accordion-header {
+    position: relative;
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    padding: 0.5rem;
+    cursor: pointer;
+    &:after {
+        content: " ";
+        position: absolute;
+        display: inline-block;
+        width: 0.5rem;
+        height: 0.5rem;
+        right: 1rem;
+        top: 0;
+        bottom: 0;
+        margin: auto;
+        transform: rotate(45deg);
+        border: solid #666;
+        border-width: 0 2px 2px 0;
+        padding: 3px;
+        transition: transform 0.2s, margin 0.2s;
+    }
+    &[aria-expanded="true"]:after {
+        transform: rotate(-135deg);
+    }
+}
+
+.badger-accordion__panel {
+    border: 1px solid #ccc;
+}
+
+.js-badger-accordion-panel-inner {
+    padding: 0.5rem 1rem 1.25rem;
+}

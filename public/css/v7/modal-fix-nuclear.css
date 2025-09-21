@@ -1,0 +1,113 @@
+/* Nuclear Modal Fix - Target the specific modal structure */
+
+/* First, reset all modal-related z-indexes to ensure clean slate */
+.modal,
+.modal-backdrop,
+.modal-dialog,
+.modal-content {
+    z-index: auto !important;
+}
+
+/* Now set proper stacking order */
+/* Backdrop should be at base level */
+.modal-backdrop {
+    z-index: 1040 !important;
+    position: fixed !important;
+}
+
+.modal-backdrop.show {
+    z-index: 1040 !important;
+}
+
+/* Modal container should be above backdrop */
+.modal {
+    z-index: 1050 !important;
+    position: fixed !important;
+}
+
+/* Modal when shown should maintain high z-index */
+.modal.show {
+    z-index: 1050 !important;
+}
+
+/* Modal dialog should inherit from parent */
+.modal-dialog {
+    position: relative !important;
+    z-index: auto !important;
+}
+
+/* Fix specific to the "Other Account Types" modal */
+#otherAccountsModal {
+    z-index: 1060 !important;
+}
+
+#otherAccountsModal.show {
+    z-index: 1060 !important;
+}
+
+/* Ensure all children of shown modal are accessible */
+.modal.show .modal-dialog,
+.modal.show .modal-content {
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Remove any transforms or filters that might affect stacking */
+.modal,
+.modal-dialog,
+.modal-content,
+.modal-backdrop {
+    transform: none !important;
+    filter: none !important;
+    -webkit-transform: none !important;
+    -webkit-filter: none !important;
+}
+
+/* Ensure pointer events work correctly */
+.modal {
+    pointer-events: none !important;
+}
+
+.modal.show {
+    pointer-events: auto !important;
+}
+
+.modal-dialog {
+    pointer-events: auto !important;
+}
+
+/* Fix for any CSS that might be setting backdrop z-index too high */
+body .modal-backdrop {
+    z-index: 1040 !important;
+}
+
+body .modal-backdrop.show {
+    z-index: 1040 !important;
+}
+
+/* Fix for any CSS that might be setting modal z-index too low */
+body .modal {
+    z-index: 1050 !important;
+}
+
+body .modal.show {
+    z-index: 1050 !important;
+}
+
+/* Ultimate override - target by attribute if needed */
+[class*="modal-backdrop"] {
+    z-index: 1040 !important;
+}
+
+[class*="modal"].show:not(.modal-backdrop) {
+    z-index: 1050 !important;
+}
+
+/* Remove debug styles from previous fix */
+.modal.show {
+    background: transparent !important;
+}
+
+.modal-dialog {
+    border: none !important;
+}

@@ -1,0 +1,199 @@
+// Chart configuration and rendering
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart style configuration
+    const chartColors = {
+        primary: '#3b82f6',
+        success: '#22c55e',
+        warning: '#eab308',
+        info: '#06b6d4',
+        gray: '#94a3b8'
+    };
+
+    const chartConfig = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    padding: 20
+                }
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                padding: 10,
+                boxPadding: 4
+            }
+        }
+    };
+
+    // Initialize User Growth Chart
+    const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+    const userGrowthChart = new Chart(userGrowthCtx, {
+        type: 'line',
+        data: {
+            labels: window.analyticsData.userGrowth.map(d => d.month),
+            datasets: [{
+                label: 'New Users',
+                data: window.analyticsData.userGrowth.map(d => d.new_users),
+                borderColor: chartColors.primary,
+                backgroundColor: hexToRGBA(chartColors.primary, 0.1),
+                borderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            ...chartConfig,
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'month',
+                        displayFormats: {
+                            month: 'MMM yyyy'
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        borderDash: [2, 2]
+                    }
+                }
+            }
+        }
+    });
+
+    // Initialize Reward Distribution Chart
+    const rewardDistributionCtx = document.getElementById('rewardDistributionChart').getContext('2d');
+    const rewardDistributionChart = new Chart(rewardDistributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: window.analyticsData.rewardDistribution.map(d => d.category),
+            datasets: [{
+                data: window.analyticsData.rewardDistribution.map(d => d.count),
+                backgroundColor: [
+                    chartColors.primary,
+                    chartColors.success,
+                    chartColors.warning,
+                    chartColors.info,
+                    chartColors.gray
+                ]
+            }]
+        },
+        options: {
+            ...chartConfig,
+            cutout: '60%',
+            plugins: {
+                ...chartConfig.plugins,
+                tooltip: {
+                    ...chartConfig.plugins.tooltip,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${value} rewards (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Handle time range filtering
+    document.querySelectorAll('.time-range').forEach(button => {
+        button.addEventListener('click', function() {
+            const range = this.dataset.range;
+            const now = new Date();
+            let startDate;
+
+            // Remove active class from all buttons
+            document.querySelectorAll('.time-range').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            this.classList.add('active');
+
+            // Calculate start date based on range
+            switch(range) {
+                case '6m':
+                    startDate = new Date(now.setMonth(now.getMonth() - 6));
+                    break;
+                case '1y':
+                    startDate = new Date(now.setFullYear(now.getFullYear() - 1));
+                    break;
+                default:
+                    startDate = null;
+            }
+
+            // Filter data
+            let filteredData = window.analyticsData.userGrowth;
+            if (startDate) {
+                filteredData = filteredData.filter(d => new Date(d.month) >= startDate);
+            }
+
+            // Update chart
+            userGrowthChart.data.labels = filteredData.map(d => d.month);
+            userGrowthChart.data.datasets[0].data = filteredData.map(d => d.new_users);
+            userGrowthChart.update();
+        });
+    });
+});
+
+// Helper function to convert hex color to RGBA
+function hexToRGBA(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Handle chart responsiveness
+window.addEventListener('resize', function() {
+    const charts = Chart.instances;
+    for (let chart of charts) {
+        chart.resize();
+    }
+});
+
+// Data processing helpers
+const dataHelpers = {
+    // Calculate cumulative total
+    getCumulativeData: (data) => {
+        let total = 0;
+        return data.map(d => {
+            total += d.new_users;
+            return {
+                month: d.month,
+                total: total
+            };
+        });
+    },
+
+    // Calculate month-over-month growth rate
+    getGrowthRate: (data) => {
+        return data.map((d, i) => {
+            if (i === 0) return { month: d.month, growth: 0 };
+            const previousMonth = data[i - 1].new_users;
+            const growth = ((d.new_users - previousMonth) / previousMonth) * 100;
+            return {
+                month: d.month,
+                growth: growth
+            };
+        });
+    },
+
+    // Get reward distribution percentages
+    getDistributionPercentages: (data) => {
+        const total = data.reduce((sum, d) => sum + d.count, 0);
+        return data.map(d => ({

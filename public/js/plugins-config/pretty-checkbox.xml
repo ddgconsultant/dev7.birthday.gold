@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file>pretty-checkbox/pretty-checkbox.min.css</file>
+            </css>
+            <js>
+                <file>pretty-checkbox/phpfb-pretty-checkbox.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[    if (typeof(phpfbPrettyCheckbox) == "undefined") {
+        window.phpfbPrettyCheckbox = [];
+    }
+    phpfbPrettyCheckbox["%selector%"] = new PrettyCheckbox("%selector%", {
+        prettyWrapper  : {
+            baseClass      : 'pretty',
+            defaultClass   : 'p-default',
+            checkboxStyle  : 'p-%checkboxStyle%',
+            radioStyle     : 'p-%radioStyle%',
+            fill           : 'p-%fill%',
+            plain          : 'p-%plain%',
+            animations     : 'p-%animations%',
+            size           : 'p-%size%',
+        },
+        labelWrapper   : {
+            color          : 'p-%color%',
+            icon           : '%icon%',
+        },
+        toggle         : %toggle%,
+        toggleOn: {
+            label: '%toggleOnLabel%',
+            color: 'p-%toggleOnColor%',
+            icon : '%toggleOnIcon%'
+        },
+        toggleOff: {
+            label: '%toggleOffLabel%',
+            color: 'p-%toggleOffColor%',
+            icon : '%toggleOffIcon%'
+        }
+    });]]>
+        </js_code>
+    </default>
+</root>

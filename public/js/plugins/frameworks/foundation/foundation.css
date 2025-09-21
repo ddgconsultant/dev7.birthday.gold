@@ -1,0 +1,126 @@
+.alert-success {
+    background: #3adb76;
+    padding: 5px 15px;
+}
+
+.align-center div {
+    text-align: center;
+}
+
+.button.danger {
+    color: #fefefe;
+    background-color: #a53b2a;
+}
+
+.button.warning {
+    background-color: #e8af13;
+}
+
+.foundation-radio [class^='iradio'],
+.foundation-radio [class^='icheck'] {
+    margin-left: 0 !important;
+}
+
+.foundation-radio [class^='iradio'],
+.foundation-radio [class^='icheck'],
+div[class^='iradio'],
+div[class^='icheck'] {
+    margin-left: 0 !important;
+    margin-bottom: 7px;
+}
+
+.help-text {
+    width: 100%;
+}
+
+div[class^='iradio']+label {
+    display: inline-block;
+    padding-right: 20px;
+}
+
+.radio-inline,
+.checkbox-inline {
+    display: inline-flex;
+    align-items: baseline;
+}
+
+form .grid-margin-x>.cell .grid-padding-x .cell {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.has-addon-after select {
+    margin-bottom: 0;
+}
+
+.has-icheck .radio-inline,
+.has-icheck .checkbox-inline {
+    align-items: center;
+}
+
+.foundation-checkbox,
+.foundation-radio,
+.main-label,
+.checkbox-inline,
+.radio-inline,
+.checkbox-inline input,
+.radio-inline input {
+    margin-bottom: 7px !important;
+}
+
+.fv-plugins-foundation .cell>label,
+.fv-plugins-foundation .input-group {
+    position: relative;
+}
+
+.fv-plugins-foundation .fv-plugins-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fv-plugins-foundation label .fv-plugins-icon {
+    bottom: 0;
+    top: 1.55rem;
+}
+
+.fv-plugins-foundation label .fv-plugins-icon,
+.fv-plugins-foundation .input-group:not(.has-addon-after) .fv-plugins-icon {
+    right: 0 !important;
+}
+
+.input-group-label.fa {
+    display: flex;
+}
+
+.lcs_wrap~label {
+    display: inline-block;
+    margin-right: 1rem;
+}
+
+.lcs_wrap~.checkbox-inline,
+.lcs_wrap~.radio-inline {
+    align-self: center;
+}
+
+.main-label {
+    width: 100%;
+}
+
+.mce-tinymce.mce-panel {
+    margin-bottom: 14px !important;
+}
+
+.pretty {
+    width: 100%;
+    margin-bottom: 0.25em;
+}
+
+.pretty label {
+    line-height: 1;
+    font-size: .95rem;
+}
+
+.select2-container {
+    margin-bottom: 1rem !important;
+}

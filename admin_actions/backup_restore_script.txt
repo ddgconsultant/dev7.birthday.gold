@@ -1,0 +1,93 @@
+### backup_website.sh
+
+#!/bin/bash
+
+# Define the source and backup directories
+SOURCE_DIR="/var/www/PROQCS/www.proqcs.com"
+BACKUP_DIR="/var/www/PROQCS/backups"
+HASH_FILE="$BACKUP_DIR/last_backup_hash.txt"
+
+# Create a new hash of the source directory
+NEW_HASH=$(find $SOURCE_DIR -type f -exec md5sum {} \; | sort -k 2 | md5sum | cut -d' ' -f1)
+
+# Check if the hash file exists and read the previous hash
+if [ -f "$HASH_FILE" ]; then
+    PREV_HASH=$(cat $HASH_FILE)
+else
+    PREV_HASH=""
+fi
+
+# Compare the new hash with the previous hash
+if [ "$NEW_HASH" != "$PREV_HASH" ]; then
+    # The directory has changed, proceed with the backup
+
+    # Create a timestamped backup file name
+    BACKUP_FILE="www.proqcs.com-$(date +%Y-%m-%d_%H-%M-%S).tar.gz"
+
+    # Navigate to the backup directory
+    cd $BACKUP_DIR
+
+    # Compress the source directory and create the backup
+    tar -czf $BACKUP_FILE $SOURCE_DIR
+
+    # Update the hash file with the new hash
+    echo $NEW_HASH > $HASH_FILE
+
+
+	# Keep only the last 14 backups of www.proqcs.com*.tar.gz files
+	ls -1tr www.proqcs.com*.tar.gz | head -n -14 | xargs -d '\n' rm -f --
+
+
+    echo "Backup completed: $BACKUP_FILE"
+else
+    echo "No changes detected. No backup needed."
+fi
+
+
+
+################################################################################## end
+
+
+
+chmod +x backup_website.sh
+0 2 * * * /bin/bash /var/www/PROQCS/backups/backup_website.sh > /var/www/PROQCS/backups/backup.log 2>&1
+
+
+
+###  restore_website.sh
+#!/bin/bash
+
+# Prompt for the backup file name
+read -p "Enter the backup file name to restore (e.g., www.proqcs.com-2023-03-13_02-00-01.tar.gz): " BACKUP_FILE
+
+# Define the source and backup directories
+SOURCE_DIR="/var/www/PROQCS/www.proqcs.com"
+BACKUP_DIR="/var/www/PROQCS/backups"
+
+# Full path to the backup file
+BACKUP_PATH="$BACKUP_DIR/$BACKUP_FILE"
+
+# Check if the backup file exists
+if [ ! -f "$BACKUP_PATH" ]; then
+    echo "Backup file does not exist: $BACKUP_PATH"
+    exit 1
+fi
+
+# Confirm restoration
+read -p "Are you sure you want to restore $BACKUP_FILE? This will replace the current live folder. [y/N]: " CONFIRM
+if [[ $CONFIRM != [yY] ]]; then
+    echo "Restoration cancelled."
+    exit 0
+fi
+
+# Remove the current live folder
+rm -rf $SOURCE_DIR
+
+# Extract the backup
+tar -xzf $BACKUP_PATH -C $(dirname "$SOURCE_DIR")
+
+echo "Restoration completed from $BACKUP_FILE"
+
+################################################################################## end
+
+chmod +x restore_website.sh

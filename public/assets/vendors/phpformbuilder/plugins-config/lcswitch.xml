@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file>lcswitch/lc_switch.min.css</file>
+            </css>
+            <js>
+                <file>lcswitch/lc_switch.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[    if (typeof(phpfbLcswitch) == "undefined") {
+        window.phpfbLcswitch     = [];
+        window.lcswitchDataAttr  = [];
+    }
+
+    phpfbLcswitch["%selector%"] = document.querySelector("%selector%");
+    lcswitchDataAttr["%selector%"] = document.querySelector("%selector%").dataset;
+    lc_switch(phpfbLcswitch["%selector%"], {
+        on_txt      : lcswitchDataAttr["%selector%"].ontext === undefined?'On':lcswitchDataAttr["%selector%"].ontext,
+        off_txt     : lcswitchDataAttr["%selector%"].offtext === undefined?'Off':lcswitchDataAttr["%selector%"].offtext,
+        on_color    : lcswitchDataAttr["%selector%"].oncolor === undefined?null:lcswitchDataAttr["%selector%"].oncolor,
+        compact_mode: false
+    });
+]]>
+        </js_code>
+    </default>
+</root>

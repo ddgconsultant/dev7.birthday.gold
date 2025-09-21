@@ -1,0 +1,57 @@
+@startuml
+!theme bluegray
+
+package "Birthday.Gold" {
+package "Hostinger" {
+  package "Production Mail Service (@mybdaygold.com)" {
+  node "= March01 - KVM1\n=== Postfix Mail Server\n\n==== march01.bday.gold\n==== 178.16.140.199\n==== us-phx-pve-node129.hostinger.io\n==== PHX, United States\n====2023-11-20 - 2025-11-20\n\n==== = Ubuntu 22.04\n+ Postfix\n+ Dovecot\n+ PHP 8.2" as PM1
+    node "= March02 - KVM1\n=== Postfix Mail Server\n\n==== march02.bday.gold\n==== 217.196.51.179\n==== us-phx-pve-node215.hostinger.io\n==== PHX, United States\n====2024-02-03 - 2026-02-03\n\n===== Ubuntu 22.04\n+ Postfix\n+ Dovecot\n+ PHP 8.2" as PM2 
+    node "= March03 - KVM1\n=== Postfix Mail Server\n\n==== march03.bday.gold\n==== 77.243.85.216\n==== us-phx-pve-node302.hostinger.io\n==== PHX, United States\n====2024-04-19 - 2026-04-19\n\n===== Ubuntu 22.04\n+ Postfix\n+ Dovecot\n+ PHP 8.2" as PM3
+    node "= ##March04 - KVM1\n=== Postfix Mail Server\n\n===== Ubuntu 22.04\n+ Postfix\n+ Dovecot\n+ PHP 8.2" as PM4
+  }
+  node "= April21 - KVM4\n=== Production HAProxy Server\n\n==== april21.bday.gold\n==== 195.35.14.143\n==== us-phx-pve-node189.hostinger.io\n==== PHX, United States\n==== 2024-03-03 - 2026-03-03\n\n==== = Ubuntu 23.04 64bit\n+ HAProxy 2.4" as HPHPX21 #d8f1f2
+
+
+package "Production LAMP" {
+  node "= July02 - KVM8\n=== Production LAMP Stack\n\n==== july02.bday.gold\n==== 86.38.218.59\n==== us-phx-pve-node124.hostinger.io\n==== PHX, United States\n==== 2023-11-20 - 2025-11-20\n\n==== = Ubuntu 22.04 64bit\n+ Apache 2.4\n+ PHP 8.3\n+ MySQL 8 (ID: 702)\n\n---------------------\nwww.birthday.gold" as PLAMP2  #d8f2db
+  node "= July04 - KVM8\n=== Production LAMP Stack\n\n==== july04.bday.gold\n==== 178.16.140.230\n==== us-phx-pve-node161.hostinger.io\n==== PHX, United States\n==== 2024-03-03 - 2026-03-03\n\n==== = Ubuntu 22.04 64bit\n+ Apache 2.4\n+ PHP 8.3\n+ MySQL 8 (ID: 704)\n\n---------------------\nwww.birthday.gold" as PLAMP4  #d8f2db
+
+  node "= ##July06 - KVM8\n=== Production LAMP Stack\n\n==== july06.bday.gold\n\n==== = Ubuntu 22.04\n+ Apache 2.4\n+ PHP 8.3\n+ MySQL 8 (ID: 706)\n\n---------------------\nwww.birthday.gold" as PLAMP6  #d8f2db
+ 
+  database "= July02 - KVM8\n=== Production MySQL DB\n\n==== july02.bday.gold\n==== 86.38.218.59\n==== us-phx-pve-node124.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04\n+ Apache 2.4\n+ PHP 8.1\n+ MySQL 8 (ID: 702)" as PMYSQL30
+} 
+
+package "Production Subdomain" {
+  node "= June12 - KVM8\n=== Production Subdomain Services\n\n==== june12.bday.gold\n==== 178.16.140.200\n==== us-phx-pve-node131.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04 64bit\n+ Apache 2.4\n+ PHP 8.1\n\n---------------------\nw3.proqcs.com\nmonitoror.birthday.gold\nhelp.birthday.gold\nstatus.birthday.gold\nproject.birthday.gold\nswagger.birthday.gold" as PBGS12 #d8f2ea
+  node "= June14 - KVM8\n=== Production Subdomain Services\n\n==== june14.bday.gold\n\n==== 77.37.74.85\n==== us-phx-pve-node220.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04\n+ CloudPanel\n\n---------------------\nmaildoll.birthday.gold\nmaildoll.ddg.mx\nmaildoll.proqcs.com" as PBGS14 #d8f2ea
+  node "= June27 - KVM8\n=== Production Subdomain Docker Services\n\n==== june27.bday.gold\n\n==== 82.197.95.68\n==== us-phx-pve-node167.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04\n+ Docker\n\n---------------------\nchat.birthday.gold" as PBGS27 #d8f2ea
+ }
+
+package "Development Environment" {
+ node "= ##April01 - KVM1\n=== DEV HAProxy Server\n\n==== april01.bday.gold\n\n==== = Ubuntu 22.04\n+ HAProxy 2.4\n+ PHP 8.1" as HDHPX1
+  node "= May01 -> June01 - KVM4\n=== DEV LAMP STACK\n\n==== june01.bday.gold\n==== 195.35.11.8\n==== us-phx-pve-node190.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04 64bit\n+ Apache 2.4\n+ PHP 8.1\n\n---------------------\n-- trying e" as DBGS
+}
+}
+
+package "Data Design Group" {
+  node "= DDGDNS1 - Intel28/64\n===DNS\n\n==== september1.bday.gold\n==== 71.33.250.251\n==== DEN, United States\n\n==== = Windows Server 2022\n+ Simple DNS Plus\n+ Built in API" as DDNS
+  node "= DDGWEB2 - Intel28/64\n===WAMP Stack\n\n==== july01.bday.gold\n==== 71.33.250.239\n==== DEN, United States\n\n==== = Windows Server 2022\n+ Apache 2.4\n+ PHP 8.1\n+ FTP" as DWAPS
+  database "= DDGDATA8P - Intel28/64\n===MySQL Server\n\n==== may01.bday.gold\n==== 71.33.250.235\n==== DEN, United States\n\n==== = Windows Server 2022\n+ MySQL 8.0 (ID: 408)" as MDB2
+}
+}
+
+
+HPHPX21 ---> PBGS12 : $warning("SOURCE/ROUNDROBIN Load Balanced")
+HPHPX21 ---> PBGS14 : $warning("SOURCE/ROUNDROBIN Load Balanced")
+HPHPX21 ---> PBGS27 : $warning("SOURCE/ROUNDROBIN Load Balanced")
+HPHPX21 ---> PLAMP2 : $success("SOURCE Load Balanced")
+HPHPX21 ---> PLAMP4 : $success("SOURCE Load Balanced")
+HPHPX21 ---> PLAMP6 : $success("SOURCE Load Balanced")
+PM1 ---> PMYSQL30 : "MySQL Message Store"
+PM2 ---> PMYSQL30 : "MySQL Message Store"
+PM3 ---> PMYSQL30 : "MySQL Message Store"
+PMYSQL30 <--> MDB2 : "MySQL Primary-Primary Replication"
+DWAPS ---> PMYSQL30 : "Uses MySQL Data"
+PBGS12 ---> PMYSQL30 : "Uses MySQL Data"
+
+@enduml

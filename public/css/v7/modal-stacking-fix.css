@@ -1,0 +1,65 @@
+/* Modal Stacking Context Fix */
+/* Fix elements that might be creating problematic stacking contexts */
+
+/* Ensure body doesn't create a stacking context */
+body {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    position: static !important;
+}
+
+/* Ensure main containers don't create stacking contexts */
+main,
+#main-content,
+.container,
+.container-fluid {
+    transform: none !important;
+    filter: none !important;
+    will-change: auto !important;
+    position: static !important;
+    z-index: auto !important;
+}
+
+/* Modal and backdrop must be direct children of body */
+.modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 1060 !important;
+}
+
+.modal-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 1050 !important;
+}
+
+/* Specific fix for the problematic modal */
+#otherAccountsModal {
+    z-index: 99999 !important;
+}
+
+#otherAccountsModal.show {
+    z-index: 99999 !important;
+}
+
+/* Ensure no parent of modal has transform or filter */
+.modal-open {
+    transform: none !important;
+    filter: none !important;
+}
+
+/* Fix for any wrapper divs */
+div:has(> .modal),
+div:has(> .modal-backdrop) {
+    transform: none !important;
+    filter: none !important;
+    z-index: auto !important;
+    position: static !important;
+}

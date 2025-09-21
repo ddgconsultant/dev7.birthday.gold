@@ -1,0 +1,469 @@
+/* Main Content Container */
+.main-content {
+    max-width: 1200px; /* Increased from 800px */
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* Large screens - even wider */
+@media (min-width: 1400px) {
+    .main-content {
+        max-width: 1400px;
+    }
+}
+
+/* Social Login Section */
+.social-login-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.social-btn {
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-width: 2px;
+}
+
+.social-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.social-btn i {
+    font-size: 1.1rem;
+}
+
+/* Divider */
+.divider-container {
+    position: relative;
+    margin: 1.5rem 0;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #dee2e6;
+    margin: 0;
+}
+
+.divider-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #f8f9fa;
+    padding: 0 1rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Header Section */
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.header p {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Progress Container */
+.progress-container {
+    margin-bottom: 2.5rem;
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 1.5rem;
+    position: relative;
+    padding: 0 40px; /* More padding for better spacing */
+}
+
+/* Individual step container */
+.step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+}
+
+/* The connecting line between steps - using a different approach */
+.step-indicator:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 24px; /* Half of 48px icon height */
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: #dee2e6;
+    z-index: 0;
+}
+
+/* Green line for completed to next step */
+.step-indicator.completed:not(:last-child)::after {
+    background: #198754;
+}
+
+/* Icon wrapper with better styling */
+.step-indicator i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    background: white;
+    border-radius: 50%;
+    padding: 8px;
+    position: relative;
+    z-index: 2;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.step-indicator.completed i {
+    color: #198754;
+}
+
+.step-indicator.active i {
+    color: #198754;
+}
+
+.step-indicator:not(.completed):not(.active) i {
+    color: #dee2e6;
+}
+
+.step-indicator span {
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-align: center;
+}
+
+/* Plan Summary */
+.plan-summary {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f9ff 100%);
+    border: 1px solid #20c997;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.plan-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #198754;
+}
+
+/* Form Sections */
+.form-section {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* Form Controls */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
+
+/* Password Input Group */
+.password-input-group {
+    position: relative;
+    display: flex;
+}
+
+.password-input-group .form-control {
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.password-input-group .btn {
+    border: 2px solid #e9ecef;
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    background: white;
+    color: #6c757d;
+}
+
+.password-input-group .btn:hover {
+    background: #f8f9fa;
+}
+
+/* Password Strength Indicator */
+.password-strength {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0;
+    transition: all 0.3s ease;
+    background: #dc3545;
+}
+
+.strength-bar.weak {
+    width: 33%;
+    background: #dc3545;
+}
+
+.strength-bar.medium {
+    width: 66%;
+    background: #ffc107;
+}
+
+.strength-bar.strong {
+    width: 100%;
+    background: #198754;
+}
+
+/* Promo Code Section */
+.promo-input-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.promo-input-group .form-control {
+    flex: 1;
+}
+
+.promo-input-group .btn {
+    white-space: nowrap;
+}
+
+#promoMessage {
+    font-size: 0.875rem;
+}
+
+#promoMessage.text-success {
+    color: #198754 !important;
+}
+
+#promoMessage.text-danger {
+    color: #dc3545 !important;
+}
+
+/* Invalid Feedback */
+.form-control.is-invalid {
+    border-color: #dc3545;
+}
+
+.invalid-feedback {
+    display: none;
+    font-size: 0.875rem;
+    color: #dc3545;
+    margin-top: 0.25rem;
+}
+
+.form-control.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+/* Step Navigation */
+.step-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Buttons */
+.btn-primary-custom {
+    background: #198754;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-primary-custom:hover:not(:disabled) {
+    background: #157347;
+    transform: translateY(-1px);
+}
+
+.btn-primary-custom:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.btn-secondary-custom {
+    background: white;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-secondary-custom:hover {
+    background: #f8f9fa;
+    border-color: #6c757d;
+    color: #495057;
+    text-decoration: none;
+}
+
+/* Contact Method Toggle */
+.contact-toggle .btn-group {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.contact-toggle .btn {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+}
+
+.contact-toggle .btn-check:checked + .btn {
+    background: #198754;
+    color: white;
+    border-color: #198754;
+}
+
+/* Promo Code Collapsible */
+#togglePromo {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+#togglePromo:hover {
+    text-decoration: underline !important;
+}
+
+#togglePromo i {
+    transition: transform 0.2s ease;
+}
+
+#togglePromo.collapsed i {
+    transform: rotate(0deg);
+}
+
+#togglePromo:not(.collapsed) i {
+    transform: rotate(45deg);
+}
+
+/* Checkbox */
+.form-check {
+    padding-left: 1.5rem;
+}
+
+.form-check-input {
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-top: 0.25rem;
+    border: 2px solid #dee2e6;
+}
+
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.form-check-label {
+    margin-left: 0.5rem;
+    color: #495057;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-content {
+        margin: 1rem auto;
+    }
+    
+    .form-section {
+        padding: 1.5rem;
+    }
+    
+    .step-nav {
+        flex-direction: column;
+    }
+    
+    .btn-primary-custom,
+    .btn-secondary-custom {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .progress-steps span {
+        font-size: 0.75rem;
+    }
+    
+    .step-indicator i {
+        font-size: 1.5rem;
+    }
+}
+
+/* Loading States */
+.btn-loading {
+    position: relative;
+    color: transparent;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    top: 50%;
+    left: 50%;
+    margin-left: -0.5rem;
+    margin-top: -0.5rem;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spinner 0.8s linear infinite;
+}
+
+@keyframes spinner {
+    to { transform: rotate(360deg); }
+}

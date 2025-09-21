@@ -1,0 +1,53 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Read(/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/2025_cert/New Folder/**)",
+      "Bash(openssl x509:*)",
+      "Read(/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/2025_cert/**)",
+      "Bash(chmod:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(git push:*)",
+      "Bash(sed:*)",
+      "Bash(wget:*)",
+      "Bash(php -l:*)",
+      "Read(/mnt/w/BIRTHDAY_SERVER/m.bd.gold/**)",
+      "Bash(mysql:*)",
+      "Bash(php:*)",
+      "Bash(DOCUMENT_ROOT=/mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold php admin_actions/setup_business_ownership.php)",
+      "Read(/mnt/w/BIRTHDAY_SERVER/**)",
+      "Bash(export MYSQL_PWD=\"pr_cur3pYHYhcxgV\")",
+      "Bash(kill:*)",
+      "Read(//mnt/w/BIRTHDAY_SERVER/m.bd.gold/**)",
+      "Bash(DOCUMENT_ROOT=/mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold php admin_actions/add_cta_mode_column.php)",
+      "Bash(curl:*)",
+      "Bash(export MYSQL_PWD='pr_cur3pYHYhcxgV')",
+      "Read(//mnt/w/BIRTHDAY_SERVER/**)",
+      "Bash(GIT_AUTHOR_NAME=\"Claude Code\" GIT_AUTHOR_EMAIL=\"claudecode@ddg.mx\" git commit --no-verify -m \"Newsletter enhancements: Gen-specific messaging and improved preview\")",
+      "Bash(export MYSQL_HOST=\"71.33.250.235\")",
+      "Bash(export MYSQL_USER=\"claudecode\")",
+      "Bash(export MYSQL_DATABASE=\"birthday_gold_www\")",
+      "Bash(MYSQL_PWD=\"pr_cur3pYHYhcxgV\" mysql -h \"71.33.250.235\" -u \"claudecode\" \"birthday_gold_www\" -e \"SELECT user_birthmonth, COUNT(*) as count FROM bg_users WHERE is_test_account = 1 GROUP BY user_birthmonth ORDER BY user_birthmonth\")",
+      "Bash(MYSQL_PWD=\"pr_cur3pYHYhcxgV\" mysql -h \"71.33.250.235\" -u \"claudecode\" \"birthday_gold_www\" -e \"SHOW COLUMNS FROM bg_users LIKE ''%birth%''\")",
+      "Bash(MYSQL_PWD=\"pr_cur3pYHYhcxgV\" mysql -h \"71.33.250.235\" -u \"claudecode\" \"birthday_gold_www\" -e \"SHOW COLUMNS FROM bg_users LIKE ''%type%''\")",
+      "Bash(DOCUMENT_ROOT=/mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold php admin_actions/scheduler--mk-newsletter-queue-v2.php)",
+      "Bash(for i in 1 2 3)",
+      "Bash(done)",
+      "Bash(DOCUMENT_ROOT=/mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold php admin_actions/scheduler--mk-newsletter-personalizer.php)",
+      "Bash(export:*)",
+      "Bash(MYSQL_PWD=\"pr_cur3pYHYhcxgV\" mysql -h \"71.33.250.235\" -u \"claudecode\" \"birthday_gold_www\" -e \"DESCRIBE bg_companies\")",
+      "Bash(MYSQL_PWD=\"pr_cur3pYHYhcxgV\" mysql -h \"71.33.250.235\" -u \"claudecode\" \"birthday_gold_www\" -e \"SELECT status, sent_to, COUNT(*) as count FROM bg_user_notifications WHERE type = ''newsletter'' GROUP BY status, sent_to ORDER BY status, sent_to\")",
+      "Bash(MYSQL_PWD=\"pr_cur3pYHYhcxgV\" mysql -h \"71.33.250.235\" -u \"claudecode\" \"birthday_gold_www\" -e \"DESCRIBE mk_campaigns\")",
+      "Read(//mnt/**)",
+      "Bash(MYSQL_PWD=\"pr_cur3pYHYhcxgV\" mysql -h \"71.33.250.235\" -u \"claudecode\" \"birthday_gold_www\" -e \"SHOW COLUMNS FROM bg_users LIKE ''%login%''\")"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "/mnt/w/BIRTHDAY_SERVER/ENV_CONFIGS",
+      "/var/log/apache2"
+    ]
+  }
+}

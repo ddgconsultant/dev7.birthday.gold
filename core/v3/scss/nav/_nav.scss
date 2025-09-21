@@ -1,0 +1,291 @@
+.h-95vh {
+  height: 95vh;
+}
+.h-0 {
+  height: 0;
+}
+.bg-pink {
+  background-color: #ff6162;
+}
+#nav-logo:hover {
+  opacity: 0.8;
+}
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: Poppins, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+.custom-red {
+  color: #ff6162;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.custom-header-h {
+  height: 75.6px;
+  font-family: Poppins, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: 15px;
+  padding: 0 30px;
+}
+.custom-header-h img {
+  width: 127px;
+  height: 43px;
+}
+// .nav-links-container{
+//   padding-left: 8px;
+// }
+a.custom-links {
+  position: relative;
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 0px 0.7rem;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700 !important;
+}
+
+.custom-links.active {
+  background: #2f2c3c;
+  color: #ff6162;
+}
+
+.custom-links:hover {
+  background: #2f2c3c;
+}
+
+.custom-links::after {
+  position: absolute;
+  content: "";
+  display: block;
+  height: 2px;
+  width: 0%;
+  left: 0;
+  bottom: 0;
+  background: rgb(233, 14, 14);
+  transition: all 0.2s;
+}
+
+.custom-links:hover::after {
+  width: 100%;
+}
+#home-link:hover #custom-home-submenu {
+  display: flex;
+  opacity: 1;
+}
+
+div#custom-home-submenu,
+div#custom-pages-links {
+  position: absolute;
+  left: 0;
+  top: 110%;
+  width: 200px;
+  border-radius: 5px;
+  padding: 4px;
+  flex-direction: column;
+  gap: 2px;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: #2f2c3c;
+  height: fit-content;
+}
+#custom-pages-links {
+  bottom: -200px;
+  height: 140px;
+}
+#pages-link-menu:hover #custom-pages-links {
+  opacity: 1;
+  display: flex;
+}
+div#custom-home-submenu a,
+div#custom-pages-links a {
+  width: 100%;
+  font-size: 0.95em;
+  border-radius: 5px;
+  text-decoration: none;
+  color: white;
+  padding: 6px 2px !important;
+  transition: all 0.3s;
+}
+#custom-home-submenu a:hover,
+#custom-pages-links a:hover {
+  background: white;
+  color: #2f2c3c;
+}
+
+.custom-community-link:hover #community-link-menu {
+  opacity: 1;
+  // z-index: 1;
+  display: flex !important;
+}
+
+#community-link-menu {
+  // z-index: -1000;
+  position: absolute;
+  left: 0;
+  top: 110%;
+  width: 700px;
+  overflow: hidden;
+  border-radius: 5px;
+  // padding-bottom: 30px;
+  background: linear-gradient(90deg, #2f2c3c 70%, transparent 90%),
+    url("../Images/anthony-delanoix-15928-700x400.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  display: none !important;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#community-link-menu h6 {
+  font-size: 13px;
+  font-weight: 600;
+  color: gray;
+}
+#community-link-menu li {
+  line-height: 1;
+  font-size: 0.95em;
+  font-weight: 400;
+  letter-spacing: 0px;
+}
+#community-link-menu .custom-col {
+  // border: 2px solid red;
+  width: 30%;
+  padding: 20px 4px;
+}
+#community-link-menu a {
+  color: white;
+  transition: all 0.3s;
+}
+#community-link-menu a:hover {
+  color: #2f2c3c;
+  background: white;
+}
+.custom-bg-purple {
+  background: #3b354d;
+}
+
+button.custom-btn-login {
+  border: 2px solid #ffffff33;
+  background-color: transparent;
+  color: white;
+  padding: 0.1rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+button.custom-btn-login:hover {
+  border-color: white;
+  color: white;
+}
+#nav-toggler {
+  gap: 4.5px;
+  transition: all 0.3s;
+}
+#nav-toggler span {
+  height: 3px;
+  width: 28px;
+  border-radius: 20px;
+  display: block;
+  background: white;
+  transition: all 0.3s;
+}
+#nav-toggler.toggled {
+  transform: rotate(45deg);
+}
+#nav-toggler.toggled span:nth-child(1) {
+  transform: translateY(7.5px) rotate(90deg);
+  transform-origin: center;
+}
+#nav-toggler.toggled span:nth-child(2) {
+  transform-origin: center;
+}
+#nav-toggler.toggled span:nth-child(3) {
+  display: none;
+}
+#nav-toggler span:nth-child(3) {
+  width: 20px;
+}
+
+.custom-sub-menu {
+  overflow: hidden;
+  transition: all 0.5s;
+}
+.custom-menu-scroller {
+  height: 95vh;
+  padding-bottom: 100px;
+  overflow-y: scroll;
+}
+.custom-sub-menu-links.main {
+  font-weight: 700;
+  margin: 10px 0;
+}
+.custom-sub-menu-links {
+  color: white;
+  text-decoration: none;
+  display: block;
+  padding: 5px;
+  width: 100%;
+}
+
+/* Webkit-based browsers */
+.custom-menu-scroller::-webkit-scrollbar {
+  width: 30px;
+  height: 12px;
+}
+
+.custom-menu-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-menu-scroller::-webkit-scrollbar-thumb {
+  background: #2f2c3c;
+  border-radius: 40px;
+  width: 30px;
+}
+
+.custom-menu-scroller::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Firefox */
+.custom-menu-scroller {
+  scrollbar-width: auto;
+  scrollbar-color: #2f2c3c transparent;
+}
+
+@media screen and (max-width: 1200px) {
+  #community-link-menu {
+    left: -20vh;
+  }
+}
+@media screen and (max-width: 991px) {
+  .custom-header-h {
+    height: 64.36px;
+    padding: 6.75px 15px;
+  }
+  .custom-header-h img {
+    width: 118px;
+    height: 39px;
+  }
+}
+@media screen and (max-width: 769px) {
+  .custom-header-h {
+    height: 64.36px;
+    padding: 6.75px 15px;
+  }
+  .custom-header-h img {
+    width: 118px;
+    height: 39px;
+  }
+}

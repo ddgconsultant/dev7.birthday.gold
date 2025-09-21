@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <default>
+        <includes>
+            <!--
+                Path to css and js files into plugins folder.
+                If your files are not in plugins folder, use absolute paths.
+            -->
+            <css>
+                <file>signature-pad/signature_pad.min.css</file>
+            </css>
+            <js>
+                <file>signature-pad/signature_pad.min.js</file>
+            </js>
+        </includes>
+        <js_code><![CDATA[   if (typeof(phpfbSignPads) == "undefined") {
+        window.phpfbSignPads = [];
+        window.resizeSignatures = function() {
+            let ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            let signatures = document.querySelectorAll('.signature-pad-canvas');
+            signatures.forEach(item => {
+                if (item.getAttribute('data-percent-width')) {
+                    let percent = item.getAttribute('data-percent-width') / 100;
+                    item.style.width = item.parentNode.offsetWidth * percent + 'px';
+                }
+                item.width = item.offsetWidth * ratio;
+                item.height = item.offsetHeight * ratio;
+                item.getContext("2d").scale(ratio, ratio);
+            });
+            window.phpfbSignPads.forEach(function(el) {
+                el.clear();
+            })
+        };
+        window.addEventListener('resize', resizeSignatures);
+    }
+
+    let inputName = document.querySelector("%selector%").getAttribute('name'),
+        dataAttr             = document.querySelector("%selector%").dataset,
+        dataWidth            = dataAttr.width === undefined?'100%':dataAttr.width,
+        dataHeight           = dataAttr.height === undefined?200:dataAttr.height,
+        dataBackgroundColor  = dataAttr.backgroundColor === undefined?'rgba(255, 255, 255, 0)':dataAttr.backgroundColor,
+        dataPenColor         = dataAttr.penColor === undefined?'rgb(0, 0, 0)':dataAttr.penColor,
+        dataClearButton      = dataAttr.clearButton === undefined?false:dataAttr.clearButton === 'true',
+        dataClearButtonClass = dataAttr.clearButtonClass === undefined?'':dataAttr.clearButtonClass,
+        dataClearButtonText  = dataAttr.clearButtonText === undefined?'clear':dataAttr.clearButtonText;
+
+    document.querySelector("%selector%-canvas").height = dataHeight;
+    document.querySelector("%selector%-canvas").style.height = dataHeight+ 'px';
+
+    if (!isNaN(dataWidth)) {
+        document.querySelector("%selector%-canvas").width = dataWidth;
+        document.querySelector("%selector%-canvas").style.width = dataWidth + 'px';
+    } else {
+        // if percent
+        document.querySelector("%selector%-canvas").setAttribute('data-percent-width', dataWidth.replace('%', ''));
+    }
+
+    resizeSignatures();
+
+    let signaturePad = new SignaturePad(document.querySelector("%selector%-canvas"), {
+        backgroundColor: dataBackgroundColor,
+        penColor: dataPenColor,
+        onEnd: function() {
+            let data = signaturePad.toDataURL('image/png');
+            document.querySelector("%selector%").value = data;
+        }
+    });
+
+    window.phpfbSignPads["%selector%"] = signaturePad;
+
+    if (dataClearButton == true) {
+        let $clearButton = document.createElement('button');
+        dataClearButtonClass.split(' ').forEach(cl => {
+            $clearButton.classList.add(cl);
+        });
+        $clearButton.classList.add('sign-pad-btn');
+        $clearButton.textContent = dataClearButtonText;
+
+        document.querySelector("%selector%-canvas").insertAdjacentElement('afterend', $clearButton);
+
+        $clearButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector("%selector%").value = '';
+            window.phpfbSignPads["%selector%"].clear();
+            return false;
+        });
+    }
+
+]]>
+        </js_code>
+    </default>
+</root>

@@ -1,0 +1,58 @@
+.ss-main .placeholder {
+    line-height: 1.25rem !important;
+    cursor: pointer !important;
+}
+
+.ss-main .ss-single-selected,
+.ss-main .ss-multi-selected {
+    padding: 0;
+    border: none;
+    background: transparent;
+    height: auto;
+}
+
+.is-valid~.ss-main .ss-arrow,
+.is-invalid~.ss-main .ss-arrow,
+.is-valid~.ss-main .ss-add,
+.is-invalid~.ss-main .ss-add {
+    display: none !important;
+}
+
+.ss-main .ss-single-selected .placeholder .ss-disabled {
+    color: #aaa !important;
+}
+
+.ss-option.flag {
+    padding-bottom: 0 !important;
+    padding-left: 42px !important;
+    padding-top: 0 !important;
+}
+
+select[data-slimselect="true"]:disabled~.ss-main {
+    background-color: #e9ecef;
+}
+
+select[data-slimselect="true"]:disabled~.ss-main .ss-deselect {
+    display: none;
+}
+
+.ss-main .ss-single-selected.ss-disabled {
+    background: transparent;
+}
+
+.icon.is-left~div.flex>.ss-main>.ss-single-selected,
+.icon.is-left~div.flex>.ss-main>.ss-multi-selected {
+    padding-left: 1.5rem;
+}
+
+.icon.is-right~div.flex>.ss-main>.ss-single-selected,
+.icon.is-right~div.flex>.ss-main>.ss-multi-selected,
+.icon.is-right~div.flex>.ss-main>select,
+select.has-icon-after,
+.has-icon-after~.ss-main .ss-single-selected {
+    padding-right: 1.5rem;
+}
+
+.icon.is-left~.ss-main {
+    padding-left: 2.5rem;
+}

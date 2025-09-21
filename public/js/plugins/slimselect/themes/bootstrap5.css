@@ -1,0 +1,74 @@
+.form-select.ss-main {
+    padding-top: .375rem;
+    padding-bottom: .375rem;
+    background-image: none;
+}
+.form-select.form-select-sm.ss-main {
+    padding-top: 0.3125rem;
+    padding-bottom: 0.3125rem;
+}
+
+.form-select.ss-main .ss-arrow {
+    position: absolute;
+    right: 10px;
+    top: calc(50% - 2.5px);
+}
+
+.form-select.ss-main .ss-single-selected,
+.form-select.ss-main .ss-multi-selected {
+    border: none !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 1.5em;
+}
+
+.form-select.ss-main.fv-plugins-icon-input.is-valid,
+.form-select.ss-main.fv-plugins-icon-input.is-invalid {
+    padding-right: 2.25rem !important;
+}
+
+.ss-main .placeholder {
+    cursor: pointer !important;
+    line-height: 1.5 !important;
+}
+
+.ss-main .ss-single-selected .placeholder .ss-disabled {
+    color: #aaa !important;
+}
+
+.ss-option.flag {
+    padding-bottom: 0 !important;
+    padding-left: 42px !important;
+    padding-top: 0 !important;
+}
+
+.ss-single-selected .placeholder {
+    background: transparent;
+    opacity: 1;
+}
+
+.ss-main.form-control .ss-single-selected,
+.ss-main.form-control .ss-multi-selected {
+    width: calc(100% + 1.5rem);
+    border: none !important;
+    margin: -0.375rem -.75rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+}
+
+select[data-slimselect="true"]:disabled~.ss-main {
+    background-color: #e9ecef;
+}
+
+select[data-slimselect="true"]:disabled~.ss-main .ss-deselect {
+    display: none;
+}
+
+.ss-main .ss-single-selected.ss-disabled {
+    background: transparent;
+}
+
+select[data-allow-deselect="true"] ~ .ss-main .ss-single-selected .placeholder {
+    flex: 0 1 auto !important;
+    width: calc(100% - 50px) !important;
+}
