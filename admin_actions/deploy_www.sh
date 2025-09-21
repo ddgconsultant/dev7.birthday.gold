@@ -4,14 +4,16 @@
 source_subdomain="dev4"
 source_version="v2"
 config_only=false
+ssl_only=false
 
 # Function to show usage
 show_usage() {
-  echo "Usage: $0 [-s source_subdomain] [-c] [source_subdomain]"
+  echo "Usage: $0 [-s source_subdomain] [-c] [-ssl] [source_subdomain]"
   echo ""
   echo "Options:"
   echo "  -s SOURCE    Specify source subdomain (e.g., dev4, dev7)"
   echo "  -c           Config-only mode: sync deploy_www.sh and ENV_CONFIG files only"
+  echo "  -ssl         SSL-only mode: check and update SSL certificates only"
   echo "  -h           Show this help message"
   echo ""
   echo "Examples:"
@@ -19,9 +21,15 @@ show_usage() {
   echo "  $0 -s dev7      # Full deployment from dev7"
   echo "  $0 -c           # Only sync config files and deploy script"
   echo "  $0 -c -s dev7   # Only sync config files from dev7"
+  echo "  $0 -ssl         # Only check and update SSL certificates"
 }
 
-# Parse command-line options
+# Parse command-line options - handle -ssl specially since it starts with 's'
+if [[ "$1" == "-ssl" ]]; then
+    ssl_only=true
+    shift
+fi
+
 while getopts ":s:ch" opt; do
   case $opt in
     s)
@@ -60,6 +68,114 @@ fi
 if [ "$(id -u)" -ne 0 ]; then
     echo "This script must be run as root" >&2
     exit 1
+fi
+
+# SSL Certificate Management Function
+##########################################################
+manage_ssl_certificates() {
+    echo "=========================================="
+    echo "SSL CERTIFICATE MANAGEMENT"
+    echo "Date: $(date)"
+    echo "=========================================="
+    echo ""
+
+    # Define certificate paths
+    CERT_SOURCE_DIR="/mnt/w/BIRTHDAY_SERVER/_CERTS_/birthday.gold/2025_cert"
+    CERT_DEST_DIR="/var/web_certs/BIRTHDAY_SERVER/birthday.gold"
+
+    # Expected SHA1 checksums for 2025 certificates (update these when certs change)
+    EXPECTED_CHAINED_SHA1="eb84bb1e2dd085bbdeb863432599e59dfd9cf3ea"
+    EXPECTED_KEY_SHA1="b7343e7d0cf08db902fd1d8d305765c6e177e8ea"
+
+    # Check if source directory exists
+    if [ ! -d "$CERT_SOURCE_DIR" ]; then
+        echo "ERROR: Source certificate directory not found: $CERT_SOURCE_DIR"
+        return 1
+    fi
+
+    # Check if source files exist
+    if [ ! -f "$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt" ] || [ ! -f "$CERT_SOURCE_DIR/star.birthday.gold.key" ]; then
+        echo "ERROR: Required certificate files not found in $CERT_SOURCE_DIR"
+        echo "Expected: STAR_birthday_gold_chained.crt and star.birthday.gold.key"
+        return 1
+    fi
+
+    # Verify source file checksums
+    echo "Verifying source certificate checksums..."
+    source_chained_sha1=$(sha1sum "$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt" 2>/dev/null | awk '{ print $1 }')
+    source_key_sha1=$(sha1sum "$CERT_SOURCE_DIR/star.birthday.gold.key" 2>/dev/null | awk '{ print $1 }')
+
+    if [ "$source_chained_sha1" != "$EXPECTED_CHAINED_SHA1" ] || [ "$source_key_sha1" != "$EXPECTED_KEY_SHA1" ]; then
+        echo "WARNING: Source certificate checksums do not match expected values!"
+        echo "  Expected chained cert SHA1: $EXPECTED_CHAINED_SHA1"
+        echo "  Found chained cert SHA1:    $source_chained_sha1"
+        echo "  Expected key SHA1:          $EXPECTED_KEY_SHA1"
+        echo "  Found key SHA1:             $source_key_sha1"
+        echo ""
+        echo "This might indicate newer certificates are available."
+        echo "Proceeding with deployment of current certificates..."
+    else
+        echo "Source certificate checksums verified successfully."
+    fi
+
+    # Create destination directory structure if it doesn't exist
+    echo "Ensuring destination directory exists: $CERT_DEST_DIR"
+    mkdir -p "$CERT_DEST_DIR"
+
+    # Set proper permissions on parent directories
+    chmod 750 /var/web_certs 2>/dev/null
+    chmod 750 /var/web_certs/BIRTHDAY_SERVER 2>/dev/null
+    chmod 750 "$CERT_DEST_DIR"
+
+    # Copy certificate files to destination
+    echo "Copying certificate files to $CERT_DEST_DIR..."
+    cp "$CERT_SOURCE_DIR/STAR_birthday_gold_chained.crt" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+    cp "$CERT_SOURCE_DIR/star.birthday.gold.key" "$CERT_DEST_DIR/server.key"
+
+    # Set proper ownership and permissions
+    chown www-data:www-data "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+    chown www-data:www-data "$CERT_DEST_DIR/server.key"
+    chmod 644 "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
+    chmod 640 "$CERT_DEST_DIR/server.key"
+
+    # Create combined PEM file
+    echo "Creating combined PEM file..."
+    cat "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt" \
+        "$CERT_DEST_DIR/server.key" \
+        > "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+
+    # Set proper ownership and permissions for combined file
+    chown www-data:www-data "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+    chmod 640 "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+
+    # Verify the combined file was created successfully
+    if [ -f "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem" ]; then
+        echo "Combined PEM file created successfully."
+
+        # Show certificate expiry information
+        echo ""
+        echo "Certificate Information:"
+        openssl x509 -in "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt" -noout -subject -enddate 2>/dev/null || echo "Could not read certificate info"
+    else
+        echo "ERROR: Failed to create combined PEM file!"
+        return 1
+    fi
+
+    # List the final certificate files
+    echo ""
+    echo "Certificate files in $CERT_DEST_DIR:"
+    ls -la "$CERT_DEST_DIR"
+
+    echo ""
+    echo "SSL certificate management completed successfully."
+    return 0
+}
+
+# SSL-ONLY MODE
+##########################################################
+if [ "$ssl_only" = true ]; then
+    manage_ssl_certificates
+    exit $?
 fi
 
 # Define unified variable names
@@ -186,6 +302,16 @@ cd /var/www/BIRTHDAY_SERVER || exit
 chown -R www-data:www-data "${pathprefix}${subdomain}.birthday.gold"
 
 echo "Deployment Completed Successfully."
+
+# SSL Certificate Management - Run during full deployment
+##########################################################
+echo ""
+echo "Checking and updating SSL certificates..."
+manage_ssl_certificates
+ssl_result=$?
+if [ $ssl_result -ne 0 ]; then
+    echo "WARNING: SSL certificate update failed. Continuing with deployment..."
+fi
 
 # Post Deployment Validation
 ##########################################################

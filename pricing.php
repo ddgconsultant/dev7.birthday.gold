@@ -13,8 +13,8 @@ $pagedata['metadescriptions'] = 'Choose the perfect Birthday.Gold plan for you. 
 global $website;
 $selectedVersion = $_REQUEST['version'] ?? $website['plan_version'];
 
-// Default to individual account type
-$selectedAccountType = $_REQUEST['account_type'] ?? 'individual';
+// Default to user account type (main individual account type)
+$selectedAccountType = $_REQUEST['account_type'] ?? 'user';
 
 // Get all available plans regardless of account type
 $availablePlans = $productmanager->getAllProductsWithFeatures($selectedVersion);
