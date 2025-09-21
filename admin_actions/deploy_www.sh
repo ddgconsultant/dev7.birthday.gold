@@ -133,8 +133,15 @@ manage_ssl_certificates() {
             return 1
         fi
 
-        # Define files we need to fetch
-        cert_files=("STAR_birthday_gold.crt" "star.birthday.gold.key")
+        # Define files we need to fetch - matching Apache config requirements
+        cert_files=(
+            "STAR_birthday_gold.crt"
+            "star.birthday.gold.key"
+            "SectigoRSADomainValidationSecureServerCA.crt"
+            "USERTrustRSAAAACA.crt"
+            "AAACertificateServices.crt"
+            "STAR_birthday_gold_combined.pem"
+        )
 
         # Check and fetch each certificate file if needed
         for cert_file in "${cert_files[@]}"; do
@@ -189,12 +196,20 @@ manage_ssl_certificates() {
             fi
         done
 
-        # Rename files to expected names
-        if [ -f "$CERT_DEST_DIR/STAR_birthday_gold.crt" ]; then
-            cp "$CERT_DEST_DIR/STAR_birthday_gold.crt" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
-        fi
+        # Only rename the key file to match Apache config
         if [ -f "$CERT_DEST_DIR/star.birthday.gold.key" ]; then
             cp "$CERT_DEST_DIR/star.birthday.gold.key" "$CERT_DEST_DIR/server.key"
+            echo "  Created server.key from star.birthday.gold.key"
+        fi
+
+        # If combined PEM doesn't exist, create it from cert + key
+        if [ ! -f "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem" ] &&
+           [ -f "$CERT_DEST_DIR/STAR_birthday_gold.crt" ] &&
+           [ -f "$CERT_DEST_DIR/server.key" ]; then
+            echo "Creating combined PEM file for AI/curl requests..."
+            cat "$CERT_DEST_DIR/STAR_birthday_gold.crt" \
+                "$CERT_DEST_DIR/server.key" \
+                > "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
         fi
 
     else
@@ -226,33 +241,41 @@ manage_ssl_certificates() {
         # Copy certificate files to destination
         echo "Copying certificate files to $CERT_DEST_DIR..."
 
-        if [ "$CERT_TYPE" = "combined" ]; then
-            cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
-            cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
-        else
-            cp "$CERT_FILE" "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
-        fi
-
+        # Copy all certificate files with proper names
+        cp "$CERT_SOURCE_DIR/STAR_birthday_gold.crt" "$CERT_DEST_DIR/STAR_birthday_gold.crt" 2>/dev/null
         cp "$CERT_SOURCE_DIR/star.birthday.gold.key" "$CERT_DEST_DIR/server.key"
+        cp "$CERT_SOURCE_DIR/SectigoRSADomainValidationSecureServerCA.crt" "$CERT_DEST_DIR/SectigoRSADomainValidationSecureServerCA.crt" 2>/dev/null
+        cp "$CERT_SOURCE_DIR/USERTrustRSAAAACA.crt" "$CERT_DEST_DIR/USERTrustRSAAAACA.crt" 2>/dev/null
+        cp "$CERT_SOURCE_DIR/AAACertificateServices.crt" "$CERT_DEST_DIR/AAACertificateServices.crt" 2>/dev/null
+
+        # Copy or create combined PEM
+        if [ -f "$CERT_SOURCE_DIR/STAR_birthday_gold_combined.pem" ]; then
+            cp "$CERT_SOURCE_DIR/STAR_birthday_gold_combined.pem" "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+        elif [ -f "$CERT_DEST_DIR/STAR_birthday_gold.crt" ] && [ -f "$CERT_DEST_DIR/server.key" ]; then
+            cat "$CERT_DEST_DIR/STAR_birthday_gold.crt" \
+                "$CERT_DEST_DIR/server.key" \
+                > "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+        fi
     fi
 
-    # Set proper ownership and permissions
-    chown www-data:www-data "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
-    chown www-data:www-data "$CERT_DEST_DIR/server.key"
-    chmod 644 "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt"
-    chmod 640 "$CERT_DEST_DIR/server.key"
+    # Set proper ownership and permissions for all certificate files
+    echo "Setting file permissions..."
 
-    # Create combined PEM file if not already present
-    if [ "$CERT_TYPE" != "combined" ]; then
-        echo "Creating combined PEM file..."
-        cat "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt" \
-            "$CERT_DEST_DIR/server.key" \
-            > "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
-    fi
+    # Set permissions for all certificate files (readable by all)
+    for cert_file in STAR_birthday_gold.crt SectigoRSADomainValidationSecureServerCA.crt USERTrustRSAAAACA.crt AAACertificateServices.crt; do
+        if [ -f "$CERT_DEST_DIR/$cert_file" ]; then
+            chown www-data:www-data "$CERT_DEST_DIR/$cert_file"
+            chmod 644 "$CERT_DEST_DIR/$cert_file"
+        fi
+    done
 
-    # Set proper ownership and permissions for combined file
-    chown www-data:www-data "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
-    chmod 640 "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+    # Set restrictive permissions for key and combined PEM (owner/group only)
+    for secure_file in server.key STAR_birthday_gold_combined.pem; do
+        if [ -f "$CERT_DEST_DIR/$secure_file" ]; then
+            chown www-data:www-data "$CERT_DEST_DIR/$secure_file"
+            chmod 640 "$CERT_DEST_DIR/$secure_file"
+        fi
+    done
 
     # Verify the combined file was created successfully
     if [ -f "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem" ]; then

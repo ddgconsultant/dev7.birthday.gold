@@ -20,14 +20,14 @@ if (!$cert_base_dir || !is_dir($cert_base_dir)) {
     die(json_encode(['status' => 'error', 'message' => 'Certificate directory not found']));
 }
 
-// Certificate files we serve
+// Certificate files we serve - must match Apache config requirements
 $cert_files = [
-    'STAR_birthday_gold.crt',
-    'STAR_birthday_gold_chained.crt',
-    'STAR_birthday_gold_combined.pem',
-    'star.birthday.gold.key',
-    'SectigoRSADomainValidationSecureServerCA.crt',
-    'USERTrustRSAAAACA.crt'
+    'STAR_birthday_gold.crt',                          // Main certificate
+    'star.birthday.gold.key',                          // Private key (becomes server.key)
+    'SectigoRSADomainValidationSecureServerCA.crt',    // Chain file
+    'USERTrustRSAAAACA.crt',                          // CA certificate
+    'AAACertificateServices.crt',                      // Additional CA
+    'STAR_birthday_gold_combined.pem'                  // Combined PEM for AI/curl
 ];
 
 // Handle different actions
