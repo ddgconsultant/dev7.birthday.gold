@@ -1,2 +1,0 @@
-ALTER TABLE emails ADD attachments TEXT NULL DEFAULT NULL;
-ALTER TABLE emails ADD is_embed_images TINYINT(1) NOT NULL DEFAULT 0;
