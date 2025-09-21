@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Default values
-source_subdomain="dev7"
+source_subdomain="dev"
 source_version="v3"
 config_only=false
 ssl_only=false
@@ -17,11 +17,11 @@ show_usage() {
   echo "  -h           Show this help message"
   echo ""
   echo "Examples:"
-  echo "  $0              # Full deployment from dev7"
-  echo "  $0 -s dev4      # Full deployment from dev4"
-  echo "  $0 -c           # Only sync config files and deploy script"
-  echo "  $0 -c -s dev4   # Only sync config files from dev4"
-  echo "  $0 -ssl         # Only check and update SSL certificates from dev7"
+  echo "  $0              # Full deployment from dev.birthday.gold"
+  echo "  $0 -s dev7      # Full deployment from specific dev7 server"
+  echo "  $0 -c           # Only sync config files and deploy script from dev"
+  echo "  $0 -c -s dev7   # Only sync config files from specific dev7"
+  echo "  $0 -ssl         # Only check and update SSL certificates from dev"
 }
 
 # Parse command-line options - handle -ssl specially since it starts with 's'
