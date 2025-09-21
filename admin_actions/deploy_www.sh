@@ -199,6 +199,9 @@ manage_ssl_certificates() {
         # Only rename the key file to match Apache config
         if [ -f "$CERT_DEST_DIR/star.birthday.gold.key" ]; then
             cp "$CERT_DEST_DIR/star.birthday.gold.key" "$CERT_DEST_DIR/server.key"
+            # Fix ownership of the original key file too
+            chown www-data:www-data "$CERT_DEST_DIR/star.birthday.gold.key"
+            chmod 640 "$CERT_DEST_DIR/star.birthday.gold.key"
             echo "  Created server.key from star.birthday.gold.key"
         fi
 
@@ -284,7 +287,7 @@ manage_ssl_certificates() {
         # Show certificate expiry information
         echo ""
         echo "Certificate Information:"
-        openssl x509 -in "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt" -noout -subject -enddate 2>/dev/null || echo "Could not read certificate info"
+        openssl x509 -in "$CERT_DEST_DIR/STAR_birthday_gold.crt" -noout -subject -enddate 2>/dev/null || echo "Could not read certificate info from STAR_birthday_gold.crt"
     else
         echo "ERROR: Failed to create combined PEM file!"
         return 1
