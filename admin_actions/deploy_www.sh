@@ -256,7 +256,7 @@ manage_ssl_certificates() {
                 "$CERT_DEST_DIR/server.key" \
                 > "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
         fi
-    fi
+    fi  # End of USE_PHP_ENDPOINT check
 
     # Set proper ownership and permissions for all certificate files
     echo "Setting file permissions..."
