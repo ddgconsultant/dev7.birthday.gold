@@ -267,7 +267,7 @@ let imageObserver; // Declare at higher scope for reuse
 let spinnerTimeout; // Declare for spinner delay
 
 document.addEventListener("DOMContentLoaded", function() {
-    // Load all initial images immediately (they're already part of the initial 32)
+    // Load all initial images immediately (they are already part of the initial 32)
     const lazyImages = document.querySelectorAll("img[data-src]");
     console.log("Found " + lazyImages.length + " images with data-src to load immediately");
 
