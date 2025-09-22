@@ -267,35 +267,17 @@ let imageObserver; // Declare at higher scope for reuse
 let spinnerTimeout; // Declare for spinner delay
 
 document.addEventListener("DOMContentLoaded", function() {
-    // Check if native lazy loading is supported
-    if ("loading" in HTMLImageElement.prototype) {
-        // Native lazy loading is supported, just load data-src images
-        const lazyImages = document.querySelectorAll("img[data-src]");
-        lazyImages.forEach(img => {
+    // Load all initial images immediately (they're already part of the initial 32)
+    const lazyImages = document.querySelectorAll("img[data-src]");
+    console.log("Found " + lazyImages.length + " images with data-src to load immediately");
+
+    lazyImages.forEach(img => {
+        if (img.dataset.src) {
             img.src = img.dataset.src;
             img.removeAttribute("data-src");
-        });
-    } else {
-        // Fallback for browsers that do not support native lazy loading
-        const lazyImages = document.querySelectorAll("img[data-src]");
-        imageObserver = new IntersectionObserver(function(entries, observer) {
-            entries.forEach(function(entry) {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    img.src = img.dataset.src;
-                    img.removeAttribute("data-src");
-                    img.classList.add("loaded");
-                    imageObserver.unobserve(img);
-                }
-            });
-        }, {
-            rootMargin: "50px 0px" // Start loading 50px before the image enters viewport
-        });
-
-        lazyImages.forEach(function(img) {
-            imageObserver.observe(img);
-        });
-    }
+            img.classList.add("loaded");
+        }
+    });
     
     // Infinite scroll implementation
     function loadMoreCompanies() {
@@ -326,18 +308,16 @@ document.addEventListener("DOMContentLoaded", function() {
                     gallery.appendChild(tempDiv.firstChild);
                 }
                 
-                // Update lazy loading for new images
-                const newLazyImages = gallery.querySelectorAll("img[data-src]:not(.loaded)");
-                if ("loading" in HTMLImageElement.prototype) {
-                    newLazyImages.forEach(img => {
+                // Load all new images immediately
+                const newLazyImages = gallery.querySelectorAll("img[data-src]");
+                console.log("Found " + newLazyImages.length + " new images to load");
+                newLazyImages.forEach(img => {
+                    if (img.dataset.src) {
                         img.src = img.dataset.src;
                         img.removeAttribute("data-src");
-                    });
-                } else if (typeof imageObserver !== "undefined") {
-                    newLazyImages.forEach(img => {
-                        imageObserver.observe(img);
-                    });
-                }
+                        img.classList.add("loaded");
+                    }
+                });
                 
                 currentOffset += data.loaded;
                 totalLoaded = data.totalLoaded || currentOffset;
