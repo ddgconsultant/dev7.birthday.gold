@@ -349,13 +349,13 @@ document.addEventListener("DOMContentLoaded", function() {
                     if (data.maxReached || totalLoaded >= maxCompanies) {
                         <?php if ($account->isactive()) { ?>
                         endMessage.innerHTML = `<div class="text-center mx-auto mb-5">
-                            <p class="text-muted">Showing first ${maxCompanies} <?php echo $website['biznames']; ?>.</p>
-                            <a href="/enrollment-picker" class="btn btn-primary btn-lg mt-3" style="border-radius: 50px; padding: 12px 32px;">Pick From All <?php echo ucfirst($website['biznames']); ?></a>
+                            <p class="text-muted">Showing first ${maxCompanies} <?php echo $website["biznames"]; ?>.</p>
+                            <a href="/enrollment-picker" class="btn btn-primary btn-lg mt-3" style="border-radius: 50px; padding: 12px 32px;">Pick From All <?php echo ucfirst($website["biznames"]); ?></a>
                         </div>`;
                         <?php } else { ?>
                         endMessage.innerHTML = `<div class="text-center mx-auto mb-5">
-                            <p class="text-muted">Showing first ${maxCompanies} <?php echo $website['biznames']; ?>.</p>
-                            <a href="/signup" class="btn btn-warning btn-lg mt-3" style="border-radius: 50px; padding: 12px 32px;">Sign Up to View All <?php echo ucfirst($website['biznames']); ?></a>
+                            <p class="text-muted">Showing first ${maxCompanies} <?php echo $website["biznames"]; ?>.</p>
+                            <a href="/signup" class="btn btn-warning btn-lg mt-3" style="border-radius: 50px; padding: 12px 32px;">Sign Up to View All <?php echo ucfirst($website["biznames"]); ?></a>
                         </div>`;
                         <?php } ?>
                     } else {
