@@ -287,7 +287,7 @@ manage_ssl_certificates() {
         # Show certificate expiry information
         echo ""
         echo "Certificate Information:"
-        openssl x509 -in "$CERT_DEST_DIR/STAR_birthday_gold.crt" -noout -subject -enddate 2>/dev/null || echo "Could not read certificate info from STAR_birthday_gold.crt"
+        openssl x509 -in "$CERT_DEST_DIR/STAR_birthday_gold.crt" -noout -subject -enddate 2>/dev/null || echo "Could not read certificate info"
     else
         echo "ERROR: Failed to create combined PEM file!"
         return 1
