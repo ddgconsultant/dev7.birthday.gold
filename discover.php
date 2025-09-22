@@ -77,6 +77,9 @@ $initial_limit = 32;
 $max_companies_display = 100;
 $loop_companies = $app->getFeaturedCompanies($initial_limit, '!!alphabetical!!');
 
+// Debug: Check how many companies are actually returned
+error_log('[DISCOVER] Initial companies loaded: ' . count($loop_companies) . ' (requested: ' . $initial_limit . ')');
+
 
 
 #-------------------------------------------------------------------------------
@@ -271,6 +274,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if ("loading" in HTMLImageElement.prototype) {
         // Native lazy loading is supported, just load data-src images
         const lazyImages = document.querySelectorAll("img[data-src]");
+        console.log("Found", lazyImages.length, "images with data-src to convert");
         lazyImages.forEach(img => {
             img.src = img.dataset.src;
             img.removeAttribute("data-src");
