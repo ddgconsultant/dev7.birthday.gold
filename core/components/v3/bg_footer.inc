@@ -533,12 +533,18 @@ default:
 
 
 // Cookie consent banner logic
-// Check if cookie preferences have been set
-$cookiePreferencesSet = isset($_COOKIE['bdgold_lastSetDate']);
+// Check if user has already set cookie preferences
+$cookiePreferencesSet = isset($_COOKIE['bdgold_lastSetDate']) && !empty($_COOKIE['bdgold_lastSetDate']);
 
+// Also check if they've explicitly accepted or rejected cookies
+$hasExplicitPreferences = (
+    (isset($_COOKIE['bdgold_analyticsCookie']) && !empty($_COOKIE['bdgold_analyticsCookie'])) ||
+    (isset($_COOKIE['bdgold_performanceCookie']) && !empty($_COOKIE['bdgold_performanceCookie'])) ||
+    (isset($_COOKIE['bdgold_advertisingCookie']) && !empty($_COOKIE['bdgold_advertisingCookie']))
+);
 
-// Include cookie banner if preferences aren't set
-if (!$cookiePreferencesSet) {
+// Only include cookie banner HTML if preferences haven't been set
+if (!$cookiePreferencesSet && !$hasExplicitPreferences) {
 
         // Set the cookie banner version if not already defined elsewhere
         if (!isset($cookiebannerversion)) {
@@ -548,7 +554,12 @@ if (!$cookiePreferencesSet) {
 
     // Include the appropriate cookie banner based on version
     $bannerFile = 'bg_cookiebanner' . $cookiebannerversion . '.inc';
-    include($_SERVER['DOCUMENT_ROOT'] . '/core/components/' . $website['ui_version'] . '/' . $bannerFile);
+
+    // Only include the banner file if it exists
+    $bannerPath = $_SERVER['DOCUMENT_ROOT'] . '/core/components/' . $website['ui_version'] . '/' . $bannerFile;
+    if (file_exists($bannerPath)) {
+        include($bannerPath);
+    }
 }
 
 
