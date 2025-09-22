@@ -77,9 +77,6 @@ $initial_limit = 32;
 $max_companies_display = 100;
 $loop_companies = $app->getFeaturedCompanies($initial_limit, '!!alphabetical!!');
 
-// Debug: Check how many companies are actually returned
-error_log('[DISCOVER] Initial companies loaded: ' . count($loop_companies) . ' (requested: ' . $initial_limit . ')');
-
 
 
 #-------------------------------------------------------------------------------
@@ -119,14 +116,16 @@ if ($enablesearch)
 
 
 foreach ($loop_companies as $index => $item_company) {
+    // Load first 8 images immediately, lazy load the rest
+    $isEager = $index < 8;
     $imgSrc = $display->companyimage($item_company['company_id'] . '/' . $item_company['company_logo']);
-
+    
     echo '<div class="col-6 col-md-4 col-lg-3 col-xl-5cols logo-item mb-3" data-index="' . $index . '">
 <div class="card h-100">
 <div class="logo-image-wrapper d-flex align-items-center justify-content-center" style="min-height: 150px; background: #f8f9fa;">
-<img class="img-fluid"
-     src="' . $imgSrc . '"
-     loading="lazy"
+<img class="img-fluid lazy-image" 
+     ' . ($isEager ? 'src="' . $imgSrc . '"' : 'data-src="' . $imgSrc . '" src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%23f8f9fa\'/%3E%3C/svg%3E"') . ' 
+     loading="' . ($isEager ? 'eager' : 'lazy') . '" 
      alt="' . htmlspecialchars($item_company['company_name']) . ' logo"
      style="width: 100%; height: auto; object-fit: contain;">
 </div>
@@ -268,7 +267,35 @@ let imageObserver; // Declare at higher scope for reuse
 let spinnerTimeout; // Declare for spinner delay
 
 document.addEventListener("DOMContentLoaded", function() {
-    // No custom lazy loading needed - browser handles it natively
+    // Check if native lazy loading is supported
+    if ("loading" in HTMLImageElement.prototype) {
+        // Native lazy loading is supported, just load data-src images
+        const lazyImages = document.querySelectorAll("img[data-src]");
+        lazyImages.forEach(img => {
+            img.src = img.dataset.src;
+            img.removeAttribute("data-src");
+        });
+    } else {
+        // Fallback for browsers that do not support native lazy loading
+        const lazyImages = document.querySelectorAll("img[data-src]");
+        imageObserver = new IntersectionObserver(function(entries, observer) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.removeAttribute("data-src");
+                    img.classList.add("loaded");
+                    imageObserver.unobserve(img);
+                }
+            });
+        }, {
+            rootMargin: "50px 0px" // Start loading 50px before the image enters viewport
+        });
+
+        lazyImages.forEach(function(img) {
+            imageObserver.observe(img);
+        });
+    }
     
     // Infinite scroll implementation
     function loadMoreCompanies() {
