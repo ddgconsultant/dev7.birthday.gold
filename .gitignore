@@ -34,3 +34,17 @@ Thumbs.db
 # Ignore all _CLEANUP_ directories and their contents
 **/_CLEANUP_/
 _CLEANUP_/
+audit/*.patch*
+../AUDIT/*.patch*
+
+# audit artifacts
+/audit/*.patch*
+../AUDIT/*.patch*
+
+# audit artifacts
+/audit/*.patch*
+../AUDIT/*.patch*
+
+# audit artifacts
+/audit/*.patch*
+../AUDIT/*.patch*
