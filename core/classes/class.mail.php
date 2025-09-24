@@ -335,7 +335,7 @@ Cheers!<br>birthday.gold
         'retry_count' => 0,
         'toemail' => $details['toemail'] ?? $to[0]
       ]),
-      'start_dt' => date('Y-m-d H:i:s'), // Retry immediately
+      'start_dt' => date('Y-m-d H:i:s.') . substr(microtime(), 2, 6), // Retry immediately (with microseconds for uniqueness)
       'end_dt' => date('Y-m-d H:i:s', strtotime('+7 days')) // Expire after 7 days if not sent
     ];
 
