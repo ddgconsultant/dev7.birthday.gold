@@ -1011,6 +1011,18 @@ $businessHours = $app->bg_businesshours();
                     <p class="admin-card-text">Load balancer monitoring</p>
                 </div>
             </a>
+
+                
+            <a href="/admin/log-viewer" class="admin-card">
+                <div class="admin-icon icon-system">
+                    <i class="bi bi-list-check"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Log Viewer</h3>
+                    <p class="admin-card-text">View real time system logs </p>
+                </div>
+            </a>
+            
             
             <a href="/admin/servicelist.txt" class="admin-card">
                 <div class="admin-icon icon-system">

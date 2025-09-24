@@ -1,0 +1,751 @@
+diff --git a/.gitignore b/.gitignore
+index 03a2443d..a39daf8c 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -33,4 +33,18 @@ Thumbs.db
+ 
+ # Ignore all _CLEANUP_ directories and their contents
+ **/_CLEANUP_/
+-_CLEANUP_/
+\ No newline at end of file
++_CLEANUP_/
++audit/*.patch*
++../AUDIT/*.patch*
++
++# audit artifacts
++/audit/*.patch*
++../AUDIT/*.patch*
++
++# audit artifacts
++/audit/*.patch*
++../AUDIT/*.patch*
++
++# audit artifacts
++/audit/*.patch*
++../AUDIT/*.patch*
+diff --git a/admin_actions/deploy_www.sh b/admin_actions/deploy_www.sh
+index 0f637c75..5f77500d 100644
+--- a/admin_actions/deploy_www.sh
++++ b/admin_actions/deploy_www.sh
+@@ -1,8 +1,8 @@
+ #!/bin/bash
+ 
+ # Default values
+-source_subdomain="dev4"
+-source_version="v2"
++source_subdomain="dev7"  # For repository cloning
++source_version="v3"
+ config_only=false
+ ssl_only=false
+ 
+@@ -17,11 +17,11 @@ show_usage() {
+   echo "  -h           Show this help message"
+   echo ""
+   echo "Examples:"
+-  echo "  $0              # Full deployment from dev4"
+-  echo "  $0 -s dev7      # Full deployment from dev7"
++  echo "  $0              # Full deployment from dev7 (configs/certs from dev.birthday.gold)"
++  echo "  $0 -s dev4      # Full deployment from dev4 (configs/certs from dev.birthday.gold)"
+   echo "  $0 -c           # Only sync config files and deploy script"
+-  echo "  $0 -c -s dev7   # Only sync config files from dev7"
+-  echo "  $0 -ssl         # Only check and update SSL certificates"
++  echo "  $0 -c -s dev4   # Only sync config from dev.birthday.gold, script from dev4"
++  echo "  $0 -ssl         # Only update SSL certificates from dev.birthday.gold"
+ }
+ 
+ # Parse command-line options - handle -ssl specially since it starts with 's'
+@@ -114,8 +114,8 @@ manage_ssl_certificates() {
+         # Fetch certificates from PHP endpoint
+         echo "Fetching certificates from remote endpoint..."
+ 
+-        # Determine which dev server to use
+-        cert_source_url="https://${source_subdomain:-dev7}.birthday.gold/admin_actions/deploy_cert_sync.php"
++        # Always use dev.birthday.gold for certificate endpoint (current dev environment)
++        cert_source_url="https://dev.birthday.gold/admin_actions/deploy_cert_sync.php"
+ 
+         # First, get list of available certificates and their checksums
+         echo "Getting certificate checksums from $cert_source_url..."
+@@ -199,6 +199,9 @@ manage_ssl_certificates() {
+         # Only rename the key file to match Apache config
+         if [ -f "$CERT_DEST_DIR/star.birthday.gold.key" ]; then
+             cp "$CERT_DEST_DIR/star.birthday.gold.key" "$CERT_DEST_DIR/server.key"
++            # Fix ownership of the original key file too
++            chown www-data:www-data "$CERT_DEST_DIR/star.birthday.gold.key"
++            chmod 640 "$CERT_DEST_DIR/star.birthday.gold.key"
+             echo "  Created server.key from star.birthday.gold.key"
+         fi
+ 
+@@ -256,7 +259,7 @@ manage_ssl_certificates() {
+                 "$CERT_DEST_DIR/server.key" \
+                 > "$CERT_DEST_DIR/STAR_birthday_gold_combined.pem"
+         fi
+-    fi
++    fi  # End of USE_PHP_ENDPOINT check
+ 
+     # Set proper ownership and permissions for all certificate files
+     echo "Setting file permissions..."
+@@ -284,7 +287,7 @@ manage_ssl_certificates() {
+         # Show certificate expiry information
+         echo ""
+         echo "Certificate Information:"
+-        openssl x509 -in "$CERT_DEST_DIR/STAR_birthday_gold_chained.crt" -noout -subject -enddate 2>/dev/null || echo "Could not read certificate info"
++        openssl x509 -in "$CERT_DEST_DIR/STAR_birthday_gold.crt" -noout -subject -enddate 2>/dev/null || echo "Could not read certificate info"
+     else
+         echo "ERROR: Failed to create combined PEM file!"
+         return 1
+@@ -588,15 +591,23 @@ if [ -f "$new_deploy_script" ] && [ ! -z "$new_deploy_script" ]; then
+ 
+     if [ "$new_sha1" != "$current_sha1" ]; then
+         cp "$new_deploy_script" "$current_deploy_script"
++        if [ $? -ne 0 ]; then
++            echo "ERROR: Failed to copy new deploy script"
++            return 1
++        fi
+         dos2unix "$current_deploy_script"
+         echo "deploy_www.sh has been updated from ${source_subdomain}.birthday.gold."
+ 
+         # Clean up temp file if used
+-        [ "$new_deploy_script" = "$temp_deploy_script" ] && rm -f "$temp_deploy_script"
++        if [ "$new_deploy_script" = "$temp_deploy_script" ]; then
++            rm -f "$temp_deploy_script"
++        fi
+     else
+         echo "No update needed for deploy_www.sh."
+         # Clean up temp file if used
+-        [ "$new_deploy_script" = "$temp_deploy_script" ] && rm -f "$temp_deploy_script"
++        if [ "$new_deploy_script" = "$temp_deploy_script" ]; then
++            rm -f "$temp_deploy_script"
++        fi
+     fi
+ else
+     echo "No deploy_www.sh found. Skipping update."
+@@ -609,22 +620,22 @@ echo "Checking ENV_CONFIG files for updates..."
+ # Define local ENV_CONFIG path
+ ENV_CONFIG_PATH="/var/www/BIRTHDAY_SERVER/ENV_CONFIGS"
+ 
+-# Array of config files to check
+-config_files=("config-main-production.inc" "config-ai.inc")
++# Config files to check (space-separated list to avoid array issues)
++config_files="config-main-production.inc config-ai.inc"
+ 
+ # Try multiple methods to sync config files
+ sync_successful=false
+ 
+ # Method 1: Try the new sync endpoint
+ echo "Attempting to sync ENV_CONFIG files via web endpoint..."
+-# Use the source_subdomain variable to determine which server to sync from
+-remote_sync_response=$(curl -s -m 10 "https://${source_subdomain}.birthday.gold/admin_actions/deploy_env_sync.php?action=checksums&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
++# Always use dev.birthday.gold for config endpoint (current dev environment)
++remote_sync_response=$(curl -s -m 10 "https://dev.birthday.gold/admin_actions/deploy_env_sync.php?action=checksums&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
+ 
+ if [ $? -eq 0 ] && [ ! -z "$remote_sync_response" ]; then
+     status=$(echo "$remote_sync_response" | jq -r '.status' 2>/dev/null)
+ 
+     if [ "$status" == "success" ]; then
+-        for config_file in "${config_files[@]}"; do
++        for config_file in $config_files; do
+             local_config_file="$ENV_CONFIG_PATH/$config_file"
+ 
+             # Get remote checksum from JSON
+@@ -640,10 +651,10 @@ if [ $? -eq 0 ] && [ ! -z "$remote_sync_response" ]; then
+ 
+                 # Compare checksums
+                 if [ "$local_checksum" != "$remote_checksum" ]; then
+-                    echo "Updating $config_file (checksum mismatch)..."
++                    echo "Updating $config_file - checksum mismatch..."
+ 
+                     # Try to get file content via web endpoint
+-                    file_content=$(curl -s -m 10 "https://${source_subdomain}.birthday.gold/admin_actions/deploy_env_sync.php?action=get_file&file=$config_file&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
++                    file_content=$(curl -s -m 10 "https://dev.birthday.gold/admin_actions/deploy_env_sync.php?action=get_file&file=$config_file&token=DEPLOY_CHECKSUM_SECRET_2025" 2>/dev/null)
+ 
+                     if [ $? -eq 0 ] && [ ! -z "$file_content" ]; then
+                         # Extract and decode the content
+@@ -685,7 +696,7 @@ if [ "$sync_successful" != "true" ]; then
+         # Copy from the staging directory we just cloned
+         if [ -d "${pathprefix}${subdomain}.birthday.gold/ENV_CONFIGS" ]; then
+             echo "Copying ENV_CONFIGS from cloned repository..."
+-            for config_file in "${config_files[@]}"; do
++            for config_file in $config_files; do
+                 source_file="${pathprefix}${subdomain}.birthday.gold/ENV_CONFIGS/$config_file"
+                 dest_file="$ENV_CONFIG_PATH/$config_file"
+ 
+diff --git a/admin_actions/notifier/notify-processor.php b/admin_actions/notifier/notify-processor.php
+index 211ca029..f8ecc1b9 100644
+--- a/admin_actions/notifier/notify-processor.php
++++ b/admin_actions/notifier/notify-processor.php
+@@ -137,16 +137,22 @@ $details['notificationid'] = $insertednotificationId;
+ # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+ function retry_unsent_notifications() {
+     global $database, $mail, $qik, $counters, $config;
+-    
++
+     $qik->logmessage('<h3>Starting retry of unsent notifications...</h3>', 1);
+-    
+-    // Query for notifications with "notsent" status
+-    $query = "SELECT n.*, u.first_name, u.last_name, u.email 
++
++    // Query for notifications with "notsent" status - including user_id=0 for system emails
++    // Only process notifications where start_dt has passed (or is NULL)
++    $query = "SELECT n.*,
++              CASE WHEN n.user_id = 0 THEN 'System' ELSE u.first_name END as first_name,
++              CASE WHEN n.user_id = 0 THEN 'Email' ELSE u.last_name END as last_name,
++              CASE WHEN n.user_id = 0 THEN n.sent_to ELSE u.email END as email
+               FROM bg_user_notifications n
+-              JOIN bg_users u ON n.user_id = u.user_id
+-              WHERE n.status = 'notsent' 
++              LEFT JOIN bg_users u ON n.user_id = u.user_id
++              WHERE n.status = 'notsent'
++              AND (n.start_dt IS NULL OR n.start_dt <= NOW())
++              AND (n.end_dt IS NULL OR n.end_dt >= NOW())
+               AND n.create_dt > DATE_SUB(NOW(), INTERVAL 7 DAY)
+-              ORDER BY n.create_dt ASC";
++              ORDER BY n.priority DESC, n.create_dt ASC";
+               
+     $stmt = $database->prepare($query);
+     $stmt->execute();
+@@ -175,13 +181,46 @@ function retry_unsent_notifications() {
+         }
+         
+         if ($config['actualsend']) {
++            // Check if this is a system email (user_id=0) with additional options
++            if ($notification['user_id'] == 0 && !empty($notification['options'])) {
++                $options = json_decode($notification['options'], true);
++
++                // For system emails, try to get the actual email from options
++                if (!empty($options['toemail']) && filter_var($options['toemail'], FILTER_VALIDATE_EMAIL)) {
++                    $recipient_email = $options['toemail'];
++                }
++
++                // Use original email details if available
++                if (!empty($options['original_to'])) {
++                    $to_details = $options['original_to'];
++                    // Ensure the first element is a valid email
++                    if (!filter_var($to_details[0], FILTER_VALIDATE_EMAIL)) {
++                        $to_details[0] = $recipient_email;
++                    }
++                } else {
++                    $to_details = [$recipient_email, $notification['first_name'] . ' ' . $notification['last_name']];
++                }
++
++                // Use original from if available
++                if (!empty($options['original_from'])) {
++                    $from_details = $options['original_from'];
++                }
++            } else {
++                $to_details = [$recipient_email, $notification['first_name'] . ' ' . $notification['last_name']];
++            }
++
+             // Format the 'to' details for addAddress
+             $details = [
+-                'to' => [$recipient_email, $notification['first_name'] . ' ' . $notification['last_name']],
++                'to' => $to_details,
+                 'subject' => $notification['title'],
+                 'body' => $notification['message'],
+                 'notificationid' => $notification['notification_id']
+             ];
++
++            // Add from if specified
++            if (!empty($from_details)) {
++                $details['from'] = $from_details;
++            }
+             
+             // Log detailed info about what we're trying to send
+             $qik->logmessage("RETRY ATTEMPT: Sending email with the following details:", 1);
+@@ -191,7 +230,15 @@ function retry_unsent_notifications() {
+             
+             // Check if recipient email is valid
+             if (!filter_var($recipient_email, FILTER_VALIDATE_EMAIL)) {
+-                $qik->logmessage("RETRY ERROR: Invalid email address format: " . $recipient_email, 1);
++                $qik->logmessage("RETRY ERROR: Invalid or missing email address: '" . $recipient_email . "' for notification ID: " . $notification['notification_id'], 1);
++
++                // Log more details about why this failed
++                if (empty($recipient_email)) {
++                    $qik->logmessage("  - Email is empty/missing for user_id: " . $notification['user_id'], 1);
++                } else {
++                    $qik->logmessage("  - Email format is invalid: " . $recipient_email, 1);
++                }
++
+                 $retry_failure++;
+                 continue;
+             }
+@@ -222,19 +269,39 @@ function retry_unsent_notifications() {
+             } else {
+                 // Extract error message if available
+                 $error_message = isset($result['error']) ? $result['error'] : 'No specific error returned';
+-                
+-                $qik->logmessage("RETRY: Email sending failed! - " . 
+-                    $notification['title'] . ' for ' . $notification['user_id'] . 
++
++                $qik->logmessage("RETRY: Email sending failed! - " .
++                    $notification['title'] . ' for ' . $notification['user_id'] .
+                     " - Error: " . $error_message, 1);
+-                
+-                // Just update the modification date to show we tried
+-                $update_query = "UPDATE bg_user_notifications SET 
+-                                 modify_dt = NOW()
++
++                // Update the retry count and next retry time in options
++                $options = !empty($notification['options']) ? json_decode($notification['options'], true) : [];
++                $retry_count = isset($options['retry_count']) ? $options['retry_count'] + 1 : 1;
++                $options['retry_count'] = $retry_count;
++                $options['last_retry'] = date('Y-m-d H:i:s');
++
++                // Calculate next retry time with exponential backoff
++                // 5 mins, 15 mins, 1 hour, 4 hours, 12 hours, 24 hours, then stop
++                $retry_delays = [5, 15, 60, 240, 720, 1440];
++                $delay_index = min($retry_count - 1, count($retry_delays) - 1);
++                $delay_minutes = $retry_delays[$delay_index];
++
++                // Update with new retry time and increment count
++                $update_query = "UPDATE bg_user_notifications SET
++                                 modify_dt = NOW(),
++                                 start_dt = DATE_ADD(NOW(), INTERVAL :delay MINUTE),
++                                 options = :options
+                                  WHERE notification_id = :notification_id";
+-                                 
++
+                 $update_stmt = $database->prepare($update_query);
+-                $update_stmt->execute(['notification_id' => $notification['notification_id']]);
+-                
++                $update_stmt->execute([
++                    'notification_id' => $notification['notification_id'],
++                    'delay' => $delay_minutes,
++                    'options' => json_encode($options)
++                ]);
++
++                $qik->logmessage("  Next retry in $delay_minutes minutes (retry #$retry_count)", 1);
++
+                 $retry_failure++;
+             }
+         }
+diff --git a/contact.php b/contact.php
+index 1459979d..b47359d1 100644
+--- a/contact.php
++++ b/contact.php
+@@ -179,7 +179,16 @@ if ($subject!='') $subject='<br>SUBJECT: '.$subject;
+ $messageinput['body']='DATE: '.date('r').'<br>ID: '.session_id().$subject.'<hr>'.$message;
+ $messageinput['notification']='DATE: '.date('r')."\n".'ID: '.session_id().$subject."\n".$message;
+ $result=$mail->sendOnlineContactForm($messageinput);
+-$errormessage = '<div class="alert alert-success alert-dismissible fade show p-3 mb-4" role="alert"><i class="bi bi-check-circle-fill me-2"></i><strong>Success!</strong> Your message was sent to our customer service team. We\'ll respond within 24-48 hours.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
++
++// Check if mail was actually sent
++if ($result && (is_array($result) ? ($result['status'] ?? false) : $result)) {
++  $errormessage = '<div class="alert alert-success alert-dismissible fade show p-3 mb-4" role="alert"><i class="bi bi-check-circle-fill me-2"></i><strong>Success!</strong> Your message was sent to our customer service team. We\'ll respond within 24-48 hours.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
++  session_tracking('contact-mail-sent-successfully', ['to' => $messageinput['toemail'], 'subject' => $messageinput['notification']]);
++} else {
++  // Mail failed but was stored for retry
++  $errormessage = '<div class="alert alert-warning alert-dismissible fade show p-3 mb-4" role="alert"><i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Message received!</strong> We\'re experiencing a temporary issue, but your message has been saved and will be sent shortly. We\'ll respond within 24-48 hours.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>';
++  session_tracking('contact-mail-failed-stored-retry', ['to' => $messageinput['toemail'], 'subject' => $messageinput['notification']]);
++}
+ 
+ // Track successful submission
+ $successTrackingData = [
+diff --git a/core/classes/class.mail.php b/core/classes/class.mail.php
+index ab4e606b..f1a25efe 100644
+--- a/core/classes/class.mail.php
++++ b/core/classes/class.mail.php
+@@ -15,6 +15,11 @@ class Mail
+   protected $mail;
+   protected $incomingmailserversdb;
+ 
++  // Test mode flag - set to true to simulate mail failures
++  // Can be set via: $mail->setTestFailureMode(true) or environment variable MAIL_TEST_FAILURE=1
++  protected $testFailureMode = false;
++  protected $testFailureRate = 100; // Percentage of emails to fail in test mode (0-100)
++
+   public function __construct($mailConfig)
+   {
+ 
+@@ -33,6 +38,24 @@ class Mail
+     }
+     $this->mail->Port = $mailConfig['MAIL_PORT'];
+ 
++    // Check for test configuration file (for testing only)
++    $testConfigFile = $_SERVER['DOCUMENT_ROOT'] . '/admin_actions/mail-test-config.php';
++    if (file_exists($testConfigFile)) {
++      include_once($testConfigFile);
++    }
++
++    // Check environment variable for test mode
++    if (getenv('MAIL_TEST_FAILURE') === '1' || getenv('MAIL_TEST_FAILURE') === 'true') {
++      $this->testFailureMode = true;
++      session_tracking('mail_test_mode_enabled', ['source' => 'environment_variable']);
++    }
++
++    // Check for failure rate in environment
++    $failureRate = getenv('MAIL_TEST_FAILURE_RATE');
++    if ($failureRate !== false && is_numeric($failureRate)) {
++      $this->testFailureRate = min(100, max(0, (int)$failureRate));
++    }
++
+     
+ 
+     // Ddfine list of incoming mail servers
+@@ -47,6 +70,33 @@ class Mail
+ 
+   }
+ 
++  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
++  /**
++   * Enable or disable test failure mode
++   * @param bool $enabled Whether to enable test mode
++   * @param int $failureRate Optional failure rate (0-100)
++   */
++  public function setTestFailureMode($enabled, $failureRate = null) {
++    $this->testFailureMode = (bool)$enabled;
++    if ($failureRate !== null) {
++      $this->testFailureRate = min(100, max(0, (int)$failureRate));
++    }
++    session_tracking('mail_test_mode_changed', [
++      'enabled' => $this->testFailureMode,
++      'failure_rate' => $this->testFailureRate
++    ]);
++  }
++
++  /**
++   * Get current test mode status
++   */
++  public function getTestModeStatus() {
++    return [
++      'enabled' => $this->testFailureMode,
++      'failure_rate' => $this->testFailureRate
++    ];
++  }
++
+   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+   function sendmail($details)
+   {
+@@ -95,8 +145,37 @@ class Mail
+       $this->mail->Subject =  $subject; #'Here is the subject';
+       $this->mail->Body    = $body; #'This is the HTML message body <b>in bold!</b>';
+ 
++      // Check if we're in test failure mode
++      if ($this->testFailureMode) {
++        // Determine if this email should fail based on failure rate
++        $shouldFail = (rand(1, 100) <= $this->testFailureRate);
++
++        if ($shouldFail) {
++          // Simulate failure
++          $result = false;
++          session_tracking('mail_test_failure_simulated', [
++            'to' => $to[0],
++            'subject' => $subject,
++            'failure_rate' => $this->testFailureRate,
++            'test_mode' => true
++          ]);
++
++          // Store the failed email for retry
++          $this->storeFailedEmail($details);
++
++          // Set mail_sent to false for proper handling
++          $results = ['mail_sent' => false, 'test_failure' => true];
++          return $results;
++        }
++      }
++
+       $result = $this->mail->send();
+ 
++      // Store failed email for retry if sending failed
++      if (!$result) {
++        $this->storeFailedEmail($details);
++      }
++
+       #echo 'Message has been sent';
+     } catch (Exception $e) {
+       $processingerror = 'Message could not be sent. Mailer Error: ' . $this->mail->ErrorInfo;
+@@ -201,12 +280,83 @@ Cheers!<br>birthday.gold
+     $message['body'] = str_replace('{{MESSAGE_CONTENT}}', $message['body'], $output);
+     $message['body'] = str_replace('{{TO_EMAIL}}', $message['toemail'], $message['body']);
+ 
+-    $this->sendmail($message);
++    $result = $this->sendmail($message);
++
++    // Log if mail sending failed (already stored by sendmail)
++    if (!$result || (is_array($result) && isset($result['mail_sent']) && !$result['mail_sent'])) {
++      session_tracking('verification_email_failed_retry', ['to' => $message['toemail'] ?? '', 'subject' => $message['subject'] ?? '']);
++    }
++
+     return $output;
+   }
+ 
+ 
+ 
++  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
++  /**
++   * Store failed email in bg_user_notifications for retry
++   * Uses user_id=0 for system emails (not belonging to any user)
++   */
++  function storeFailedEmail($details) {
++    global $database;
++
++    // Prepare email details for storage
++    $to = is_array($details['to']) ? $details['to'] : [$details['to'], $details['to']];
++    $from = isset($details['from']) ? (is_array($details['from']) ? $details['from'] : [$details['from'], $details['from']]) : ['noreply@birthday.gold', 'birthday.gold'];
++
++    // Get the actual email address (prefer toemail over to[0])
++    $recipient_email = $details['toemail'] ?? (is_array($to) ? $to[0] : $to);
++    // If to[0] is not a valid email, try to extract from array
++    if (!filter_var($recipient_email, FILTER_VALIDATE_EMAIL) && is_array($to)) {
++      // Check if any element in the array is a valid email
++      foreach ($to as $email) {
++        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
++          $recipient_email = $email;
++          break;
++        }
++      }
++    }
++
++    // Build notification record
++    $notification = [
++      'user_id' => 0, // System email, not belonging to any user
++      'type' => 'failed_email',
++      'title' => $details['subject'] ?? 'Failed Email',
++      'message' => $details['body'] ?? '',
++      'status' => 'notsent',
++      'sent_to' => $recipient_email, // Use actual email address
++      'category' => 'failed_email_retry',
++      'priority' => 'high',
++      'options' => json_encode([
++        'original_to' => $to,
++        'original_from' => $from,
++        'attachment' => $details['attachment'] ?? null,
++        'failed_at' => date('Y-m-d H:i:s'),
++        'retry_count' => 0,
++        'toemail' => $details['toemail'] ?? $to[0]
++      ]),
++      'start_dt' => date('Y-m-d H:i:s.') . substr(microtime(), 2, 6), // Retry immediately (with microseconds for uniqueness)
++      'end_dt' => date('Y-m-d H:i:s', strtotime('+7 days')) // Expire after 7 days if not sent
++    ];
++
++    // Insert into bg_user_notifications
++    try {
++      $query = "INSERT INTO bg_user_notifications
++                (user_id, type, title, message, status, sent_to, category, priority, options, start_dt, end_dt, create_dt, modify_dt)
++                VALUES
++                (:user_id, :type, :title, :message, :status, :sent_to, :category, :priority, :options, :start_dt, :end_dt, NOW(), NOW())";
++
++      $stmt = $database->prepare($query);
++      $stmt->execute($notification);
++
++      // Log the failed email storage
++      session_tracking('failed_email_stored', ['to' => $to[0], 'subject' => $details['subject'] ?? 'Unknown', 'notification_id' => $database->lastInsertId()]);
++
++    } catch (Exception $e) {
++      session_tracking('failed_email_storage_error', ['error' => $e->getMessage(), 'to' => $to[0]]);
++    }
++  }
++
+   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+   function sendOnlineContactForm($input)
+   {
+@@ -258,6 +408,12 @@ An online message:
+     #$message['body']=str_replace($search,$replace, $message['body']);
+ 
+     $result = $this->sendmail($message);
++
++    // Log if mail sending failed (already stored by sendmail)
++    if (!$result || (is_array($result) && isset($result['mail_sent']) && !$result['mail_sent'])) {
++      session_tracking('contact_form_email_failed_retry', ['to' => $message['toemail'] ?? '', 'subject' => $message['subject'] ?? '']);
++    }
++
+     $results['status'] = $result;
+     $results['output'] = $output;
+     return $results;
+diff --git a/core/components/v3/bg_footer.inc b/core/components/v3/bg_footer.inc
+index 226142d1..2d20fcba 100644
+--- a/core/components/v3/bg_footer.inc
++++ b/core/components/v3/bg_footer.inc
+@@ -533,12 +533,18 @@ default:
+ 
+ 
+ // Cookie consent banner logic
+-// Check if cookie preferences have been set
+-$cookiePreferencesSet = isset($_COOKIE['bdgold_lastSetDate']);
++// Check if user has already set cookie preferences
++$cookiePreferencesSet = isset($_COOKIE['bdgold_lastSetDate']) && !empty($_COOKIE['bdgold_lastSetDate']);
+ 
++// Also check if they've explicitly accepted or rejected cookies
++$hasExplicitPreferences = (
++    (isset($_COOKIE['bdgold_analyticsCookie']) && !empty($_COOKIE['bdgold_analyticsCookie'])) ||
++    (isset($_COOKIE['bdgold_performanceCookie']) && !empty($_COOKIE['bdgold_performanceCookie'])) ||
++    (isset($_COOKIE['bdgold_advertisingCookie']) && !empty($_COOKIE['bdgold_advertisingCookie']))
++);
+ 
+-// Include cookie banner if preferences aren't set
+-if (!$cookiePreferencesSet) {
++// Only include cookie banner HTML if preferences haven't been set
++if (!$cookiePreferencesSet && !$hasExplicitPreferences) {
+ 
+         // Set the cookie banner version if not already defined elsewhere
+         if (!isset($cookiebannerversion)) {
+@@ -548,7 +554,12 @@ if (!$cookiePreferencesSet) {
+ 
+     // Include the appropriate cookie banner based on version
+     $bannerFile = 'bg_cookiebanner' . $cookiebannerversion . '.inc';
+-    include($_SERVER['DOCUMENT_ROOT'] . '/core/components/' . $website['ui_version'] . '/' . $bannerFile);
++
++    // Only include the banner file if it exists
++    $bannerPath = $_SERVER['DOCUMENT_ROOT'] . '/core/components/' . $website['ui_version'] . '/' . $bannerFile;
++    if (file_exists($bannerPath)) {
++        include($bannerPath);
++    }
+ }
+ 
+ 
+diff --git a/core/components/v7/bg_footer.inc b/core/components/v7/bg_footer.inc
+index 9fdd9578..17e494a4 100644
+--- a/core/components/v7/bg_footer.inc
++++ b/core/components/v7/bg_footer.inc
+@@ -1087,10 +1087,18 @@ function toggleMoreMenu() {
+ </script>';
+ 
+ // Cookie consent banner logic
+-$cookiePreferencesSet = isset($_COOKIE['bdgold_lastSetDate']);
+-
+-// Include cookie banner if preferences aren't set
+-if (!$cookiePreferencesSet) {
++// Check if user has already set cookie preferences
++$cookiePreferencesSet = isset($_COOKIE['bdgold_lastSetDate']) && !empty($_COOKIE['bdgold_lastSetDate']);
++
++// Also check if they've explicitly accepted or rejected cookies
++$hasExplicitPreferences = (
++    (isset($_COOKIE['bdgold_analyticsCookie']) && !empty($_COOKIE['bdgold_analyticsCookie'])) ||
++    (isset($_COOKIE['bdgold_performanceCookie']) && !empty($_COOKIE['bdgold_performanceCookie'])) ||
++    (isset($_COOKIE['bdgold_advertisingCookie']) && !empty($_COOKIE['bdgold_advertisingCookie']))
++);
++
++// Only include cookie banner HTML if preferences haven't been set
++if (!$cookiePreferencesSet && !$hasExplicitPreferences) {
+     // Set the cookie banner version if not already defined elsewhere
+     if (!isset($cookiebannerversion)) {
+         // Random selection between version 1 and 2
+@@ -1099,7 +1107,12 @@ if (!$cookiePreferencesSet) {
+     $cookiebannerversion = 2;
+     // Include the appropriate cookie banner based on version
+     $bannerFile = 'bg_cookiebanner' . $cookiebannerversion . '.inc';
+-    include($_SERVER['DOCUMENT_ROOT'] . '/core/components/' . $website['ui_version'] . '/' . $bannerFile);
++
++    // Only include the banner file if it exists
++    $bannerPath = $_SERVER['DOCUMENT_ROOT'] . '/core/components/' . $website['ui_version'] . '/' . $bannerFile;
++    if (file_exists($bannerPath)) {
++        include($bannerPath);
++    }
+ }
+ 
+ ?>
+diff --git a/discover.php b/discover.php
+index ff27b227..1b65ddbe 100644
+--- a/discover.php
++++ b/discover.php
+@@ -267,35 +267,17 @@ let imageObserver; // Declare at higher scope for reuse
+ let spinnerTimeout; // Declare for spinner delay
+ 
+ document.addEventListener("DOMContentLoaded", function() {
+-    // Check if native lazy loading is supported
+-    if ("loading" in HTMLImageElement.prototype) {
+-        // Native lazy loading is supported, just load data-src images
+-        const lazyImages = document.querySelectorAll("img[data-src]");
+-        lazyImages.forEach(img => {
++    // Load all initial images immediately (they are already part of the initial 32)
++    const lazyImages = document.querySelectorAll("img[data-src]");
++    console.log("Found " + lazyImages.length + " images with data-src to load immediately");
++
++    lazyImages.forEach(img => {
++        if (img.dataset.src) {
+             img.src = img.dataset.src;
+             img.removeAttribute("data-src");
+-        });
+-    } else {
+-        // Fallback for browsers that do not support native lazy loading
+-        const lazyImages = document.querySelectorAll("img[data-src]");
+-        imageObserver = new IntersectionObserver(function(entries, observer) {
+-            entries.forEach(function(entry) {
+-                if (entry.isIntersecting) {
+-                    const img = entry.target;
+-                    img.src = img.dataset.src;
+-                    img.removeAttribute("data-src");
+-                    img.classList.add("loaded");
+-                    imageObserver.unobserve(img);
+-                }
+-            });
+-        }, {
+-            rootMargin: "50px 0px" // Start loading 50px before the image enters viewport
+-        });
+-
+-        lazyImages.forEach(function(img) {
+-            imageObserver.observe(img);
+-        });
+-    }
++            img.classList.add("loaded");
++        }
++    });
+     
+     // Infinite scroll implementation
+     function loadMoreCompanies() {
+@@ -326,18 +308,16 @@ document.addEventListener("DOMContentLoaded", function() {
+                     gallery.appendChild(tempDiv.firstChild);
+                 }
+                 
+-                // Update lazy loading for new images
+-                const newLazyImages = gallery.querySelectorAll("img[data-src]:not(.loaded)");
+-                if ("loading" in HTMLImageElement.prototype) {
+-                    newLazyImages.forEach(img => {
++                // Load all new images immediately
++                const newLazyImages = gallery.querySelectorAll("img[data-src]");
++                console.log("Found " + newLazyImages.length + " new images to load");
++                newLazyImages.forEach(img => {
++                    if (img.dataset.src) {
+                         img.src = img.dataset.src;
+                         img.removeAttribute("data-src");
+-                    });
+-                } else if (typeof imageObserver !== "undefined") {
+-                    newLazyImages.forEach(img => {
+-                        imageObserver.observe(img);
+-                    });
+-                }
++                        img.classList.add("loaded");
++                    }
++                });
+                 
+                 currentOffset += data.loaded;
+                 totalLoaded = data.totalLoaded || currentOffset;
+@@ -349,13 +329,13 @@ document.addEventListener("DOMContentLoaded", function() {
+                     if (data.maxReached || totalLoaded >= maxCompanies) {
+                         <?php if ($account->isactive()) { ?>
+                         endMessage.innerHTML = `<div class="text-center mx-auto mb-5">
+-                            <p class="text-muted">Showing first ${maxCompanies} <?php echo $website['biznames']; ?>.</p>
+-                            <a href="/enrollment-picker" class="btn btn-primary btn-lg mt-3" style="border-radius: 50px; padding: 12px 32px;">Pick From All <?php echo ucfirst($website['biznames']); ?></a>
++                            <p class="text-muted">Showing first ${maxCompanies} <?php echo $website["biznames"]; ?>.</p>
++                            <a href="/enrollment-picker" class="btn btn-primary btn-lg mt-3" style="border-radius: 50px; padding: 12px 32px;">Pick From All <?php echo ucfirst($website["biznames"]); ?></a>
+                         </div>`;
+                         <?php } else { ?>
+                         endMessage.innerHTML = `<div class="text-center mx-auto mb-5">
+-                            <p class="text-muted">Showing first ${maxCompanies} <?php echo $website['biznames']; ?>.</p>
+-                            <a href="/signup" class="btn btn-warning btn-lg mt-3" style="border-radius: 50px; padding: 12px 32px;">Sign Up to View All <?php echo ucfirst($website['biznames']); ?></a>
++                            <p class="text-muted">Showing first ${maxCompanies} <?php echo $website["biznames"]; ?>.</p>
++                            <a href="/signup" class="btn btn-warning btn-lg mt-3" style="border-radius: 50px; padding: 12px 32px;">Sign Up to View All <?php echo ucfirst($website["biznames"]); ?></a>
+                         </div>`;
+                         <?php } ?>
+                     } else {
+diff --git a/validate-account.php b/validate-account.php
+index 2314f5b4..624381c7 100644
+--- a/validate-account.php
++++ b/validate-account.php
+@@ -267,7 +267,16 @@ if (!isset($userregistrationdata['validationemailsent']) || isset($_GET['adminse
+   # print_r($message);
+   $result = $mail->sendVerificationEmail($message);
+ 
+-  $userregistrationdata['validationemailsent'] = date('r');
++  // Track result of sending validation email
++  if ($result) {
++    session_tracking('validation_email_sent', ['to' => $email, 'count' => $sendcount]);
++    $userregistrationdata['validationemailsent'] = date('r');
++  } else {
++    session_tracking('validation_email_failed_stored', ['to' => $email, 'count' => $sendcount, 'message' => 'Email failed but stored for retry']);
++    // Still mark as sent so user sees the validation page
++    $userregistrationdata['validationemailsent'] = date('r') . ' (pending retry)';
++  }
++
+   $userregistrationdata['validationemailsent_count'] = $sendcount;
+ 
+   $session->set('userregistrationdata', $userregistrationdata);

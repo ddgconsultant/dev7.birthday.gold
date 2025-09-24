@@ -45,7 +45,8 @@
       "Bash(timeout 5 git push origin main)",
       "Bash(timeout 10 git commit --allow-empty -m \"PROD 04 - LAUNCH-hotfixA - 20250920\")",
       "Bash(GIT_INDEX_FILE=.git/index.new git commit --allow-empty -m \"PROD 04 - LAUNCH-hotfixB - 20250920\")",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": [],

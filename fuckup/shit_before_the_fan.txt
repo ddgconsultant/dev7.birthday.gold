@@ -1,0 +1,80 @@
+========================================================================================
+CHANGE LOG - LAST TWO SESSIONS DISASTER REPORT
+Generated: 2025-09-24
+========================================================================================
+
+CURRENT UNCOMMITTED CHANGES:
+----------------------------
+m b2-sdk-php (modified submodule)
+M monitoring/processed_rss_items.json (modified)
+D public/assets/vendors/phpformbuilder/plugins/material-datepicker/dist/css/material-datepicker.min.css (deleted)
+
+RECENT COMMITS (LAST 2 DAYS):
+------------------------------
+4ea979fc 2025-09-24 Remove large patch from history; ignore audit patch artifacts
+c8cd25d2 2025-09-24 FINAL FIX: DISCOVER HOTFIX + LOG VIEWER (A/M only); keep correct discover.php; add audit
+93b7f6c6 2025-09-24 FINAL FIX: DISCOVER HOTFIX + added/modified changes from LOG VIEWER (no deletions)
+159c20d2 2025-09-22 Fix PHP parse error - remove apostrophe from comment in JavaScript string
+71dc2bbb 2025-09-22 Fix lazy loading and infinite scroll issues
+17b8b751 2025-09-22 Fix PHP parse error in discover.php - restore original functionality
+a296d627 2025-09-22 Fix lazy loading - use native browser lazy loading instead of custom implementation
+60c513b8 2025-09-22 Add debugging for lazy loading issue - tracking why only 8 images show
+d225496c 2025-09-22 Fix PHP parse error in discover.php causing 500 error on production
+
+FILES CHANGED IN RECENT COMMITS:
+---------------------------------
+MODIFIED FILES:
+- .gitignore
+- admin_actions/deploy_www.sh
+- admin_actions/notifier/notify-processor.php
+- contact.php
+- core/classes/class.mail.php (158 lines changed!)
+- core/components/v3/bg_footer.inc
+- core/components/v7/bg_footer.inc
+- discover.php (62 lines changed)
+- validate-account.php
+
+NEW FILES ADDED:
+- admin/log-viewer.php (1114 lines!)
+- admin_actions/test-mail-cli.php (144 lines)
+- admin_actions/test-mail-env.sh (60 lines)
+- admin_actions/test-mail-failure.php (354 lines)
+- audit/commits_DH_to_LV.txt
+- audit/files_DH_to_LV.txt (15567 lines!)
+- audit/regenerate-audit.sh
+- audit/stats_DH_to_LV.txt (15568 lines!)
+
+FILES DELETED:
+- b2-sdk-php (submodule removed)
+
+TOTAL IMPACT:
+-------------
+18 files changed
+33,187 insertions(+)
+95 deletions(-)
+
+MASSIVE AUDIT FILES CREATED:
+- audit/files_DH_to_LV.txt: 15,567 lines
+- audit/stats_DH_to_LV.txt: 15,568 lines
+(These appear to be huge patch/diff files)
+
+KEY AREAS OF CONCERN:
+---------------------
+1. DISCOVER.PHP - Multiple attempts to fix PHP parse errors and lazy loading
+2. EMAIL SYSTEM - Major changes to core/classes/class.mail.php with retry logic
+3. LOG VIEWER - New admin tool added with 1000+ lines
+4. AUDIT FILES - Massive patch files added (30,000+ lines total)
+5. DEPLOY SCRIPT - Modified deployment process
+6. COOKIE BANNER - Changes to footer components
+7. SUBMODULE - b2-sdk-php appears deleted in one commit
+
+PATTERN OF ISSUES:
+------------------
+- Multiple "fix" commits for discover.php suggesting unstable changes
+- "FINAL FIX" commits that weren't final
+- Parse error fixes suggesting code was pushed without testing
+- Large audit/patch files that shouldn't be in repo
+
+========================================================================================
+END OF REPORT - NO FURTHER CHANGES WILL BE MADE WITHOUT EXPLICIT PERMISSION
+========================================================================================
