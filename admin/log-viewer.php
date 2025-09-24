@@ -31,121 +31,154 @@ if (isset($website['server_environment'])) {
     $server_environment = 'production';
 }
 
-// Get log configuration from ENV_CONFIGS
+// === DB CONFIG (host first, then env fallback) ===============================
+$host_identifier   = strtolower(preg_replace('/[^a-z0-9_\-]/i', '', gethostname() ?: 'unknown'));
+$ENV_CONFIG_TYPE   = 'log_viewer_env_'  . $server_environment;
+$HOST_CONFIG_TYPE  = 'log_viewer_host_' . $host_identifier;
+
+$settings_host = [];
+$settings_env  = [];
+$log_settings  = [];
+
+// Use framework DB wrapper (do NOT open new connection)
+if (is_object($database) && method_exists($database, 'prepare')) {
+    try {
+        $sql  = "SELECT config_type, config_key, config_value
+                 FROM bg_config
+                 WHERE config_type IN (?, ?) AND status='1'";
+        // Host first so we can optionally short-circuit later if desired
+        $stmt = $database->prepare($sql);
+        $stmt->execute([$HOST_CONFIG_TYPE, $ENV_CONFIG_TYPE]);
+
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            if ($row['config_type'] === $HOST_CONFIG_TYPE) {
+                $settings_host[$row['config_key']] = $row['config_value'];
+            } else {
+                $settings_env[$row['config_key']] = $row['config_value'];
+            }
+        }
+    } catch (Throwable $e) {
+        // silent; will fall back
+    }
+}
+
+// Coalesce (host wins). Start with host, then fill gaps from env.
+$log_settings = $settings_host;
+foreach ($settings_env as $k => $v) {
+    if (!array_key_exists($k, $log_settings)) {
+        $log_settings[$k] = $v;
+    }
+}
+
+// Legacy file fallback ONLY if both host+env empty
 $config_file = '/mnt/w/BIRTHDAY_SERVER/ENV_CONFIGS/config-main-' . $server_environment . '.inc';
-
-// Try alternative path for Windows environments
-if (!file_exists($config_file)) {
-    $alt_config_file = str_replace('/mnt/w/', 'W:/', $config_file);
-    $alt_config_file = str_replace('/', '\\', $alt_config_file);
-    if (file_exists($alt_config_file)) {
-        $config_file = $alt_config_file;
+if (empty($log_settings) && file_exists($config_file)) {
+    $legacy = @parse_ini_file($config_file, true);
+    if (!empty($legacy['logs'])) {
+        $log_settings   = $legacy['logs'];
+        $legacy_seeded  = true;
     }
 }
 
-// Also check using DOCUMENT_ROOT relative path
-if (!file_exists($config_file)) {
-    $relative_config = $_SERVER['DOCUMENT_ROOT'] . '/../ENV_CONFIGS/config-main-' . $server_environment . '.inc';
-    if (file_exists($relative_config)) {
-        $config_file = realpath($relative_config);
-    }
-}
-
-$log_settings = [];
-
-if (file_exists($config_file)) {
-    $log_configs = @parse_ini_file($config_file, true);
-    if ($log_configs === false) {
-        $error_message = "Warning: Unable to parse configuration file. Using default log paths. <br>Config file: " . htmlspecialchars($config_file);
-        // Use defaults even if parse fails
-        $log_settings = [];
-    } else {
-        $log_settings = $log_configs['logs'] ?? [];
-        if (empty($log_settings)) {
-            $info_message = "Info: [logs] section not found in config. Using default paths. You can configure them using the Settings button.";
+// Helper: upsert (always writes host scope)
+if (!function_exists('lv_upsert_config')) {
+    function lv_upsert_config($database, string $type, string $key, string $value, ?int $userId = null): bool {
+        if (!is_object($database) || !method_exists($database, 'prepare')) return false;
+        try {
+            $sql = "INSERT INTO bg_config
+                        (config_type, config_key, config_value, status, display_order, created_by, updated_by)
+                    VALUES (?, ?, ?, '1', 0, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        config_value = VALUES(config_value),
+                        updated_by   = VALUES(updated_by),
+                        updated_at   = NOW()";
+            $stmt = $database->prepare($sql);
+            return $stmt->execute([$type, $key, $value, $userId, $userId]);
+        } catch (Throwable $e) {
+            return false;
         }
     }
-} else {
-    $error_message = "Warning: Configuration file not found. Using default log paths.<br>" .
-                     "Expected file: " . htmlspecialchars($config_file) . "<br>" .
-                     "You can configure log paths using the Settings button above.";
 }
 
-// Default settings if not configured
-$apache_access_log = $log_settings['APACHE_ACCESS_LOG'] ?? '/var/log/apache2/access.log';
-$apache_error_log = $log_settings['APACHE_ERROR_LOG'] ?? '/var/log/apache2/error.log';
-$php_error_log = $log_settings['PHP_ERROR_LOG'] ?? '../_logs_/dev7_PHP_errors.log';
-$default_lines = intval($log_settings['LOG_TAIL_LINES'] ?? 25);
-$max_lines = intval($log_settings['LOG_MAX_LINES'] ?? 500);
-$refresh_interval = intval($log_settings['LOG_REFRESH_INTERVAL'] ?? 10);
+// Seed legacy into host scope once
+if (!empty($legacy_seeded)) {
+    $uid = $account->userid ?? null;
+    foreach ($log_settings as $k => $v) {
+        lv_upsert_config($database, $HOST_CONFIG_TYPE, $k, (string)$v, $uid);
+    }
+}
 
-// Handle form POST for updating log paths with backup functionality
+// Map settings (defaults)
+$apache_access_log = $log_settings['APACHE_ACCESS_LOG']        ?? '/var/log/apache2/access.log';
+$apache_error_log  = $log_settings['APACHE_ERROR_LOG']         ?? '/var/log/apache2/error.log';
+$php_error_log     = $log_settings['PHP_ERROR_LOG']            ?? '../_logs_/dev7_PHP_errors.log';
+$default_lines     = (int)($log_settings['LOG_TAIL_LINES']     ?? 25);
+$max_lines         = (int)($log_settings['LOG_MAX_LINES']      ?? 500);
+$refresh_interval  = (int)($log_settings['LOG_REFRESH_INTERVAL'] ?? 10);
+
+// Messaging
+if (empty($settings_host) && empty($settings_env)) {
+    $info_message = ($info_message ?? '') . ' DB config empty; using ' . (!empty($legacy_seeded) ? 'legacy file seed.' : 'defaults.');
+} elseif (!empty($settings_host) && !empty($settings_env)) {
+    // both present (host precedence)
+} elseif (!empty($settings_host)) {
+    $info_message = ($info_message ?? '') . ' Using host-only configuration.';
+} elseif (!empty($settings_env)) {
+    $info_message = ($info_message ?? '') . ' Using environment configuration (no host overrides).';
+}
+
+// PRE-EXISTING vars for messages (ensure defined)
+$success_message = $success_message ?? '';
+$error_message   = $error_message   ?? '';
+
+// Handle form POST for updating log paths (DB only now)
 $success_message = '';
 $error_message = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_paths') {
-    // Validate admin access
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['action'])
+    && $_POST['action'] === 'update_paths') {
+
     if ($account->isadmin()) {
-        // Create timestamped backup of config file before making changes
-        if (file_exists($config_file)) {
-            $backup_file = $config_file . '.backup_' . date('Y-m-d_H-i-s');
-            if (!copy($config_file, $backup_file)) {
-                $error_message = "Error: Unable to create backup of configuration file.";
-            }
-        }
+        if (!is_object($database) || !method_exists($database, 'prepare')) {
+            $error_message = "Database handle not available.";
+        } else {
+            $uid = $account->userid ?? null;
+            $new_vals = [
+                'APACHE_ACCESS_LOG'     => trim($_POST['apache_access'] ?? $apache_access_log),
+                'APACHE_ERROR_LOG'      => trim($_POST['apache_error'] ?? $apache_error_log),
+                'PHP_ERROR_LOG'         => trim($_POST['php_error'] ?? $php_error_log),
+                'LOG_TAIL_LINES'        => (string)max(10, intval($_POST['tail_lines'] ?? $default_lines)),
+                'LOG_MAX_LINES'         => (string)max(100, intval($_POST['max_lines'] ?? $max_lines)),
+                'LOG_REFRESH_INTERVAL'  => (string)max(5, intval($_POST['refresh_interval'] ?? $refresh_interval)),
+            ];
 
-        if (empty($error_message)) {
-            // Prepare the logs section with proper formatting
-            $logs_section = "[logs]\n";
-            $logs_section .= "; Log file paths for $server_environment environment\n";
-            $logs_section .= "; Last updated: " . date('Y-m-d H:i:s') . "\n";
-            $logs_section .= "APACHE_ACCESS_LOG=\"" . trim($_POST['apache_access'] ?? $apache_access_log) . "\"\n";
-            $logs_section .= "APACHE_ERROR_LOG=\"" . trim($_POST['apache_error'] ?? $apache_error_log) . "\"\n";
-            $logs_section .= "PHP_ERROR_LOG=\"" . trim($_POST['php_error'] ?? $php_error_log) . "\"\n";
-            $logs_section .= "LOG_TAIL_LINES=" . intval($_POST['tail_lines'] ?? $default_lines) . "\n";
-            $logs_section .= "LOG_MAX_LINES=" . intval($_POST['max_lines'] ?? $max_lines) . "\n";
-            $logs_section .= "LOG_REFRESH_INTERVAL=" . intval($_POST['refresh_interval'] ?? $refresh_interval) . "\n";
-
-            if (file_exists($config_file)) {
-                // Read existing config
-                $existing_config = file_get_contents($config_file);
-                if ($existing_config !== false) {
-                    // Remove existing [logs] section if it exists (including all content until next section or EOF)
-                    $pattern = '/\[logs\][^\[]*(?=\[|$)/s';
-                    $existing_config = preg_replace($pattern, '', $existing_config);
-
-                    // Trim and append new logs section
-                    $new_config = trim($existing_config) . "\n\n" . $logs_section;
-                } else {
-                    $error_message = "Error: Unable to read configuration file.";
+            $all_ok = true;
+            foreach ($new_vals as $k => $v) {
+                if (!lv_upsert_config($database, $HOST_CONFIG_TYPE, $k, $v, $uid)) {
+                    $all_ok = false;
+                    break;
                 }
+            }
+
+            if ($all_ok) {
+                $success_message = "Log configuration saved (host scope: {$HOST_CONFIG_TYPE}).";
+                // Refresh in-memory (host overrides)
+                foreach ($new_vals as $k => $v) {
+                    $log_settings[$k] = $v;
+                }
+                $apache_access_log = $new_vals['APACHE_ACCESS_LOG'];
+                $apache_error_log  = $new_vals['APACHE_ERROR_LOG'];
+                $php_error_log     = $new_vals['PHP_ERROR_LOG'];
+                $default_lines     = intval($new_vals['LOG_TAIL_LINES']);
+                $max_lines         = intval($new_vals['LOG_MAX_LINES']);
+                $refresh_interval  = intval($new_vals['LOG_REFRESH_INTERVAL']);
             } else {
-                // Create new config with just logs section
-                $new_config = $logs_section;
-            }
-
-            if (empty($error_message) && isset($new_config)) {
-                if (file_put_contents($config_file, $new_config)) {
-                    $success_message = "Log paths updated successfully! Backup created at: " . basename($backup_file ?? '');
-
-                    // Reload the settings
-                    $log_configs = @parse_ini_file($config_file, true);
-                    if ($log_configs !== false) {
-                        $log_settings = $log_configs['logs'] ?? [];
-                        $apache_access_log = $log_settings['APACHE_ACCESS_LOG'] ?? '/var/log/apache2/access.log';
-                        $apache_error_log = $log_settings['APACHE_ERROR_LOG'] ?? '/var/log/apache2/error.log';
-                        $php_error_log = $log_settings['PHP_ERROR_LOG'] ?? '../_logs_/dev7_PHP_errors.log';
-                        $default_lines = intval($log_settings['LOG_TAIL_LINES'] ?? 25);
-                        $max_lines = intval($log_settings['LOG_MAX_LINES'] ?? 500);
-                        $refresh_interval = intval($log_settings['LOG_REFRESH_INTERVAL'] ?? 10);
-                    }
-                } else {
-                    $error_message = "Error: Unable to save configuration. Check file permissions for: " . htmlspecialchars($config_file);
-                }
+                $error_message = "Error: failed to persist one or more keys.";
             }
         }
     } else {
-        $error_message = "Error: Admin access required to update settings.";
+        $error_message = "Admin access required.";
     }
 }
 
@@ -964,7 +997,9 @@ echo '
 
         <div class="mt-3 text-muted small">
             <i class="bi bi-info-circle"></i>
-            These settings are stored in: <code>' . htmlspecialchars($config_file) . '</code>
+            Settings precedence: host overrides environment.<br>
+            Host config_type: <code><?=htmlspecialchars($HOST_CONFIG_TYPE)?></code><br>
+            Env  config_type: <code><?=htmlspecialchars($ENV_CONFIG_TYPE)?></code>
         </div>
     </div>
 
