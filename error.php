@@ -41,6 +41,19 @@ if (isset($_SESSION[$sessionKey])) {
 // Get current datetime
 $currentDateTime = date('Y-m-d H:i:s');
 
+// Add human-readable summary to error_log
+$host       = $_SERVER['HTTP_HOST']      ?? '-';
+$uri        = $_SERVER['REQUEST_URI']    ?? '-';
+$referrer   = $_SERVER['HTTP_REFERER']   ?? '-';
+$clientIp   = $_SERVER['REMOTE_ADDR']    ?? '-';
+$userAgent  = $_SERVER['HTTP_USER_AGENT']?? '-';
+$humanMsg   = strip_tags($randomMessage);
+$summaryLog = sprintf(
+  "At=%s | Host=%s | URI=%s | Referer=%s | IP=%s | UA=%s | Hash=%s | Message=%s",
+  $currentDateTime, $host, $uri, $referrer, $clientIp, $userAgent, $errorHash, $humanMsg
+);
+error_log('[ErrorPage] ' . $summaryLog);
+
 echo '
 <!-- ERROR Start -->
 <div class="container main-content">
@@ -207,8 +220,12 @@ switch ($mode) {
     // Error handling
     if ($response === false) {
       echo 'Curl error: ' . curl_error($ch);
+      // Log PagerDuty notify failure
+      error_log('[PagerDuty] Notify failed: ' . curl_error($ch));
     } else {
       echo 'Response: ' . $response;
+      // Log PagerDuty notify success
+      error_log('[PagerDuty] Notified | severity='.$severity.' | summary='.$summaryValue.' | component='.$domainAndPage);
     }
 
     // Close cURL session

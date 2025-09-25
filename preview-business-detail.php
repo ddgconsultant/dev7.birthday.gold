@@ -5,8 +5,7 @@
  * Does NOT require login - validates admin token instead
  */
 
-// Start session to check for admin preview mode
-session_start();
+include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 // Initialize preview variables
 $admin_preview_mode = false;
@@ -45,9 +44,6 @@ if (isset($_GET['test']) && isset($_GET['preview']) && !$admin_preview_mode) {
     die('Invalid preview token. This page is only accessible with a valid admin preview token.');
 }
 
-// Include minimal requirements (no auth check)
-include($_SERVER['DOCUMENT_ROOT'] . '/core/connection.inc');
-include($_SERVER['DOCUMENT_ROOT'] . '/core/site-arrays.inc');
 
 if (!$company_id) {
     header('Location: /');

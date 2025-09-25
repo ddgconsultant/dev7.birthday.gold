@@ -1,10 +1,11 @@
 <?PHP
 
 if (empty($getaccountdetailsuser)) {
-    $component_user_data = $current_user_data;
+    $component_user_data = $session->get('current_user_data') ?? [];
 } else {
     $component_user_data = $getaccountdetailsuser;
 }
+
 
 if (empty($component_user_data) || empty($component_user_data['birthdate'])) {
   session_tracking('error-user_getaccoutndetails-failure', 'User data not found.  Redirecting to login page.');
