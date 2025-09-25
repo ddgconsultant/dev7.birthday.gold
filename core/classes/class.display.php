@@ -410,7 +410,7 @@ function smoothScrollToTop(duration) {
       global $qik;
       
       // Get user agent details
-      $userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+      $userAgent = !empty($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
       $browser_details = $qik->getbrowser('full', $userAgent);
       $device_platform = is_array($browser_details) && isset($browser_details['platform']) ? strtolower($browser_details['platform']) : '';
 

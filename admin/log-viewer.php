@@ -450,6 +450,59 @@ function get_log_tail($file, $lines, $search = '') {
     return $output;
 }
 
+// Function to format size badge
+function format_size_badge(int $bytes): array {
+    $badge_class = 'bg-success';
+    if ($bytes >= 1073741824) {
+        return [round($bytes / 1073741824, 2) . ' GB', 'bg-danger'];
+    } elseif ($bytes >= 1048576) {
+        $size_text = round($bytes / 1048576, 2) . ' MB';
+        $badge_class = ($bytes > 104857600) ? 'bg-warning text-dark' : 'bg-info';
+        return [$size_text, $badge_class];
+    } elseif ($bytes >= 1024) {
+        return [round($bytes / 1024, 2) . ' KB', $badge_class];
+    }
+    return [$bytes . ' bytes', $badge_class];
+}
+
+// Function to build log info HTML
+function build_log_info_html(string $display_path, string $resolved_path): string {
+    $host_name   = htmlspecialchars(gethostname() ?: 'unknown');
+    $stack_badge = is_windows() ? 'WAMP' : 'LAMP';
+
+    $base = '
+        <div class="mb-2">
+            <span class="fw-bold">Host:</span> <span>'.$host_name.'</span>
+            <span class="badge bg-secondary ms-2">'.$stack_badge.'</span>
+        </div>
+        <div class="mb-2">
+            <span class="fw-bold">File Path:</span>
+            <code class="small">'.htmlspecialchars($display_path).'</code>
+        </div>';
+
+    if (file_exists($resolved_path)) {
+        $bytes = filesize($resolved_path);
+        [$size_text, $badge_class] = format_size_badge((int)$bytes);
+        $mtime = filemtime($resolved_path);
+        $last_modified = date('Y-m-d H:i:s', $mtime);
+        $time_ago = human_time_diff($mtime);
+
+        $status = '
+            <div class="small">
+                <span class="fw-bold">Size:</span><span class="ms-3">'.$size_text.'</span>
+                <span class="text-muted ms-3">|</span>
+                <span class="fw-bold ms-3">Modified:</span><span title="'.$last_modified.'">'.$time_ago.'</span>
+            </div>';
+    } else {
+        $status = '
+            <div class="small">
+                <span class="badge bg-danger">File Not Found</span>
+            </div>';
+    }
+
+    return $base . $status;
+}
+
 // Get log content if AJAX request
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'true') {
     header('Content-Type: text/plain');
@@ -478,7 +531,6 @@ $additionalstyles .= '
 .nav-tabs-modern {
     display: flex;
     border-bottom: 2px solid #e9ecef;
-    margin-bottom: 2rem;
     gap: 0;
     overflow: hidden;
     position: relative;
@@ -785,20 +837,20 @@ function loadLogContent() {
 function highlightSearchTerms(element, search) {
     const text = element.textContent;
     const regex = new RegExp(`(${search})`, "gi");
-    element.innerHTML = text.replace(regex, "<span class=\"highlight\">$1</span>");
+    element.innerHTML = text.replace(regex, "<mark class=\"bg-warning text-dark px-1\">$1</mark>");
 }
 
 function colorizeLogLevels(element) {
     let html = element.innerHTML;
 
-    // Colorize error patterns
-    html = html.replace(/(\[error\]|ERROR|Fatal|Exception)/gi, "<span class=\"error-line\">$1</span>");
+    // Errors => red
+    html = html.replace(/(\[error\]|ERROR|Fatal|Exception)/gi, "<span class=\"text-danger\">$1</span>");
 
-    // Colorize warning patterns
-    html = html.replace(/(\[warn\]|WARNING|Warning)/gi, "<span class=\"warning-line\">$1</span>");
+    // Warnings => yellow
+    html = html.replace(/(\[warn\]|WARNING|Warning)/gi, "<span class=\"text-warning\">$1</span>");
 
-    // Colorize info patterns
-    html = html.replace(/(\[info\]|INFO|Notice)/gi, "<span class=\"info-line\">$1</span>");
+    // Info => blue
+    html = html.replace(/(\[info\]|INFO|Notice)/gi, "<span class=\"text-info\">$1</span>");
 
     element.innerHTML = html;
 }
@@ -1048,52 +1100,8 @@ echo '
 
 $resolved_path = resolve_log_path($current_log_file);
 
-// Build comprehensive log info
-if (file_exists($resolved_path)) {
-    $file_size = filesize($resolved_path);
-    $size_text = '';
-
-    if ($file_size >= 1073741824) {
-        $size_text = round($file_size / 1073741824, 2) . ' GB';
-        $badge_class = 'bg-danger';
-    } elseif ($file_size >= 1048576) {
-        $size_text = round($file_size / 1048576, 2) . ' MB';
-        $badge_class = ($file_size > 104857600) ? 'bg-warning text-dark' : 'bg-info';
-    } elseif ($file_size >= 1024) {
-        $size_text = round($file_size / 1024, 2) . ' KB';
-        $badge_class = 'bg-success';
-    } else {
-        $size_text = $file_size . ' bytes';
-        $badge_class = 'bg-success';
-    }
-
-    $last_modified = date('Y-m-d H:i:s', filemtime($resolved_path));
-    $time_ago = human_time_diff(filemtime($resolved_path));
-
-    echo '
-                    <div class="mb-2">
-                        <span class="text-muted">File Path:</span>
-                        <code class="small">' . htmlspecialchars($current_log_file) . '</code>
-                        <span class="badge bg-secondary ms-2">' . (is_windows() ? 'WAMP' : 'LAMP') . '</span>
-                    </div>
-                    <div class="small">
-                        <span class="text-muted">Size:</span>
-                        <span class="badge ' . $badge_class . ' ms-1">' . $size_text . '</span>
-                        <span class="text-muted ms-3">|</span>
-                        <span class="text-muted ms-3">Modified:</span>
-                        <span title="' . $last_modified . '">' . $time_ago . '</span>
-                    </div>';
-} else {
-    echo '
-                    <div class="mb-2">
-                        <span class="text-muted">File Path:</span>
-                        <code class="small">' . htmlspecialchars($current_log_file) . '</code>
-                        <span class="badge bg-secondary ms-2">' . (is_windows() ? 'WAMP' : 'LAMP') . '</span>
-                    </div>
-                    <div class="small">
-                        <span class="badge bg-danger">File Not Found</span>
-                    </div>';
-}
+// Build comprehensive log info (DRY)
+echo build_log_info_html($current_log_file, $resolved_path);
 
 echo '
                 </div>
@@ -1139,7 +1147,6 @@ echo '
         </div>
     </div>
 </div>';
-
 
 
 // Include Birthday Gold footer
