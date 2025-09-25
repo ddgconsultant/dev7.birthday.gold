@@ -158,9 +158,21 @@ h1 {
     border-color: #ffeaa7 !important;
 }
 
+.user-item.test-user:hover {
+    background-color: #ffeaa7 !important;
+    border-color: #ffc107 !important;
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15) !important;
+}
+
+/* Parental/Minor account highlighting */
+.user-item.parental-user {
+    border-left: 4px solid #17a2b8 !important; /* Info blue color */
+}
+
 .user-item:hover {
     border-color: #dee2e6;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    background-color: rgba(13, 110, 253, 0.02);
 }
 
 /* Removed user-item-content as we are using Bootstrap grid now */
@@ -848,7 +860,7 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             // Get badges
             $isAdmin = $account->isadmin(['user_id' => $user['user_id']]);
             $isStaff = $account->isstaff('*', $user['user_id']);
-            $isVerified = $account->isverified('*', $user['user_id']);
+            $isVerified = !empty($account->getUserAttribute($user['user_id'], 'verified'));
             
             // Determine badge colors
             $statusColors = [
@@ -873,8 +885,11 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                           strpos(strtolower($user['email']), 'test') !== false ||
                           strpos(strtolower($user['first_name']), 'test') !== false ||
                           strpos(strtolower($user['last_name']), 'test') !== false);
+            
+            // Check if this is a parental/minor account
+            $isParentalUser = ($user['account_type'] === 'parental');
             ?>
-            <div class="card p-2 px-4 mb-1 user-item<?php echo $isTestUser ? ' test-user' : ''; ?>" data-user-id="<?php echo $user['user_id']; ?>">
+            <div class="card p-2 px-4 mb-1 user-item<?php echo $isTestUser ? ' test-user' : ''; ?><?php echo $isParentalUser ? ' parental-user' : ''; ?>" data-user-id="<?php echo $user['user_id']; ?>">
                 <div class="row align-items-start g-3">
                     <!-- Column A: Avatar, name, email, username -->
                     <div class="col-12 col-md-5">
@@ -1258,8 +1273,15 @@ class UserManager {
                                user.email.toLowerCase().includes('test') ||
                                user.first_name.toLowerCase().includes('test') ||
                                user.last_name.toLowerCase().includes('test'));
+            
+            // Check if parental/minor account
+            const isParentalUser = (user.account_type === 'parental');
+            
             if (isTestUser) {
                 userItem.classList.add('test-user');
+            }
+            if (isParentalUser) {
+                userItem.classList.add('parental-user');
             }
             item.querySelector('.user-avatar').src = user.avatar || '/public/avatars/problemavatar.png';
             item.querySelector('.user-name').textContent = `${user.first_name} ${user.last_name}`;

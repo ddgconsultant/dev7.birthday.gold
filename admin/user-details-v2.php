@@ -115,7 +115,6 @@ $additionalstyles .= '
 .nav-tabs-modern {
     display: flex;
     border-bottom: 2px solid #e9ecef;
-    margin-bottom: 2rem;
     gap: 0;
     overflow: hidden;
 }
@@ -763,7 +762,7 @@ echo '
                 </div>
                 <div class="col-lg-4">
                     <div class="info-card">
-                        <div class="card-body">
+                        <div class="card-body p-3">
                             <h5 class="mb-3">Roles & Permissions</h5>
                             <div class="mb-3">';
 
@@ -1054,13 +1053,13 @@ echo '
         <!-- Attributes Tab -->
         <div class="tab-pane fade" id="attributes">
             <div class="info-card">
-                <div class="card-body">
+                <div class="card-body p-3">
                     <h5 class="mb-4">User Attributes</h5>
                     <div class="row mb-4">';
 
 foreach ($user_attributes as $attr) {
     echo '
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-2 mb-3">
                             <div class="text-center">
                                 <h3 class="mb-1">' . $attr['count'] . '</h3>
                                 <small class="text-muted">' . ucfirst(str_replace('_', ' ', $attr['type'])) . '</small>

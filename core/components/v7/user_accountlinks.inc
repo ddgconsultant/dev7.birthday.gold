@@ -275,7 +275,7 @@ $account_links['transfer']= '
 
 if (!empty($accountlinkspresentation)) {
    $linksoutput.= '
-<div class="card mb-3 overflow-hidden"><div class="card-header"><h5 class="mb-0">Account Settings/Links</h5></div><div class="card-body bg-body-tertiary">
+<div class="card mb-3 overflow-hidden"><div class="card-header"><h5 class="mb-0">Elevated Account Settings/Links</h5></div><div class="card-body bg-body-tertiary">
 
 </div>';
 }
@@ -299,7 +299,7 @@ if (!empty($accountlinkspresentation)) {
     $accountlinks_output .= '
 <div class="card mb-3 overflow-hidden">
 <div class="card-header">
-<h5 class="mb-0">Account Settings/Links</h5>
+<h5 class="mb-0">Elevated Account Settings/Links</h5>
 </div>
 <div class="card-body bg-body-tertiary">
 ';
@@ -321,7 +321,7 @@ if (isset($account_links) && is_array($account_links) && !empty($account_links))
 
  
 echo '<div class="content-panel">
-<h3 class="text-secondary fw-bold">Account Settings/Links</h3>';
+<h3 class="text-secondary fw-bold">Elevated Account Settings/Links</h3>';
 echo '<div class="card-body row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 my-0 py-0">';
 
 

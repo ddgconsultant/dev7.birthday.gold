@@ -164,7 +164,7 @@ try {
         // Add badge flags
         $row['is_admin'] = $account->isadmin(['user_id' => $row['user_id'], 'account_admin' => $row['account_admin']]);
         $row['is_staff'] = $account->isstaff('*', $row['user_id']);
-        $row['is_verified'] = $account->isverified('*', $row['user_id']);
+        $row['is_verified'] = !empty($account->getUserAttribute($row['user_id'], 'verified'));
         
         // Format dates
         $row['create_dt'] = date('c', strtotime($row['create_dt']));
