@@ -13,8 +13,25 @@ RewriteRule ^index\.php$ / [L,R=301,NC]
 
 RewriteRule ^getplan/([^/]*)$ getplan.php?plan=$1 [L,QSA]
 
-# Block access to .git directory and redirect to custom 499 page
-RewriteRule ^\.git(/|$) /499 [R=302,L]
+# Block access to sensitive files
+<Files ".gitignore">
+    Require all denied
+</Files>
+
+<Files ".env">
+    Require all denied
+</Files>
+
+<Files ".htaccess">
+    Require all denied
+</Files>
+
+<Files ".htpasswd">
+    Require all denied
+</Files>
+
+# Block access to directories containing "claude"
+RewriteRule ^(.*claude.*)/ - [F,L]
 
 # Normal 403 error page
 ErrorDocument 403 /403

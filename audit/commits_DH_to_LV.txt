@@ -1,6 +1,0 @@
-0903c8d  Mon Sep 22 10:38:00 2025  Claude Code  DISCOVER HOTFIX (rollback to 22463a6) - 202050922
-6cb4a27  Mon Sep 22 15:42:51 2025  Claude Code  Add skeleton loaders to discover page for better loading UX
-dde0c2a  Mon Sep 22 15:47:19 2025  Claude Code  Add skeleton loaders to enrollment-picker for improved loading UX
-1e5f665  Tue Sep 23 10:48:44 2025  Claude Code  Revert "Add skeleton loaders to enrollment-picker for improved loading UX"
-66fd353  Tue Sep 23 10:51:04 2025  Claude Code  Revert "Add skeleton loaders to discover page for better loading UX"
-de79994  Tue Sep 23 22:02:32 2025  Claude Code  LOG VIEWER - 20250923
