@@ -115,7 +115,7 @@ if ($app->formposted()) {
         
         $additionalstyles = '
         <style>
-        /* Keep only essential custom styles that Bootstrap can't handle */
+        /* Keep only essential custom styles that Bootstrap cant handle */
         .success-icon {
             width: 80px;
             height: 80px;

@@ -410,9 +410,10 @@ function smoothScrollToTop(duration) {
       global $qik;
       
       // Get user agent details
-      $browser_details = $qik->getbrowser('full', $_SERVER['HTTP_USER_AGENT']);
-      $device_platform = strtolower($browser_details['platform']);
-  
+      $userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
+      $browser_details = $qik->getbrowser('full', $userAgent);
+      $device_platform = is_array($browser_details) && isset($browser_details['platform']) ? strtolower($browser_details['platform']) : '';
+
       // Default values
       $username = '';
       $content_id = '';
@@ -507,47 +508,51 @@ function smoothScrollToTop(duration) {
   {
     global $session;
     $browser = $session->get('browser_detail');
-    $result = false;
-    $deviceMaker = strtolower($browser['device_maker'] ?? '');
-    $platform = strtolower($browser['platform'] ?? '');
-    $platformDescription = strtolower($browser['platform_description'] ?? '');
-    $deviceName = strtolower($browser['device_name'] ?? '');
-    $deviceType = strtolower($browser['device_type'] ?? '');
 
-    // Check for various Apple device indicators
+    // Normalize to array
+    if (!is_array($browser)) {
+        $browser = [];
+    }
+
+    // Helper to safely lowercase
+    $safeLower = function($value) {
+        return is_string($value) ? strtolower($value) : '';
+    };
+
+    $result = false;
+    $deviceMaker          = $safeLower($browser['device_maker'] ?? '');
+    $platform             = $safeLower($browser['platform'] ?? '');
+    $platformDescription  = $safeLower($browser['platform_description'] ?? '');
+    $deviceName           = $safeLower($browser['device_name'] ?? '');
+    $deviceType           = $safeLower($browser['device_type'] ?? '');
+
     $reason = "";
 
-    if (strpos($deviceMaker, 'apple') !== false) {
+    if ($deviceMaker !== '' && str_contains($deviceMaker, 'apple')) {
       $reason = "Device maker is Apple";
-    } elseif (strpos($platform, 'ios') !== false) {
+    } elseif ($platform !== '' && str_contains($platform, 'ios')) {
       $reason = "Platform is iOS";
-    } elseif (strpos($platformDescription, 'ipod') !== false) {
+    } elseif ($platformDescription !== '' && str_contains($platformDescription, 'ipod')) {
       $reason = "Platform description contains iPod";
-    } elseif (strpos($platformDescription, 'iphone') !== false) {
+    } elseif ($platformDescription !== '' && str_contains($platformDescription, 'iphone')) {
       $reason = "Platform description contains iPhone";
-    } elseif (strpos($platformDescription, 'ipad') !== false) {
+    } elseif ($platformDescription !== '' && str_contains($platformDescription, 'ipad')) {
       $reason = "Platform description contains iPad";
-    } elseif (strpos($platformDescription, 'macos') !== false) {
+    } elseif ($platformDescription !== '' && str_contains($platformDescription, 'macos')) {
       $reason = "Platform description contains macOS";
-    } elseif (strpos($deviceName, 'iphone') !== false) {
+    } elseif ($deviceName !== '' && str_contains($deviceName, 'iphone')) {
       $reason = "Device name contains iPhone";
-    } elseif (strpos($deviceName, 'ipad') !== false) {
+    } elseif ($deviceName !== '' && str_contains($deviceName, 'ipad')) {
       $reason = "Device name contains iPad";
     }
-    // Uncomment these if you want to include them
-    // elseif (strpos($deviceType, 'mobile phone') !== false) {
-    //     $reason = "Device type is mobile phone";
-    // } elseif (strpos($deviceType, 'tablet') !== false) {
-    //     $reason = "Device type is tablet";
-    // }
 
-    if (!empty($reason)) {
+    if ($reason !== "") {
       $result = true;
     }
+
     switch ($type) {
       case 'details':
-        return array('result' => $result, 'reason' => $reason, 'details' => $browser);
-
+        return ['result' => $result, 'reason' => $reason, 'details' => $browser];
       default:
         return $result;
     }
