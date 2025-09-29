@@ -5,6 +5,12 @@
 # Location: /core/components/bg_header.inc
 #-------------------------------------------------------------------------------
 
+// Ensure iframe mode variable is available (fallback if not set in pagestart)
+if (!isset($is_iframe_mode)) {
+    $signup_mode = $session->get('signupmode', '') ?? '';
+    $is_iframe_mode = in_array($signup_mode, ['tabletkiosk', 'upgrade']);
+}
+
 if (!isset($newheader)) {
     echo '
     </head>
@@ -17,7 +23,7 @@ if (!isset($newheader)) {
         // Mobile viewport height fix (actually useful!)
         function setViewportHeight() {
             const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty("--vh", `${vh}px`);
+            document.documentElement.style.setProperty("--vh", vh + "px");
         }
     
         // Set initial viewport height
@@ -171,8 +177,8 @@ if ($isHomePage) {
     
     if (!$isLoggedIn) {
         echo '
-                <a href="/signup" class="btn btn-secondary me-2 d-none d-sm-inline-block">Sign Up</a>
-                <a href="/login" class="btn btn-primary">Login</a>';
+                <a href="/signup" class="btn btn-secondary btn-signup me-2 d-none d-sm-inline-block">Sign Up</a>
+                <a href="/login" class="btn btn-primary login-btn">Login</a>';
     } else {
         // Still show avatar dropdown for logged in users on home page
         echo '
@@ -302,8 +308,13 @@ if ($isHomePage) {
     // User Authentication UI
     if (!$isLoggedIn) {
         // Logged Out State
+        $excludeSignupPages = ['signup', 'createaccount', 'verify', 'checkout'];
+        if (!in_array($currentPage, $excludeSignupPages)) {
+            echo '
+                <a href="/signup" class="btn btn-secondary btn-signup me-2 d-none d-sm-inline-block">Sign Up</a>';
+        }
         echo '
-                <a href="/login" class="login-btn btn-primary">Login</a>';
+                <a href="/login" class="btn btn-primary login-btn">Login</a>';
     } else {
         // Logged In State  
         echo '
@@ -475,19 +486,43 @@ body {
     transform: translateY(-2px);
 }
 
-.top-header .btn-success {
-    background-color: transparent;
+.top-header .btn-signup {
+    background-color: #FFF8DC;
     border: 2px solid #FFD700;
-    color: #FFD700;
+    color: #000;
     padding: 0.5rem 1.5rem;
     font-weight: 600;
     border-radius: 25px;
     text-decoration: none;
     display: inline-block;
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.top-header .btn-success:hover {
+.top-header .btn-signup::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255, 215, 0, 0.29), transparent);
+    transform: skewX(-20deg);
+    animation: signup-shimmer 10s infinite;
+    pointer-events: none;
+}
+
+@keyframes signup-shimmer {
+    0% {
+        left: -150%;
+    }
+    100% {
+        left: 150%;
+    }
+}
+
+.top-header .btn-signup:hover {
     background-color: #FFD700;
     color: #000;
     transform: translateY(-2px);
@@ -496,7 +531,7 @@ body {
 /* Home page specific - ensure buttons are visible on transparent header */
 .home-header .btn-primary,
 .home-header .login-btn,
-.home-header .btn-success {
+.home-header .btn-signup {
     color: #fff !important;
     border-color: rgba(255, 255, 255, 0.8) !important;
     background-color: transparent !important;
@@ -508,8 +543,13 @@ body {
     border-color: #fff !important;
 }
 
-.home-header .btn-success:hover {
+.home-header .btn-signup::after {
+    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.33), transparent);
+}
+
+.home-header .btn-signup:hover {
     background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
     border-color: #fff !important;
 }
 

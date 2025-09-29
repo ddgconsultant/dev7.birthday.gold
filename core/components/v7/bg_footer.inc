@@ -1086,19 +1086,12 @@ function toggleMoreMenu() {
 }
 </script>';
 
-// Cookie consent banner logic
-// Check if user has already set cookie preferences
-$cookiePreferencesSet = isset($_COOKIE['bdgold_lastSetDate']) && !empty($_COOKIE['bdgold_lastSetDate']);
-
-// Also check if they've explicitly accepted or rejected cookies
-$hasExplicitPreferences = (
-    (isset($_COOKIE['bdgold_analyticsCookie']) && !empty($_COOKIE['bdgold_analyticsCookie'])) ||
-    (isset($_COOKIE['bdgold_performanceCookie']) && !empty($_COOKIE['bdgold_performanceCookie'])) ||
-    (isset($_COOKIE['bdgold_advertisingCookie']) && !empty($_COOKIE['bdgold_advertisingCookie']))
-);
+// Cookie consent banner logic - decision made at page start in bg_pagestart.inc
+// Use the global variable set early in page execution to avoid timing issues
+$show_cookie_banner = $show_cookie_banner ?? true; // Default to true if not set
 
 // Only include cookie banner HTML if preferences haven't been set
-if (!$cookiePreferencesSet && !$hasExplicitPreferences) {
+if ($show_cookie_banner) {
     // Set the cookie banner version if not already defined elsewhere
     if (!isset($cookiebannerversion)) {
         // Random selection between version 1 and 2

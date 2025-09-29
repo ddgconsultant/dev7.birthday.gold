@@ -29,12 +29,59 @@ if ($current_page === 'signup') {
     $meta_description = 'Choose from hundreds of businesses offering birthday freebies and member rewards. Customize your Birthday.Gold experience.';
 }
 
-// Check if we're in signup mode for iframe/kiosk contexts
-$signup_mode = $session->get('signupmode', '') ?? '';
-$is_iframe_mode = in_array($signup_mode, ['tabletkiosk', 'upgrade']);
+// Check if user has already set cookie preferences
+$cookiePreferencesSet = isset($_COOKIE['bdgold_lastSetDate']) && !empty($_COOKIE['bdgold_lastSetDate']);
 
-// Handle raw header mode for special contexts (preserved from original logic)
-$raw_header = $headerattribute['rawheader'] ?? false;
+// Also check if they've explicitly accepted or rejected cookies
+$hasExplicitPreferences = (
+    (isset($_COOKIE['bdgold_analyticsCookie']) && !empty($_COOKIE['bdgold_analyticsCookie'])) ||
+    (isset($_COOKIE['bdgold_performanceCookie']) && !empty($_COOKIE['bdgold_performanceCookie'])) ||
+    (isset($_COOKIE['bdgold_advertisingCookie']) && !empty($_COOKIE['bdgold_advertisingCookie']))
+);
+
+// Additional check for any cookie preference indicators (but exclude banner_closed counter)
+$hasAnyCookiePreference = (
+    isset($_COOKIE['bdgold_cookieConsent']) ||
+    isset($_COOKIE['bdgold_cookieAccepted']) ||
+    isset($_COOKIE['bdgold_cookieRejected']) ||
+    (isset($_COOKIE['bdgold_analyticsCookie']) && $_COOKIE['bdgold_analyticsCookie'] !== '') ||
+    (isset($_COOKIE['bdgold_performanceCookie']) && $_COOKIE['bdgold_performanceCookie'] !== '') ||
+    (isset($_COOKIE['bdgold_advertisingCookie']) && $_COOKIE['bdgold_advertisingCookie'] !== '')
+);
+
+
+
+// Increment page view counter
+if (!isset($_SESSION['bdgold_page_views'])) {
+    $_SESSION['bdgold_page_views'] = 0;
+}
+$_SESSION['bdgold_page_views']++;
+
+// Initialize dismissal counter and last dismissal page if not set
+if (!isset($_SESSION['bdgold_banner_dismissals'])) {
+    $_SESSION['bdgold_banner_dismissals'] = 0;
+}
+if (!isset($_SESSION['bdgold_last_dismissal_page'])) {
+    $_SESSION['bdgold_last_dismissal_page'] = 0;
+}
+
+$pageView = $_SESSION['bdgold_page_views'];
+$dismissalCount = $_SESSION['bdgold_banner_dismissals'];
+$lastDismissalPage = $_SESSION['bdgold_last_dismissal_page'];
+
+// Calculate pages since last dismissal
+$pagesSinceDismissal = $pageView - $lastDismissalPage;
+
+// Show banner if:
+// 1. No dismissals yet (first time), OR
+// 2. More than 2 pages since last dismissal AND under 3 total dismissals, OR  
+// 3. 3 or more dismissals (permanent show)
+$shouldShowBanner = ($dismissalCount == 0) || 
+                   ($pagesSinceDismissal > 2 && $dismissalCount < 3) || 
+                   ($dismissalCount >= 3);
+
+// Set global variable for cookie banner display - checked at page start
+$show_cookie_banner = (!$cookiePreferencesSet && !$hasExplicitPreferences && !$hasAnyCookiePreference) && $shouldShowBanner;
 
 
 if(empty($ignoretrueheader)) {

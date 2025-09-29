@@ -1,22 +1,26 @@
 <?php
 // Cookie banner include file - simplified version
-if (!isset($_COOKIE['bdgold_banner_closed'])) {
-    setcookie("bdgold_banner_closed", "0", [
-        'expires' => time() + (86400 * 365),
-        'path' => '/',
-        'secure' => true,
-        'samesite' => 'None',
-        'httponly' => false,
-        'domain' => 'birthday.gold'
-    ]);
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-$closeCount = isset($_COOKIE['bdgold_banner_closed']) ? intval($_COOKIE['bdgold_banner_closed']) : 0;
-$showCloseButton = $closeCount < 3;
+// Initialize dismissal counter if not set
+if (!isset($_SESSION['bdgold_banner_dismissals'])) {
+    $_SESSION['bdgold_banner_dismissals'] = 0;
+}
+
+$dismissalCount = $_SESSION['bdgold_banner_dismissals'];
+$showCloseButton = $dismissalCount < 3;
 ?>
 
 <!-- Cookie Banner -->
-<div id="cookieConsentBanner" class="cookie-banner position-fixed bottom-0 start-0 end-0 text-white">
+<div id="cookieConsentBanner" class="cookie-banner position-fixed bottom-0 start-0 end-0 text-white" 
+     data-cookie-consent="true" 
+     data-nosnippet
+     role="dialog" 
+     aria-live="polite" 
+     aria-label="Cookie Consent Banner"
+     aria-describedby="cookie-description">
   <div class="cookie-content mx-auto" style="max-width: 1200px;">
     <div class="cookie-header d-flex justify-content-between align-items-center mb-3">
       <!-- Large screen heading -->
@@ -29,7 +33,7 @@ $showCloseButton = $closeCount < 3;
       <?php endif; ?>
     </div>
 
-    <p>
+    <p id="cookie-description">
       <!-- Large screen text -->
       <span class="d-none d-sm-inline">
         We use cookies to make your Birthday.Gold experience sparkle! ✨ Just like how we help you collect birthday rewards, these cookies help us remember your preferences and improve your experience.
@@ -67,9 +71,11 @@ $showCloseButton = $closeCount < 3;
 <style>
 .cookie-banner {
     background-color: rgb(62, 51, 5);
-    z-index: 9999;
+    z-index: 9999 !important;
     font-size: 0.9rem;
     transition: transform 0.3s ease-in-out;
+    border-top: 3px solid #ffc107 !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
 
     /* Squiggly top border */
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='12'><path d='M0,6 Q25,0 50,6 T100,6' fill='transparent' stroke='%23ffc107' stroke-width='7'/></svg>");
@@ -77,6 +83,11 @@ $showCloseButton = $closeCount < 3;
     background-position: top left;
     background-size: 100px 12px;
     padding-top: 12px;
+    
+    /* Make it resistant to hiding */
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .cookie-banner.hidden {
@@ -99,30 +110,92 @@ $showCloseButton = $closeCount < 3;
 
 
 <script>
+// Immediately ensure cookie banner is visible
+(function() {
+    const cookieBanner = document.getElementById('cookieConsentBanner');
+    if (cookieBanner) {
+        // Force visibility
+        cookieBanner.style.display = 'block';
+        cookieBanner.style.visibility = 'visible';
+        cookieBanner.style.opacity = '1';
+        cookieBanner.style.transform = 'translateY(0)';
+        cookieBanner.classList.remove('hidden');
+        
+        // Prevent hiding by extensions
+        Object.defineProperty(cookieBanner.style, 'display', {
+            get: function() { return 'block'; },
+            set: function(value) { 
+                if (value !== 'none' && value !== 'hidden') {
+                    this.setProperty('display', value);
+                }
+            }
+        });
+        
+        // Attach close button event listener immediately
+        const closeCookieBanner = document.getElementById('closeCookieBanner');
+        if (closeCookieBanner) {
+            closeCookieBanner.addEventListener('click', function() {
+                // Hide the banner by setting transform directly
+                cookieBanner.style.transform = 'translateY(100%)';
+                
+                // Increment dismissal counter via AJAX
+                fetch('/ajax/increment_banner_dismissal.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=increment_dismissal'
+                }).catch(function(error) {
+                    console.log('Error incrementing dismissal counter:', error);
+                });
+                
+                // Automatically show again after 24 hours (only if under 3 dismissals)
+                setTimeout(function() {
+                    if (!document.cookie.includes('bdgold_lastSetDate')) {
+                        cookieBanner.style.transform = 'translateY(0)';
+                    }
+                }, 24 * 60 * 60 * 1000); // 24 hours
+            });
+        }
+    }
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
     const cookieBanner = document.getElementById('cookieConsentBanner');
     const closeCookieBanner = document.getElementById('closeCookieBanner');
     const acceptAll = document.getElementById('acceptAll');
     const rejectAll = document.getElementById('rejectAll');
     
-    // Close button functionality (increase counter)
-    if (closeCookieBanner) {
-        closeCookieBanner.addEventListener('click', function() {
-            cookieBanner.classList.add('hidden');
-            
-            // Increment close count
-            const currentCount = <?php echo $closeCount; ?>;
-            document.cookie = "bdgold_banner_closed=" + (currentCount + 1) + 
-                              "; path=/; max-age=31536000; secure; samesite=None; domain=birthday.gold";
-            
-            // Automatically show again after 24 hours
-            setTimeout(function() {
-                if (!document.cookie.includes('bdgold_lastSetDate')) {
-                    cookieBanner.classList.remove('hidden');
-                }
-            }, 24 * 60 * 60 * 1000); // 24 hours
-        });
+    // Ensure banner is still visible after DOM load (but don't override if user just closed it)
+    if (cookieBanner && !cookieBanner.classList.contains('hidden')) {
+        cookieBanner.style.display = 'block';
+        cookieBanner.style.visibility = 'visible';
+        cookieBanner.style.opacity = '1';
     }
+    
+    // Close button functionality (increase counter) - MOVED TO IMMEDIATE FUNCTION ABOVE
+    // if (closeCookieBanner) {
+    //     console.log('Close button found, attaching event listener');
+    //     closeCookieBanner.addEventListener('click', function() {
+    //         console.log('Close button clicked!');
+    //         cookieBanner.classList.add('hidden');
+    //         
+    //         // Increment close count
+    //         const currentCount = <?php echo $closeCount; ?>;
+    //         console.log('Current count:', currentCount, 'New count:', currentCount + 1);
+    //         document.cookie = "bdgold_banner_closed=" + (currentCount + 1) + 
+    //                           "; path=/; max-age=31536000; secure; samesite=None; domain=birthday.gold";
+    //         
+    //         // Automatically show again after 24 hours
+    //         setTimeout(function() {
+    //             if (!document.cookie.includes('bdgold_lastSetDate')) {
+    //                 cookieBanner.classList.remove('hidden');
+    //             }
+    //         }, 24 * 60 * 60 * 1000); // 24 hours
+    //     });
+    // } else {
+    //     console.log('Close button NOT found!');
+    // }
     
     // Cookie options
     const cookieOptions = "; path=/; max-age=31536000; secure; samesite=None; domain=birthday.gold";

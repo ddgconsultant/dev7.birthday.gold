@@ -539,11 +539,21 @@ $businessHours = $app->bg_businesshours();
         $paidQuery = "SELECT COUNT(*) as count FROM bg_users WHERE status='active' AND account_plan NOT IN ('free', 'user_free', '')";
         $paidResult = $database->getrow($paidQuery);
         $userStats['paid'] = $paidResult['count'] ?? 0;
-        
+
         // Get free users
         $freeQuery = "SELECT COUNT(*) as count FROM bg_users WHERE status='active' AND (account_plan IN ('free', 'user_free') OR account_plan = '' OR account_plan IS NULL)";
         $freeResult = $database->getrow($freeQuery);
         $userStats['free'] = $freeResult['count'] ?? 0;
+
+        // Get new users today
+        $todayQuery = "SELECT COUNT(*) as count FROM bg_users WHERE DATE(create_dt) = CURDATE()";
+        $todayResult = $database->getrow($todayQuery);
+        $userStats['new_today'] = $todayResult['count'] ?? 0;
+
+        // Get new users in last 7 days
+        $weekQuery = "SELECT COUNT(*) as count FROM bg_users WHERE create_dt >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        $weekResult = $database->getrow($weekQuery);
+        $userStats['new_week'] = $weekResult['count'] ?? 0;
         
         // Calculate totals
         $activeUsers = $userStats['status']['active'] ?? 0;
@@ -552,26 +562,34 @@ $businessHours = $app->bg_businesshours();
         $totalUsers = $activeUsers + $pendingUsers + $validatedUsers;
         ?>
         <div class="stats-grid">
-            <div class="stat-card d-flex align-items-center" style="padding: 1rem; min-height: 120px;">
+            <div class="stat-card d-flex align-items-center p-2" style="min-height: 120px;">
                 <div class="d-flex align-items-center w-100">
-                    <div class="flex-grow-1 text-center border-end pe-3">
-                        <div class="stat-value" style="font-size: 2rem;">
+                    <div class="text-center border-end pe-3" style="width: 50%;">
+                        <div class="stat-value fs-2">
                             <?php echo number_format($totalUsers); ?>
                         </div>
-                        <div class="stat-label" style="font-size: 0.875rem; text-transform: lowercase;">users</div>
+                        <div class="stat-label small text-lowercase">users</div>
                     </div>
-                    <div class="ps-3" style="min-width: 120px;">
-                        <div class="d-flex align-items-center mb-1">
-                            <span class="fw-bold me-2" style="font-size: 0.95rem; min-width: 35px; text-align: right;"><?php echo number_format($activeUsers); ?></span>
-                            <span class="text-muted" style="font-size: 0.8rem;">Active</span>
+                    <div class="ps-3" style="width: 50%;">
+                        <div class="d-flex align-items-center p-0 mb-1" style="line-height: 1.1;">
+                            <span class="fw-bold me-2 text-success text-end p-0 m-0" style="min-width: 35px;"><?php echo number_format($userStats['new_today']); ?></span>
+                            <span class="text-muted small p-0 m-0">New/Today</span>
                         </div>
-                        <div class="d-flex align-items-center mb-1">
-                            <span class="fw-bold me-2" style="font-size: 0.95rem; min-width: 35px; text-align: right;"><?php echo number_format($userStats['paid']); ?></span>
-                            <span class="text-muted" style="font-size: 0.8rem;">Paid</span>
+                        <div class="d-flex align-items-center p-0 mb-1" style="line-height: 1.1;">
+                            <span class="fw-bold me-2 text-primary text-end p-0 m-0" style="min-width: 35px;"><?php echo number_format($userStats['new_week']); ?></span>
+                            <span class="text-muted small p-0 m-0">New/7days</span>
                         </div>
-                        <div class="d-flex align-items-center">
-                            <span class="fw-bold me-2" style="font-size: 0.95rem; min-width: 35px; text-align: right;"><?php echo number_format($pendingUsers); ?></span>
-                            <span class="text-muted" style="font-size: 0.8rem;">Pending</span>
+                        <div class="d-flex align-items-center p-0 mb-1" style="line-height: 1.1;">
+                            <span class="fw-bold me-2 text-end p-0 m-0" style="min-width: 35px;"><?php echo number_format($activeUsers); ?></span>
+                            <span class="text-muted small p-0 m-0">Active</span>
+                        </div>
+                        <div class="d-flex align-items-center p-0 mb-1" style="line-height: 1.1;">
+                            <span class="fw-bold me-2 text-end p-0 m-0" style="min-width: 35px;"><?php echo number_format($userStats['paid']); ?></span>
+                            <span class="text-muted small p-0 m-0">Paid</span>
+                        </div>
+                        <div class="d-flex align-items-center p-0" style="line-height: 1.1;">
+                            <span class="fw-bold me-2 text-end p-0 m-0" style="min-width: 35px;"><?php echo number_format($pendingUsers); ?></span>
+                            <span class="text-muted small p-0 m-0">Pending</span>
                         </div>
                     </div>
                 </div>
