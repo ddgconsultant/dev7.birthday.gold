@@ -93,13 +93,6 @@ $event_breakdown = $database->query($event_breakdown_sql, $query_params)->fetchA
 
 $additionalstyles .= '
 <style>
-.drill-down-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 2rem 0;
-    margin-bottom: 2rem;
-}
-
 .stat-card {
     background: white;
     border-radius: 12px;
@@ -134,9 +127,10 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
-<div class="drill-down-header">
+<!-- Hero Section -->
+<div class="content-header-admin">
     <div class="container">
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center mt-3 mb-3">
             <a href="/admin/analytics-dashboard?date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
                class="btn btn-light me-3">
                 <i class="bi bi-arrow-left"></i> Back
@@ -150,7 +144,7 @@ include($dir['core_components'] . '/bg_header.inc');
                         Country Analysis: <?php echo htmlspecialchars($drill_down_value); ?>
                     <?php endif; ?>
                 </h1>
-                <p class="mb-0 mt-2 opacity-75">
+                <p class="lead mb-0 mt-2">
                     <?php echo date('M j, Y', strtotime($date_from)); ?> - <?php echo date('M j, Y', strtotime($date_to)); ?>
                 </p>
             </div>
