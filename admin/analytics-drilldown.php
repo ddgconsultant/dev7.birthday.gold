@@ -128,9 +128,9 @@ include($dir['core_components'] . '/bg_header.inc');
 ?>
 
 <!-- Hero Section -->
-<div class="content-header-admin">
+<div class="content-header-admin" style="padding: 1.5rem 0;">
     <div class="container">
-        <h1 class="mt-3 text-white">
+        <h1 class="mt-2 mb-2 text-white">
             <i class="bi bi-zoom-in"></i>
             <?php if ($drill_down_type === 'page'): ?>
                 Page Analysis
@@ -138,7 +138,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 Country Analysis
             <?php endif; ?>
         </h1>
-        <p class="lead mb-4 text-white">
+        <p class="lead mb-2 text-white">
             <?php if ($drill_down_type === 'page'): ?>
                 <code class="text-white bg-dark px-2 py-1 rounded"><?php echo htmlspecialchars($drill_down_value); ?></code>
             <?php else: ?>
