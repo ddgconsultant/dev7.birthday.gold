@@ -152,6 +152,18 @@ $additionalstyles .= '
     border: 1px solid #e9ecef;
     margin-bottom: 1.5rem;
 }
+
+/* Analytics drill-down links */
+.analytics-drill-link {
+    color: #0d6efd;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.analytics-drill-link:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
 </style>
 ';
 
@@ -284,7 +296,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                     <?php if ($event['username']): ?>
                                         <?php if ($event['user_id'] && $drill_down_type !== 'user'): ?>
                                         <a href="/admin/analytics-drilldown?user=<?php echo $event['user_id']; ?>&date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
-                                           class="text-decoration-none">
+                                           class="analytics-drill-link">
                                             <?php echo htmlspecialchars($event['username']); ?>
                                         </a>
                                         <?php else: ?>
@@ -311,7 +323,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                 <td>
                                     <?php if ($drill_down_type !== 'session'): ?>
                                     <a href="/admin/analytics-drilldown?session=<?php echo urlencode($event['sessionid']); ?>&date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
-                                       class="text-decoration-none">
+                                       class="analytics-drill-link">
                                         <small><?php echo substr($event['sessionid'], 0, 8); ?>...</small>
                                     </a>
                                     <?php else: ?>

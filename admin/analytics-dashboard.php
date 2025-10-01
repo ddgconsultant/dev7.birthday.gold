@@ -287,6 +287,18 @@ $additionalstyles .= '
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
+
+/* Analytics drill-down links */
+.analytics-drill-link {
+    color: #0d6efd;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.analytics-drill-link:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
 </style>
 ';
 
