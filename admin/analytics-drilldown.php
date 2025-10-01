@@ -31,7 +31,8 @@ if (!$drill_down_type) {
 }
 
 // Build WHERE clause
-$where_conditions = ["type = 'analytics'", "create_dt BETWEEN :date_from AND :date_to"];
+// Use end of day for date_to to include full day
+$where_conditions = ["type = 'analytics'", "create_dt BETWEEN :date_from AND DATE_ADD(:date_to, INTERVAL 1 DAY)"];
 $query_params = ['date_from' => $date_from, 'date_to' => $date_to];
 
 if ($drill_down_type === 'page') {
