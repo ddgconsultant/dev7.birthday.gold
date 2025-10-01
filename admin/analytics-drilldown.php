@@ -92,6 +92,20 @@ ORDER BY count DESC
 ";
 $event_breakdown = $database->query($event_breakdown_sql, $query_params)->fetchAll();
 
+// Get scroll depth breakdown
+$scroll_depth_sql = "
+SELECT
+    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '$.event_data.depth')) as depth,
+    COUNT(*) as count
+FROM bg_sessiontracking
+WHERE $where_clause
+    AND name = 'analytics:scroll_depth'
+    AND JSON_EXTRACT(tracking_data, '$.event_data.depth') IS NOT NULL
+GROUP BY depth
+ORDER BY CAST(depth AS UNSIGNED)
+";
+$scroll_depth_data = $database->query($scroll_depth_sql, $query_params)->fetchAll();
+
 $additionalstyles .= '
 <style>
 .stat-card {
@@ -197,6 +211,19 @@ include($dir['core_components'] . '/bg_header.inc');
                 <h3>Event Breakdown</h3>
                 <canvas id="eventChart"></canvas>
             </div>
+
+            <!-- Scroll Depth Breakdown -->
+            <?php if (!empty($scroll_depth_data)): ?>
+            <div class="chart-card mt-3">
+                <h3>Scroll Depth Distribution</h3>
+                <canvas id="scrollChart"></canvas>
+                <div class="mt-3">
+                    <small class="text-muted">
+                        Shows how far users scrolled on this page
+                    </small>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
 
         <!-- Detailed Events Table -->
@@ -278,6 +305,44 @@ new Chart(eventCtx, {
         }
     }
 });
+
+<?php if (!empty($scroll_depth_data)): ?>
+// Scroll Depth Chart
+const scrollCtx = document.getElementById('scrollChart').getContext('2d');
+new Chart(scrollCtx, {
+    type: 'bar',
+    data: {
+        labels: <?php echo json_encode(array_map(function($d) { return $d['depth'] . '%'; }, $scroll_depth_data)); ?>,
+        datasets: [{
+            label: 'Users',
+            data: <?php echo json_encode(array_column($scroll_depth_data, 'count')); ?>,
+            backgroundColor: [
+                '#ffc107', // 25% - yellow
+                '#ff9800', // 50% - orange
+                '#ff5722', // 75% - deep orange
+                '#4caf50'  // 100% - green (success!)
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            title: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+<?php endif; ?>
 </script>
 
 <?php
