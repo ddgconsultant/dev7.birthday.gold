@@ -106,8 +106,8 @@ ORDER BY CAST(depth AS UNSIGNED)
 ";
 $scroll_depth_data = $database->query($scroll_depth_sql, $query_params)->fetchAll();
 
-// Disable sticky footer for this page
-$nostickyfooter = true;
+// Use no footer for this page
+$display_footertype = 'none';
 
 $additionalstyles .= '
 <style>
@@ -349,7 +349,6 @@ new Chart(scrollCtx, {
 </script>
 
 <?php
-$display_footertype = 'min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>
