@@ -130,29 +130,37 @@ include($dir['core_components'] . '/bg_header.inc');
 <!-- Hero Section -->
 <div class="content-header-admin">
     <div class="container">
-        <div class="d-flex align-items-center mt-3 mb-3">
-            <a href="/admin/analytics-dashboard?date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
-               class="btn btn-light me-3">
-                <i class="bi bi-arrow-left"></i> Back
-            </a>
-            <div>
-                <h1 class="mb-0">
-                    <i class="bi bi-zoom-in"></i>
-                    <?php if ($drill_down_type === 'page'): ?>
-                        Page Analysis: <code><?php echo htmlspecialchars($drill_down_value); ?></code>
-                    <?php else: ?>
-                        Country Analysis: <?php echo htmlspecialchars($drill_down_value); ?>
-                    <?php endif; ?>
-                </h1>
-                <p class="lead mb-0 mt-2">
-                    <?php echo date('M j, Y', strtotime($date_from)); ?> - <?php echo date('M j, Y', strtotime($date_to)); ?>
-                </p>
-            </div>
-        </div>
+        <h1 class="mt-3">
+            <i class="bi bi-zoom-in"></i>
+            <?php if ($drill_down_type === 'page'): ?>
+                Page Analysis
+            <?php else: ?>
+                Country Analysis
+            <?php endif; ?>
+        </h1>
+        <p class="lead mb-4">
+            <?php if ($drill_down_type === 'page'): ?>
+                <code><?php echo htmlspecialchars($drill_down_value); ?></code>
+            <?php else: ?>
+                <?php echo htmlspecialchars($drill_down_value); ?>
+            <?php endif; ?>
+            <span class="text-muted ms-3">
+                <?php echo date('M j, Y', strtotime($date_from)); ?> - <?php echo date('M j, Y', strtotime($date_to)); ?>
+            </span>
+        </p>
     </div>
 </div>
 
 <div class="container-fluid py-4">
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-12 text-end">
+            <a href="/admin/analytics-dashboard?date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
+               class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
     <!-- Summary Stats -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
