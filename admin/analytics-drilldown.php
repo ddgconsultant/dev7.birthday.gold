@@ -15,6 +15,16 @@ $user_filter = $_GET['user'] ?? null;
 $date_from = $_GET['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
 $date_to = $_GET['date_to'] ?? date('Y-m-d');
 
+// Pagination parameters
+$per_page = isset($_GET['per_page']) ? (int)$_GET['per_page'] : 250;
+$current_page = isset($_GET['p']) ? max(1, (int)$_GET['p']) : 1;
+$offset = ($current_page - 1) * $per_page;
+
+// Validate per_page
+if (!in_array($per_page, [250, 1000, 5000])) {
+    $per_page = 250;
+}
+
 // Determine drill-down type
 $drill_down_type = null;
 $drill_down_value = null;
@@ -59,7 +69,16 @@ if ($drill_down_type === 'page') {
 
 $where_clause = implode(' AND ', $where_conditions);
 
-// Get detailed event data
+// Get total count for pagination
+$count_sql = "
+SELECT COUNT(*) as total
+FROM bg_sessiontracking
+WHERE $where_clause
+";
+$total_events = $database->query($count_sql, $query_params)->fetchColumn();
+$total_pages = ceil($total_events / $per_page);
+
+// Get detailed event data with pagination
 $events_sql = "
 SELECT
     create_dt,
@@ -78,7 +97,7 @@ SELECT
 FROM bg_sessiontracking
 WHERE $where_clause
 ORDER BY create_dt DESC
-LIMIT 500
+LIMIT $per_page OFFSET $offset
 ";
 $events = $database->query($events_sql, $query_params)->fetchAll();
 
@@ -119,6 +138,22 @@ GROUP BY depth
 ORDER BY CAST(depth AS UNSIGNED)
 ";
 $scroll_depth_data = $database->query($scroll_depth_sql, $query_params)->fetchAll();
+
+// Helper function to build pagination URLs
+function buildPaginationUrl($page_num, $per_page, $params) {
+    $query = array_merge($params, ['p' => $page_num, 'per_page' => $per_page]);
+    return '/admin/analytics-drilldown?' . http_build_query($query);
+}
+
+// Build base params for pagination
+$base_params = array_filter([
+    'page' => $page_filter,
+    'country' => $country_filter,
+    'session' => $session_filter,
+    'user' => $user_filter,
+    'date_from' => $date_from,
+    'date_to' => $date_to
+]);
 
 // Use no footer for this page
 $display_footertype = 'none';
@@ -266,7 +301,72 @@ include($dir['core_components'] . '/bg_header.inc');
         <!-- Detailed Events Table -->
         <div class="col-md-8">
             <div class="chart-card">
-                <h3>Recent Events (Last 500)</h3>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0">Events (<?php echo number_format($total_events); ?> total)</h3>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 me-2">Per page:</label>
+                        <select class="form-select form-select-sm" style="width: auto;" onchange="location.href=this.value">
+                            <option value="<?php echo buildPaginationUrl($current_page, 250, $base_params); ?>" <?php echo $per_page === 250 ? 'selected' : ''; ?>>250</option>
+                            <option value="<?php echo buildPaginationUrl($current_page, 1000, $base_params); ?>" <?php echo $per_page === 1000 ? 'selected' : ''; ?>>1,000</option>
+                            <option value="<?php echo buildPaginationUrl($current_page, 5000, $base_params); ?>" <?php echo $per_page === 5000 ? 'selected' : ''; ?>>5,000</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <?php if ($total_pages > 1): ?>
+                <nav aria-label="Event pagination">
+                    <ul class="pagination pagination-sm mb-3">
+                        <!-- Previous -->
+                        <?php if ($current_page > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="<?php echo buildPaginationUrl($current_page - 1, $per_page, $base_params); ?>">Previous</a>
+                        </li>
+                        <?php else: ?>
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                        <?php endif; ?>
+
+                        <!-- Page numbers -->
+                        <?php
+                        $start_page = max(1, $current_page - 2);
+                        $end_page = min($total_pages, $current_page + 2);
+
+                        if ($start_page > 1): ?>
+                            <li class="page-item"><a class="page-link" href="<?php echo buildPaginationUrl(1, $per_page, $base_params); ?>">1</a></li>
+                            <?php if ($start_page > 2): ?>
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                            <?php endif; ?>
+                        <?php endif; ?>
+
+                        <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                        <li class="page-item <?php echo $i === $current_page ? 'active' : ''; ?>">
+                            <a class="page-link" href="<?php echo buildPaginationUrl($i, $per_page, $base_params); ?>"><?php echo $i; ?></a>
+                        </li>
+                        <?php endfor; ?>
+
+                        <?php if ($end_page < $total_pages): ?>
+                            <?php if ($end_page < $total_pages - 1): ?>
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                            <?php endif; ?>
+                            <li class="page-item"><a class="page-link" href="<?php echo buildPaginationUrl($total_pages, $per_page, $base_params); ?>"><?php echo $total_pages; ?></a></li>
+                        <?php endif; ?>
+
+                        <!-- Next -->
+                        <?php if ($current_page < $total_pages): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="<?php echo buildPaginationUrl($current_page + 1, $per_page, $base_params); ?>">Next</a>
+                        </li>
+                        <?php else: ?>
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+                <?php endif; ?>
+
                 <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                     <table class="table table-hover table-sm">
                         <thead style="position: sticky; top: 0; background: white; z-index: 10;">
