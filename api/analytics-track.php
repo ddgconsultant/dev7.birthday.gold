@@ -150,7 +150,7 @@ try {
         'sessionid' => session_id() ?: $sessionId,
         'ip' => $client_ip,
         'user_id' => $current_user_data['user_id'] ?? null,
-        'username' => $current_user_data['user_username'] ?? null,
+        'username' => $current_user_data['username'] ?? $current_user_data['user_username'] ?? null,
         'type' => 'analytics',
         'tracking_data' => json_encode($trackingData, JSON_PRETTY_PRINT),
         'site' => $site,
