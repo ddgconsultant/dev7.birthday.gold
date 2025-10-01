@@ -7,10 +7,44 @@ include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 $page_title = "Analytics Dashboard - Birthday.Gold";
 $page_description = "Real-time analytics and user behavior insights";
 
-// Get date range from query params
+// Get filters from query params
 $date_from = $_GET['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
 $date_to = $_GET['date_to'] ?? date('Y-m-d');
 $event_filter = $_GET['event'] ?? 'all';
+$site_filter = $_GET['site'] ?? 'all';
+$traffic_filter = $_GET['traffic'] ?? 'organic_only';
+$server_filter = $_GET['server'] ?? 'all';
+
+// Build WHERE clause based on filters
+$where_conditions = ["type = 'analytics'", "create_dt BETWEEN :date_from AND :date_to"];
+$query_params = ['date_from' => $date_from, 'date_to' => $date_to];
+
+// Site filter
+if ($site_filter !== 'all') {
+    $where_conditions[] = "site = :site";
+    $query_params['site'] = $site_filter;
+}
+
+// Server filter (for load balanced production)
+if ($server_filter !== 'all') {
+    $where_conditions[] = "server = :server";
+    $query_params['server'] = $server_filter;
+}
+
+// Traffic source filter
+if ($traffic_filter === 'organic_only') {
+    $where_conditions[] = "(JSON_EXTRACT(tracking_data, '$.traffic_source') = 'organic' OR JSON_EXTRACT(tracking_data, '$.traffic_source') IS NULL)";
+} elseif ($traffic_filter === 'no_bots') {
+    $where_conditions[] = "(JSON_EXTRACT(tracking_data, '$.is_bot') = false OR JSON_EXTRACT(tracking_data, '$.is_bot') IS NULL)";
+} elseif ($traffic_filter === 'no_test') {
+    $where_conditions[] = "(JSON_EXTRACT(tracking_data, '$.is_test') = false OR JSON_EXTRACT(tracking_data, '$.is_test') IS NULL)";
+} elseif ($traffic_filter === 'bots_only') {
+    $where_conditions[] = "JSON_EXTRACT(tracking_data, '$.is_bot') = true";
+} elseif ($traffic_filter === 'test_only') {
+    $where_conditions[] = "JSON_EXTRACT(tracking_data, '$.is_test') = true";
+}
+
+$where_clause = implode(' AND ', $where_conditions);
 
 #-------------------------------------------------------------------------------
 # ANALYTICS QUERIES
@@ -22,13 +56,12 @@ SELECT
     DATE(create_dt) as date,
     COUNT(*) as views
 FROM bg_sessiontracking
-WHERE type = 'analytics'
+WHERE $where_clause
     AND name = 'analytics:pageview'
-    AND create_dt BETWEEN :date_from AND :date_to
 GROUP BY DATE(create_dt)
 ORDER BY date ASC
 ";
-$pageview_data = $database->query($pageview_sql, ['date_from' => $date_from, 'date_to' => $date_to])->fetchAll();
+$pageview_data = $database->query($pageview_sql, $query_params)->fetchAll();
 
 // 2. Top Pages
 $top_pages_sql = "
@@ -37,15 +70,14 @@ SELECT
     COUNT(*) as views,
     COUNT(DISTINCT sessionid) as unique_sessions
 FROM bg_sessiontracking
-WHERE type = 'analytics'
+WHERE $where_clause
     AND name = 'analytics:pageview'
-    AND create_dt BETWEEN :date_from AND :date_to
     AND JSON_EXTRACT(tracking_data, '$.page.path') IS NOT NULL
 GROUP BY page_path
 ORDER BY views DESC
 LIMIT 20
 ";
-$top_pages = $database->query($top_pages_sql, ['date_from' => $date_from, 'date_to' => $date_to])->fetchAll();
+$top_pages = $database->query($top_pages_sql, $query_params)->fetchAll();
 
 // 3. Event Breakdown
 $events_sql = "
@@ -53,12 +85,11 @@ SELECT
     REPLACE(name, 'analytics:', '') as event_name,
     COUNT(*) as count
 FROM bg_sessiontracking
-WHERE type = 'analytics'
-    AND create_dt BETWEEN :date_from AND :date_to
+WHERE $where_clause
 GROUP BY event_name
 ORDER BY count DESC
 ";
-$event_breakdown = $database->query($events_sql, ['date_from' => $date_from, 'date_to' => $date_to])->fetchAll();
+$event_breakdown = $database->query($events_sql, $query_params)->fetchAll();
 
 // 4. Device Breakdown
 $device_sql = "
@@ -66,13 +97,12 @@ SELECT
     JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '$.device.mobile')) as is_mobile,
     COUNT(*) as count
 FROM bg_sessiontracking
-WHERE type = 'analytics'
+WHERE $where_clause
     AND name = 'analytics:pageview'
-    AND create_dt BETWEEN :date_from AND :date_to
     AND JSON_EXTRACT(tracking_data, '$.device.mobile') IS NOT NULL
 GROUP BY is_mobile
 ";
-$device_data = $database->query($device_sql, ['date_from' => $date_from, 'date_to' => $date_to])->fetchAll();
+$device_data = $database->query($device_sql, $query_params)->fetchAll();
 
 // 5. Summary Stats
 $stats_sql = "
@@ -82,10 +112,9 @@ SELECT
     COUNT(DISTINCT user_id) as unique_users,
     COUNT(DISTINCT ip) as unique_ips
 FROM bg_sessiontracking
-WHERE type = 'analytics'
-    AND create_dt BETWEEN :date_from AND :date_to
+WHERE $where_clause
 ";
-$stats = $database->query($stats_sql, ['date_from' => $date_from, 'date_to' => $date_to])->fetch();
+$stats = $database->query($stats_sql, $query_params)->fetch();
 
 // 6. Referrer Sources
 $referrer_sql = "
@@ -101,14 +130,13 @@ SELECT
     END as source,
     COUNT(*) as count
 FROM bg_sessiontracking
-WHERE type = 'analytics'
+WHERE $where_clause
     AND name = 'analytics:pageview'
-    AND create_dt BETWEEN :date_from AND :date_to
     AND JSON_EXTRACT(tracking_data, '$.data.entrypoint') = 'true'
 GROUP BY source
 ORDER BY count DESC
 ";
-$referrer_data = $database->query($referrer_sql, ['date_from' => $date_from, 'date_to' => $date_to])->fetchAll();
+$referrer_data = $database->query($referrer_sql, $query_params)->fetchAll();
 
 // 7. Recent Events (Live Feed)
 $recent_events_sql = "
@@ -119,15 +147,24 @@ SELECT
     ip,
     user_id,
     username,
+    site,
+    server,
     JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '$.page.path')) as page_path,
-    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '$.event')) as event_type
+    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '$.event')) as event_type,
+    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '$.traffic_source')) as traffic_source
 FROM bg_sessiontracking
-WHERE type = 'analytics'
-    AND create_dt BETWEEN :date_from AND :date_to
+WHERE $where_clause
 ORDER BY create_dt DESC
 LIMIT 50
 ";
-$recent_events = $database->query($recent_events_sql, ['date_from' => $date_from, 'date_to' => $date_to])->fetchAll();
+$recent_events = $database->query($recent_events_sql, $query_params)->fetchAll();
+
+// 8. Get available sites and servers for filters
+$sites_sql = "SELECT DISTINCT site FROM bg_sessiontracking WHERE type = 'analytics' ORDER BY site";
+$available_sites = $database->query($sites_sql)->fetchAll(PDO::FETCH_COLUMN);
+
+$servers_sql = "SELECT DISTINCT server FROM bg_sessiontracking WHERE type = 'analytics' ORDER BY server";
+$available_servers = $database->query($servers_sql)->fetchAll(PDO::FETCH_COLUMN);
 
 $additionalstyles .= '
 <style>
@@ -230,27 +267,51 @@ include($dir['core_components'] . '/bg_header.inc');
             </div>
         </div>
 
-        <!-- Date Range Filter -->
+        <!-- Enhanced Filter Bar -->
         <div class="filter-bar">
             <form method="GET" class="row g-3 align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">From Date</label>
                     <input type="date" name="date_from" class="form-control" value="<?php echo htmlspecialchars($date_from); ?>">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">To Date</label>
                     <input type="date" name="date_to" class="form-control" value="<?php echo htmlspecialchars($date_to); ?>">
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Event Type</label>
-                    <select name="event" class="form-select">
-                        <option value="all">All Events</option>
-                        <option value="pageview" <?php echo $event_filter === 'pageview' ? 'selected' : ''; ?>>Page Views</option>
-                        <option value="click" <?php echo $event_filter === 'click' ? 'selected' : ''; ?>>Clicks</option>
-                        <option value="form_submit" <?php echo $event_filter === 'form_submit' ? 'selected' : ''; ?>>Form Submissions</option>
+                <div class="col-md-2">
+                    <label class="form-label">Site</label>
+                    <select name="site" class="form-select">
+                        <option value="all">All Sites</option>
+                        <?php foreach ($available_sites as $site_option): ?>
+                        <option value="<?php echo htmlspecialchars($site_option); ?>" <?php echo $site_filter === $site_option ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($site_option); ?>
+                        </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label class="form-label">Server</label>
+                    <select name="server" class="form-select">
+                        <option value="all">All Servers</option>
+                        <?php foreach ($available_servers as $server_option): ?>
+                        <option value="<?php echo htmlspecialchars($server_option); ?>" <?php echo $server_filter === $server_option ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($server_option); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Traffic Type</label>
+                    <select name="traffic" class="form-select">
+                        <option value="all" <?php echo $traffic_filter === 'all' ? 'selected' : ''; ?>>All Traffic</option>
+                        <option value="organic_only" <?php echo $traffic_filter === 'organic_only' ? 'selected' : ''; ?>>Organic Only</option>
+                        <option value="no_bots" <?php echo $traffic_filter === 'no_bots' ? 'selected' : ''; ?>>No Bots</option>
+                        <option value="no_test" <?php echo $traffic_filter === 'no_test' ? 'selected' : ''; ?>>No Test Users</option>
+                        <option value="bots_only" <?php echo $traffic_filter === 'bots_only' ? 'selected' : ''; ?>>Bots Only</option>
+                        <option value="test_only" <?php echo $traffic_filter === 'test_only' ? 'selected' : ''; ?>>Test Users Only</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
                 </div>
             </form>
@@ -355,6 +416,9 @@ include($dir['core_components'] . '/bg_header.inc');
                                     <th>Event</th>
                                     <th>Page</th>
                                     <th>User</th>
+                                    <th>Site</th>
+                                    <th>Server</th>
+                                    <th>Type</th>
                                     <th>IP</th>
                                 </tr>
                             </thead>
@@ -369,6 +433,15 @@ include($dir['core_components'] . '/bg_header.inc');
                                     </td>
                                     <td><code><?php echo htmlspecialchars($event['page_path'] ?? '-'); ?></code></td>
                                     <td><?php echo $event['username'] ? htmlspecialchars($event['username']) : 'Anonymous'; ?></td>
+                                    <td><span class="badge bg-secondary"><?php echo htmlspecialchars($event['site']); ?></span></td>
+                                    <td><small><?php echo htmlspecialchars(substr($event['server'], 0, 12)); ?></small></td>
+                                    <td>
+                                        <?php if ($event['traffic_source']): ?>
+                                        <span class="badge bg-<?php echo $event['traffic_source'] === 'organic' ? 'success' : ($event['traffic_source'] === 'bot' || $event['traffic_source'] === 'facebook_bot' || $event['traffic_source'] === 'google_bot' ? 'warning' : 'info'); ?>">
+                                            <?php echo htmlspecialchars($event['traffic_source']); ?>
+                                        </span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo htmlspecialchars($event['ip']); ?></td>
                                 </tr>
                                 <?php endforeach; ?>

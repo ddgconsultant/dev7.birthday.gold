@@ -57,6 +57,24 @@ try {
     $deviceInfo = $data['device'] ?? [];
     $eventData = $data['data'] ?? [];
 
+    // Detect bots and crawlers
+    $userAgent = $deviceInfo['userAgent'] ?? $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $isBot = preg_match('/(bot|crawler|spider|facebook|twitter|linkedin|pinterest|slack|telegram|whatsapp|preview)/i', $userAgent);
+    $isFacebookBot = preg_match('/facebookexternalhit|facebot/i', $userAgent);
+    $isGoogleBot = preg_match('/googlebot|google-structured-data/i', $userAgent);
+
+    // Detect test/internal traffic
+    $isTestUser = isset($current_user_data['user_type']) && $current_user_data['user_type'] === 'test';
+    $isInternalIP = in_array($client_ip, ['127.0.0.1', '::1']) || strpos($client_ip, '192.168.') === 0 || strpos($client_ip, '10.') === 0;
+
+    // Determine traffic source category
+    $trafficSource = 'organic';
+    if ($isBot) $trafficSource = 'bot';
+    if ($isFacebookBot) $trafficSource = 'facebook_bot';
+    if ($isGoogleBot) $trafficSource = 'google_bot';
+    if ($isTestUser) $trafficSource = 'test_user';
+    if ($isInternalIP) $trafficSource = 'internal';
+
     // Prepare tracking data
     $trackingData = [
         'event' => $event,
@@ -65,7 +83,11 @@ try {
         'visit_id' => $visitId,
         'page' => $pageInfo,
         'device' => $deviceInfo,
-        'event_data' => $eventData
+        'event_data' => $eventData,
+        'traffic_source' => $trafficSource,
+        'is_bot' => $isBot,
+        'is_test' => $isTestUser,
+        'is_internal' => $isInternalIP
     ];
 
     // Determine event name for database
