@@ -838,6 +838,16 @@ $businessHours = $app->bg_businesshours();
         </div>
         
         <div class="admin-grid">
+            <a href="/admin/analytics-dashboard" class="admin-card">
+                <div class="admin-icon icon-system" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">BG Analytics</h3>
+                    <p class="admin-card-text">Real-time user behavior and interaction tracking</p>
+                </div>
+            </a>
+
             <a href="/admin/redirect-metabase" target="_blank" class="admin-card">
                 <div class="admin-icon icon-system">
                     <img src="/public/images/system_icons/com.metabase.cloudronapp.png" alt="" width="40">
@@ -847,7 +857,7 @@ $businessHours = $app->bg_businesshours();
                     <p class="admin-card-text">Business intelligence and analytics</p>
                 </div>
             </a>
-            
+
             <a href="/admin/redirect-netdata" target="_blank" class="admin-card">
                 <div class="admin-icon icon-system">
                     <img src="/public/assets/logos/netdata.png" alt="" width="40">

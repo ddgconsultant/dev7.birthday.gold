@@ -1,0 +1,136 @@
+<?php
+/**
+ * Birthday.Gold Analytics Tracking Endpoint
+ *
+ * Receives client-side analytics events and stores them
+ * in the bg_sessiontracking table.
+ *
+ * @version 1.0.0
+ */
+
+// Set headers
+header('Content-Type: application/json');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+
+// Load core
+$codemode = 'api';
+$nosessiontracking = true; // Prevent recursive tracking
+require_once(__DIR__ . '/../core/site-controller.php');
+
+try {
+    // Only accept POST requests
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['error' => 'Method not allowed']);
+        exit;
+    }
+
+    // Get raw POST data
+    $rawData = file_get_contents('php://input');
+    if (empty($rawData)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'No data received']);
+        exit;
+    }
+
+    // Parse JSON
+    $data = json_decode($rawData, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid JSON']);
+        exit;
+    }
+
+    // Validate required fields
+    if (empty($data['event']) || empty($data['timestamp'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Missing required fields']);
+        exit;
+    }
+
+    // Extract data
+    $event = $data['event'];
+    $timestamp = $data['timestamp'];
+    $sessionId = $data['session_id'] ?? null;
+    $visitId = $data['visit_id'] ?? null;
+    $pageInfo = $data['page'] ?? [];
+    $deviceInfo = $data['device'] ?? [];
+    $eventData = $data['data'] ?? [];
+
+    // Prepare tracking data
+    $trackingData = [
+        'event' => $event,
+        'timestamp' => $timestamp,
+        'client_session_id' => $sessionId,
+        'visit_id' => $visitId,
+        'page' => $pageInfo,
+        'device' => $deviceInfo,
+        'event_data' => $eventData
+    ];
+
+    // Determine event name for database
+    $eventName = 'analytics:' . $event;
+
+    // Get current page from data
+    $currentPage = $pageInfo['path'] ?? '/api/analytics-track';
+
+    // Store in session tracking
+    // Note: We're bypassing normal session_tracking() to avoid circular reference
+    // and to store analytics-specific data structure
+
+    $sql = "INSERT INTO bg_sessiontracking (
+        `name`,
+        `page`,
+        `sessionid`,
+        `ip`,
+        `user_id`,
+        `username`,
+        `type`,
+        `tracking_data`,
+        `site`,
+        `server`,
+        `version`,
+        `create_dt`
+    ) VALUES (
+        :name,
+        :page,
+        :sessionid,
+        :ip,
+        :user_id,
+        :username,
+        :type,
+        :tracking_data,
+        :site,
+        :server,
+        :version,
+        NOW()
+    )";
+
+    $stmt = $database->prepare($sql);
+    $stmt->execute([
+        'name' => $eventName,
+        'page' => $currentPage,
+        'sessionid' => session_id() ?: $sessionId,
+        'ip' => $client_ip,
+        'user_id' => $current_user_data['user_id'] ?? null,
+        'username' => $current_user_data['user_username'] ?? null,
+        'type' => 'analytics',
+        'tracking_data' => json_encode($trackingData, JSON_PRETTY_PRINT),
+        'site' => $site,
+        'server' => $_SERVER['SERVER_ADDR'],
+        'version' => $footerappversion ?? 'v1.0'
+    ]);
+
+    // Return success (204 No Content for efficiency)
+    http_response_code(204);
+    exit;
+
+} catch (Exception $e) {
+    // Log error
+    error_log('Analytics tracking error: ' . $e->getMessage());
+
+    // Return error response
+    http_response_code(500);
+    echo json_encode(['error' => 'Internal server error']);
+    exit;
+}

@@ -1006,15 +1006,8 @@ if (!empty($footerattribute['bottomfooter'])) {
     unset($footerattribute['bottomfooter']);
 }
 
-// Include analytics script based on mode
-switch ($mode) {
-    case 'dev':
-        echo '<script data-host="https://a.bd.gold" data-dnt="false" data-mode="dev" src="https://a.bd.gold/js/script.js" id="ZwSg9rf6GA" async defer></script>';
-        break;
-    default:
-        echo '<script data-host="https://a.bd.gold" data-dnt="false" src="https://a.bd.gold/js/script.js" id="ZwSg9rf6GA" async defer></script>';
-        break;
-}
+// Include Birthday.Gold Analytics (our own system)
+echo '<script src="/public/js/bg-analytics.js" async defer></script>';
 
 // Mobile-specific enhancements from v7
 echo '
