@@ -106,6 +106,9 @@ ORDER BY CAST(depth AS UNSIGNED)
 ";
 $scroll_depth_data = $database->query($scroll_depth_sql, $query_params)->fetchAll();
 
+// Disable sticky footer for this page
+$nostickyfooter = true;
+
 $additionalstyles .= '
 <style>
 .stat-card {
