@@ -417,7 +417,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <!-- Top Pages -->
             <div class="col-md-6">
                 <div class="chart-card">
-                    <h3 class="chart-title">Top Pages</h3>
+                    <h3 class="chart-title">Top Pages <small class="text-muted">(<?php echo count($top_pages); ?> pages)</small></h3>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -462,7 +462,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <!-- Geographic Distribution -->
             <div class="col-md-6">
                 <div class="chart-card">
-                    <h3 class="chart-title">Geographic Distribution</h3>
+                    <h3 class="chart-title">Geographic Distribution <small class="text-muted">(<?php echo count($geo_data); ?> countries)</small></h3>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -509,7 +509,7 @@ include($dir['core_components'] . '/bg_header.inc');
             <!-- Traffic Type Breakdown -->
             <div class="col-md-6">
                 <div class="chart-card">
-                    <h3 class="chart-title">Traffic Type Breakdown</h3>
+                    <h3 class="chart-title">Traffic Type Breakdown <small class="text-muted">(<?php echo array_sum(array_column($traffic_breakdown, 'count')); ?> events)</small></h3>
                     <canvas id="trafficChart"></canvas>
                 </div>
             </div>
@@ -521,7 +521,7 @@ include($dir['core_components'] . '/bg_header.inc');
                 <div class="chart-card">
                     <h3 class="chart-title">
                         <span class="live-indicator"></span>
-                        Recent Events
+                        Recent Events <small class="text-muted">(last <?php echo count($recent_events); ?>)</small>
                     </h3>
                     <div class="table-responsive">
                         <table class="table table-hover table-sm">

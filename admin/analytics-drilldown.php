@@ -113,7 +113,7 @@ WHERE $where_clause
 ";
 $stats = $database->query($stats_sql, $query_params)->fetch();
 
-// Get event breakdown
+// Get event breakdown with total
 $event_breakdown_sql = "
 SELECT
     REPLACE(name, 'analytics:', '') as event_name,
@@ -124,8 +124,9 @@ GROUP BY event_name
 ORDER BY count DESC
 ";
 $event_breakdown = $database->query($event_breakdown_sql, $query_params)->fetchAll();
+$event_breakdown_total = array_sum(array_column($event_breakdown, 'count'));
 
-// Get scroll depth breakdown
+// Get scroll depth breakdown with total
 $scroll_depth_sql = "
 SELECT
     JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '$.event_data.depth')) as depth,
@@ -138,6 +139,7 @@ GROUP BY depth
 ORDER BY CAST(depth AS UNSIGNED)
 ";
 $scroll_depth_data = $database->query($scroll_depth_sql, $query_params)->fetchAll();
+$scroll_depth_total = array_sum(array_column($scroll_depth_data, 'count'));
 
 // Helper function to build pagination URLs
 function buildPaginationUrl($page_num, $per_page, $params) {
@@ -280,14 +282,14 @@ include($dir['core_components'] . '/bg_header.inc');
         <!-- Event Breakdown -->
         <div class="col-md-4">
             <div class="chart-card">
-                <h3>Event Breakdown</h3>
+                <h3>Event Breakdown <small class="text-muted">(<?php echo number_format($event_breakdown_total); ?>)</small></h3>
                 <canvas id="eventChart"></canvas>
             </div>
 
             <!-- Scroll Depth Breakdown -->
             <?php if (!empty($scroll_depth_data)): ?>
             <div class="chart-card mt-3">
-                <h3>Scroll Depth Distribution</h3>
+                <h3>Scroll Depth Distribution <small class="text-muted">(<?php echo number_format($scroll_depth_total); ?>)</small></h3>
                 <canvas id="scrollChart"></canvas>
                 <div class="mt-3">
                     <small class="text-muted">
