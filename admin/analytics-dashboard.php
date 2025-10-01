@@ -154,6 +154,7 @@ SELECT
     ip,
     user_id,
     username,
+    sessionid,
     site,
     server,
     JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '$.page.path')) as page_path,
@@ -431,7 +432,12 @@ include($dir['core_components'] . '/bg_header.inc');
                             <tbody>
                                 <?php foreach ($top_pages as $page): ?>
                                 <tr>
-                                    <td><code><?php echo htmlspecialchars($page['page_path']); ?></code></td>
+                                    <td>
+                                        <a href="/admin/analytics-drilldown?page=<?php echo urlencode($page['page_path']); ?>&date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
+                                           class="analytics-drill-link">
+                                            <code><?php echo htmlspecialchars($page['page_path']); ?></code>
+                                        </a>
+                                    </td>
                                     <td><?php echo number_format($page['views']); ?></td>
                                     <td><?php echo number_format($page['unique_sessions']); ?></td>
                                     <td>
@@ -484,10 +490,13 @@ include($dir['core_components'] . '/bg_header.inc');
                                 <?php foreach ($geo_data as $geo): ?>
                                 <tr>
                                     <td>
-                                        <?php if ($geo['country_code']): ?>
-                                        <span class="fi fi-<?php echo strtolower($geo['country_code']); ?>"></span>
-                                        <?php endif; ?>
-                                        <?php echo htmlspecialchars($geo['country'] ?? 'Unknown'); ?>
+                                        <a href="/admin/analytics-drilldown?country=<?php echo urlencode($geo['country_code']); ?>&date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
+                                           class="analytics-drill-link">
+                                            <?php if ($geo['country_code']): ?>
+                                            <span class="fi fi-<?php echo strtolower($geo['country_code']); ?>"></span>
+                                            <?php endif; ?>
+                                            <?php echo htmlspecialchars($geo['country'] ?? 'Unknown'); ?>
+                                        </a>
                                     </td>
                                     <td><?php echo number_format($geo['events']); ?></td>
                                     <td><?php echo number_format($geo['sessions']); ?></td>
@@ -531,6 +540,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                     <th>Event</th>
                                     <th>Page</th>
                                     <th>User</th>
+                                    <th>Session</th>
                                     <th>Site</th>
                                     <th>Server</th>
                                     <th>Type</th>
@@ -546,8 +556,32 @@ include($dir['core_components'] . '/bg_header.inc');
                                             <?php echo htmlspecialchars($event['event_type']); ?>
                                         </span>
                                     </td>
-                                    <td><code><?php echo htmlspecialchars($event['page_path'] ?? '-'); ?></code></td>
-                                    <td><?php echo $event['username'] ? htmlspecialchars($event['username']) : 'Anonymous'; ?></td>
+                                    <td>
+                                        <?php if ($event['page_path']): ?>
+                                        <a href="/admin/analytics-drilldown?page=<?php echo urlencode($event['page_path']); ?>&date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
+                                           class="analytics-drill-link">
+                                            <code><?php echo htmlspecialchars($event['page_path']); ?></code>
+                                        </a>
+                                        <?php else: ?>
+                                        <code>-</code>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($event['user_id']): ?>
+                                        <a href="/admin/analytics-drilldown?user=<?php echo $event['user_id']; ?>&date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
+                                           class="analytics-drill-link">
+                                            <?php echo htmlspecialchars($event['username']); ?>
+                                        </a>
+                                        <?php else: ?>
+                                        Anonymous
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <a href="/admin/analytics-drilldown?session=<?php echo urlencode($event['sessionid']); ?>&date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
+                                           class="analytics-drill-link">
+                                            <small><?php echo htmlspecialchars(substr($event['sessionid'], 0, 8)); ?>...</small>
+                                        </a>
+                                    </td>
                                     <td><span class="badge bg-secondary"><?php echo htmlspecialchars($event['site']); ?></span></td>
                                     <td><small><?php echo htmlspecialchars(substr($event['server'], 0, 12)); ?></small></td>
                                     <td>
@@ -683,7 +717,7 @@ setTimeout(() => location.reload(), 30000);
 
 <?php
 
-$display_footertype = 'min';
+$display_footertype = 'none';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();
 ?>
