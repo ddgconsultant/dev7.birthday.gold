@@ -16,7 +16,8 @@ $traffic_filter = $_GET['traffic'] ?? 'all'; // Changed default to 'all' since o
 $server_filter = $_GET['server'] ?? 'all';
 
 // Build WHERE clause based on filters
-$where_conditions = ["type = 'analytics'", "create_dt BETWEEN :date_from AND :date_to"];
+// Use end of day for date_to to include full day
+$where_conditions = ["type = 'analytics'", "create_dt BETWEEN :date_from AND DATE_ADD(:date_to, INTERVAL 1 DAY)"];
 $query_params = ['date_from' => $date_from, 'date_to' => $date_to];
 
 // Site filter
@@ -45,6 +46,12 @@ if ($traffic_filter === 'organic_only') {
 }
 
 $where_clause = implode(' AND ', $where_conditions);
+
+// DEBUG: Log the query parameters
+if ($mode === 'dev') {
+    error_log("Analytics Dashboard - Where Clause: $where_clause");
+    error_log("Analytics Dashboard - Params: " . json_encode($query_params));
+}
 
 #-------------------------------------------------------------------------------
 # ANALYTICS QUERIES
