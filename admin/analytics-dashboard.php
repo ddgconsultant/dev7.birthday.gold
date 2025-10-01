@@ -258,14 +258,16 @@ include($dir['core_components'] . '/bg_pagestart.inc');
 include($dir['core_components'] . '/bg_header.inc');
 ?>
 
+<!-- Hero Section -->
+<div class="content-header-admin">
+    <div class="container">
+        <h1 class="mt-3"><i class="bi bi-graph-up"></i> Analytics Dashboard</h1>
+        <p class="lead mb-4">Real-time insights powered by Birthday.Gold Analytics</p>
+    </div>
+</div>
+
 <div class="analytics-dashboard">
     <div class="container-fluid py-4">
-        <div class="row mb-4">
-            <div class="col-12">
-                <h1 class="mb-2"><i class="bi bi-graph-up"></i> Analytics Dashboard</h1>
-                <p class="text-muted">Real-time insights powered by Birthday.Gold Analytics</p>
-            </div>
-        </div>
 
         <!-- Enhanced Filter Bar -->
         <div class="filter-bar">
