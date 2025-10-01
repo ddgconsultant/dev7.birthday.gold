@@ -10,6 +10,8 @@ $page_description = "Detailed analytics drill-down";
 // Get drill-down parameters
 $page_filter = $_GET['page'] ?? null;
 $country_filter = $_GET['country'] ?? null;
+$session_filter = $_GET['session'] ?? null;
+$user_filter = $_GET['user'] ?? null;
 $date_from = $_GET['date_from'] ?? date('Y-m-d', strtotime('-30 days'));
 $date_to = $_GET['date_to'] ?? date('Y-m-d');
 
@@ -23,6 +25,12 @@ if ($page_filter) {
 } elseif ($country_filter) {
     $drill_down_type = 'country';
     $drill_down_value = $country_filter;
+} elseif ($session_filter) {
+    $drill_down_type = 'session';
+    $drill_down_value = $session_filter;
+} elseif ($user_filter) {
+    $drill_down_type = 'user';
+    $drill_down_value = $user_filter;
 }
 
 if (!$drill_down_type) {
@@ -41,6 +49,12 @@ if ($drill_down_type === 'page') {
 } elseif ($drill_down_type === 'country') {
     $where_conditions[] = "JSON_EXTRACT(tracking_data, '$.geo.country_code') = :country_code";
     $query_params['country_code'] = $country_filter;
+} elseif ($drill_down_type === 'session') {
+    $where_conditions[] = "sessionid = :session_id";
+    $query_params['session_id'] = $session_filter;
+} elseif ($drill_down_type === 'user') {
+    $where_conditions[] = "user_id = :user_id";
+    $query_params['user_id'] = $user_filter;
 }
 
 $where_clause = implode(' AND ', $where_conditions);
@@ -152,13 +166,21 @@ include($dir['core_components'] . '/bg_header.inc');
             <i class="bi bi-zoom-in"></i>
             <?php if ($drill_down_type === 'page'): ?>
                 Page Analysis
-            <?php else: ?>
+            <?php elseif ($drill_down_type === 'country'): ?>
                 Country Analysis
+            <?php elseif ($drill_down_type === 'session'): ?>
+                Session Journey
+            <?php else: ?>
+                User Activity
             <?php endif; ?>
         </h1>
         <p class="lead mb-2 text-white">
             <?php if ($drill_down_type === 'page'): ?>
                 <code class="text-white bg-dark px-2 py-1 rounded"><?php echo htmlspecialchars($drill_down_value); ?></code>
+            <?php elseif ($drill_down_type === 'session'): ?>
+                Session ID: <code class="text-white bg-dark px-2 py-1 rounded"><?php echo htmlspecialchars(substr($drill_down_value, 0, 16)); ?>...</code>
+            <?php elseif ($drill_down_type === 'user'): ?>
+                User ID: <span class="badge bg-light text-dark"><?php echo htmlspecialchars($drill_down_value); ?></span>
             <?php else: ?>
                 <?php echo htmlspecialchars($drill_down_value); ?>
             <?php endif; ?>
@@ -258,7 +280,20 @@ include($dir['core_components'] . '/bg_header.inc');
                                 <?php if ($drill_down_type === 'country'): ?>
                                 <td><code><?php echo htmlspecialchars($event['page_path'] ?? '-'); ?></code></td>
                                 <?php endif; ?>
-                                <td><?php echo $event['username'] ? htmlspecialchars($event['username']) : 'Anonymous'; ?></td>
+                                <td>
+                                    <?php if ($event['username']): ?>
+                                        <?php if ($event['user_id'] && $drill_down_type !== 'user'): ?>
+                                        <a href="/admin/analytics-drilldown?user=<?php echo $event['user_id']; ?>&date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
+                                           class="text-decoration-none">
+                                            <?php echo htmlspecialchars($event['username']); ?>
+                                        </a>
+                                        <?php else: ?>
+                                        <?php echo htmlspecialchars($event['username']); ?>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                    Anonymous
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <?php if ($event['city']): ?>
                                     <?php echo htmlspecialchars($event['city']); ?>, <?php echo htmlspecialchars($event['country']); ?>
@@ -274,7 +309,14 @@ include($dir['core_components'] . '/bg_header.inc');
                                     <?php endif; ?>
                                 </td>
                                 <td>
+                                    <?php if ($drill_down_type !== 'session'): ?>
+                                    <a href="/admin/analytics-drilldown?session=<?php echo urlencode($event['sessionid']); ?>&date_from=<?php echo $date_from; ?>&date_to=<?php echo $date_to; ?>"
+                                       class="text-decoration-none">
+                                        <small><?php echo substr($event['sessionid'], 0, 8); ?>...</small>
+                                    </a>
+                                    <?php else: ?>
                                     <small><?php echo substr($event['sessionid'], 0, 8); ?>...</small>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
