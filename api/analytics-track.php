@@ -13,7 +13,6 @@ header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
 // Load core
-$codemode = 'api';
 $nosessiontracking = true; // Prevent recursive tracking
 require_once(__DIR__ . '/../core/site-controller.php');
 
@@ -75,6 +74,21 @@ try {
     if ($isTestUser) $trafficSource = 'test_user';
     if ($isInternalIP) $trafficSource = 'internal';
 
+    // Get geolocation data (already loaded in site-controller)
+    $geoLocation = null;
+    if (!empty($client_locationdata) && is_array($client_locationdata)) {
+        $geoLocation = [
+            'country' => $client_locationdata['country'] ?? $client_locationdata['countryCode'] ?? null,
+            'country_code' => $client_locationdata['countryCode'] ?? null,
+            'region' => $client_locationdata['regionName'] ?? null,
+            'city' => $client_locationdata['city'] ?? null,
+            'zip' => $client_locationdata['zip'] ?? null,
+            'lat' => $client_locationdata['lat'] ?? null,
+            'lon' => $client_locationdata['lon'] ?? null,
+            'timezone' => $client_locationdata['timezone'] ?? null
+        ];
+    }
+
     // Prepare tracking data
     $trackingData = [
         'event' => $event,
@@ -87,7 +101,8 @@ try {
         'traffic_source' => $trafficSource,
         'is_bot' => $isBot,
         'is_test' => $isTestUser,
-        'is_internal' => $isInternalIP
+        'is_internal' => $isInternalIP,
+        'geo' => $geoLocation
     ];
 
     // Determine event name for database
