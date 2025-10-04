@@ -64,6 +64,7 @@ class Mail
     $this->incomingmailserversdb = [
         'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
         'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
+        'march03' => ['DB_HOST' => 'march03.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
      #   ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4']
     ];
 
@@ -619,7 +620,50 @@ Regards,<br>birthday.gold
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function mailcount($user_id, $type = 'unread', $limit = 0)
 {
+    global $database;
 
+    // OPTIMIZATION: Check cache in bg_user_attributes first (avoids slow remote server queries)
+    // Cache is updated hourly by scheduler--sync-mail-counts.php
+    try {
+        $cache_sql = "SELECT value, description, modify_dt
+                     FROM bg_user_attributes
+                     WHERE user_id = :user_id
+                     AND type = 'mail_count_cache'
+                     AND name = 'feature_email_count'
+                     AND status = 'active'
+                     LIMIT 1";
+        $cache_stmt = $database->prepare($cache_sql);
+        $cache_stmt->execute(['user_id' => $user_id]);
+        $cached = $cache_stmt->fetch(PDO::FETCH_ASSOC);
+
+        // If cache exists and is less than 2 hours old, use it
+        if ($cached && strtotime($cached['modify_dt']) > (time() - 7200)) {
+            $cached_data = json_decode($cached['description'], true);
+            if ($cached_data && isset($cached_data['total'])) {
+                // Build message structure from cache
+                $totalCount = (int)$cached['value'];
+                $badgeContent = $totalCount > 1000 ? '999+' : $totalCount;
+
+                return [
+                    'total' => $totalCount,
+                    'count' => $totalCount,
+                    'unread' => $cached_data['unread'] ?? $totalCount,
+                    'read' => $cached_data['read'] ?? 0,
+                    'inbox' => $cached_data['inbox'] ?? $totalCount,
+                    'trash' => $cached_data['trash'] ?? 0,
+                    'displaycount' => $totalCount,
+                    'badge' => $totalCount === 0 ? '' : '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">' . $badgeContent . '<span class="visually-hidden">unread messages</span></span>',
+                    'cached' => true,
+                    'cache_age' => time() - strtotime($cached['modify_dt'])
+                ];
+            }
+        }
+    } catch (Exception $e) {
+        // If cache fails, fall through to live query
+        error_log("Mail count cache read failed: " . $e->getMessage());
+    }
+
+    // FALLBACK: Query remote servers if cache miss or expired
     $servers = $this->incomingmailserversdb;
 
     $totalCount = 0;
@@ -629,10 +673,12 @@ Regards,<br>birthday.gold
     // Loop through each server
     foreach ($servers as $mailsvrlabel => $serverConfig) {
         try {
-            // Create PDO connection
+            // Create PDO connection with persistent connection for performance
             $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
-            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD']);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD'], [
+                PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            ]);
 
             // Prepare SQL query
             $sql = "SELECT COUNT(*) as cnt FROM messages WHERE user_id = :user_id and processstatus not in ('delete' ,'expired') " . $criteria;

@@ -6,13 +6,6 @@
 
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-// Check admin access
-if (!$account->isadmin()) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
-}
-
 // Get parameters
 $user_id = intval($_GET['user_id'] ?? 0);
 $offset = intval($_GET['offset'] ?? 0);

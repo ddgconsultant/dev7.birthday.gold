@@ -1,7 +1,13 @@
 <?php
+// === PERFORMANCE MONITORING START ===
+$perf_timers = [];
+$perf_start = microtime(true);
+$perf_timers['start'] = 0;
+
 $addClasses[] = 'Referral';
 $addClasses[] = 'allocationmanager';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+$perf_timers['site_controller'] = round((microtime(true) - $perf_start) * 1000, 2);
 
 // PREP VARIABLES AND SETUP
 $p_displaylength = 30;
@@ -10,12 +16,17 @@ $colorIndex = 0;
 $ipColorMap = [];
 
 // GET USER DATA
+$perf_checkpoint = microtime(true);
 if (isset($_REQUEST['u'])) {
     $workingUser = $qik->decodeId($_REQUEST['u']);
     $tmpsettings['status']='*';
     $workinguserdata = $account->getuserdata($workingUser, 'user_id', $tmpsettings);
+    $perf_timers['getuserdata'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
+
+    $perf_checkpoint = microtime(true);
     $getaccountdetailsuser = $workinguserdata;
     include_once($dir['core_components'] . '/user_getaccountdetails.inc');
+    $perf_timers['user_getaccountdetails'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
 } else {
     header('location: /500');
     exit;
@@ -23,9 +34,18 @@ if (isset($_REQUEST['u'])) {
 
 // GET ADDITIONAL USER DATA
 // Get current allocation balance for user
+$perf_checkpoint = microtime(true);
 $allocation_balance = $allocationmanager->getUserBalance($workingUser);
+$perf_timers['getUserBalance'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
 
-// Get recent enrollments
+// OPTIMIZATION: Don't load heavy data upfront - load via AJAX on tab click
+// Only load minimal data needed for Overview tab
+$recent_enrollments = []; // Will load via AJAX
+$recent_logins = []; // Will load via AJAX
+$user_attributes = []; // Will load via AJAX
+
+// Get MINIMAL recent enrollments just for overview (top 5)
+$perf_checkpoint = microtime(true);
 $recent_enrollments_sql = "SELECT uc.*, c.company_name, c.company_id
                           FROM bg_user_companies uc
                           JOIN bg_companies c ON uc.company_id = c.company_id
@@ -33,43 +53,46 @@ $recent_enrollments_sql = "SELECT uc.*, c.company_name, c.company_id
                           ORDER BY uc.create_dt DESC
                           LIMIT 5";
 $recent_enrollments = $database->getrows($recent_enrollments_sql, ['user_id' => $workingUser]);
+$perf_timers['recent_enrollments'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
 
-// Get recent logins from sessiontracking
-$recent_logins_sql = "SELECT * FROM bg_sessiontracking 
-                     WHERE user_id = :user_id 
-                     AND name LIKE '%login%'
-                     ORDER BY create_dt DESC 
+// Get MINIMAL recent logins just for overview (top 5)
+// OPTIMIZED: Use specific name values + only select needed columns
+$perf_checkpoint = microtime(true);
+$recent_logins_sql = "SELECT id, create_dt, ip, name, page FROM bg_sessiontracking
+                     WHERE user_id = :user_id
+                     AND name IN ('LOGIN-success_user', 'LOGIN-success_admin', 'bg_rememberme_loginsuccess', 'login_success')
+                     ORDER BY create_dt DESC
                      LIMIT 5";
 $recent_logins = $database->getrows($recent_logins_sql, ['user_id' => $workingUser]);
-
-// Get user attributes summary
-$attributes_sql = "SELECT type, COUNT(*) as count 
-                  FROM bg_user_attributes 
-                  WHERE user_id = :user_id AND status = 'active' 
-                  GROUP BY type";
-$user_attributes = $database->getrows($attributes_sql, ['user_id' => $workingUser]);
+$perf_timers['recent_logins'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
 
 // Get notification preferences from user attributes
+$perf_checkpoint = microtime(true);
 $notification_prefs = $database->getrow(
-    "SELECT * FROM bg_user_attributes 
-     WHERE user_id = :user_id 
-     AND type = 'notification_preferences' 
-     AND status = 'active' 
+    "SELECT * FROM bg_user_attributes
+     WHERE user_id = :user_id
+     AND type = 'notification_preferences'
+     AND status = 'active'
      LIMIT 1",
     ['user_id' => $workingUser]
 );
+$perf_timers['notification_prefs'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
 
 // Get social connections
+$perf_checkpoint = microtime(true);
 $social_connections = $database->getrows(
-    "SELECT * FROM bg_user_attributes 
-     WHERE user_id = :user_id 
-     AND type = 'social_connection' 
+    "SELECT * FROM bg_user_attributes
+     WHERE user_id = :user_id
+     AND type = 'social_connection'
      AND status = 'active'",
     ['user_id' => $workingUser]
 );
+$perf_timers['social_connections'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
 
 // SETUP REFERER DATA
+$perf_checkpoint = microtime(true);
 $referer = $referral->getreferer($workinguserdata['user_id']);
+$perf_timers['getreferer'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
 $refererbuttontitle = 'Add Referer';
 $refereraction = 'add';
 
@@ -355,12 +378,20 @@ $additionalstyles .= '
 </style>';
 
 // START PAGE OUTPUT
+$perf_checkpoint = microtime(true);
 $transferpagedata = $system->startpostpage();
+$perf_timers['startpostpage'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
 
 $header_flush = true;
 $pagetitle = "User Details - " . $workinguserdata['first_name'] . " " . $workinguserdata['last_name'];
+
+$perf_checkpoint = microtime(true);
 include($dir['core_components'] . '/bg_pagestart.inc');
+$perf_timers['bg_pagestart'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
+
+$perf_checkpoint = microtime(true);
 include($dir['core_components'] . '/bg_header.inc');
+$perf_timers['bg_header'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
 
 // Build the page HTML
 echo '
@@ -596,7 +627,7 @@ echo '
                                     <td class="text-muted">Referrer</td>
                                     <td class="text-end">';
 
-if (!empty($referer)) {
+if (!empty($referer) && isset($referer['referrer_id']) && isset($referer['referrer_name'])) {
     echo '<a href="/admin/user-details?u=' . $qik->encodeId($referer['referrer_id']) . '">' . htmlspecialchars($referer['referrer_name']) . '</a>';
 } else {
     echo '<span class="text-muted">None</span>';
@@ -832,7 +863,7 @@ echo '
                         </div>
                     </div>
                     <div class="table-responsive">
-                        <table class="table data-table">
+                        <table class="table data-table" id="enrollments-table">
                             <thead>
                                 <tr>
                                     <th>Company</th>
@@ -841,44 +872,15 @@ echo '
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>';
-
-$enrollment_sql = "SELECT uc.*, c.company_name 
-                  FROM bg_user_companies uc
-                  JOIN bg_companies c ON uc.company_id = c.company_id
-                  WHERE uc.user_id = :user_id
-                  ORDER BY uc.create_dt DESC
-                  LIMIT 50";
-$enrollments = $database->getrows($enrollment_sql, ['user_id' => $workingUser]);
-
-foreach ($enrollments as $enrollment) {
-    $status_class = 'secondary';
-    if ($enrollment['status'] == 'success') $status_class = 'success';
-    elseif ($enrollment['status'] == 'pending') $status_class = 'warning';
-    elseif ($enrollment['status'] == 'failed') $status_class = 'danger';
-    
-    echo '
+                            <tbody>
                                 <tr>
-                                    <td>
-                                        <strong>' . htmlspecialchars($enrollment['company_name']) . '</strong>
-                                        <small class="text-muted d-block">ID: ' . $enrollment['company_id'] . '</small>
+                                    <td colspan="4" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading enrollment data...</p>
                                     </td>
-                                    <td>
-                                        <span class="badge bg-' . $status_class . '">
-                                            ' . ucfirst($enrollment['status']) . '
-                                        </span>
-                                    </td>
-                                    <td>' . date('M j, Y', strtotime($enrollment['create_dt'])) . '</td>
-                                    <td>
-                                        <a href="/admin/company-details?id=' . $enrollment['company_id'] . '" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>';
-}
-
-echo '
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -892,7 +894,7 @@ echo '
                 <div class="card-body p-3">
                     <h5 class="mb-4">Session Activity</h5>
                     <div class="table-responsive">
-                        <table class="table data-table">
+                        <table class="table data-table" id="activity-table">
                             <thead>
                                 <tr>
                                     <th>IP Address</th>
@@ -902,45 +904,22 @@ echo '
                                     <th>Details</th>
                                 </tr>
                             </thead>
-                            <tbody>';
-
-$sql = "SELECT * FROM bg_sessiontracking 
-        WHERE user_id = ? " . 
-        ($mode != 'dev' ? "AND site = 'www'" : "AND type = 'user'") . 
-        " ORDER BY create_dt DESC LIMIT 100";
-
-$stmt = $database->prepare($sql);
-$stmt->execute([$workinguserdata['user_id']]);
-$logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-foreach ($logs as $log) {
-    if (!isset($ipColorMap[$log['ip']])) {
-        $ipColorMap[$log['ip']] = $badgeColors[$colorIndex % count($badgeColors)];
-        $colorIndex++;
-    }
-    
-    echo '
+                            <tbody>
                                 <tr>
-                                    <td>
-                                        <span class="badge bg-' . $ipColorMap[$log['ip']] . '">
-                                            ' . htmlspecialchars($log['ip']) . '
-                                        </span>
+                                    <td colspan="5" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading activity data...</p>
                                     </td>
-                                    <td>' . htmlspecialchars($log['name']) . '</td>
-                                    <td><code>' . htmlspecialchars($log['page']) . '</code></td>
-                                    <td>' . date('M j, g:i A', strtotime($log['create_dt'])) . '</td>
-                                    <td>
-                                        <a href="/admin/sessiondetails?id=' . $log['id'] . '" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-search"></i>
-                                        </a>
-                                    </td>
-                                </tr>';
-}
-
-echo '
+                                </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-primary" id="load-more-activity" style="display: none;">
+                            Load More
+                        </button>
                     </div>
                 </div>
             </div>
@@ -958,14 +937,16 @@ echo '
                                     <td>Two-Factor Authentication</td>
                                     <td class="text-end">';
 
-$has_2fa = $database->query("SELECT COUNT(*) FROM bg_user_attributes WHERE user_id = {$workingUser} AND type = 'security' AND name = '2fa' AND status = 'active'")->fetchColumn() > 0;
+$stmt_2fa = $database->prepare("SELECT COUNT(*) as count FROM bg_user_attributes WHERE user_id = :user_id AND type = 'security' AND name = '2fa' AND status = 'active'");
+$stmt_2fa->execute(['user_id' => $workingUser]);
+$has_2fa = $stmt_2fa->fetchColumn() > 0;
 $tfa_class = $has_2fa ? 'enabled' : 'disabled';
 $tfa_icon = $has_2fa ? 'check' : 'x';
 $tfa_text = $has_2fa ? 'Enabled' : 'Disabled';
 
 echo '
                                         <span class="security-badge ' . $tfa_class . '">
-                                            <i class="bi bi-' . $tfa_icon . '-circle"></i> 
+                                            <i class="bi bi-' . $tfa_icon . '-circle"></i>
                                             ' . $tfa_text . '
                                         </span>
                                     </td>
@@ -974,7 +955,9 @@ echo '
                                     <td>Security Questions</td>
                                     <td class="text-end">';
 
-$has_sq = $database->query("SELECT COUNT(*) FROM bg_user_attributes WHERE user_id = {$workingUser} AND type = 'security' AND name = 'security_questions' AND status = 'active'")->fetchColumn() > 0;
+$stmt_sq = $database->prepare("SELECT COUNT(*) as count FROM bg_user_attributes WHERE user_id = :user_id AND type = 'security' AND name = 'security_questions' AND status = 'active'");
+$stmt_sq->execute(['user_id' => $workingUser]);
+$has_sq = $stmt_sq->fetchColumn() > 0;
 $sq_class = $has_sq ? 'enabled' : 'disabled';
 $sq_icon = $has_sq ? 'check' : 'x';
 $sq_text = $has_sq ? 'Set' : 'Not Set';
@@ -1055,24 +1038,18 @@ echo '
             <div class="info-card">
                 <div class="card-body p-3">
                     <h5 class="mb-4">User Attributes</h5>
-                    <div class="row mb-4">';
-
-foreach ($user_attributes as $attr) {
-    echo '
-                        <div class="col-md-2 mb-3">
-                            <div class="text-center">
-                                <h3 class="mb-1">' . $attr['count'] . '</h3>
-                                <small class="text-muted">' . ucfirst(str_replace('_', ' ', $attr['type'])) . '</small>
+                    <div class="row mb-4" id="attributes-summary">
+                        <div class="col-12 text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
                             </div>
-                        </div>';
-}
-
-echo '
+                            <p class="mt-2">Loading attributes...</p>
+                        </div>
                     </div>
-                    
+
                     <h6 class="mb-3">Recent Attributes</h6>
                     <div class="table-responsive">
-                        <table class="table table-sm">
+                        <table class="table table-sm" id="attributes-table">
                             <thead>
                                 <tr>
                                     <th>Type</th>
@@ -1081,27 +1058,14 @@ echo '
                                     <th>Created</th>
                                 </tr>
                             </thead>
-                            <tbody>';
-
-$recent_attrs = $database->getrows(
-    "SELECT * FROM bg_user_attributes 
-     WHERE user_id = :user_id 
-     ORDER BY create_dt DESC 
-     LIMIT 20",
-    ['user_id' => $workingUser]
-);
-
-foreach ($recent_attrs as $attr) {
-    echo '
+                            <tbody>
                                 <tr>
-                                    <td><span class="badge bg-secondary">' . htmlspecialchars($attr['type']) . '</span></td>
-                                    <td>' . htmlspecialchars($attr['name']) . '</td>
-                                    <td>' . htmlspecialchars(substr($attr['value'] ?? $attr['description'], 0, 50)) . '...</td>
-                                    <td>' . date('M j', strtotime($attr['create_dt'])) . '</td>
-                                </tr>';
-}
-
-echo '
+                                    <td colspan="4" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -1115,6 +1079,61 @@ echo '
 ';
 
 include('user_components/user-details_modals.inc');
+
+// Calculate total time before rendering performance report
+$perf_timers['TOTAL_BACKEND'] = round((microtime(true) - $perf_start) * 1000, 2);
+
+// Build performance report
+$perf_report_html = '<div class="alert alert-info mt-4" id="perf-report">
+    <div class="d-flex justify-content-between align-items-center" style="cursor: pointer;" onclick="document.getElementById(\'perf-details\').classList.toggle(\'d-none\')">
+        <h5 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Performance Report</h5>
+        <span class="badge bg-primary">' . $perf_timers['TOTAL_BACKEND'] . ' ms</span>
+    </div>
+    <div id="perf-details" class="mt-3 d-none">
+        <table class="table table-sm table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Operation</th>
+                    <th class="text-end">Time (ms)</th>
+                    <th class="text-end">% of Total</th>
+                </tr>
+            </thead>
+            <tbody>';
+
+// Sort timers by time (descending)
+arsort($perf_timers);
+
+foreach ($perf_timers as $label => $time) {
+    if ($label === 'start' || $label === 'TOTAL_BACKEND') continue;
+    $percentage = round(($time / $perf_timers['TOTAL_BACKEND']) * 100, 1);
+    $bar_color = 'bg-success';
+    if ($percentage > 20) $bar_color = 'bg-warning';
+    if ($percentage > 40) $bar_color = 'bg-danger';
+
+    $perf_report_html .= '<tr>
+        <td>' . htmlspecialchars($label) . '</td>
+        <td class="text-end"><strong>' . $time . '</strong></td>
+        <td class="text-end">
+            <div class="d-flex align-items-center justify-content-end">
+                <span class="me-2">' . $percentage . '%</span>
+                <div class="progress" style="width: 100px; height: 8px;">
+                    <div class="progress-bar ' . $bar_color . '" style="width: ' . $percentage . '%"></div>
+                </div>
+            </div>
+        </td>
+    </tr>';
+}
+
+$perf_report_html .= '
+            </tbody>
+        </table>
+        <div class="mt-2 small text-muted">
+            <strong>Note:</strong> Times shown are server-side execution only. Click to collapse.
+        </div>
+    </div>
+</div>';
+
+echo $perf_report_html;
 
 echo '
 <!-- Avatar Modal -->
@@ -1133,42 +1152,299 @@ echo '
         </div>
     </div>
 </div>
-
+';
+?>
 <script>
-// Tab switching functionality - similar to loginhistory.php
+// Tab switching functionality with lazy loading
 document.addEventListener("DOMContentLoaded", function() {
     const tabItems = document.querySelectorAll(".nav-tab-item");
     const tabPanes = document.querySelectorAll(".tab-pane");
-    
+    const userId = <?php echo $workingUser; ?>;
+    const badgeColors = <?php echo json_encode($badgeColors); ?>;
+    const ipColorMap = {};
+    let colorIndex = 0;
+
+    // Track which tabs have been loaded
+    const loadedTabs = {
+        overview: true, // Already loaded
+        account: true,  // Static content
+        enrollments: false,
+        activity: false,
+        security: true, // Static content mostly
+        attributes: false
+    };
+
+    // Load activity data
+    function loadActivityData(offset = 0) {
+        const tbody = document.querySelector("#activity-table tbody");
+        const loadMoreBtn = document.getElementById("load-more-activity");
+
+        if (offset === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center"><div class="spinner-border text-primary"></div><p class="mt-2">Loading activity data...</p></td></tr>';
+        }
+
+        fetch(`/admin/ajax/user-activity-logs.php?user_id=${userId}&offset=${offset}&limit=50`)
+            .then(response => response.json())
+            .then(data => {
+                if (offset === 0) tbody.innerHTML = '';
+
+                if (data.logs && data.logs.length > 0) {
+                    data.logs.forEach(log => {
+                        // Assign color to IP
+                        if (!ipColorMap[log.ip]) {
+                            ipColorMap[log.ip] = badgeColors[colorIndex % badgeColors.length];
+                            colorIndex++;
+                        }
+
+                        const row = document.createElement('tr');
+                        const logDate = new Date(log.create_dt);
+                        const formattedDate = logDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true});
+
+                        row.innerHTML = `
+                            <td><span class="badge bg-${ipColorMap[log.ip]}">${log.ip}</span></td>
+                            <td>${log.name}</td>
+                            <td><code>${log.page}</code></td>
+                            <td>${formattedDate}</td>
+                            <td>
+                                <a href="/admin/sessiondetails?id=${log.id}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-search"></i>
+                                </a>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    // Show/hide load more button
+                    if (data.logs.length >= 50) {
+                        loadMoreBtn.style.display = 'block';
+                        loadMoreBtn.onclick = () => loadActivityData(offset + 50);
+                    } else {
+                        loadMoreBtn.style.display = 'none';
+                    }
+                } else {
+                    if (offset === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No activity found</td></tr>';
+                    }
+                    loadMoreBtn.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading activity:', error);
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading activity data</td></tr>';
+            });
+    }
+
+    // Load enrollments data
+    function loadEnrollmentsData() {
+        const tbody = document.querySelector("#enrollments-table tbody");
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border text-primary"></div><p class="mt-2">Loading enrollments...</p></td></tr>';
+
+        fetch(`/admin/ajax/user-enrollments.php?user_id=${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                tbody.innerHTML = '';
+
+                if (data.enrollments && data.enrollments.length > 0) {
+                    data.enrollments.forEach(enrollment => {
+                        let statusClass = 'secondary';
+                        if (enrollment.status === 'success') statusClass = 'success';
+                        else if (enrollment.status === 'pending') statusClass = 'warning';
+                        else if (enrollment.status === 'failed') statusClass = 'danger';
+
+                        const enrollDate = new Date(enrollment.create_dt);
+                        const formattedDate = enrollDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                <strong>${enrollment.company_name}</strong>
+                                <small class="text-muted d-block">ID: ${enrollment.company_id}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-${statusClass}">${enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}</span>
+                            </td>
+                            <td>${formattedDate}</td>
+                            <td>
+                                <a href="/admin/company-details?id=${enrollment.company_id}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No enrollments found</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading enrollments:', error);
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading enrollment data</td></tr>';
+            });
+    }
+
+    // Load attributes data
+    function loadAttributesData() {
+        const summary = document.getElementById("attributes-summary");
+        const tbody = document.querySelector("#attributes-table tbody");
+
+        fetch(`/admin/ajax/user-attributes.php?user_id=${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Update summary
+                summary.innerHTML = '';
+                if (data.summary && data.summary.length > 0) {
+                    data.summary.forEach(attr => {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-2 mb-3';
+                        col.innerHTML = `
+                            <div class="text-center">
+                                <h3 class="mb-1">${attr.count}</h3>
+                                <small class="text-muted">${attr.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</small>
+                            </div>
+                        `;
+                        summary.appendChild(col);
+                    });
+                } else {
+                    summary.innerHTML = '<div class="col-12 text-center text-muted">No attribute summary available</div>';
+                }
+
+                // Update table
+                tbody.innerHTML = '';
+                if (data.recent && data.recent.length > 0) {
+                    data.recent.forEach(attr => {
+                        const attrDate = new Date(attr.create_dt);
+                        const formattedDate = attrDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+                        const value = attr.value || attr.description || '';
+                        const displayValue = value.length > 50 ? value.substring(0, 50) + '...' : value;
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><span class="badge bg-secondary">${attr.type}</span></td>
+                            <td>${attr.name}</td>
+                            <td>${displayValue}</td>
+                            <td>${formattedDate}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No recent attributes found</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading attributes:', error);
+                summary.innerHTML = '<div class="col-12 text-center text-danger">Error loading attributes</div>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading attributes data</td></tr>';
+            });
+    }
+
+    // Tab switching with lazy loading
     tabItems.forEach(function(tab) {
         tab.addEventListener("click", function(e) {
             e.preventDefault();
-            
+
             // Remove active class from all tabs
             tabItems.forEach(function(item) {
                 item.classList.remove("active");
             });
-            
+
             // Remove show and active classes from all panes
             tabPanes.forEach(function(pane) {
                 pane.classList.remove("show", "active");
             });
-            
+
             // Add active class to clicked tab
             this.classList.add("active");
-            
+
             // Show corresponding pane
             const targetId = this.getAttribute("href").substring(1);
             const targetPane = document.getElementById(targetId);
             if (targetPane) {
                 targetPane.classList.add("show", "active");
+
+                // Lazy load data if not already loaded
+                if (!loadedTabs[targetId]) {
+                    loadedTabs[targetId] = true;
+
+                    if (targetId === 'activity') {
+                        loadActivityData();
+                    } else if (targetId === 'enrollments') {
+                        loadEnrollmentsData();
+                    } else if (targetId === 'attributes') {
+                        loadAttributesData();
+                    }
+                }
             }
         });
     });
+
+    // Frontend performance monitoring
+    window.addEventListener('load', function() {
+        const perfData = performance.timing;
+        const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
+        const domReady = perfData.domContentLoadedEventEnd - perfData.navigationStart;
+        const backendTime = <?php echo $perf_timers['TOTAL_BACKEND']; ?>;
+
+        // Add frontend timing to performance report
+        const perfReport = document.getElementById('perf-details');
+        if (perfReport) {
+            const frontendHTML = `
+                <hr>
+                <h6 class="mt-3">Frontend Performance</h6>
+                <table class="table table-sm table-striped mb-0">
+                    <tbody>
+                        <tr>
+                            <td>Backend Processing</td>
+                            <td class="text-end"><strong>${backendTime} ms</strong></td>
+                        </tr>
+                        <tr>
+                            <td>DOM Ready</td>
+                            <td class="text-end"><strong>${domReady} ms</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Full Page Load</td>
+                            <td class="text-end"><strong>${pageLoadTime} ms</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Network + Frontend</td>
+                            <td class="text-end"><strong>${pageLoadTime - backendTime} ms</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+            perfReport.insertAdjacentHTML('beforeend', frontendHTML);
+        }
+
+        // Log to console for easy debugging
+        console.log('=== USER DETAILS PAGE PERFORMANCE ===');
+        console.log('Backend:', backendTime + 'ms');
+        console.log('DOM Ready:', domReady + 'ms');
+        console.log('Full Load:', pageLoadTime + 'ms');
+        console.log('Network + Frontend:', (pageLoadTime - backendTime) + 'ms');
+    });
 });
 </script>
-';
-
+<?php
 $display_footertype = 'min';
+
+$perf_checkpoint = microtime(true);
 include($dir['core_components'] . '/bg_footer.inc');
+$perf_timers['bg_footer'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
+
+$perf_checkpoint = microtime(true);
 $app->outputpage();
+$perf_timers['outputpage'] = round((microtime(true) - $perf_checkpoint) * 1000, 2);
+
+// Log performance summary to error log
+$perf_total = round((microtime(true) - $perf_start) * 1000, 2);
+$slow_operations = [];
+foreach ($perf_timers as $label => $time) {
+    if ($label === 'start' || $label === 'TOTAL_BACKEND') continue;
+    if ($time > 50) { // Only log operations taking more than 50ms
+        $slow_operations[] = "$label={$time}ms";
+    }
+}
+$perf_summary = "USER-DETAILS-V2 [User $workingUser]: Total={$perf_total}ms";
+if (!empty($slow_operations)) {
+    $perf_summary .= " | SLOW: " . implode(', ', $slow_operations);
+}
+error_log($perf_summary);

@@ -1,4 +1,9 @@
 <?PHP
+// PERFORMANCE TRACKING (if enabled in parent)
+if (isset($perf_timers)) {
+    $ugad_start = microtime(true);
+    $ugad_timers = [];
+}
 
 if (empty($getaccountdetailsuser)) {
     $component_user_data = $session->get('current_user_data') ?? [];
@@ -34,7 +39,9 @@ $till=$app->getTimeTilBirthday($component_user_data['birthdate']);
 
 $born_birthdate = new DateTime($component_user_data['birthdate']);;
 
+if (isset($ugad_timers)) $ugad_checkpoint = microtime(true);
 $logincount=$account->getLoginCount($component_user_data['user_id']);
+if (isset($ugad_timers)) $ugad_timers['getLoginCount'] = round((microtime(true) - $ugad_checkpoint) * 1000, 2);
 
 // Ensure bg_users_accountplans is available
 global $bg_users_accountplans;
@@ -51,13 +58,19 @@ if (!isset($product) || !is_object($product)) {
 $userplanname = $product->getProduct($component_user_data['account_product_id'], 'id')['account_name'];
 $user_planddetails=$app->plandetail('details_id', $component_user_data['account_product_id']);
 
+if (isset($ugad_timers)) $ugad_checkpoint = microtime(true);
 $enabledHonorFlags = $account->getEnabledFlags();
+if (isset($ugad_timers)) $ugad_timers['getEnabledFlags'] = round((microtime(true) - $ugad_checkpoint) * 1000, 2);
 
-if ($session->get('featuremailcount_cachedtime') < time() - 60) {
+// OPTIMIZATION: Only check featuremailcount if user actually has a feature email
+if (isset($ugad_timers)) $ugad_checkpoint = microtime(true);
+$has_feature_email = !empty($component_user_data['feature_email']);
+
+if ($has_feature_email && $session->get('featuremailcount_cachedtime') < time() - 60) {
     $session->set('featuremailcount_cachedtime', time());
-    require_once($dir['classes'] . '/' . 'class.mail.php');  
+    require_once($dir['classes'] . '/' . 'class.mail.php');
     $mail= new mail( $sitesettings['mail']);
-    
+
     $featuremailcount=$mail->mailcount($component_user_data['user_id']);
  $session->set('featuremailcount',  $featuremailcount);
 
@@ -65,9 +78,12 @@ if ($session->get('featuremailcount_cachedtime') < time() - 60) {
 } else {
   $featuremailcount=$session->get('featuremailcount', 0);
 }
+if (isset($ugad_timers)) $ugad_timers['featuremailcount'] = round((microtime(true) - $ugad_checkpoint) * 1000, 2);
 
+if (isset($ugad_timers)) $ugad_checkpoint = microtime(true);
 include_once($_SERVER['DOCUMENT_ROOT'] .  '/myaccount/module_funfacts/astrosign.inc');
 $user_astrosigndetails=$astrosigndetails;
+if (isset($ugad_timers)) $ugad_timers['astrosign_inc'] = round((microtime(true) - $ugad_checkpoint) * 1000, 2);
    
 /*echo '
 <div class="border-bottom border-dashed my-4 d-lg-none"></div>
@@ -85,9 +101,13 @@ You were born on: ' . $born_birthdate->format('D, M. j, Y') . '<br>
 ';
 */
 
+if (isset($ugad_timers)) $ugad_checkpoint = microtime(true);
 $user_reward_results = $account->getbusinesslist_rewards($component_user_data, 'list', '"success", "success-btn"', 0, true);
+if (isset($ugad_timers)) $ugad_timers['getbusinesslist_rewards'] = round((microtime(true) - $ugad_checkpoint) * 1000, 2);
 
+if (isset($ugad_timers)) $ugad_checkpoint = microtime(true);
 $lastlogindetails = $account->getLastLogin($component_user_data['user_id']);
+if (isset($ugad_timers)) $ugad_timers['getLastLogin'] = round((microtime(true) - $ugad_checkpoint) * 1000, 2);
 
 //====================================================================================================
 /// COVER BANNER
@@ -108,13 +128,43 @@ if (!empty($usercover['description'])) {
 
 //====================================================================================================
 /// GET PROFILE COMPLETION
+if (isset($ugad_timers)) $ugad_checkpoint = microtime(true);
 $profilecompletion = $account->profilecompletionratio($component_user_data);
+if (isset($ugad_timers)) $ugad_timers['profilecompletionratio'] = round((microtime(true) - $ugad_checkpoint) * 1000, 2);
 
 
 //====================================================================================================
 /// GET ENROLLMENT COUNTS
-$showlimit=0;
-$businessoutput = $account->getbusinesslist($component_user_data, 'any', $showlimit);
+if (isset($ugad_timers)) $ugad_checkpoint = microtime(true);
+
+// OPTIMIZATION: For admin pages, use sendresults=true to skip HTML generation (just get data)
+$is_admin_page = (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false);
+if ($is_admin_page) {
+    // Use sendresults=true to skip HTML rendering, just get counts
+    $businessoutput = $account->getbusinesslist($component_user_data, 'any', 0, true);
+    // The function with sendresults=true returns raw data array, we need to process it for counts
+    if (is_array($businessoutput) && !isset($businessoutput['counts'])) {
+        // It returned raw rows, need to count them
+        $counts = ['success' => 0, 'pending' => 0, 'failed' => 0, 'total' => count($businessoutput)];
+        foreach ($businessoutput as $row) {
+            if (isset($row['status'])) {
+                if (isset($counts[$row['status']])) {
+                    $counts[$row['status']]++;
+                }
+            }
+        }
+        // Calculate remaining
+        $plandatafeatures = $app->plandetail('details_id', $component_user_data['account_product_id']);
+        $selectsused = ($counts['pending'] + $counts['success']);
+        $counts['remaining'] = max(0, ($plandatafeatures['max_business_select'] - $selectsused));
+
+        $businessoutput = ['counts' => $counts, 'list' => $businessoutput];
+    }
+} else {
+    $showlimit=0;
+    $businessoutput = $account->getbusinesslist($component_user_data, 'any', $showlimit);
+}
+if (isset($ugad_timers)) $ugad_timers['getbusinesslist'] = round((microtime(true) - $ugad_checkpoint) * 1000, 2);
 /*if ($businessoutput['counts']['success'] == 0) {
   $businessoutput = $account->getbusinesslist($component_user_data, '"selected"', $showlimit);
   $enrollmentstyle = 'selected';
@@ -177,3 +227,14 @@ $funfact_content='';
      $funfact_content.= '</div>';
    }
    unset($getaccountdetailsuser);
+
+// PERFORMANCE TRACKING OUTPUT
+if (isset($ugad_timers)) {
+    $ugad_total = round((microtime(true) - $ugad_start) * 1000, 2);
+    $perf_timers['ugad_TOTAL'] = $ugad_total;
+
+    // Add individual timers to parent with ugad_ prefix
+    foreach ($ugad_timers as $label => $time) {
+        $perf_timers['ugad_' . $label] = $time;
+    }
+}
