@@ -737,6 +737,33 @@ $businessHours = $app->bg_businesshours();
                     <p class="admin-card-text">Review and manage device security reports</p>
                 </div>
             </a>
+
+            <a href="/admin/lockout-dashboard" class="admin-card">
+                <div class="admin-icon icon-security">
+                    <i class="bi bi-lock-fill"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Lockout Dashboard
+                        <?php
+                        $active_lockouts = $database->query("SELECT COUNT(*) FROM bg_lockout WHERE status='active' AND expire_dt > NOW()")->fetchColumn();
+                        if ($active_lockouts > 0):
+                        ?>
+                        <span class="enrollment-badge"><?php echo $active_lockouts; ?></span>
+                        <?php endif; ?>
+                    </h3>
+                    <p class="admin-card-text">Monitor and manage rate limit lockouts</p>
+                </div>
+            </a>
+
+            <a href="/admin/marketing-add-access.php" class="admin-card">
+                <div class="admin-icon icon-productivity">
+                    <i class="bi bi-megaphone-fill"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Add Marketing Access</h3>
+                    <p class="admin-card-text">Grant users access to marketing tools</p>
+                </div>
+            </a>
             
             <a href="/admin/redirect-enrollments" target="_blank" class="admin-card">
                 <div class="admin-icon icon-enrollment">

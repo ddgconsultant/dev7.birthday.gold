@@ -1039,6 +1039,24 @@ function maskIP($ip, $settings=[]) {
 
 
     # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+    function formatDuration($minutes) {
+        if ($minutes <= 0) return 'Expired';
+
+        $years = floor($minutes / 525600); // 365 * 24 * 60
+        $months = floor(($minutes % 525600) / 43200); // 30 * 24 * 60
+        $days = floor(($minutes % 43200) / 1440); // 24 * 60
+        $hours = floor(($minutes % 1440) / 60);
+        $mins = $minutes % 60;
+
+        // Build output with most significant unit only
+        if ($years > 0) return $years . ' year' . ($years > 1 ? 's' : '');
+        if ($months > 0) return $months . ' month' . ($months > 1 ? 's' : '');
+        if ($days > 0) return $days . ' day' . ($days > 1 ? 's' : '');
+        if ($hours > 0) return $hours . ' hr' . ($hours > 1 ? 's' : '');
+        return $mins . ' min' . ($mins > 1 ? 's' : '');
+    }
+
+    # ##--------------------------------------------------------------------------------------------------------------------------------------------------
     function timeago($date, $showdate = 700, $dateformat = 'Y-m-d H:i:s', $sameyeardateformat = 'm-d H:i:s')
     {
         $timezone = new DateTimeZone('America/Denver');

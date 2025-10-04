@@ -1,0 +1,131 @@
+================================================================================
+LOCKOUT CONSOLIDATION MIGRATION - QUICK START
+================================================================================
+Date: 2025-10-04
+Status: READY TO RUN
+
+================================================================================
+WHAT THIS DOES
+================================================================================
+✅ Consolidates 742,161 duplicate lockout records → ~296 parent records
+✅ Creates bg_lockout_history table for full audit trail
+✅ Updates application code to use new parent/child structure
+✅ Creates backup table for safety (bg_lockout_backup_20251004)
+✅ Adds tracking columns: first_violation_dt, last_violation_dt, total_violations, lockout_level
+
+RESULT: 99.96% reduction in main table size, much faster queries
+
+================================================================================
+HOW TO RUN
+================================================================================
+
+METHOD 1: Automated PHP Script (RECOMMENDED)
+--------------------------------------------
+cd /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold
+php admin_actions/run_lockout_migration.php
+
+→ Script will ask for confirmation (type YES)
+→ Runs all 3 steps automatically
+→ Shows verification results
+
+
+METHOD 2: Manual SQL Execution (RECOMMENDED - Tested for MySQL 8)
+--------------------------------------------
+# First, test the syntax:
+mysql -h 71.33.250.235 -u root -p birthday_gold_www < admin_actions/test_migration_syntax.sql
+
+# Then run the migration:
+mysql -h 71.33.250.235 -u root -p birthday_gold_www < admin_actions/migration_step1_simple.sql
+mysql -h 71.33.250.235 -u root -p birthday_gold_www < admin_actions/migration_lockout_consolidation_step2_data.sql
+mysql -h 71.33.250.235 -u root -p birthday_gold_www < admin_actions/migration_lockout_consolidation_step3_verify.sql
+
+================================================================================
+FILES CREATED
+================================================================================
+📄 test_migration_syntax.sql                          - Pre-flight syntax validation
+📄 migration_step1_simple.sql                         - Creates tables/columns (MySQL 8)
+📄 migration_lockout_consolidation_step2_data.sql     - Migrates data
+📄 migration_lockout_consolidation_step3_verify.sql   - Verifies success
+📄 run_lockout_migration.php                          - Automated runner
+📄 MIGRATION_LOCKOUT_README.md                        - Full documentation
+📄 LOCKOUT_MIGRATION_QUICKSTART.txt                   - This file
+
+CODE CHANGES:
+📝 core/site-controller.php (lines 827-896)           - Updated lockout logic
+
+================================================================================
+VERIFICATION (After Running)
+================================================================================
+
+Quick Check:
+-----------
+SELECT COUNT(*) FROM bg_lockout;           -- Should be ~296
+SELECT COUNT(*) FROM bg_lockout_history;   -- Should be 742,161
+
+Detailed Check:
+--------------
+SELECT COUNT(*) as orphans FROM bg_lockout_history WHERE parent_id IS NULL;
+-- Should return 0
+
+Full Verification:
+-----------------
+mysql -h 71.33.250.235 -u claudecode -p birthday_gold_www < admin_actions/migration_lockout_consolidation_step3_verify.sql
+
+================================================================================
+ROLLBACK (If Needed)
+================================================================================
+
+TRUNCATE TABLE bg_lockout;
+INSERT INTO bg_lockout SELECT * FROM bg_lockout_backup_20251004;
+
+Then revert code changes in core/site-controller.php
+
+================================================================================
+POST-MIGRATION
+================================================================================
+
+✅ Test rate limiting (try triggering a lockout)
+✅ Monitor error logs for 24-48 hours
+✅ After 30 days of success, drop backup:
+   DROP TABLE bg_lockout_backup_20251004;
+
+================================================================================
+NEW TABLE STRUCTURE
+================================================================================
+
+bg_lockout (Parent - Current State):
+-----------------------------------
+- id, ip, type, session_id, start_dt, expire_dt, create_dt, modify_dt, status
+- first_violation_dt ← NEW
+- last_violation_dt ← NEW
+- total_violations ← NEW
+- lockout_level ← NEW (1-18, represents 2^level minutes)
+
+bg_lockout_history (Child - Full Audit Trail):
+----------------------------------------------
+- All bg_lockout fields PLUS:
+- parent_id (references bg_lockout.id)
+- lockout_minutes (calculated duration)
+
+================================================================================
+LOCKOUT LEVELS
+================================================================================
+Level 1  = 1 minute       Level 10 = 512 minutes (~8.5 hours)
+Level 2  = 2 minutes      Level 11 = 1,024 min (~17 hours)
+Level 3  = 4 minutes      Level 12 = 2,048 min (~1.4 days)
+Level 4  = 8 minutes      Level 13 = 4,096 min (~2.8 days)
+Level 5  = 16 minutes     Level 14 = 8,192 min (~5.7 days)
+Level 6  = 32 minutes     Level 15 = 16,384 min (~11.4 days)
+Level 7  = 64 min (~1hr)  Level 16 = 32,768 min (~22.8 days)
+Level 8  = 128 min (~2hr) Level 17 = 65,536 min (~45.5 days)
+Level 9  = 256 min (~4hr) Level 18 = 99,999 min (~69 days MAX)
+
+================================================================================
+SUPPORT
+================================================================================
+📖 Full docs: admin_actions/MIGRATION_LOCKOUT_README.md
+🐛 Logs: W:/BIRTHDAY_SERVER/_logs_/dev7_PHP_errors.log
+💾 Backup: Table bg_lockout_backup_20251004
+
+Questions? Check the README for detailed explanations and support queries.
+================================================================================

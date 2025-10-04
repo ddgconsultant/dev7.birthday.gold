@@ -825,15 +825,72 @@ VALUES (:cip, :type, :hit, :city, :state, :country_code, :lon, :lat, :data_strin
     $pagecount_minute++;
 
     if ($pagecount_second > 40 || $pagecount_minute > 150) {
-      $lockout_count =  $database->count('bg_lockout', "ip=:ip and `status`!='never_block'", ['ip' => $client_ip]);
+      $sessionid = session_id();
 
-      // --------------------------------------------------------------------------------------------------
-      // Calculate block duration with exponential growth and limit it to a maximum of 99999 minutes
-      $block_duration = min(pow(2, $lockout_count), 99999); // 2^lockout_count but no more than 99999 minutes
+      // Check if this IP/session already has a lockout record
+      $sql = "SELECT id, total_violations, lockout_level FROM bg_lockout
+              WHERE ip = :ip AND session_id = :sessionid AND `status` != 'never_block'
+              LIMIT 1";
+      $stmt = $database->prepare($sql);
+      $stmt->execute(['ip' => $client_ip, 'sessionid' => $sessionid]);
+      $existing_lockout = $stmt->fetch(PDO::FETCH_ASSOC);
 
-      $sql = "INSERT INTO bg_lockout (ip, expire_dt, session_id, start_dt, create_dt, modify_dt, `status`, `type`) 
-VALUES (:ip, DATE_ADD(NOW(), INTERVAL :duration MINUTE), :sessionid, NOW(), NOW(), NOW(), 'active', 'rate_limit')";
-      $database->query($sql, ['ip' => $client_ip, 'duration' => $block_duration, 'sessionid' => session_id()]);
+      if ($existing_lockout) {
+        // UPDATE existing parent record
+        $new_level = $existing_lockout['lockout_level'] + 1;
+        $new_violations = $existing_lockout['total_violations'] + 1;
+        $block_duration = min(pow(2, $new_level), 99999);
+
+        $sql = "UPDATE bg_lockout
+                SET lockout_level = :level,
+                    total_violations = :violations,
+                    last_violation_dt = NOW(),
+                    expire_dt = DATE_ADD(NOW(), INTERVAL :duration MINUTE),
+                    modify_dt = NOW()
+                WHERE id = :id";
+        $database->query($sql, [
+          'id' => $existing_lockout['id'],
+          'level' => $new_level,
+          'violations' => $new_violations,
+          'duration' => $block_duration
+        ]);
+
+        // INSERT into history table
+        $sql = "INSERT INTO bg_lockout_history
+                (parent_id, ip, type, session_id, start_dt, expire_dt, create_dt, modify_dt, status, lockout_minutes)
+                VALUES (:parent_id, :ip, 'rate_limit', :sessionid, NOW(), DATE_ADD(NOW(), INTERVAL :duration MINUTE),
+                        NOW(), NOW(), 'active', :duration)";
+        $database->query($sql, [
+          'parent_id' => $existing_lockout['id'],
+          'ip' => $client_ip,
+          'sessionid' => $sessionid,
+          'duration' => $block_duration
+        ]);
+
+      } else {
+        // INSERT new parent record (first violation)
+        $block_duration = 1; // Start at 1 minute
+
+        $sql = "INSERT INTO bg_lockout
+                (ip, type, session_id, start_dt, expire_dt, create_dt, modify_dt, status,
+                 first_violation_dt, last_violation_dt, total_violations, lockout_level)
+                VALUES (:ip, 'rate_limit', :sessionid, NOW(), DATE_ADD(NOW(), INTERVAL 1 MINUTE),
+                        NOW(), NOW(), 'active', NOW(), NOW(), 1, 1)";
+        $database->query($sql, ['ip' => $client_ip, 'sessionid' => $sessionid]);
+        $parent_id = $database->lastInsertId();
+
+        // INSERT into history table
+        $sql = "INSERT INTO bg_lockout_history
+                (parent_id, ip, type, session_id, start_dt, expire_dt, create_dt, modify_dt, status, lockout_minutes)
+                VALUES (:parent_id, :ip, 'rate_limit', :sessionid, NOW(), DATE_ADD(NOW(), INTERVAL 1 MINUTE),
+                        NOW(), NOW(), 'active', 1)";
+        $database->query($sql, [
+          'parent_id' => $parent_id,
+          'ip' => $client_ip,
+          'sessionid' => $sessionid
+        ]);
+      }
+
       session_tracking('BLOCKED: excessive requests');
       die("You're temporarily blocked due to excessive requests. [$client_ip]");
     }
