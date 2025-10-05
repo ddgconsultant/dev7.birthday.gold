@@ -20,7 +20,7 @@ class Chat {
     $DEBUG=false;
     $payload = json_encode([
         'text' => $message,
-        
+
     ]);
   if ($DEBUG)    echo 'Payload: ' . $payload . '<br>';
 

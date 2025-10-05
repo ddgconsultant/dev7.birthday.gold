@@ -1,18 +1,9 @@
 <?php
 // scheduler--process-business-submissions.php - Process submitted business recommendations
-// Can be triggered via URL: /admin_actions/scheduler--process-business-submissions.php?key=YOUR_KEY
+// Can be triggered via URL: /admin_actions/scheduler--process-business-submissions.php
 
 // Set up environment
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-
-// Check authorization key
-$auth_key = $_GET['key'] ?? '';
-$expected_key = $sitesettings['scheduler_key'] ?? 'default_scheduler_key_change_me';
-
-if ($auth_key !== $expected_key) {
-    http_response_code(403);
-    die("Unauthorized");
-}
 
 // Set execution limits
 set_time_limit(600); // 10 minutes

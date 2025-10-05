@@ -1077,8 +1077,25 @@ $businessHours = $app->bg_businesshours();
                     <p class="admin-card-text">View real time system logs </p>
                 </div>
             </a>
-            
-            
+
+            <a href="/admin/error-fix-dashboard.php" class="admin-card">
+                <div class="admin-icon icon-system">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Auto Error Fixer
+                        <?php
+                        $pending_fixes = $database->query("SELECT COUNT(*) FROM bg_auto_error_fixes WHERE fix_status='pending_review'")->fetchColumn();
+                        if ($pending_fixes > 0):
+                        ?>
+                        <span class="enrollment-badge"><?php echo $pending_fixes; ?></span>
+                        <?php endif; ?>
+                    </h3>
+                    <p class="admin-card-text">AI-powered error detection and fixes</p>
+                </div>
+            </a>
+
+
             <a href="/admin/servicelist.txt" class="admin-card">
                 <div class="admin-icon icon-system">
                     <i class="bi bi-list-check"></i>

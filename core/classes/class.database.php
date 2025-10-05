@@ -5,6 +5,8 @@ class Database
 {
 
   private $pdo;
+  private $lastQuery = null;
+  private $lastParams = [];
 
   public function __construct($local_config)
   {
@@ -18,7 +20,7 @@ class Database
       PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
       PDO::ATTR_EMULATE_PREPARES => false,
     ]);
-    
+
   }
 
 
@@ -51,9 +53,17 @@ class Database
   public function query($sql, $params = [])
   {
     if (!empty($sql)) {
-      $stmt = $this->pdo->prepare($sql);
-      $stmt->execute($params);
-      return $stmt;
+      $this->lastQuery = $sql;
+      $this->lastParams = $params;
+      try {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt;
+      } catch (PDOException $e) {
+        // Log query details with the error
+        error_log("Database Query Error: " . $e->getMessage() . " | Query: " . $sql . " | Params: " . json_encode($params));
+        throw $e;
+      }
     } else {
       return false;
     }
@@ -76,7 +86,13 @@ class Database
     if (empty($sql)) {  // If no query is passed
       return false;
     }
-    return $this->pdo->prepare($sql);
+    $this->lastQuery = $sql;
+    try {
+      return $this->pdo->prepare($sql);
+    } catch (PDOException $e) {
+      error_log("Database Prepare Error: " . $e->getMessage() . " | Query: " . $sql);
+      throw $e;
+    }
   }
 
 
@@ -89,11 +105,18 @@ class Database
     if ($where !== '') {
       $sql .= " WHERE $where";
     }
-    // Prepare and execute
-    $stmt = $this->pdo->prepare($sql);
-    $stmt->execute($params);
-    // Return count 
-    return $stmt->fetchColumn();
+    $this->lastQuery = $sql;
+    $this->lastParams = $params;
+    try {
+      // Prepare and execute
+      $stmt = $this->pdo->prepare($sql);
+      $stmt->execute($params);
+      // Return count
+      return $stmt->fetchColumn();
+    } catch (PDOException $e) {
+      error_log("Database Count Error: " . $e->getMessage() . " | Query: " . $sql . " | Params: " . json_encode($params));
+      throw $e;
+    }
   }
 
 # ##--------------------------------------------------------------------------------------------------------------------------------------------------
@@ -118,9 +141,16 @@ public function errorInfo($stmt = null)
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function fetchOne($sql, $params = [])
   {
-    $stmt = $this->pdo->prepare($sql);
-    $stmt->execute($params);
-    return $stmt->fetch(PDO::FETCH_ASSOC);
+    $this->lastQuery = $sql;
+    $this->lastParams = $params;
+    try {
+      $stmt = $this->pdo->prepare($sql);
+      $stmt->execute($params);
+      return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+      error_log("Database FetchOne Error: " . $e->getMessage() . " | Query: " . $sql . " | Params: " . json_encode($params));
+      throw $e;
+    }
   }
 
 
@@ -128,17 +158,23 @@ public function errorInfo($stmt = null)
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function fetch($sql, $params = [])
   {
-    // Prepare statement
-    $stmt = $this->prepare($sql);
-    // Bind parameters 
-    if (!empty($params)) {
-      foreach ($params as $param => $value) {
-        $stmt->bindValue(":$param", $value);
+    $this->lastParams = $params;
+    try {
+      // Prepare statement
+      $stmt = $this->prepare($sql);
+      // Bind parameters
+      if (!empty($params)) {
+        foreach ($params as $param => $value) {
+          $stmt->bindValue(":$param", $value);
+        }
       }
+      $stmt->execute();
+      $results = $stmt->fetch(PDO::FETCH_ASSOC);
+      return $results;
+    } catch (PDOException $e) {
+      error_log("Database Fetch Error: " . $e->getMessage() . " | Query: " . $sql . " | Params: " . json_encode($params));
+      throw $e;
     }
-    $stmt->execute();
-    $results = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $results;
   }
 
 
@@ -146,20 +182,26 @@ public function errorInfo($stmt = null)
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function getrows($sql, $params = [])
   {
-    // Prepare statement
-    $stmt = $this->prepare($sql);
-    // Bind parameters 
-    if (!empty($params)) {
-      foreach ($params as $param => $value) {
-        // Remove colon if it's already there
-        $param = ltrim($param, ':');
-        $stmt->bindValue(":$param", $value);
+    $this->lastParams = $params;
+    try {
+      // Prepare statement
+      $stmt = $this->prepare($sql);
+      // Bind parameters
+      if (!empty($params)) {
+        foreach ($params as $param => $value) {
+          // Remove colon if it's already there
+          $param = ltrim($param, ':');
+          $stmt->bindValue(":$param", $value);
+        }
       }
+      $stmt->execute();
+      // Fetch all rows
+      $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+      return $results;
+    } catch (PDOException $e) {
+      error_log("Database GetRows Error: " . $e->getMessage() . " | Query: " . $sql . " | Params: " . json_encode($params));
+      throw $e;
     }
-    $stmt->execute();
-    // Fetch all rows
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    return $results;
   }
 
 
@@ -189,16 +231,36 @@ public function errorInfo($stmt = null)
       return "$field = :$field";
     }, $fields)) . " WHERE " . key($where) . " = :" . key($where) . " LIMIT 1";
 
-    $stmt = $this->pdo->prepare($sql);
+    $this->lastQuery = $sql;
+    $this->lastParams = array_merge($data, $where);
 
-    // bind data values
-    foreach ($data as $key => $value) {
-      $stmt->bindValue(":$key", $value);
+    try {
+      $stmt = $this->pdo->prepare($sql);
+
+      // bind data values
+      foreach ($data as $key => $value) {
+        $stmt->bindValue(":$key", $value);
+      }
+
+      // bind where clause value
+      $stmt->bindValue(":" . key($where), reset($where));
+
+      return $stmt->execute();
+    } catch (PDOException $e) {
+      error_log("Database Update Error: " . $e->getMessage() . " | Query: " . $sql . " | Params: " . json_encode($this->lastParams));
+      throw $e;
     }
+  }
 
-    // bind where clause value
-    $stmt->bindValue(":" . key($where), reset($where));
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function getLastQuery()
+  {
+    return $this->lastQuery;
+  }
 
-    return $stmt->execute();
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  public function getLastParams()
+  {
+    return $this->lastParams;
   }
 }

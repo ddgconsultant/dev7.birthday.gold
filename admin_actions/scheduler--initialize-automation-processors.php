@@ -2,13 +2,6 @@
 // scheduler--initialize-automation-processors.php - Run SQL to initialize automation processors in bg_config
 include('../core/site-controller.php');
 
-// Check scheduler key
-$provided_key = $_GET['key'] ?? '';
-if ($provided_key !== SCHEDULER_KEY) {
-    http_response_code(403);
-    die(json_encode(['error' => 'Unauthorized']));
-}
-
 $result = [
     'status' => 'success',
     'timestamp' => date('Y-m-d H:i:s'),

@@ -125,7 +125,22 @@ if ($errormode === 'showerrors') {
 
 // Handle uncaught exceptions and log them
 set_exception_handler(function ($e) {
-  error_log('Uncaught Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
+  $errorMsg = 'Uncaught Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine();
+
+  // If it's a PDOException and database object exists, include query info
+  if ($e instanceof PDOException && isset($GLOBALS['database'])) {
+    $lastQuery = $GLOBALS['database']->getLastQuery();
+    $lastParams = $GLOBALS['database']->getLastParams();
+    if ($lastQuery) {
+      $errorMsg .= ' | Last Query: ' . $lastQuery;
+      if (!empty($lastParams)) {
+        $errorMsg .= ' | Params: ' . json_encode($lastParams);
+      }
+    }
+  }
+
+  error_log($errorMsg);
+
   if ($GLOBALS['errormode'] === 'showerrors') {
     echo "Uncaught Exception: " . $e->getMessage() . " in " . $e->getFile() . " on line " . $e->getLine() . "<br>";
   }
@@ -516,6 +531,10 @@ foreach ($classes as $class) {
         $sitesettings_ai = parse_ini_string($config_ai, true);
         $ai = new AI($system, $sitesettings_ai);
         #  $$className = AI::getInstance($sitesettings_ai['ai']);
+        break;
+      // -----------------------------------------
+      case 'errorfixer':
+        $errorfixer = new ErrorFixer($database, $ai, $system);
         break;
       // -----------------------------------------
       case 'company':

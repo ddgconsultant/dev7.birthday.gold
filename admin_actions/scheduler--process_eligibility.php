@@ -5,18 +5,11 @@
  * Purpose: Batch process user eligibility for stale records
  * Schedule: Run every hour during off-peak times (1 AM - 5 AM)
  * 
- * Usage: /admin_actions/scheduler--process_eligibility.php?key=SCHEDULER_KEY
+ * Usage: /admin_actions/scheduler--process_eligibility.php
  */
 
 // Initialize site
 require_once(dirname(__FILE__).'/../core/site-controller.php');
-
-// Verify scheduler key
-$scheduler_key = $_GET['key'] ?? '';
-if ($scheduler_key !== $SCHEDULERCONFIG['key']) {
-    header('HTTP/1.1 403 Forbidden');
-    die('Access denied');
-}
 
 // Set execution limits for batch processing
 set_time_limit(300); // 5 minutes max

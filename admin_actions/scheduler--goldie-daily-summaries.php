@@ -1,21 +1,13 @@
 <?php
 // scheduler--goldie-daily-summaries.php
 // Nightly job to generate Goldie AI summaries for users with birthday messages
-// Can be triggered via URL: /admin_actions/scheduler--goldie-daily-summaries.php?key=YOUR_KEY&date=2025-07-18
+// Can be triggered via URL: /admin_actions/scheduler--goldie-daily-summaries.php
+// Optional override: ?date=2025-07-18
 
 // Set up environment
 $addClasses[] = 'mail';
 $addClasses[] = 'ai';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-
-// Check authorization key
-$auth_key = $_GET['key'] ?? '';
-$expected_key = $sitesettings['scheduler_key'] ?? 'default_scheduler_key_change_me';
-
-if ($auth_key !== $expected_key && 1==2) {
-    http_response_code(403);
-    die("Unauthorized");
-}
 
 // Set execution limits for batch processing
 set_time_limit(3600); // 1 hour
@@ -28,8 +20,8 @@ header('Content-Type: text/plain; charset=utf-8');
 $start_time = microtime(true);
 echo "[" . date('Y-m-d H:i:s') . "] Starting Goldie daily summaries batch job\n";
 
-// Get date to process (default: yesterday)
-$process_date = date('Y-m-d', strtotime('-1 day'));
+// Get date to process (default: today, unless overridden)
+$process_date = date('Y-m-d');
 if (!empty($_GET['date'])) {
     // Allow overriding date via GET parameter
     $process_date = date('Y-m-d', strtotime($_GET['date']));
