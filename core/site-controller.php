@@ -462,10 +462,15 @@ foreach ($classes as $class) {
       // -----------------------------------------
       case 'mail':
         $usemailconfig = $sitesettings['mail'];    // Use the default mail settings
+
+        // Check for MAIL_SENDERPLATFORM configuration
+        $usemailsender = $sitesettings['mail']['MAIL_SENDERPLATFORM'] ?? null;
+
         if (!empty($usemailsender) && !empty($sitesettings['mailsender_' . $usemailsender])) { // If a specific sender override exists, merge it
           $usemailconfig = array_merge($usemailconfig, $sitesettings['mailsender_' . $usemailsender]);
         }
         $$className = new $className($usemailconfig);  // Instantiate the class with the resolved config
+      #  breakpoint ($usemailconfig);
         break;
       // -----------------------------------------
       case 'marketing':
