@@ -8,19 +8,23 @@ $funfactrecord = '<div id="events"><p class="fw-bold">No historical data found.<
 } else {
 $event=$event[0];
 $eventarray = json_decode($event['event']);
-$eventarray=$eventarray[0];
+$eventarray = is_array($eventarray) && !empty($eventarray) ? $eventarray[0] : null;
 
 // Current first-class stamp price as of April 2025
 $current_price = 0.73;
 // Calculate percentage change
-$old_price = floatval(preg_replace('/[^0-9.]/', '', $eventarray->title));
-$percent_change = round((($current_price - $old_price) / $old_price) * 100);
+$old_price = $eventarray && isset($eventarray->title) ? floatval(preg_replace('/[^0-9.]/', '', $eventarray->title)) : 0;
+$percent_change = ($old_price > 0) ? round((($current_price - $old_price) / $old_price) * 100) : 0;
 
 // Check if this is an approximate year
-$year_display = isset($event['approximate_year']) ? 
-                $event['year'] . ' <small class="text-muted">(nearest to your birth year)</small>' : 
+$year_display = isset($event['approximate_year']) ?
+                $event['year'] . ' <small class="text-muted">(nearest to your birth year)</small>' :
                 $event['year'];
 
+// Verify we have valid data before displaying
+if (!$eventarray || !isset($eventarray->title) || !isset($eventarray->description)) {
+    $funfactrecord = '<div id="events"><p class="fw-bold">No historical data found.</p></div>';
+} else {
 $funfactrecord = '
 <div class="card h-100">
   <div class="card-body">
@@ -37,4 +41,5 @@ $funfactrecord = '
   </div>
 </div>
 ';
+}
 }

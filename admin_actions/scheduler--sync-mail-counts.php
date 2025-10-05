@@ -63,7 +63,7 @@ try {
                 ];
 
                 // Store in bg_user_attributes
-                $check_sql = "SELECT id FROM bg_user_attributes
+                $check_sql = "SELECT user_id FROM bg_user_attributes
                              WHERE user_id = :user_id
                              AND type = 'mail_count_cache'
                              AND name = 'feature_email_count'";
@@ -77,10 +77,12 @@ try {
                                   SET value = :value,
                                       description = :description,
                                       modify_dt = NOW()
-                                  WHERE id = :id";
+                                  WHERE user_id = :user_id
+                                  AND type = 'mail_count_cache'
+                                  AND name = 'feature_email_count'";
                     $update_stmt = $database->prepare($update_sql);
                     $update_stmt->execute([
-                        'id' => $existing['id'],
+                        'user_id' => $user['user_id'],
                         'value' => $mailcount['total'],
                         'description' => json_encode($mail_data)
                     ]);

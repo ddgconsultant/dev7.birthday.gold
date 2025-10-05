@@ -57,10 +57,15 @@ if ($app->formposted()) {
                     }
 
                     try {
+                        // Set a timeout for SMS sending to prevent hanging
+                        set_time_limit(30);
                         $sms->sendSingleMessage($phone, $sms_message);
                     } catch (Exception $e) {
                         // Log error but continue showing success
                         error_log("SMS sending failed: " . $e->getMessage());
+                    } finally {
+                        // Reset timeout to default
+                        set_time_limit(120);
                     }
 
                     // For now, show success page with the link
@@ -95,7 +100,17 @@ if ($app->formposted()) {
         $message['validatelink'] = $link;
         $message['validationcode'] = $local_validationcode = $validationcodes['mini'];
 
-                $mail->sendPasswordResetEmail($message);
+                try {
+                    // Set a timeout for email sending to prevent hanging
+                    set_time_limit(30);
+                    $mail->sendPasswordResetEmail($message);
+                } catch (Exception $e) {
+                    // Log error but continue showing success to prevent user enumeration
+                    error_log("Password reset email failed: " . $e->getMessage());
+                } finally {
+                    // Reset timeout to default
+                    set_time_limit(120);
+                }
 
                 $sent_to = htmlspecialchars($email);
                 $show_success = true;

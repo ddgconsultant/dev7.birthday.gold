@@ -673,11 +673,11 @@ Regards,<br>birthday.gold
     // Loop through each server
     foreach ($servers as $mailsvrlabel => $serverConfig) {
         try {
-            // Create PDO connection with persistent connection for performance
+            // Create PDO connection with buffered queries to prevent packet order issues
             $dsn = "mysql:host={$serverConfig['DB_HOST']};dbname={$serverConfig['DB_DATABASE']};charset={$serverConfig['DB_CHARSET']}";
             $pdo = new PDO($dsn, $serverConfig['DB_USERNAME'], $serverConfig['DB_PASSWORD'], [
-                PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true
             ]);
 
             // Prepare SQL query

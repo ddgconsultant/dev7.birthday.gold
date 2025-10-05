@@ -12,9 +12,9 @@ if ($app->formposted('GET')) {
 
         // Handle revert impersonation request.
         if (isset($_REQUEST['revertimpersonation']) && $_REQUEST['revertimpersonation'] == '1') {
-            session_tracking('attempting to stop impersonation', $impersonatordata);
-
             $impersonator_data = $session->get('impersonator');
+            session_tracking('attempting to stop impersonation', $impersonator_data);
+
             if (!empty($impersonator_data)) {
                 $account->logout();
                 $response = $account->login($impersonator_data['user_id'], $sitesettings['app']['APP_AUTOLOGIN'], 'adminswitch');

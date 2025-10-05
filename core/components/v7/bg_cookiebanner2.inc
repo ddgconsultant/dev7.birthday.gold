@@ -179,9 +179,9 @@ document.addEventListener('DOMContentLoaded', function() {
     //     closeCookieBanner.addEventListener('click', function() {
     //         console.log('Close button clicked!');
     //         cookieBanner.classList.add('hidden');
-    //         
+    //
     //         // Increment close count
-    //         const currentCount = <?php echo $closeCount; ?>;
+    //         const currentCount = <?php echo $dismissalCount; ?>;
     //         console.log('Current count:', currentCount, 'New count:', currentCount + 1);
     //         document.cookie = "bdgold_banner_closed=" + (currentCount + 1) + 
     //                           "; path=/; max-age=31536000; secure; samesite=None; domain=birthday.gold";
