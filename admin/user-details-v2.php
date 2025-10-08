@@ -533,6 +533,9 @@ echo '
         <a href="#attributes" class="nav-tab-item" data-bs-toggle="tab">
             <i class="bi bi-tags me-2"></i>Attributes
         </a>
+        <a href="#notifications" class="nav-tab-item" data-bs-toggle="tab">
+            <i class="bi bi-bell me-2"></i>Notifications
+        </a>
     </nav>
 
     <!-- Tab Content -->
@@ -1001,7 +1004,7 @@ echo '
                 </div>
                 <div class="col-lg-6">
                     <div class="info-card">
-                        <div class="card-body">
+                        <div class="card-body p-3">
                             <h5 class="mb-3">Recent Login History</h5>
                             <div class="table-responsive">
                                 <table class="table table-sm">
@@ -1070,6 +1073,71 @@ echo '
                         </table>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Notifications Tab -->
+        <div class="tab-pane fade" id="notifications">
+            <div class="info-card">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0">User Notifications</h5>
+                        <div id="notifications-summary">
+                            <span class="badge bg-info" id="notif-total">0</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table data-table" id="notifications-table">
+                            <thead>
+                                <tr>
+                                    <th width="100">Type</th>
+                                    <th>Title</th>
+                                    <th width="120">Status</th>
+                                    <th width="120">Sent To</th>
+                                    <th width="150">Date</th>
+                                    <th width="100">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading notifications...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-primary" id="load-more-notifications" style="display: none;">
+                            Load More
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Details Modal -->
+<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">Notification Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="notificationModalBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="notificationModalFooter">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -1155,11 +1223,466 @@ echo '
 ';
 ?>
 <script>
+// Global variables for notification functions
+const userId = <?php echo $workingUser; ?>;
+
+// View notification details (global scope for onclick)
+function viewNotification(notificationId) {
+    const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
+    const modalBody = document.getElementById('notificationModalBody');
+    const modalFooter = document.getElementById('notificationModalFooter');
+
+    // Show loading state
+    modalBody.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    modalFooter.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+
+    // Show modal
+    modal.show();
+
+    // Fetch notification details
+    fetch(`/admin/ajax/user-notifications.php?user_id=${userId}&offset=0&limit=1000`)
+        .then(response => response.json())
+        .then(data => {
+            const notif = data.notifications.find(n => n.notification_id == notificationId);
+            if (notif) {
+                // Status badge color
+                let statusClass = 'secondary';
+                if (notif.status === 'sent') statusClass = 'success';
+                else if (notif.status === 'pending') statusClass = 'warning';
+                else if (notif.status === 'failed') statusClass = 'danger';
+                else if (notif.status === 'read') statusClass = 'info';
+
+                // Sent to badge color (use sent_to_display from backend)
+                const sentToDisplay = notif.sent_to_display || notif.sent_to;
+                let sentToClass = 'secondary';
+                if (sentToDisplay === 'email') sentToClass = 'primary';
+                else if (sentToDisplay === 'sms') sentToClass = 'info';
+                else if (sentToDisplay === 'display') sentToClass = 'success';
+                else if (sentToDisplay === 'both') sentToClass = 'warning';
+
+                // Parse options
+                let optionsHTML = '<em class="text-muted">None</em>';
+                if (notif.options) {
+                    try {
+                        const options = JSON.parse(notif.options);
+                        optionsHTML = '<pre class="bg-light p-2 rounded" style="max-height: 200px; overflow-y: auto;">' + JSON.stringify(options, null, 2) + '</pre>';
+                    } catch (e) {
+                        optionsHTML = '<pre class="bg-light p-2 rounded">' + notif.options + '</pre>';
+                    }
+                }
+
+                // Format dates
+                const createDate = new Date(notif.create_dt);
+                const sentDate = notif.sent_dt ? new Date(notif.sent_dt) : null;
+
+                // Build action buttons HTML (moved to top)
+                let actionsHTML = '<div class="mb-4 pb-3 border-bottom"><h6 class="mb-3">Actions</h6><div class="d-flex gap-2 flex-wrap">';
+
+                // Mark as Read/Unread buttons (only for display notifications)
+                if (sentToDisplay === 'display') {
+                    if (notif.status !== 'read') {
+                        actionsHTML += `<button type="button" class="btn btn-info" onclick="markNotificationAs(${notif.notification_id}, 'read')">
+                            <i class="bi bi-check2"></i> Mark as Read
+                        </button>`;
+                    }
+                    if (notif.status === 'read') {
+                        actionsHTML += `<button type="button" class="btn btn-warning" onclick="markNotificationAs(${notif.notification_id}, 'unread')">
+                            <i class="bi bi-x"></i> Mark as Unread
+                        </button>`;
+                    }
+                }
+
+                // Resend button (for email notifications)
+                if (notif.can_resend) {
+                    actionsHTML += `<button type="button" class="btn btn-success" onclick="resendNotificationFromModal(${notif.notification_id})">
+                        <i class="bi bi-arrow-clockwise"></i> Resend Email
+                    </button>`;
+                }
+
+                // Status change dropdown (for all notifications)
+                actionsHTML += `
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i> Change Status
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); markNotificationAs(${notif.notification_id}, 'sent')">Mark as Sent</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); markNotificationAs(${notif.notification_id}, 'pending')">Mark as Pending</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); markNotificationAs(${notif.notification_id}, 'failed')">Mark as Failed</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); markNotificationAs(${notif.notification_id}, 'read')">Mark as Read</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); markNotificationAs(${notif.notification_id}, 'unread')">Mark as Unread</a></li>
+                        </ul>
+                    </div>
+                `;
+
+                actionsHTML += '</div></div>';
+
+                // Build collapsible details section
+                const detailsHTML = `
+                    <div class="accordion" id="notificationDetailsAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#basicDetails">
+                                    <i class="bi bi-info-circle me-2"></i> Basic Details
+                                </button>
+                            </h2>
+                            <div id="basicDetails" class="accordion-collapse collapse" data-bs-parent="#notificationDetailsAccordion">
+                                <div class="accordion-body">
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td width="120"><strong>ID:</strong></td>
+                                                <td>${notif.notification_id}</td>
+                                                <td width="120"><strong>Type:</strong></td>
+                                                <td><span class="badge bg-secondary">${notif.type || 'N/A'}</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Status:</strong></td>
+                                                <td><span class="badge bg-${statusClass}">${notif.status || 'N/A'}</span></td>
+                                                <td><strong>Sent To:</strong></td>
+                                                <td>${notif.recipient_email || sentToDisplay || 'N/A'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Created:</strong></td>
+                                                <td><small>${createDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true})}</small></td>
+                                                <td><strong>Sent:</strong></td>
+                                                <td><small>${sentDate ? sentDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true}) : '<em class="text-muted">Not sent</em>'}</small></td>
+                                            </tr>
+                                            ${notif.priority || notif.category ? `
+                                            <tr>
+                                                ${notif.priority ? `<td><strong>Priority:</strong></td><td>${notif.priority}</td>` : '<td></td><td></td>'}
+                                                ${notif.category ? `<td><strong>Category:</strong></td><td>${notif.category}</td>` : '<td></td><td></td>'}
+                                            </tr>` : ''}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#messageContent">
+                                    <i class="bi bi-envelope me-2"></i> Message Content
+                                </button>
+                            </h2>
+                            <div id="messageContent" class="accordion-collapse collapse show" data-bs-parent="#notificationDetailsAccordion">
+                                <div class="accordion-body">
+                                    <div class="mb-3">
+                                        <strong>Title:</strong>
+                                        <p class="mb-0">${notif.title || '<em class="text-muted">No title</em>'}</p>
+                                    </div>
+                                    <div>
+                                        <strong>Message:</strong>
+                                        <div class="card mt-2">
+                                            <div class="card-body">
+                                                ${notif.message || '<em class="text-muted">No message</em>'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#advancedOptions">
+                                    <i class="bi bi-code-square me-2"></i> Advanced Options
+                                </button>
+                            </h2>
+                            <div id="advancedOptions" class="accordion-collapse collapse" data-bs-parent="#notificationDetailsAccordion">
+                                <div class="accordion-body">
+                                    ${optionsHTML}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Build modal body (actions at top, then collapsible details)
+                modalBody.innerHTML = actionsHTML + detailsHTML;
+
+                // Simple footer with just close button (actions moved to top)
+                modalFooter.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+            } else {
+                modalBody.innerHTML = '<div class="alert alert-danger">Notification not found</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading notification:', error);
+            modalBody.innerHTML = '<div class="alert alert-danger">Error loading notification details</div>';
+        });
+}
+
+// Mark notification as read/unread (global scope)
+function markNotificationAs(notificationId, status) {
+    const csrfToken = document.querySelector('input[name="_token"]')?.value || '';
+    console.log('Marking notification', notificationId, 'as', status, 'with token:', csrfToken ? 'present' : 'missing');
+
+    fetch('/admin/ajax/notification-actions.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=mark_notification&notification_id=${notificationId}&status=${status}&_token=${csrfToken}`
+    })
+    .then(response => {
+        console.log('Response status:', response.status, response.statusText);
+        return response.text(); // Get text first to see what we're getting
+    })
+    .then(text => {
+        console.log('Raw response:', text);
+        try {
+            const data = JSON.parse(text);
+            console.log('Parsed response:', data);
+            if (data && data.success === true) {
+                // Show success message in modal
+                showNotificationAlertInModal(`Notification marked as ${status}!`, 'success');
+
+                // Reload the notification details in the modal to show updated status
+                setTimeout(() => {
+                    viewNotification(notificationId);
+                }, 1500);
+
+                // Reload notifications table in background
+                loadNotificationsData(0);
+            } else {
+                console.error('Backend returned error:', data);
+                showNotificationAlertInModal('Error: ' + (data.error || 'Unknown error'), 'danger');
+            }
+        } catch (e) {
+            console.error('JSON parse error:', e, 'Raw text:', text);
+            showNotificationAlertInModal('Invalid response from server', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error, error.message);
+        showNotificationAlertInModal('Failed to mark notification. Please try again.', 'danger');
+    });
+}
+
+// Show dismissible alert inside the modal
+function showNotificationAlertInModal(message, type = 'success') {
+    const modalBody = document.getElementById('notificationModalBody');
+
+    // Remove any existing alerts in modal
+    const existingAlert = modalBody.querySelector('.alert.notification-action-alert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+
+    // Create new alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show notification-action-alert mb-3`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Add to top of modal body
+    modalBody.insertBefore(alertDiv, modalBody.firstChild);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = bootstrap.Alert.getInstance(alertDiv);
+        if (alert) {
+            alert.close();
+        } else {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Show dismissible alert for notification actions (outside modal)
+function showNotificationAlert(message, type = 'success') {
+    // Remove any existing alerts
+    const existingAlert = document.getElementById('notification-action-alert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+
+    // Create new alert
+    const alertDiv = document.createElement('div');
+    alertDiv.id = 'notification-action-alert';
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // Add to page
+    document.body.appendChild(alertDiv);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = bootstrap.Alert.getInstance(alertDiv);
+        if (alert) {
+            alert.close();
+        } else {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Resend notification from modal (global scope)
+function resendNotificationFromModal(notificationId) {
+    if (!confirm('Are you sure you want to resend this notification?')) {
+        return;
+    }
+
+    resendNotification(notificationId);
+
+    // Close modal after a delay
+    setTimeout(() => {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('notificationModal'));
+        if (modal) modal.hide();
+    }, 500);
+}
+
+// Resend notification (global scope)
+function resendNotification(notificationId) {
+    // Get CSRF token from the page
+    const csrfToken = document.querySelector('input[name="_token"]')?.value || '';
+
+    // Get button if available
+    const btn = event?.target?.closest('button');
+    let originalHTML = '';
+
+    if (btn) {
+        originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+    }
+
+    fetch('/admin/ajax/resend-notification.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `notification_id=${notificationId}&_token=${csrfToken}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotificationAlert('Notification resent successfully!', 'success');
+            // Reload notifications to show updated status
+            loadNotificationsData(0);
+        } else {
+            showNotificationAlert('Error: ' + (data.error || 'Unknown error'), 'danger');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error resending notification:', error);
+        showNotificationAlert('Failed to resend notification. Please try again.', 'danger');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    });
+}
+
+// Load notifications data (global scope)
+function loadNotificationsData(offset = 0) {
+    const tbody = document.querySelector("#notifications-table tbody");
+    const loadMoreBtn = document.getElementById("load-more-notifications");
+    const totalBadge = document.getElementById("notif-total");
+
+    if (offset === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border text-primary"></div><p class="mt-2">Loading notifications...</p></td></tr>';
+    }
+
+    fetch(`/admin/ajax/user-notifications.php?user_id=${userId}&offset=${offset}&limit=50`)
+        .then(response => response.json())
+        .then(data => {
+            if (offset === 0) tbody.innerHTML = '';
+
+            // Update summary badge
+            if (data.notifications) {
+                totalBadge.textContent = `${data.notifications.length} notifications`;
+            }
+
+            if (data.notifications && data.notifications.length > 0) {
+                data.notifications.forEach(notif => {
+                    // Status badge color
+                    let statusClass = 'secondary';
+                    if (notif.status === 'sent') statusClass = 'success';
+                    else if (notif.status === 'pending') statusClass = 'warning';
+                    else if (notif.status === 'failed') statusClass = 'danger';
+                    else if (notif.status === 'read') statusClass = 'info';
+
+                    // Sent to badge color (use sent_to_display from backend)
+                    const sentToDisplay = notif.sent_to_display || notif.sent_to;
+                    let sentToClass = 'secondary';
+                    if (sentToDisplay === 'email') sentToClass = 'primary';
+                    else if (sentToDisplay === 'sms') sentToClass = 'info';
+                    else if (sentToDisplay === 'display') sentToClass = 'success';
+                    else if (sentToDisplay === 'both') sentToClass = 'warning';
+
+                    const notifDate = new Date(notif.create_dt);
+                    const formattedDate = notifDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true});
+
+                    const row = document.createElement('tr');
+
+                    // Truncate title and message for display
+                    const displayTitle = notif.title ? (notif.title.length > 40 ? notif.title.substring(0, 40) + '...' : notif.title) : 'No title';
+
+                    row.innerHTML = `
+                        <td><span class="badge bg-secondary">${notif.type || 'N/A'}</span></td>
+                        <td>
+                            <strong>${displayTitle}</strong>
+                            ${notif.message ? '<br><small class="text-muted">' + (notif.message.length > 60 ? notif.message.substring(0, 60) + '...' : notif.message) + '</small>' : ''}
+                        </td>
+                        <td><span class="badge bg-${statusClass}">${notif.status || 'N/A'}</span></td>
+                        <td><span class="badge bg-${sentToClass}">${sentToDisplay || 'N/A'}</span></td>
+                        <td><small>${formattedDate}</small></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewNotification(${notif.notification_id})"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            ${notif.can_resend ? `<button class="btn btn-sm btn-outline-success" onclick="resendNotification(${notif.notification_id})"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Resend Notification">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // Show/hide load more button
+                if (data.notifications.length >= 50) {
+                    loadMoreBtn.style.display = 'block';
+                    loadMoreBtn.onclick = () => loadNotificationsData(offset + 50);
+                } else {
+                    loadMoreBtn.style.display = 'none';
+                }
+
+                // Initialize Bootstrap tooltips for the new buttons
+                const tooltipTriggerList = [].slice.call(tbody.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            } else {
+                if (offset === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No notifications found</td></tr>';
+                }
+                loadMoreBtn.style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading notifications:', error);
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading notifications</td></tr>';
+        });
+}
+
 // Tab switching functionality with lazy loading
 document.addEventListener("DOMContentLoaded", function() {
     const tabItems = document.querySelectorAll(".nav-tab-item");
     const tabPanes = document.querySelectorAll(".tab-pane");
-    const userId = <?php echo $workingUser; ?>;
     const badgeColors = <?php echo json_encode($badgeColors); ?>;
     const ipColorMap = {};
     let colorIndex = 0;
@@ -1171,7 +1694,8 @@ document.addEventListener("DOMContentLoaded", function() {
         enrollments: false,
         activity: false,
         security: true, // Static content mostly
-        attributes: false
+        attributes: false,
+        notifications: false
     };
 
     // Load activity data
@@ -1371,6 +1895,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         loadEnrollmentsData();
                     } else if (targetId === 'attributes') {
                         loadAttributesData();
+                    } else if (targetId === 'notifications') {
+                        loadNotificationsData();
                     }
                 }
             }
