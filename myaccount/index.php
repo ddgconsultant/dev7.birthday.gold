@@ -50,24 +50,56 @@ if (!$response && $current_user_data['account_type'] != 'minor') {
   }
 }
 
+#-------------------------------------------------------------------------------
+# HANDLE FEATURE INITIALIZATION (for paid/upgraded accounts)
+#-------------------------------------------------------------------------------
+// FEATURE CHECKING CONTROL FLAGS
+$FEATURE_CHECKING_ENABLED = false;    // Set to false to disable feature checking globally
+$FEATURE_CHECKING_DEV_ONLY = false;   // Set to true to enable only for $mode='dev'
+
+// Determine if we should run feature checking
+$should_check_features = false;
+
+if ($FEATURE_CHECKING_ENABLED) {
+    if ($FEATURE_CHECKING_DEV_ONLY) {
+        // Only run in dev mode
+        $should_check_features = ($mode === 'dev');
+    } else {
+        // Feature checking is enabled globally (not restricted to dev)
+        $should_check_features = true;
+    }
+}
+
+// Check if user has product features that need initialization
+// This runs after first profile visit and handles both new signups and upgrades
+if ($should_check_features && $current_user_data['account_type'] != 'minor') {
+    include($_SERVER['DOCUMENT_ROOT'].'/myaccount/setup-features.php');
+    // If setup-features redirects to a feature component, execution stops there
+    // Otherwise, continue with normal index.php flow
+}
+
 
 
 $till = $app->getTimeTilBirthday($current_user_data['birthdate']);
-$session->unset('display_birthday_banner');
 $display_birthday_link=false;
+
 #-------------------------------------------------------------------------------
 # HANDLE BIRTHDAY NOTIFICATION
 #-------------------------------------------------------------------------------
 if ($till['days']==0) {
+  // It's their birthday!
   $response = $account->getUserAttribute($current_user_data['user_id'], 'myaccount_redirect_happybirthday_'.date('Y'));
 
-if (!$response) {
-  $sql = "INSERT INTO bg_user_attributes (user_id, `type`, `name`, `description`, `status`, `rank`, create_dt, modify_dt, start_dt, end_dt)
-  VALUES (:user_id, 'page_redirect', 'myaccount_redirect_happybirthday_".date('Y')."', '/myaccount/happy-birthday-to-you', 'active', 100, NOW(), NOW(), '".date('Y')."-01-01', '".date('Y')."-12-31 23:59:59')";
-  $stmt = $database->query($sql, [':user_id' => $current_user_data['user_id']]);   
-}
-$session->set('display_birthday_banner', true);
-$display_birthday_link=true;
+  if (!$response) {
+    $sql = "INSERT INTO bg_user_attributes (user_id, `type`, `name`, `description`, `status`, `rank`, create_dt, modify_dt, start_dt, end_dt)
+    VALUES (:user_id, 'page_redirect', 'myaccount_redirect_happybirthday_".date('Y')."', '/myaccount/happy-birthday-to-you', 'active', 100, NOW(), NOW(), '".date('Y')."-01-01', '".date('Y')."-12-31 23:59:59')";
+    $stmt = $database->query($sql, [':user_id' => $current_user_data['user_id']]);
+  }
+  $session->set('display_birthday_banner', true);
+  $display_birthday_link=true;
+} else {
+  // It's NOT their birthday - ensure the banner is cleared
+  $session->unset('display_birthday_banner');
 }
 
 
