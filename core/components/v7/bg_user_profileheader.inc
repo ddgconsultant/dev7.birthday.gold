@@ -11,10 +11,19 @@ if (empty($useraccountdetails) && empty($current_user_data['user_id'])) {
     exit; 
 }
 
+// Check if it's the user's birthday and override the cover banner
 $birthdaybanner=$session->get('display_birthday_banner', false);
 if ($birthdaybanner) {
-$coverbanner = '/public/images/site_covers/cbanner_happybirthday.jpg';
+    // Override with birthday banner
+    $coverbanner = '/public/images/site_covers/cbanner_happybirthday.jpg';
 }
+// If $coverbanner is still not set, use a default
+if (empty($coverbanner)) {
+    // Use a default banner based on birth month if no custom banner is set
+    $bdarray = explode('-', $current_user_data['birthdate']);
+    $coverbanner = '/public/images/site_covers/cbanner_' . $bdarray[1] . '.jpg';
+}
+
 $additionalstyles.="
 <style>
 /* USERPROFILEHEADER styles ======================================== */

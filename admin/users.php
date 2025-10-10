@@ -152,13 +152,14 @@ ORDER BY
 */
 
 $query="
-SELECT 
-  u.user_id, 
-  u.first_name, 
-  u.last_name, 
-  u.email, 
-  DATE_FORMAT(u.birthdate, '%Y') AS formatted_birthyear, 
-  DATE_FORMAT(u.birthdate, '%M %e') AS formatted_birthdate, 
+SELECT
+  u.user_id,
+  u.first_name,
+  u.last_name,
+  u.email,
+  DATE_FORMAT(u.birthdate, '%Y') AS formatted_birthyear,
+  DATE_FORMAT(u.birthdate, '%M %e') AS formatted_birthdate,
+  TIMESTAMPDIFF(YEAR, u.birthdate, CURDATE()) AS age,
   enrollmentstart_dt,
   CASE
     WHEN enrollmentstart_dt IS NOT NULL AND enrollmentstart_dt > NOW() THEN TIMESTAMPDIFF(HOUR, NOW(), enrollmentstart_dt)
@@ -222,7 +223,7 @@ if ($users) {
 
         $userlistoutput .= "<div class='row my-2'>";
         $userlistoutput .= "<div class='col-md-5'><span class=' fw-bold'>" . $user['first_name'] . " " . $user['last_name'] . '</span><br><small>' . $user['email'] . '<br>uid=' . $user['user_id'] . "</small></div>";
-        $userlistoutput .= "<div class='col-md-2 text-center '>" . $user['formatted_birthdate'] . '<br>' . $user['formatted_birthyear'] . "</div>";
+        $userlistoutput .= "<div class='col-md-2 text-center '>" . $user['formatted_birthdate'] . '<br>' . $user['formatted_birthyear'] . " (Age: " . $user['age'] . ")</div>";
         $userlistoutput .= "<div class='col-md-3'>TOTAL: " . $user['company_count'] . "<BR>Pending: " . $user['selected_count'] . "<br>Success: " .  $user['success_count'] . "</div>";
 
         if ($user['hours_until_enrollment'] == 0) {

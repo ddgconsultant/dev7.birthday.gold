@@ -97,15 +97,16 @@ if ($days !== 'all' && !empty($days) && is_numeric($days)) {
 
 $whereClause = !empty($conditions) ? implode(' AND ', $conditions) : '1=1';
 
-// Get users
+// Get users with enrollment counts
 $sql = "
-    SELECT 
+    SELECT
         u.user_id,
         u.first_name,
         u.last_name,
         u.username,
         u.email,
         u.birthdate,
+        TIMESTAMPDIFF(YEAR, u.birthdate, CURDATE()) AS age,
         u.city,
         u.state,
         u.status,
@@ -116,18 +117,30 @@ $sql = "
         u.create_dt,
         u.modify_dt,
         a.description as avatar,
-        lt.last_login_dt
+        lt.last_login_dt,
+        COALESCE(ec.pending_count, 0) as pending_enrollments,
+        COALESCE(ec.success_count, 0) as success_enrollments,
+        COALESCE(ec.total_count, 0) as total_enrollments
     FROM bg_users u
-    LEFT JOIN bg_user_attributes a ON u.user_id = a.user_id 
-        AND a.name = 'avatar' 
-        AND a.category = 'primary' 
+    LEFT JOIN bg_user_attributes a ON u.user_id = a.user_id
+        AND a.name = 'avatar'
+        AND a.category = 'primary'
         AND a.status = 'active'
     LEFT JOIN (
-        SELECT user_id, MAX(modify_dt) as last_login_dt 
-        FROM bg_logintracking 
-        WHERE status = 'A' 
+        SELECT user_id, MAX(modify_dt) as last_login_dt
+        FROM bg_logintracking
+        WHERE status = 'A'
         GROUP BY user_id
     ) lt ON u.user_id = lt.user_id
+    LEFT JOIN (
+        SELECT
+            user_id,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+            SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_count,
+            COUNT(*) as total_count
+        FROM bg_user_companies
+        GROUP BY user_id
+    ) ec ON u.user_id = ec.user_id
     WHERE $whereClause
     ORDER BY u.create_dt DESC
     LIMIT :limit OFFSET :offset

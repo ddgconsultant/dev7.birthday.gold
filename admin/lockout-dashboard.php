@@ -313,6 +313,7 @@ if (empty($lockouts)) {
                                 <input type="hidden" name="lockout_id" value="' . $lock['id'] . '">
                                 <input type="hidden" name="action" value="unlock">
                                 <button type="submit" class="action-btn btn btn-outline-success"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Unlock this IP immediately"
                                         onclick="return confirm(\'Unlock this IP?\')">
                                     <i class="bi bi-unlock"></i>
                                 </button>
@@ -321,6 +322,7 @@ if (empty($lockouts)) {
                                 <input type="hidden" name="lockout_id" value="' . $lock['id'] . '">
                                 <input type="hidden" name="action" value="reset_level">
                                 <button type="submit" class="action-btn btn btn-outline-warning"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Reset lockout level to 1"
                                         onclick="return confirm(\'Reset level to 1?\')">
                                     <i class="bi bi-arrow-counterclockwise"></i>
                                 </button>
@@ -329,6 +331,7 @@ if (empty($lockouts)) {
                                 <input type="hidden" name="lockout_id" value="' . $lock['id'] . '">
                                 <input type="hidden" name="action" value="whitelist">
                                 <button type="submit" class="action-btn btn btn-outline-info"
+                                        data-bs-toggle="tooltip" data-bs-placement="top" title="Add to whitelist (never block again)"
                                         onclick="return confirm(\'Add to whitelist (never block)?\')">
                                     <i class="bi bi-shield-check"></i>
                                 </button>
@@ -363,6 +366,14 @@ echo '
 </div>
 
 <script>
+// Initialize Bootstrap tooltips
+document.addEventListener(\'DOMContentLoaded\', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll(\'[data-bs-toggle="tooltip"]\'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
 function showHistory(lockoutId, ip) {
     document.getElementById("modal-ip").textContent = ip;
     const modal = new bootstrap.Modal(document.getElementById("historyModal"));

@@ -854,15 +854,23 @@ echo '
 
         <!-- Enrollments Tab -->
         <div class="tab-pane fade" id="enrollments">
+            <!-- Enrollment Statistics Summary -->
+            <div class="row mb-4" id="enrollment-stats-summary">
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading enrollment statistics...</p>
+                </div>
+            </div>
+
+            <!-- Enrollment History Table -->
             <div class="info-card">
                 <div class="card-body p-3">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="mb-0">Enrollment History</h5>
-                        <div>
-                            <span class="badge bg-primary">' . $businessoutput['counts']['remaining'] . ' Available</span>
-                            <span class="badge bg-warning">' . $businessoutput['counts']['pending'] . ' Pending</span>
-                            <span class="badge bg-success">' . $businessoutput['counts']['success'] . ' Successful</span>
-                            <span class="badge bg-danger">' . $businessoutput['counts']['failed'] . ' Failed</span>
+                        <div id="enrollment-badge-summary">
+                            <span class="badge bg-secondary" id="total-enrollments-badge">0 Total</span>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -1758,22 +1766,75 @@ document.addEventListener("DOMContentLoaded", function() {
             });
     }
 
-    // Load enrollments data
+    // Load enrollments data with statistics
     function loadEnrollmentsData() {
         const tbody = document.querySelector("#enrollments-table tbody");
+        const statsSummary = document.getElementById("enrollment-stats-summary");
+        const badgeSummary = document.getElementById("enrollment-badge-summary");
+        const totalBadge = document.getElementById("total-enrollments-badge");
+
         tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border text-primary"></div><p class="mt-2">Loading enrollments...</p></td></tr>';
 
         fetch(`/admin/ajax/user-enrollments.php?user_id=${userId}`)
             .then(response => response.json())
             .then(data => {
-                tbody.innerHTML = '';
+                // Update statistics summary
+                statsSummary.innerHTML = '';
+                if (data.stats && Object.keys(data.stats).length > 0) {
+                    // Create stat cards for each status
+                    const statusLabels = {
+                        'success': { label: 'Successful', color: 'text-success' },
+                        'pending': { label: 'Pending', color: 'text-warning' },
+                        'failed': { label: 'Failed', color: 'text-danger' },
+                        'selected': { label: 'Selected', color: 'text-info' },
+                        'removed': { label: 'Removed', color: 'text-secondary' },
+                        'active': { label: 'Active', color: 'text-primary' },
+                        'testing': { label: 'Testing', color: 'text-info' },
+                        'user_owned': { label: 'User Owned', color: 'text-primary' },
+                        'existing': { label: 'Existing', color: 'text-secondary' }
+                    };
 
+                    Object.entries(data.stats).forEach(([status, count]) => {
+                        const statusInfo = statusLabels[status] || { label: status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), color: 'text-secondary' };
+                        const col = document.createElement('div');
+                        col.className = 'col-6 col-md-3 col-lg-2';
+                        col.innerHTML = `
+                            <div class="info-card">
+                                <div class="card-body p-3 text-center">
+                                    <div class="stat-value ${statusInfo.color}">${count}</div>
+                                    <div class="stat-label">${statusInfo.label}</div>
+                                </div>
+                            </div>
+                        `;
+                        statsSummary.appendChild(col);
+                    });
+                } else {
+                    statsSummary.innerHTML = '<div class="col-12 text-center text-muted">No enrollment statistics available</div>';
+                }
+
+                // Update badge summary
+                if (data.total_enrollments) {
+                    totalBadge.textContent = `${data.total_enrollments} Total`;
+
+                    // Add badges for key statuses
+                    badgeSummary.innerHTML = `
+                        <span class="badge bg-secondary">${data.total_enrollments} Total</span>
+                        ${data.stats.pending ? `<span class="badge bg-warning">${data.stats.pending} Pending</span>` : ''}
+                        ${data.stats.success ? `<span class="badge bg-success">${data.stats.success} Success</span>` : ''}
+                        ${data.stats.failed ? `<span class="badge bg-danger">${data.stats.failed} Failed</span>` : ''}
+                    `;
+                }
+
+                // Update table
+                tbody.innerHTML = '';
                 if (data.enrollments && data.enrollments.length > 0) {
                     data.enrollments.forEach(enrollment => {
                         let statusClass = 'secondary';
                         if (enrollment.status === 'success') statusClass = 'success';
                         else if (enrollment.status === 'pending') statusClass = 'warning';
                         else if (enrollment.status === 'failed') statusClass = 'danger';
+                        else if (enrollment.status === 'active') statusClass = 'primary';
+                        else if (enrollment.status === 'selected') statusClass = 'info';
 
                         const enrollDate = new Date(enrollment.create_dt);
                         const formattedDate = enrollDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
@@ -1803,6 +1864,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(error => {
                 console.error('Error loading enrollments:', error);
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading enrollment data</td></tr>';
+                statsSummary.innerHTML = '<div class="col-12 text-center text-danger">Error loading statistics</div>';
             });
     }
 

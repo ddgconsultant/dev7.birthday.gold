@@ -817,25 +817,38 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
         // When $dayFilter === 'all', we don't add any date restriction
         
         $initialUsersSql = "
-            SELECT 
+            SELECT
                 u.user_id,
                 u.first_name,
                 u.last_name,
                 u.username,
                 u.email,
                 u.birthdate,
+                TIMESTAMPDIFF(YEAR, u.birthdate, CURDATE()) AS age,
                 u.city,
                 u.state,
                 u.status,
                 u.account_plan,
                 u.account_type,
                 u.create_dt,
-                a.description as avatar
+                a.description as avatar,
+                COALESCE(ec.pending_count, 0) as pending_enrollments,
+                COALESCE(ec.success_count, 0) as success_enrollments,
+                COALESCE(ec.total_count, 0) as total_enrollments
             FROM bg_users u
-            LEFT JOIN bg_user_attributes a ON u.user_id = a.user_id 
-                AND a.name = 'avatar' 
-                AND a.category = 'primary' 
+            LEFT JOIN bg_user_attributes a ON u.user_id = a.user_id
+                AND a.name = 'avatar'
+                AND a.category = 'primary'
                 AND a.status = 'active'
+            LEFT JOIN (
+                SELECT
+                    user_id,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+                    SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_count,
+                    COUNT(*) as total_count
+                FROM bg_user_companies
+                GROUP BY user_id
+            ) ec ON u.user_id = ec.user_id
             WHERE 1=1 $searchWhere
             ORDER BY u.create_dt DESC
             LIMIT 50
@@ -892,28 +905,31 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
             <div class="card p-2 px-4 mb-1 user-item<?php echo $isTestUser ? ' test-user' : ''; ?><?php echo $isParentalUser ? ' parental-user' : ''; ?>" data-user-id="<?php echo $user['user_id']; ?>">
                 <div class="row align-items-start g-3">
                     <!-- Column A: Avatar, name, email, username -->
-                    <div class="col-12 col-md-5">
+                    <div class="col-12 col-md-4">
                         <div class="d-flex align-items-start gap-3">
                             <img src="<?php echo htmlspecialchars($avatar); ?>" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
                             <div class="flex-grow-1">
                                 <div class="fw-semibold user-name"><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></div>
                                 <div class="small text-muted">
                                     <div>
-                                        <i class="bi bi-envelope me-1"></i><?php echo htmlspecialchars($user['email']); ?>
+                                        <?php if ($user['age']): ?>
+                                        <i class="bi bi-cake me-1"></i><?php echo $user['age']; ?>
+                                        <?php endif; ?>
+                                        <i class="bi bi-envelope <?php echo $user['age'] ? 'ms-2' : ''; ?> me-1"></i><?php echo htmlspecialchars($user['email']); ?>
                                         <i class="bi bi-person ms-2 me-1"></i>@<?php echo htmlspecialchars($user['username']); ?>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Column B: Location -->
                     <div class="col-12 col-md-2">
-                        <div class="text-muted small">
+                        <div class="text-muted small" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?php echo htmlspecialchars($location); ?>">
                             <i class="bi bi-geo-alt me-1"></i><?php echo htmlspecialchars($location); ?>
                         </div>
                     </div>
-                    
+
                     <!-- Column C: Badges -->
                     <div class="col-12 col-md-2">
                         <div class="d-flex flex-wrap gap-1">
@@ -930,18 +946,53 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                             <?php endif; ?>
                         </div>
                     </div>
-                    
-                    <!-- Column D: Dates and action button -->
-                    <div class="col-12 col-md-3">
+
+                    <!-- Column D: Dates, enrollment stats, and action button -->
+                    <div class="col-12 col-md-4">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex gap-4">
-                                <div class="text-center">
-                                    <div class="user-stat-value"><?php echo date('M d', strtotime($user['create_dt'])); ?></div>
-                                    <div class="user-stat-label small text-muted">Joined</div>
+                            <div class="d-flex flex-column gap-0" style="min-width: 200px;">
+                                <div class="d-flex gap-3 mb-1">
+                                    <div class="text-center" style="min-width: 55px;">
+                                        <div class="user-stat-value"><?php echo date('M d', strtotime($user['create_dt'])); ?></div>
+                                    </div>
+                                    <div class="text-center" style="min-width: 55px;">
+                                        <div class="user-stat-value"><?php echo $user['birthdate'] ? date('M d', strtotime($user['birthdate'])) : '-'; ?></div>
+                                    </div>
+                                    <?php
+                                    $pending_enrollments = $user['pending_enrollments'] ?? 0;
+                                    $success_enrollments = $user['success_enrollments'] ?? 0;
+                                    $total_enrollments = $user['total_enrollments'] ?? 0;
+                                    $user_status = $user['status'];
+                                    $show_enrollments = ($user_status !== 'pending');
+
+                                    // Determine what to display for enrollments
+                                    $enrollment_display = '';
+                                    if ($show_enrollments) {
+                                        if ($pending_enrollments == 0 && $success_enrollments == 0 && $total_enrollments == 0) {
+                                            // All zeros: show dash
+                                            $enrollment_display = '-';
+                                        } else {
+                                            // Has enrollments: show counts
+                                            $enrollment_display = '<span class="text-warning">' . $pending_enrollments . '</span> / ' .
+                                                                '<span class="text-success">' . $success_enrollments . '</span> / ' .
+                                                                '<span class="text-primary">' . $total_enrollments . '</span>';
+                                        }
+                                    }
+                                    ?>
+                                    <?php if ($show_enrollments): ?>
+                                    <div class="text-center" style="min-width: 65px;">
+                                        <div class="user-stat-value" style="font-size: 0.7rem;">
+                                            <?php echo $enrollment_display; ?>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
-                                <div class="text-center">
-                                    <div class="user-stat-value"><?php echo $user['birthdate'] ? date('M d', strtotime($user['birthdate'])) : '-'; ?></div>
-                                    <div class="user-stat-label small text-muted">Birthday</div>
+                                <div class="d-flex gap-3">
+                                    <div class="user-stat-label small text-muted text-center" style="min-width: 55px;">JOINED</div>
+                                    <div class="user-stat-label small text-muted text-center" style="min-width: 55px;">BIRTHDAY</div>
+                                    <?php if ($show_enrollments): ?>
+                                    <div class="user-stat-label small text-muted text-center" style="min-width: 65px;">ENROLLMENTS</div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <a href="/admin/user-details?u=<?php echo $qik->encodeId($user['user_id']); ?>" class="btn btn-primary btn-sm">
@@ -1015,13 +1066,14 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
     <div class="card p-2 px-4 mb-1 user-item" data-user-id="">
         <div class="row align-items-center g-3">
             <!-- Column A: Avatar, name, email, username -->
-            <div class="col-12 col-md-5">
+            <div class="col-12 col-md-4">
                 <div class="d-flex align-items-start gap-3">
                     <img src="" alt="" class="rounded-circle user-avatar" style="width: 48px; height: 48px; object-fit: cover;">
                     <div class="flex-grow-1">
                         <div class="fw-semibold user-name"></div>
                         <div class="small text-muted">
                             <div>
+                                <span class="age-info"></span>
                                 <i class="bi bi-envelope me-1"></i><span class="email"></span>
                                 <i class="bi bi-person ms-2 me-1"></i><span class="username"></span>
                             </div>
@@ -1029,30 +1081,38 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                     </div>
                 </div>
             </div>
-            
+
             <!-- Column B: Location -->
             <div class="col-12 col-md-2">
-                <div class="text-muted small">
+                <div class="text-muted small location-container" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     <i class="bi bi-geo-alt me-1"></i><span class="location"></span>
                 </div>
             </div>
-            
+
             <!-- Column C: Badges -->
             <div class="col-12 col-md-2">
                 <div class="d-flex flex-wrap gap-1 user-badges"></div>
             </div>
-            
-            <!-- Column D: Dates and action button -->
-            <div class="col-12 col-md-3">
+
+            <!-- Column D: Dates, enrollment stats, and action button -->
+            <div class="col-12 col-md-4">
                 <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex gap-4">
-                        <div class="text-center">
-                            <div class="user-stat-value joined-date"></div>
-                            <div class="user-stat-label small text-muted">Joined</div>
+                    <div class="d-flex flex-column gap-0" style="min-width: 200px;">
+                        <div class="d-flex gap-3 mb-1">
+                            <div class="text-center" style="min-width: 55px;">
+                                <div class="user-stat-value joined-date"></div>
+                            </div>
+                            <div class="text-center" style="min-width: 55px;">
+                                <div class="user-stat-value birthday-date"></div>
+                            </div>
+                            <div class="text-center enrollments-container" style="min-width: 65px;">
+                                <div class="user-stat-value enrollments-stats" style="font-size: 0.7rem;"></div>
+                            </div>
                         </div>
-                        <div class="text-center">
-                            <div class="user-stat-value birthday-date"></div>
-                            <div class="user-stat-label small text-muted">Birthday</div>
+                        <div class="d-flex gap-3">
+                            <div class="user-stat-label small text-muted text-center" style="min-width: 55px;">JOINED</div>
+                            <div class="user-stat-label small text-muted text-center" style="min-width: 55px;">BIRTHDAY</div>
+                            <div class="user-stat-label small text-muted text-center enrollments-label" style="min-width: 65px;">ENROLLMENTS</div>
                         </div>
                     </div>
                     <a href="" class="btn btn-primary btn-sm view-details-btn">
@@ -1287,15 +1347,68 @@ class UserManager {
             item.querySelector('.user-name').textContent = `${user.first_name} ${user.last_name}`;
             item.querySelector('.username').textContent = `@${user.username}`;
             item.querySelector('.email').textContent = user.email;
-            
+
+            // Age info with cake icon
+            const ageInfo = item.querySelector('.age-info');
+            if (user.age) {
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-cake me-1';
+                ageInfo.appendChild(icon);
+
+                const text = document.createTextNode(user.age);
+                ageInfo.appendChild(text);
+
+                // Add spacing for email icon
+                const emailIcon = ageInfo.nextElementSibling;
+                if (emailIcon && emailIcon.classList.contains('bi-envelope')) {
+                    emailIcon.classList.add('ms-2');
+                }
+            }
+
             // Location
             const location = [user.city, user.state].filter(Boolean).join(', ') || 'Unknown';
+            const locationContainer = item.querySelector('.location-container');
+            locationContainer.setAttribute('title', location);
             item.querySelector('.location').textContent = location;
-            
+
             // Dates
             item.querySelector('.joined-date').textContent = this.formatShortDate(user.create_dt);
             item.querySelector('.birthday-date').textContent = user.birthdate ? this.formatShortDate(user.birthdate) : '-';
-            
+
+            // Enrollments
+            const enrollmentsContainer = item.querySelector('.enrollments-container');
+            const enrollmentsLabel = item.querySelector('.enrollments-label');
+            const enrollmentsStats = item.querySelector('.enrollments-stats');
+            const pendingCount = user.pending_enrollments || 0;
+            const successCount = user.success_enrollments || 0;
+            const totalEnrollments = user.total_enrollments || 0;
+
+            // Show/hide enrollment column based on user status
+            if (user.status === 'pending') {
+                // Pending users: hide enrollment column entirely
+                enrollmentsContainer.style.display = 'none';
+                enrollmentsLabel.style.display = 'none';
+            } else {
+                // Non-pending users: show enrollment column
+                enrollmentsContainer.style.display = 'block';
+                enrollmentsLabel.style.display = 'block';
+
+                // Determine what to display
+                let enrollmentDisplay = '';
+                if (pendingCount === 0 && successCount === 0 && totalEnrollments === 0) {
+                    // All zeros: show dash
+                    enrollmentDisplay = '-';
+                } else {
+                    // Has enrollments: show counts
+                    enrollmentDisplay = `
+                        <span class="text-warning">${pendingCount}</span> /
+                        <span class="text-success">${successCount}</span> /
+                        <span class="text-primary">${totalEnrollments}</span>
+                    `;
+                }
+                enrollmentsStats.innerHTML = enrollmentDisplay;
+            }
+
             // Badges
             const badgesContainer = item.querySelector('.user-badges');
             

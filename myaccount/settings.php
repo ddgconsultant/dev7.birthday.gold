@@ -620,66 +620,6 @@ if ($current_user_data['account_type'] == 'parental') {
 $username = (isset($_POST['username']) ? $_POST['username'] : false);
 if ($username) $output = $createaccount->isavailable($username);
 
-$accountstats = $account->account_getstats();
-
-#$plandetails = $app->plandetail('details');
-$plandatafeatures=$app->plandetail('details_id', $current_user_data['account_product_id']);
-$userplan = $current_user_data['account_plan'];
-
-$selectsused = ($accountstats['business_pending'] + $accountstats['business_selected'] + $accountstats['business_success']);
-#$selectsleft = ($plandetails[$userplan]['max_business_select'] - $selectsused);
-$selectsleft = ($plandatafeatures['max_business_select'] - $selectsused);
-
-$plandata = $app->plandetail('details');
-$userplan = $current_user_data['account_plan'];
-
-
-
-
-
-
-$daysouttag = $plandatafeatures['celebration_tour_option_tag'] ;
-$daysout = $plandatafeatures['celebration_planning_days'];
-/* 
-switch ($userplan) {
-    case 'free':
-        $daysouttag = $plandatafeatures['celebration_tour_option_tag'] . ' - Click Here to upgade.';
-        $daysout = $plandatafeatures['celebration_planning_days'];
-        break;
-    case 'gold':
-        $daysouttag = $plandatafeatures['celebration_tour_option_tag'];
-        $daysout = $plandetails[$userplan]['celebration_planning_days'];
-        break;
-    case 'life':
-        $daysouttag = $plandetails[$userplan]['celebration_tour_option_tag'];
-        $daysout = $plandetails[$userplan]['celebration_planning_days'];
-        break;
-    default:
-        $daysouttag = 'This feature is not available on the FREE plan - Click Here to upgade.';
-        $daysout = 0;
-        break;
-}
- */
-$tag1 = $plandatafeatures['max_business_select_tag'];
-/*
-switch ($plandatafeatures['max_business_select_tag']) {
-    case 0:
-        $tag1 = ' The free plan does not allow you to enroll in any businesses.';
-        break;
-
-
-    default:
-        $tag1 = ' Every year you renew you get ' . $plandatafeatures['max_business_select'] . ' more.';
-        break;
-}
-        */
-# breakpoint($current_user_data);
-$nextDate = $app->calculateNextOccurrence($current_user_data['birthdate'], $daysout);
-#breakpoint($nextDate);
-# $output['result']
-$outdays = $app->getTimeTilBirthday($nextDate['date']);
-
-
 echo '
 
 <!-- Plan Feature card-->
@@ -691,90 +631,20 @@ echo '
         </div>
     </div>
     <div class="security-card-body px-0">
-        <!-- Payment method 1-->
-        <div class="d-flex align-items-center justify-content-between px-4">
-            <div class="d-flex align-items-center">
-                    <h1><i class="bi bi-bag-heart"></i></h1>
-                <div class="ms-4">
-                ';
+';
 
-                echo  '<div class="small">You can select up to  ' . $plandatafeatures['max_business_select'] . ' '.$website['biznames'].' in your plan.
-                ' . $tag1 . '</div>
-                <div class="text-xs text-muted">You are using ' . $selectsused . ' and have ' . ($selectsleft < 0 ? 0 : $selectsleft) . ' left.</div>
-                ';
-                /*
-switch ($plandatafeatures['plan'] ) {
-    case 'free':
-        echo $tag1;
-        break;
-    default:
-        echo  '<div class="small">You can select up to  ' . $plandatafeatures['max_business_select'] . '  '.$website['biznames'].' in your plan.
-                    ' . $tag1 . '</div>
-                    <div class="text-xs text-muted">You are using ' . $selectsused . ' and have ' . ($selectsleft < 0 ? 0 : $selectsleft) . ' left.</div>
-                    ';
-        break;
-}
-*/
+#-------------------------------------------------------------------------------
+# DYNAMIC PLAN FEATURES - Component Driven
+#-------------------------------------------------------------------------------
+// Use setup-features.php in 'settings' mode to display feature components
+$featuremode = 'settings';
+include($_SERVER['DOCUMENT_ROOT'] . '/myaccount/setup-features.php');
 
 echo '
-                </div>
-            </div>               
-        </div>
-        <hr>
-        <!-- Item method 2-->
-        <div class="d-flex align-items-center justify-content-between px-4">
-            <div class="d-flex align-items-center">
-            <h1><i class="bi bi-calendar3"></i></h1>
-                <div class="ms-4">
-                <div class="small">Celebration Tour: ' . $plandatafeatures['celebration_tour_option_tag'] . '</div>';
-
-                echo '                     
-                <div class="text-xs text-muted">You can start your planning in ' . $outdays['days'] . ' ' . $qik->plural('day',  $outdays['days']) . '</div>
-                ';
-                /*
-switch ($plandatafeatures['plan'] ) {
-    case 'free':
-        echo
-        '';
-        break;
-    default:
-        echo '                     
-                <div class="text-xs text-muted">You can start your planning in ' . $outdays['days'] . ' ' . $qik->plural('day',  $outdays['days']) . '</div>
-                ';
-        break;
-}
-        */
-echo '
-                </div>
-            </div>
-        </div>
-        <hr>
-        <!-- Item method 3-->
-        <div class="d-flex align-items-center justify-content-between px-4">
-            <div class="d-flex align-items-center">
-            <h1><i class="bi bi-alarm"></i></h1>
-                <div class="ms-4">
-                <div class="small">Reminder of upcoming benefits</div>
-                <div class="text-xs text-muted">Don\'t miss out on any freebies!</div>
-                </div>
-            </div>
-        </div>
-        <hr>
-        <!-- Item method 3-->
-        <div class="d-flex align-items-center justify-content-between px-4">
-            <div class="d-flex align-items-center">
-            <h1><i class="bi bi-wechat"></i></h1>
-                <div class="ms-4">
-                <div class="small">Support through ' . $plandatafeatures['support_tag'] . '</div>
-                <div class="text-xs text-muted"><a target="_blank" href="' . $plandatafeatures['support_link'] . '">Click here to get support now.</a></div>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     </div>
-    
+
     ';
     // https://chat.birthdaygold.cloud/channel/BG-CustomerService
 
