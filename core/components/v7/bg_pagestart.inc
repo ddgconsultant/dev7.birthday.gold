@@ -160,7 +160,7 @@ echo '<meta name="bginfdata" content="' . $haProxyIP . '-' . $webserverIP . '">'
 
 
 
-echo '<meta  name="banner" ddg_alt="v3pageheader" content="' . str_repeat("\n", 30) . '
+echo '<meta  name="banner" ddg_alt="Apageheader" content="' . str_repeat("\n", 30) . '
 Celebrate You!!
 
 dP       oo            dP   dP             dP                                        dP       dP 

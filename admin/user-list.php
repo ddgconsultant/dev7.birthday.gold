@@ -1508,8 +1508,9 @@ class UserManager {
     }
     
     encodeId(id) {
-        // This should match your PHP encoding method
-        return btoa(id).replace(/=/g, '');
+        // For now, just return the plain ID since admin users have access
+        // The PHP decodeId function will handle plain numeric IDs
+        return id;
     }
     
     showLoading() {

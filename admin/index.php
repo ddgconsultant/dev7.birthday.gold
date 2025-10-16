@@ -865,12 +865,12 @@ $businessHours = $app->bg_businesshours();
         </div>
         
         <div class="admin-grid">
-            <a href="/admin/analytics-dashboard" class="admin-card">
+            <a href="https://dev.birthday.gold/admin/analytics-dashboard" target="_blank" class="admin-card">
                 <div class="admin-icon icon-system" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     <i class="bi bi-graph-up"></i>
                 </div>
                 <div class="admin-content">
-                    <h3 class="admin-card-title">BG Analytics</h3>
+                    <h3 class="admin-card-title">BG Analytics (Dev Server)</h3>
                     <p class="admin-card-text">Real-time user behavior and interaction tracking</p>
                 </div>
             </a>

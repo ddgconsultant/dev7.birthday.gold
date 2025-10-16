@@ -167,24 +167,37 @@ if ($show_captcha && !$app->validateCaptcha()) {
       // Check if 2FA is enabled for this user
       $current_user_data = $session->get('current_user_data');
       $user_id = $current_user_data['user_id'];
-      
+
       // Get 2FA method if enabled
-      $sql = 'SELECT string_value as auth_method FROM bg_user_attributes 
-             WHERE user_id = :user_id 
-             AND type = "2fa_method" 
+      $sql = 'SELECT string_value as auth_method FROM bg_user_attributes
+             WHERE user_id = :user_id
+             AND type = "2fa_method"
              AND status = "active"';
       $stmt = $database->prepare($sql);
       $stmt->execute(['user_id' => $user_id]);
       $user_2fa = $stmt->fetch(PDO::FETCH_ASSOC);
-      
+
+      // Track if user has 2FA setup but may need configuration
+      if ($user_2fa && !empty($user_2fa['auth_method'])) {
+        // Log that this user has a 2FA setup record (might need configuration)
+        session_tracking('2fa_setup_detected', [
+          'user_id' => $user_id,
+          'method' => $user_2fa['auth_method'],
+          'user_type' => $account->isstaff('*', $user_id) ? 'staff' : ($account->isadmin($current_user_data) ? 'admin' : 'regular'),
+          'username' => $current_user_data['email'] ?? $current_user_data['username'] ?? 'unknown'
+        ]);
+      }
+
       // Skip 2FA for trusted device (remember me) logins - selective 2FA will handle sensitive pages
       $is_trusted_device = $doautologin && strpos($logintype, 'rememberme') !== false;
-      
+
+      // Process 2FA if enabled and not a trusted device
       if ($user_2fa && !empty($user_2fa['auth_method']) && !$is_trusted_device) {
         // 2FA is enabled - logout user temporarily and redirect to 2FA verification
-        session_tracking('2fa_verification_required-setupfailure', [
+        session_tracking('2fa_verification_required', [
           'user_id' => $user_id,
-          'method' => $user_2fa['auth_method']
+          'method' => $user_2fa['auth_method'],
+          'setup_status' => 'processing'
         ]);
         $account->logout(); // Logout to prevent bypass
         
@@ -196,15 +209,48 @@ if ($show_captcha && !$app->validateCaptcha()) {
         
         // For TOTP method, get the secret
         $totp_secret = '';
+        $has_setup_issue = false;
         if ($user_2fa['auth_method'] === 'Highly Secure') {
-          $sql = 'SELECT string_value FROM bg_user_attributes 
-                 WHERE user_id = :user_id 
-                 AND type = "2fa_secret" 
+          $sql = 'SELECT string_value FROM bg_user_attributes
+                 WHERE user_id = :user_id
+                 AND type = "2fa_secret"
                  AND status = "active"';
           $stmt = $database->prepare($sql);
           $stmt->execute(['user_id' => $user_id]);
           $secret_result = $stmt->fetch(PDO::FETCH_ASSOC);
           $totp_secret = $secret_result['string_value'] ?? '';
+
+          // Check if TOTP setup is incomplete
+          if (empty($totp_secret)) {
+            $has_setup_issue = true;
+            session_tracking('2fa_verification_required-setupfailure', [
+              'user_id' => $user_id,
+              'method' => $user_2fa['auth_method'],
+              'issue' => 'missing_totp_secret',
+              'username' => $current_user_data['email'] ?? $current_user_data['username'] ?? 'unknown'
+            ]);
+          }
+        }
+
+        // Check for SMS/Email 2FA setup issues
+        if ($user_2fa['auth_method'] === 'sms' && empty($user_contact['phone_number'])) {
+          $has_setup_issue = true;
+          session_tracking('2fa_verification_required-setupfailure', [
+            'user_id' => $user_id,
+            'method' => $user_2fa['auth_method'],
+            'issue' => 'missing_phone_number',
+            'username' => $current_user_data['email'] ?? $current_user_data['username'] ?? 'unknown'
+          ]);
+        }
+
+        if ($user_2fa['auth_method'] === 'email' && empty($user_contact['email'])) {
+          $has_setup_issue = true;
+          session_tracking('2fa_verification_required-setupfailure', [
+            'user_id' => $user_id,
+            'method' => $user_2fa['auth_method'],
+            'issue' => 'missing_email',
+            'username' => $current_user_data['email'] ?? $current_user_data['username'] ?? 'unknown'
+          ]);
         }
         
         // Store 2FA verification data in session

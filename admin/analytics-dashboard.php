@@ -366,6 +366,14 @@ include($dir['core_components'] . '/bg_header.inc');
                     <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
                 </div>
             </form>
+            <div class="mt-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="autoRefreshToggle" role="switch">
+                    <label class="form-check-label" for="autoRefreshToggle">
+                        Auto-refresh every 30 seconds <span id="refreshCountdown" class="text-muted ms-2"></span>
+                    </label>
+                </div>
+            </div>
         </div>
 
         <!-- Summary Stats -->
@@ -711,8 +719,61 @@ new Chart(trafficCtx, {
     }
 });
 
-// Auto-refresh every 30 seconds
-setTimeout(() => location.reload(), 30000);
+// Auto-refresh functionality with checkbox control
+let refreshInterval = null;
+let refreshCountdown = 30;
+const refreshCheckbox = document.getElementById('autoRefreshToggle');
+const countdownSpan = document.getElementById('refreshCountdown');
+
+function startAutoRefresh() {
+    refreshCountdown = 30;
+    updateCountdown();
+
+    refreshInterval = setInterval(() => {
+        refreshCountdown--;
+        if (refreshCountdown <= 0) {
+            location.reload();
+        }
+        updateCountdown();
+    }, 1000);
+}
+
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
+    }
+    countdownSpan.textContent = '';
+}
+
+function updateCountdown() {
+    if (refreshCheckbox.checked) {
+        countdownSpan.textContent = `(refreshing in ${refreshCountdown}s)`;
+    }
+}
+
+// Load saved preference from localStorage
+const autoRefreshPref = localStorage.getItem('analyticsAutoRefresh');
+if (autoRefreshPref === 'true') {
+    refreshCheckbox.checked = true;
+    startAutoRefresh();
+}
+
+// Handle checkbox toggle
+refreshCheckbox.addEventListener('change', function() {
+    localStorage.setItem('analyticsAutoRefresh', this.checked);
+
+    if (this.checked) {
+        startAutoRefresh();
+    } else {
+        stopAutoRefresh();
+    }
+});
+
+// Start auto-refresh if checkbox is already checked on page load
+if (refreshCheckbox.checked) {
+    startAutoRefresh();
+}
 </script>
 
 <?php

@@ -37,7 +37,34 @@ if (isset($_REQUEST['act'])) {
 # GET USER DATA
 #-------------------------------------------------------------------------------
 if (isset($_REQUEST['u'])) {
-    $workingUser = $qik->decodeId($_REQUEST['u']);
+    // Handle both encoded and plain numeric user IDs
+    $userIdParam = $_REQUEST['u'];
+
+    // Check if it's a plain numeric ID
+    if (is_numeric($userIdParam)) {
+        $workingUser = intval($userIdParam);
+    } else {
+        // Try to decode it
+        $workingUser = $qik->decodeId($userIdParam);
+
+        // If decoding fails, it might be base64 encoded (from JavaScript)
+        if (!$workingUser || $workingUser === false) {
+            // Try base64 decode as fallback
+            $decoded = base64_decode($userIdParam);
+            if (is_numeric($decoded)) {
+                $workingUser = intval($decoded);
+            } else {
+                // Invalid ID format
+                $workingUser = 0;
+            }
+        }
+    }
+
+    if (!$workingUser || $workingUser <= 0) {
+        header('location: /500');
+        exit;
+    }
+
 		$tmpsettings['status']='*';
     $workinguserdata = $account->getuserdata($workingUser, 'user_id', $tmpsettings);
     $getaccountdetailsuser = $workinguserdata;
