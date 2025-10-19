@@ -68,6 +68,7 @@ $stats_sql = "SELECT
     SUM(CASE WHEN fix_status = 'applied' THEN 1 ELSE 0 END) as applied,
     SUM(CASE WHEN fix_status = 'rejected' THEN 1 ELSE 0 END) as rejected,
     SUM(CASE WHEN fix_status = 'failed_to_apply' THEN 1 ELSE 0 END) as failed,
+    SUM(CASE WHEN fix_status = 'needs_manual_review' THEN 1 ELSE 0 END) as manual_review,
     SUM(occurrence_count) as total_occurrences,
     AVG(ai_confidence) as avg_confidence
 FROM bg_auto_error_fixes";
@@ -200,6 +201,10 @@ echo '
             <div class="stat-label">Pending Review</div>
         </div>
         <div class="stat-card">
+            <div class="stat-number text-secondary">' . number_format($stats['manual_review'] ?? 0) . '</div>
+            <div class="stat-label">Manual Review</div>
+        </div>
+        <div class="stat-card">
             <div class="stat-number text-info">' . number_format($stats['approved_pending'] ?? 0) . '</div>
             <div class="stat-label">Approved (Pending)</div>
         </div>
@@ -210,6 +215,10 @@ echo '
         <div class="stat-card">
             <div class="stat-number text-danger">' . number_format($stats['rejected'] ?? 0) . '</div>
             <div class="stat-label">Rejected</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number text-danger">' . number_format($stats['failed'] ?? 0) . '</div>
+            <div class="stat-label">Failed</div>
         </div>
         <div class="stat-card">
             <div class="stat-number">' . number_format($stats['avg_confidence'] ?? 0, 1) . '%</div>
@@ -243,7 +252,8 @@ echo '
                 <label for="status" class="form-label">Status</label>
                 <select class="form-select" id="status" name="status" onchange="this.form.submit()">
                     <option value="all"' . ($status_filter === 'all' ? ' selected' : '') . '>All Statuses</option>
-                    <option value="pending_review"' . ($status_filter === 'pending_review' ? ' selected' : '') . '>Pending Review</option>
+                    <option value="pending_review"' . ($status_filter === 'pending_review' ? ' selected' : '') . '>Pending Review (Auto-fixable)</option>
+                    <option value="needs_manual_review"' . ($status_filter === 'needs_manual_review' ? ' selected' : '') . '>Needs Manual Review</option>
                     <option value="approved_pending_apply"' . ($status_filter === 'approved_pending_apply' ? ' selected' : '') . '>Approved (Pending Apply)</option>
                     <option value="applied"' . ($status_filter === 'applied' ? ' selected' : '') . '>Applied</option>
                     <option value="rejected"' . ($status_filter === 'rejected' ? ' selected' : '') . '>Rejected</option>
@@ -290,6 +300,7 @@ if (empty($fixes)) {
         // Status badge
         $status_badge = match ($fix['fix_status']) {
             'pending_review' => '<span class="badge bg-warning text-dark">Pending Review</span>',
+            'needs_manual_review' => '<span class="badge bg-secondary">Manual Review</span>',
             'approved_pending_apply' => '<span class="badge bg-info">Approved</span>',
             'applied' => '<span class="badge bg-success">Applied</span>',
             'rejected' => '<span class="badge bg-danger">Rejected</span>',

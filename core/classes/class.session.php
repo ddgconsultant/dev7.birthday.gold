@@ -4,13 +4,22 @@
 // Define the session save path one directory level above the web root
 $session_path = $dir['base'] . '/../_SESSIONS_';
 
-// Ensure the directory exists
+// Normalize the path for Windows/Linux compatibility
+$session_path = str_replace('\\', '/', realpath($session_path));
+
+// Ensure the directory exists with proper permissions
 if (!is_dir($session_path)) {
-    mkdir($session_path, 0770, true); // Create the directory with 770 permissions
+    mkdir($session_path, 0777, true); // Create the directory with 777 permissions for broader compatibility
+    chmod($session_path, 0777); // Ensure permissions are set
 }
 
 // Set the session save path
 ini_set('session.save_path', $session_path);
+
+// Set additional session configuration for better compatibility
+ini_set('session.gc_probability', 1);
+ini_set('session.gc_divisor', 100);
+ini_set('session.gc_maxlifetime', 3600);
 
 # ##==================================================================================================================================================
 # ##==================================================================================================================================================
@@ -21,7 +30,20 @@ class Session
   {
     // Start session if it has not already started
     if (session_status() == PHP_SESSION_NONE) {
-      session_start();
+      // Suppress errors and handle them gracefully
+      @session_start();
+
+      // Check if session started successfully
+      if (session_status() != PHP_SESSION_ACTIVE) {
+        // Try alternative session configuration
+        ini_set('session.use_cookies', '1');
+        ini_set('session.use_only_cookies', '1');
+        ini_set('session.use_strict_mode', '0');
+        ini_set('session.cookie_httponly', '1');
+
+        // Try to start session again
+        @session_start();
+      }
     }
   }
 

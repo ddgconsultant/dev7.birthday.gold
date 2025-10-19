@@ -180,10 +180,10 @@ try {
 
     // Send notification if there's any activity (applied fixes, fixable errors, or unfixable errors)
     $has_applied = $applied_count > 0;
-    $has_fixes = count(array_filter($fixes, fn($f) => $f['fixable'])) > 0;
-    $has_unfixable = $error_count > 0 && count($fixes) === 0;
+    $has_fixable = count(array_filter($fixes, fn($f) => $f['fixable'])) > 0;
+    $has_unfixable = count(array_filter($fixes, fn($f) => !$f['fixable'])) > 0;
 
-    if ($has_applied || $has_fixes || $has_unfixable) {
+    if ($has_applied || $has_fixable || $has_unfixable) {
         echo "Sending RocketChat notification...\n";
 
         try {

@@ -551,63 +551,85 @@ class ErrorFixer {
             // Get code context
             $context = $this->getCodeContext($error['file'], $error['line']);
 
+            // Generate review token regardless
+            $review_token = bin2hex(random_bytes(32));
+
+            // Default values if AI analysis fails or context not available
+            $ai_result = null;
+            $fix_status = 'needs_manual_review';
+            $review_reason = 'Unable to analyze automatically';
+
             if (!$context) {
-                continue; // File not readable
+                // File not readable - still record the error
+                $review_reason = 'File not readable or does not exist';
+            } else {
+                // Call AI to analyze
+                $ai_result = $this->analyzeWithAI($error, $context);
+
+                if ($ai_result) {
+                    $fix_status = $ai_result['fixable'] ? 'pending_review' : 'auto_ignored';
+                    $review_reason = $ai_result['review_reason'] ?? null;
+                } else {
+                    // AI analysis failed - still record the error
+                    $review_reason = 'AI analysis failed or returned invalid response';
+                }
             }
 
-            // Call AI to analyze
-            $ai_result = $this->analyzeWithAI($error, $context);
+            // Store in database regardless of AI result
+            $insert_sql = "INSERT INTO bg_auto_error_fixes
+                          (error_hash, error_file, error_line, error_message, error_type,
+                           error_context, first_seen, last_seen, occurrence_count,
+                           fix_status, ai_analyzed_dt, ai_model, ai_confidence, ai_fix_type,
+                           ai_explanation, ai_review_reason, original_code, proposed_fix,
+                           line_start, line_end, review_token)
+                          VALUES
+                          (:hash, :file, :line, :message, :type,
+                           :context, :first_seen, :last_seen, :count,
+                           :status, NOW(), :model, :confidence, :fix_type,
+                           :explanation, :review_reason, :original_code, :proposed_fix,
+                           :line_start, :line_end, :token)";
+
+            $this->database->query($insert_sql, [
+                'hash' => $error['hash'],
+                'file' => $error['file'],
+                'line' => $error['line'],
+                'message' => $error['message'],
+                'type' => $error['type'],
+                'context' => $context ? $context['full_context'] : null,
+                'first_seen' => $error['first_seen'],
+                'last_seen' => $error['last_seen'],
+                'count' => $error['count'],
+                'status' => $fix_status,
+                'model' => $ai_result ? ($ai_result['model'] ?? 'unknown') : null,
+                'confidence' => $ai_result ? ($ai_result['confidence'] ?? 0) : 0,
+                'fix_type' => $ai_result ? ($ai_result['fix_type'] ?? null) : null,
+                'explanation' => $ai_result ? ($ai_result['explanation'] ?? null) : null,
+                'review_reason' => $review_reason,
+                'original_code' => $context ? $context['problem_code'] : null,
+                'proposed_fix' => $ai_result ? ($ai_result['fixed_code'] ?? null) : null,
+                'line_start' => $context ? $context['line_start'] : $error['line'],
+                'line_end' => $context ? $context['line_end'] : $error['line'],
+                'token' => $review_token
+            ]);
+
+            $fix_id = $this->database->lastInsertId();
+
+            // Create fix array
+            $fix_entry = array_merge($error, [
+                'fix_id' => $fix_id,
+                'review_token' => $review_token,
+                'fixable' => $ai_result ? ($ai_result['fixable'] ?? false) : false,
+                'confidence' => $ai_result ? ($ai_result['confidence'] ?? 0) : 0,
+                'fix_type' => $ai_result ? ($ai_result['fix_type'] ?? 'manual_review') : 'manual_review',
+                'review_reason' => $review_reason
+            ]);
 
             if ($ai_result) {
-                // Generate review token
-                $review_token = bin2hex(random_bytes(32));
-
-                // Store in database
-                $insert_sql = "INSERT INTO bg_auto_error_fixes
-                              (error_hash, error_file, error_line, error_message, error_type,
-                               error_context, first_seen, last_seen, occurrence_count,
-                               fix_status, ai_analyzed_dt, ai_model, ai_confidence, ai_fix_type,
-                               ai_explanation, ai_review_reason, original_code, proposed_fix,
-                               line_start, line_end, review_token)
-                              VALUES
-                              (:hash, :file, :line, :message, :type,
-                               :context, :first_seen, :last_seen, :count,
-                               :status, NOW(), :model, :confidence, :fix_type,
-                               :explanation, :review_reason, :original_code, :proposed_fix,
-                               :line_start, :line_end, :token)";
-
-                $this->database->query($insert_sql, [
-                    'hash' => $error['hash'],
-                    'file' => $error['file'],
-                    'line' => $error['line'],
-                    'message' => $error['message'],
-                    'type' => $error['type'],
-                    'context' => $context['full_context'],
-                    'first_seen' => $error['first_seen'],
-                    'last_seen' => $error['last_seen'],
-                    'count' => $error['count'],
-                    'status' => $ai_result['fixable'] ? 'pending_review' : 'auto_ignored',
-                    'model' => $ai_result['model'],
-                    'confidence' => $ai_result['confidence'],
-                    'fix_type' => $ai_result['fix_type'],
-                    'explanation' => $ai_result['explanation'],
-                    'review_reason' => $ai_result['review_reason'] ?? null,
-                    'original_code' => $context['problem_code'],
-                    'proposed_fix' => $ai_result['fixed_code'] ?? null,
-                    'line_start' => $context['line_start'],
-                    'line_end' => $context['line_end'],
-                    'token' => $review_token
-                ]);
-
-                $fix_id = $this->database->lastInsertId();
-
-                $fixes[] = array_merge($error, $ai_result, [
-                    'fix_id' => $fix_id,
-                    'review_token' => $review_token
-                ]);
-
-                $processed++;
+                $fix_entry = array_merge($fix_entry, $ai_result);
             }
+
+            $fixes[] = $fix_entry;
+            $processed++;
         }
 
         return $fixes;
@@ -729,38 +751,42 @@ Respond with ONLY valid JSON, no markdown formatting:
     public function sendNotification($applied_fixes, $new_fixes, $total_errors_found = 0) {
         global $system;
 
-        $base_url = $this->getConfig('base_review_url', 'https://dev.birthday.gold/admin/error-fix-review.php');
+        $dashboard_url = 'https://dev.birthday.gold/admin/error-fix-dashboard.php';
 
-        $message = "**Auto Error Fixer**\n\n";
+        $message = "**Auto Error Fixer Report**\n\n";
 
         // Applied fixes section (brief)
         if (count($applied_fixes) > 0) {
             $success_count = count(array_filter($applied_fixes, fn($f) => $f['success']));
-            $message .= "✅ Applied {$success_count} fix(es)\n\n";
+            $failed_count = count(array_filter($applied_fixes, fn($f) => !$f['success']));
+
+            $message .= "✅ **Applied:** {$success_count} fix(es)";
+            if ($failed_count > 0) {
+                $message .= " (⚠️ {$failed_count} failed)";
+            }
+            $message .= "\n";
         }
 
-        // New fixes section (condensed)
+        // Count new errors found
         if (count($new_fixes) > 0) {
             $fixable = array_filter($new_fixes, fn($f) => $f['fixable']);
+            $unfixable = array_filter($new_fixes, fn($f) => !$f['fixable']);
+
+            $message .= "🔍 **Detected:** " . count($new_fixes) . " error(s)\n";
 
             if (count($fixable) > 0) {
-                $message .= "🔍 **" . count($fixable) . " Fix(es) Pending Review:**\n\n";
-
-                foreach ($fixable as $idx => $fix) {
-                    $message .= "**#{$fix['fix_id']}** `{$fix['file']}:{$fix['line']}` ({$fix['confidence']}%)\n";
-                    $review_url = $base_url . "?token=" . $fix['review_token'];
-                    $message .= "→ [Review & Approve]({$review_url})\n\n";
-                }
+                $message .= "  • " . count($fixable) . " auto-fixable (pending review)\n";
             }
+
+            if (count($unfixable) > 0) {
+                $message .= "  • " . count($unfixable) . " need manual review\n";
+            }
+        } elseif ($total_errors_found > 0) {
+            $message .= "🔍 **Detected:** {$total_errors_found} error(s)\n";
         }
 
-        // If no fixes but errors were detected
-        if (count($new_fixes) === 0 && $total_errors_found > 0) {
-            $message .= "🔍 Detected {$total_errors_found} error(s) but none were fixable\n\n";
-        }
-
-        // Dashboard link
-        $message .= "📊 [View All Fixes](https://dev.birthday.gold/admin/error-fix-dashboard.php)";
+        // Single dashboard link
+        $message .= "\n📊 [View Error Fix Dashboard]({$dashboard_url})";
 
         // Debug output
         echo "RocketChat Message:\n";

@@ -560,34 +560,49 @@ $statusDetails = [
 
 echo '<div class="container">';
 
-echo '<nav class="nav-tabs-modern" role="tablist">';
-foreach ($statusCounters as $status => $count) {
-    if ($status != 'total' && $count > 0) {
-        $details = $statusDetails[$status];
-        $isActive = $firstPanel ? 'active' : '';
-        echo '<a href="#section-' . htmlspecialchars($status) . '" class="nav-tab-item ' . $isActive . '" id="tab-' . htmlspecialchars($status) . '" data-bs-toggle="tab" data-bs-target="#section-' . htmlspecialchars($status) . '" role="tab" aria-controls="section-' . htmlspecialchars($status) . '" aria-selected="' . ($firstPanel ? 'true' : 'false') . '">';
-        echo '<i class="' . $details['icon'] . ' me-2"></i>';
-        echo htmlspecialchars($details['label']);
-        if ($count > 0) {
-            echo ' <span class="badge">(' . $count . ')</span>';
+// Check if there are any enrollments
+if ($totalEnrollments == 0) {
+    // Display "no history" message
+    echo '<div class="text-center py-5">';
+    echo '<div class="mb-4">';
+    echo '<i class="bi bi-inbox display-1 text-muted"></i>';
+    echo '</div>';
+    echo '<h3 class="mb-3">No Enrollment History</h3>';
+    echo '<p class="text-muted mb-4">You haven\'t selected any birthday rewards yet.</p>';
+    echo '<a href="/myaccount/enrollment-picker" class="btn btn-primary btn-lg">';
+    echo '<i class="bi bi-plus-circle me-2"></i>Start Selecting Rewards';
+    echo '</a>';
+    echo '</div>';
+} else {
+    // Display tabs only if there are enrollments
+    echo '<nav class="nav-tabs-modern" role="tablist">';
+    foreach ($statusCounters as $status => $count) {
+        if ($status != 'total' && $count > 0) {
+            $details = $statusDetails[$status];
+            $isActive = $firstPanel ? 'active' : '';
+            echo '<a href="#section-' . htmlspecialchars($status) . '" class="nav-tab-item ' . $isActive . '" id="tab-' . htmlspecialchars($status) . '" data-bs-toggle="tab" data-bs-target="#section-' . htmlspecialchars($status) . '" role="tab" aria-controls="section-' . htmlspecialchars($status) . '" aria-selected="' . ($firstPanel ? 'true' : 'false') . '">';
+            echo '<i class="' . $details['icon'] . ' me-2"></i>';
+            echo htmlspecialchars($details['label']);
+            if ($count > 0) {
+                echo ' <span class="badge">(' . $count . ')</span>';
+            }
+            echo '</a>';
+            $firstPanel = false;
         }
-        echo '</a>';
-        $firstPanel = false;
     }
-}
 
-// settings tab
-// -----------------------------------------------------
-echo '<a href="#settings" class="nav-tab-item settings-tab" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" role="tab" aria-controls="settings" aria-selected="false">
-        <i class="bi bi-gear"></i>
-      </a>';
-echo '</nav>';
+    // settings tab
+    // -----------------------------------------------------
+    echo '<a href="#settings" class="nav-tab-item settings-tab" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" role="tab" aria-controls="settings" aria-selected="false">
+            <i class="bi bi-gear"></i>
+          </a>';
+    echo '</nav>';
 
-echo '<div class="tab-content" id="statusTabsContent">';
-$firstPanel = true;
-foreach ($statusCounters as $status => $count) {
+    echo '<div class="tab-content" id="statusTabsContent">';
+    $firstPanel = true;
+    foreach ($statusCounters as $status => $count) {
 
-    if ($status != 'total' && $count > 0) {
+        if ($status != 'total' && $count > 0) {
         echo '
 <!-- ================================================================================================================= -->
 <div class="tab-pane fade ' . ($firstPanel ? 'show active' : '') . '" id="section-' . htmlspecialchars($status) . '" role="tabpanel" aria-labelledby="tab-' . htmlspecialchars($status) . '">';
@@ -888,7 +903,9 @@ echo '
 
 // end of tab content
 // -----------------------------------------------------
-echo '</div>'; // Close tab-content
+    echo '</div>'; // Close tab-content
+} // Close else statement (when there are enrollments)
+
 echo '</div>'; // Close container
 
 
