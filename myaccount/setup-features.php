@@ -49,7 +49,7 @@ if (isset($_SESSION[$session_key]) && isset($_SESSION[$session_ttl_key])) {
         unset($_SESSION[$session_key]);
         unset($_SESSION[$session_ttl_key]);
     }
-}
+} 
 
 // If no cached data, get from database
 if (!$use_cached) {

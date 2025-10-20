@@ -66,14 +66,14 @@ try {
     // Process picked items (normal enrollments)
     foreach ($picked_ids as $company_id) {
         if (!$company_id) continue;
-        
+
         // Check if company exists and is active
-        $company_sql = "SELECT company_id, company_name 
-                        FROM bg_companies 
-                        WHERE company_id = :company_id 
+        $company_sql = "SELECT company_id, company_name
+                        FROM bg_companies
+                        WHERE company_id = :company_id
                         AND status IN ('active', 'finalized')";
         $company = $database->getrow($company_sql, ['company_id' => $company_id]);
-        
+
         if (!$company) {
             $response['picked'][] = [
                 'company_id' => $company_id,
@@ -82,39 +82,59 @@ try {
             ];
             continue;
         }
-        
-        // Check for existing enrollment
-        $existing_sql = "SELECT user_company_id
+
+        // Check for existing enrollment (including cart status)
+        $existing_sql = "SELECT user_company_id, status
                          FROM bg_user_enrollments
                          WHERE user_id = :user_id
-                         AND company_id = :company_id
-                         AND status IN ('selected', 'active', 'pending', 'user_owned')";
+                         AND company_id = :company_id";
         $existing = $database->getrow($existing_sql, [
             'user_id' => $user_id,
             'company_id' => $company_id
         ]);
-        
+
         if ($existing) {
-            $response['picked'][] = [
-                'company_id' => $company_id,
-                'company_name' => $company['company_name'],
-                'success' => false,
-                'error' => 'Already enrolled or tracked'
-            ];
+            // If it's in cart, UPDATE to selected
+            if ($existing['status'] === 'cart') {
+                $update_sql = "UPDATE bg_user_enrollments
+                               SET status = 'selected',
+                                   status_method = 'enrollment_picker',
+                                   modify_dt = NOW()
+                               WHERE user_company_id = :user_company_id";
+
+                $database->query($update_sql, [
+                    'user_company_id' => $existing['user_company_id']
+                ]);
+
+                $response['picked'][] = [
+                    'company_id' => $company_id,
+                    'company_name' => $company['company_name'],
+                    'success' => true,
+                    'user_company_id' => $existing['user_company_id']
+                ];
+            } else if (in_array($existing['status'], ['selected', 'active', 'pending', 'user_owned'])) {
+                // Already enrolled with final status
+                $response['picked'][] = [
+                    'company_id' => $company_id,
+                    'company_name' => $company['company_name'],
+                    'success' => false,
+                    'error' => 'Already enrolled or tracked'
+                ];
+            }
             continue;
         }
-        
-        // Create enrollment
+
+        // No existing record - create new enrollment
         $insert_sql = "INSERT INTO bg_user_enrollments
                        (user_id, company_id, status, status_method, create_dt, modify_dt)
                        VALUES
                        (:user_id, :company_id, 'selected', 'enrollment_picker', NOW(), NOW())";
-        
+
         $database->query($insert_sql, [
             'user_id' => $user_id,
             'company_id' => $company_id
         ]);
-        
+
         $response['picked'][] = [
             'company_id' => $company_id,
             'company_name' => $company['company_name'],
@@ -126,14 +146,14 @@ try {
     // Process tracked items (user_owned status)
     foreach ($tracked_ids as $company_id) {
         if (!$company_id) continue;
-        
+
         // Check if company exists and is active
-        $company_sql = "SELECT company_id, company_name 
-                        FROM bg_companies 
-                        WHERE company_id = :company_id 
+        $company_sql = "SELECT company_id, company_name
+                        FROM bg_companies
+                        WHERE company_id = :company_id
                         AND status IN ('active', 'finalized')";
         $company = $database->getrow($company_sql, ['company_id' => $company_id]);
-        
+
         if (!$company) {
             $response['tracked'][] = [
                 'company_id' => $company_id,
@@ -142,39 +162,59 @@ try {
             ];
             continue;
         }
-        
-        // Check for existing enrollment or tracking
+
+        // Check for existing enrollment (including cart_tracked status)
         $existing_sql = "SELECT user_company_id, status
                          FROM bg_user_enrollments
                          WHERE user_id = :user_id
-                         AND company_id = :company_id
-                         AND status IN ('selected', 'active', 'pending', 'user_owned')";
+                         AND company_id = :company_id";
         $existing = $database->getrow($existing_sql, [
             'user_id' => $user_id,
             'company_id' => $company_id
         ]);
-        
+
         if ($existing) {
-            $response['tracked'][] = [
-                'company_id' => $company_id,
-                'company_name' => $company['company_name'],
-                'success' => false,
-                'error' => $existing['status'] == 'user_owned' ? 'Already tracked' : 'Already enrolled'
-            ];
+            // If it's in cart_tracked, UPDATE to user_owned
+            if ($existing['status'] === 'cart_tracked') {
+                $update_sql = "UPDATE bg_user_enrollments
+                               SET status = 'user_owned',
+                                   status_method = 'enrollment_picker_tracked',
+                                   modify_dt = NOW()
+                               WHERE user_company_id = :user_company_id";
+
+                $database->query($update_sql, [
+                    'user_company_id' => $existing['user_company_id']
+                ]);
+
+                $response['tracked'][] = [
+                    'company_id' => $company_id,
+                    'company_name' => $company['company_name'],
+                    'success' => true,
+                    'user_company_id' => $existing['user_company_id']
+                ];
+            } else if (in_array($existing['status'], ['selected', 'active', 'pending', 'user_owned'])) {
+                // Already tracked or enrolled with final status
+                $response['tracked'][] = [
+                    'company_id' => $company_id,
+                    'company_name' => $company['company_name'],
+                    'success' => false,
+                    'error' => $existing['status'] == 'user_owned' ? 'Already tracked' : 'Already enrolled'
+                ];
+            }
             continue;
         }
-        
-        // Create user_owned enrollment
-        $insert_sql = "INSERT INTO bg_user_enrollments 
-                       (user_id, company_id, status, status_method, create_dt, modify_dt) 
-                       VALUES 
+
+        // No existing record - create new user_owned enrollment
+        $insert_sql = "INSERT INTO bg_user_enrollments
+                       (user_id, company_id, status, status_method, create_dt, modify_dt)
+                       VALUES
                        (:user_id, :company_id, 'user_owned', 'enrollment_picker_tracked', NOW(), NOW())";
-        
+
         $database->query($insert_sql, [
             'user_id' => $user_id,
             'company_id' => $company_id
         ]);
-        
+
         $response['tracked'][] = [
             'company_id' => $company_id,
             'company_name' => $company['company_name'],

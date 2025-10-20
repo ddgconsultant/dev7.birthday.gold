@@ -329,16 +329,16 @@ echo '
             </div>
 
             <div class="label">Fix Type:</div>
-            <div><span class="badge bg-info">' . htmlspecialchars($fix['ai_fix_type']) . '</span></div>
+            <div><span class="badge bg-info">' . htmlspecialchars($fix['ai_fix_type'] ?? '') . '</span></div>
 
             <div class="label">AI Model:</div>
-            <div><small class="text-muted">' . htmlspecialchars($fix['ai_model']) . '</small></div>
+            <div><small class="text-muted">' . htmlspecialchars($fix['ai_model'] ?? '') . '</small></div>
 
             <div class="label">Analyzed:</div>
             <div>' . date('M j, Y g:i A', strtotime($fix['ai_analyzed_dt'])) . '</div>
 
             <div class="label">Explanation:</div>
-            <div>' . nl2br(htmlspecialchars($fix['ai_explanation'])) . '</div>
+            <div>' . nl2br(htmlspecialchars($fix['ai_explanation'] ?? '')) . '</div>
         </div>
     </div>';
 
@@ -348,10 +348,10 @@ echo '
         <h5><i class="bi bi-code-square text-success"></i> Code Comparison</h5>
 
         <h6 class="mt-3"><span class="diff-indicator diff-removed">-</span>Original Code (Lines ' . $fix['line_start'] . '-' . $fix['line_end'] . ')</h6>
-        <div class="code-block original">' . htmlspecialchars($fix['original_code']) . '</div>
+        <div class="code-block original">' . htmlspecialchars($fix['original_code'] ?? '') . '</div>
 
         <h6 class="mt-4"><span class="diff-indicator diff-added">+</span>Proposed Fix</h6>
-        <div class="code-block fixed">' . htmlspecialchars($fix['proposed_fix']) . '</div>
+        <div class="code-block fixed">' . htmlspecialchars($fix['proposed_fix'] ?? '') . '</div>
     </div>';
 
 // Full context (expandable)
@@ -403,10 +403,10 @@ if ($fix['fix_status'] === 'applied' && !empty($fix['applied_dt'])) {
             <div>' . date('M j, Y g:i A', strtotime($fix['applied_dt'])) . '</div>
 
             <div class="label">Applied By:</div>
-            <div>' . htmlspecialchars($fix['applied_by']) . '</div>
+            <div>' . htmlspecialchars($fix['applied_by'] ?? '') . '</div>
 
             <div class="label">Git Commit:</div>
-            <div><code>' . htmlspecialchars($fix['git_commit_hash']) . '</code></div>
+            <div><code>' . htmlspecialchars($fix['git_commit_hash'] ?? '') . '</code></div>
 
             <div class="label">Syntax Check:</div>
             <div>' . ($fix['syntax_check_passed'] ? '<span class="badge bg-success">Passed</span>' : '<span class="badge bg-danger">Failed</span>') . '</div>

@@ -33,6 +33,21 @@ $profile_completion_percentage = $profilecompletion['required_percentage'] ?? 10
 $selectionList = $session->get('goldmine_selectionList', []);
 $existingList = $session->get('goldmine_existingList', []);
 
+// Also load any saved cart items from database
+$cart_sql = "SELECT company_id, status FROM bg_user_enrollments
+             WHERE user_id = :user_id
+             AND status IN ('cart', 'cart_tracked')";
+$cart_items = $database->getrows($cart_sql, ['user_id' => $user_id]);
+$cartList = [];
+$cartTrackedList = [];
+foreach ($cart_items as $item) {
+    if ($item['status'] === 'cart') {
+        $cartList[] = $item['company_id'];
+    } else if ($item['status'] === 'cart_tracked') {
+        $cartTrackedList[] = $item['company_id'];
+    }
+}
+
 // Initialize variables for business-detail exception mode
 $business_detail_mode = false;
 $pending_company_id = null;
@@ -1834,6 +1849,54 @@ $output .= '
 echo $output;
 
 // JavaScript section - Initialize user data BEFORE loading scripts
+// Get company details for cart items to pre-populate basket
+$cart_company_details = [];
+$cart_tracked_company_details = [];
+
+if (!empty($cartList)) {
+    $placeholders = array_fill(0, count($cartList), '?');
+    $cart_companies_sql = "SELECT c.company_id, c.company_name, a.description as company_logo
+                           FROM bg_companies c
+                           LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id
+                               AND a.category = 'company_logos' AND a.grouping = 'primary_logo'
+                           WHERE c.company_id IN (" . implode(',', $placeholders) . ")";
+    $stmt = $database->prepare($cart_companies_sql);
+    $stmt->execute($cartList);
+    $cart_companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($cart_companies as $company) {
+        $logo_url = !empty($company['company_logo']) ?
+            $display->companyimage($company['company_id'] . '/' . $company['company_logo']) : '';
+        $cart_company_details[] = [
+            'id' => $company['company_id'],
+            'name' => $company['company_name'],
+            'logo' => $logo_url
+        ];
+    }
+}
+
+if (!empty($cartTrackedList)) {
+    $placeholders = array_fill(0, count($cartTrackedList), '?');
+    $tracked_companies_sql = "SELECT c.company_id, c.company_name, a.description as company_logo
+                              FROM bg_companies c
+                              LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id
+                                  AND a.category = 'company_logos' AND a.grouping = 'primary_logo'
+                              WHERE c.company_id IN (" . implode(',', $placeholders) . ")";
+    $stmt = $database->prepare($tracked_companies_sql);
+    $stmt->execute($cartTrackedList);
+    $tracked_companies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($tracked_companies as $company) {
+        $logo_url = !empty($company['company_logo']) ?
+            $display->companyimage($company['company_id'] . '/' . $company['company_logo']) : '';
+        $cart_tracked_company_details[] = [
+            'id' => $company['company_id'],
+            'name' => $company['company_name'],
+            'logo' => $logo_url
+        ];
+    }
+}
+
 echo '
 <script>
 // Initialize user data first (before loading other scripts)
@@ -1845,9 +1908,23 @@ window.userData = {
         tokened: "' . $label_tokened . '"
     },
     hasEnrollments: ' . ((($accountstats['business_success'] ?? 0) + ($accountstats['business_pending'] ?? 0)) > 0 ? 'true' : 'false') . ',
-    forceShowHelp: ' . (isset($_GET['showhelp']) ? 'true' : 'false') . '
+    forceShowHelp: ' . (isset($_GET['showhelp']) ? 'true' : 'false') . ',
+    // Pre-populate cart items from database
+    cartItems: ' . json_encode($cart_company_details) . ',
+    cartTrackedItems: ' . json_encode($cart_tracked_company_details) . '
 };
-console.log("userData initialized:", window.userData);
+console.log("userData initialized with cart items:", window.userData);
+
+// Pre-populate sessionStorage with cart items from database
+if (window.userData.cartItems && window.userData.cartItems.length > 0) {
+    sessionStorage.setItem("enrollmentBasket", JSON.stringify(window.userData.cartItems));
+    console.log("Pre-populated enrollmentBasket with", window.userData.cartItems.length, "cart items");
+}
+
+if (window.userData.cartTrackedItems && window.userData.cartTrackedItems.length > 0) {
+    sessionStorage.setItem("trackedBasket", JSON.stringify(window.userData.cartTrackedItems));
+    console.log("Pre-populated trackedBasket with", window.userData.cartTrackedItems.length, "cart_tracked items");
+}
 </script>
 ';
 

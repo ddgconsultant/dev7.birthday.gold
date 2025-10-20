@@ -155,23 +155,29 @@ function addToBasket(companyId, companyName, companyLogo) {
         showError('This company is already in your selection basket');
         return;
     }
-    
+
     // Check if we have enough allocations
     if (selectionBasket.length >= window.userData.availableAllocations) {
         showError('You don\'t have enough allocations for more selections');
         return;
     }
-    
+
     // Add to basket
     selectionBasket.push({
         id: companyId,
         name: companyName,
         logo: companyLogo
     });
-    
+
     // Save to sessionStorage
     sessionStorage.setItem('enrollmentBasket', JSON.stringify(selectionBasket));
-    
+
+    // Track the pick event for analytics
+    trackPickEvent('add', companyId, companyName);
+
+    // Auto-save the basket to server (non-blocking)
+    autoSaveBasket();
+
     // Update UI
     updateBasketUI();
     
@@ -192,11 +198,22 @@ function addToBasket(companyId, companyName, companyLogo) {
 
 // Remove from basket
 function removeFromBasket(companyId) {
+    // Get company name for tracking
+    const removedItem = selectionBasket.find(item => item.id === companyId);
+
     selectionBasket = selectionBasket.filter(item => item.id !== companyId);
-    
+
     // Save to sessionStorage
     sessionStorage.setItem('enrollmentBasket', JSON.stringify(selectionBasket));
-    
+
+    // Track the removal event
+    if (removedItem) {
+        trackPickEvent('remove', companyId, removedItem.name);
+    }
+
+    // Auto-save the basket
+    autoSaveBasket();
+
     updateBasketUI();
     
     // Update the card button back to Select with split button
@@ -742,6 +759,154 @@ function showFirstPickerHelp() {
     }, 300); // 300ms delay for cart animation
 }
 
+// Track pick events for analytics
+function trackPickEvent(action, companyId, companyName) {
+    // Send tracking event to server
+    fetch('/myaccount/ajax/track-pick-event.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=${action}&company_id=${companyId}&company_name=${encodeURIComponent(companyName)}&basket_count=${selectionBasket.length}`,
+        credentials: 'same-origin'
+    }).catch(error => {
+        console.error('Failed to track pick event:', error);
+    });
+}
+
+// Auto-save basket to server
+let autoSaveTimer = null;
+function autoSaveBasket() {
+    // Debounce auto-saves to avoid too many requests
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+        const data = {
+            picked: selectionBasket.map(item => item.id),
+            tracked: JSON.parse(sessionStorage.getItem('trackedBasket') || '[]').map(item => item.id)
+        };
+
+        fetch('/myaccount/ajax/auto-save-basket.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+            credentials: 'same-origin'
+        }).then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                console.log('Basket auto-saved successfully');
+                // Add a subtle indicator that basket is saved
+                const counter = document.getElementById('selectionCounter');
+                if (counter) {
+                    counter.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.6)';
+                    setTimeout(() => {
+                        counter.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.4)';
+                    }, 500);
+                }
+            }
+        }).catch(error => {
+            console.error('Failed to auto-save basket:', error);
+        });
+    }, 1000); // Wait 1 second before saving
+}
+
+// Warn user before leaving page with unsaved picks
+let hasWarnedAboutLeaving = false;
+window.addEventListener('beforeunload', function(e) {
+    // Check if we have items in basket
+    const hasPickedItems = selectionBasket.length > 0;
+    const hasTrackedItems = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]').length > 0;
+
+    if ((hasPickedItems || hasTrackedItems) && !hasWarnedAboutLeaving) {
+        const confirmationMessage = 'You have unpicked items in your basket. Are you sure you want to leave without confirming them?';
+        e.preventDefault();
+        e.returnValue = confirmationMessage;
+        return confirmationMessage;
+    }
+});
+
+// Show exit warning modal (for better UX on modern browsers)
+function showExitWarningModal() {
+    if (selectionBasket.length === 0 && JSON.parse(sessionStorage.getItem('trackedBasket') || '[]').length === 0) {
+        return true; // Allow navigation
+    }
+
+    // Create and show warning modal
+    const modalHtml = `
+        <div class="modal fade" id="exitWarningModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            Unpicked Items in Basket
+                        </h5>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">You have <strong>${selectionBasket.length} items</strong> in your basket that haven't been confirmed yet.</p>
+                        <p>Would you like to:</p>
+                        <div class="list-group">
+                            <button type="button" class="list-group-item list-group-item-action" onclick="confirmAndLeave()">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                <strong>Confirm picks and continue</strong>
+                            </button>
+                            <button type="button" class="list-group-item list-group-item-action" onclick="saveAndLeave()">
+                                <i class="bi bi-save text-primary me-2"></i>
+                                <strong>Save for later and leave</strong>
+                            </button>
+                            <button type="button" class="list-group-item list-group-item-action" onclick="discardAndLeave()">
+                                <i class="bi bi-trash text-danger me-2"></i>
+                                <strong>Discard picks and leave</strong>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stay on page</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add modal to page if not exists
+    if (!document.getElementById('exitWarningModal')) {
+        const modalDiv = document.createElement('div');
+        modalDiv.innerHTML = modalHtml;
+        document.body.appendChild(modalDiv.firstElementChild);
+    }
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('exitWarningModal'));
+    modal.show();
+
+    return false; // Prevent navigation for now
+}
+
+// Helper functions for exit warning modal
+function confirmAndLeave() {
+    hasWarnedAboutLeaving = true;
+    confirmEnrollments(() => {
+        window.location.href = '/myaccount/';
+    });
+}
+
+function saveAndLeave() {
+    hasWarnedAboutLeaving = true;
+    autoSaveBasket();
+    setTimeout(() => {
+        window.location.href = '/myaccount/';
+    }, 500);
+}
+
+function discardAndLeave() {
+    hasWarnedAboutLeaving = true;
+    clearBasket();
+    sessionStorage.removeItem('enrollmentBasket');
+    sessionStorage.removeItem('trackedBasket');
+    window.location.href = '/myaccount/';
+}
+
 // Expose functions globally for onclick handlers
 console.log('Exposing functions globally...');
 window.addToBasket = addToBasket;
@@ -752,5 +917,8 @@ window.toggleBasketDetails = toggleBasketDetails;
 window.confirmEnrollments = confirmEnrollments;
 window.redirectToMyAccount = redirectToMyAccount;
 window.showFirstPickerHelp = showFirstPickerHelp;
+window.confirmAndLeave = confirmAndLeave;
+window.saveAndLeave = saveAndLeave;
+window.discardAndLeave = discardAndLeave;
 console.log('Functions exposed. window.addToBasket =', typeof window.addToBasket);
 
