@@ -858,22 +858,18 @@ function showExitWarningModal() {
                     <div class="modal-header bg-warning text-dark">
                         <h5 class="modal-title">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            You Have ${totalItems} Unpicked Item${totalItems > 1 ? 's' : ''}!
+                            ${totalItems} Item${totalItems > 1 ? 's' : ''} in Basket
                         </h5>
                     </div>
                     <div class="modal-body">
-                        <p class="mb-3"><strong>You're about to leave with items still in your basket.</strong></p>
-                        <p class="mb-3">What would you like to do?</p>
                         <div class="d-grid gap-2">
                             <button type="button" class="btn btn-success btn-lg" onclick="confirmAndLeave()">
                                 <i class="bi bi-check-circle-fill me-2"></i>
-                                <strong>Confirm Picks Now</strong>
-                                <div class="small">Submit these items for enrollment</div>
+                                Confirm & Continue
                             </button>
                             <button type="button" class="btn btn-primary" onclick="saveAndLeave()">
                                 <i class="bi bi-save me-2"></i>
-                                <strong>Save for Later</strong>
-                                <div class="small">Come back and finish later</div>
+                                Save for Later
                             </button>
                             <button type="button" class="btn btn-outline-danger" onclick="discardAndLeave()">
                                 <i class="bi bi-trash me-2"></i>
@@ -883,7 +879,7 @@ function showExitWarningModal() {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" onclick="closeExitWarningModal()">
-                            <i class="bi bi-arrow-left me-1"></i> Stay on Page
+                            Stay on Page
                         </button>
                     </div>
                 </div>
