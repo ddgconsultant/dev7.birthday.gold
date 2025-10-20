@@ -808,95 +808,130 @@ function autoSaveBasket() {
         }).catch(error => {
             console.error('Failed to auto-save basket:', error);
         });
-    }, 1000); // Wait 1 second before saving
+    }, 300); // Reduced to 300ms for faster saves
 }
 
-// Warn user before leaving page with unsaved picks
+// Navigation interception - show modal INSTANTLY when user tries to leave
+let pendingNavigationUrl = null;
 let hasWarnedAboutLeaving = false;
-window.addEventListener('beforeunload', function(e) {
-    // Check if we have items in basket
-    const hasPickedItems = selectionBasket.length > 0;
-    const hasTrackedItems = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]').length > 0;
 
-    if ((hasPickedItems || hasTrackedItems) && !hasWarnedAboutLeaving) {
-        const confirmationMessage = 'You have unpicked items in your basket. Are you sure you want to leave without confirming them?';
+// Intercept all navigation attempts
+document.addEventListener('DOMContentLoaded', function() {
+    // Intercept all link clicks
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (!link) return;
+
+        // Check if we have items in basket
+        const hasPickedItems = selectionBasket.length > 0;
+        const hasTrackedItems = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]').length > 0;
+
+        // Skip if no items or already warned
+        if (!hasPickedItems && !hasTrackedItems) return;
+        if (hasWarnedAboutLeaving) return;
+
+        // Skip if it's a same-page anchor or javascript: link
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+        // Prevent default navigation
         e.preventDefault();
-        e.returnValue = confirmationMessage;
-        return confirmationMessage;
-    }
+        e.stopPropagation();
+
+        // Store the intended destination
+        pendingNavigationUrl = href;
+
+        // Show modal INSTANTLY
+        showExitWarningModal();
+    }, true); // Use capture phase to catch early
 });
 
-// Show exit warning modal (for better UX on modern browsers)
+// Show exit warning modal
 function showExitWarningModal() {
-    if (selectionBasket.length === 0 && JSON.parse(sessionStorage.getItem('trackedBasket') || '[]').length === 0) {
-        return true; // Allow navigation
-    }
+    const totalItems = selectionBasket.length + JSON.parse(sessionStorage.getItem('trackedBasket') || '[]').length;
 
-    // Create and show warning modal
+    // Create modal HTML
     const modalHtml = `
-        <div class="modal fade" id="exitWarningModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal fade show" id="exitWarningModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" style="display: block;">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
+                <div class="modal-content border-warning" style="border-width: 3px;">
                     <div class="modal-header bg-warning text-dark">
                         <h5 class="modal-title">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            Unpicked Items in Basket
+                            You Have ${totalItems} Unpicked Item${totalItems > 1 ? 's' : ''}!
                         </h5>
                     </div>
                     <div class="modal-body">
-                        <p class="mb-3">You have <strong>${selectionBasket.length} items</strong> in your basket that haven't been confirmed yet.</p>
-                        <p>Would you like to:</p>
-                        <div class="list-group">
-                            <button type="button" class="list-group-item list-group-item-action" onclick="confirmAndLeave()">
-                                <i class="bi bi-check-circle text-success me-2"></i>
-                                <strong>Confirm picks and continue</strong>
+                        <p class="mb-3"><strong>You're about to leave with items still in your basket.</strong></p>
+                        <p class="mb-3">What would you like to do?</p>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-success btn-lg" onclick="confirmAndLeave()">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <strong>Confirm Picks Now</strong>
+                                <div class="small">Submit these items for enrollment</div>
                             </button>
-                            <button type="button" class="list-group-item list-group-item-action" onclick="saveAndLeave()">
-                                <i class="bi bi-save text-primary me-2"></i>
-                                <strong>Save for later and leave</strong>
+                            <button type="button" class="btn btn-primary" onclick="saveAndLeave()">
+                                <i class="bi bi-save me-2"></i>
+                                <strong>Save for Later</strong>
+                                <div class="small">Come back and finish later</div>
                             </button>
-                            <button type="button" class="list-group-item list-group-item-action" onclick="discardAndLeave()">
-                                <i class="bi bi-trash text-danger me-2"></i>
-                                <strong>Discard picks and leave</strong>
+                            <button type="button" class="btn btn-outline-danger" onclick="discardAndLeave()">
+                                <i class="bi bi-trash me-2"></i>
+                                Discard & Leave
                             </button>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stay on page</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeExitWarningModal()">
+                            <i class="bi bi-arrow-left me-1"></i> Stay on Page
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="modal-backdrop fade show"></div>
     `;
 
-    // Add modal to page if not exists
-    if (!document.getElementById('exitWarningModal')) {
-        const modalDiv = document.createElement('div');
-        modalDiv.innerHTML = modalHtml;
-        document.body.appendChild(modalDiv.firstElementChild);
+    // Remove existing modal if present
+    const existing = document.getElementById('exitWarningModal');
+    if (existing) {
+        existing.parentElement.remove();
     }
 
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('exitWarningModal'));
-    modal.show();
+    // Add modal to page
+    const modalDiv = document.createElement('div');
+    modalDiv.innerHTML = modalHtml;
+    document.body.appendChild(modalDiv);
 
-    return false; // Prevent navigation for now
+    // Add show class after brief delay for animation
+    setTimeout(() => {
+        const modal = document.getElementById('exitWarningModal');
+        if (modal) {
+            modal.classList.add('show');
+        }
+    }, 10);
 }
 
 // Helper functions for exit warning modal
 function confirmAndLeave() {
     hasWarnedAboutLeaving = true;
+    closeExitWarningModal();
     confirmEnrollments(() => {
-        window.location.href = '/myaccount/';
+        if (pendingNavigationUrl) {
+            window.location.href = pendingNavigationUrl;
+        }
     });
 }
 
 function saveAndLeave() {
     hasWarnedAboutLeaving = true;
+    closeExitWarningModal();
     autoSaveBasket();
     setTimeout(() => {
-        window.location.href = '/myaccount/';
-    }, 500);
+        if (pendingNavigationUrl) {
+            window.location.href = pendingNavigationUrl;
+        }
+    }, 400);
 }
 
 function discardAndLeave() {
@@ -904,7 +939,28 @@ function discardAndLeave() {
     clearBasket();
     sessionStorage.removeItem('enrollmentBasket');
     sessionStorage.removeItem('trackedBasket');
-    window.location.href = '/myaccount/';
+    closeExitWarningModal();
+    if (pendingNavigationUrl) {
+        window.location.href = pendingNavigationUrl;
+    }
+}
+
+function closeExitWarningModal() {
+    const modal = document.getElementById('exitWarningModal');
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.parentElement.remove();
+        }, 150);
+    }
+    if (backdrop) {
+        backdrop.classList.remove('show');
+        setTimeout(() => {
+            backdrop.remove();
+        }, 150);
+    }
+    pendingNavigationUrl = null;
 }
 
 // Expose functions globally for onclick handlers
@@ -920,5 +976,6 @@ window.showFirstPickerHelp = showFirstPickerHelp;
 window.confirmAndLeave = confirmAndLeave;
 window.saveAndLeave = saveAndLeave;
 window.discardAndLeave = discardAndLeave;
+window.closeExitWarningModal = closeExitWarningModal;
 console.log('Functions exposed. window.addToBasket =', typeof window.addToBasket);
 
