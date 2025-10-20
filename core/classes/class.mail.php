@@ -319,6 +319,10 @@ Cheers!<br>birthday.gold
     }
 
     // Build notification record
+    // Add small random delay (0-59 seconds) to start_dt to avoid duplicate key collisions
+    $random_delay = rand(0, 59);
+    $start_time = time() + $random_delay;
+
     $notification = [
       'user_id' => 0, // System email, not belonging to any user
       'type' => 'failed_email',
@@ -334,24 +338,45 @@ Cheers!<br>birthday.gold
         'attachment' => $details['attachment'] ?? null,
         'failed_at' => date('Y-m-d H:i:s'),
         'retry_count' => 0,
-        'toemail' => $details['toemail'] ?? $to[0]
+        'toemail' => $details['toemail'] ?? $to[0],
+        'retry_delay_seconds' => $random_delay
       ]),
-      'start_dt' => date('Y-m-d H:i:s.') . substr(microtime(), 2, 6), // Retry immediately (with microseconds for uniqueness)
+      'start_dt' => date('Y-m-d H:i:s', $start_time), // Retry with random delay to avoid duplicates
       'end_dt' => date('Y-m-d H:i:s', strtotime('+7 days')) // Expire after 7 days if not sent
     ];
 
-    // Insert into bg_user_notifications
+    // Insert into bg_user_notifications with duplicate key handling
     try {
       $query = "INSERT INTO bg_user_notifications
                 (user_id, type, title, message, status, sent_to, category, priority, options, start_dt, end_dt, create_dt, modify_dt)
                 VALUES
-                (:user_id, :type, :title, :message, :status, :sent_to, :category, :priority, :options, :start_dt, :end_dt, NOW(), NOW())";
+                (:user_id, :type, :title, :message, :status, :sent_to, :category, :priority, :options, :start_dt, :end_dt, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                  title = VALUES(title),
+                  message = VALUES(message),
+                  sent_to = VALUES(sent_to),
+                  priority = VALUES(priority),
+                  options = JSON_MERGE_PATCH(
+                    COALESCE(options, '{}'),
+                    JSON_OBJECT(
+                      'duplicate_attempts', COALESCE(JSON_EXTRACT(options, '$.duplicate_attempts'), 0) + 1,
+                      'last_duplicate_at', NOW()
+                    )
+                  ),
+                  end_dt = VALUES(end_dt),
+                  modify_dt = NOW()";
 
       $stmt = $database->prepare($query);
       $stmt->execute($notification);
 
       // Log the failed email storage
-      session_tracking('failed_email_stored', ['to' => $to[0], 'subject' => $details['subject'] ?? 'Unknown', 'notification_id' => $database->lastInsertId()]);
+      $notification_id = $database->lastInsertId();
+      if ($notification_id == 0) {
+        // This means we hit a duplicate and updated instead
+        session_tracking('failed_email_updated', ['to' => $to[0], 'subject' => $details['subject'] ?? 'Unknown', 'reason' => 'duplicate_key']);
+      } else {
+        session_tracking('failed_email_stored', ['to' => $to[0], 'subject' => $details['subject'] ?? 'Unknown', 'notification_id' => $notification_id]);
+      }
 
     } catch (Exception $e) {
       session_tracking('failed_email_storage_error', ['error' => $e->getMessage(), 'to' => $to[0]]);
