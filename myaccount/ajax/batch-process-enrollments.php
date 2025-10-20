@@ -84,11 +84,11 @@ try {
         }
         
         // Check for existing enrollment
-        $existing_sql = "SELECT user_company_id 
-                         FROM bg_user_enrollments 
-                         WHERE user_id = :user_id 
-                         AND company_id = :company_id 
-                         AND status IN ('active', 'pending', 'user_owned')";
+        $existing_sql = "SELECT user_company_id
+                         FROM bg_user_enrollments
+                         WHERE user_id = :user_id
+                         AND company_id = :company_id
+                         AND status IN ('selected', 'active', 'pending', 'user_owned')";
         $existing = $database->getrow($existing_sql, [
             'user_id' => $user_id,
             'company_id' => $company_id
@@ -105,10 +105,10 @@ try {
         }
         
         // Create enrollment
-        $insert_sql = "INSERT INTO bg_user_enrollments 
-                       (user_id, company_id, status, status_method, create_dt, modify_dt) 
-                       VALUES 
-                       (:user_id, :company_id, 'active', 'enrollment_picker', NOW(), NOW())";
+        $insert_sql = "INSERT INTO bg_user_enrollments
+                       (user_id, company_id, status, status_method, create_dt, modify_dt)
+                       VALUES
+                       (:user_id, :company_id, 'selected', 'enrollment_picker', NOW(), NOW())";
         
         $database->query($insert_sql, [
             'user_id' => $user_id,
@@ -144,11 +144,11 @@ try {
         }
         
         // Check for existing enrollment or tracking
-        $existing_sql = "SELECT user_company_id, status 
-                         FROM bg_user_enrollments 
-                         WHERE user_id = :user_id 
-                         AND company_id = :company_id 
-                         AND status IN ('active', 'pending', 'user_owned')";
+        $existing_sql = "SELECT user_company_id, status
+                         FROM bg_user_enrollments
+                         WHERE user_id = :user_id
+                         AND company_id = :company_id
+                         AND status IN ('selected', 'active', 'pending', 'user_owned')";
         $existing = $database->getrow($existing_sql, [
             'user_id' => $user_id,
             'company_id' => $company_id

@@ -882,13 +882,14 @@ VALUES (:cip, :type, :hit, :city, :state, :country_code, :lon, :lat, :data_strin
         // INSERT into history table
         $sql = "INSERT INTO bg_lockout_history
                 (parent_id, ip, type, session_id, start_dt, expire_dt, create_dt, modify_dt, status, lockout_minutes)
-                VALUES (:parent_id, :ip, 'rate_limit', :sessionid, NOW(), DATE_ADD(NOW(), INTERVAL :duration MINUTE),
-                        NOW(), NOW(), 'active', :duration)";
+                VALUES (:parent_id, :ip, 'rate_limit', :sessionid, NOW(), DATE_ADD(NOW(), INTERVAL :duration1 MINUTE),
+                        NOW(), NOW(), 'active', :duration2)";
         $database->query($sql, [
           'parent_id' => $existing_lockout['id'],
           'ip' => $client_ip,
           'sessionid' => $sessionid,
-          'duration' => $block_duration
+          'duration1' => $block_duration,
+          'duration2' => $block_duration
         ]);
 
       } else {
