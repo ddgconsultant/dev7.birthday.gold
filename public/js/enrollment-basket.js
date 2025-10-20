@@ -932,13 +932,37 @@ function saveAndLeave() {
 
 function discardAndLeave() {
     hasWarnedAboutLeaving = true;
-    clearBasket();
+
+    // Clear session storage
     sessionStorage.removeItem('enrollmentBasket');
     sessionStorage.removeItem('trackedBasket');
-    closeExitWarningModal();
-    if (pendingNavigationUrl) {
-        window.location.href = pendingNavigationUrl;
-    }
+
+    // Delete cart items from database
+    fetch('/myaccount/ajax/auto-save-basket.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ picked: [], tracked: [] }), // Empty arrays = delete all
+        credentials: 'same-origin'
+    }).then(() => {
+        // Clear UI basket
+        clearBasket();
+        closeExitWarningModal();
+
+        // Navigate to the intended destination
+        if (pendingNavigationUrl) {
+            window.location.href = pendingNavigationUrl;
+        }
+    }).catch(error => {
+        console.error('Failed to clear cart:', error);
+        // Navigate anyway
+        clearBasket();
+        closeExitWarningModal();
+        if (pendingNavigationUrl) {
+            window.location.href = pendingNavigationUrl;
+        }
+    });
 }
 
 function closeExitWarningModal() {
