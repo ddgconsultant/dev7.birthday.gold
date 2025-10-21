@@ -702,7 +702,7 @@ button.action-btn.tracked,
     justify-content: center;
     font-size: 1.2rem;
     font-weight: bold;
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
     cursor: pointer;
     z-index: 1040;
     transition: all 0.3s ease;
@@ -959,11 +959,20 @@ button.category-pill.active {
 }
 
 .company-action .dropdown-toggle-split {
-    border-left: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 0.5rem 0.5rem !important;
+    min-width: 32px !important;
+    background: rgba(0, 62, 130, 0.9) !important; /* Much darker blue at 90% opacity */
+}
+
+.company-action .dropdown-toggle-split:hover {
+    background: rgba(0, 50, 105, 1) !important; /* Even darker on hover at full opacity */
 }
 
 .company-action .dropdown-toggle-split::after {
-    color: #6c757d !important; /* Gray caret color */
+    color: rgba(255, 255, 255, 0.9) !important;
+    border-width: 0.35em !important;
+    margin-left: 0 !important;
 }
 
 .company-action .dropdown-menu {
@@ -973,6 +982,18 @@ button.category-pill.active {
     transform: translate(0, 0) !important; /* Reset any transform */
     top: 100% !important; /* Position below button */
     bottom: auto !important; /* Do not position from bottom */
+    background: #f8f9fa !important; /* Light gray background */
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important; /* Nice drop shadow */
+}
+
+.company-action .dropdown-menu .dropdown-item {
+    background: transparent;
+    transition: background 0.2s ease;
+}
+
+.company-action .dropdown-menu .dropdown-item:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Force dropdown to stay below */
@@ -1558,8 +1579,7 @@ if (empty($companies)) {
                         <li><a class="dropdown-item" href="#" onclick="trackAsOwned(' . $company['company_id'] . ', \'' . htmlspecialchars(addslashes($company['company_name'])) . '\', this); return false;">
                             <i class="bi bi-bookmark-check text-info"></i> I Already Have This
                         </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><span class="dropdown-item-text text-muted small"><em>Track without using a ' . strtolower($label_token) . '</em></span></li>
+                        <li><span class="dropdown-item-text text-muted" style="font-size: 0.7rem; padding: 0.25rem 1rem;"><em>Track without using a ' . strtolower($label_token) . '</em></span></li>
                     </ul>
                 </div>';
         } else {
@@ -1930,8 +1950,8 @@ if (window.userData.cartTrackedItems && window.userData.cartTrackedItems.length 
 
 // Load required scripts AFTER userData is defined
 echo '
-<script src="/public/js/enrollment-picker.js"></script>
-<script src="/public/js/enrollment-basket.js"></script>
+<script src="/public/js/enrollment-picker.js?v=' . time() . '"></script>
+<script src="/public/js/enrollment-basket.js?v=' . time() . '"></script>
 ';
 
 // Continue with other JavaScript
@@ -2114,6 +2134,10 @@ function removeFromTrackedBasket(companyId) {
     }
 }
 
+// Expose functions to window for onclick handlers
+window.trackAsOwned = trackAsOwned;
+window.removeFromTrackedBasket = removeFromTrackedBasket;
+
 // Untrack Company function - deprecated, now using removeFromTrackedBasket
 function untrackCompany(companyId, companyName, element) {
     // This function is deprecated - we now use removeFromTrackedBasket
@@ -2155,8 +2179,7 @@ function untrackCompany(companyId, companyName, element) {
                         <li><a class="dropdown-item" href="#" onclick="trackAsOwned(${companyId}, '${name.replace(/'/g, "\\'")}', this); return false;">
                             <i class="bi bi-bookmark-check text-info"></i> I Already Have This
                         </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><span class="dropdown-item-text text-muted small"><em>Track without using a ${window.userData.labels.token.toLowerCase()}</em></span></li>
+                        <li><span class="dropdown-item-text text-muted" style="font-size: 0.7rem; padding: 0.25rem 1rem;"><em>Track without using a ${window.userData.labels.token.toLowerCase()}</em></span></li>
                     </ul>
                 </div>
             `;
@@ -2233,7 +2256,7 @@ document.addEventListener("DOMContentLoaded", function() {
             trigger: 'hover'
         });
     });
-});
+
     let lastScrollTop = 0;
     const header = document.querySelector(".enrollment-header");
     const searchBar = document.querySelector(".search-bar");

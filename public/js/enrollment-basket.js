@@ -172,9 +172,6 @@ function addToBasket(companyId, companyName, companyLogo) {
     // Save to sessionStorage
     sessionStorage.setItem('enrollmentBasket', JSON.stringify(selectionBasket));
 
-    // Track the pick event for analytics
-    trackPickEvent('add', companyId, companyName);
-
     // Auto-save the basket to server (non-blocking)
     autoSaveBasket();
 
@@ -205,11 +202,6 @@ function removeFromBasket(companyId) {
 
     // Save to sessionStorage
     sessionStorage.setItem('enrollmentBasket', JSON.stringify(selectionBasket));
-
-    // Track the removal event
-    if (removedItem) {
-        trackPickEvent('remove', companyId, removedItem.name);
-    }
 
     // Auto-save the basket
     autoSaveBasket();
@@ -244,8 +236,7 @@ function removeFromBasket(companyId) {
                         <li><a class="dropdown-item" href="#" onclick="trackAsOwned(${companyId}, '${name.replace(/'/g, "\\'")}', this); return false;">
                             <i class="bi bi-bookmark-check me-2"></i> I Already Have This
                         </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><span class="dropdown-item-text text-muted small"><em>Track without using a ${window.userData.labels.token.toLowerCase()}</em></span></li>
+                        <li><span class="dropdown-item-text text-muted" style="font-size: 0.7rem; padding: 0.25rem 1rem;"><em>Track without using a ${window.userData.labels.token.toLowerCase()}</em></span></li>
                     </ul>
                 </div>
             `;
@@ -543,20 +534,25 @@ function toggleBasketDetails() {
 
 
 // Confirm enrollments - handles both picked and tracked items
-async function confirmEnrollments() {
+async function confirmEnrollments(skipSuccessModal = false) {
+    console.log('📦 ========================================');
+    console.log('📦 CONFIRM ENROLLMENTS CALLED');
+    console.log('📦 skipSuccessModal:', skipSuccessModal);
+    console.log('📦 ========================================');
+
     // Sync global variable with sessionStorage first
     selectionBasket = JSON.parse(sessionStorage.getItem('enrollmentBasket') || '[]');
     const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
-    
-    console.log('Picked basket (synced):', selectionBasket);
-    console.log('Tracked basket:', trackedBasket);
-    console.log('Picked length:', selectionBasket.length);
-    console.log('Tracked length:', trackedBasket.length);
-    
+
+    console.log('📦 Picked basket (synced):', selectionBasket);
+    console.log('📦 Tracked basket:', trackedBasket);
+    console.log('📦 Picked length:', selectionBasket.length);
+    console.log('📦 Tracked length:', trackedBasket.length);
+
     if (selectionBasket.length === 0 && trackedBasket.length === 0) {
         console.log('Both baskets are empty');
         showError('No items to submit');
-        return;
+        return false; // Return false to indicate failure
     }
     
     // Close basket modal
@@ -655,20 +651,23 @@ async function confirmEnrollments() {
         const totalSuccess = successCount + trackedSuccessCount;
         
         if (totalSuccess > 0 && errors.length === 0) {
-            let message = '';
-            if (successCount > 0 && trackedSuccessCount > 0) {
-                const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
-                message = `Successfully submitted ${successCount} ${pickWord} for enrollment and tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} as already owned.`;
-            } else if (successCount > 0) {
-                const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
-                message = `Your ${successCount} ${pickWord} ${successCount === 1 ? 'has' : 'have'} been successfully submitted for enrollment processing.`;
-            } else if (trackedSuccessCount > 0) {
-                message = `Successfully tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} as already owned.`;
+            // Only show success modal if not skipping (i.e., not redirecting)
+            if (!skipSuccessModal) {
+                let message = '';
+                if (successCount > 0 && trackedSuccessCount > 0) {
+                    const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
+                    message = `Successfully submitted ${successCount} ${pickWord} for enrollment and tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} as already owned.`;
+                } else if (successCount > 0) {
+                    const pickWord = successCount === 1 ? window.userData.labels.token : window.userData.labels.token + 's';
+                    message = `Your ${successCount} ${pickWord} ${successCount === 1 ? 'has' : 'have'} been successfully submitted for enrollment processing.`;
+                } else if (trackedSuccessCount > 0) {
+                    message = `Successfully tracked ${trackedSuccessCount} reward${trackedSuccessCount === 1 ? '' : 's'} as already owned.`;
+                }
+                showSuccess(message, successCount, trackedSuccessCount);
+
+                // Don't auto-reload - let user see the success message
+                // The page will need to be manually refreshed or navigated away
             }
-            showSuccess(message, successCount, trackedSuccessCount);
-            
-            // Don't auto-reload - let user see the success message
-            // The page will need to be manually refreshed or navigated away
         } else if (totalSuccess > 0 && errors.length > 0) {
             showError(`Partially successful. ${totalSuccess} processed, but errors: ${errors.join(', ')}`);
             // Don't auto-reload on partial success - let user see what happened
@@ -683,18 +682,25 @@ async function confirmEnrollments() {
         if (successCount > 0) {
             document.querySelector('.balance-number').textContent = window.userData.availableAllocations;
         }
-        
+
+        console.log('✅ Enrollments processed successfully, returning true');
+        // Return true to indicate success
+        return true;
+
     } catch (error) {
-        console.error('Batch enrollment error:', error);
-        
+        console.error('❌ Batch enrollment error:', error);
+
         // Show more specific error message
         let errorMsg = 'Failed to process enrollments';
         if (error.message) {
             errorMsg += ': ' + error.message;
         }
         showError(errorMsg);
+        console.log('❌ Returning false due to error');
+        return false; // Return false to indicate failure
     } finally {
         showLoading(false);
+        console.log('📦 confirmEnrollments function finishing (finally block)');
     }
 }
 
@@ -759,20 +765,8 @@ function showFirstPickerHelp() {
     }, 300); // 300ms delay for cart animation
 }
 
-// Track pick events for analytics
-function trackPickEvent(action, companyId, companyName) {
-    // Send tracking event to server
-    fetch('/myaccount/ajax/track-pick-event.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `action=${action}&company_id=${companyId}&company_name=${encodeURIComponent(companyName)}&basket_count=${selectionBasket.length}`,
-        credentials: 'same-origin'
-    }).catch(error => {
-        console.error('Failed to track pick event:', error);
-    });
-}
+// Track pick events for analytics - Removed (endpoint doesn't exist)
+// If analytics are needed in the future, implement track-pick-event.php endpoint
 
 // Auto-save basket to server
 let autoSaveTimer = null;
@@ -834,14 +828,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const href = link.getAttribute('href');
         if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
 
+        console.log('🔗 ========================================');
+        console.log('🔗 LINK CLICK INTERCEPTED!');
+        console.log('🔗 User clicked on:', link.textContent.trim());
+        console.log('🔗 Destination URL:', href);
+        console.log('🔗 ========================================');
+
         // Prevent default navigation
         e.preventDefault();
         e.stopPropagation();
 
         // Store the intended destination
         pendingNavigationUrl = href;
+        console.log('✅ Stored pendingNavigationUrl:', pendingNavigationUrl);
 
         // Show modal INSTANTLY
+        console.log('📢 Showing exit warning modal...');
         showExitWarningModal();
     }, true); // Use capture phase to catch early
 });
@@ -850,7 +852,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function showExitWarningModal() {
     const totalItems = selectionBasket.length + JSON.parse(sessionStorage.getItem('trackedBasket') || '[]').length;
 
-    // Create modal HTML
+    console.log('=== EXIT WARNING MODAL ===');
+    console.log('User was trying to go to:', pendingNavigationUrl);
+    console.log('Items in basket:', totalItems);
+    console.log('=========================');
+
+    // Create modal HTML with destination shown to user
     const modalHtml = `
         <div class="modal fade show" id="exitWarningModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" style="display: block;">
             <div class="modal-dialog modal-dialog-centered">
@@ -862,6 +869,7 @@ function showExitWarningModal() {
                         </h5>
                     </div>
                     <div class="modal-body">
+                        <p class="mb-3">You have items in your basket. What would you like to do before leaving?</p>
                         <div class="d-grid gap-2">
                             <button type="button" class="btn btn-success btn-lg" onclick="confirmAndLeave()">
                                 <i class="bi bi-check-circle-fill me-2"></i>
@@ -909,35 +917,88 @@ function showExitWarningModal() {
 }
 
 // Helper functions for exit warning modal
-function confirmAndLeave() {
+async function confirmAndLeave() {
+    console.log('🚀 ========================================');
+    console.log('🚀 CONFIRM AND LEAVE FUNCTION CALLED');
+    console.log('🚀 pendingNavigationUrl:', pendingNavigationUrl);
+    console.log('🚀 ========================================');
+
+    // CRITICAL: Save the URL BEFORE we close the modal (which clears it)
+    const destinationUrl = pendingNavigationUrl;
+    console.log('✅ Saved destination URL:', destinationUrl);
+
     hasWarnedAboutLeaving = true;
     closeExitWarningModal();
-    confirmEnrollments(() => {
-        if (pendingNavigationUrl) {
-            window.location.href = pendingNavigationUrl;
-        }
-    });
+
+    console.log('✅ Modal closed');
+    console.log('⏳ Calling confirmEnrollments with skipSuccessModal=true...');
+
+    // Pass true to skip the success modal so we can redirect immediately
+    const success = await confirmEnrollments(true);
+
+    console.log('✅ confirmEnrollments completed!');
+    console.log('   - Success:', success);
+    console.log('   - Will redirect to:', destinationUrl);
+
+    // Always redirect, even if enrollment failed - user chose to leave
+    if (destinationUrl) {
+        console.log('🔄 REDIRECTING NOW TO:', destinationUrl);
+        console.log('🔄 Executing: window.location.href =', destinationUrl);
+        window.location.href = destinationUrl;
+        console.log('🔄 Redirect command executed (page should be navigating...)');
+    } else {
+        console.error('❌ ERROR: No destination URL saved!');
+    }
 }
 
 function saveAndLeave() {
+    console.log('💾 ========================================');
+    console.log('💾 SAVE AND LEAVE FUNCTION CALLED');
+    console.log('💾 pendingNavigationUrl:', pendingNavigationUrl);
+    console.log('💾 ========================================');
+
+    // CRITICAL: Save the URL BEFORE we close the modal (which clears it)
+    const destinationUrl = pendingNavigationUrl;
+    console.log('✅ Saved destination URL:', destinationUrl);
+
     hasWarnedAboutLeaving = true;
     closeExitWarningModal();
+    console.log('✅ Modal closed');
+
+    console.log('💾 Auto-saving basket...');
     autoSaveBasket();
+
+    console.log('⏳ Waiting 400ms before redirect...');
     setTimeout(() => {
-        if (pendingNavigationUrl) {
-            window.location.href = pendingNavigationUrl;
+        if (destinationUrl) {
+            console.log('🔄 REDIRECTING NOW TO:', destinationUrl);
+            window.location.href = destinationUrl;
+            console.log('🔄 Redirect command executed');
+        } else {
+            console.error('❌ No destination URL!');
         }
     }, 400);
 }
 
 function discardAndLeave() {
+    console.log('🗑️ ========================================');
+    console.log('🗑️ DISCARD AND LEAVE FUNCTION CALLED');
+    console.log('🗑️ pendingNavigationUrl:', pendingNavigationUrl);
+    console.log('🗑️ ========================================');
+
+    // CRITICAL: Save the URL BEFORE we close the modal (which clears it)
+    const destinationUrl = pendingNavigationUrl;
+    console.log('✅ Saved destination URL:', destinationUrl);
+
     hasWarnedAboutLeaving = true;
 
     // Clear session storage
     sessionStorage.removeItem('enrollmentBasket');
     sessionStorage.removeItem('trackedBasket');
+    console.log('✅ Session storage cleared');
 
     // Delete cart items from database
+    console.log('⏳ Sending request to clear cart in database...');
     fetch('/myaccount/ajax/auto-save-basket.php', {
         method: 'POST',
         headers: {
@@ -946,21 +1007,28 @@ function discardAndLeave() {
         body: JSON.stringify({ picked: [], tracked: [] }), // Empty arrays = delete all
         credentials: 'same-origin'
     }).then(() => {
+        console.log('✅ Cart cleared from database');
         // Clear UI basket
         clearBasket();
         closeExitWarningModal();
+        console.log('✅ UI basket cleared and modal closed');
 
-        // Navigate to the intended destination
-        if (pendingNavigationUrl) {
-            window.location.href = pendingNavigationUrl;
+        // Navigate to the intended destination using our saved URL
+        if (destinationUrl) {
+            console.log('🔄 REDIRECTING NOW TO:', destinationUrl);
+            window.location.href = destinationUrl;
+            console.log('🔄 Redirect command executed');
+        } else {
+            console.error('❌ No destination URL!');
         }
     }).catch(error => {
-        console.error('Failed to clear cart:', error);
+        console.error('❌ Failed to clear cart:', error);
         // Navigate anyway
         clearBasket();
         closeExitWarningModal();
-        if (pendingNavigationUrl) {
-            window.location.href = pendingNavigationUrl;
+        if (destinationUrl) {
+            console.log('🔄 REDIRECTING ANYWAY TO:', destinationUrl);
+            window.location.href = destinationUrl;
         }
     });
 }
@@ -984,7 +1052,9 @@ function closeExitWarningModal() {
 }
 
 // Expose functions globally for onclick handlers
-console.log('Exposing functions globally...');
+console.log('🌍 ========================================');
+console.log('🌍 EXPOSING FUNCTIONS TO WINDOW OBJECT');
+console.log('🌍 ========================================');
 window.addToBasket = addToBasket;
 window.removeFromBasket = removeFromBasket;
 window.removeTrackedItem = removeTrackedItem;
@@ -997,5 +1067,10 @@ window.confirmAndLeave = confirmAndLeave;
 window.saveAndLeave = saveAndLeave;
 window.discardAndLeave = discardAndLeave;
 window.closeExitWarningModal = closeExitWarningModal;
-console.log('Functions exposed. window.addToBasket =', typeof window.addToBasket);
+console.log('✅ window.confirmAndLeave =', typeof window.confirmAndLeave);
+console.log('✅ window.saveAndLeave =', typeof window.saveAndLeave);
+console.log('✅ window.discardAndLeave =', typeof window.discardAndLeave);
+console.log('✅ window.closeExitWarningModal =', typeof window.closeExitWarningModal);
+console.log('🌍 All functions exposed successfully');
+console.log('🌍 ========================================');
 
