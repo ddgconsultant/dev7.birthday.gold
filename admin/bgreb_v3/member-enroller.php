@@ -205,7 +205,7 @@ if ($app->formposted()) {
                                         <p><strong>What happens next:</strong></p>
                                         <ul>
                                             <li>We\'ll carefully process each enrollment</li>
-                                            <li>You\'ll receive confirmation as each one is completed</li>
+                                            <li>You\'ll receive periodic updates as your enrollments are processed</li>
                                             <li>Any special instructions will be sent to you</li>
                                         </ul>
                                         <p>If you have any questions, feel free to reach out to our support team.</p>
