@@ -2375,16 +2375,22 @@ ORDER BY availability_from_date ASC, expiration_date ASC
 
 
     $sql = "WITH RankedCompanies AS (
-  SELECT uc.user_company_id, uc.user_id, uc.company_id company_id,  uc.reason, uc.status,   uc.`status` as enrollment_status,  uc.registration_dt, uc.create_dt, uc.modify_dt, 
-  c.company_name, c.appgoogle, c.appapple, ca.description AS company_logo, MAX(IFNULL(ad.id, '')) as amid, ROW_NUMBER() 
+  SELECT uc.user_company_id, uc.user_id, uc.company_id company_id,  uc.reason, uc.status,   uc.`status` as enrollment_status,  uc.registration_dt, uc.create_dt, uc.modify_dt,
+  c.company_name, c.appgoogle, c.appapple,
+  (SELECT ca.description
+   FROM bg_company_attributes ca
+   WHERE ca.company_id = c.company_id
+     AND ca.category = 'company_logos'
+     AND ca.grouping = 'primary_logo'
+   LIMIT 1) AS company_logo,
+  MAX(IFNULL(ad.id, '')) as amid, ROW_NUMBER()
   OVER (PARTITION BY uc.company_id ORDER BY uc.modify_dt DESC) as rn
   FROM bg_user_companies AS uc
   LEFT JOIN am_datastore ad ON uc.user_id = ad.user_id AND uc.company_id = ad.company_id
   JOIN bg_companies AS c ON uc.company_id = c.company_id
-  LEFT JOIN bg_company_attributes ca ON c.company_id = ca.company_id AND ca.category = 'company_logos' AND ca.grouping = 'primary_logo'
-  WHERE uc.user_id = ? " . $criteria . " 
+  WHERE uc.user_id = ? " . $criteria . "
   AND uc.create_dt >= '2023-08-01'
-  GROUP BY uc.user_company_id, uc.user_id, uc.company_id, uc.modify_dt, c.company_name, c.appgoogle, c.appapple, ca.description
+  GROUP BY uc.user_company_id, uc.user_id, uc.company_id, uc.modify_dt, c.company_name, c.appgoogle, c.appapple
 )
 SELECT user_company_id, user_id, company_id, reason, status, enrollment_status, create_dt , modify_dt, registration_dt, company_name, appgoogle, appapple, company_logo, amid
 FROM RankedCompanies

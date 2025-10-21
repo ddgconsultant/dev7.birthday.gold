@@ -21,7 +21,7 @@ try {
     $stats_sql = "SELECT
                     status,
                     COUNT(*) as count
-                  FROM bg_user_enrollments
+                  FROM bg_user_companies
                   WHERE user_id = :user_id
                   GROUP BY status
                   ORDER BY count DESC";
@@ -37,11 +37,25 @@ try {
     }
 
     // Get enrollments with company details
-    $enrollment_sql = "SELECT ue.*, c.company_name, c.website
-                      FROM bg_user_enrollments ue
-                      JOIN bg_companies c ON ue.company_id = c.company_id
-                      WHERE ue.user_id = :user_id
-                      ORDER BY ue.create_dt DESC
+    // Use subquery to get only one logo per company to avoid duplicates
+    $enrollment_sql = "SELECT
+                        uc.*,
+                        c.company_name,
+                        c.company_id,
+                        c.display_category as company_category,
+                        c.description as company_description,
+                        (SELECT ca.description
+                         FROM bg_company_attributes ca
+                         WHERE ca.company_id = c.company_id
+                           AND ca.category = 'company_logos'
+                           AND ca.grouping = 'primary_logo'
+                         LIMIT 1) as company_logo,
+                        uc.create_dt,
+                        uc.status
+                      FROM bg_user_companies uc
+                      JOIN bg_companies c ON uc.company_id = c.company_id
+                      WHERE uc.user_id = :user_id
+                      ORDER BY uc.create_dt DESC
                       LIMIT 100";
 
     $enrollments = $database->getrows($enrollment_sql, ['user_id' => $user_id]);

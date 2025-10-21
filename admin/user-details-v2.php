@@ -331,6 +331,28 @@ $additionalstyles .= '
     vertical-align: middle;
 }
 
+/* Allocation Amount Styles */
+.allocation-positive {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.allocation-negative {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
 /* Action Buttons */
 .action-menu {
     position: relative;
@@ -550,6 +572,9 @@ echo '
         </a>
         <a href="#enrollments" class="nav-tab-item" data-bs-toggle="tab">
             <i class="bi bi-gift me-2"></i>Enrollments
+        </a>
+        <a href="#allocations" class="nav-tab-item" data-bs-toggle="tab">
+            <i class="bi bi-coin me-2"></i>Allocations
         </a>
         <a href="#activity" class="nav-tab-item" data-bs-toggle="tab">
             <i class="bi bi-activity me-2"></i>Activity
@@ -904,6 +929,7 @@ echo '
                         <table class="table data-table" id="enrollments-table">
                             <thead>
                                 <tr>
+                                    <th width="80">EID</th>
                                     <th>Company</th>
                                     <th>Status</th>
                                     <th>Enrolled Date</th>
@@ -912,11 +938,55 @@ echo '
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td colspan="4" class="text-center">
+                                    <td colspan="5" class="text-center">
                                         <div class="spinner-border text-primary" role="status">
                                             <span class="visually-hidden">Loading...</span>
                                         </div>
                                         <p class="mt-2">Loading enrollment data...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Allocations Tab -->
+        <div class="tab-pane fade" id="allocations">
+            <!-- Allocation Summary Stats -->
+            <div class="row g-3 mb-4" id="allocation-stats">
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading allocation data...</p>
+                </div>
+            </div>
+
+            <!-- Allocation History Table -->
+            <div class="info-card">
+                <div class="card-body p-3">
+                    <h5 class="mb-4">Allocation Transactions</h5>
+                    <div class="table-responsive">
+                        <table class="table data-table" id="allocations-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th class="text-center">Amount</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Available</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading allocation data...</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -1727,6 +1797,7 @@ document.addEventListener("DOMContentLoaded", function() {
         overview: true, // Already loaded
         account: true,  // Static content
         enrollments: false,
+        allocations: false,
         activity: false,
         security: true, // Static content mostly
         attributes: false,
@@ -1869,15 +1940,19 @@ document.addEventListener("DOMContentLoaded", function() {
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>
+                                <small class="text-muted">EID:</small><br>
+                                <code>${enrollment.user_company_id}</code>
+                            </td>
+                            <td>
                                 <strong>${enrollment.company_name}</strong>
-                                <small class="text-muted d-block">ID: ${enrollment.company_id}</small>
+                                <small class="text-muted d-block">CID: ${enrollment.company_id}</small>
                             </td>
                             <td>
                                 <span class="badge bg-${statusClass}">${enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}</span>
                             </td>
                             <td>${formattedDate}</td>
                             <td>
-                                <a href="/admin/company-details?id=${enrollment.company_id}" class="btn btn-sm btn-outline-primary">
+                                <a href="/admin/company-editor-main?cid=${enrollment.company_id}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i>
                                 </a>
                             </td>
@@ -1885,13 +1960,138 @@ document.addEventListener("DOMContentLoaded", function() {
                         tbody.appendChild(row);
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No enrollments found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No enrollments found</td></tr>';
                 }
             })
             .catch(error => {
                 console.error('Error loading enrollments:', error);
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading enrollment data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading enrollment data</td></tr>';
                 statsSummary.innerHTML = '<div class="col-12 text-center text-danger">Error loading statistics</div>';
+            });
+    }
+
+    // Load allocations data
+    function loadAllocationsData() {
+        const statsContainer = document.getElementById("allocation-stats");
+        const tbody = document.querySelector("#allocations-table tbody");
+
+        fetch(`/admin/ajax/user-allocations.php?user_id=${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Update stats summary
+                statsContainer.innerHTML = '';
+                if (data.balance) {
+                    const hasPending = (data.balance.pending_allocations || 0) > 0;
+                    const colClass = hasPending ? 'col-6 col-md-4 col-lg' : 'col-6 col-lg-3';
+
+                    // Available balance
+                    const availableCol = document.createElement('div');
+                    availableCol.className = colClass;
+                    availableCol.innerHTML = `
+                        <div class="info-card">
+                            <div class="card-body p-3 text-center">
+                                <div class="stat-value text-primary">${data.balance.available_allocations}</div>
+                                <div class="stat-label">Available</div>
+                            </div>
+                        </div>
+                    `;
+                    statsContainer.appendChild(availableCol);
+
+                    // Total earned
+                    const earnedCol = document.createElement('div');
+                    earnedCol.className = colClass;
+                    earnedCol.innerHTML = `
+                        <div class="info-card">
+                            <div class="card-body p-3 text-center">
+                                <div class="stat-value text-success">${data.balance.total_earned || 0}</div>
+                                <div class="stat-label">Total Earned</div>
+                            </div>
+                        </div>
+                    `;
+                    statsContainer.appendChild(earnedCol);
+
+                    // Total used
+                    const usedCol = document.createElement('div');
+                    usedCol.className = colClass;
+                    usedCol.innerHTML = `
+                        <div class="info-card">
+                            <div class="card-body p-3 text-center">
+                                <div class="stat-value text-danger">${data.balance.total_used || 0}</div>
+                                <div class="stat-label">Total Used</div>
+                            </div>
+                        </div>
+                    `;
+                    statsContainer.appendChild(usedCol);
+
+                    // Transaction count
+                    const transactionCol = document.createElement('div');
+                    transactionCol.className = colClass;
+                    transactionCol.innerHTML = `
+                        <div class="info-card">
+                            <div class="card-body p-3 text-center">
+                                <div class="stat-value text-info">${data.allocations ? data.allocations.length : 0}</div>
+                                <div class="stat-label">Transactions</div>
+                            </div>
+                        </div>
+                    `;
+                    statsContainer.appendChild(transactionCol);
+
+                    // Pending if exists
+                    if (hasPending) {
+                        const pendingCol = document.createElement('div');
+                        pendingCol.className = colClass;
+                        pendingCol.innerHTML = `
+                            <div class="info-card">
+                                <div class="card-body p-3 text-center">
+                                    <div class="stat-value text-warning">${data.balance.pending_allocations}</div>
+                                    <div class="stat-label">Pending</div>
+                                </div>
+                            </div>
+                        `;
+                        statsContainer.appendChild(pendingCol);
+                    }
+                }
+
+                // Update table
+                tbody.innerHTML = '';
+                if (data.allocations && data.allocations.length > 0) {
+                    data.allocations.forEach(alloc => {
+                        const allocDate = new Date(alloc.created_at);
+                        const formattedDate = allocDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+
+                        let typeClass = 'bg-primary';
+                        if (alloc.allocation_type == 'bonus') typeClass = 'bg-success';
+                        else if (alloc.allocation_type == 'referral') typeClass = 'bg-info';
+
+                        let statusClass = 'bg-success';
+                        if (alloc.status == 'pending') statusClass = 'bg-warning';
+                        else if (alloc.status == 'expired') statusClass = 'bg-secondary';
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${formattedDate}</td>
+                            <td><span class="badge ${typeClass}">${alloc.allocation_type ? alloc.allocation_type.charAt(0).toUpperCase() + alloc.allocation_type.slice(1) : 'N/A'}</span></td>
+                            <td class="text-center"><span class="allocation-positive">+${alloc.amount}</span></td>
+                            <td>
+                                ${alloc.allocation_comment || 'N/A'}
+                                ${alloc.reference_type ? '<br><small class="text-muted">Ref: ' + alloc.reference_type + '</small>' : ''}
+                            </td>
+                            <td><span class="badge ${statusClass}">${alloc.status ? alloc.status.charAt(0).toUpperCase() + alloc.status.slice(1) : 'N/A'}</span></td>
+                            <td class="text-center">
+                                ${alloc.amount - alloc.amount_used}
+                                ${alloc.amount_used > 0 ? '<br><small class="text-muted">Used: ' + alloc.amount_used + '</small>' : ''}
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No allocation history found</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading allocations:', error);
+                statsContainer.innerHTML = '<div class="col-12 text-center text-danger">Error loading allocation data</div>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading allocation data</td></tr>';
             });
     }
 
@@ -1982,6 +2182,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         loadActivityData();
                     } else if (targetId === 'enrollments') {
                         loadEnrollmentsData();
+                    } else if (targetId === 'allocations') {
+                        loadAllocationsData();
                     } else if (targetId === 'attributes') {
                         loadAttributesData();
                     } else if (targetId === 'notifications') {

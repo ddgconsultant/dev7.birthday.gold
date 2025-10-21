@@ -335,11 +335,16 @@ if (!empty($_REQUEST['id'])) {
     $id = intval($_REQUEST['id']); // Make sure to sanitize the ID input
 
     // Get the record 
-    $sql = "SELECT uc.*, c.company_name, c.appgoogle, c.appapple, ca.description AS company_logo 
+    $sql = "SELECT uc.*, c.company_name, c.appgoogle, c.appapple,
+                   (SELECT ca.description
+                    FROM bg_company_attributes ca
+                    WHERE ca.company_id = c.company_id
+                      AND ca.category = 'company_logos'
+                      AND ca.grouping = 'primary_logo'
+                    LIMIT 1) AS company_logo
 FROM bg_user_companies uc
 JOIN bg_companies c ON uc.company_id=c.company_id
-LEFT JOIN bg_company_attributes ca ON c.company_id = ca.company_id AND ca.category = 'company_logos' AND ca.grouping = 'primary_logo'
-WHERE uc.user_company_id = ? AND uc.user_id = ? 
+WHERE uc.user_company_id = ? AND uc.user_id = ?
 ORDER BY uc.modify_dt DESC";
     $stmt = $database->prepare($sql);
     $stmt->execute([$id, $current_user_data['user_id']]);
@@ -383,19 +388,7 @@ $transferpagedata = $system->startpostpage();
 
 
 #breakpoint($transferpagedata);
-$statusCounters = [
-    'failed' => 0,
-    'pending' => 0,
-    'selected' => 0,
-    'toenroll' => 0,
-    'active' => 0,
-    'success' => 0,
-    'existing' => 0,
-    'default' => 0,
-    'removed' => 0,
-    'user_owned' => 0,
-    'total' => 0
-];
+$statusCounters = $bg_enrollment_status_counters;
 
 $companies = [];
 
@@ -554,6 +547,14 @@ $statusDetails = [
         'allowapplink' => true,
         'allowremoval' => true,
         'allowsearchbar' => true,
+    ],
+    'cart' => [
+        'label' => 'In Cart',
+        'color' => 'info',
+        'icon' => 'bi-cart3',
+        'allowapplink' => true,
+        'allowremoval' => true,
+        'allowsearchbar' => true,
     ]
     // 'total' is excluded as it doesn't need a tab representation
 ];
@@ -621,33 +622,56 @@ if ($totalEnrollments == 0) {
             #if ($company['company_id'] == 1955) breakpoint($company);
             $companylineclass = '';
             $highlightrowclass = 'row-hover';
+            $statusline = '';
+
             // Status-related Information
             if ($company['status'] == 'failed') {
                 $statusline = '<p class="text-danger mb-0"><i>' . htmlspecialchars($company['reason']) . '</i></p>';
             }
 
-            // Add enrollment date if status is "success"
+            // Determine which date to show based on status
+            $displayDate = null;
+            $dateLabel = 'Modified';
+
             if ($company['status'] == 'success' && isset($company['registration_dt'])) {
-                $timeago = $qik->timeago($company['registration_dt']);
-                $statusline = '<p class="text-muted mb-0 mt-0 fw-light small">Enrolled: ' . $timeago['message'] . '</p>';
-            } else {
-                // Add enrollment date if status is "pending"
-                if ($company['status'] == 'pending' && isset($company['create_dt'])) {
-                    $timeago = $qik->timeago($company['create_dt']);
-                    $statusline = '<p class="text-muted mb-0 mt-0 fw-light small">Selected: ' . $timeago['message'] . '</p>';
+                $displayDate = $company['registration_dt'];
+                $dateLabel = 'Enrolled';
+            } elseif ($company['status'] == 'pending' && isset($company['create_dt'])) {
+                $displayDate = $company['create_dt'];
+                $dateLabel = 'Selected';
+            } elseif ($company['status'] == 'selected' && isset($company['create_dt'])) {
+                $displayDate = $company['create_dt'];
+                $dateLabel = 'Selected';
+            } elseif ($company['status'] == 'removed' && isset($company['modify_dt'])) {
+                $displayDate = $company['modify_dt'];
+                $dateLabel = 'Removed';
+                $companylineclass = 'muted-company';
+                $highlightrowclass = '';
+            } elseif ($company['status'] == 'cart' && isset($company['create_dt'])) {
+                $displayDate = $company['create_dt'];
+                $dateLabel = 'Added';
+            } elseif ($company['status'] == 'user_owned' && isset($company['create_dt'])) {
+                $displayDate = $company['create_dt'];
+                $dateLabel = 'Added';
+            } elseif (isset($company['modify_dt'])) {
+                $displayDate = $company['modify_dt'];
+                $dateLabel = 'Modified';
+            } elseif (isset($company['create_dt'])) {
+                $displayDate = $company['create_dt'];
+                $dateLabel = 'Created';
+            }
+
+            // Add date line with admin-specific formatting
+            if ($displayDate) {
+                if ($account->isadmin()) {
+                    // Show actual datetime for admins
+                    $formattedDate = date('M j, Y g:i A', strtotime($displayDate));
+                    $statusline .= '<p class="text-muted mb-0 mt-0 fw-light small">' . $dateLabel . ': ' . $formattedDate . '</p>';
+                } else {
+                    // Show time ago for regular users
+                    $timeago = $qik->timeago($displayDate);
+                    $statusline .= '<p class="text-muted mb-0 mt-0 fw-light small">' . $dateLabel . ': ' . $timeago['message'] . '</p>';
                 }
-                // Add enrollment date if status is "removed"
-                if ($company['status'] == 'removed' && isset($company['modify_dt'])) {
-                    $timeago = $qik->timeago($company['modify_dt']);
-                    $statusline = '<p class="text-muted mb-0 mt-0 fw-light small">Removed: ' . $timeago['message'] . '</p>';
-                    $companylineclass = 'muted-company';
-                    $highlightrowclass = '';
-                }
-                           // Add enrollment date if status is "selected"
-                           if ($company['status'] == 'selected' && isset($company['create_dt'])) {
-                            $timeago = $qik->timeago($company['create_dt']);
-                            $statusline = '<p class="text-muted mb-0 mt-0 fw-light small">Selected: ' . $timeago['message'] . '</p>';
-                        }
             }
 
 

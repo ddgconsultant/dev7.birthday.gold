@@ -77,11 +77,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         // Get full company details from database for the modal
         $company_details = $database->getrow("
-            SELECT c.*, 
-                   a.description as logo_filename
+            SELECT c.*,
+                   (SELECT a.description
+                    FROM bg_company_attributes a
+                    WHERE a.company_id = c.company_id
+                      AND a.category = 'company_logos'
+                      AND a.grouping = 'primary_logo'
+                    LIMIT 1) as logo_filename
             FROM bg_companies c
-            LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id 
-                AND a.category = 'company_logos' AND a.`grouping` = 'primary_logo'
             WHERE c.company_id = :company_id
             AND c.status = 'finalized'
         ", ['company_id' => $pending_company_id]);
@@ -197,11 +200,15 @@ if ($search_query) {
     ];
     
     // Direct search query - exclude tracked companies
-    $sql = "SELECT DISTINCT c.*, a.description as company_logo 
+    $sql = "SELECT DISTINCT c.*,
+                   (SELECT a.description
+                    FROM bg_company_attributes a
+                    WHERE a.company_id = c.company_id
+                      AND a.category = 'company_logos'
+                      AND a.grouping = 'primary_logo'
+                    LIMIT 1) as company_logo
             FROM bg_companies AS c
-            LEFT JOIN bg_company_attributes AS a ON c.company_id = a.company_id 
-                AND a.category = 'company_logos' AND a.grouping = 'primary_logo'
-            WHERE c.status = 'finalized' 
+            WHERE c.status = 'finalized'
                 AND (c.company_name LIKE :search1 OR c.description LIKE :search2)
                 AND c.company_id NOT IN (
                     SELECT company_id FROM bg_user_enrollments 
@@ -1884,10 +1891,14 @@ $cart_tracked_company_details = [];
 
 if (!empty($cartList)) {
     $placeholders = array_fill(0, count($cartList), '?');
-    $cart_companies_sql = "SELECT c.company_id, c.company_name, a.description as company_logo
+    $cart_companies_sql = "SELECT c.company_id, c.company_name,
+                                  (SELECT a.description
+                                   FROM bg_company_attributes a
+                                   WHERE a.company_id = c.company_id
+                                     AND a.category = 'company_logos'
+                                     AND a.grouping = 'primary_logo'
+                                   LIMIT 1) as company_logo
                            FROM bg_companies c
-                           LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id
-                               AND a.category = 'company_logos' AND a.grouping = 'primary_logo'
                            WHERE c.company_id IN (" . implode(',', $placeholders) . ")";
     $stmt = $database->prepare($cart_companies_sql);
     $stmt->execute($cartList);
@@ -1906,10 +1917,14 @@ if (!empty($cartList)) {
 
 if (!empty($cartTrackedList)) {
     $placeholders = array_fill(0, count($cartTrackedList), '?');
-    $tracked_companies_sql = "SELECT c.company_id, c.company_name, a.description as company_logo
+    $tracked_companies_sql = "SELECT c.company_id, c.company_name,
+                                     (SELECT a.description
+                                      FROM bg_company_attributes a
+                                      WHERE a.company_id = c.company_id
+                                        AND a.category = 'company_logos'
+                                        AND a.grouping = 'primary_logo'
+                                      LIMIT 1) as company_logo
                               FROM bg_companies c
-                              LEFT JOIN bg_company_attributes a ON c.company_id = a.company_id
-                                  AND a.category = 'company_logos' AND a.grouping = 'primary_logo'
                               WHERE c.company_id IN (" . implode(',', $placeholders) . ")";
     $stmt = $database->prepare($tracked_companies_sql);
     $stmt->execute($cartTrackedList);
