@@ -720,13 +720,23 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
                                 </select>
                             </div>
                             <div class="col-md-3">
+                                <?php
+                                // Determine the selected day filter value
+                                $selectedDayFilter = $_GET['dayFilter'] ?? $_POST['dayFilter'] ?? '';
+                                // If searching and no explicit dayFilter, default to 'all'
+                                if (!empty($searchTerm) && empty($selectedDayFilter)) {
+                                    $selectedDayFilter = 'all';
+                                } elseif (empty($selectedDayFilter)) {
+                                    $selectedDayFilter = '180';
+                                }
+                                ?>
                                 <select class="form-select" name="dayFilter" id="dayFilter" onchange="this.form.submit()">
-                                    <option value="180" <?php echo ($_GET['dayFilter'] ?? '180') === '180' ? 'selected' : ''; ?>>Last 180 Days</option>
-                                    <option value="90" <?php echo ($_GET['dayFilter'] ?? '') === '90' ? 'selected' : ''; ?>>Last 90 Days</option>
-                                    <option value="30" <?php echo ($_GET['dayFilter'] ?? '') === '30' ? 'selected' : ''; ?>>Last 30 Days</option>
-                                    <option value="7" <?php echo ($_GET['dayFilter'] ?? '') === '7' ? 'selected' : ''; ?>>Last 7 Days</option>
-                                    <option value="1" <?php echo ($_GET['dayFilter'] ?? '') === '1' ? 'selected' : ''; ?>>Today</option>
-                                    <option value="all" <?php echo ($_GET['dayFilter'] ?? '') === 'all' ? 'selected' : ''; ?>>All Time</option>
+                                    <option value="180" <?php echo $selectedDayFilter === '180' ? 'selected' : ''; ?>>Last 180 Days</option>
+                                    <option value="90" <?php echo $selectedDayFilter === '90' ? 'selected' : ''; ?>>Last 90 Days</option>
+                                    <option value="30" <?php echo $selectedDayFilter === '30' ? 'selected' : ''; ?>>Last 30 Days</option>
+                                    <option value="7" <?php echo $selectedDayFilter === '7' ? 'selected' : ''; ?>>Last 7 Days</option>
+                                    <option value="1" <?php echo $selectedDayFilter === '1' ? 'selected' : ''; ?>>Today</option>
+                                    <option value="all" <?php echo $selectedDayFilter === 'all' ? 'selected' : ''; ?>>All Time</option>
                                 </select>
                             </div>
                         </div>
@@ -752,13 +762,18 @@ $paidUsersCount = $paidUsers->fetch(PDO::FETCH_ASSOC)['total'];
         // Load initial users for fallback
         $searchWhere = '';
         $searchParams = [];
-        
+
         // Get filters from GET/POST
         $statusFilter = $_GET['statusFilter'] ?? $_POST['statusFilter'] ?? '';
         $planFilter = $_GET['planFilter'] ?? $_POST['planFilter'] ?? '';
         $typeFilter = $_GET['typeFilter'] ?? $_POST['typeFilter'] ?? '';
         $dayFilter = $_GET['dayFilter'] ?? $_POST['dayFilter'] ?? '180';
-        
+
+        // When searching, force dayFilter to 'all' to search all time unless explicitly set
+        if (!empty($searchTerm) && !isset($_GET['dayFilter']) && !isset($_POST['dayFilter'])) {
+            $dayFilter = 'all';
+        }
+
         if (!empty($searchTerm)) {
             $searchLike = '%' . $searchTerm . '%';
             $searchWhere = " AND (
