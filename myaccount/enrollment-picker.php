@@ -48,6 +48,15 @@ foreach ($cart_items as $item) {
     }
 }
 
+// Get ALL enrollments (success, pending, processing) to prevent duplicates
+$enrolled_sql = "SELECT company_id FROM bg_user_enrollments
+                 WHERE user_id = :user_id
+                 AND status IN ('success', 'pending', 'processing', 'cart', 'cart_tracked')";
+$enrolled_items = $database->getrows($enrolled_sql, ['user_id' => $user_id]);
+$enrolledCompanyIds = array_map(function($item) {
+    return (int)$item['company_id'];
+}, $enrolled_items);
+
 // Initialize variables for business-detail exception mode
 $business_detail_mode = false;
 $pending_company_id = null;
@@ -1931,9 +1940,11 @@ window.userData = {
     forceShowHelp: ' . (isset($_GET['showhelp']) ? 'true' : 'false') . ',
     // Pre-populate cart items from database
     cartItems: ' . json_encode($cart_company_details) . ',
-    cartTrackedItems: ' . json_encode($cart_tracked_company_details) . '
+    cartTrackedItems: ' . json_encode($cart_tracked_company_details) . ',
+    // List of ALL enrolled company IDs (success, pending, processing, cart, cart_tracked) to prevent duplicates
+    enrolledCompanyIds: ' . json_encode($enrolledCompanyIds) . '
 };
-console.log("userData initialized with cart items:", window.userData);
+console.log("userData initialized with cart items and enrolled companies:", window.userData);
 
 // Pre-populate sessionStorage with cart items from database
 if (window.userData.cartItems && window.userData.cartItems.length > 0) {

@@ -150,7 +150,14 @@ function updateCompanyCard(companyId, enrolled) {
 function addToBasket(companyId, companyName, companyLogo) {
     console.log('addToBasket called with:', companyId, companyName, companyLogo);
 
-    // Check if already in basket
+    // CRITICAL: Check if company is already enrolled/pending/in cart
+    if (window.userData.enrolledCompanyIds && window.userData.enrolledCompanyIds.includes(parseInt(companyId))) {
+        showError('You have already enrolled in or have a pending enrollment for this company');
+        console.warn('Duplicate enrollment attempt blocked for company ID:', companyId);
+        return;
+    }
+
+    // Check if already in basket (session storage)
     if (selectionBasket.find(item => item.id === companyId)) {
         showError('This company is already in your selection basket');
         return;
