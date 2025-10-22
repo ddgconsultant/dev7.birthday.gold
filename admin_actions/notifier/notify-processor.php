@@ -142,6 +142,7 @@ function retry_unsent_notifications() {
 
     // Query for notifications with "notsent" status - including user_id=0 for system emails
     // Only process notifications where start_dt has passed (or is NULL)
+    // Filter out notifications without valid email addresses
     $query = "SELECT n.*,
               CASE WHEN n.user_id = 0 THEN 'System' ELSE u.first_name END as first_name,
               CASE WHEN n.user_id = 0 THEN 'Email' ELSE u.last_name END as last_name,
@@ -152,6 +153,10 @@ function retry_unsent_notifications() {
               AND (n.start_dt IS NULL OR n.start_dt <= NOW())
               AND (n.end_dt IS NULL OR n.end_dt >= NOW())
               AND n.create_dt > DATE_SUB(NOW(), INTERVAL 7 DAY)
+              AND (
+                  (n.user_id = 0 AND n.sent_to IS NOT NULL AND n.sent_to != '')
+                  OR (n.user_id != 0 AND u.email IS NOT NULL AND u.email != '')
+              )
               ORDER BY n.priority DESC, n.create_dt ASC";
               
     $stmt = $database->prepare($query);
