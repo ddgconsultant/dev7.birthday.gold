@@ -1199,7 +1199,7 @@ function previewEmail(randomize) {
                                 // Add default signature if none found
                                 savedFooter = '<hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">' +
                                             '<p style="text-align: center; color: #666; font-size: 14px;">Happy (almost) Birthday!<br>' +
-                                            'The Birthday Gold Team</p>';
+                                            'The Birthday.Gold Team</p>';
                             }
                         }
                         

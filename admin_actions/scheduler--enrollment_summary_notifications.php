@@ -350,7 +350,7 @@ function build_summary_email($user, $enrollments) {
 
     $html .= '
                 <p style="margin-top: 20px;">If you have any questions about your enrollments, please don\'t hesitate to contact our support team.</p>
-                <p>Best regards,<br>The Birthday Gold Team</p>
+                <p>Best regards,<br>The Birthday.Gold Team</p>
             </div>
             <div class="footer">
                 <p>&copy; ' . date('Y') . ' Birthday Gold. All rights reserved.</p>

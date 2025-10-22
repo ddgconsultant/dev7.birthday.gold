@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $message = "Dear {$claim['user_name']},\n\n";
             $message .= "Your ownership claim for {$claim_record['company_name']} has been approved.\n";
             $message .= "You can now access business marketing tools and analytics in your account.\n\n";
-            $message .= "Best regards,\nBirthday Gold Team";
+            $message .= "Best regards,\nBirthday.Gold Team";
             
             // Use your email sending method
             $system->sendemail($claim['user_email'], $subject, $message);
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $message .= "Admin notes: {$notes}\n\n";
             }
             $message .= "Please contact support if you have questions.\n\n";
-            $message .= "Best regards,\nBirthday Gold Team";
+            $message .= "Best regards,\nBirthday.Gold Team";
             
             $system->sendemail($claim['user_email'], $subject, $message);
         }

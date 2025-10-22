@@ -209,7 +209,7 @@ if ($app->formposted()) {
                                             <li>Any special instructions will be sent to you</li>
                                         </ul>
                                         <p>If you have any questions, feel free to reach out to our support team.</p>
-                                        <p>Best regards,<br>The Birthday Gold Team</p>
+                                        <p>Best regards,<br>The Birthday.Gold Team</p>
                                     </div>
                                     <div class="footer">
                                         <p>&copy; ' . date('Y') . ' Birthday Gold. All rights reserved.</p>
@@ -279,7 +279,7 @@ if ($app->formposted()) {
                                         </ul>
                                         <p>You\'ll receive an email confirmation as soon as your enrollments are complete.</p>
                                         <p>Thank you for your patience!</p>
-                                        <p>Best regards,<br>The Birthday Gold Team</p>
+                                        <p>Best regards,<br>The Birthday.Gold Team</p>
                                     </div>
                                     <div class="footer">
                                         <p>&copy; ' . date('Y') . ' Birthday Gold. All rights reserved.</p>
@@ -354,7 +354,7 @@ if ($app->formposted()) {
                                             <li>Get ready to enjoy your birthday rewards!</li>
                                         </ul>
                                         <p>If you have any questions or need assistance, our support team is here to help.</p>
-                                        <p>Happy Birthday (in advance)!<br>The Birthday Gold Team</p>
+                                        <p>Happy Birthday (in advance)!<br>The Birthday.Gold Team</p>
                                     </div>
                                     <div class="footer">
                                         <p>&copy; ' . date('Y') . ' Birthday Gold. All rights reserved.</p>

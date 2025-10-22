@@ -150,7 +150,7 @@ if (!isset($ai_content['subject']) || !isset($ai_content['body'])) {
     <p>Make your birthday month unforgettable with Birthday Gold!</p>
     
     <p>Best wishes,<br>
-    The Birthday Gold Team</p>";
+    The Birthday.Gold Team</p>";
 } else {
     $subject = $ai_content['subject'];
     $body = $ai_content['body'];
