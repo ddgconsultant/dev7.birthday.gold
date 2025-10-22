@@ -1,8 +1,18 @@
-<?PHP
+<?php
+/**
+ * Notification Processor
+ *
+ * Processes and sends various user notifications including:
+ * - Birthday reminders
+ * - Profile completion prompts
+ * - Enrollment status updates
+ * - Account status notifications
+ *
+ * Also retries failed notification sends
+ */
+
 $addClasses[] = 'mail';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
-echo '<html>';
-// Initialize counters based on expected notification categories
 
 $config = [
     'testmail' => false,
@@ -16,7 +26,7 @@ $counters = [
     'config_testmail' => $config['testmail'],
     'config_actualsend' => $config['actualsend'],
     'config_ignoretestaccounts' => $config['ignoretestaccounts'],
-    
+
     // Add other counters
     'email_notifications' => 0,
     'profile_incomplete' => 0,
@@ -63,7 +73,7 @@ function log_notification($notification_data)
 
 
     if ($config['ignoretestaccounts'] && strpos($notification_data['sent_to'], '@bdtest.xyz') !== false) {
-        $qik->logmessage( "<pre style='color:#ddd'>Ignoring test account not sending email - [" . $notification_data['title'] . '] for: ' . $notification_data['user_id'].'</pre>', 1  );
+        $qik->logmessage("<p style='color: #999;'>⏭️ Skipped test account: " . $notification_data['user_id'] . " - " . $notification_data['title'] . "</p>\n", 1);
         return;
     }
 
@@ -102,7 +112,7 @@ function log_notification($notification_data)
     }
     $counters['total_notifications_sent']++;
 
-    $qik->logmessage( "Notification logged successfully! - [" . $notification_data['title'] . '] for: ' . $notification_data['user_id'] );
+    $qik->logmessage("<p style='color: green;'>✅ Notification queued: " . htmlspecialchars($notification_data['title']) . " (User: " . $notification_data['user_id'] . ")</p>\n");
     $lastnotification_sent=1;
    
 if ($config['testmail']) {
@@ -121,14 +131,14 @@ $details['notificationid'] = $insertednotificationId;
 
     // Check if the 'mail_sent' field in $result is true
     if ($result['mail_sent'] === true) {
-       $qik->logmessage( "Email sent successfully! - " . $notification_data['title'] . ' for '.(implode('/',$details['to'])).' / ' . $notification_data['user_id'] );
+        $qik->logmessage("<p style='color: green;'>✉️ Email sent: " . htmlspecialchars($notification_data['title']) . " to " . htmlspecialchars($details['to'][0]) . " (User: " . $notification_data['user_id'] . ")</p>\n");
         // update the status = sent
         $query = "UPDATE bg_user_notifications SET `status` = 'sent', modify_dt=now() WHERE notification_id = :notification_id";
         $stmt = $database->prepare($query);
         $stmt->execute(['notification_id' => $insertednotificationId]);
         $counters['emails_sent']++;
     } else {
-        $qik->logmessage( "Email sending failed! - " . $notification_data['title'] . ' for ' . $notification_data['user_id']  );
+        $qik->logmessage("<p style='color: red;'>❌ Email failed: " . htmlspecialchars($notification_data['title']) . " (User: " . $notification_data['user_id'] . ")</p>\n");
     }
 }
 
@@ -138,7 +148,7 @@ $details['notificationid'] = $insertednotificationId;
 function retry_unsent_notifications() {
     global $database, $mail, $qik, $counters, $config;
 
-    $qik->logmessage('<h3>Starting retry of unsent notifications...</h3>', 1);
+    $qik->logmessage("\n<h3>🔄 Retry Process: Unsent Notifications</h3>\n", 1);
 
     // Query for notifications with "notsent" status - including user_id=0 for system emails
     // Only process notifications where start_dt has passed (or is NULL)
@@ -162,9 +172,9 @@ function retry_unsent_notifications() {
     $stmt = $database->prepare($query);
     $stmt->execute();
     $unsent_notifications = $stmt->fetchAll();
-    
+
     $counters['retry_notifications_found'] = count($unsent_notifications);
-    $qik->logmessage("Found {$counters['retry_notifications_found']} unsent notifications to retry", 1);
+    $qik->logmessage("<p>Found {$counters['retry_notifications_found']} unsent notifications to retry</p>\n", 1);
     
     $retry_success = 0;
     $retry_failure = 0;
@@ -172,8 +182,7 @@ function retry_unsent_notifications() {
     foreach ($unsent_notifications as $notification) {
         // Skip test accounts if configured to do so
         if ($config['ignoretestaccounts'] && strpos($notification['email'], '@bdtest.xyz') !== false) {
-            $qik->logmessage("<pre style='color:#ddd'>Ignoring test account not sending email - [" . 
-                $notification['title'] . '] for: ' . $notification['user_id'].'</pre>', 1);
+            $qik->logmessage("<p style='color: #999;'>⏭️ Skipped test account retry: " . $notification['user_id'] . " - " . htmlspecialchars($notification['title']) . "</p>\n", 1);
             continue;
         }
         
@@ -228,36 +237,21 @@ function retry_unsent_notifications() {
             }
             
             // Log detailed info about what we're trying to send
-            $qik->logmessage("RETRY ATTEMPT: Sending email with the following details:", 1);
-            $qik->logmessage("- To: " . $recipient_email . " (" . $notification['first_name'] . ' ' . $notification['last_name'] . ")", 1);
-            $qik->logmessage("- Subject: " . $notification['title'], 1);
-            $qik->logmessage("- Notification ID: " . $notification['notification_id'], 1);
+            $qik->logmessage("<p style='color: #0066cc;'>🔄 Retry attempt: " . htmlspecialchars($notification['title']) . " to " . htmlspecialchars($recipient_email) . " (ID: " . $notification['notification_id'] . ")</p>\n", 1);
             
             // Check if recipient email is valid
             if (!filter_var($recipient_email, FILTER_VALIDATE_EMAIL)) {
-                $qik->logmessage("RETRY ERROR: Invalid or missing email address: '" . $recipient_email . "' for notification ID: " . $notification['notification_id'], 1);
-
-                // Log more details about why this failed
-                if (empty($recipient_email)) {
-                    $qik->logmessage("  - Email is empty/missing for user_id: " . $notification['user_id'], 1);
-                } else {
-                    $qik->logmessage("  - Email format is invalid: " . $recipient_email, 1);
-                }
-
+                $error_detail = empty($recipient_email) ? "Email is empty/missing" : "Invalid email format";
+                $qik->logmessage("<p style='color: red;'>❌ Retry error: Invalid email for notification ID " . $notification['notification_id'] . " - " . $error_detail . " (User: " . $notification['user_id'] . ")</p>\n", 1);
                 $retry_failure++;
                 continue;
             }
             
             $result = $mail->sendmail($details);
-            
-            // Detailed logging of the result
-            $qik->logmessage("RETRY RESULT: " . print_r($result, true), 1);
-            
+
             // Check if the email was sent successfully
             if ($result['mail_sent'] === true) {
-                $qik->logmessage("RETRY: Email sent successfully! - " . 
-                    $notification['title'] . ' for ' . (implode('/', $details['to'])) . 
-                    ' / ' . $notification['user_id']);
+                $qik->logmessage("<p style='color: green;'>✅ Retry success: " . htmlspecialchars($notification['title']) . " sent to " . htmlspecialchars($details['to'][0]) . " (User: " . $notification['user_id'] . ")</p>\n");
                 
                 // Update the status to 'sent'
                 $update_query = "UPDATE bg_user_notifications SET 
@@ -275,9 +269,7 @@ function retry_unsent_notifications() {
                 // Extract error message if available
                 $error_message = isset($result['error']) ? $result['error'] : 'No specific error returned';
 
-                $qik->logmessage("RETRY: Email sending failed! - " .
-                    $notification['title'] . ' for ' . $notification['user_id'] .
-                    " - Error: " . $error_message, 1);
+                $qik->logmessage("<p style='color: red;'>❌ Retry failed: " . htmlspecialchars($notification['title']) . " (User: " . $notification['user_id'] . ") - Error: " . htmlspecialchars($error_message) . "</p>\n", 1);
 
                 // Update the retry count and next retry time in options
                 $options = !empty($notification['options']) ? json_decode($notification['options'], true) : [];
@@ -305,17 +297,18 @@ function retry_unsent_notifications() {
                     'options' => json_encode($options)
                 ]);
 
-                $qik->logmessage("  Next retry in $delay_minutes minutes (retry #$retry_count)", 1);
+                $qik->logmessage("<p style='color: #666;'>⏰ Next retry scheduled in $delay_minutes minutes (attempt #$retry_count)</p>\n", 1);
 
                 $retry_failure++;
             }
         }
     }
-    
+
     $counters['retry_success'] = $retry_success;
     $counters['retry_failure'] = $retry_failure;
-    
-    $qik->logmessage("<h3>Completed retry of unsent notifications. Success: $retry_success, Failure: $retry_failure</h3>", 1);
+
+    $qik->logmessage("\n<h3>✅ Retry Process Complete</h3>\n", 1);
+    $qik->logmessage("<p>Success: $retry_success | Failure: $retry_failure | Total: {$counters['retry_notifications_found']}</p>\n", 1);
     
     return [
         'success' => $retry_success,
@@ -356,7 +349,9 @@ function notification_last_sent($user_id, $type = 'email_notification', $categor
 //*************************************************************************************************************************
 //*************************************************************************************************************************
 $debug=true;
-$qik->logmessage( '<H1>start - ' . date('Y-m-d H:i:s') . '<h1><br>',1);
+
+echo "<h1>📧 Notification Processor - " . date('Y-m-d H:i:s') . "</h1>\n";
+
 $process_shards = true;  // false will process all users, true will process only users with user_id % 10 == current_hour
 $counters['process_shards'] = $process_shards ? 'Y' : 'N';
 
@@ -370,23 +365,24 @@ if ($config['testmail']) {
 
 if ($process_shards !== false) {
     $currentHour = date('g') % 10;  // Get the last digit of the 12-hour clock (1-12)
-    $counters['hour_userid_segment'] = $currentHour; 
+    $counters['hour_userid_segment'] = $currentHour;
 
-    #  $currentHour=0;
-    $qik->logmessage(  'Current Hour: ' . $currentHour );
+    echo "<p>Processing shard segment: User IDs ending in <strong>$currentHour</strong></p>\n";
     $query = "SELECT * FROM bg_users WHERE `status` !='deleted' AND MOD(user_id, 10) = :currentHour";
     $stmt = $database->prepare($query);
     $stmt->execute(['currentHour' => $currentHour]);
 } else {
+    echo "<p>Processing all active users (shard processing disabled)</p>\n";
     $query = "SELECT * FROM bg_users WHERE `status` !='deleted'";
     $stmt = $database->prepare($query);
     $stmt->execute();
 }
 
-
 $notify_users = $stmt->fetchAll();
-$qik->logmessage( 'Users to notify: ' . count($notify_users) );
-$counters['total_users'] = count($notify_users); 
+$counters['total_users'] = count($notify_users);
+
+echo "<p>Found <strong>" . count($notify_users) . "</strong> users to process</p>\n";
+echo "\n<h2>📬 Processing User Notifications</h2>\n"; 
 $debug=true;
 foreach ($notify_users as $notify_user_data) {
 
@@ -432,11 +428,33 @@ $timesince=$app->getTimeSinceDate($notify_user_data['create_dt']);
 
 $debug=true;
 
-$qik->logmessage('<h2>Starting retry process for failed notifications</h2>', 1);
+echo "\n<h2>🔄 Retry Process</h2>\n";
 $retry_results = retry_unsent_notifications();
 $counters['retry_results'] = $retry_results;
 
+echo "\n<h2>📊 Process Summary</h2>\n";
+echo "<ul>\n";
+echo "<li><strong>Total Users Processed:</strong> {$counters['total_users']}</li>\n";
+echo "<li><strong>Total Notifications Queued:</strong> {$counters['total_notifications_sent']}</li>\n";
+echo "<li><strong>Emails Sent:</strong> {$counters['emails_sent']}</li>\n";
+echo "<li><strong>Retry Notifications Found:</strong> " . ($counters['retry_notifications_found'] ?? 0) . "</li>\n";
+echo "<li><strong>Retry Success:</strong> " . ($counters['retry_success'] ?? 0) . "</li>\n";
+echo "<li><strong>Retry Failure:</strong> " . ($counters['retry_failure'] ?? 0) . "</li>\n";
+echo "</ul>\n";
 
-$qik->logmessage( '<H1>done - ' . date('Y-m-d H:i:s') . '<h1><br>',1);
-session_tracking('notification_process_counts', $counters );
-session_tracking('notification_process_log', $qik->logmessage('!FINALIZE!') );
+// Category breakdown
+if ($counters['total_notifications_sent'] > 0) {
+    echo "\n<h3>Notifications by Category</h3>\n";
+    echo "<ul>\n";
+    if (!empty($counters['email_notifications'])) echo "<li>Email Notifications: {$counters['email_notifications']}</li>\n";
+    if (!empty($counters['profile_incomplete'])) echo "<li>Profile Incomplete: {$counters['profile_incomplete']}</li>\n";
+    if (!empty($counters['no_enrollments_week'])) echo "<li>No Enrollments (Week): {$counters['no_enrollments_week']}</li>\n";
+    if (!empty($counters['no_enrollments_month'])) echo "<li>No Enrollments (Month): {$counters['no_enrollments_month']}</li>\n";
+    if (!empty($counters['birthday_notifications'])) echo "<li>Birthday Notifications: {$counters['birthday_notifications']}</li>\n";
+    echo "</ul>\n";
+}
+
+echo "\n<p><strong>✅ Notification processing complete - " . date('Y-m-d H:i:s') . "</strong></p>\n";
+
+session_tracking('notification_process_counts', $counters);
+session_tracking('notification_process_log', $qik->logmessage('!FINALIZE!'));
