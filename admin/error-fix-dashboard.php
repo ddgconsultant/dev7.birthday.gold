@@ -321,7 +321,7 @@ if (empty($fixes)) {
                         <strong>Fix #' . $fix['fix_id'] . '</strong>
                         ' . $status_badge . '
                         ' . $confidence_badge . '
-                        <span class="badge bg-light text-dark">' . htmlspecialchars($fix['ai_fix_type']) . '</span>
+                        <span class="badge bg-light text-dark">' . htmlspecialchars($fix['ai_fix_type'] ?? '') . '</span>
                     </div>
                     <div class="fix-file">
                         <i class="bi bi-file-code"></i> ' . htmlspecialchars($fix['error_file']) . ':' . $fix['error_line'] . '

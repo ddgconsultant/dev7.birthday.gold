@@ -124,6 +124,36 @@ $bg_age_requirements_defaults = [
     'rental_age' => 25      // Car rental minimum age
 ];
 
+// Enrollment statuses for bg_user_enrollments table
+$bg_enrollment_statuses = [
+    'cart' => 'In Cart',                  // Saved but not yet submitted
+    'cart_tracked' => 'Tracked Cart',     // Cart item with tracking
+    'selected' => 'Selected',             // Selected for enrollment
+    'pending' => 'Pending',               // Enrollment in progress
+    'processing' => 'Processing',         // Being processed
+    'success' => 'Success',               // Successfully enrolled
+    'existing' => 'Existing',             // Had account before
+    'removed' => 'Removed',               // Removed from enrollments
+    'failed' => 'Failed',                 // Enrollment failed
+    'queued' => 'Queued'                  // Queued for processing
+];
+
+// Status counters initialization template
+$bg_enrollment_status_counters = [
+    'failed' => 0,
+    'pending' => 0,
+    'selected' => 0,
+    'toenroll' => 0,
+    'active' => 0,
+    'success' => 0,
+    'existing' => 0,
+    'default' => 0,
+    'removed' => 0,
+    'cart' => 0,
+    'user_owned' => 0,
+    'total' => 0
+];
+
 
 ///////////////////////////////////////////////////////////////
 $bg_sales_associatecommissions =$bg_users_attributes_associatecommissions =$bg_users_attributes_associatedcommissions = [

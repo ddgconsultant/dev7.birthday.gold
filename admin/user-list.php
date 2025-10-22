@@ -1195,45 +1195,6 @@ class UserManager {
         // Search input - disabled for form submission
         // Search is now handled by form POST submission
 
-        // Auto-change day filter to "all" when user starts typing in search
-        const searchInput = document.getElementById('searchInput');
-        const dayFilter = document.getElementById('dayFilter');
-
-        if (searchInput && dayFilter) {
-            let hasAutoChangedToAll = false;
-
-            searchInput.addEventListener('input', (e) => {
-                // If user types something and dayFilter is not already "all"
-                if (e.target.value.trim() !== '' && dayFilter.value !== 'all' && !hasAutoChangedToAll) {
-                    dayFilter.value = 'all';
-                    hasAutoChangedToAll = true;
-                    // Trigger change event to update filter
-                    dayFilter.dispatchEvent(new Event('change'));
-
-                    // Show a subtle notification to user
-                    const notification = document.createElement('div');
-                    notification.className = 'alert alert-info alert-dismissible fade show position-fixed';
-                    notification.style.cssText = 'top: 80px; right: 20px; z-index: 1050; max-width: 300px;';
-                    notification.innerHTML = `
-                        <i class="bi bi-info-circle me-2"></i>
-                        Time filter changed to "All Time" for complete search results
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    `;
-                    document.body.appendChild(notification);
-
-                    // Auto-dismiss after 3 seconds
-                    setTimeout(() => {
-                        notification.classList.remove('show');
-                        setTimeout(() => notification.remove(), 150);
-                    }, 3000);
-                }
-
-                // Reset the flag when search is cleared
-                if (e.target.value.trim() === '') {
-                    hasAutoChangedToAll = false;
-                }
-            });
-        }
 
         // Filter changes
         document.getElementById('statusFilter').addEventListener('change', (e) => {

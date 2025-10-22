@@ -32,21 +32,19 @@ echo "<h1>Enrollment Summary Notifications - " . date('Y-m-d H:i:s') . "</h1>\n"
 // Only count enrollments that changed to success/failed status since last summary
 $query = "SELECT
     u.user_id,
-    u.profile_first_name as first_name,
-    u.profile_last_name as last_name,
-    u.profile_email as email,
+    u.first_name,
+    u.last_name,
+    u.email,
     u.type as user_type,
     COALESCE(ua.string_value, '1900-01-01 00:00:00') as last_summary_dt,
     COUNT(CASE
         WHEN ue.status = 'success'
         AND ue.modify_dt > COALESCE(ua.string_value, '1900-01-01')
-        AND ue.modify_dt > DATE_SUB(NOW(), INTERVAL :time_window1 MINUTE)
         THEN 1
     END) as success_count,
     COUNT(CASE
         WHEN ue.status = 'failed'
         AND ue.modify_dt > COALESCE(ua.string_value, '1900-01-01')
-        AND ue.modify_dt > DATE_SUB(NOW(), INTERVAL :time_window2 MINUTE)
         THEN 1
     END) as failed_count,
     COUNT(CASE WHEN ue.status IN ('selected', 'pending', 'queued') THEN 1 END) as pending_count,
@@ -59,14 +57,11 @@ LEFT JOIN bg_user_attributes ua ON u.user_id = ua.user_id
     AND ua.status = 'active'
 WHERE u.status = 'active'
     AND u.type = 'real'
-GROUP BY u.user_id, u.profile_first_name, u.profile_last_name, u.profile_email, u.type, ua.string_value
+GROUP BY u.user_id, u.first_name, u.last_name, u.email, u.type, ua.string_value
 HAVING (success_count > 0 OR failed_count > 0)";
 
 $stmt = $database->prepare($query);
-$stmt->execute([
-    ':time_window1' => $time_window_minutes,
-    ':time_window2' => $time_window_minutes
-]);
+$stmt->execute();
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 echo "<p>Found " . count($users) . " users with enrollment activity to summarize</p>\n";
@@ -230,6 +225,7 @@ function update_last_summary_datetime($user_id) {
  * Build the HTML email body for enrollment summary
  */
 function build_summary_email($user, $enrollments) {
+    global $qik;
     $successful = [];
     $failed = [];
     $pending = [];
@@ -277,9 +273,10 @@ function build_summary_email($user, $enrollments) {
 
     // Successful enrollments section
     if (count($successful) > 0) {
+        $success_count = count($successful);
         $html .= '
                 <div class="section">
-                    <div class="section-title success-title">✅ SUCCESSFUL ENROLLMENTS (' . count($successful) . ')</div>';
+                    <div class="section-title success-title">✅ SUCCESSFUL ' . strtoupper($qik->plural2($success_count, 'ENROLLMENT')) . ' (' . $success_count . ')</div>';
 
         foreach ($successful as $enrollment) {
             $company_display = htmlspecialchars($enrollment['company_display_name'] ?: $enrollment['company_name']);
@@ -289,18 +286,20 @@ function build_summary_email($user, $enrollments) {
                     </div>';
         }
 
+        $company_word = $qik->plural2($success_count, 'company', 'companies');
         $html .= '
                     <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                        <em>You should receive confirmation emails from these companies. Please check your inbox and verify your email if requested.</em>
+                        <em>You should receive confirmation emails from ' . ($success_count == 1 ? 'this ' . $company_word : 'these ' . $company_word) . '. Please check your inbox and verify your email if requested.</em>
                     </p>
                 </div>';
     }
 
     // Failed enrollments section
     if (count($failed) > 0) {
+        $failed_count = count($failed);
         $html .= '
                 <div class="section">
-                    <div class="section-title failed-title">❌ UNSUCCESSFUL ENROLLMENTS (' . count($failed) . ')</div>';
+                    <div class="section-title failed-title">❌ UNSUCCESSFUL ' . strtoupper($qik->plural2($failed_count, 'ENROLLMENT')) . ' (' . $failed_count . ')</div>';
 
         foreach ($failed as $enrollment) {
             $company_display = htmlspecialchars($enrollment['company_display_name'] ?: $enrollment['company_name']);
@@ -327,9 +326,10 @@ function build_summary_email($user, $enrollments) {
 
     // Pending enrollments section
     if (count($pending) > 0) {
+        $pending_count = count($pending);
         $html .= '
                 <div class="section">
-                    <div class="section-title pending-title">⏳ STILL PROCESSING (' . count($pending) . ')</div>';
+                    <div class="section-title pending-title">⏳ STILL PROCESSING (' . $pending_count . ' ' . strtoupper($qik->plural2($pending_count, 'ENROLLMENT')) . ')</div>';
 
         foreach ($pending as $enrollment) {
             $company_display = htmlspecialchars($enrollment['company_display_name'] ?: $enrollment['company_name']);
@@ -339,9 +339,11 @@ function build_summary_email($user, $enrollments) {
                     </div>';
         }
 
+        $enrollment_word = $qik->plural2($pending_count, 'enrollment');
+        $these_this = $pending_count == 1 ? 'this' : 'these';
         $html .= '
                     <p style="margin-top: 10px; font-size: 14px; color: #666;">
-                        <em>We\'re still working on these enrollments. You\'ll receive another update as we make progress.</em>
+                        <em>We\'re still working on ' . $these_this . ' ' . $enrollment_word . '. You\'ll receive another update as we make progress.</em>
                     </p>
                 </div>';
     }
