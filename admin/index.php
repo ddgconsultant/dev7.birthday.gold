@@ -798,7 +798,24 @@ $businessHours = $app->bg_businesshours();
                     <p class="admin-card-text">Ask Goldie analytics and conversation insights</p>
                 </div>
             </a>
-            
+
+            <a href="/admin/contact-messages" class="admin-card">
+                <div class="admin-icon icon-user">
+                    <i class="bi bi-envelope"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Contact Messages
+                        <?php
+                        $spam_count = $database->query("SELECT COUNT(*) FROM bg_sessiontracking WHERE name = 'contact-ai-spam-check' AND create_dt >= DATE_SUB(NOW(), INTERVAL 7 DAY)")->fetchColumn();
+                        if ($spam_count > 0):
+                        ?>
+                        <span class="enrollment-badge"><?php echo $spam_count; ?></span>
+                        <?php endif; ?>
+                    </h3>
+                    <p class="admin-card-text">Contact form submissions and AI spam detection</p>
+                </div>
+            </a>
+
             <a href="/admin/allocation-dashboard" class="admin-card">
                 <div class="admin-icon icon-user">
                     <i class="bi bi-coin"></i>
