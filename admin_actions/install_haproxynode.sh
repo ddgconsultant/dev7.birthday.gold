@@ -61,12 +61,39 @@ check_password_set() {
 
 log "Starting HAProxy webserver node addition process on $(hostname)"
 
+# Set up systemd service for auto-resume after reboot
+if [ ! -f /etc/systemd/system/haproxy-install-resume.service ]; then
+    log "Creating auto-resume systemd service"
+    cat > /etc/systemd/system/haproxy-install-resume.service <<'EOF'
+[Unit]
+Description=Resume HAProxy Installation After Reboot
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/root/install_haproxynode.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable haproxy-install-resume.service
+    log "Auto-resume service enabled"
+fi
+
 STATE=$(load_state)
 RESUME_STATE=$(load_resume_state)
 
 # Check if the state is "completed" and no actions have been performed
 if [ "$STATE" == "completed" ] && [ "$ACTION_COUNTER" -eq 0 ]; then
     figlet "Check State File"
+    # Clean up auto-resume service
+    systemctl disable haproxy-install-resume.service 2>/dev/null
+    rm -f /etc/systemd/system/haproxy-install-resume.service
+    systemctl daemon-reload
+    log "Auto-resume service removed"
     log "The state file [$STATE_FILE] = completed"
     exit 0
 fi

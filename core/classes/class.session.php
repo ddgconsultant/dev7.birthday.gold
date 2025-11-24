@@ -1,17 +1,21 @@
 <?php
 // session.php
+// JULY05 - 20251123
 
 // Define the session save path one directory level above the web root
 $session_path = $dir['base'] . '/../_SESSIONS_';
 
-// Normalize the path for Windows/Linux compatibility
-$session_path = str_replace('\\', '/', realpath($session_path));
+// Normalize the path for Windows/Linux compatibility (before directory exists)
+$session_path = str_replace('\\', '/', $session_path);
 
 // Ensure the directory exists with proper permissions
 if (!is_dir($session_path)) {
     mkdir($session_path, 0777, true); // Create the directory with 777 permissions for broader compatibility
     chmod($session_path, 0777); // Ensure permissions are set
 }
+
+// Get the real path after directory is created
+$session_path = realpath($session_path);
 
 // Set the session save path
 ini_set('session.save_path', $session_path);
@@ -30,19 +34,28 @@ class Session
   {
     // Start session if it has not already started
     if (session_status() == PHP_SESSION_NONE) {
+      // Check if headers have already been sent (CLI/scheduler context)
+      if (headers_sent()) {
+        // Skip session initialization in CLI/scheduler mode
+        return;
+      }
+
       // Suppress errors and handle them gracefully
       @session_start();
 
       // Check if session started successfully
       if (session_status() != PHP_SESSION_ACTIVE) {
-        // Try alternative session configuration
-        ini_set('session.use_cookies', '1');
-        ini_set('session.use_only_cookies', '1');
-        ini_set('session.use_strict_mode', '0');
-        ini_set('session.cookie_httponly', '1');
+        // Don't attempt to change ini settings if headers already sent
+        if (!headers_sent()) {
+          // Try alternative session configuration
+          ini_set('session.use_cookies', '1');
+          ini_set('session.use_only_cookies', '1');
+          ini_set('session.use_strict_mode', '0');
+          ini_set('session.cookie_httponly', '1');
 
-        // Try to start session again
-        @session_start();
+          // Try to start session again
+          @session_start();
+        }
       }
     }
   }

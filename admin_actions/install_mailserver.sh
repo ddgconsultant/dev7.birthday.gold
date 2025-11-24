@@ -38,12 +38,39 @@ load_state() {
 
 log "Starting mail server setup process on $(hostname)"
 
+# Set up systemd service for auto-resume after reboot
+if [ ! -f /etc/systemd/system/mailserver-install-resume.service ]; then
+    log "Creating auto-resume systemd service"
+    cat > /etc/systemd/system/mailserver-install-resume.service <<'EOF'
+[Unit]
+Description=Resume Mail Server Installation After Reboot
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/root/install_mailserver.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable mailserver-install-resume.service
+    log "Auto-resume service enabled"
+fi
+
 STATE=$(load_state)
 
 # Check if the state is "completed" and no actions have been performed
 if [ "$STATE" == "completed" ] && [ "$ACTION_COUNTER" -eq 0 ]; then
     echo "Check State File"
     log "The state file [$STATE_FILE] = completed"
+    # Clean up auto-resume service
+    systemctl disable mailserver-install-resume.service 2>/dev/null
+    rm -f /etc/systemd/system/mailserver-install-resume.service
+    systemctl daemon-reload
+    log "Auto-resume service removed"
     exit 0
 fi
 

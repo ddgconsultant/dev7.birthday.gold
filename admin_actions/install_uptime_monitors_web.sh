@@ -1,4 +1,39 @@
 #!/bin/bash
+################################################################################
+# Uptime Kuma Monitor Setup Script
+################################################################################
+#
+# PREREQUISITES:
+#
+# 1. FLASK API SERVER (april21.bday.gold)
+#    - Python Flask API must be running on april21.bday.gold:5443
+#    - Location: /root/PYTHON_API/uptime_api_handler.py
+#    - Required endpoints: /check_monitor_exists, /create_monitor
+#
+# 2. ENVIRONMENT VARIABLE
+#    - UPTIME_KUMA_PASSWORD must be set before starting Flask app
+#    - Username: ddgconsultant
+#    - Password: 80t7gPv8X0DmxnaJ (stored in UPTIME_KUMA_PASSWORD env var)
+#
+# 3. START FLASK API:
+#    cd /root/PYTHON_API
+#    export UPTIME_KUMA_PASSWORD='80t7gPv8X0DmxnaJ'
+#    nohup /root/PYTHON_API/venv/bin/python /root/PYTHON_API/uptime_api_handler.py > uptime_api.log 2>&1 &
+#
+# 4. VERIFY FLASK API:
+#    curl -k -X POST https://localhost:5443/check_monitor_exists \
+#         -H "Content-Type: application/json" -d '{"name": "test"}'
+#    Expected response: {"exists":false} or {"exists":true,"id":123}
+#
+# 5. NETWORK CONNECTIVITY:
+#    - Server running this script must be able to reach april21.bday.gold:5443
+#    - Test: curl -k https://april21.bday.gold:5443/check_monitor_exists
+#
+# 6. UPTIME KUMA ACCESS:
+#    - URL: https://uptime.birthdaygold.cloud
+#    - API credentials configured in Flask app
+#
+################################################################################
 
 LOG_FILE=~/uptime_kuma_add_node_$(date +"%Y%m%d%H%M%S").log
 STATE_FILE=~/uptime_kuma_add_state
@@ -39,7 +74,7 @@ load_state() {
 check_monitor_exists() {
     MONITOR_NAME=$1
     log "Checking if monitor '$MONITOR_NAME' exists"
-    RESPONSE=$(curl -s -X POST http://april21.bday.gold:5000/check_monitor_exists -H "Content-Type: application/json" -d "{\"name\": \"$MONITOR_NAME\"}")
+    RESPONSE=$(curl -s -k -X POST https://april21.bday.gold:5443/check_monitor_exists -H "Content-Type: application/json" -d "{\"name\": \"$MONITOR_NAME\"}")
     log "Response: $RESPONSE"
     EXISTS=$(echo $RESPONSE | jq -r '.exists')
     log "Exists: $EXISTS"
@@ -52,12 +87,39 @@ check_monitor_exists() {
 
 log "Starting Uptime Kuma node addition process on $(hostname)"
 
+# Set up systemd service for auto-resume after reboot
+if [ ! -f /etc/systemd/system/uptime-kuma-install-resume.service ]; then
+    log "Creating auto-resume systemd service"
+    cat > /etc/systemd/system/uptime-kuma-install-resume.service <<'EOF'
+[Unit]
+Description=Resume Uptime Kuma Installation After Reboot
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/root/install_uptime_monitors_web.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable uptime-kuma-install-resume.service
+    log "Auto-resume service enabled"
+fi
+
 STATE=$(load_state)
 
 # Check if the state is "completed" and no actions have been performed
 if [ "$STATE" == "completed" ] && [ "$ACTION_COUNTER" -eq 0 ]; then
     figlet "Check State File"
     log "The state file [$STATE_FILE] = completed"
+    # Clean up auto-resume service
+    systemctl disable uptime-kuma-install-resume.service 2>/dev/null
+    rm -f /etc/systemd/system/uptime-kuma-install-resume.service
+    systemctl daemon-reload
+    log "Auto-resume service removed"
     exit 0
 fi
 
@@ -98,7 +160,7 @@ case $STATE in
         echo ${HOST_DATA} | tee -a $LOG_FILE
 
         log "Sending POST request to create HOST monitor"
-        curl -X POST http://april21.bday.gold:5000/create_monitor -H "Content-Type: application/json" -d "$HOST_DATA"
+        curl -k -X POST https://april21.bday.gold:5443/create_monitor -H "Content-Type: application/json" -d "$HOST_DATA"
         validate "Creating HOST monitor in Uptime Kuma"
         figlet "Monitor Added"
     fi
@@ -116,8 +178,8 @@ case $STATE in
         log "Monitor '$MONITOR_NAME' already exists. Skipping creation."
     else
         log "Creating JSON data for HTTP SiteChecker monitor"
-        HTTP_DATA=$(jq -n --arg name "$UPPERHOSTNAME SiteChecker" --arg hostname "$HOSTNAME.birthday.gold" --arg url "https://$HOSTNAME.birthday.gold/admin_actions/sitechecker" --arg description "Execute the sitechecker.php script to look for errors" '{
-            type: "HTTP(s) - Keyword",
+        HTTP_DATA=$(jq -n --arg name "$UPPERHOSTNAME SiteChecker" --arg hostname "$HOSTNAME.birthday.gold" --arg url "https://$HOSTNAME.birthday.gold/admin_actions/scheduler--sitechecker" --arg description "Execute the sitechecker.php script to look for errors" '{
+            type: "keyword",
             name: $name,
             hostname: $hostname,
             url: $url,
@@ -150,7 +212,7 @@ case $STATE in
         echo ${HTTP_DATA} | tee -a $LOG_FILE
 
         log "Sending POST request to create HTTP SiteChecker monitor"
-        curl -X POST http://april21.bday.gold:5000/create_monitor -H "Content-Type: application/json" -d "$HTTP_DATA"
+        curl -k -X POST https://april21.bday.gold:5443/create_monitor -H "Content-Type: application/json" -d "$HTTP_DATA"
         validate "Creating HTTP SiteChecker monitor in Uptime Kuma"
         figlet "Monitor Added"
     fi
@@ -201,7 +263,7 @@ case $STATE in
         echo ${HTTP_DATA} | tee -a $LOG_FILE
 
         log "Sending POST request to create HTTP STATUS monitor"
-        curl -X POST http://april21.bday.gold:5000/create_monitor -H "Content-Type: application/json" -d "$HTTP_DATA"
+        curl -k -X POST https://april21.bday.gold:5443/create_monitor -H "Content-Type: application/json" -d "$HTTP_DATA"
         validate "Creating HTTP STATUS monitor in Uptime Kuma"
         figlet "Monitor Added"
     fi

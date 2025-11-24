@@ -1,23 +1,28 @@
 #!/bin/bash
 
-LOG_FILE=~/installhistory_web_$(date +"%Y%m%d%H%M%S").log
+# Use fixed log filename so we can always tail it after reboots
+LOG_FILE=~/installhistory_web_current.log
+# Also create a timestamped backup
+BACKUP_LOG=~/installhistory_web_$(date +"%Y%m%d%H%M%S").log
 STATE_FILE=~/install_state_web
 ACTION_COUNTER=0
 
+# Initialize log file if it doesn't exist
+if [ ! -f "$LOG_FILE" ]; then
+    touch "$LOG_FILE"
+fi
+
 log() {
-    echo "$(date +"%Y-%m-%d %H:%M:%S") - $1" | tee -a $LOG_FILE
+    echo "$(date +"%Y-%m-%d %H:%M:%S") - $1" | tee -a $LOG_FILE -a $BACKUP_LOG
     echo ""
 }
 
 validate() {
     if [ $? -ne 0 ]; then
         figlet "FAIL" | tee -a $LOG_FILE
-        log "FAIL: $1"
-        read -p "FAIL: $1. Do you want to continue? (y/n): " choice
-        if [ "$choice" != "y" ]; then
-            log "Aborting installation"
-            exit 1
-        fi
+        log "FAIL: $1 (auto-continuing)"
+        # Auto-continue on errors - do not prompt for input
+        log "Continuing installation despite error..."
     else
         log "PASS: $1"
     fi
@@ -38,12 +43,39 @@ load_state() {
 
 log "Starting installation process on $(hostname)"
 
+# Set up systemd service for auto-resume after reboot
+if [ ! -f /etc/systemd/system/webserver-install-resume.service ]; then
+    log "Creating auto-resume systemd service"
+    cat > /etc/systemd/system/webserver-install-resume.service <<'EOF'
+[Unit]
+Description=Resume Webserver Installation After Reboot
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/root/install_webserver.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable webserver-install-resume.service
+    log "Auto-resume service enabled"
+fi
+
 STATE=$(load_state)
 
 # Check if the state is "completed" and no actions have been performed
 if [ "$STATE" == "completed" ] && [ "$ACTION_COUNTER" -eq 0 ]; then
     figlet "Check State File"
     log "The state file [$STATE_FILE] = completed"
+    # Clean up auto-resume service
+    systemctl disable webserver-install-resume.service 2>/dev/null
+    rm -f /etc/systemd/system/webserver-install-resume.service
+    systemctl daemon-reload
+    log "Auto-resume service removed"
     exit 0
 fi
 
@@ -81,12 +113,12 @@ echo ""
 
     ##########################################################
     ## Set up the FTP Password in .profile:
-    figlet "Input Required"
-    read -sp "Enter FTP password: " MYSUPERSECUREPASSWORD
-    echo
+    # figlet "Input Required" - Password pre-set via environment
+#     read -sp "Enter FTP password: " MYSUPERSECUREPASSWORD
+#     echo
 
     log "Setting up FTP password"
-    echo "export MYSUPERSECUREPASSWORD=\"$MYSUPERSECUREPASSWORD\"" >> ~/.profile
+    #echo "export MYSUPERSECUREPASSWORD=\"$MYSUPERSECUREPASSWORD\"" >> ~/.profile
     source ~/.profile
     validate "Setting up FTP password"
 
@@ -137,8 +169,12 @@ echo ""
     ##########################################################
     ## Create rdavis user
     log "Creating rdavis user"
-    adduser rdavis --gecos "Richard Davis,RoomNumber,WorkPhone,HomePhone" --disabled-password
-    validate "Creating rdavis user"
+    if id "rdavis" &>/dev/null; then
+        log "User rdavis already exists, skipping creation"
+    else
+        adduser rdavis --gecos "Richard Davis,RoomNumber,WorkPhone,HomePhone" --disabled-password
+        validate "Creating rdavis user"
+    fi
 
     echo 'rdavis:$MYSUPERSECUREPASSWORD' | sudo chpasswd
     validate "Setting rdavis user password"
@@ -156,14 +192,24 @@ echo ""
     chown rdavis:rdavis /home/rdavis/.ssh
     chmod 700 /home/rdavis/.ssh
 
-    ftp -inv dev.birthday.gold <<EOF
+    ftp -inv january02.bday.gold <<EOF
 user richard $MYSUPERSECUREPASSWORD
 get /BIRTHDAY_SERVER/ENV_CONFIGS/keys/hostinger_rdavis.pub /home/rdavis/.ssh/hostinger_rdavis.pub
 EOF
     validate "Transferring SSH key"
 
-    cat /home/rdavis/.ssh/hostinger_rdavis.pub >> /home/rdavis/.ssh/authorized_keys
-    validate "Setting up authorized_keys for rdavis"
+    # Ensure authorized_keys exists and has correct permissions
+    touch /home/rdavis/.ssh/authorized_keys
+    chmod 600 /home/rdavis/.ssh/authorized_keys
+    chown rdavis:rdavis /home/rdavis/.ssh/authorized_keys
+
+    # Append public key if it was transferred successfully
+    if [ -f /home/rdavis/.ssh/hostinger_rdavis.pub ]; then
+        cat /home/rdavis/.ssh/hostinger_rdavis.pub >> /home/rdavis/.ssh/authorized_keys
+        validate "Setting up authorized_keys for rdavis"
+    else
+        log "WARNING: hostinger_rdavis.pub not found, skipping authorized_keys setup"
+    fi
 
     chmod 600 /home/rdavis/.ssh/authorized_keys
     validate "Setting permissions for authorized_keys"
@@ -180,11 +226,25 @@ EOF
     apt-get update -y
     validate "Running apt update"
 
-    apt -y install dos2unix tmux make gcc g++ software-properties-common mlocate unzip jq
+    # Detect Ubuntu version and install appropriate locate package
+    UBUNTU_VERSION=$(lsb_release -rs | cut -d. -f1)
+    if [ "$UBUNTU_VERSION" -ge 24 ]; then
+        LOCATE_PKG="plocate"
+    else
+        LOCATE_PKG="mlocate"
+    fi
+    log "Installing locate package: $LOCATE_PKG (Ubuntu $UBUNTU_VERSION)"
+
+    apt -y install dos2unix tmux make gcc g++ software-properties-common $LOCATE_PKG unzip jq
     validate "Installing basic packages"
 
-    updatedb
-    validate "Updating file database"
+    # Only run updatedb if mlocate is installed (plocate auto-updates)
+    if [ "$LOCATE_PKG" = "mlocate" ]; then
+        updatedb
+        validate "Updating file database"
+    else
+        log "Skipping updatedb (plocate auto-updates)"
+    fi
 
     figlet "Done"
     figlet "Rebooting"
@@ -288,7 +348,7 @@ EOF
     apt -y install aptitude
     validate "Installing aptitude"
 
-    aptitude install libc6-dev libtirpc-dev libnsl-dev libssl-dev
+    aptitude install -y -y libc6-dev libtirpc-dev libnsl-dev libssl-dev
     validate "Installing development libraries"
 
     php -v
@@ -363,12 +423,12 @@ EOF
     ##########################################################
     ## TRANSFER CERTS AND ENV CONFIG FILE
     log "Transferring certs and env config file"
-    ftp -inv dev.birthday.gold <<EOF
+    ftp -inv january02.bday.gold <<EOF
 user richard $MYSUPERSECUREPASSWORD
 binary
 get "/BIRTHDAY_SERVER/ENV_CONFIGS/config-main-production.inc" "/var/www/BIRTHDAY_SERVER/ENV_CONFIGS/config-main-production.inc"
 get "/BIRTHDAY_SERVER/ENV_CONFIGS/www-profile.txt" "/root/www-profile.txt"
-get "/BIRTHDAY_SERVER/dev.birthday.gold/admin_actions/deploy_www.sh" "/root/deploy_www.sh"
+get "/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/deploy_www.sh" "/root/deploy_www.sh"
 get "/BIRTHDAY_SERVER/_CERTS_/birthday.gold/xfer/AAACertificateServices.crt" "/var/web_certs/BIRTHDAY_SERVER/birthday.gold/AAACertificateServices.crt"
 get "/BIRTHDAY_SERVER/_CERTS_/birthday.gold/xfer/SectigoRSADomainValidationSecureServerCA.crt" "/var/web_certs/BIRTHDAY_SERVER/birthday.gold/SectigoRSADomainValidationSecureServerCA.crt"
 get "/BIRTHDAY_SERVER/_CERTS_/birthday.gold/xfer/server.key" "/var/web_certs/BIRTHDAY_SERVER/birthday.gold/server.key"
@@ -387,7 +447,7 @@ EOF
     files=(
         "/BIRTHDAY_SERVER/ENV_CONFIGS/config-main-production.inc:/var/www/BIRTHDAY_SERVER/ENV_CONFIGS/config-main-production.inc"
         "/BIRTHDAY_SERVER/ENV_CONFIGS/www-profile.txt:/root/www-profile.txt"
-        "/BIRTHDAY_SERVER/dev.birthday.gold/admin_actions/deploy_www.sh:/root/deploy_www.sh"
+        "/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/deploy_www.sh:/root/deploy_www.sh"
         "/BIRTHDAY_SERVER/_CERTS_/birthday.gold/xfer/AAACertificateServices.crt:/var/web_certs/BIRTHDAY_SERVER/birthday.gold/AAACertificateServices.crt"
         "/BIRTHDAY_SERVER/_CERTS_/birthday.gold/xfer/SectigoRSADomainValidationSecureServerCA.crt:/var/web_certs/BIRTHDAY_SERVER/birthday.gold/SectigoRSADomainValidationSecureServerCA.crt"
         "/BIRTHDAY_SERVER/_CERTS_/birthday.gold/xfer/server.key:/var/web_certs/BIRTHDAY_SERVER/birthday.gold/server.key"
@@ -396,7 +456,7 @@ EOF
     )
 
     # Start FTP transfer
-    ftp -inv dev.birthday.gold <<EOF
+    ftp -inv january02.bday.gold <<EOF
 user richard $MYSUPERSECUREPASSWORD
 binary
 $(for file in "${files[@]}"; do
@@ -419,9 +479,9 @@ EOF
 
     log "All files transferred and validated successfully."
     validate "Transferring certificates and config files"
-    
+
     save_state "adjust_directory_permissions"
-&;
+    ;;
 "adjust_directory_permissions")
     ##########################################################
     ## 
