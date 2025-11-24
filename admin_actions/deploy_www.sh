@@ -485,7 +485,7 @@ chmod +x ${pathprefix}${subdomain}.birthday.gold/admin_actions/gather_server_inf
 echo "Deployment Completed Successfully."
 
 # Define the message body
-hostname=$(hostname)
+hostname=$(hostname -f)
 latest_commit_msg=$(cat "$latest_commit_msg_file")
 latest_commit_msg_post=$(head -n 1 "$latest_commit_msg_file")
 message_body="❇️ Deployment completed successfully for BIRTHDAY GOLD on $hostname - $(date '+%Y-%m-%d %H:%M:%S') with [SOURCE: $source_subdomain / BRANCH:  $latest_commit_msg_post]"
