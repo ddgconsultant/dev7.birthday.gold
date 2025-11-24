@@ -5,13 +5,82 @@
  * This job handles the actual email sending with generation-specific content
  */
 
+// Set execution limits to prevent timeout
+set_time_limit(300); // 5 minutes max execution time
+ini_set('max_execution_time', 300);
+ini_set('memory_limit', '256M');
+
+// Disable output buffering completely for immediate output
+@ini_set('output_buffering', 'Off');
+@ini_set('zlib.output_compression', 0);
+@ini_set('implicit_flush', 1);
+
+// Clear any existing output buffers
+while (ob_get_level()) {
+    ob_end_clean();
+}
+
+// Tell PHP to flush after every output
+ob_implicit_flush(true);
+
+// Suppress session warnings since we're in CLI/scheduler mode
+@ini_set('session.use_cookies', 0);
+@ini_set('session.use_only_cookies', 0);
+
+// Send headers to prevent buffering
+header('Content-Type: text/html; charset=utf-8');
+header('Cache-Control: no-cache');
+header('X-Accel-Buffering: no'); // Disable Nginx buffering
+
 // Output HTML header for better formatting in browser
 echo '<pre style="font-family: monospace; font-size: 12px; line-height: 1.4; background: #f5f5f5; padding: 20px;">';
+
+// Send initial output to establish connection
+echo "Initializing MK Newsletter Sender...\n";
+flush();
+
+// Track if we've output a status yet
+$statusOutput = false;
+
+// Error handler to catch fatal errors AND ensure status is always output
+register_shutdown_function(function() use (&$statusOutput) {
+    $error = error_get_last();
+
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        echo "\n\nFatal Error: " . $error['message'] . "\n";
+        if (!$statusOutput) {
+            echo "\nStatus: Error\n";
+            $statusOutput = true;
+        }
+    } else if (!$statusOutput) {
+        echo "\n\nScript terminated unexpectedly without status\n";
+        echo "Status: Error\n";
+        $statusOutput = true;
+    }
+
+    echo '</pre>';
+    @flush();
+});
 
 $pagename = 'mk-newsletter-sender'; // Set pagename for CLI script
 $addClasses[] = 'mail';
 $addClasses[] = 'marketing';
+
+// Suppress errors during include
+$oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
+
+// Capture any output from site-controller
+ob_start();
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+$includeOutput = ob_get_clean();
+
+// Restore error reporting
+error_reporting($oldErrorReporting);
+
+// Only show fatal errors, not warnings
+if (!empty($includeOutput) && stripos($includeOutput, 'fatal') !== false) {
+    echo "Site controller error: " . substr($includeOutput, 0, 200) . "\n";
+}
 
 echo date('Y-m-d H:i:s') . " - Starting newsletter sender\n";
 
@@ -32,18 +101,22 @@ $notifications = $database->getrows($notifications_sql, ['batch_size' => $batch_
 
 if (empty($notifications)) {
     echo "No newsletters ready to send (status='notsent')\n";
-    
+
     // Check other statuses for debugging
-    $status_check = "SELECT status, COUNT(*) as count FROM bg_user_notifications 
+    $status_check = "SELECT status, COUNT(*) as count FROM bg_user_notifications
                     WHERE type = 'newsletter' GROUP BY status";
     $statuses = $database->getrows($status_check);
-    
+
     if (!empty($statuses)) {
         echo "\nCurrent newsletter status breakdown:\n";
         foreach ($statuses as $status) {
             echo "  - {$status['status']}: {$status['count']} notifications\n";
         }
     }
+
+    // No records to send is OK
+    echo "\nStatus: Ok\n";
+    echo '</pre>';
     exit;
 }
 
@@ -106,6 +179,11 @@ foreach ($notifications as $notification) {
             
             $sent_count++;
             echo "Sent newsletter to " . $user_email . " (User: " . $notification['user_id'] . ")\n";
+
+            // Flush output every 10 emails to prevent timeout
+            if ($sent_count % 10 == 0) {
+                flush();
+            }
             
             // Log activity
             try {
@@ -188,6 +266,15 @@ session_tracking('newsletter_batch_complete', [
 ], 'mk-newsletter-sender');
 
 echo date('Y-m-d H:i:s') . " - Newsletter sender finished\n";
+
+// Report final status
+if ($error_count > 0 && $sent_count == 0) {
+    // Only errors, no successes
+    echo "\nStatus: Error - All sends failed\n";
+} else {
+    // Success - either sent some or no records (both are OK)
+    echo "\nStatus: Ok\n";
+}
 
 // Close the pre tag for HTML formatting
 echo '</pre>';

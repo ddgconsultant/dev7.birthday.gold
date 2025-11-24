@@ -106,6 +106,38 @@ def create_monitor():
         logger.error("Error creating monitor: %s", str(e))
         return jsonify({'error': str(e)}), 500
 
+@app.route('/check_monitor_exists', methods=['POST'])
+def check_monitor_exists():
+    """
+    Check if a monitor with the given name already exists.
+    The request must include 'name' in the JSON body.
+
+    Returns:
+        JSON response with {'exists': true/false}
+    """
+    data = request.json
+    if not data or 'name' not in data:
+        logger.error("No monitor name provided in the request.")
+        return jsonify({'error': 'Monitor name is required'}), 400
+
+    monitor_name = data.get('name')
+
+    try:
+        api = get_api_instance()
+        monitors = api.get_monitors()
+
+        # Check if any monitor has the same name
+        for monitor in monitors:
+            if monitor.get('name') == monitor_name:
+                logger.info("Monitor '%s' already exists (ID: %s)", monitor_name, monitor.get('id'))
+                return jsonify({'exists': True, 'id': monitor.get('id')})
+
+        logger.info("Monitor '%s' does not exist", monitor_name)
+        return jsonify({'exists': False})
+    except Exception as e:
+        logger.error("Error checking monitor existence: %s", str(e))
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/get_monitor_status', methods=['POST'])
 def get_monitor_status():
     """

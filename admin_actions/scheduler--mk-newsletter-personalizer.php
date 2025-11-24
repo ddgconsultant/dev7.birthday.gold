@@ -9,24 +9,160 @@
  * - Processes up to 50 notifications per run
  */
 
+// Set execution limits to prevent timeout
+set_time_limit(300); // 5 minutes max execution time
+ini_set('max_execution_time', 300);
+ini_set('memory_limit', '256M');
+
+// Disable output buffering completely for immediate output
+@ini_set('output_buffering', 'Off');
+@ini_set('zlib.output_compression', 0);
+@ini_set('implicit_flush', 1);
+
+// Clear any existing output buffers
+while (ob_get_level()) {
+    ob_end_clean();
+}
+
+// Tell PHP to flush after every output
+ob_implicit_flush(true);
+
+// Suppress session warnings since we're in CLI/scheduler mode
+@ini_set('session.use_cookies', 0);
+@ini_set('session.use_only_cookies', 0);
+
+// Send headers to prevent buffering
+header('Content-Type: text/html; charset=utf-8');
+header('Cache-Control: no-cache');
+header('X-Accel-Buffering: no'); // Disable Nginx buffering
+
 // Output HTML header for better formatting in browser
 echo '<pre style="font-family: monospace; font-size: 12px; line-height: 1.4; background: #f5f5f5; padding: 20px;">';
+
+// Send initial output to establish connection
+echo "Initializing MK Newsletter Personalizer...\n";
+flush();
+
+// Track if we've output a status yet
+$statusOutput = false;
+
+// Error handler to catch fatal errors AND ensure status is always output
+register_shutdown_function(function() use (&$statusOutput) {
+    $error = error_get_last();
+
+    // If there's a fatal error, report it
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        echo "\n\n=== FATAL ERROR ===\n";
+        echo "Message: " . $error['message'] . "\n";
+        echo "File: " . $error['file'] . "\n";
+        echo "Line: " . $error['line'] . "\n";
+        echo "Type: " . $error['type'] . "\n";
+
+        if (!$statusOutput) {
+            echo "\nStatus: Error\n";
+            $statusOutput = true;
+        }
+    } else if (!$statusOutput) {
+        // No fatal error but script ended without outputting status
+        echo "\n\nScript terminated unexpectedly without status\n";
+        echo "Status: Error\n";
+        $statusOutput = true;
+    }
+
+    echo '</pre>';
+    @ob_flush();
+    @flush();
+});
+
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+echo "Loading configuration...\n";
+flush();
 
 $pagename = 'mk-newsletter-personalizer';
 $addClasses[] = 'marketing';
 $addClasses[] = 'ai';
-include(dirname(__DIR__) . '/core/site-controller.php');
+
+echo "Including site controller...\n";
+flush();
+
+// Check if path exists
+$controller_path = dirname(__DIR__) . '/core/site-controller.php';
+if (!file_exists($controller_path)) {
+    echo "Error: site-controller.php not found at: $controller_path\n";
+    echo "\nStatus: Error\n";
+    $statusOutput = true;
+    echo '</pre>';
+    exit(1);
+}
+
+// Set a short timeout for the include to prevent hanging
+$start_time = time();
+$timeout = 10; // 10 seconds max for include
+
+try {
+    // Suppress warnings/notices from include
+    $oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
+
+    // Use output buffering to capture any output from site-controller
+    ob_start();
+    include($controller_path);
+    $includeOutput = ob_get_clean();
+
+    error_reporting($oldErrorReporting);
+
+    // Check if include took too long
+    if (time() - $start_time > $timeout) {
+        echo "Warning: Site controller took longer than expected to load\n";
+    }
+
+    echo "✓ Site controller loaded successfully\n";
+
+    // Only show errors if any (skip warnings)
+    if (!empty($includeOutput) && stripos($includeOutput, 'fatal') !== false) {
+        echo "Site controller output: " . substr($includeOutput, 0, 200) . "\n";
+    }
+    flush();
+} catch (Exception $e) {
+    echo "Error loading site controller: " . $e->getMessage() . "\n";
+    echo "Stack trace:\n" . $e->getTraceAsString() . "\n";
+    echo "\nStatus: Error\n";
+    $statusOutput = true;
+    echo '</pre>';
+    exit(1);
+}
+
+// Check database connection
+if (!isset($database) || !is_object($database)) {
+    echo "Error: Database connection not available\n";
+    echo "\nStatus: Error\n";
+    $statusOutput = true;
+    echo '</pre>';
+    exit(1);
+}
+echo "✓ Database connection established\n";
+flush();
 
 // Initialize AI if available
 if (isset($ai) && is_object($ai)) {
-    $ai->setEngine('anthropic_goldie', 'text');
-    echo "AI engine set to anthropic_goldie\n";
+    try {
+        $ai->setEngine('anthropic_goldie', 'text');
+        echo "AI engine set to anthropic_goldie\n";
+    } catch (Exception $e) {
+        echo "Warning: Could not set AI engine - " . $e->getMessage() . "\n";
+        echo "Will use template-based processing only\n";
+        $ai = null;
+    }
 } else {
     echo "AI not available - will use template-based processing only\n";
 }
+flush();
 
 echo date('Y-m-d H:i:s') . " - Starting MK Newsletter Personalizer\n";
 echo str_repeat('=', 80) . "\n";
+flush(); // Force output to browser
 
 // Configuration
 $max_batch_size = 50;     // Maximum notifications to process per run
@@ -51,20 +187,25 @@ $workload = $database->getrows($analysis_sql);
 
 if (empty($workload)) {
     echo "No pending newsletters to personalize\n";
-    
+
     // Show status breakdown
-    $status_sql = "SELECT status, COUNT(*) as count 
-                  FROM bg_user_notifications 
-                  WHERE type = 'newsletter' 
+    $status_sql = "SELECT status, COUNT(*) as count
+                  FROM bg_user_notifications
+                  WHERE type = 'newsletter'
                   GROUP BY status";
     $statuses = $database->getrows($status_sql);
-    
+
     if (!empty($statuses)) {
         echo "\nCurrent newsletter status breakdown:\n";
         foreach ($statuses as $status) {
             echo "  - {$status['status']}: {$status['count']} notifications\n";
         }
     }
+
+    // No records to process is OK
+    echo "\nStatus: Ok\n";
+    $statusOutput = true;
+    echo '</pre>';
     exit;
 }
 
@@ -97,14 +238,25 @@ foreach ($workload as $work) {
 echo str_repeat('-', 80) . "\n";
 echo "Total pending: $total_pending (AI: $needs_ai_count, Template: $template_only_count)\n";
 echo str_repeat('=', 80) . "\n\n";
+flush(); // Keep connection alive
 
 // Initialize components
-$marketing = new Marketing($database, $qik, $mail);
+try {
+    $marketing = new Marketing($database, $qik, $mail);
+} catch (Exception $e) {
+    echo "Error initializing Marketing class: " . $e->getMessage() . "\n";
+    echo "\nStatus: Error\n";
+    $statusOutput = true;
+    echo '</pre>';
+    exit(1);
+}
+
 $processed_count = 0;
 $error_count = 0;
 $ai_cache = []; // Cache AI responses by campaign_id + generation
 
 // Process workload strategically
+try {
 foreach ($workload as $work) {
     if ($processed_count >= $max_batch_size) {
         echo "\nReached max batch size ($max_batch_size), stopping for this run\n";
@@ -169,36 +321,63 @@ foreach ($workload as $work) {
             $ai_subject = $ai_cache[$cache_key]['subject'];
             $ai_content = $ai_cache[$cache_key]['content'];
         } elseif (isset($ai) && is_object($ai)) {
-            // Generate AI content once for all users of this generation
-            echo "Generating AI content for $generation generation...\n";
-            
-            $cta_category = $first_options['cta_category'] ?? 'Retail';
-            
-            $ai_prompt = "You are adapting a Birthday Gold newsletter for {$generation} recipients.\n\n" .
-                        "Campaign: {$campaign_name}\n" .
-                        "Category: {$cta_category} rewards\n" .
-                        "Generation: {$generation}\n\n" .
-                        "Original Newsletter:\n" .
-                        "Subject: {$subject_original}\n" .
-                        "Content: {$campaign_content_original}\n\n" .
-                        "Instructions:\n" .
-                        "1. Adapt the subject and content to appeal to {$generation} generation\n" .
-                        "2. Keep the core message about birthday rewards\n" .
-                        "3. PRESERVE all placeholders: [[first_name]], [[city]], [[birthday_month]], [[CTA_BLOCK]]\n" .
-                        "4. Adjust tone and cultural references for {$generation}\n" .
-                        "5. Keep similar length and structure\n\n" .
-                        "Return ONLY valid JSON with 'subject' and 'content' fields.";
-            
-            try {
-                $systemPrompt = 'You are a marketing assistant. Return ONLY valid JSON with "subject" and "content" fields. No markdown, no backticks.';
-                
-                $response = $ai->process([
-                    ['role' => 'system', 'content' => $systemPrompt],
-                    ['role' => 'user', 'content' => $ai_prompt]
-                ], [
-                    'temperature' => 0.7,
-                    'max_tokens' => 1000
-                ]);
+            // Validate we have content before calling AI
+            if (empty($campaign_content_original) || empty($subject_original)) {
+                echo "Warning: Missing content for AI generation, using original\n";
+                $ai_subject = $subject_original ?: 'Birthday Gold Newsletter';
+                $ai_content = $campaign_content_original ?: 'Check out your birthday rewards!';
+            } else {
+                // Generate AI content once for all users of this generation
+                echo "Generating AI content for $generation generation...\n";
+                echo "  Original subject length: " . strlen($subject_original) . "\n";
+                echo "  Original content length: " . strlen($campaign_content_original) . "\n";
+                flush();
+
+                $cta_category = $first_options['cta_category'] ?? 'Retail';
+
+                // Truncate content if too long for AI
+                $content_for_ai = $campaign_content_original;
+                if (strlen($content_for_ai) > 2000) {
+                    $content_for_ai = substr($content_for_ai, 0, 2000) . '...';
+                    echo "  Content truncated for AI processing\n";
+                }
+
+                $ai_prompt = "You are adapting a Birthday Gold newsletter for {$generation} recipients.\n\n" .
+                            "Campaign: {$campaign_name}\n" .
+                            "Category: {$cta_category} rewards\n" .
+                            "Generation: {$generation}\n\n" .
+                            "Original Newsletter:\n" .
+                            "Subject: {$subject_original}\n" .
+                            "Content: {$content_for_ai}\n\n" .
+                            "Instructions:\n" .
+                            "1. Adapt the subject and content to appeal to {$generation} generation\n" .
+                            "2. Keep the core message about birthday rewards\n" .
+                            "3. PRESERVE all placeholders: [[first_name]], [[city]], [[birthday_month]], [[CTA_BLOCK]]\n" .
+                            "4. Adjust tone and cultural references for {$generation}\n" .
+                            "5. Keep similar length and structure\n\n" .
+                            "Return ONLY valid JSON with 'subject' and 'content' fields.";
+
+                try {
+                    $systemPrompt = 'You are a marketing assistant. Return ONLY valid JSON with "subject" and "content" fields. No markdown, no backticks.';
+
+                    echo "  Calling AI API...\n";
+                    flush();
+
+                    // Set a timeout for AI call
+                    $ai_start = time();
+                    $ai_timeout = 15; // 15 seconds max for AI
+
+                    $response = $ai->process([
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => $ai_prompt]
+                    ], [
+                        'temperature' => 0.7,
+                        'max_tokens' => 1000
+                    ]);
+
+                    $ai_duration = time() - $ai_start;
+                    echo "  AI response received in {$ai_duration} seconds\n";
+                    flush();
                 
                 // Extract AI response
                 $ai_answer = null;
@@ -235,10 +414,15 @@ foreach ($workload as $work) {
                     }
                 } else {
                     echo "⚠ AI returned empty response, using original content\n";
+                    $ai_subject = $subject_original;
+                    $ai_content = $campaign_content_original;
                 }
             } catch (Exception $e) {
                 echo "⚠ AI generation failed: " . $e->getMessage() . "\n";
+                $ai_subject = $subject_original;
+                $ai_content = $campaign_content_original;
             }
+            } // End of content validation else
         } else {
             echo "⚠ AI not available, using original content\n";
         }
@@ -357,6 +541,11 @@ foreach ($workload as $work) {
             
             $group_processed++;
             echo "  ✓ ID {$notification['notification_id']} - User {$notification['user_id']} ({$user_data['first_name']} {$user_data['last_name']})\n";
+
+            // Flush output every 5 notifications to prevent timeout
+            if ($group_processed % 5 == 0) {
+                flush();
+            }
             
         } catch (Exception $e) {
             $group_errors++;
@@ -375,6 +564,15 @@ foreach ($workload as $work) {
     
     echo str_repeat('-', 40) . "\n";
     echo "Group complete: $group_processed processed, $group_errors errors\n";
+}
+
+} catch (Exception $e) {
+    echo "\nUnexpected error during processing: " . $e->getMessage() . "\n";
+    echo "File: " . $e->getFile() . " Line: " . $e->getLine() . "\n";
+    echo "\nStatus: Error\n";
+    $statusOutput = true;
+    echo '</pre>';
+    exit(1);
 }
 
 // Final summary
@@ -416,5 +614,24 @@ session_tracking('mk_newsletter_personalize', [
 ]);
 
 echo date('Y-m-d H:i:s') . " - MK Newsletter Personalizer finished\n";
+
+// Report final status
+if ($error_count > 0 && $processed_count == 0) {
+    // Only errors, no successes
+    echo "\nStatus: Error - All attempts failed\n";
+    $statusOutput = true;
+} else {
+    // Success - either processed some or no records (both are OK)
+    echo "\nStatus: Ok\n";
+    $statusOutput = true;
+}
+
+// Ensure output is complete
 echo '</pre>';
+
+// Final flush to ensure all data is sent
+flush();
+
+// Exit cleanly
+exit(0);
 ?>

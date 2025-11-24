@@ -5,12 +5,81 @@
  * This job creates notification entries that will be processed by the personalizer
  */
 
+// Set execution limits to prevent timeout
+set_time_limit(300); // 5 minutes max execution time
+ini_set('max_execution_time', 300);
+ini_set('memory_limit', '256M');
+
+// Disable output buffering completely for immediate output
+@ini_set('output_buffering', 'Off');
+@ini_set('zlib.output_compression', 0);
+@ini_set('implicit_flush', 1);
+
+// Clear any existing output buffers
+while (ob_get_level()) {
+    ob_end_clean();
+}
+
+// Tell PHP to flush after every output
+ob_implicit_flush(true);
+
+// Suppress session warnings since we're in CLI/scheduler mode
+@ini_set('session.use_cookies', 0);
+@ini_set('session.use_only_cookies', 0);
+
+// Send headers to prevent buffering
+header('Content-Type: text/html; charset=utf-8');
+header('Cache-Control: no-cache');
+header('X-Accel-Buffering: no'); // Disable Nginx buffering
+
 // Output HTML header for better formatting in browser
 echo '<pre style="font-family: monospace; font-size: 12px; line-height: 1.4; background: #f5f5f5; padding: 20px;">';
 
+// Send initial output to establish connection
+echo "Initializing MK Newsletter Queue...\n";
+flush();
+
+// Track if we've output a status yet
+$statusOutput = false;
+
+// Error handler to catch fatal errors AND ensure status is always output
+register_shutdown_function(function() use (&$statusOutput) {
+    $error = error_get_last();
+
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        echo "\n\nFatal Error: " . $error['message'] . "\n";
+        if (!$statusOutput) {
+            echo "\nStatus: Error\n";
+            $statusOutput = true;
+        }
+    } else if (!$statusOutput) {
+        echo "\n\nScript terminated unexpectedly without status\n";
+        echo "Status: Error\n";
+        $statusOutput = true;
+    }
+
+    echo '</pre>';
+    @flush();
+});
+
 $addClasses[] = 'marketing';
 $addClasses[] = 'mail';
+
+// Suppress errors during include
+$oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
+
+// Capture any output from site-controller
+ob_start();
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
+$includeOutput = ob_get_clean();
+
+// Restore error reporting
+error_reporting($oldErrorReporting);
+
+// Only show fatal errors, not warnings
+if (!empty($includeOutput) && stripos($includeOutput, 'fatal') !== false) {
+    echo "Site controller error: " . substr($includeOutput, 0, 200) . "\n";
+}
 
 echo date('Y-m-d H:i:s') . " - Starting MK Newsletter Queue\n";
 
@@ -25,6 +94,9 @@ $campaigns = $database->getrows($campaigns_sql);
 
 if (empty($campaigns)) {
     echo "No scheduled campaigns found\n";
+    echo "\nStatus: Ok\n";
+    $statusOutput = true;
+    echo '</pre>';
     exit;
 }
 
@@ -212,7 +284,13 @@ foreach ($campaigns as $campaign) {
             
             $database->query($notification_sql, $notification_params);
             $queue_count++;
-            
+
+            // Flush output every 50 users to prevent timeout
+            if ($queue_count % 50 == 0) {
+                echo "  ... processed $queue_count users so far\n";
+                flush();
+            }
+
         } catch (Exception $e) {
             echo "Error processing user " . $user['user_id'] . ": " . $e->getMessage() . "\n";
         }
@@ -271,6 +349,10 @@ foreach ($completed_campaigns as $completed) {
 }
 
 echo date('Y-m-d H:i:s') . " - Queue scheduler completed\n";
+
+// Report status - no campaigns or successful processing are both OK
+echo "\nStatus: Ok\n";
+$statusOutput = true;
 
 // Close the pre tag for HTML formatting
 echo '</pre>';

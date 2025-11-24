@@ -111,6 +111,12 @@ try {
     // Get current page from data
     $currentPage = $pageInfo['path'] ?? '/api/analytics-track';
 
+    // Reject analytics tracking for admin paths
+    if (strpos($currentPage, '/admin/') === 0 || strpos($currentPage, '/admin_actions/') === 0) {
+        http_response_code(204); // Success but no content stored
+        exit;
+    }
+
     // Store in session tracking
     // Note: We're bypassing normal session_tracking() to avoid circular reference
     // and to store analytics-specific data structure

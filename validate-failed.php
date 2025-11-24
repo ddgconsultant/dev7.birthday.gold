@@ -118,6 +118,7 @@ $validationcodes=$app->getvalidationcodes($validatedata);
 $link=$website['fullurl'].'/validate-account?t='.$validationcodes['long'];
 $message['validatelink']=$link;
 $message['validationcode']=$local_validationcode=$validationcodes['mini'];
+$message['user_id']=$userregistrationdata['user_id']; // Pass user_id for notification tracking
 #print_r($message);
 $result=$mail->sendVerificationEmail($message);
 $userregistrationdata['validationemailsent']=date('r');

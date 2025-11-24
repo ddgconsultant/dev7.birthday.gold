@@ -66,6 +66,7 @@ $stats_sql = "SELECT
     SUM(CASE WHEN fix_status = 'pending_review' THEN 1 ELSE 0 END) as pending_review,
     SUM(CASE WHEN fix_status = 'approved_pending_apply' THEN 1 ELSE 0 END) as approved_pending,
     SUM(CASE WHEN fix_status = 'applied' THEN 1 ELSE 0 END) as applied,
+    SUM(CASE WHEN fix_status = 'manually_fixed' THEN 1 ELSE 0 END) as manually_fixed,
     SUM(CASE WHEN fix_status = 'rejected' THEN 1 ELSE 0 END) as rejected,
     SUM(CASE WHEN fix_status = 'failed_to_apply' THEN 1 ELSE 0 END) as failed,
     SUM(CASE WHEN fix_status = 'needs_manual_review' THEN 1 ELSE 0 END) as manual_review,
@@ -213,6 +214,10 @@ echo '
             <div class="stat-label">Applied</div>
         </div>
         <div class="stat-card">
+            <div class="stat-number text-success">' . number_format($stats['manually_fixed'] ?? 0) . '</div>
+            <div class="stat-label">Manually Fixed</div>
+        </div>
+        <div class="stat-card">
             <div class="stat-number text-danger">' . number_format($stats['rejected'] ?? 0) . '</div>
             <div class="stat-label">Rejected</div>
         </div>
@@ -256,6 +261,7 @@ echo '
                     <option value="needs_manual_review"' . ($status_filter === 'needs_manual_review' ? ' selected' : '') . '>Needs Manual Review</option>
                     <option value="approved_pending_apply"' . ($status_filter === 'approved_pending_apply' ? ' selected' : '') . '>Approved (Pending Apply)</option>
                     <option value="applied"' . ($status_filter === 'applied' ? ' selected' : '') . '>Applied</option>
+                    <option value="manually_fixed"' . ($status_filter === 'manually_fixed' ? ' selected' : '') . '>Manually Fixed</option>
                     <option value="rejected"' . ($status_filter === 'rejected' ? ' selected' : '') . '>Rejected</option>
                     <option value="failed_to_apply"' . ($status_filter === 'failed_to_apply' ? ' selected' : '') . '>Failed to Apply</option>
                     <option value="auto_ignored"' . ($status_filter === 'auto_ignored' ? ' selected' : '') . '>Ignored</option>
@@ -303,6 +309,7 @@ if (empty($fixes)) {
             'needs_manual_review' => '<span class="badge bg-secondary">Manual Review</span>',
             'approved_pending_apply' => '<span class="badge bg-info">Approved</span>',
             'applied' => '<span class="badge bg-success">Applied</span>',
+            'manually_fixed' => '<span class="badge bg-success"><i class="bi bi-wrench"></i> Manually Fixed</span>',
             'rejected' => '<span class="badge bg-danger">Rejected</span>',
             'failed_to_apply' => '<span class="badge bg-danger">Failed</span>',
             'auto_ignored' => '<span class="badge bg-secondary">Ignored</span>',
@@ -324,10 +331,10 @@ if (empty($fixes)) {
                         <span class="badge bg-light text-dark">' . htmlspecialchars($fix['ai_fix_type'] ?? '') . '</span>
                     </div>
                     <div class="fix-file">
-                        <i class="bi bi-file-code"></i> ' . htmlspecialchars($fix['error_file']) . ':' . $fix['error_line'] . '
+                        <i class="bi bi-file-code"></i> ' . htmlspecialchars($fix['error_file'] ?? 'unknown') . ':' . ($fix['error_line'] ?? 0) . '
                     </div>
                     <div class="fix-message">
-                        <strong>' . htmlspecialchars($fix['error_type']) . ':</strong> ' . htmlspecialchars(substr($fix['error_message'], 0, 150)) . (strlen($fix['error_message']) > 150 ? '...' : '') . '
+                        <strong>' . htmlspecialchars($fix['error_type'] ?? 'Error') . ':</strong> ' . htmlspecialchars(substr($fix['error_message'] ?? '', 0, 150)) . (strlen($fix['error_message'] ?? '') > 150 ? '...' : '') . '
                     </div>
                     <div class="fix-meta">
                         <span><i class="bi bi-clock"></i> Last seen: ' . date('M j, Y g:i A', strtotime($fix['last_seen'])) . '</span>

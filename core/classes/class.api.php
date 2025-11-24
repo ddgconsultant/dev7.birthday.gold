@@ -61,7 +61,7 @@ class Api
     
     # ##--------------------------------------------------------------------------------------------------------------------------------------------------
     function authenticate_api_key($api_key) {
-        $auth_url = '//dev.birthday.gold/api/auth';
+        $auth_url = 'https://dev.birthday.gold/api/auth';
         $data = ['api_key' => $api_key, 'get_owner'=>1];
         
         $options = [

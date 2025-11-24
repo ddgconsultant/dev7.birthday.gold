@@ -422,6 +422,9 @@ if ((isset($_POST['ajax']) && $_POST['ajax'] == 'resend') || (isset($_GET['actio
             $validatedata['user_id'] = $userregistrationdata['user_id'];
         }
 
+        // Pass user_id to message for notification tracking
+        $message['user_id'] = $validatedata['user_id'];
+
         // Set code type based on our determination above
         if ($use_numeric_code) {
             $validatedata['numeric_only'] = true;

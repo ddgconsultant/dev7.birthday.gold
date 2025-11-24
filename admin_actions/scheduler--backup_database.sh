@@ -3,7 +3,7 @@
 
 # MySQL credentials
 MYSQL_USER="root"
-MYSQL_PASS=""
+MYSQL_PASS="Hvm!7644"
 
 # Database names
 DATABASES=("mysql" "birthday_gold_www")
@@ -36,7 +36,7 @@ for DB in "${DATABASES[@]}"; do
     FILENAME="${DB}_${DATE}.sql.gz"
 
     # Dump, drop, and create with GTID enabled
-    mysqldump --user="$MYSQL_USER" --single-transaction --set-gtid-purged=ON --databases $DB 2>&1 | grep -v 'Warning: A partial dump from a server that has GTIDs' | gzip > "$BACKUP_DIR/$FILENAME"
+    mysqldump --user="$MYSQL_USER" -p"$MYSQL_PASS" --single-transaction --set-gtid-purged=ON --databases $DB 2>&1 | grep -v 'Warning: A partial dump from a server that has GTIDs' | gzip > "$BACKUP_DIR/$FILENAME"
 
     # Upload to Backblaze bucket with expiration
     s3cmd put "$BACKUP_DIR/$FILENAME" s3://$BUCKET_NAME/december20.bday.gold/$FILENAME

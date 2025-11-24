@@ -98,7 +98,7 @@ throw new Exception("No eligible enrollment found to update");
     return true;
 }
 
-function handle_enrollment_failure($company_id, $working_user_data, $admin_user_data, $reason='', $post_data)
+function handle_enrollment_failure($company_id, $working_user_data, $admin_user_data, $reason='', $post_data=[])
 {
     global $database;
 

@@ -1007,7 +1007,12 @@ if (!empty($footerattribute['bottomfooter'])) {
 }
 
 // Include Birthday.Gold Analytics (our own system)
-echo '<script src="/public/js/bg-analytics.js" async defer></script>';
+// Exclude analytics from admin and admin_actions directories
+$currentPath = $_SERVER['REQUEST_URI'];
+$isAdminPath = (strpos($currentPath, '/admin/') === 0 || strpos($currentPath, '/admin_actions/') === 0);
+if (!$isAdminPath) {
+    echo '<script src="/public/js/bg-analytics.js" async defer></script>';
+}
 
 // Mobile-specific enhancements from v7
 echo '

@@ -304,25 +304,8 @@ if ($day_of_week == 1 && !$messages_sent) {
 # LOG EXECUTION
 #-------------------------------------------------------------------------------
 
-if (!$debug_mode) {
-    // Log the execution to database
-    $log_sql = "INSERT INTO bg_cron_log (cron_name, execution_time, status, message, create_dt) 
-                VALUES ('legalhubreview_reminder', NOW(), 'success', :message, NOW())";
-    
-    $summary = sprintf(
-        "Checked %d policies. Overdue: %d, High Priority: %d, Approaching: %d",
-        count($policies),
-        count($policies_overdue),
-        count($policies_needing_review),
-        count($policies_approaching_review)
-    );
-    
-    try {
-        $database->query($log_sql, ['message' => $summary]);
-    } catch (Exception $e) {
-        // Silent fail on logging
-    }
-}
+// Note: Database logging removed - bg_cron_log table does not exist
+// Execution summary is output to stdout below for cron logging
 
 // Output summary for cron log
 echo date('Y-m-d H:i:s') . " - Legal Hub Review Reminder executed successfully\n";

@@ -1,60 +1,280 @@
 <?php
 $addClasses[] = 'api';
+$addClasses[] = 'powerdns';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 require_once($dir['vendor'] . '/autoload.php');
 
 use phpseclib3\Net\SSH2;
 
+// Load systems early - needed for form processing and hostname extraction
+try {
+    $query = "SELECT id, name, url, create_dt, modify_dt FROM bg_system_availability where `status`='A' order by create_dt DESC";
+    $stmt = $database->prepare($query);
+    $stmt->execute();
+    $systems = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $systems = [];
+    error_log("Error loading systems: " . $e->getMessage());
+}
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+# HANDLE DELETING A HOST
+#-------------------------------------------------------------------------------
+if (isset($_POST['action']) && $_POST['action'] == 'delete_host') {
+    $host_id = intval($_POST['host_id']);
+
+    try {
+        $query = "DELETE FROM bg_system_availability WHERE id = :id";
+        $stmt = $database->prepare($query);
+        $stmt->execute([':id' => $host_id]);
+        $alert_message = '<div class="alert alert-success alert-dismissible fade show" role="alert">Host deleted successfully!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+    } catch (PDOException $e) {
+        $alert_message = '<div class="alert alert-danger alert-dismissible fade show" role="alert">Error deleting host: ' . htmlspecialchars($e->getMessage()) . '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+    }
+}
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+# HANDLE ADDING A NEW HOST
+#-------------------------------------------------------------------------------
+if (isset($_POST['action']) && $_POST['action'] == 'add_host') {
+    $host_name = trim($_POST['host_name']);
+    $host_url = trim($_POST['host_url']);
+    $host_port = !empty($_POST['host_port']) ? intval($_POST['host_port']) : 443;
+    $host_type = !empty($_POST['host_type']) ? trim($_POST['host_type']) : 'web';
+    $host_description = !empty($_POST['host_description']) ? trim($_POST['host_description']) : '';
+    $host_ip = !empty($_POST['host_ip']) ? trim($_POST['host_ip']) : '';
+    $dns_zone = !empty($_POST['dns_zone']) ? trim($_POST['dns_zone']) : 'bday.gold';
+    $create_dns = isset($_POST['create_dns']) && $_POST['create_dns'] == '1';
+
+    if (!empty($host_name) && !empty($host_url)) {
+        // Check if host already exists
+        try {
+            $check_query = "SELECT COUNT(*) as count FROM bg_system_availability WHERE url = :url";
+            $check_stmt = $database->prepare($check_query);
+            $check_stmt->execute([':url' => $host_url]);
+            $exists = $check_stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($exists['count'] > 0) {
+                $alert_message = '<div class="alert alert-warning alert-dismissible fade show" role="alert">Host with URL "' . htmlspecialchars($host_url) . '" already exists. Please use a different URL or delete the existing entry first.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+            } else {
+                $dns_messages = [];
+
+                // Create DNS records if requested and IP provided
+                if ($create_dns && !empty($host_ip)) {
+                    if (!isset($powerdns)) {
+                        $dns_messages[] = '<span class="text-danger">✗ PowerDNS class not available. Check configuration.</span>';
+                    } else {
+                        // Extract hostname without domain (e.g., "july05" from "july05.bday.gold")
+                        $hostname_only = explode('.', $host_url)[0];
+
+                        // Create A record for bday.gold (internal domain)
+                        $bday_hostname = $hostname_only . '.bday.gold';
+                        $result = $powerdns->createARecord('bday.gold', $bday_hostname, $host_ip);
+                        if ($result['success']) {
+                            $dns_messages[] = '<span class="text-success">✓ Created A record: ' . htmlspecialchars($bday_hostname) . ' → ' . htmlspecialchars($host_ip) . '</span>';
+                        } else {
+                            $error_msg = $result['error'] . ' (HTTP ' . $result['http_code'] . ')';
+                            $dns_messages[] = '<span class="text-danger">✗ Failed A record (bday.gold): ' . htmlspecialchars($error_msg) . '</span>';
+                        }
+
+                        // Create A record for birthday.gold (public domain)
+                        $birthday_hostname = $hostname_only . '.birthday.gold';
+                        $result = $powerdns->createARecord('birthday.gold', $birthday_hostname, $host_ip);
+                        if ($result['success']) {
+                            $dns_messages[] = '<span class="text-success">✓ Created A record: ' . htmlspecialchars($birthday_hostname) . ' → ' . htmlspecialchars($host_ip) . '</span>';
+                        } else {
+                            $error_msg = $result['error'] . ' (HTTP ' . $result['http_code'] . ')';
+                            $dns_messages[] = '<span class="text-danger">✗ Failed A record (birthday.gold): ' . htmlspecialchars($error_msg) . '</span>';
+                        }
+
+                        // Create MySQL replication DNS records (december pattern)
+                        // Convert month name: july->december, march->october, etc.
+                        $month_map = [
+                            'january' => 'october', 'february' => 'november', 'march' => 'december',
+                            'april' => 'january', 'may' => 'february', 'june' => 'march',
+                            'july' => 'december', 'august' => 'january', 'september' => 'february',
+                            'october' => 'march', 'november' => 'april', 'december' => 'may'
+                        ];
+
+                        preg_match('/^([a-z]+)(\d+)$/', $hostname_only, $matches);
+                        if (count($matches) == 3) {
+                            $month = strtolower($matches[1]);
+                            $day = $matches[2];
+
+                            if (isset($month_map[$month])) {
+                                $mysql_hostname = $month_map[$month] . $day;
+
+                                // Create december**.bday.gold
+                                $mysql_bday = $mysql_hostname . '.bday.gold';
+                                $result = $powerdns->createARecord('bday.gold', $mysql_bday, $host_ip);
+                                if ($result['success']) {
+                                    $dns_messages[] = '<span class="text-success">✓ Created MySQL A record: ' . htmlspecialchars($mysql_bday) . ' → ' . htmlspecialchars($host_ip) . '</span>';
+                                }
+
+                                // Create december**.birthday.gold
+                                $mysql_birthday = $mysql_hostname . '.birthday.gold';
+                                $result = $powerdns->createARecord('birthday.gold', $mysql_birthday, $host_ip);
+                                if ($result['success']) {
+                                    $dns_messages[] = '<span class="text-success">✓ Created MySQL A record: ' . htmlspecialchars($mysql_birthday) . ' → ' . htmlspecialchars($host_ip) . '</span>';
+                                }
+                            }
+                        }
+                    }
+                }
+
+                try {
+                    // Build name: "hostname / Type" (e.g., "july05.bday.gold / Production LAMP Stack")
+                    $type_labels = [
+                        'web' => 'Production LAMP Stack',
+                        'db' => 'Production MySQL DB',
+                        'mail' => 'Production Mail Server',
+                        'queue' => 'Production Email Queue',
+                        'haproxy' => 'Production HAProxy Server',
+                        'other' => 'Production Server'
+                    ];
+                    $type_label = $type_labels[$host_type] ?? 'Production Server';
+                    $full_name = $host_url . ' / ' . $type_label;
+
+                    // Build description with specs
+                    $full_description = "=== " . $type_label . "\n\n";
+                    if (!empty($host_description)) {
+                        $full_description .= $host_description . "\n";
+                    }
+                    $full_description .= "Ubuntu 24.04 LTS\n+ Apache 2.4\n+ PHP 8.3\n+ MySQL 8 (ID: ###)";
+
+                    $query = "INSERT INTO bg_system_availability (system_id, name, description, url, port, system_status, status, create_dt, modify_dt, last_success_dt, last_failure_dt)
+                              VALUES (180, :name, :description, :url, :port, 'unknown', 'A', NOW(), NOW(), NOW(), NOW())";
+                    $stmt = $database->prepare($query);
+                    $stmt->execute([
+                        ':name' => $full_name,
+                        ':description' => $full_description,
+                        ':url' => $host_ip,
+                        ':port' => $host_port
+                    ]);
+
+                    $success_msg = 'Host "' . htmlspecialchars($host_name) . '" added successfully!';
+                    if (!empty($dns_messages)) {
+                        $success_msg .= '<br><strong>DNS Records:</strong><br>' . implode('<br>', $dns_messages);
+                    }
+                    $alert_message = '<div class="alert alert-success alert-dismissible fade show" role="alert">' . $success_msg . '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+                } catch (PDOException $e) {
+                    $alert_message = '<div class="alert alert-danger alert-dismissible fade show" role="alert">Error adding host: ' . htmlspecialchars($e->getMessage()) . '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+                }
+            }
+        } catch (PDOException $e) {
+            // Error checking for duplicates
+            $alert_message = '<div class="alert alert-danger alert-dismissible fade show" role="alert">Database error: ' . htmlspecialchars($e->getMessage()) . '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+        }
+    } else {
+        $alert_message = '<div class="alert alert-warning alert-dismissible fade show" role="alert">Please provide both host name and URL.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+    }
+}
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 # HANDLE THE FORM POSTING ATTEMPT
 #-------------------------------------------------------------------------------
-if ($app->formposted()) {
+if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add_host' && $_POST['action'] != 'delete_host'))) {
 
+    $host = $_POST['host'] ?? '';
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
+    $api_key = $_POST['api_key'] ?? '';
 
-    $host = $_POST['host'];
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-    $api_key = $_POST['api_key'];
+    // Only proceed if we have the required SSH parameters
+    if (empty($host) || empty($username) || empty($password) || empty($api_key)) {
+        $alert_message = '<div class="alert alert-danger alert-dismissible fade show" role="alert">Missing required SSH connection parameters.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+    } else {
+        $auth_response = $api->authenticate_api_key($api_key);
 
-    $auth_response = $api->authenticate_api_key($api_key);
-
-    if ($auth_response['success']) {
+        if ($auth_response['success']) {
         function reconnect($host, $username, $password)
         {
-            $ssh = new SSH2($host);
-            if (!$ssh->login($username, $password)) {
-                echo "<div class='mt-4 alert alert-danger'>Login Failed</div>";
+            try {
+                $ssh = new SSH2($host);
+                $ssh->setTimeout(120); // Set timeout before login
+                if (!$ssh->login($username, $password)) {
+                    echo "<div class='mt-4 alert alert-danger'>Login Failed</div>";
+                    return false;
+                }
+                return $ssh;
+            } catch (\Exception $e) {
+                echo "<div class='mt-4 alert alert-danger'>SSH Connection Error: " . htmlspecialchars($e->getMessage()) . "</div>";
+                error_log("SSH connection error to $host: " . $e->getMessage());
                 return false;
             }
-            // Increase timeout if necessary
-            $ssh->setTimeout(120); // Set timeout to 120 seconds
-            return $ssh;
         }
 
         $ssh = reconnect($host, $username, $password);
         if ($ssh) {
-
-            // Turn off output buffering
+            // Turn off ALL output buffering for real-time streaming
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
             ini_set('output_buffering', 'Off');
-
-            // Turn off zlib output compression
             ini_set('zlib.output_compression', 'Off');
-            ob_start();
+            ini_set('implicit_flush', 'On');
             ob_implicit_flush(true);
-            ob_end_flush();
 
-            echo '<section></section><div class="container">';
-            flush(); // Send output to the browser
-            flush(); // Send output to the browser
+            // Output minimal HTML header immediately
+            echo '<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSH Command Execution - Birthday.Gold</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background: #f8f9fa; padding: 20px; padding-bottom: 100px; }
+        .command-output { background: #000; color: #0f0; padding: 15px; border-radius: 5px; font-family: monospace; margin: 10px 0; white-space: pre-wrap; }
+        .command-header { background: #343a40; color: #fff; padding: 10px; border-radius: 5px; margin-top: 20px; }
+        .timestamp { color: #6c757d; font-size: 0.9em; }
+        #output-container { margin-bottom: 50px; }
+    </style>
+    <script>
+        function scrollToBottom() {
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+        // Auto-scroll on page load and when new content appears
+        window.onload = scrollToBottom;
+        setInterval(scrollToBottom, 500);
+    </script>
+</head>
+<body>
+    <div class="container" id="output-container">
+        <h1 class="mb-4"><i class="bi bi-terminal"></i> SSH Command Execution</h1>
+        <div class="alert alert-info">
+            <strong>Executing commands on:</strong> ' . htmlspecialchars($host) . ' <br>
+            <strong>Username:</strong> ' . htmlspecialchars($username) . '
+        </div>
+';
+            flush();
 
             $doactions = $_REQUEST['serveraction'];
 
             $listofcommands = [];
 
             foreach ($doactions as $action) {
+                ///==========================================================================
+                if ($action == 'resume_webserver') {
+                    $listofcommands[] = 'echo "Resuming webserver installation from saved state..."';
+                    $listofcommands[] = 'cat ~/install_state_web 2>/dev/null || echo "No state file found - will start from beginning"';
+                    $listofcommands[] = 'tail -20 ~/installhistory_web_*.log 2>/dev/null || echo "No log file found"';
+                    // Create .my.cnf for password-less MySQL access
+                    $listofcommands[] = 'printf "[client]\\nuser=root\\n\\n[mysql]\\nuser=root\\n" > $HOME/.my.cnf && chmod 600 $HOME/.my.cnf';
+                    $listofcommands[] = 'echo "Created .my.cnf for MySQL access"';
+                    $listofcommands[] = 'source ~/.profile';
+                    $listofcommands[] = 'export AUTO_CONTINUE=1';
+                    $listofcommands[] = 'bash install_webserver.sh';
+                    $listofcommands[] = 'echo "=== Installation phase complete ==="';
+                    $listofcommands[] = 'tail -30 ~/installhistory_web_*.log';
+                }
                 ///==========================================================================
                 if ($action == 'deploy_www') {
                     $listofcommands[] = 'ls -ltr';
@@ -63,11 +283,106 @@ if ($app->formposted()) {
                     $listofcommands[] = './deploy_www.sh';
                 }
                 ///==========================================================================
-                if ($action == 'install_webserver') {
+                if ($action == 'install_webserver_full') {
+                    echo '<div class="alert alert-info"><h5>Full Web Server Installation Process Started</h5></div>';
+
+                    // Create .passwordfile with FTP credentials (escape special chars)
+                    $pass = @file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=DZCKHC-KJGBK-9DBGB-JBBJ97&apikey=' . $api_key . '&');   // FTP - webinstall
+
+                    // Validate password was retrieved
+                    if ($pass === false || empty($pass) || strlen($pass) < 4) {
+                        echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">Failed to retrieve FTP password from AccessManager. Password length: ' . strlen($pass) . ' bytes. Please check API key and credential ID.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+                        error_log("AccessManager password retrieval failed for FTP - webinstall. Length: " . strlen($pass) . ", Content: " . substr($pass, 0, 100));
+                        exit;
+                    }
+
+                    // Use base64 encoding to safely pass password with special characters
+                    $pass_b64 = base64_encode($pass);
+                    $listofcommands[] = 'echo "export MYSUPERSECUREPASSWORD=\$(echo ' . $pass_b64 . ' | base64 -d)" > $HOME/.profile';
+                    $listofcommands[] = 'source $HOME/.profile';
+
+                    // Set hostname by parsing it from the selected system's name
+                    // Load systems data to find the selected host
+                    $query_systems = "SELECT id, name, url FROM bg_system_availability WHERE status='A' AND url = :host";
+                    $stmt_systems = $database->prepare($query_systems);
+                    $stmt_systems->execute([':host' => $host]);
+                    $selected_system = $stmt_systems->fetch(PDO::FETCH_ASSOC);
+
+                    if ($selected_system && !empty($selected_system['name'])) {
+                        // Parse: "july05.bday.gold / Production LAMP Stack" -> "july05.bday.gold"
+                        $hostname_full = explode(' / ', $selected_system['name'])[0];
+                        // Extract short hostname: "july05.bday.gold" -> "july05"
+                        $short_hostname = explode('.', $hostname_full)[0];
+                        $listofcommands[] = 'hostnamectl set-hostname ' . escapeshellarg($short_hostname);
+                        $listofcommands[] = 'echo "Hostname set to: ' . $short_hostname . ' (from ' . $hostname_full . ')"';
+                    } else {
+                        $listofcommands[] = 'echo "Warning: Could not determine hostname from selection, keeping default"';
+                    }
+
                     // INSTALL WEB NODE
                     $listofcommands[] = '[ -f ~/install_webserver.sh ] && rm ~/install_webserver.sh';
                     $listofcommands[] = '[ -f ~/install_state ] && rm ~/install_state';
+                    $listofcommands[] = '[ -f ~/install_state_web ] && rm ~/install_state_web';
+                    $listofcommands[] = 'wget --no-cache https://dev.birthday.gold/admin_actions/install_webserver.sh';
+                    $listofcommands[] = 'dos2unix install_webserver.sh 2>/dev/null || sed -i "s/\r$//" install_webserver.sh';
+                    $listofcommands[] = 'chmod 700 install_webserver.sh';
+                    $listofcommands[] = 'echo "Starting webserver installation (may take several minutes and cause reboots)..."';
+                    $listofcommands[] = 'export AUTO_CONTINUE=1';
+                    $listofcommands[] = 'bash install_webserver.sh';
+                    // INSTALL MYSQL DB
+                    // Set MySQL passwords and SSH password in environment before running install
+                    $mysql_admin_pass = file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=DVN3RN-OTMX3-Q7OSO-OQSNOS&apikey=' . $api_key . '&');   // birthday_gold_admin
+                    $mysql_repl_pass = file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=DZCK9C-97J99-FKDKJ-9HHDFF&apikey=' . $api_key . '&');   // bgdbreplicator1
+                    $legacy_root_pass = file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=DYBJFB-ACB6A-6KFBB-AEAHBE&apikey=' . $api_key . '&');   // KVM8-web-root LEGACY
+
+                    $listofcommands[] = 'apt-get install -y sshpass';
+                    // Set passwords as inline exports (will be available to the script)
+                    $listofcommands[] = 'export MYSQL_ADMIN_PASSWORD=' . escapeshellarg($mysql_admin_pass);
+                    $listofcommands[] = 'export MYSQL_REPL_PASSWORD=' . escapeshellarg($mysql_repl_pass);
+                    $listofcommands[] = 'export LEGACY_ROOT_PASSWORD=' . escapeshellarg($legacy_root_pass);
+                    $listofcommands[] = 'echo "Passwords set in environment"';
+
+                    $listofcommands[] = '[ -f ~/install_mysqldb.sh ] && rm ~/install_mysqldb.sh';
+                    $listofcommands[] = '[ -f ~/install_state_mysql ] && rm ~/install_state_mysql';
+                    $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_mysqldb.sh';
+                    $listofcommands[] = 'dos2unix install_mysqldb.sh 2>/dev/null || sed -i "s/\r$//" install_mysqldb.sh';
+                    $listofcommands[] = 'chmod 700 install_mysqldb.sh';
+                    $listofcommands[] = './install_mysqldb.sh';
+                    // INSTALL HAPROXY
+                    $listofcommands[] = '[ -f ~/install_haproxynode.sh ] && rm ~/install_haproxynode.sh';
+                    $listofcommands[] = '[ -f ~/haproxy_add_state ] && rm ~/haproxy_add_state';
+                    $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_haproxynode.sh';
+                    $listofcommands[] = 'dos2unix install_haproxynode.sh 2>/dev/null || sed -i "s/\r$//" install_haproxynode.sh';
+                    $listofcommands[] = 'chmod 700 install_haproxynode.sh';
+                    $listofcommands[] = './install_haproxynode.sh';
+                    // Add to Metabase
+                    $listofcommands[] = '[ -f ~/install_addtometabase_web.sh ] && rm ~/install_addtometabase_web.sh';
+                    $listofcommands[] = '[ -f ~/metabase_add_state_web ] && rm ~/metabase_add_state_web';
+                    $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_addtometabase_web.sh';
+                    $listofcommands[] = 'dos2unix install_addtometabase_web.sh 2>/dev/null || sed -i "s/\r$//" install_addtometabase_web.sh';
+                    $listofcommands[] = 'chmod 700 install_addtometabase_web.sh';
+                    $listofcommands[] = './install_addtometabase_web.sh';
+                    // Add node to Uptime Kuma monitoring
+                    $listofcommands[] = '[ -f ~/install_uptime_monitors_web.sh ] && rm ~/install_uptime_monitors_web.sh';
+                    $listofcommands[] = '[ -f ~/uptime_kuma_add_state ] && rm ~/uptime_kuma_add_state';
+                    $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_uptime_monitors_web.sh';
+                    $listofcommands[] = 'dos2unix install_uptime_monitors_web.sh 2>/dev/null || sed -i "s/\r$//" install_uptime_monitors_web.sh';
+                    $listofcommands[] = 'chmod 700 install_uptime_monitors_web.sh';
+                    $listofcommands[] = './install_uptime_monitors_web.sh';
+                    // Deploy WWW
+                    $listofcommands[] = '[ -f ~/deploy_www.sh ] && rm ~/deploy_www.sh';
+                    $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/deploy_www.sh';
+                    $listofcommands[] = 'dos2unix deploy_www.sh 2>/dev/null || sed -i "s/\r$//" deploy_www.sh';
+                    $listofcommands[] = 'chmod 700 deploy_www.sh';
+                    $listofcommands[] = './deploy_www.sh';
+                }
+                ///==========================================================================
+                if ($action == 'install_webserver') {
+                    // INSTALL WEB NODE ONLY (no MySQL, no HAProxy, no monitoring)
+                    $listofcommands[] = '[ -f ~/install_webserver.sh ] && rm ~/install_webserver.sh';
+                    $listofcommands[] = '[ -f ~/install_state ] && rm ~/install_state';
                     $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_webserver.sh';
+                    $listofcommands[] = 'dos2unix install_webserver.sh 2>/dev/null || sed -i "s/\r$//" install_webserver.sh';
                     $listofcommands[] = 'chmod 700 install_webserver.sh';
                     // Execute this install script three times
                     for ($i = 0; $i < 3; $i++) {
@@ -77,40 +392,30 @@ if ($app->formposted()) {
                             return reconnect($host, $username, $password);
                         };
                     }
-                    // INSTALL MYSQL DB
-                    $listofcommands[] = '[ -f ~/install_mysqldb.sh ] && rm ~/install_mysqldb.sh';
-                    $listofcommands[] = '[ -f ~/install_state_mysql ] && rm ~/install_state_mysql';
-                    $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_mysqldb.sh';
-                    $listofcommands[] = 'chmod 700 install_mysqldb.sh';
-                    $listofcommands[] = './install_mysqldb.sh';
-                    // INSTALL HAPROXY
-                    $listofcommands[] = '[ -f ~/install_haproxynode.sh ] && rm ~/install_haproxynode.sh';
-                    $listofcommands[] = '[ -f ~/haproxy_add_state ] && rm ~/haproxy_add_state';
-                    $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_haproxynode.sh';
-                    $listofcommands[] = 'chmod 700 install_haproxynode.sh';
-                    $listofcommands[] = './install_haproxynode.sh';
-                    // Add to Metabase
-                    $listofcommands[] = '[ -f ~/install_addtometabase_web.sh ] && rm ~/install_addtometabase_web.sh';
-                    $listofcommands[] = '[ -f ~/metabase_add_state_web ] && rm ~/metabase_add_state_web';
-                    $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_addtometabase_web.sh';
-                    $listofcommands[] = 'chmod 700 install_addtometabase_web.sh';
-                    $listofcommands[] = './install_addtometabase_web.sh';
-                    // Add node to Uptime Kuma monitoring
-                    $listofcommands[] = '[ -f ~/install_uptime_monitors_web.sh ] && rm ~/install_uptime_monitors_web.sh';
-                    $listofcommands[] = '[ -f ~/uptime_kuma_add_state ] && rm ~/uptime_kuma_add_state';
-                    $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_uptime_monitors_web.sh';
-                    $listofcommands[] = 'chmod 700 install_uptime_monitors_web.sh';
-                    $listofcommands[] = './install_uptime_monitors_web.sh';
                 }
                 ///==========================================================================
                 if ($action == 'install_mysqldb') {
                     // INSTALL MYSQL DB
+                    // Get MySQL passwords from AccessManager
+                    $admin_pass = file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=DVN3RN-OTMX3-Q7OSO-OQSNOS&apikey=' . $api_key . '&');   // birthday_gold_admin
+                    $repl_pass = file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=DZCK9C-97J99-FKDKJ-9HHDFF&apikey=' . $api_key . '&');   // bgdbreplicator1
+                    $legacy_root_pass = file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=DYBJFB-ACB6A-6KFBB-AEAHBE&apikey=' . $api_key . '&');   // KVM8-web-root LEGACY
+
+                    // Install sshpass for SSH authentication
+                    $listofcommands[] = 'apt-get install -y sshpass';
+
+                    // Export passwords as environment variables for the install script
+                    $listofcommands[] = 'export MYSQL_ADMIN_PASSWORD=' . escapeshellarg($admin_pass);
+                    $listofcommands[] = 'export MYSQL_REPL_PASSWORD=' . escapeshellarg($repl_pass);
+                    $listofcommands[] = 'export LEGACY_ROOT_PASSWORD=' . escapeshellarg($legacy_root_pass);
+                    $listofcommands[] = 'echo "Passwords set in environment"';
+
                     $listofcommands[] = '[ -f ~/install_mysqldb.sh ] && rm ~/install_mysqldb.sh';
                     $listofcommands[] = '[ -f ~/install_state_mysql ] && rm ~/install_state_mysql';
                     $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_mysqldb.sh';
+                    $listofcommands[] = 'dos2unix install_mysqldb.sh 2>/dev/null || sed -i "s/\r$//" install_mysqldb.sh';
                     $listofcommands[] = 'chmod 700 install_mysqldb.sh';
                     $listofcommands[] = './install_mysqldb.sh';
-                    // Additional steps or messages can be added here if needed
                 }
                 ///==========================================================================
                 if ($action == 'install_mailserver') {
@@ -118,6 +423,7 @@ if ($app->formposted()) {
                     $listofcommands[] = '[ -f ~/install_mailserver.sh ] && rm ~/install_mailserver.sh';
                     $listofcommands[] = '[ -f ~/install_state_mail ] && rm ~/install_state_mail';
                     $listofcommands[] = 'wget https://dev.birthday.gold/admin_actions/install_mailserver.sh';
+                    $listofcommands[] = 'dos2unix install_mailserver.sh 2>/dev/null || sed -i "s/\r$//" install_mailserver.sh';
                     $listofcommands[] = 'chmod 700 install_mailserver.sh';
                     $listofcommands[] = './install_mailserver.sh';
                     // Additional steps or messages can be added here if needed
@@ -269,23 +575,54 @@ if ($app->formposted()) {
                             break;
                         }
                     } else {
+                        try {
+                            $output = $ssh->exec($command);
+                            if (strpos($command, 'password') !== false) $displaycommand = '{{suppressed}}';
+                            else $displaycommand = $command;
 
-                        $output = $ssh->exec($command);
-                        if (strpos($command, 'password') !== false) $displaycommand = '{{suppressed}}';
-                        else $displaycommand = $command;
-                        echo '<hr><div class="mt-4"><i>' . date('r') . '</i><h5>Command Output: <span class="text-primary">' . $displaycommand . '</span></h5><pre>' . $output . '</pre></div>';
-                        flush(); // Send output to the browser
-                        sleep(1); // Delay to ensure command completion
-                        flush(); // Send output to the browser
+                            echo '<div class="command-header"><span class="timestamp">' . date('H:i:s') . '</span> <strong>' . htmlspecialchars($displaycommand) . '</strong></div>';
+                            echo '<div class="command-output">' . htmlspecialchars($output) . '</div>';
+                            echo '<script>scrollToBottom();</script>';
 
+                            flush();
+                            if (function_exists('apache_reset_timeout')) {
+                                apache_reset_timeout();
+                            }
+                        } catch (\phpseclib3\Exception\ConnectionClosedException $e) {
+                            // Server rebooted - redirect to log viewer
+                            echo '<div class="alert alert-warning mt-4">';
+                            echo '<h5><i class="bi bi-arrow-clockwise"></i> Server Rebooting</h5>';
+                            echo '<p>The server is rebooting as part of the installation process. The installation will continue automatically in the background.</p>';
+                            echo '<p>Redirecting to installation log viewer in 5 seconds...</p>';
+                            echo '</div>';
+                            echo '<script>';
+                            echo 'setTimeout(function() {';
+                            echo '  window.location.href = "/admin_actions/view-install-log.php?host=' . urlencode($host) . '&type=web";';
+                            echo '}, 5000);';
+                            echo '</script>';
+                            flush();
+                            break; // Exit the loop
+                        } catch (\Exception $e) {
+                            echo '<div class="alert alert-danger mt-4">';
+                            echo '<h5>Error</h5>';
+                            echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+                            echo '</div>';
+                            flush();
+                            break;
+                        }
                     }
                 }
                 #-------------------------------------------------------------------------------
 
             }
             echo '</div>';
+            echo '<div class="alert alert-success mt-4"><i class="bi bi-check-circle"></i> Command execution completed!</div>';
+            echo '</div></body></html>';
+            flush();
+            exit; // Stop execution
         }
     }
+    } // Close else block for SSH parameter validation
 }
 
 
@@ -306,7 +643,7 @@ if ($app->formposted()) {
 
 try {
     // Query to fetch data
-    $query = "SELECT name, url FROM bg_system_availability where `status`='A' order by name";
+    $query = "SELECT id, name, url, create_dt, modify_dt FROM bg_system_availability where `status`='A' order by create_dt DESC";
     $stmt = $database->prepare($query);
     $stmt->execute();
     $systems = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -315,12 +652,171 @@ try {
     echo "Error: " . $e->getMessage();
 }
 
-
+// Display alert message if there is one (below header)
+if (!empty($alert_message)) {
+    echo '<div class="container" style="margin-top: 100px;">' . $alert_message . '</div>';
+}
 
 echo '
     <div class="container mt-5">
+        <!-- Add New Host Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h4>Add New Host</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin_actions/newhost_setup">
+                    ' . $display->inputcsrf_token() . '
+                    <input type="hidden" name="action" value="add_host">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="host_name" class="form-label">Host Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="host_name" name="host_name" placeholder="e.g., March 2025 Server" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="host_url" class="form-label">Host URL <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="host_url" name="host_url" placeholder="e.g., march25.bday.gold" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label for="host_port" class="form-label">Port</label>
+                            <input type="number" class="form-control" id="host_port" name="host_port" value="443" placeholder="443">
+                            <small class="text-muted">Default: 443</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="host_type" class="form-label">Type</label>
+                            <select class="form-select" id="host_type" name="host_type">
+                                <option value="web" selected>Web Server</option>
+                                <option value="db">Database</option>
+                                <option value="mail">Mail Server</option>
+                                <option value="queue">Email Queue</option>
+                                <option value="haproxy">HAProxy</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="host_description" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="host_description" name="host_description" placeholder="Optional description">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="host_ip" class="form-label">IP Address</label>
+                            <input type="text" class="form-control" id="host_ip" name="host_ip" placeholder="e.g., 192.168.1.100">
+                            <small class="text-muted">Required for DNS creation</small>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dns_zone" class="form-label">DNS Zone</label>
+                            <select class="form-select" id="dns_zone" name="dns_zone">
+                                <option value="bday.gold" selected>bday.gold</option>
+                                <option value="birthday.gold">birthday.gold</option>
+                                <option value="thedatadesigngroup.com">thedatadesigngroup.com</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label d-block">&nbsp;</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="create_dns" name="create_dns" value="1" checked>
+                                <label class="form-check-label" for="create_dns">
+                                    <i class="bi bi-globe"></i> Automatically create DNS records (A + www CNAME)
+                                </label>
+                            </div>
+                            <small class="text-muted">Uses PowerDNS API to create records</small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 text-end">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i> Add Host
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Manage Existing Hosts Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h4>Manage Existing Hosts</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>URL</th>
+                                <th>Created</th>
+                                <th>Modified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+
+foreach ($systems as $system) {
+    $id = htmlspecialchars($system['id']);
+    $name = htmlspecialchars($system['name']);
+    $url = htmlspecialchars($system['url']);
+    $created = $system['create_dt'] ? date('M d, Y', strtotime($system['create_dt'])) : 'N/A';
+    $modified = $system['modify_dt'] ? date('M d, Y', strtotime($system['modify_dt'])) : 'N/A';
+
+    echo '<tr>';
+    echo '<td>' . $id . '</td>';
+    echo '<td>' . $name . '</td>';
+    echo '<td>' . $url . '</td>';
+    echo '<td>' . $created . '</td>';
+    echo '<td>' . $modified . '</td>';
+    echo '<td>';
+    echo '<button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal' . $id . '">';
+    echo '<i class="bi bi-trash"></i> Delete';
+    echo '</button>';
+
+    // Delete Modal for this host
+    echo '
+    <div class="modal fade" id="deleteModal' . $id . '" tabindex="-1" aria-labelledby="deleteModalLabel' . $id . '" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel' . $id . '">Confirm Delete</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-1">Are you sure you want to delete this host?</p>
+                    <div class="alert alert-warning mt-3">
+                        <strong>' . $name . '</strong><br>
+                        <small class="text-muted">' . $url . '</small>
+                    </div>
+                    <p class="text-danger small mb-0"><i class="bi bi-exclamation-triangle"></i> This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <form method="post" action="/admin_actions/newhost_setup">
+                        ' . $display->inputcsrf_token() . '
+                        <input type="hidden" name="action" value="delete_host">
+                        <input type="hidden" name="host_id" value="' . $id . '">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Delete Host</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>';
+
+    echo '</td>';
+    echo '</tr>';
+}
+
+echo '                  </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SSH Command Executor Section -->
         <h2>SSH Command Executor</h2>
-        <form method="post" action="/admin_actions/newhost_setup">            
+        <form method="post" action="/admin_actions/newhost_setup">
 ' . $display->inputcsrf_token() . '
 <div class="mb-3">
     <label for="host" class="form-label">Host</label>
@@ -331,12 +827,23 @@ echo '
 foreach ($systems as $system) {
     $name = htmlspecialchars($system['name']);
     $url = htmlspecialchars($system['url']);
-    echo '<option value="'.$url.'">'.$name.'</option>';
+    // Extract hostname from name (e.g., "july05.bday.gold" from "july05.bday.gold / Production LAMP Stack")
+    $hostname = explode(' ', $name)[0];
+    echo '<option value="'.$url.'" data-hostname="'.$hostname.'">'.$name.'</option>';
 }
 
 echo '
     </select>
+    <input type="hidden" name="host_name" id="host_name" value="">
 </div>
+<script>
+// Capture hostname from selected option
+document.getElementById("host").addEventListener("change", function() {
+    var selectedOption = this.options[this.selectedIndex];
+    var hostname = selectedOption.getAttribute("data-hostname");
+    document.getElementById("host_name").value = hostname;
+});
+</script>
 ';
 /*
             <div class="mb-3">
@@ -344,6 +851,15 @@ echo '
                 <input type="text" class="form-control" id="host" name="host" value="march03.bday.gold" required>
             </div>
 */
+// Set default values for user_id 20
+$current_user_data = $session->get('current_user_data');
+$current_user_id = $current_user_data['user_id'] ?? 0;
+$default_password = ($current_user_id == 20) ? 'Hvm@7644Hvm@7644' : '';
+$default_api_key = ($current_user_id == 20) ? '785e12db5ac5f59606ced5fc8a43db34f9f384b3c527d7ed76a2621dbeba8ecf' : '';
+
+// Debug: check values
+echo "<!-- DEBUG: user_id=$current_user_id, password_set=" . (!empty($default_password) ? 'YES' : 'NO') . ", api_key_set=" . (!empty($default_api_key) ? 'YES' : 'NO') . " -->";
+
 echo '
             <div class="mb-3">
                 <label for="username" class="form-label">OS Username</label>
@@ -351,16 +867,18 @@ echo '
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">OS User Password</label>
-                <input type="password" class="form-control" id="password" name="password" value="" required>
+                <input type="password" class="form-control" id="password" name="password" value="' . htmlspecialchars($default_password) . '" required>
             </div>
             <div class="mb-3">
                 <label for="api_key" class="form-label">API Key</label>
-                <input type="text" class="form-control" id="api_key" name="api_key" >
+                <input type="text" class="form-control" id="api_key" name="api_key" value="' . htmlspecialchars($default_api_key) . '">
             </div>
 ';
 $actions = [
     'deploy_www' => 'Deploy WWW',
-    'install_webserver' => 'Install Webserver',
+    'resume_webserver' => 'RESUME Webserver Installation (after reboot)',
+    'install_webserver_full' => 'FULL WEB SERVER SETUP (Web + MySQL + HAProxy + Monitoring)',
+    'install_webserver' => 'Install Webserver Only',
     'install_mysqldb' => 'Install MySQL DB',
     'install_mailserver' => 'Install Mailserver',
     'install_emailqueue' => 'Install Email Queue Docker',
@@ -388,5 +906,6 @@ echo '     <button type="submit" class="btn btn-primary">Execute Command</button
 #include($_SERVER['DOCUMENT_ROOT'] . '/core/'.$website['ui_version'].'/footerjs.inc');
 
 
+$display_footertype = 'min';
 include($dir['core_components'] . '/bg_footer.inc');
 $app->outputpage();

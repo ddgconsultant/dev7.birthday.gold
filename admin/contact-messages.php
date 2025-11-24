@@ -19,7 +19,7 @@ $query_params = ['date_from' => $date_from, 'date_to' => $date_to];
 
 // Status filter
 if ($status_filter === 'spam') {
-    $where_conditions[] = "name = 'contact-ai-spam-check' AND JSON_EXTRACT(tracking_data, '$.ai_decision') LIKE '%SPAM%'";
+    $where_conditions[] = "name = 'contact-ai-spam-check' AND tracking_data IS NOT NULL AND tracking_data != '' AND JSON_EXTRACT(tracking_data, '$.ai_decision') LIKE '%SPAM%'";
 } elseif ($status_filter === 'legitimate') {
     $where_conditions[] = "name = 'contact-ai-legitimate'";
 } elseif ($status_filter === 'sent') {
@@ -43,7 +43,7 @@ $where_clause = implode(' AND ', $where_conditions);
 $stats_sql = "
 SELECT
     SUM(CASE WHEN name = 'contact-form-sent' THEN 1 ELSE 0 END) as total_sent,
-    SUM(CASE WHEN name = 'contact-ai-spam-check' AND JSON_EXTRACT(tracking_data, '\$.ai_decision') LIKE '%SPAM%' THEN 1 ELSE 0 END) as total_spam,
+    SUM(CASE WHEN name = 'contact-ai-spam-check' AND tracking_data IS NOT NULL AND tracking_data != '' AND JSON_EXTRACT(tracking_data, '\$.ai_decision') LIKE '%SPAM%' THEN 1 ELSE 0 END) as total_spam,
     SUM(CASE WHEN name = 'contact-ai-legitimate' THEN 1 ELSE 0 END) as total_legitimate,
     SUM(CASE WHEN name = 'contact-captcha-fail' THEN 1 ELSE 0 END) as total_captcha_fails,
     SUM(CASE WHEN name IN ('sendOnlineContactForm_error!!', 'contact_form_email_failed_retry') THEN 1 ELSE 0 END) as total_errors
@@ -57,7 +57,7 @@ $timeline_sql = "
 SELECT
     DATE(create_dt) as date,
     SUM(CASE WHEN name = 'contact-form-sent' THEN 1 ELSE 0 END) as sent,
-    SUM(CASE WHEN name = 'contact-ai-spam-check' AND JSON_EXTRACT(tracking_data, '\$.ai_decision') LIKE '%SPAM%' THEN 1 ELSE 0 END) as spam,
+    SUM(CASE WHEN name = 'contact-ai-spam-check' AND tracking_data IS NOT NULL AND tracking_data != '' AND JSON_EXTRACT(tracking_data, '\$.ai_decision') LIKE '%SPAM%' THEN 1 ELSE 0 END) as spam,
     SUM(CASE WHEN name = 'contact-captcha-fail' THEN 1 ELSE 0 END) as captcha_fails
 FROM bg_sessiontracking
 WHERE create_dt BETWEEN :date_from AND DATE_ADD(:date_to, INTERVAL 1 DAY)
@@ -75,12 +75,24 @@ SELECT
     name,
     ip,
     sessionid,
-    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.email')) as email,
-    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.subject')) as subject,
-    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.message_preview')) as message_preview,
-    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.ai_decision')) as ai_decision,
-    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.status')) as status,
-    JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.confirmed_after_spam')) as confirmed_after_spam,
+    CASE WHEN tracking_data IS NOT NULL AND tracking_data != ''
+        THEN JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.email'))
+        ELSE NULL END as email,
+    CASE WHEN tracking_data IS NOT NULL AND tracking_data != ''
+        THEN JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.subject'))
+        ELSE NULL END as subject,
+    CASE WHEN tracking_data IS NOT NULL AND tracking_data != ''
+        THEN JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.message_preview'))
+        ELSE NULL END as message_preview,
+    CASE WHEN tracking_data IS NOT NULL AND tracking_data != ''
+        THEN JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.ai_decision'))
+        ELSE NULL END as ai_decision,
+    CASE WHEN tracking_data IS NOT NULL AND tracking_data != ''
+        THEN JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.status'))
+        ELSE NULL END as status,
+    CASE WHEN tracking_data IS NOT NULL AND tracking_data != ''
+        THEN JSON_UNQUOTE(JSON_EXTRACT(tracking_data, '\$.confirmed_after_spam'))
+        ELSE NULL END as confirmed_after_spam,
     tracking_data
 FROM bg_sessiontracking
 WHERE $where_clause

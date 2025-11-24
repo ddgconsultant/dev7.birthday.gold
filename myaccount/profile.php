@@ -61,7 +61,14 @@ if ($app->formposted() && isset($_REQUEST['profileupdate']) && !$account->Profil
       $updatefields[$columnname] = trim($formvalue);
     }
   }
+if($current_user_data['email']=='' &&  $updatefields['profile_email']!='') {
+       $sql = "UPDATE bg_users SET email = '{$updatefields['profile_email']}', modify_dt = NOW() WHERE user_id = ?";
+                    $stmt = $database->prepare($sql);
+                    $stmt->execute([$current_user_data['user_id']]);
+                      $profilesettings['savetosession']= true;
+$current_user_data=$account->getuserdata($current_user_data['user_id'], 'user_id', $profilesettings );
 
+}
   if (!empty($updatefields)) {
     # breakpoint($updatefields);
     $updatefields['profile_email'] = strtolower($updatefields['profile_email']);

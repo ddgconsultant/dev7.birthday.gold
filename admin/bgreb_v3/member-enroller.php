@@ -1070,10 +1070,10 @@ if (empty($bid)) {
         $profilecompletion = $account->profilecompletionratio($working_user_data);
         echo '
         <div class="card mb-4">
-            <div class="card-header bg-primary text-white">  
+            <div class="card-header bg-primary text-white">
                 <h5 class="card-title d-inline align-middle me-4" id="profileModalLabel">Member Enrollment Profile Details</h5>';
-                
-        $badgeClass = $profilecompletion['required_percentage'] >= 80 ? 'bg-success' : 
+
+        $badgeClass = $profilecompletion['required_percentage'] >= 80 ? 'bg-success' :
                     ($profilecompletion['required_percentage'] >= 50 ? 'bg-warning' : 'bg-danger');
 
         echo '

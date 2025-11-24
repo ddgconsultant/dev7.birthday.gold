@@ -161,29 +161,24 @@ foreach ($holidayResults as $holiday) {
 
                            // This block will execute only if it's 7 AM localtime
                            $sendtimehour=7;
-                if ($currentHourUser === $sendtimehour) {     
+                if ($currentHourUser === $sendtimehour) {
+                    // Prepare message suffixes for use in both branches
+                    shuffle($messagessuffixes);
+                    $formattedHolidayDate = $holidayDate->format('F j, Y'); // Example: "October 11, 2024"
+                    $message1 = str_replace('{{formattedHolidayDate}}', $formattedHolidayDate, $messagessuffixes[0]);
+                    $message2 = str_replace('{{formattedHolidayDate}}', $formattedHolidayDate, $messagessuffixes[1]);
+
                     // Process based on the time and holiday proximity
                     if ($isHolidayIn24Hrs && $isHolidayTomorrow) {
-
-                        shuffle($messagessuffixes);
-
                         // If the holiday is tomorrow, send a "tomorrow" message
-                        $formattedHolidayDate = $holidayDate->format('F j, Y'); // Example: "October 11, 2024"
-
-                        $message1 = str_replace('{{formattedHolidayDate}}', $formattedHolidayDate, $messagessuffixes[0]);
-                        $message2 = str_replace('{{formattedHolidayDate}}', $formattedHolidayDate, $messagessuffixes[1]);
-
-
                         $personalMessage = "Hi {$staff['first_name']}, just a reminder... tomorrow is a \"{$holidaycategory}\" -- {$holidayDetails} to observe {$holidayName}.";
                         $personalMessage .= $message1;
-                      
+
                         $qik->logmessage("Sending 'tomorrow' message to {$staff['username']}...");
 
 
                     } elseif ($isUpcomingHoliday &&  (date('N') == 1 || date('N') ==3)) {
                         // If the holiday is within the next $upcomingdays days, send an upcoming holiday message -- only if it's Monday or Wednesday
-                        $formattedHolidayDate = $holidayDate->format('F j, Y'); // Example: "October 11, 2024"
-
                         $personalMessage = "Hi {$staff['first_name']}, the next \"{$holidaycategory}\" is coming up soon on {$holidayDetails}.  Review https://www.bd.gold/BDGOLD_timeoff for more information.";
                         $personalMessage .= $message2;
                         

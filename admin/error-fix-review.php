@@ -18,9 +18,9 @@ $page_description = "Review AI-proposed error fixes";
 
 // Get review token
 $token = $_GET['token'] ?? '';
+$errormessage = '';
 
 if (empty($token)) {
-    $system->addmessage('error', 'Invalid review link - no token provided');
     header('Location: /admin/error-fix-dashboard.php');
     exit;
 }
@@ -31,10 +31,16 @@ $stmt = $database->query($sql, ['token' => $token]);
 $fix = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$fix) {
-    $system->addmessage('error', 'Fix not found or invalid token');
     header('Location: /admin/error-fix-dashboard.php');
     exit;
 }
+
+// Get current user ID
+$current_user_data = $session->get('current_user_data');
+if (empty($current_user_data['user_id'])) {
+    die('Error: User not logged in');
+}
+$current_user_id = $current_user_data['user_id'];
 
 // Handle approval/rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -50,12 +56,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       WHERE fix_id = :fix_id";
 
         $database->query($update_sql, [
-            'user_id' => $account->userid,
+            'user_id' => $current_user_id,
             'notes' => $notes,
             'fix_id' => $fix['fix_id']
         ]);
 
-        $system->addmessage('success', 'Fix approved! It will be applied on the next scheduler run.');
+        $errormessage = '<div class="alert alert-success alert-dismissible fade show" role="alert">
+            Fix approved! It will be applied on the next scheduler run.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>';
 
         // Reload fix data
         $fix = $database->query($sql, ['token' => $token])->fetch(PDO::FETCH_ASSOC);
@@ -69,12 +78,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       WHERE fix_id = :fix_id";
 
         $database->query($update_sql, [
-            'user_id' => $account->userid,
+            'user_id' => $current_user_id,
             'notes' => $notes,
             'fix_id' => $fix['fix_id']
         ]);
 
-        $system->addmessage('success', 'Fix rejected and will not be applied.');
+        $errormessage = '<div class="alert alert-success alert-dismissible fade show" role="alert">
+            Fix rejected and will not be applied.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>';
 
         // Reload fix data
         $fix = $database->query($sql, ['token' => $token])->fetch(PDO::FETCH_ASSOC);
@@ -88,12 +100,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       WHERE fix_id = :fix_id";
 
         $database->query($update_sql, [
-            'user_id' => $account->userid,
+            'user_id' => $current_user_id,
             'notes' => $notes,
             'fix_id' => $fix['fix_id']
         ]);
 
-        $system->addmessage('info', 'Fix ignored. This error will be hidden from future reports.');
+        $errormessage = '<div class="alert alert-info alert-dismissible fade show" role="alert">
+            Fix ignored. This error will be hidden from future reports.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>';
+
+        // Reload fix data
+        $fix = $database->query($sql, ['token' => $token])->fetch(PDO::FETCH_ASSOC);
+
+    } elseif ($action === 'manual_fixed') {
+        $update_sql = "UPDATE bg_auto_error_fixes
+                      SET fix_status = 'manually_fixed',
+                          reviewed_by = :user_id,
+                          reviewed_dt = NOW(),
+                          review_notes = :notes,
+                          applied_dt = NOW(),
+                          applied_by = 'manual'
+                      WHERE fix_id = :fix_id";
+
+        $database->query($update_sql, [
+            'user_id' => $current_user_id,
+            'notes' => $notes,
+            'fix_id' => $fix['fix_id']
+        ]);
+
+        $errormessage = '<div class="alert alert-success alert-dismissible fade show" role="alert">
+            Fix marked as manually fixed. This will be reflected on the dashboard.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>';
 
         // Reload fix data
         $fix = $database->query($sql, ['token' => $token])->fetch(PDO::FETCH_ASSOC);
@@ -117,6 +156,9 @@ switch ($fix['fix_status']) {
         break;
     case 'auto_ignored':
         $status_badge = '<span class="badge bg-secondary">Ignored</span>';
+        break;
+    case 'manually_fixed':
+        $status_badge = '<span class="badge bg-success"><i class="bi bi-wrench"></i> Manually Fixed</span>';
         break;
     default:
         $status_badge = '<span class="badge bg-light text-dark">' . htmlspecialchars($fix['fix_status']) . '</span>';
@@ -274,6 +316,11 @@ echo '
 
 <div class="error-fix-container">';
 
+// Display message if any
+if (!empty($errormessage)) {
+    echo $errormessage;
+}
+
 // Status at top
 echo '
     <div class="info-card">
@@ -369,7 +416,7 @@ if (!empty($fix['error_context'])) {
 // Review history (if reviewed)
 if (!empty($fix['reviewed_by'])) {
     // Get reviewer name
-    $reviewer_sql = "SELECT user_firstname, user_lastname FROM bg_users WHERE user_id = :user_id";
+    $reviewer_sql = "SELECT first_name, last_name FROM bg_users WHERE user_id = :user_id";
     $reviewer = $database->query($reviewer_sql, ['user_id' => $fix['reviewed_by']])->fetch(PDO::FETCH_ASSOC);
 
     echo '
@@ -377,7 +424,7 @@ if (!empty($fix['reviewed_by'])) {
         <h5><i class="bi bi-person-check-fill text-success"></i> Review History</h5>
         <div class="info-grid">
             <div class="label">Reviewed By:</div>
-            <div>' . htmlspecialchars($reviewer['user_firstname'] . ' ' . $reviewer['user_lastname']) . ' (ID: ' . $fix['reviewed_by'] . ')</div>
+            <div>' . htmlspecialchars(($reviewer['first_name'] ?? '') . ' ' . ($reviewer['last_name'] ?? '')) . ' (ID: ' . $fix['reviewed_by'] . ')</div>
 
             <div class="label">Reviewed On:</div>
             <div>' . date('M j, Y g:i A', strtotime($fix['reviewed_dt'])) . '</div>';
@@ -414,8 +461,8 @@ if ($fix['fix_status'] === 'applied' && !empty($fix['applied_dt'])) {
     </div>';
 }
 
-// Action buttons (only if pending review)
-if ($fix['fix_status'] === 'pending_review') {
+// Action buttons (only if pending review or needs manual review)
+if (in_array($fix['fix_status'], ['pending_review', 'needs_manual_review'])) {
     echo '
     <div class="action-buttons">
         <h5 class="mb-3"><i class="bi bi-hand-thumbs-up"></i> Actions</h5>
@@ -427,21 +474,38 @@ if ($fix['fix_status'] === 'pending_review') {
                           placeholder="Add any notes about your decision..."></textarea>
             </div>
 
-            <div class="btn-group">
+            <div class="btn-group">';
+
+    // Show approve/reject buttons only for pending_review
+    if ($fix['fix_status'] === 'pending_review') {
+        echo '
                 <button type="submit" name="action" value="approve" class="btn btn-success btn-lg">
                     <i class="bi bi-check-circle"></i> Approve Fix
                 </button>
                 <button type="submit" name="action" value="reject" class="btn btn-danger btn-lg">
                     <i class="bi bi-x-circle"></i> Reject Fix
+                </button>';
+    }
+
+    echo '
+                <button type="submit" name="action" value="manual_fixed" class="btn btn-primary btn-lg">
+                    <i class="bi bi-wrench"></i> Mark as Manually Fixed
                 </button>
                 <button type="submit" name="action" value="ignore" class="btn btn-secondary btn-lg">
                     <i class="bi bi-eye-slash"></i> Ignore Error
                 </button>
             </div>
 
-            <div class="mt-3 small text-muted">
+            <div class="mt-3 small text-muted">';
+
+    if ($fix['fix_status'] === 'pending_review') {
+        echo '
                 <strong>Approve:</strong> Fix will be applied on next scheduler run<br>
-                <strong>Reject:</strong> Fix will be marked rejected and not applied<br>
+                <strong>Reject:</strong> Fix will be marked rejected and not applied<br>';
+    }
+
+    echo '
+                <strong>Mark as Manually Fixed:</strong> Indicate you have fixed this issue manually<br>
                 <strong>Ignore:</strong> Hide this error from future reports
             </div>
         </form>

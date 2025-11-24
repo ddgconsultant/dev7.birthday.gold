@@ -1985,12 +1985,37 @@ public function isExistingPhoneNumber($phone, $exclude_user_id = null) {
           }
   
           // Update main user record's modify_dt only if there were changes
+          // Also update bg_users.email if it's blank and profile_email was provided
           if ($anyChanges) {
-              $sql = "UPDATE bg_users 
-                      SET modify_dt = NOW() 
-                      WHERE user_id = :user_id";
-              $stmt = $this->db->prepare($sql);
-              $stmt->execute([':user_id' => $user_id]);
+              if (isset($settings['profile_email']) && !empty($settings['profile_email'])) {
+                  // Update email if blank AND modify_dt in one query
+                  $sql = "UPDATE bg_users
+                          SET email = :email,
+                              modify_dt = NOW()
+                          WHERE user_id = :user_id
+                          AND (email = '' OR email IS NULL)";
+                  $stmt = $this->db->prepare($sql);
+                  $result = $stmt->execute([
+                      ':email' => $settings['profile_email'],
+                      ':user_id' => $user_id
+                  ]);
+
+                  // If email wasn't blank (no rows affected), just update modify_dt
+                  if ($stmt->rowCount() === 0) {
+                      $sql = "UPDATE bg_users
+                              SET modify_dt = NOW()
+                              WHERE user_id = :user_id";
+                      $stmt = $this->db->prepare($sql);
+                      $stmt->execute([':user_id' => $user_id]);
+                  }
+              } else {
+                  // No email update needed, just modify_dt
+                  $sql = "UPDATE bg_users
+                          SET modify_dt = NOW()
+                          WHERE user_id = :user_id";
+                  $stmt = $this->db->prepare($sql);
+                  $stmt->execute([':user_id' => $user_id]);
+              }
           }
   
           $this->db->commit();

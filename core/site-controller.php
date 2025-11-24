@@ -558,6 +558,15 @@ foreach ($classes as $class) {
         $$className = new $className($database, $app, $account, $system);
         break;
       // -----------------------------------------
+      case 'powerdns':
+        $pdnsConfig = [
+          'api_url' => $sitesettings['powerdns']['api_url'] ?? 'http://pdns.thedatadesigngroup.com/api/v1',
+          'api_key' => $sitesettings['powerdns']['API_KEY'] ?? '',
+          'server_id' => $sitesettings['powerdns']['server_id'] ?? 'localhost'
+        ];
+        $$className = new $className($pdnsConfig);
+        break;
+      // -----------------------------------------
       default:
         $$className = new $className($classConfig);
         break;

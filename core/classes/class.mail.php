@@ -210,12 +210,38 @@ class Mail
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   function sendVerificationEmail($input)
   {
-    global $dir, $app, $qik;
+    global $dir, $app, $qik, $database;
     $output = $verificationcode_tag = '';
-  
-    if (!$qik->checkvariables($input, ['toemail', 'fullname', 'validatelink', 'validationcode'])){      
+
+    if (!$qik->checkvariables($input, ['toemail', 'fullname', 'validatelink', 'validationcode'])){
       session_tracking('sendVerificationEmail_error!!', 'missing fields');
       return false;
+    }
+
+    // Create notification record for tracking purposes
+    if (isset($input['user_id']) && $input['user_id'] > 0) {
+      try {
+        $notification_sql = "INSERT INTO bg_user_notifications
+                            (user_id, type, title, message, status, sent_to, category, priority, create_dt, modify_dt)
+                            VALUES
+                            (:user_id, 'verification_email', 'Account Verification Email Sent', :message, 'sent', :sent_to, 'account', 'high', NOW(), NOW())";
+
+        $recipient = is_array($input['toemail']) ? (filter_var($input['toemail'][0] ?? '', FILTER_VALIDATE_EMAIL) ? $input['toemail'][0] : '') : $input['toemail'];
+
+        $notification_params = [
+          ':user_id' => $input['user_id'],
+          ':message' => 'Verification email sent to ' . $recipient . '. Please check your email and click the link or enter the validation code to activate your account.',
+          ':sent_to' => $recipient
+        ];
+
+        $stmt = $database->prepare($notification_sql);
+        $stmt->execute($notification_params);
+
+        $notification_id = $database->lastInsertId();
+        session_tracking('verification_email_notification_created', ['user_id' => $input['user_id'], 'notification_id' => $notification_id]);
+      } catch (Exception $e) {
+        session_tracking('verification_email_notification_error', ['error' => $e->getMessage(), 'user_id' => $input['user_id']]);
+      }
     }
 
     include($dir['blade'] . '/email/email-template_basic.inc');

@@ -1044,6 +1044,16 @@ $businessHours = $app->bg_businesshours();
         </div>
         
         <div class="admin-grid">
+            <a href="/admin_actions/newhost_setup" class="admin-card">
+                <div class="admin-icon icon-system">
+                    <i class="bi bi-hdd-network"></i>
+                </div>
+                <div class="admin-content">
+                    <h3 class="admin-card-title">Host Management</h3>
+                    <p class="admin-card-text">Add, configure, and manage web servers</p>
+                </div>
+            </a>
+
             <a href="/admin/redirect-cloudron" target="_blank" class="admin-card">
                 <div class="admin-icon icon-system">
                     <img src="/public/images/system_icons/io.cloudron.buildservice.png" alt="" width="40">

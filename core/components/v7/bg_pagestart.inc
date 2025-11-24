@@ -413,6 +413,22 @@ body {
     margin-top: 0;
     flex: none;
 }
+
+/* Accessibility - Skip to main content link */
+.sr-only,
+.sr-only-focusable {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    color: #fff !important; /* White text to prevent visibility on slow connections */
+    font-size: 6pt !important; /* Tiny font size */
+}
 </style>
 ';
 

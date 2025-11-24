@@ -172,7 +172,8 @@ echo '
 .lockout-table { background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e9ecef; }
 .lockout-table table { margin: 0; }
 .lockout-table th { background: #f8f9fa; font-weight: 600; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; color: #495057; }
-.ip-cell { font-family: "Courier New", monospace; font-weight: 600; }
+.ip-cell { font-family: "Courier New", monospace; font-weight: 600; color: #0d6efd; cursor: pointer; }
+.ip-cell:hover { text-decoration: underline; color: #0a58ca; }
 .level-badge { display: inline-flex; align-items: center; gap: 0.25rem; }
 .action-btn { padding: 0.25rem 0.75rem; font-size: 0.875rem; border-radius: 6px; }
 .severity-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
@@ -282,7 +283,12 @@ if (empty($lockouts)) {
         echo '
                 <tr>
                     <td>
-                        <span class="ip-cell">' . htmlspecialchars($lock['ip']) . '</span>
+                        <a href="#" class="ip-cell text-decoration-none"
+                           onclick="analyzeIP(\'' . htmlspecialchars($lock['ip']) . '\'); return false;"
+                           data-bs-toggle="tooltip" data-bs-placement="top"
+                           title="Click to analyze this IP address">
+                            ' . htmlspecialchars($lock['ip']) . '
+                        </a>
                     </td>
                     <td>
                         <span class="level-badge">
@@ -365,6 +371,29 @@ echo '
     </div>
 </div>
 
+<div class="modal fade" id="ipAnalysisModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-globe"></i> IP Address Analysis - <span id="analysis-modal-ip"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="ip-analysis-content">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Analyzing IP address...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Initialize Bootstrap tooltips
 document.addEventListener(\'DOMContentLoaded\', function() {
@@ -411,6 +440,169 @@ function showHistory(lockoutId, ip) {
         })
         .catch(error => {
             document.getElementById("history-content").innerHTML = \'<div class="alert alert-danger">Error loading history</div>\';
+        });
+}
+
+function analyzeIP(ip) {
+    document.getElementById("analysis-modal-ip").textContent = ip;
+    const modal = new bootstrap.Modal(document.getElementById("ipAnalysisModal"));
+    modal.show();
+
+    // Reset content with loading spinner
+    document.getElementById("ip-analysis-content").innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Analyzing IP address...</p>
+        </div>
+    `;
+
+    fetch("/admin/ajax/analyze-ip.php?ip=" + encodeURIComponent(ip))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = \'\';
+
+                // Current Lockout Status
+                if (data.current_lockout) {
+                    const current = data.current_lockout;
+                    const isActive = current.minutes_remaining > 0;
+                    html += `
+                        <div class="alert ${isActive ? \'alert-danger\' : \'alert-secondary\'} mb-4">
+                            <h5 class="alert-heading">
+                                <i class="bi bi-lock-fill"></i> Current Lockout Status
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-3"><strong>Level:</strong> ${current.lockout_level}</div>
+                                <div class="col-md-3"><strong>Violations:</strong> ${current.total_violations}</div>
+                                <div class="col-md-3"><strong>Status:</strong> ${isActive ? \'🔴 Active\' : \'⚪ Inactive\'}</div>
+                                <div class="col-md-3"><strong>Expires:</strong> ${isActive ? current.minutes_remaining + \' min\' : \'Expired\'}</div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6"><strong>First Violation:</strong> ${current.first_violation_dt}</div>
+                                <div class="col-md-6"><strong>Last Violation:</strong> ${current.last_violation_dt}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="alert alert-success mb-4">
+                            <i class="bi bi-check-circle"></i> No active lockout for this IP address
+                        </div>
+                    `;
+                }
+
+                // Basic IP Info
+                if (data.basic_info && Object.keys(data.basic_info).length > 0) {
+                    const info = data.basic_info;
+                    html += `
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="bi bi-geo-alt-fill"></i> Geographic & Network Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>Country:</strong> ${info.country || \'N/A\'} (${info.countryCode || \'N/A\'})</p>
+                                        <p class="mb-2"><strong>Region:</strong> ${info.regionName || \'N/A\'}</p>
+                                        <p class="mb-2"><strong>City:</strong> ${info.city || \'N/A\'}</p>
+                                        <p class="mb-2"><strong>Timezone:</strong> ${info.timezone || \'N/A\'}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-2"><strong>ISP:</strong> ${info.isp || \'N/A\'}</p>
+                                        <p class="mb-2"><strong>Organization:</strong> ${info.org || \'N/A\'}</p>
+                                        <p class="mb-2"><strong>AS:</strong> ${info.as || \'N/A\'}</p>
+                                        ${info.proxy ? \'<p class="mb-2 text-warning"><strong>⚠️ Proxy Detected</strong></p>\' : \'\'}
+                                        ${info.hosting ? \'<p class="mb-2 text-info"><strong>🖥️ Hosting/Datacenter IP</strong></p>\' : \'\'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // AI Analysis
+                html += `
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-robot"></i> AI-Powered Threat Intelligence</h6>
+                        </div>
+                        <div class="card-body">
+                            <div style="white-space: pre-wrap; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif;">
+                                ${data.ai_analysis ? data.ai_analysis.replace(/\\n/g, \'<br>\') : \'Analysis unavailable\'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Lockout History
+                if (data.history && data.history.length > 0) {
+                    html += `
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="bi bi-clock-history"></i> Recent Lockout History (Last 10 Events)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Level</th>
+                                                <th>Duration</th>
+                                                <th>Type</th>
+                                                <th>Start Date</th>
+                                                <th>Expire Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                    `;
+
+                    data.history.forEach(h => {
+                        html += `
+                            <tr>
+                                <td><span class="badge bg-secondary">Level ${h.level}</span></td>
+                                <td>${h.lockout_minutes} min</td>
+                                <td><code>${h.type}</code></td>
+                                <td class="small">${h.start_dt}</td>
+                                <td class="small">${h.expire_dt}</td>
+                                <td><span class="badge bg-${h.status === \'active\' ? \'danger\' : \'secondary\'}">${h.status}</span></td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No lockout history found for this IP address
+                        </div>
+                    `;
+                }
+
+                document.getElementById("ip-analysis-content").innerHTML = html;
+            } else {
+                document.getElementById("ip-analysis-content").innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Failed to analyze IP: ${data.error || \'Unknown error\'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            document.getElementById("ip-analysis-content").innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Error loading IP analysis: ${error.message}
+                </div>
+            `;
         });
 }
 </script>
