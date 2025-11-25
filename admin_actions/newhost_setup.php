@@ -1,4 +1,12 @@
 <?php
+/**
+ * New Host Setup - Server Deployment Tool
+ *
+ * MODE CONFIGURATION:
+ * - Line ~262: $display_mode flag controls behavior
+ * - TRUE  = Display commands for manual execution (safer, recommended)
+ * - FALSE = Execute commands automatically via SSH (original behavior)
+ */
 $addClasses[] = 'api';
 $addClasses[] = 'powerdns';
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
@@ -236,17 +244,54 @@ if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add
         .command-header { background: #343a40; color: #fff; padding: 10px; border-radius: 5px; margin-top: 20px; }
         .timestamp { color: #6c757d; font-size: 0.9em; }
         #output-container { margin-bottom: 50px; }
+        #scroll-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        #scroll-control button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .btn-stop { background: #dc3545; color: white; }
+        .btn-start { background: #28a745; color: white; }
     </style>
     <script>
+        let autoScrollEnabled = true;
+
         function scrollToBottom() {
-            window.scrollTo(0, document.body.scrollHeight);
+            if (autoScrollEnabled) {
+                window.scrollTo(0, document.body.scrollHeight);
+            }
         }
+
+        function toggleAutoScroll() {
+            autoScrollEnabled = !autoScrollEnabled;
+            const btn = document.getElementById(\'scroll-toggle-btn\');
+            if (autoScrollEnabled) {
+                btn.textContent = \'⏸ Stop Auto-Scroll\';
+                btn.className = \'btn-stop\';
+                scrollToBottom();
+            } else {
+                btn.textContent = \'▶ Resume Auto-Scroll\';
+                btn.className = \'btn-start\';
+            }
+        }
+
         // Auto-scroll on page load and when new content appears
         window.onload = scrollToBottom;
         setInterval(scrollToBottom, 500);
     </script>
 </head>
 <body>
+    <div id="scroll-control">
+        <button id="scroll-toggle-btn" class="btn-stop" onclick="toggleAutoScroll()">⏸ Stop Auto-Scroll</button>
+    </div>
     <div class="container" id="output-container">
         <h1 class="mb-4"><i class="bi bi-terminal"></i> SSH Command Execution</h1>
         <div class="alert alert-info">
@@ -257,6 +302,73 @@ if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add
             flush();
 
             $doactions = $_REQUEST['serveraction'];
+
+            // MODE SWITCH: Set to true to display commands, false to execute them
+            $display_mode = true; // Change to false to execute commands directly
+
+            if ($display_mode) {
+                // Display mode: show commands for manual execution
+                echo '<div class="alert alert-info mt-4">';
+                echo '<h4><i class="bi bi-terminal"></i> Commands to Execute</h4>';
+                echo '<p>Copy and paste these commands into your SSH session with <strong>' . htmlspecialchars($host) . '</strong></p>';
+                echo '</div>';
+
+                // Password Reference Table - Dynamically retrieve passwords
+                $password_credentials = [
+                    ['id' => 'DZCKHC-KJGBK-9DBGB-JBBJ97', 'label' => 'FTP - webinstall', 'var' => 'MYSUPERSECUREPASSWORD', 'usage' => 'env var, rdavis user, FTP auth', 'scripts' => 'install_webserver_full, install_emailqueue'],
+                    ['id' => 'DVN3RN-OTMX3-Q7OSO-OQSNOS', 'label' => 'birthday_gold_admin', 'var' => 'MYSQL_ADMIN_PASSWORD', 'usage' => 'MySQL admin', 'scripts' => 'install_webserver_full, install_mysqldb, install_emailqueue'],
+                    ['id' => 'DZCK9C-97J99-FKDKJ-9HHDFF', 'label' => 'bgdbreplicator1', 'var' => 'MYSQL_REPL_PASSWORD', 'usage' => 'MySQL replication', 'scripts' => 'install_webserver_full, install_mysqldb, install_emailqueue'],
+                    ['id' => 'DYBJFB-ACB6A-6KFBB-AEAHBE', 'label' => 'KVM8-web-root LEGACY', 'var' => 'LEGACY_ROOT_PASSWORD', 'usage' => 'SSH root password', 'scripts' => 'install_webserver_full, install_mysqldb'],
+                    ['id' => 'DJLTPL-RKLNL-TNTSM-LTLNTR', 'label' => 'birthday_gold_admin', 'var' => 'adminpass', 'usage' => 'Admin for emailqueue', 'scripts' => 'install_emailqueue_docker, install_emailqueue'],
+                    ['id' => 'DTOWO8-UOONO-NTWNR-TTRT8T', 'label' => 'postmasterpass', 'var' => 'postmasterpass', 'usage' => 'Postmaster for emailqueue', 'scripts' => 'install_emailqueue_docker, install_emailqueue'],
+                ];
+
+                echo '<div class="card mb-3">';
+                echo '<div class="card-header bg-primary text-white">';
+                echo '<h5 class="mb-0"><i class="bi bi-key-fill"></i> Password Reference - Access Manager Credentials</h5>';
+                echo '</div>';
+                echo '<div class="card-body p-0">';
+                echo '<div class="table-responsive">';
+                echo '<table class="table table-sm table-striped mb-0">';
+                echo '<thead class="table-dark">';
+                echo '<tr>';
+                echo '<th>Label</th>';
+                echo '<th>Variable Name</th>';
+                echo '<th>Password Value</th>';
+                echo '<th>Usage</th>';
+                echo '<th>Used In Scripts</th>';
+                echo '</tr>';
+                echo '</thead>';
+                echo '<tbody>';
+
+                foreach ($password_credentials as $cred) {
+                    $password = @file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=' . $cred['id'] . '&apikey=' . $api_key . '&');
+                    if ($password === false || empty($password)) {
+                        $password_display = '<span class="text-danger">Failed to retrieve</span>';
+                    } else {
+                        $password_id = 'pwd_' . md5($cred['id']);
+                        $password_display = '<code class="text-success" style="cursor: pointer; user-select: all;" onclick="copyPassword(\'' . $password_id . '\')" title="Click to copy">' . htmlspecialchars($password) . ' <i class="bi bi-clipboard"></i></code>';
+                        $password_display .= '<input type="hidden" id="' . $password_id . '" value="' . htmlspecialchars($password) . '">';
+                    }
+
+                    echo '<tr>';
+                    echo '<td><strong>' . htmlspecialchars($cred['label']) . '</strong><br><small class="text-muted">' . htmlspecialchars($cred['id']) . '</small></td>';
+                    echo '<td><code>' . htmlspecialchars($cred['var']) . '</code></td>';
+                    echo '<td>' . $password_display . '</td>';
+                    echo '<td>' . htmlspecialchars($cred['usage']) . '</td>';
+                    echo '<td><small>' . htmlspecialchars($cred['scripts']) . '</small></td>';
+                    echo '</tr>';
+                }
+
+                echo '</tbody>';
+                echo '</table>';
+                echo '</div>';
+                echo '</div>';
+                echo '</div>';
+
+                // Disable auto-scroll by default in display mode
+                echo '<script>autoScrollEnabled = false; document.getElementById("scroll-toggle-btn").textContent = "▶ Resume Auto-Scroll"; document.getElementById("scroll-toggle-btn").className = "btn-start";</script>';
+            }
 
             $listofcommands = [];
 
@@ -271,7 +383,7 @@ if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add
                     $listofcommands[] = 'echo "Created .my.cnf for MySQL access"';
                     $listofcommands[] = 'source ~/.profile';
                     $listofcommands[] = 'export AUTO_CONTINUE=1';
-                    $listofcommands[] = 'bash install_webserver.sh';
+                    $listofcommands[] = './install_webserver.sh';
                     $listofcommands[] = 'echo "=== Installation phase complete ==="';
                     $listofcommands[] = 'tail -30 ~/installhistory_web_*.log';
                 }
@@ -284,7 +396,10 @@ if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add
                 }
                 ///==========================================================================
                 if ($action == 'install_webserver_full') {
-                    echo '<div class="alert alert-info"><h5>Full Web Server Installation Process Started</h5></div>';
+                    // Only show this message in execution mode
+                    if (!$display_mode) {
+                        echo '<div class="alert alert-info"><h5>Full Web Server Installation Process Started</h5></div>';
+                    }
 
                     // Create .passwordfile with FTP credentials (escape special chars)
                     $pass = @file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=DZCKHC-KJGBK-9DBGB-JBBJ97&apikey=' . $api_key . '&');   // FTP - webinstall
@@ -311,10 +426,9 @@ if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add
                     if ($selected_system && !empty($selected_system['name'])) {
                         // Parse: "july05.bday.gold / Production LAMP Stack" -> "july05.bday.gold"
                         $hostname_full = explode(' / ', $selected_system['name'])[0];
-                        // Extract short hostname: "july05.bday.gold" -> "july05"
-                        $short_hostname = explode('.', $hostname_full)[0];
-                        $listofcommands[] = 'hostnamectl set-hostname ' . escapeshellarg($short_hostname);
-                        $listofcommands[] = 'echo "Hostname set to: ' . $short_hostname . ' (from ' . $hostname_full . ')"';
+                        // Use FQDN as hostname
+                        $listofcommands[] = 'hostnamectl set-hostname ' . escapeshellarg($hostname_full);
+                        $listofcommands[] = 'echo "Hostname set to: ' . $hostname_full . '"';
                     } else {
                         $listofcommands[] = 'echo "Warning: Could not determine hostname from selection, keeping default"';
                     }
@@ -328,7 +442,7 @@ if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add
                     $listofcommands[] = 'chmod 700 install_webserver.sh';
                     $listofcommands[] = 'echo "Starting webserver installation (may take several minutes and cause reboots)..."';
                     $listofcommands[] = 'export AUTO_CONTINUE=1';
-                    $listofcommands[] = 'bash install_webserver.sh';
+                    $listofcommands[] = './install_webserver.sh';
                     // INSTALL MYSQL DB
                     // Set MySQL passwords and SSH password in environment before running install
                     $mysql_admin_pass = file_get_contents('https://dev.birthday.gold/admin/accessmanager/accessmanager_get?id=DVN3RN-OTMX3-Q7OSO-OQSNOS&apikey=' . $api_key . '&');   // birthday_gold_admin
@@ -566,57 +680,139 @@ if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add
 
 
                 #-------------------------------------------------------------------------------
-                // Stream output to the browser
+                // MODE SWITCH: Display vs Execute
 
-                foreach ($listofcommands as $command) {
-                    if (is_callable($command)) {
-                        $ssh = $command();
-                        if (!$ssh) {
-                            break;
-                        }
-                    } else {
-                        try {
-                            $output = $ssh->exec($command);
-                            if (strpos($command, 'password') !== false) $displaycommand = '{{suppressed}}';
-                            else $displaycommand = $command;
+                if ($display_mode) {
+                    // DISPLAY MODE: Show commands for manual execution
+                    echo '<div class="card mt-3">';
+                    echo '<div class="card-header bg-dark text-white">';
+                    echo '<h5><i class="bi bi-code-square"></i> Execution Commands</h5>';
+                    echo '</div>';
+                    echo '<div class="card-body p-0">';
+                    echo '<div style="background: #1e1e1e; color: #d4d4d4; padding: 20px; font-family: \'Courier New\', monospace; font-size: 14px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word;">';
 
-                            echo '<div class="command-header"><span class="timestamp">' . date('H:i:s') . '</span> <strong>' . htmlspecialchars($displaycommand) . '</strong></div>';
-                            echo '<div class="command-output">' . htmlspecialchars($output) . '</div>';
-                            echo '<script>scrollToBottom();</script>';
-
-                            flush();
-                            if (function_exists('apache_reset_timeout')) {
-                                apache_reset_timeout();
+                    $command_script = '';
+                    $prev_command = '';
+                    foreach ($listofcommands as $command) {
+                        if (is_callable($command)) {
+                            $command_script .= "\n# [Note: Reconnect to SSH if server reboots]\n\n";
+                        } else {
+                            // Add separator BEFORE cleanup that leads to installation
+                            // Pattern: [ -f ~/install_*.sh ] or [ -f ~/deploy_*.sh ] marks start of new section
+                            if (preg_match('/^\[ -f ~\/(install_|deploy_).*\.sh \]/', $command)) {
+                                $command_script .= "\n" . str_repeat('=', 80) . "\n";
+                                $command_script .= "# NEW INSTALLATION SECTION\n";
+                                $command_script .= str_repeat('=', 80) . "\n\n";
                             }
-                        } catch (\phpseclib3\Exception\ConnectionClosedException $e) {
-                            // Server rebooted - redirect to log viewer
-                            echo '<div class="alert alert-warning mt-4">';
-                            echo '<h5><i class="bi bi-arrow-clockwise"></i> Server Rebooting</h5>';
-                            echo '<p>The server is rebooting as part of the installation process. The installation will continue automatically in the background.</p>';
-                            echo '<p>Redirecting to installation log viewer in 5 seconds...</p>';
-                            echo '</div>';
-                            echo '<script>';
-                            echo 'setTimeout(function() {';
-                            echo '  window.location.href = "/admin_actions/view-install-log.php?host=' . urlencode($host) . '&type=web";';
-                            echo '}, 5000);';
-                            echo '</script>';
-                            flush();
-                            break; // Exit the loop
-                        } catch (\Exception $e) {
-                            echo '<div class="alert alert-danger mt-4">';
-                            echo '<h5>Error</h5>';
-                            echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
-                            echo '</div>';
-                            flush();
-                            break;
+
+                            // Display all commands including passwords (user is authenticated)
+                            $command_script .= $command . "\n";
+                            $prev_command = $command;
                         }
                     }
+
+                    echo htmlspecialchars($command_script);
+                    echo '</div>';
+                    echo '<div class="card-footer">';
+                    echo '<button class="btn btn-sm btn-primary" onclick="copyCommands()"><i class="bi bi-clipboard"></i> Copy All Commands</button>';
+                    echo '<small class="text-muted ms-3">Total commands: ' . count($listofcommands) . '</small>';
+                    echo '</div>';
+                    echo '</div>';
+                    echo '</div>';
+
+                    echo '<script>';
+                    echo 'function copyCommands() {';
+                    echo '  const text = ' . json_encode($command_script) . ';';
+                    echo '  navigator.clipboard.writeText(text).then(function() {';
+                    echo '    alert("Commands copied to clipboard!");';
+                    echo '  }, function(err) {';
+                    echo '    console.error("Could not copy text: ", err);';
+                    echo '  });';
+                    echo '}';
+                    echo 'function copyPassword(elementId) {';
+                    echo '  const password = document.getElementById(elementId).value;';
+                    echo '  navigator.clipboard.writeText(password).then(function() {';
+                    echo '    const notification = document.createElement("div");';
+                    echo '    notification.className = "alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3";';
+                    echo '    notification.style.zIndex = "9999";';
+                    echo '    notification.textContent = "Password copied!";';
+                    echo '    document.body.appendChild(notification);';
+                    echo '    setTimeout(() => notification.remove(), 2000);';
+                    echo '  }, function(err) {';
+                    echo '    console.error("Could not copy password: ", err);';
+                    echo '  });';
+                    echo '}';
+                    echo '</script>';
+
+                    echo '</div>';
+                    echo '<div class="alert alert-info mt-4">';
+                    echo '<i class="bi bi-info-circle"></i> <strong>Next Steps:</strong><br>';
+                    echo '1. Copy the commands above using the "Copy All Commands" button<br>';
+                    echo '2. SSH into <strong>' . htmlspecialchars($host) . '</strong> as <strong>' . htmlspecialchars($username) . '</strong><br>';
+                    echo '3. Paste and execute the commands in your SSH terminal<br>';
+                    echo '4. Monitor the installation progress directly in your terminal';
+                    echo '</div>';
+
+                } else {
+                    // EXECUTION MODE: Execute commands via SSH (original code)
+                    foreach ($listofcommands as $command) {
+                        if (is_callable($command)) {
+                            $ssh = $command();
+                            if (!$ssh) {
+                                break;
+                            }
+                        } else {
+                            try {
+                                // Add visual separator BEFORE cleanup that leads to installation
+                                // Pattern: [ -f ~/install_*.sh ] or [ -f ~/deploy_*.sh ] marks start of new section
+                                if (preg_match('/^\[ -f ~\/(install_|deploy_).*\.sh \]/', $command)) {
+                                    echo '<div class="alert alert-warning mt-4 mb-4" style="border: 2px solid #ffc107; background: #fff3cd;">';
+                                    echo '<h5 style="margin: 0;"><i class="bi bi-arrow-right-circle-fill"></i> NEW INSTALLATION SECTION</h5>';
+                                    echo '</div>';
+                                }
+
+                                $output = $ssh->exec($command);
+                                // Display all commands including passwords (user is authenticated)
+                                $displaycommand = $command;
+
+                                echo '<div class="command-header"><span class="timestamp">' . date('H:i:s') . '</span> <strong>' . htmlspecialchars($displaycommand) . '</strong></div>';
+                                echo '<div class="command-output">' . htmlspecialchars($output) . '</div>';
+
+                                flush();
+                                if (function_exists('apache_reset_timeout')) {
+                                    apache_reset_timeout();
+                                }
+                            } catch (\phpseclib3\Exception\ConnectionClosedException $e) {
+                                // Server rebooted - redirect to log viewer
+                                echo '<div class="alert alert-warning mt-4">';
+                                echo '<h5><i class="bi bi-arrow-clockwise"></i> Server Rebooting</h5>';
+                                echo '<p>The server is rebooting as part of the installation process. The installation will continue automatically in the background.</p>';
+                                echo '<p>Redirecting to installation log viewer in 5 seconds...</p>';
+                                echo '</div>';
+                                echo '<script>';
+                                echo 'setTimeout(function() {';
+                                echo '  window.location.href = "/admin_actions/view-install-log.php?host=' . urlencode($host) . '&type=web";';
+                                echo '}, 5000);';
+                                echo '</script>';
+                                flush();
+                                break; // Exit the loop
+                            } catch (\Exception $e) {
+                                echo '<div class="alert alert-danger mt-4">';
+                                echo '<h5>Error</h5>';
+                                echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+                                echo '</div>';
+                                flush();
+                                break;
+                            }
+                        }
+                    }
+
+                    echo '</div>';
+                    echo '<div class="alert alert-success mt-4"><i class="bi bi-check-circle"></i> Command execution completed!</div>';
                 }
                 #-------------------------------------------------------------------------------
 
             }
-            echo '</div>';
-            echo '<div class="alert alert-success mt-4"><i class="bi bi-check-circle"></i> Command execution completed!</div>';
             echo '</div></body></html>';
             flush();
             exit; // Stop execution
@@ -851,15 +1047,7 @@ document.getElementById("host").addEventListener("change", function() {
                 <input type="text" class="form-control" id="host" name="host" value="march03.bday.gold" required>
             </div>
 */
-// Set default values for user_id 20
-$current_user_data = $session->get('current_user_data');
-$current_user_id = $current_user_data['user_id'] ?? 0;
-$default_password = ($current_user_id == 20) ? 'Hvm@7644Hvm@7644' : '';
-$default_api_key = ($current_user_id == 20) ? '785e12db5ac5f59606ced5fc8a43db34f9f384b3c527d7ed76a2621dbeba8ecf' : '';
-
-// Debug: check values
-echo "<!-- DEBUG: user_id=$current_user_id, password_set=" . (!empty($default_password) ? 'YES' : 'NO') . ", api_key_set=" . (!empty($default_api_key) ? 'YES' : 'NO') . " -->";
-
+// No default values - user must provide credentials
 echo '
             <div class="mb-3">
                 <label for="username" class="form-label">OS Username</label>
@@ -867,11 +1055,11 @@ echo '
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">OS User Password</label>
-                <input type="password" class="form-control" id="password" name="password" value="' . htmlspecialchars($default_password) . '" required>
+                <input type="password" class="form-control" id="password" name="password" value="" required>
             </div>
             <div class="mb-3">
                 <label for="api_key" class="form-label">API Key</label>
-                <input type="text" class="form-control" id="api_key" name="api_key" value="' . htmlspecialchars($default_api_key) . '">
+                <input type="text" class="form-control" id="api_key" name="api_key" value="">
             </div>
 ';
 $actions = [

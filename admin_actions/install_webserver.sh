@@ -223,6 +223,14 @@ EOF
     v_HOST=$(hostname)
     echo ${v_HOST}
 
+    # Wait for apt locks to be released
+    log "Waiting for apt locks to be released..."
+    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
+        log "Waiting for other package managers to finish..."
+        sleep 2
+    done
+    log "Apt locks released, proceeding"
+
     apt-get update -y
     validate "Running apt update"
 
@@ -235,7 +243,7 @@ EOF
     fi
     log "Installing locate package: $LOCATE_PKG (Ubuntu $UBUNTU_VERSION)"
 
-    apt -y install dos2unix tmux make gcc g++ software-properties-common $LOCATE_PKG unzip jq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends dos2unix tmux make gcc g++ software-properties-common $LOCATE_PKG unzip jq
     validate "Installing basic packages"
 
     # Only run updatedb if mlocate is installed (plocate auto-updates)
