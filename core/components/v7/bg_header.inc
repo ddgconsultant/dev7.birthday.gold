@@ -16,7 +16,7 @@ if (!isset($newheader)) {
     </head>
     <body' . ($is_iframe_mode ? ' class="iframe-mode"' : '') . '>
         <!-- Skip to main content for accessibility -->
-        <a href="#main-content" class="sr-only sr-only-focusable">Skip to main content</a>
+        <a href="#main-content" class="sr-only sr-only-focusable" style="color: white;">Skip to main content</a>
         
         <!-- JavaScript initialization -->
         <script>

@@ -1,6 +1,8 @@
 <?PHP
 #$nosessiontracking=true;
 $addClasses[] = 'Chat';
+// Set flag to suppress timeout errors in error handler
+$SUPPRESS_TIMEOUT_ERRORS = true;
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
 #-------------------------------------------------------------------------------

@@ -261,6 +261,9 @@ EOF'
 
     server_id="${month_num}${day}"
 
+    # Get last digit of day for auto_increment_offset (july05=5, july08=8, etc)
+    last_digit=${day: -1}
+
     bash -c "cat <<EOF > /etc/mysql/mysql.conf.d/99-mysql_2-replication.cnf
 [mysqld]
 #=========================================================================
@@ -281,7 +284,7 @@ relay-log-recovery = 1
 
 # Auto Increment Settings for Master-Master
 auto_increment_increment = 10
-auto_increment_offset = 2
+auto_increment_offset = $last_digit
 
 replicate-ignore-db = ccswag_dev8
 slave_skip_errors = 1062
@@ -340,7 +343,7 @@ EOF"
     # Extract the numbers from the hostnames
     master_num=$(echo $master_host | grep -oP '\d+')
     slave_num=$(echo $slave_host | grep -oP '\d+')    
-    master_channel="channel_prod${master_num}_to_prod${slave_num}"    
+    master_channel="channelsource_prod${master_num}_to_prod${slave_num}"    
     # Check if the replication channel exists
     channel_exists=$(mysql -u root -e "SHOW SLAVE STATUS FOR CHANNEL '$master_channel'\G" | grep -c "Channel_Name: $master_channel")
         if [ $channel_exists -gt 0 ]; then
@@ -360,7 +363,7 @@ EOF"
     # Extract the numbers from the hostnames
     master_num=$(echo $master_host | grep -oP '\d+')
     slave_num=$(echo $slave_host | grep -oP '\d+')    
-    master_channel="channel_prod${master_num}_to_prod${slave_num}"
+    master_channel="channelsource_prod${master_num}_to_prod${slave_num}"
     
     figlet "Adding Replication Channel" 
     log "creating $master_channel on: $slave_host"
@@ -389,7 +392,7 @@ EOF"
     # Extract the numbers from the hostnames
    master_num=$(echo $master_host | grep -oP '\d+')
     slave_num=$(echo $slave_host | grep -oP '\d+')
-    master_channel="channel_prod${slave_num}_to_prod${master_num}"
+    master_channel="channelsource_prod${slave_num}_to_prod${master_num}"
 
     log "Checking reverse replication channel on july02 using MYSQL_ADMIN_PASSWORD"
     # Check if the replication channel exists
@@ -414,7 +417,7 @@ EOF"
     # Extract the numbers from the hostnames
     master_num=$(echo $master_host | grep -oP '\d+')
     slave_num=$(echo $slave_host | grep -oP '\d+')
-    master_channel="channel_prod${slave_num}_to_prod${master_num}"
+    master_channel="channelsource_prod${slave_num}_to_prod${master_num}"
 
     log "Setting up reverse replication channel $master_channel on july02"
     log "Using MYSQL_ADMIN_PASSWORD to connect to july02"

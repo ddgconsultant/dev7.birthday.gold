@@ -148,6 +148,15 @@ set_exception_handler(function ($e) {
 
 // Convert warnings and notices to log entries but allow execution to continue
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+  // Check if we should suppress timeout errors (set by sitechecker)
+  if (!empty($GLOBALS['SUPPRESS_TIMEOUT_ERRORS'])) {
+    // Suppress cURL timeout errors
+    if (stripos($errstr, 'Operation timed out') !== false ||
+        stripos($errstr, 'timed out after') !== false) {
+      return true; // Suppress this error
+    }
+  }
+
   error_log("PHP Error [$errno]: $errstr in $errfile on line $errline");
 
   if ($GLOBALS['errormode'] === 'showerrors') {

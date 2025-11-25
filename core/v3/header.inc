@@ -2,7 +2,7 @@
 <body data-rsssl=1 class="activity bp-user my-activity just-me buddypress bp-legacy bbp-user-page single singular bbpress no-js buddypress-template-default page page-id-5 logged-in wp-custom-logo wp-embed-responsive grimlock grimlock--classic grimlock--navigation-classic-center grimlock--navigation-classic-top grimlock--navigation-fixed grimlock--back-to-top-right grimlock--back-to-top-displayed grimlock--loader-fadein-displayed grimlock--page grimlock--archive_forum grimlock-buddypress--members-counts-displayed grimlock-buddypress--bps-form-labels-displayed grimlock-buddypress--friend-icons-smile grimlock-buddypress--follow-icons-add grimlock-buddypress--members-items-layout-2-2-2-2-2-2-cols-classic grimlock-buddypress--profile-secondary-nav-mobile-text-displayed grimlock-buddypress--profile-nav-mobile-default-state-closed grimlock-buddypress--groups-counts-displayed grimlock-buddypress--groups-items-layout-2-2-2-2-2-cols-classic bm-messages-light grimlock-wordpress-seo--breadcrumb_custom_header_displayed mobile grimlock--custom_header-bevel-displayed">
 
 
-<a class="skip-link screen-reader-text sr-only sr-only-focusable" href="#content">Skip to main content</a>
+<a class="skip-link screen-reader-text sr-only sr-only-focusable" href="#content" style="color: white;">Skip to main content</a>
 
 <div id="site-wrapper" class="site-wrapper">
 	
