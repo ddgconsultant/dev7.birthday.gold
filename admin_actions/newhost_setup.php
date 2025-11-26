@@ -383,6 +383,9 @@ if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add
                     $listofcommands[] = 'echo "Created .my.cnf for MySQL access"';
                     $listofcommands[] = 'source ~/.profile';
                     $listofcommands[] = 'export AUTO_CONTINUE=1';
+                    // AUTO_RESUME defaults to false (manual mode) in install_webserver.sh
+                    // Set AUTO_RESUME=true before calling script if you want automatic systemd service resume
+                    // Manual mode (default) writes instructions to .profile for better visibility
                     $listofcommands[] = './install_webserver.sh';
                     $listofcommands[] = 'echo "=== Installation phase complete ==="';
                     $listofcommands[] = 'tail -30 ~/installhistory_web_*.log';
@@ -442,6 +445,9 @@ if ($app->formposted() && (!isset($_POST['action']) || ($_POST['action'] != 'add
                     $listofcommands[] = 'chmod 700 install_webserver.sh';
                     $listofcommands[] = 'echo "Starting webserver installation (may take several minutes and cause reboots)..."';
                     $listofcommands[] = 'export AUTO_CONTINUE=1';
+                    // AUTO_RESUME defaults to false (manual mode) in install_webserver.sh
+                    // Set AUTO_RESUME=true before calling script if you want automatic systemd service resume
+                    // Manual mode (default) writes instructions to .profile for better visibility
                     $listofcommands[] = './install_webserver.sh';
                     // INSTALL MYSQL DB
                     // Set MySQL passwords and SSH password in environment before running install

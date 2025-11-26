@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# AUTO_RESUME: Controls resume behavior after reboot
+# - false (default): Manual resume with .profile instructions (better visibility)
+# - true: Automatic resume via systemd service (original behavior)
+AUTO_RESUME=${AUTO_RESUME:-false}
+
 # Use fixed log filename so we can always tail it after reboots
 LOG_FILE=~/installhistory_web_current.log
 # Also create a timestamped backup
@@ -41,12 +46,67 @@ load_state() {
     fi
 }
 
-log "Starting installation process on $(hostname)"
+# Calculate remaining runs based on state
+get_remaining_runs() {
+    local state="$1"
+    # States that require reboot: update_upgrade, install_basics
+    # After reboot states: post_reboot_ssl_apache_ufw, post_reboot_apache_install
+    case "$state" in
+        "update_upgrade")
+            echo "2"  # Will reboot, then run post_reboot_ssl_apache_ufw, then install_basics->reboot, then post_reboot_apache_install
+            ;;
+        "post_reboot_ssl_apache_ufw")
+            echo "2"  # Will run to install_basics->reboot, then post_reboot_apache_install
+            ;;
+        "install_basics")
+            echo "1"  # Will reboot, then run post_reboot_apache_install
+            ;;
+        "post_reboot_apache_install")
+            echo "1"  # Final run to completion
+            ;;
+        *)
+            echo "0"  # No reboots remaining
+            ;;
+    esac
+}
 
-# Set up systemd service for auto-resume after reboot
-if [ ! -f /etc/systemd/system/webserver-install-resume.service ]; then
-    log "Creating auto-resume systemd service"
-    cat > /etc/systemd/system/webserver-install-resume.service <<'EOF'
+# Write manual resume instructions to .profile
+write_resume_instructions() {
+    local next_state="$1"
+    local remaining=$(get_remaining_runs "$next_state")
+
+    # Remove any previous installation instructions
+    sed -i '/### WEBSERVER INSTALLATION INSTRUCTIONS ###/,/### END WEBSERVER INSTALLATION INSTRUCTIONS ###/d' ~/.profile 2>/dev/null
+
+    if [ "$remaining" -gt 0 ]; then
+        cat >> ~/.profile <<EOF
+
+### WEBSERVER INSTALLATION INSTRUCTIONS ###
+# ⚠️  WEBSERVER INSTALLATION IN PROGRESS
+# Current state: $next_state
+# Estimated runs remaining: $remaining
+#
+# To continue installation, run:
+#   cd ~ && ./install_webserver.sh
+#
+# To monitor installation:
+#   tail -f ~/installhistory_web_current.log
+### END WEBSERVER INSTALLATION INSTRUCTIONS ###
+EOF
+        log "Manual resume instructions written to ~/.profile (runs remaining: $remaining)"
+    else
+        log "Installation complete - no resume instructions needed"
+    fi
+}
+
+log "Starting installation process on $(hostname)"
+log "Resume mode: AUTO_RESUME=$AUTO_RESUME"
+
+# Set up systemd service for auto-resume after reboot (only if AUTO_RESUME=true)
+if [ "$AUTO_RESUME" = "true" ]; then
+    if [ ! -f /etc/systemd/system/webserver-install-resume.service ]; then
+        log "Creating auto-resume systemd service"
+        cat > /etc/systemd/system/webserver-install-resume.service <<'EOF'
 [Unit]
 Description=Resume Webserver Installation After Reboot
 After=network.target
@@ -61,8 +121,11 @@ StandardError=journal
 [Install]
 WantedBy=multi-user.target
 EOF
-    systemctl enable webserver-install-resume.service
-    log "Auto-resume service enabled"
+        systemctl enable webserver-install-resume.service
+        log "Auto-resume service enabled"
+    fi
+else
+    log "Manual resume mode - will write instructions to .profile instead"
 fi
 
 STATE=$(load_state)
@@ -71,11 +134,20 @@ STATE=$(load_state)
 if [ "$STATE" == "completed" ] && [ "$ACTION_COUNTER" -eq 0 ]; then
     figlet "Check State File"
     log "The state file [$STATE_FILE] = completed"
-    # Clean up auto-resume service
-    systemctl disable webserver-install-resume.service 2>/dev/null
-    rm -f /etc/systemd/system/webserver-install-resume.service
-    systemctl daemon-reload
-    log "Auto-resume service removed"
+
+    # Clean up based on resume mode
+    if [ "$AUTO_RESUME" = "true" ]; then
+        # Clean up auto-resume service
+        systemctl disable webserver-install-resume.service 2>/dev/null
+        rm -f /etc/systemd/system/webserver-install-resume.service
+        systemctl daemon-reload
+        log "Auto-resume service removed"
+    else
+        # Remove manual resume instructions from .profile
+        sed -i '/### WEBSERVER INSTALLATION INSTRUCTIONS ###/,/### END WEBSERVER INSTALLATION INSTRUCTIONS ###/d' ~/.profile 2>/dev/null
+        log "Manual resume instructions removed from .profile"
+    fi
+
     exit 0
 fi
 
@@ -97,16 +169,92 @@ echo ""
     # Suppress kernel warnings by disabling the motd-news service
     echo 'ENABLED=0' > /etc/default/motd-news
 
+    ##########################################################
+    ## SECURITY: Pin apt sources to official Ubuntu mirrors ONLY
+    ##########################################################
+    log "SECURITY: Configuring official Ubuntu mirrors to prevent supply chain attacks"
+
+    # Backup original sources
+    cp /etc/apt/sources.list /etc/apt/sources.list.backup.$(date +%Y%m%d) 2>/dev/null || true
+
+    # Ubuntu 24.04+ uses DEB822 format in /etc/apt/sources.list.d/ubuntu.sources
+    # Backup and verify it's using official mirrors only
+    if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+        log "Found DEB822 format sources file (Ubuntu 24.04+)"
+        cp /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.backup.$(date +%Y%m%d)
+
+        # Check if sources are official Ubuntu
+        if grep -q "archive.ubuntu.com\|security.ubuntu.com" /etc/apt/sources.list.d/ubuntu.sources; then
+            log "DEB822 sources are using official Ubuntu mirrors - keeping as-is"
+            # Disable old sources.list to prevent duplicates
+            echo "# Disabled by install_webserver.sh - using DEB822 format in sources.list.d/" > /etc/apt/sources.list
+        else
+            log "WARNING: DEB822 sources may not be official Ubuntu mirrors"
+        fi
+    else
+        # Older Ubuntu versions - use traditional sources.list
+        UBUNTU_CODENAME=$(lsb_release -cs)
+        log "Detected Ubuntu codename: $UBUNTU_CODENAME (using traditional sources.list)"
+
+        # Create new sources.list with ONLY official Ubuntu mirrors
+        cat > /etc/apt/sources.list <<EOF
+# Official Ubuntu repositories ONLY - configured by install_webserver.sh
+# Date: $(date)
+# Security hardening: Using official mirrors only to prevent supply chain attacks
+
+# Main repositories
+deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME} main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-backports main restricted universe multiverse
+
+# Security updates
+deb http://security.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-security main restricted universe multiverse
+
+# Source repositories (commented out by default)
+# deb-src http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME} main restricted universe multiverse
+# deb-src http://archive.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-updates main restricted universe multiverse
+# deb-src http://security.ubuntu.com/ubuntu/ ${UBUNTU_CODENAME}-security main restricted universe multiverse
+EOF
+    fi
+
+    log "Official Ubuntu mirrors configured successfully"
+    validate "Configuring official Ubuntu mirrors"
+
+    # Log packages BEFORE apt operations (for security audit)
+    log "SECURITY AUDIT: Logging installed packages BEFORE dist-upgrade"
+    dpkg -l > ~/package_audit_BEFORE_distupgrade.log
+
     apt-get dist-upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
     validate "Running dist-upgrade"
+
+    # Log packages AFTER dist-upgrade (for security audit)
+    log "SECURITY AUDIT: Logging installed packages AFTER dist-upgrade"
+    dpkg -l > ~/package_audit_AFTER_distupgrade.log
+
+    # Show what changed during dist-upgrade
+    log "SECURITY AUDIT: Packages changed during dist-upgrade:"
+    diff ~/package_audit_BEFORE_distupgrade.log ~/package_audit_AFTER_distupgrade.log | grep "^[<>]" | head -50 | tee -a $LOG_FILE
 
     apt update -y
     validate "Running apt update"
 
+    # Log packages BEFORE upgrade (for security audit)
+    log "SECURITY AUDIT: Logging installed packages BEFORE upgrade"
+    dpkg -l > ~/package_audit_BEFORE_upgrade.log
+
     apt upgrade -y
     validate "Running apt upgrade"
 
+    # Log packages AFTER upgrade (for security audit)
+    log "SECURITY AUDIT: Logging installed packages AFTER upgrade"
+    dpkg -l > ~/package_audit_AFTER_upgrade.log
+
+    # Show what changed during upgrade
+    log "SECURITY AUDIT: Packages changed during upgrade:"
+    diff ~/package_audit_BEFORE_upgrade.log ~/package_audit_AFTER_upgrade.log | grep "^[<>]" | head -50 | tee -a $LOG_FILE
+
     apt -y install figlet
+    validate "Installing figlet"
     save_state "start"
     ;&
 "start")
@@ -132,6 +280,12 @@ echo ""
     figlet "Rebooting"
     log "Rebooting system"
     save_state "post_reboot_ssl_apache_ufw"
+
+    # Write resume instructions if in manual mode
+    if [ "$AUTO_RESUME" != "true" ]; then
+        write_resume_instructions "post_reboot_ssl_apache_ufw"
+    fi
+
     reboot
     ;;
 "post_reboot_ssl_apache_ufw")
@@ -192,11 +346,37 @@ echo ""
     chown rdavis:rdavis /home/rdavis/.ssh
     chmod 700 /home/rdavis/.ssh
 
+    ##########################################################
+    ## SECURITY WARNING: Downloading SSH key via INSECURE FTP
+    ##########################################################
+    log "================================================================"
+    log "SECURITY WARNING: Downloading SSH key via INSECURE FTP protocol"
+    log "Source: january02.bday.gold (unencrypted)"
+    log "File: /BIRTHDAY_SERVER/ENV_CONFIGS/keys/hostinger_rdavis.pub"
+    log "================================================================"
+
     ftp -inv january02.bday.gold <<EOF
 user richard $MYSUPERSECUREPASSWORD
 get /BIRTHDAY_SERVER/ENV_CONFIGS/keys/hostinger_rdavis.pub /home/rdavis/.ssh/hostinger_rdavis.pub
 EOF
     validate "Transferring SSH key"
+
+    # Verify downloaded SSH key
+    if [ -f /home/rdavis/.ssh/hostinger_rdavis.pub ]; then
+        log "SECURITY AUDIT: SSH key downloaded successfully"
+        log "SSH Key fingerprint (MD5):"
+        ssh-keygen -lf /home/rdavis/.ssh/hostinger_rdavis.pub -E md5 | tee -a $LOG_FILE
+        log "SSH Key fingerprint (SHA256):"
+        ssh-keygen -lf /home/rdavis/.ssh/hostinger_rdavis.pub -E sha256 | tee -a $LOG_FILE
+        log "SSH Key contents:"
+        cat /home/rdavis/.ssh/hostinger_rdavis.pub | tee -a $LOG_FILE
+        log "================================================================"
+        log "MANUAL VERIFICATION REQUIRED:"
+        log "Compare the above fingerprints with your known good SSH key"
+        log "================================================================"
+    else
+        log "ERROR: SSH key download failed"
+    fi
 
     # Ensure authorized_keys exists and has correct permissions
     touch /home/rdavis/.ssh/authorized_keys
@@ -234,6 +414,11 @@ EOF
     apt-get update -y
     validate "Running apt update"
 
+    # Install pv first so we can use it for progress monitoring
+    log "Installing pv (Pipe Viewer) for progress tracking"
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq pv
+    validate "Installing pv"
+
     # Detect Ubuntu version and install appropriate locate package
     UBUNTU_VERSION=$(lsb_release -rs | cut -d. -f1)
     if [ "$UBUNTU_VERSION" -ge 24 ]; then
@@ -243,7 +428,9 @@ EOF
     fi
     log "Installing locate package: $LOCATE_PKG (Ubuntu $UBUNTU_VERSION)"
 
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends dos2unix tmux make gcc g++ software-properties-common $LOCATE_PKG unzip jq
+    # Use pv to show progress for apt operations
+    log "Installing basic packages with progress monitoring..."
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dos2unix tmux make gcc g++ software-properties-common $LOCATE_PKG unzip jq 2>&1 | pv -p -t -e -r -b > /dev/null
     validate "Installing basic packages"
 
     # Only run updatedb if mlocate is installed (plocate auto-updates)
@@ -258,6 +445,12 @@ EOF
     figlet "Rebooting"
     log "Rebooting system"
     save_state "post_reboot_apache_install"
+
+    # Write resume instructions if in manual mode
+    if [ "$AUTO_RESUME" != "true" ]; then
+        write_resume_instructions "post_reboot_apache_install"
+    fi
+
     reboot
     ;;
 "post_reboot_apache_install")
@@ -338,7 +531,8 @@ EOF
 "install_php_extensions")
     ##########################################################
     # Install PHP 8.1 additional extensions
-    apt -y install php8.1-cli php8.1-common php8.1-mysql php8.1-zip php8.1-gd php8.1-mbstring php8.1-curl php8.1-xml php8.1-bcmath php8.1-intl php8.1-readline php8.1-ldap php8.1-soap php8.1-sqlite3 php8.1-opcache php8.1-xmlrpc  php8.1-odbc php8.1-fpm php8.1-phpdbg php8.1-fileinfo php-mysql php-curl 
+    log "Installing PHP 8.1 extensions (this may take 15-20 minutes)..."
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends php8.1-cli php8.1-common php8.1-mysql php8.1-zip php8.1-gd php8.1-mbstring php8.1-curl php8.1-xml php8.1-bcmath php8.1-intl php8.1-readline php8.1-ldap php8.1-soap php8.1-sqlite3 php8.1-opcache php8.1-xmlrpc php8.1-odbc php8.1-fpm php8.1-phpdbg php8.1-fileinfo php-mysql php-curl 2>&1 | pv -p -t -e -r -b > /dev/null
     validate "Installing additional PHP 8.1 extensions"
 
     apt -y install php-pear
@@ -489,7 +683,7 @@ EOF
     validate "Transferring certificates and config files"
 
     save_state "adjust_directory_permissions"
-    ;;
+    ;&
 "adjust_directory_permissions")
     ##########################################################
     ## 
