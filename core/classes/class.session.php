@@ -1,29 +1,21 @@
 <?php
 // session.php
-// JULY05 - 20251123
 
 // Define the session save path one directory level above the web root
 $session_path = $dir['base'] . '/../_SESSIONS_';
 
-// Normalize the path for Windows/Linux compatibility (before directory exists)
-$session_path = str_replace('\\', '/', $session_path);
-
-// Ensure the directory exists with proper permissions
+// Ensure the directory exists
 if (!is_dir($session_path)) {
-    mkdir($session_path, 0777, true); // Create the directory with 777 permissions for broader compatibility
-    chmod($session_path, 0777); // Ensure permissions are set
+    mkdir($session_path, 0770, true);
 }
 
-// Get the real path after directory is created
+// Resolve to real path (needed for Ubuntu 24.04)
 $session_path = realpath($session_path);
 
-// Set the session save path
-ini_set('session.save_path', $session_path);
-
-// Set additional session configuration for better compatibility
-ini_set('session.gc_probability', 1);
-ini_set('session.gc_divisor', 100);
-ini_set('session.gc_maxlifetime', 3600);
+// Set the session save path (only if headers not sent)
+if (!headers_sent()) {
+    ini_set('session.save_path', $session_path);
+}
 
 # ##==================================================================================================================================================
 # ##==================================================================================================================================================
@@ -33,30 +25,8 @@ class Session
   public function __construct($local_config)
   {
     // Start session if it has not already started
-    if (session_status() == PHP_SESSION_NONE) {
-      // Check if headers have already been sent (CLI/scheduler context)
-      if (headers_sent()) {
-        // Skip session initialization in CLI/scheduler mode
-        return;
-      }
-
-      // Suppress errors and handle them gracefully
-      @session_start();
-
-      // Check if session started successfully
-      if (session_status() != PHP_SESSION_ACTIVE) {
-        // Don't attempt to change ini settings if headers already sent
-        if (!headers_sent()) {
-          // Try alternative session configuration
-          ini_set('session.use_cookies', '1');
-          ini_set('session.use_only_cookies', '1');
-          ini_set('session.use_strict_mode', '0');
-          ini_set('session.cookie_httponly', '1');
-
-          // Try to start session again
-          @session_start();
-        }
-      }
+    if (session_status() == PHP_SESSION_NONE && !headers_sent()) {
+      session_start();
     }
   }
 
