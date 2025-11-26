@@ -1,0 +1,35 @@
+# Auto detect text files and normalize line endings
+* text=auto
+
+# Force Unix line endings for shell scripts (critical for bash execution)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Force Unix line endings for other server-side scripts
+*.php text eol=lf
+*.py text eol=lf
+*.pl text eol=lf
+
+# Force Unix line endings for config files commonly deployed to Linux
+*.conf text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+*.inc text eol=lf
+
+# Web files can use auto
+*.html text
+*.css text
+*.js text
+*.json text
+*.xml text
+
+# Binary files - don't touch
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
