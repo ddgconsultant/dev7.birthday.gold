@@ -7,7 +7,7 @@
  */
 
 $addClasses[] = 'fileuploader';
-include(__DIR__ . '/../core/site-controller.php');
+include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 echo "<pre>";
 
 // Configuration
