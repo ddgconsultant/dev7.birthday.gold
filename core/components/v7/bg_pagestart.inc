@@ -211,8 +211,10 @@ switch($v){
 }
 
 
-$metakeywords=$pagedata['metakeywords']??'Birthday Freebies, Birthday Rewards, Personalized Birthday Offers, Birthday Celebration Map, Exclusive Birthday Perks, Birthday Gold Registration, Birthday Coupons and Vouchers, VIP Birthday Experiences, Year-Round Birthday Deals, Birthday Celebration Itinerary, Unique Birthday Experiences';
-$metadescriptions=$pagedata['metadescriptions']??'Unlock a world of birthday perks with birthday.gold! Register, personalize, and celebrate with exclusive offers from over ' . $website['numberofbiz'] . '+  brands. Discover freebies, VIP experiences, and unique celebrations tailored just for you.';
+$defaultMetaKeywords = 'Birthday Freebies, Birthday Rewards, Personalized Birthday Offers, Birthday Celebration Map, Exclusive Birthday Perks, Birthday Gold Registration, Birthday Coupons and Vouchers, VIP Birthday Experiences, Year-Round Birthday Deals, Birthday Celebration Itinerary, Unique Birthday Experiences';
+$defaultMetaDescription = 'Unlock a world of birthday perks with birthday.gold! Register, personalize, and celebrate with exclusive offers from over ' . $website['numberofbiz'] . '+  brands. Discover freebies, VIP experiences, and unique celebrations tailored just for you.';
+$metakeywords = (isset($pagedata['metakeywords']) && is_string($pagedata['metakeywords'])) ? $pagedata['metakeywords'] : $defaultMetaKeywords;
+$metadescriptions = (isset($pagedata['metadescriptions']) && is_string($pagedata['metadescriptions'])) ? $pagedata['metadescriptions'] : $defaultMetaDescription;
 
 echo '
 
@@ -454,6 +456,11 @@ echo "
 ";
 
 
+
+// Handle $additionalstyles being passed as array (convert to string)
+if (is_array($additionalstyles)) {
+    $additionalstyles = implode("\n", $additionalstyles);
+}
 
 // Schema.org structured data
 $additionalstyles.= '

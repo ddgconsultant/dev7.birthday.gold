@@ -1622,27 +1622,31 @@ class Marketing
             }
             
             // Create image resource based on type
+            // Temporarily suppress libpng warnings about color profiles
+            set_error_handler(function() {}, E_WARNING);
             $source_image = false;
             switch ($image_info['mime']) {
                 case 'image/jpeg':
-                    $source_image = @imagecreatefromstring($image_data);
+                    $source_image = imagecreatefromstring($image_data);
                     break;
                 case 'image/png':
-                    $source_image = @imagecreatefromstring($image_data);
+                    $source_image = imagecreatefromstring($image_data);
                     break;
                 case 'image/gif':
-                    $source_image = @imagecreatefromstring($image_data);
+                    $source_image = imagecreatefromstring($image_data);
                     break;
                 case 'image/webp':
                     if (function_exists('imagecreatefromwebp')) {
-                        $source_image = @imagecreatefromstring($image_data);
+                        $source_image = imagecreatefromstring($image_data);
                     }
                     break;
                 default:
+                    restore_error_handler();
                     error_log("convertImageToBase64: Unsupported image type {$image_info['mime']} for: $image_url");
                     return '';
             }
-            
+            restore_error_handler();
+
             if (!$source_image) {
                 error_log("convertImageToBase64: Failed to create image resource from: $image_url");
                 return '';
@@ -1814,10 +1818,12 @@ class Marketing
 
             if ($use_mk_tables) {
                 // Use mk_activities table
+                // Note: mk_activities uses related_campaign_id, not campaign_id
+                // and stores user_id in metadata since there's no user_id column
                 $sql = "INSERT INTO mk_activities
-                       (campaign_id, user_id, activity_type, activity_data, activity_dt)
+                       (related_campaign_id, activity_type, activity_title, metadata, activity_date, create_by, company_id)
                        VALUES
-                       (:campaign_id, :user_id, :event_type, :extra_data, NOW())";
+                       (:campaign_id, :event_type, :event_type, :extra_data, NOW(), :user_id, 0)";
             } else {
                 // Use legacy bg_newsletter_events table
                 $sql = "INSERT INTO bg_newsletter_events

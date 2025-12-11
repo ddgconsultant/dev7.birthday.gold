@@ -62,10 +62,8 @@ class Mail
     global $sitesettings;
     $config = $sitesettings['database_admin'];
     $this->incomingmailserversdb = [
-        'march01' => ['DB_HOST' => 'march01.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
         'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
         'march03' => ['DB_HOST' => 'march03.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
-     #   ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'xfer', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4']
     ];
 
 

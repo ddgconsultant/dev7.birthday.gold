@@ -107,8 +107,9 @@ if (is_array($data) && isset($data['apps']) && is_array($data['apps']) && isset(
     ] );
 
     if ($update_response) {
-        $update_data = $update_response['decoded'];
-        foreach ($update_data['update'] as $key => $update) {
+        $update_data = $update_response['decoded'] ?? [];
+        $updates = $update_data['update'] ?? [];
+        foreach ($updates as $key => $update) {
             if (isset($update['manifest'])) {
                 unset($update['manifest']['description'], $update['manifest']['changelog'], $update['manifest']['postInstallMessage']);
             }

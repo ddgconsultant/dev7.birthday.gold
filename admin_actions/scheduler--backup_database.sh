@@ -4,11 +4,8 @@
 
 
 # MySQL credentials
-## STORED in december20:/root/.my.cnf as richard
+## STORED in december20:/root/.my.cnf as bgdbackupservice
 
-# MySQL credentials
-# MySQL credentials
-## STORED in december20:/root/.my.cnf as richard
 # Database names
 DATABASES=("mysql" "birthday_gold_www")
 

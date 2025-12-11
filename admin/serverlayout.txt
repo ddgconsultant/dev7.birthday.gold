@@ -20,11 +20,15 @@ package "Production LAMP" {
  
   database "= July02 - KVM8\n=== Production MySQL DB\n\n==== july02.bday.gold\n==== 86.38.218.59\n==== us-phx-pve-node124.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04\n+ Apache 2.4\n+ PHP 8.1\n+ MySQL 8 (ID: 702)" as PMYSQL30
 } 
-
+package "DECOMMED VPS" {
+  node "= June12 - KVM8\n=== Production Subdomain Services\n\n==== june12.bday.gold\n==== 178.16.140.200\n==== us-phx-pve-node131.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04 64bit\n+ Apache 2.4\n+ PHP 8.1\n\n---------------------\nw3.proqcs.com\nmonitoror.birthday.gold\nhelp.birthday.gold\nstatus.birthday.gold\nproject.birthday.gold\nswagger.birthday.gold" as PBGS12 #d8f2ea
+  node "= June14 - KVM8\n=== Production Subdomain Services\n\n==== june14.bday.gold\n\n==== 77.37.74.85\n==== us-phx-pve-node220.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04\n+ CloudPanel\n\n---------------------\nmaildoll.birthday.gold\nmaildoll.ddg.mx\nmaildoll.proqcs.com" as PBGS14 #d8f2ea
+}
 package "Production Subdomain" {
   node "= June12 - KVM8\n=== Production Subdomain Services\n\n==== june12.bday.gold\n==== 178.16.140.200\n==== us-phx-pve-node131.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04 64bit\n+ Apache 2.4\n+ PHP 8.1\n\n---------------------\nw3.proqcs.com\nmonitoror.birthday.gold\nhelp.birthday.gold\nstatus.birthday.gold\nproject.birthday.gold\nswagger.birthday.gold" as PBGS12 #d8f2ea
   node "= June14 - KVM8\n=== Production Subdomain Services\n\n==== june14.bday.gold\n\n==== 77.37.74.85\n==== us-phx-pve-node220.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04\n+ CloudPanel\n\n---------------------\nmaildoll.birthday.gold\nmaildoll.ddg.mx\nmaildoll.proqcs.com" as PBGS14 #d8f2ea
-  node "= June27 - KVM8\n=== Production Subdomain Docker Services\n\n==== june27.bday.gold\n\n==== 82.197.95.68\n==== us-phx-pve-node167.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04\n+ Docker\n\n---------------------\nchat.birthday.gold" as PBGS27 #d8f2ea
+  node "= June27 - KVM8\n=== Production Subdomain Cloudron Services\n\n==== june27.bday.gold\n\n==== 82.197.95.68\n==== us-phx-pve-node167.hostinger.io\n==== PHX, United States\n\n==== = Ubuntu 22.04\n+ Docker\n\n---------------------\nchat.birthday.gold" as PBGS27 #d8f2ea
+  node "= June28 - KVM8\n=== Production Subdomain Cloudron Services\n\n==== june28.bday.gold\n\n==== 147.93.113.57\n==== us-phx-pve-node167.hostinger.io\n==== BOS, United States\n\n==== = Ubuntu 24.04\n+ Docker\n\n---------------------\nchat.birthday.gold" as PBGS28 #d8f2ea
  }
 
 package "Development Environment" {
@@ -41,9 +45,8 @@ package "Data Design Group" {
 }
 
 
-HPHPX21 ---> PBGS12 : $warning("SOURCE/ROUNDROBIN Load Balanced")
-HPHPX21 ---> PBGS14 : $warning("SOURCE/ROUNDROBIN Load Balanced")
-HPHPX21 ---> PBGS27 : $warning("SOURCE/ROUNDROBIN Load Balanced")
+
+HPHPX21 ---> PBGS28 : $warning("SOURCE/ROUNDROBIN Load Balanced")
 HPHPX21 ---> PLAMP2 : $success("SOURCE Load Balanced")
 HPHPX21 ---> PLAMP4 : $success("SOURCE Load Balanced")
 HPHPX21 ---> PLAMP6 : $success("SOURCE Load Balanced")
@@ -52,6 +55,5 @@ PM2 ---> PMYSQL30 : "MySQL Message Store"
 PM3 ---> PMYSQL30 : "MySQL Message Store"
 PMYSQL30 <--> MDB2 : "MySQL Primary-Primary Replication"
 DWAPS ---> PMYSQL30 : "Uses MySQL Data"
-PBGS12 ---> PMYSQL30 : "Uses MySQL Data"
 
 @enduml

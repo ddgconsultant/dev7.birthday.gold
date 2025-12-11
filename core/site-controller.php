@@ -3,6 +3,10 @@ ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 ini_set('log_errors', 1);
 
+// Session cookie domain must be set before headers are sent
+$website['domain'] = '.birthday.gold';
+ini_set('session.cookie_domain', $website['domain']);
+
 // CORS headers
 if (isset($_SERVER['HTTP_ORIGIN'])) {
   $origin = $_SERVER['HTTP_ORIGIN'];
@@ -322,7 +326,7 @@ $dir['bge_raw'] = 'W:/BIRTHDAY_SERVER/' . $site . '.birthday.gold' . $dir['bge']
 $dir['bge_webA'] = 'https://' . $site . '.birthday.gold' . $dir['bge'];
 $website['bge_extensionversion'] = 'v4';
 
-$website['domain'] = '.birthday.gold';  // Notice the leading dot (.)
+// $website['domain'] is set at top of file (before headers are sent)
 $website['url'] = $site . $website['domain'];
 $website['fullurl'] = 'https://' . $website['url'];
 $website['formalurl'] = ($site == 'www') ? 'https://birthday.gold' : $website['fullurl'];
@@ -357,13 +361,6 @@ $enablechat = true;
 # GRAB CODE VERSION
 #-------------------------------------------------------------------------------
 include($dir['core'] . '/' . $website['ui_version'] . '/footerversion.inc');
-
-
-
-#-------------------------------------------------------------------------------
-# ALLOW CROSS SUBDOMAIN SESSIONS
-#-------------------------------------------------------------------------------
-ini_set('session.cookie_domain', $website['domain']);
 
 
 
@@ -659,8 +656,9 @@ if (empty($apibypass) && empty($claudebypass)) {
     // For admin access, check if the URI contains the '//' directory 
     if (strpos($uri, '/admin/')  !== false && !$account->isadmin()) {
 
-      if (isset($securityoverride_referrer) && $_SERVER['HTTP_REFERER'] == $securityoverride_referrer) {
-        session_tracking('securityoverride_referrer', $_SERVER['HTTP_REFERER']);
+      $http_referer = $_SERVER['HTTP_REFERER'] ?? '';
+      if (isset($securityoverride_referrer) && $http_referer == $securityoverride_referrer) {
+        session_tracking('securityoverride_referrer', $http_referer);
       } else {
         session_tracking('admin_access_failure');
         $system->redirectUser('admin_access_failure');
@@ -720,7 +718,9 @@ function session_tracking($name = '', $trackingdata = array(), $p_pagename = '')
   // --------------------------------------------------------------------------------------------------
   // Use $_SERVER['SCRIPT_NAME'] as default if $pagename is not provided
   if ($p_pagename == '' || $p_pagename == '__NOREQUESTDATA__') {
-    $pagename = $_SERVER['SCRIPT_NAME'];
+    $pagename = $_SERVER['SCRIPT_NAME'] ?? '';
+  } else {
+    $pagename = $p_pagename;
   }
   ksort($_SERVER);
   ksort($_SESSION);

@@ -496,7 +496,7 @@ if ($current_day == '01' || ($debug_mode && isset($_GET['monthly']))) {
         $birthdate = new DateTime($staff['birthdate']);
         if ($birthdate->format('m') == $current_month) {
             $birthdays_this_month[] = [
-                'name' => $staff['profile_first_name'] . ' ' . $staff['profile_last_name'],
+                'name' => $staff['first_name'] . ' ' . $staff['last_name'],
                 'day' => $birthdate->format('j'),
                 'date' => $birthdate->format('F j')
             ];

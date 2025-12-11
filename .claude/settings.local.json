@@ -22,7 +22,15 @@
       "Bash(ssh:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(sshpass -p 'Hvm@7644Hvm@7644' ssh -o StrictHostKeyChecking=no root@178.16.140.200 \"ls -la /etc/apache2/sites-enabled/\")",
+      "Bash(sshpass -p 'Hvm@7644Hvm@7644' ssh -o StrictHostKeyChecking=no root@178.16.140.200 \"ls -la /var/web_certs/ 2>/dev/null || ls -la /etc/ssl/certs/ | head -20\")",
+      "Bash(sshpass -p 'Hvm@7644Hvm@7644' ssh -o StrictHostKeyChecking=no root@31.220.62.118 \"hostname; df -h; free -h; cat /etc/os-release | head -3\")",
+      "Bash(sshpass -p 'Hvm@7644Hvm@7644' scp -o StrictHostKeyChecking=no /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/install_ddg_webserver.sh root@31.220.62.118:/root/install_ddg_webserver.sh)",
+      "Bash(sshpass -p 'Hvm@7644Hvm@7644' ssh -o StrictHostKeyChecking=no root@31.220.62.118 \"chmod +x /root/install_ddg_*.sh && ls -la /root/install_ddg_*.sh\")",
+      "Bash(sshpass:*)",
+      "Bash(curl:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": [],

@@ -300,11 +300,11 @@ foreach ($campaigns as $campaign) {
     
     // Log activity in mk_activities if table exists
     try {
-        $activity_sql = "INSERT INTO mk_activities 
-                        (campaign_id, activity_type, activity_data, create_dt) 
-                        VALUES 
-                        (:campaign_id, 'queue_batch_generated', :data, NOW())";
-        
+        $activity_sql = "INSERT INTO mk_activities
+                        (related_campaign_id, activity_type, activity_title, metadata, activity_date, create_by, company_id)
+                        VALUES
+                        (:campaign_id, 'queue_batch_generated', 'Queue Batch Generated', :data, NOW(), 0, 0)";
+
         $database->query($activity_sql, [
             'campaign_id' => $campaign['campaign_id'],
             'data' => json_encode([
