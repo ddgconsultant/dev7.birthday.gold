@@ -268,6 +268,58 @@ case $STATE in
         figlet "Monitor Added"
     fi
 
+    save_state "create_replicalag_monitor"
+    ;&
+##########################################################
+"create_replicalag_monitor")
+    UPPERHOSTNAME=$(hostname | tr '[:lower:]' '[:upper:]')
+    validate "Transforming hostname to uppercase"
+
+    MONITOR_NAME="$UPPERHOSTNAME ReplicaLag"
+    if check_monitor_exists "$MONITOR_NAME"; then
+        figlet "Already Exists"
+        log "Monitor '$MONITOR_NAME' already exists. Skipping creation."
+    else
+        log "Creating JSON data for ReplicaLag monitor"
+        HTTP_DATA=$(jq -n --arg name "$UPPERHOSTNAME ReplicaLag" --arg hostname "$HOSTNAME.birthday.gold" --arg url "https://$HOSTNAME.birthday.gold/api/monitoror/dataserver_replicalag.php" --arg description "MySQL Replica Lag monitor for $HOSTNAME" '{
+            type: "keyword",
+            name: $name,
+            hostname: $hostname,
+            url: $url,
+            interval: 300,
+            maxretries: 1,
+            retryInterval: 300,
+            timeout: 48,
+            resendInterval: 10,
+            expiryNotification: true,
+            ignoreTls: true,
+            upsideDown: false,
+            maxredirects: 10,
+            accepted_statuscodes: ["200-299"],
+            parent: 3,
+            description: $description,
+            tags: ["WEB", "DATABASE"],
+            notificationIDList: [1],
+            method: "GET",
+            httpBodyEncoding: "json",
+            headers: {
+                "HeaderName": "HeaderValue"
+            },
+            body: {
+                "key": "value"
+            },
+            keyword: "seconds behind"
+        }')
+        validate "Creating JSON data for ReplicaLag monitor"
+
+        echo ${HTTP_DATA} | tee -a $LOG_FILE
+
+        log "Sending POST request to create ReplicaLag monitor"
+        curl -k -X POST https://april21.bday.gold:5443/create_monitor -H "Content-Type: application/json" -d "$HTTP_DATA"
+        validate "Creating ReplicaLag monitor in Uptime Kuma"
+        figlet "Monitor Added"
+    fi
+
     save_state "completed"
     ;&
 ##########################################################
