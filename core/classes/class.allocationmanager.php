@@ -122,7 +122,8 @@ class AllocationManager {
             'expiring_soon_count' => $expiring_result['expiring_count'] ?? 0,
             'pending_allocations' => $allocation_data['pending_allocations'] ?? 0,
             'plan_allocations' => $plan_allocations,
-            'bonus_allocations' => $bonus_allocations
+            'bonus_allocations' => $bonus_allocations,
+            'plan_limit' => $plan_max_allocations  // Explicit plan limit for enforcement
         ];
     }
     

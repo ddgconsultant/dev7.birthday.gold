@@ -39,6 +39,50 @@ if ($balance['available_allocations'] < 1) {
     exit;
 }
 
+// SERVER-SIDE PLAN LIMIT ENFORCEMENT
+// This is a critical security check - do not rely solely on available_allocations
+// as allocation records may not be properly initialized
+$plan_limit = $balance['plan_limit'] ?? 0;
+$bonus_allocations = $balance['bonus_allocations'] ?? 0;
+$total_allowed = $plan_limit + $bonus_allocations;
+$current_enrollments = $balance['use_count'] ?? 0;
+
+// If plan_limit is 0, get it directly from user's plan as a fail-safe
+if ($plan_limit == 0) {
+    $user_plan_data = $account->getuserdata($user_id, 'user_id');
+    $plan_details = $app->plandetail('details_id', $user_plan_data['account_product_id'] ?? 0);
+
+    if ($plan_details && isset($plan_details['max_business_select']['value'])) {
+        $plan_limit = intval($plan_details['max_business_select']['value']);
+    }
+
+    // Default limits by plan type if still not found
+    if ($plan_limit == 0) {
+        $account_plan = strtolower($user_plan_data['account_plan'] ?? 'free');
+        if (strpos($account_plan, 'free') !== false) {
+            $plan_limit = 5;  // Free plan default
+        } elseif (strpos($account_plan, 'basic') !== false) {
+            $plan_limit = 10;  // Basic plan default
+        } else {
+            $plan_limit = 5;  // Absolute minimum fallback
+        }
+    }
+
+    $total_allowed = $plan_limit + $bonus_allocations;
+}
+
+// Enforce the plan limit - this is the critical check that was missing
+if ($current_enrollments >= $total_allowed) {
+    error_log("ENROLLMENT LIMIT ENFORCED: User {$user_id} attempted enrollment #{" . ($current_enrollments + 1) . "} but limit is {$total_allowed} (plan: {$plan_limit}, bonus: {$bonus_allocations})");
+    echo json_encode([
+        'success' => false,
+        'error' => 'You have reached your plan enrollment limit',
+        'current' => $current_enrollments,
+        'limit' => $total_allowed
+    ]);
+    exit;
+}
+
 // Check if already enrolled
 $check_sql = "SELECT * FROM bg_user_enrollments WHERE user_id = :user_id AND company_id = :company_id AND status NOT IN ('failed', 'removed')";
 $existing = $database->getrow($check_sql, ['user_id' => $user_id, 'company_id' => $company_id]);
