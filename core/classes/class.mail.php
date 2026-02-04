@@ -58,13 +58,35 @@ class Mail
 
     
 
-    // Ddfine list of incoming mail servers
+    // Define list of incoming mail servers from config
+    // To decommission a server, set its status to 'inactive' in config-main-production.inc [mailservers] section
     global $sitesettings;
     $config = $sitesettings['database_admin'];
-    $this->incomingmailserversdb = [
-        'march02' => ['DB_HOST' => 'march02.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
-        'march03' => ['DB_HOST' => 'march03.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
-    ];
+    $this->incomingmailserversdb = [];
+
+    // Load mailserver list from config if available
+    if (isset($sitesettings['mailservers']) && is_array($sitesettings['mailservers'])) {
+        foreach ($sitesettings['mailservers'] as $hostname => $status) {
+            // Only include active servers
+            if (strtolower($status) === 'active') {
+                $this->incomingmailserversdb[$hostname] = [
+                    'DB_HOST' => $hostname . '.bday.gold',
+                    'DB_DATABASE' => 'mailserver',
+                    'DB_USERNAME' => 'birthday_gold_admin',
+                    'DB_PASSWORD' => $config['password'],
+                    'DB_CHARSET' => 'utf8mb4'
+                ];
+            }
+        }
+    }
+
+    // Fallback to hardcoded list if config not available
+    if (empty($this->incomingmailserversdb)) {
+        $this->incomingmailserversdb = [
+            // march02 expired 2026-02-04
+            'march03' => ['DB_HOST' => 'march03.bday.gold', 'DB_DATABASE' => 'mailserver', 'DB_USERNAME' => 'birthday_gold_admin', 'DB_PASSWORD' => $config['password'], 'DB_CHARSET' => 'utf8mb4'],
+        ];
+    }
 
 
   }
