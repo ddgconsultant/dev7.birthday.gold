@@ -141,7 +141,7 @@ $tracked_sql = "SELECT company_id FROM bg_user_enrollments
 $tracked_companies = $database->getrows($tracked_sql, ['user_id' => $user_id]);
 $trackedList = array_column($tracked_companies, 'company_id');
 
-// Get user balance
+// Get user balance (don't include cart items - JavaScript handles basket display reduction)
 $balance = $allocationmanager->getUserBalance($user_id);
 $allocation_warning = $allocationmanager->getAllocationWarning($user_id);
 
@@ -2075,23 +2075,29 @@ function updateBalanceDisplay() {
 function trackAsOwned(companyId, companyName, element) {
     // Prevent default link behavior
     event.preventDefault();
-    
+
     // Get company logo from card
     const card = element.closest('.company-card');
     const imgEl = card ? card.querySelector('.company-image img') : null;
     const companyLogo = imgEl ? imgEl.src : '';
-    
+
     // Check if already tracked
     let trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
-    
+
     // Ensure companyId is a number for consistency
     const numericCompanyId = parseInt(companyId, 10);
-    
+
     if (trackedBasket.find(item => item.id === numericCompanyId)) {
         showNotification('info', 'This company is already marked as tracked');
+        // Track the blocked attempt
+        if (typeof trackEnrollmentSelection === 'function') {
+            trackEnrollmentSelection('track_blocked', numericCompanyId, companyName, {
+                was_already_in_basket: true
+            });
+        }
         return;
     }
-    
+
     // Add to tracked basket with numeric ID
     trackedBasket.push({
         id: numericCompanyId,
@@ -2099,7 +2105,12 @@ function trackAsOwned(companyId, companyName, element) {
         logo: companyLogo
     });
     sessionStorage.setItem('trackedBasket', JSON.stringify(trackedBasket));
-    
+
+    // Track the successful track action
+    if (typeof trackEnrollmentSelection === 'function') {
+        trackEnrollmentSelection('track', numericCompanyId, companyName);
+    }
+
     // Replace the entire button group with a single tracked button
     const actionDiv = element.closest('.btn-group').parentElement;
     actionDiv.innerHTML = `
@@ -2107,21 +2118,30 @@ function trackAsOwned(companyId, companyName, element) {
             <i class="bi bi-bookmark-check-fill"></i> Tracked
         </button>
     `;
-    
+
     // Update basket UI to show counts
     updateBasketUI();
-    
+
     // No notification needed - the button change is enough feedback
 }
 
 // Remove from tracked basket - mirrors removeFromBasket for picked items
 function removeFromTrackedBasket(companyId) {
     let trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+
+    // Get item name before removing for tracking
+    const removedItem = trackedBasket.find(item => item.id === companyId);
+
     trackedBasket = trackedBasket.filter(item => item.id !== companyId);
-    
+
     // Save to sessionStorage
     sessionStorage.setItem('trackedBasket', JSON.stringify(trackedBasket));
-    
+
+    // Track the untrack action
+    if (removedItem && typeof trackEnrollmentSelection === 'function') {
+        trackEnrollmentSelection('untrack', companyId, removedItem.name);
+    }
+
     // Update basket UI
     updateBasketUI();
     

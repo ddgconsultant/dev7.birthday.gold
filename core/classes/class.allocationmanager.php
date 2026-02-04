@@ -1,101 +1,33 @@
 <?php
 /**
  * AllocationManager Class for Enrollment Allocations
- * Simplified version that works without additional tables
+ * Uses centralized $account->getAllocationBalance() for consistency
  */
 
 class AllocationManager {
     private $db;
-    
+
     public function __construct($database) {
         $this->db = $database;
     }
-    
+
     /**
-     * Get user's current allocation balance from database
+     * Get user's current allocation balance
+     * Delegates to centralized $account->getAllocationBalance() for consistency
+     *
+     * @param int $user_id User ID
+     * @param int|null $year Year (kept for API compatibility, not used)
+     * @param array $options Options to pass to getAllocationBalance
+     * @return array Allocation balance data
      */
-    public function getUserBalance($user_id, $year = null) {
-        global $app, $account;
-        
-        if (!$year) {
-            $year = date('Y');
-        }
-        
-        // Get user's plan details
-        $user_data = $account->getuserdata($user_id, 'user_id');
-        $plan_details = false;
-        if (!empty($user_data['account_product_id'])) {
-            $plan_details = $app->plandetail('details_id', $user_data['account_product_id']);
-        }
-        
-        // Get allocations from bg_user_allocations table
-        $sql = "SELECT 
-                    COALESCE(SUM(CASE WHEN status = 'active' AND (expires_at IS NULL OR expires_at > NOW()) THEN (COALESCE(amount, 0) - COALESCE(amount_used, 0)) ELSE 0 END), 0) as total_available,
-                    COALESCE(SUM(CASE WHEN allocation_type = 'plan' THEN amount ELSE 0 END), 0) as plan_allocations,
-                    COALESCE(SUM(CASE WHEN allocation_type = 'bonus' AND status != 'pending' THEN amount ELSE 0 END), 0) as bonus_allocations,
-                    COALESCE(SUM(CASE WHEN status != 'pending' THEN amount ELSE 0 END), 0) as total_allocated,
-                    COALESCE(SUM(COALESCE(amount_used, 0)), 0) as total_used_from_allocations,
-                    COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) as pending_allocations
-                FROM bg_user_allocations
-                WHERE user_id = :user_id
-                AND allocation_year = :year
-                AND status IN ('active', 'depleted', 'pending', 'expired', 'revoked')";
-        
-        $allocation_data = $this->db->getrow($sql, [
-            'user_id' => $user_id,
-            'year' => $year
-        ]);
-        
-        // Debug logging
-        error_log("AllocationManager::getUserBalance - Raw allocation data: " . json_encode($allocation_data));
-        
-        // Get number of enrollments used this year from bg_user_companies
-        $sql = "SELECT COUNT(*) as used_count 
-                FROM bg_user_companies 
-                WHERE user_id = :user_id 
-                AND YEAR(create_dt) = :year 
-                AND status NOT IN ('failed', 'removed')";
-        
-        $result = $this->db->getrow($sql, [
-            'user_id' => $user_id,
-            'year' => $year
-        ]);
-        
-        $used_count = $result['used_count'] ?? 0;
-        
-        // Get max allocations from plan features only - no hardcoded defaults
-        $plan_max_allocations = 0;
-        if ($plan_details && isset($plan_details['max_business_select']) && isset($plan_details['max_business_select']['value'])) {
-            $plan_max_allocations = intval($plan_details['max_business_select']['value']);
-        }
-        
-        // Check if we have any allocations at all (including just bonus)
-        $has_any_allocations = !empty($allocation_data) && ($allocation_data['total_allocated'] > 0 || $allocation_data['bonus_allocations'] > 0);
-        
-        if ($has_any_allocations) {
-            // Use data from database
-            $total_available = $allocation_data['total_available'] ?? 0;
-            $total_allocated = $allocation_data['total_allocated'] ?? 0;
-            $plan_allocations = $allocation_data['plan_allocations'] ?? 0;
-            $bonus_allocations = $allocation_data['bonus_allocations'] ?? 0;
-            
-            // If we have bonus but no plan allocations, add the plan default to available
-            if ($plan_allocations == 0 && $bonus_allocations > 0) {
-                // User has bonus allocations but no plan allocation record
-                // Add the plan max to their available balance
-                $total_available += max(0, $plan_max_allocations - $used_count);
-                $total_allocated += $plan_max_allocations;
-                // Don't create the plan allocation record here, just account for it
-            }
-        } else {
-            // No allocations at all - use plan defaults
-            $total_available = max(0, $plan_max_allocations - $used_count);
-            $total_allocated = $plan_max_allocations;
-            $plan_allocations = $plan_max_allocations;
-            $bonus_allocations = 0;
-        }
-        
-        // Count expiring soon (within 30 days)
+    public function getUserBalance($user_id, $year = null, $options = []) {
+        global $account;
+
+        // Use centralized function from Account class
+        $balance = $account->getAllocationBalance($user_id, $options);
+
+        // Count expiring soon (within 30 days) - bonus-specific feature
+        $currentYear = date('Y');
         $sql = "SELECT COUNT(*) as expiring_count
                 FROM bg_user_allocations
                 WHERE user_id = :user_id
@@ -105,34 +37,36 @@ class AllocationManager {
                 AND expires_at IS NOT NULL
                 AND expires_at > NOW()
                 AND expires_at <= DATE_ADD(NOW(), INTERVAL 30 DAY)";
-        
+
         $expiring_result = $this->db->getrow($sql, [
             'user_id' => $user_id,
-            'year' => $year
+            'year' => $currentYear
         ]);
-        
+
+        // Return in expected format for backward compatibility
         return [
             'user_id' => $user_id,
-            'year' => $year,
-            'available_allocations' => $total_available,
-            'total_earned' => $total_allocated,
-            'total_used' => $used_count,
-            'earn_count' => 0, // Can be calculated from allocation records
-            'use_count' => $used_count,
+            'year' => $currentYear,
+            'available_allocations' => $balance['available'],
+            'total_earned' => $balance['total_allocations'],
+            'total_used' => $balance['used'],
+            'earn_count' => 0,
+            'use_count' => $balance['used'],
             'expiring_soon_count' => $expiring_result['expiring_count'] ?? 0,
-            'pending_allocations' => $allocation_data['pending_allocations'] ?? 0,
-            'plan_allocations' => $plan_allocations,
-            'bonus_allocations' => $bonus_allocations,
-            'plan_limit' => $plan_max_allocations  // Explicit plan limit for enforcement
+            'pending_allocations' => $balance['pending'],
+            'plan_allocations' => $balance['plan_allocations'],
+            'bonus_allocations' => $balance['bonus_allocations'],
+            'plan_limit' => $balance['plan_allocations'],
+            'cart_count' => $balance['cart']
         ];
     }
     
     /**
      * Get allocation warning message
      */
-    public function getAllocationWarning($user_id) {
-        $balance = $this->getUserBalance($user_id);
-        
+    public function getAllocationWarning($user_id, $options = []) {
+        $balance = $this->getUserBalance($user_id, null, $options);
+
         if ($balance['available_allocations'] == 0) {
             return [
                 'type' => 'danger',
@@ -140,11 +74,11 @@ class AllocationManager {
             ];
         } elseif ($balance['available_allocations'] <= 3) {
             return [
-                'type' => 'warning', 
+                'type' => 'warning',
                 'message' => "You have only {$balance['available_allocations']} enrollments left."
             ];
         }
-        
+
         return null;
     }
     

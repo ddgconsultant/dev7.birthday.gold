@@ -2238,6 +2238,7 @@ public function isExistingPhoneNumber($phone, $exclude_user_id = null) {
       'active' => 0,
       'success' => 0,
       'existing' => 0,
+      'user_owned' => 0,
       'default' => 0,
       'removed' => 0,
       'total' => 0,
@@ -2372,6 +2373,7 @@ ORDER BY availability_from_date ASC, expiration_date ASC
       'active' => 0,
       'success' => 0,
       'existing' => 0,
+      'user_owned' => 0,
       'default' => 0,
       'removed' => 0,
       'total' => 0,
@@ -2485,6 +2487,12 @@ ORDER BY status, company_name, modify_dt DESC
           $removetag = '';
           $showcompany = false;
           break;
+        case 'user_owned':
+          $status_sign = '<i class="bi bi-bookmark-check-fill text-warning"></i>';
+          $statusmessage = '<p class="text-warning p-0 m-0">You already have this reward program.</p>';
+          $statusCounters['user_owned']++;
+          $removetag = '';
+          break;
         default:
           $status_sign = '<i class="bi bi-question-diamond-fill text-warning"></i>';
           $statusmessage = '<p class="text-warning p-0 m-0"></p>';
@@ -2544,30 +2552,10 @@ ORDER BY status, company_name, modify_dt DESC
       $statusCounters['limited_total'] = $limitcount;
     }
 
-    // Calculate remaining selections
-    $accountstats = [
-      'business_pending' => $statusCounters['pending'],
-      'business_selected' => $statusCounters['selected'],
-      'business_success' => $statusCounters['success']
-    ];
-    $selectsused = ($accountstats['business_pending'] + $accountstats['business_selected'] + $accountstats['business_success']);
-
-
-/*
-    // Attempt to get the v3 plan details
-$userplan = $current_user_data['account_plan']; // Assuming 'user_plan' is part of $current_user_data
-#$plandetails = $app->plandetail('details');
-// Check if the user plan exists in v3
-if (!isset($plandetails[$userplan])) {
-  // If the user plan doesn't exist in v3, fall back to v2
-  $plandetails = $app->plandetail('details', '', 'v2');
-}
-  */
-  $plandatafeatures=$app->plandetail('details_id', $current_user_data['account_product_id']);
-      $selectsleft = ($plandatafeatures['max_business_select'] - $selectsused);
-    $statusCounters['remaining'] = max(0, $selectsleft); // Ensure remaining is not negative
-    $statusCounters['overage'] =  $selectsleft; // Ensure remaining is not negative
-    $statusCounters['plan_total'] = $plandatafeatures['max_business_select'];
+    // Use centralized allocation balance function for consistency across all pages
+    $allocationBalance = $this->getAllocationBalance($current_user_data['user_id']);
+    $statusCounters['remaining'] = $allocationBalance['available'];
+    $statusCounters['plan_total'] = $allocationBalance['total_allocations'];
 
 
     
@@ -2578,6 +2566,82 @@ if (!isset($plandetails[$userplan])) {
     return $finalarray;
   }
 
+
+  /**
+   * Get user's allocation balance - CENTRALIZED SOURCE OF TRUTH
+   * Use this function everywhere allocation counts are needed for consistency.
+   *
+   * @param int $user_id User ID
+   * @param array $options Optional settings:
+   *   - include_cart: bool - Include cart items in used count (default: false)
+   * @return array Allocation balance data
+   */
+  public function getAllocationBalance($user_id, $options = [])
+  {
+    global $database, $app;
+
+    $include_cart = $options['include_cart'] ?? false;
+
+    // Get user's plan details
+    $user_data = $this->getuserdata($user_id, 'user_id');
+    $plan_max = 0;
+    if (!empty($user_data['account_product_id'])) {
+      $plan_details = $app->plandetail('details_id', $user_data['account_product_id']);
+      $plan_max = intval($plan_details['max_business_select'] ?? 0);
+    }
+
+    // Count enrollments that consume allocations
+    // Only these statuses count against allocation: pending, selected, success, success-btn
+    $sql = "SELECT
+              COUNT(*) as total_used,
+              SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+              SUM(CASE WHEN status = 'selected' THEN 1 ELSE 0 END) as selected_count,
+              SUM(CASE WHEN status IN ('success', 'success-btn') THEN 1 ELSE 0 END) as success_count
+            FROM bg_user_companies
+            WHERE user_id = :user_id
+            AND create_dt >= '2023-08-01'
+            AND status IN ('pending', 'selected', 'success', 'success-btn')";
+
+    $enrollment_counts = $database->getrow($sql, ['user_id' => $user_id]);
+    $used_count = intval($enrollment_counts['total_used'] ?? 0);
+
+    // Optionally include cart items (from bg_user_enrollments with cart status)
+    $cart_count = 0;
+    if ($include_cart) {
+      $cart_sql = "SELECT COUNT(*) as cart_count
+                   FROM bg_user_enrollments
+                   WHERE user_id = :user_id
+                   AND status IN ('cart', 'cart_tracked')";
+      $cart_result = $database->getrow($cart_sql, ['user_id' => $user_id]);
+      $cart_count = intval($cart_result['cart_count'] ?? 0);
+    }
+
+    // Get bonus allocations from bg_user_allocations (if any)
+    $year = date('Y');
+    $bonus_sql = "SELECT COALESCE(SUM(CASE WHEN allocation_type = 'bonus' AND status = 'active' THEN amount ELSE 0 END), 0) as bonus
+                  FROM bg_user_allocations
+                  WHERE user_id = :user_id
+                  AND allocation_year = :year";
+    $bonus_result = $database->getrow($bonus_sql, ['user_id' => $user_id, 'year' => $year]);
+    $bonus_allocations = intval($bonus_result['bonus'] ?? 0);
+
+    // Calculate available
+    $total_allocations = $plan_max + $bonus_allocations;
+    $total_used_with_cart = $used_count + $cart_count;
+    $available = max(0, $total_allocations - $total_used_with_cart);
+
+    return [
+      'available' => $available,
+      'total_allocations' => $total_allocations,
+      'plan_allocations' => $plan_max,
+      'bonus_allocations' => $bonus_allocations,
+      'used' => $used_count,
+      'cart' => $cart_count,
+      'pending' => intval($enrollment_counts['pending_count'] ?? 0),
+      'selected' => intval($enrollment_counts['selected_count'] ?? 0),
+      'success' => intval($enrollment_counts['success_count'] ?? 0),
+    ];
+  }
 
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------

@@ -6,6 +6,56 @@
 // Global basket state - load from sessionStorage if available
 let selectionBasket = JSON.parse(sessionStorage.getItem('enrollmentBasket') || '[]');
 
+/**
+ * Track selection/unselection events for debugging allocation issues
+ * Sends state data to session_tracking for troubleshooting
+ */
+function trackEnrollmentSelection(action, companyId, companyName, extraData = {}) {
+    const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
+
+    const trackingData = {
+        action: action,
+        company_id: companyId,
+        company_name: companyName,
+
+        // Current basket state
+        picked_basket_count: selectionBasket.length,
+        tracked_basket_count: trackedBasket.length,
+        picked_basket_ids: selectionBasket.map(item => item.id),
+        tracked_basket_ids: trackedBasket.map(item => item.id),
+
+        // Allocation state
+        available_allocations: window.userData?.availableAllocations ?? null,
+        enrolled_company_ids: window.userData?.enrolledCompanyIds ?? [],
+
+        // Validation flags from extraData
+        was_already_enrolled: extraData.was_already_enrolled || false,
+        was_already_in_basket: extraData.was_already_in_basket || false,
+        had_enough_allocations: extraData.had_enough_allocations !== false,
+
+        // Include any extra data for special actions (clear_all, confirm_submit, etc.)
+        ...extraData,
+
+        // Timestamp
+        client_timestamp: new Date().toISOString()
+    };
+
+    // Fire and forget - don't wait for response
+    fetch('/myaccount/ajax/track-enrollment-selection.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify(trackingData)
+    }).catch(err => {
+        console.warn('Selection tracking failed:', err);
+    });
+}
+
+// Expose tracking function globally
+window.trackEnrollmentSelection = trackEnrollmentSelection;
+
 // Initialize basket on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Load tracked basket
@@ -154,18 +204,30 @@ function addToBasket(companyId, companyName, companyLogo) {
     if (window.userData.enrolledCompanyIds && window.userData.enrolledCompanyIds.includes(parseInt(companyId))) {
         showError('You have already enrolled in or have a pending enrollment for this company');
         console.warn('Duplicate enrollment attempt blocked for company ID:', companyId);
+        // Track the blocked attempt
+        trackEnrollmentSelection('select_blocked', companyId, companyName, {
+            was_already_enrolled: true
+        });
         return;
     }
 
     // Check if already in basket (session storage)
     if (selectionBasket.find(item => item.id === companyId)) {
         showError('This company is already in your selection basket');
+        // Track the blocked attempt
+        trackEnrollmentSelection('select_blocked', companyId, companyName, {
+            was_already_in_basket: true
+        });
         return;
     }
 
     // Check if we have enough allocations
     if (selectionBasket.length >= window.userData.availableAllocations) {
         showError('You don\'t have enough allocations for more selections');
+        // Track the blocked attempt
+        trackEnrollmentSelection('select_blocked', companyId, companyName, {
+            had_enough_allocations: false
+        });
         return;
     }
 
@@ -178,6 +240,9 @@ function addToBasket(companyId, companyName, companyLogo) {
 
     // Save to sessionStorage
     sessionStorage.setItem('enrollmentBasket', JSON.stringify(selectionBasket));
+
+    // Track the successful selection
+    trackEnrollmentSelection('select', companyId, companyName);
 
     // Auto-save the basket to server (non-blocking)
     autoSaveBasket();
@@ -209,6 +274,11 @@ function removeFromBasket(companyId) {
 
     // Save to sessionStorage
     sessionStorage.setItem('enrollmentBasket', JSON.stringify(selectionBasket));
+
+    // Track the unselection
+    if (removedItem) {
+        trackEnrollmentSelection('unselect', companyId, removedItem.name);
+    }
 
     // Auto-save the basket
     autoSaveBasket();
@@ -277,7 +347,15 @@ function clearBasket() {
     const pickedIds = [...selectionBasket.map(item => item.id)];
     const trackedBasket = JSON.parse(sessionStorage.getItem('trackedBasket') || '[]');
     const trackedIds = [...trackedBasket.map(item => item.id)];
-    
+
+    // Track the clear action before clearing
+    if (pickedIds.length > 0 || trackedIds.length > 0) {
+        trackEnrollmentSelection('clear_all', null, null, {
+            cleared_picked_ids: pickedIds,
+            cleared_tracked_ids: trackedIds
+        });
+    }
+
     // Clear both baskets
     selectionBasket = [];
     sessionStorage.removeItem('enrollmentBasket');
@@ -383,6 +461,15 @@ function updateBasketUI() {
     if (typeof updateBalanceDisplay === 'function') {
         updateBalanceDisplay();
     }
+
+    // Update the available allocations display to show remaining after basket items
+    const balanceNumber = document.querySelector('.balance-number');
+    if (balanceNumber && window.userData && typeof window.userData.availableAllocations === 'number') {
+        const pickedCount = selectionBasket.length;
+        const remaining = Math.max(0, window.userData.availableAllocations - pickedCount);
+        balanceNumber.textContent = remaining;
+    }
+
     const counter = document.getElementById('selectionCounter');
     const basketCount = document.getElementById('basketCount');
     const modalBasketCount = document.getElementById('modalBasketCount');
@@ -561,7 +648,15 @@ async function confirmEnrollments(skipSuccessModal = false) {
         showError('No items to submit');
         return false; // Return false to indicate failure
     }
-    
+
+    // Track the confirm action before submitting
+    trackEnrollmentSelection('confirm_submit', null, null, {
+        submitting_picked_ids: selectionBasket.map(item => item.id),
+        submitting_tracked_ids: trackedBasket.map(item => item.id),
+        submitting_picked_count: selectionBasket.length,
+        submitting_tracked_count: trackedBasket.length
+    });
+
     // Close basket modal
     const basketModal = bootstrap.Modal.getInstance(document.getElementById('basketModal'));
     if (basketModal) {

@@ -563,23 +563,27 @@ echo '
                             <h5 class="card-title text-success mb-1">
                                 <i class="bi bi-check-circle me-2"></i>Enrollments
                             </h5>
-                            <p class="text-muted small mb-0">Active birthday rewards</p>
+                            <p class="text-muted small mb-0">Enrolled Birthday Rewards</p>
                         </div>
-                        <span class="badge bg-success fs-6">' . ($accountstats['business_success'] ?? 0) . '</span>
+                        <span class="badge rounded-pill bg-success fs-6">' . ($businessoutput['counts']['success'] ?? 0) . '</span>
                     </div>
                     <div class="flex-grow-1">
                         <div class="text-muted small mb-2">
                             <div class="d-flex justify-content-between mb-1">
-                                <span>Active</span>
-                                <span class="fw-bold text-success">' . ($accountstats['business_success'] ?? 0) . '</span>
+                                <span>Pending</span>
+                                <span class="fw-bold text-warning">' . ($businessoutput['counts']['pending'] ?? 0) . '</span>
                             </div>
                             <div class="d-flex justify-content-between mb-1">
-                                <span>Pending</span>
-                                <span class="fw-bold text-warning">' . ($accountstats['business_pending'] ?? 0) . '</span>
+                                <span>Selected</span>
+                                <span class="fw-bold text-primary">' . ($businessoutput['counts']['selected'] ?? 0) . '</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Already Have</span>
+                                <span class="fw-bold text-secondary">' . ($businessoutput['counts']['user_owned'] ?? 0) . '</span>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span>Failed</span>
-                                <span class="fw-bold text-danger">' . ($accountstats['business_removed'] ?? 0) . '</span>
+                                <span class="fw-bold text-danger">' . ($businessoutput['counts']['failed'] ?? 0) . '</span>
                             </div>
                         </div>
                         <hr class="my-2">
@@ -591,15 +595,18 @@ echo '
                             </small>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <a href="/myaccount/enrollment-history" class="btn btn-sm btn-outline-success w-100">
-                            View Enrollment History
+                    <div class="mt-3 d-flex gap-2">
+                        <a href="/myaccount/enrollment-history" class="btn btn-sm btn-outline-success flex-grow-1">
+                            View History
+                        </a>
+                        <a href="/myaccount/enrollment-picker" class="btn btn-sm btn-success flex-grow-1">
+                            Pick Businesses
                         </a>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Allocations Card (second position - supporting information) -->
         <div class="col-md-6">
             <div class="card h-100 border-primary">
@@ -611,7 +618,7 @@ echo '
                             </h5>
                             <p class="text-muted small mb-0">Enrollment Picks</p>
                         </div>
-                        <span class="badge bg-primary fs-6">' . $businessoutput['counts']['remaining'] . '</span>
+                        <span class="badge rounded-pill bg-primary fs-6">' . $businessoutput['counts']['remaining'] . '</span>
                     </div>
                     <div class="flex-grow-1">';
 
@@ -704,9 +711,14 @@ if ($is_free_plan) {
 }
 
 echo '
-                        <a href="/myaccount/allocation-history" class="btn btn-sm btn-outline-primary w-100">
-                            View Allocation History
-                        </a>
+                        <div class="d-flex gap-2">
+                            <a href="/myaccount/allocation-history" class="btn btn-sm btn-outline-primary flex-grow-1">
+                                View History
+                            </a>
+                            <a href="/myaccount/earn-enrollments" class="btn btn-sm btn-primary flex-grow-1">
+                                Earn More
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
