@@ -241,6 +241,44 @@ echo '
 ';
 
 
+#-------------------------------------------------------------------------------
+# CANONICAL URL (universal default + per-page hooks)
+#  - $pagedata['canonical_skip'] = true   -> emit nothing (page opted out)
+#  - $pagedata['canonical_url']  = '...'  -> use this URL verbatim (full override)
+#  - Default: build from script short name (e.g. /discover.php => /discover,
+#    /index.php => /), plus a small whitelist of content-defining query params
+#    (?i, ?id, ?slug, ?page, ?q). Tracking/state params (utm_*, ref, promo,
+#    etc.) are dropped automatically.
+#  - Pages with extra content-defining params can extend the whitelist via
+#    $pagedata['canonical_keep_params'] = ['extra_param', ...] before include.
+#  - Production canonical host hardcoded; dev hosts already emit noindex above.
+#-------------------------------------------------------------------------------
+if (empty($pagedata['canonical_skip'])) {
+    if (!empty($pagedata['canonical_url'])) {
+        $canonical_url = $pagedata['canonical_url'];
+    } else {
+        $canonical_path = preg_replace('/\.php$/', '', $_SERVER['SCRIPT_NAME'] ?? '/');
+        if ($canonical_path === '' || $canonical_path === '/index') {
+            $canonical_path = '/';
+        }
+        $keep = ['i', 'id', 'slug', 'page', 'q'];
+        if (!empty($pagedata['canonical_keep_params']) && is_array($pagedata['canonical_keep_params'])) {
+            $keep = array_unique(array_merge($keep, $pagedata['canonical_keep_params']));
+        }
+        $clean = [];
+        foreach ($keep as $k) {
+            if (isset($_GET[$k]) && $_GET[$k] !== '') {
+                $clean[$k] = $_GET[$k];
+            }
+        }
+        ksort($clean);
+        $qs = $clean ? '?' . http_build_query($clean) : '';
+        $canonical_url = 'https://birthday.gold' . $canonical_path . $qs;
+    }
+    echo '<link rel="canonical" href="' . htmlspecialchars($canonical_url, ENT_QUOTES, 'UTF-8') . '">' . "\n";
+}
+
+
 echo '
 
 <!-- Favicon -->

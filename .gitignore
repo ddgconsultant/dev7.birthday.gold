@@ -41,10 +41,16 @@ audit/*.patch*
 /audit/*.patch*
 ../AUDIT/*.patch*
 
-# audit artifacts
-/audit/*.patch*
-../AUDIT/*.patch*
+# Ignore manual file backups
+*.backup.*
 
-# audit artifacts
-/audit/*.patch*
-../AUDIT/*.patch*
+# Ignore Claude Code screenshots
+.claudecode/
+
+# Ignore runtime-generated sync logs/metrics
+admin_actions/sync_logs/
+
+# Ignore temp SQL and scratch notes
+temp_*.sql
+enrollmentlimit_fix.txt
+cleanup_bad_database_backups.txt

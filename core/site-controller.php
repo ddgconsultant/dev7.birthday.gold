@@ -601,6 +601,17 @@ else $enableadminpageeditor = false;
 ## INITIALIZE CLIENT DETAILS
 #-------------------------------------
 $client_ip = $system->getipaddress();
+
+// Claude Code authentication bypass (header or query param, dev only) — checked early to skip lockout/rate-limiting
+$claudebypass = false;
+if ($mode == 'dev' && isset($sitesettings['app']['CLAUDE_CODE_AUTH_KEY'])) {
+  $claude_key = $_SERVER['HTTP_X_CLAUDE_CODE_KEY'] ?? $_GET['claude_key'] ?? null;
+  if ($claude_key && hash_equals($sitesettings['app']['CLAUDE_CODE_AUTH_KEY'], $claude_key)) {
+    $claudebypass = true;
+    $nolockout = true;
+  }
+}
+
 if (empty($nolockout)) $app->check_lockout($client_ip);  ## CHECK LOCKOUT
 $client_browser = $qik->browserdetail();
 if ($codemode == 'api') $client_locationdata = '';
@@ -625,18 +636,12 @@ switch ($website['mode']) {
 $csrf_token = $session->get('csrf_token', bin2hex(random_bytes(32)), 'set');
 if ($client_ip == '52.22.66.203') $apibypass = true; // validator.org
 
-// Claude Code authentication bypass
-$claudebypass = false;
-if (isset($_SERVER['HTTP_X_CLAUDE_CODE_KEY']) && $mode == 'dev') {
-  $claude_key = $_SERVER['HTTP_X_CLAUDE_CODE_KEY'];
-  // Use a development-only key that can be easily configured
-  if (isset($sitesettings['app']['CLAUDE_CODE_AUTH_KEY']) && $claude_key == $sitesettings['app']['CLAUDE_CODE_AUTH_KEY']) {
-    $claudebypass = true;
-    session_tracking('claude_code_access', ['ip' => $client_ip, 'uri' => $_SERVER['REQUEST_URI'], 'time' => date('Y-m-d H:i:s')]);
-  }
+// ---- Clean up stale Claude bypass sessions on normal requests
+if (empty($claudebypass) && $session->get('claude_code_session', false)) {
+  $session->unset('claude_code_session');
+  $session->unset('current_user_data');
 }
 
-// ----
 $activeuser = $account->isactive();
 $uri = $website['fulluri']['uri'];
 if (empty($apibypass) && empty($claudebypass)) {
@@ -697,14 +702,23 @@ if (empty($apibypass) && empty($claudebypass)) {
     'user_email' => 'claude@birthday.gold',
     'user_firstname' => 'Claude',
     'user_lastname' => 'Code',
-    'user_role' => 'admin',
+    'account_admin' => 'Y',
     'user_status' => 'active',
     'user_created' => date('Y-m-d H:i:s'),
-    'user_type' => 'test'
+    'user_type' => 'test',
+    'birthdate' => '2000-01-01',
+    'create_dt' => '2025-01-01 00:00:00',
+    'state' => 'CA',
+    'country' => 'US',
+    'account_product_id' => 1,
+    'avatar' => '/public/images/defaultavatar.png',
+    'status' => 'A'
   ];
   // Set active user for permission checks
   $activeuser = ['user_id' => 999999, 'active' => true];
+  $session->set('current_user_data', $current_user_data);
   $session->set('claude_code_session', true);
+  session_tracking('claude_code_access', ['ip' => $client_ip, 'uri' => $_SERVER['REQUEST_URI'], 'method' => isset($_SERVER['HTTP_X_CLAUDE_CODE_KEY']) ? 'header' : 'query', 'time' => date('Y-m-d H:i:s')]);
 }
 
 
@@ -714,7 +728,7 @@ if (empty($apibypass) && empty($claudebypass)) {
 #-------------------------------------------------------------------------------
 function session_tracking($name = '', $trackingdata = array(), $p_pagename = '')
 {
-  global $database, $qik, $current_user_data, $client_ip, $session, $site, $footerappversion;
+  global $database, $qik, $current_user_data, $client_ip, $session, $site, $footerappversion, $nolockout, $claudebypass;
   // --------------------------------------------------------------------------------------------------
   // Use $_SERVER['SCRIPT_NAME'] as default if $pagename is not provided
   if ($p_pagename == '' || $p_pagename == '__NOREQUESTDATA__') {
@@ -849,9 +863,9 @@ VALUES (:cip, :type, :hit, :city, :state, :country_code, :lon, :lat, :data_strin
 
 
   // --------------------------------------------------------------------------------------------------
-  // -- do rate limiting
+  // -- do rate limiting (skip for whitelisted IPs and Claude bypass)
   $current_time = time();
-  if (empty($nolockout)) {
+  if (empty($nolockout) && empty($claudebypass)) {
     $pagecount_second = $session->get('pagecount_second', 0, true);
     $pagecount_minute = $session->get('pagecount_minute', 0, true);
     $lastvisit_dt = $session->get('lastvisit_dt', $current_time, true);

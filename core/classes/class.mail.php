@@ -20,6 +20,24 @@ class Mail
   protected $testFailureMode = false;
   protected $testFailureRate = 100; // Percentage of emails to fail in test mode (0-100)
 
+  // Per-request cache of unsubscribe_emails lookups keyed by lowercased email.
+  // Value is either false (not suppressed) or [source, scope] (suppressed).
+  // Long-running CLI workers share the cache for the life of the process; a
+  // suppression added mid-run won't take effect until the next invocation.
+  protected $suppressionCache = [];
+
+  // Categories that can still be delivered to recipients whose suppression
+  // scope is 'marketing_only' (self-unsubscribers). Abuse complaints / bounces
+  // use scope='all' and block these as well.
+  protected $transactionalCategories = [
+    'transactional',
+    'account',
+    'security',
+    'verification',
+    '2fa',
+    'password_reset',
+  ];
+
   public function __construct($mailConfig)
   {
 
@@ -119,12 +137,101 @@ class Mail
   }
 
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
+  /**
+   * Check whether an address is on the suppression list (unsubscribe_emails).
+   *
+   * Returns false if the address may be emailed, or an assoc array
+   * ['source' => ..., 'scope' => ...] if the send should be short-circuited.
+   *
+   * Scope semantics:
+   *   - scope='all'            → block every category (abuse complaint / hard bounce)
+   *   - scope='marketing_only' → still allow transactional categories
+   *                              (verification, password_reset, 2fa, account, security)
+   *
+   * Fails open on DB error — better to risk one extra send than silently
+   * drop everything if the suppression table is temporarily unreachable.
+   */
+  public function isEmailSuppressed($email, $category = null)
+  {
+    global $database;
+
+    $email = strtolower(trim((string)$email));
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      return false;
+    }
+
+    // Per-request cache. Always cache the raw suppression row — the
+    // category-based carve-out is applied on each call so the same cache
+    // entry can answer both marketing and transactional lookups.
+    if (!array_key_exists($email, $this->suppressionCache)) {
+      try {
+        $sql = "SELECT source, scope
+                  FROM unsubscribe_emails
+                 WHERE email = :email
+                   AND status = 'active'
+                 LIMIT 1";
+        $row = $database->getrow($sql, ['email' => $email]);
+        $this->suppressionCache[$email] = $row ?: false;
+      } catch (Exception $e) {
+        // Table may not exist yet on envs that haven't run the migration.
+        // Don't log every lookup — just the first miss per request.
+        if (!isset($this->suppressionCache['__error_logged__'])) {
+          session_tracking('email_suppression_lookup_error', ['error' => $e->getMessage()]);
+          $this->suppressionCache['__error_logged__'] = true;
+        }
+        $this->suppressionCache[$email] = false;
+      }
+    }
+
+    $row = $this->suppressionCache[$email];
+    if ($row === false) return false;
+
+    $scope = $row['scope'] ?? 'marketing_only';
+
+    // scope=all blocks everything, no exceptions.
+    if ($scope === 'all') {
+      return $row;
+    }
+
+    // scope=marketing_only lets a curated list of transactional categories
+    // through. An unspecified category is treated as marketing (the safer
+    // default — prefer to miss a send than to email a complainer).
+    $cat = is_string($category) ? strtolower(trim($category)) : '';
+    if ($cat !== '' && in_array($cat, $this->transactionalCategories, true)) {
+      return false;
+    }
+
+    return $row;
+  }
+
+  # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   function sendmail($details)
   {
     if (!isset($details['donottrack'])) $details['donottrack']=false;
     // Set up email parameters
     $details['to'] = $details['to'] ?? $details['toemail'];
     $to = is_array($details['to']) ? $details['to'] : [$details['to'], $details['to']];  // use email/name if provided if not then make the name the same as the email
+
+    // Suppression check — must run BEFORE the test-failure-mode block and
+    // BEFORE any call to storeFailedEmail() so that suppressed messages do
+    // not enter the retry queue.
+    $recipient_email = is_array($details['to']) ? ($details['to'][0] ?? '') : $details['to'];
+    $send_category   = $details['category'] ?? null;
+    if ($suppressed = $this->isEmailSuppressed($recipient_email, $send_category)) {
+      session_tracking('email_suppressed', [
+        'to'       => $recipient_email,
+        'subject'  => $details['subject'] ?? '',
+        'category' => $send_category,
+        'source'   => $suppressed['source'] ?? null,
+        'scope'    => $suppressed['scope'] ?? null,
+      ]);
+      return [
+        'mail_sent'   => false,
+        'suppressed'  => true,
+        'suppression' => $suppressed,
+        'details'     => $details,
+      ];
+    }
 
     $details['from'] = $details['from'] ?? ['noreply@birthday.gold', 'birthday.gold-noreply'];
     $from = is_array($details['from']) ? $details['from'] : [$details['from'], $details['from']];
@@ -326,6 +433,9 @@ Cheers!<br>birthday.gold
 
     $message['body'] = str_replace('{{MESSAGE_CONTENT}}', $message['body'], $output);
     $message['body'] = str_replace('{{TO_EMAIL}}', $message['toemail'], $message['body']);
+
+    // Transactional: still delivered to self-unsubscribers (scope=marketing_only)
+    $message['category'] = 'verification';
 
     $result = $this->sendmail($message);
 
@@ -608,6 +718,8 @@ Regards,<br>birthday.gold
     $message['body'] = str_replace($search, $replace, $message['body']);
     $message['body'] = str_replace('{{TO_EMAIL}}', $message['toemail'], $message['body']);
 
+    // Transactional: still delivered to self-unsubscribers (scope=marketing_only)
+    $message['category'] = 'password_reset';
 
     $result = $this->sendmail($message);
     $results['status'] = $result;
@@ -1630,7 +1742,9 @@ class MailQueue
     $message = [
       'toemail' => $user['email'],
       'subject' => '[Birthday.Gold] ' . $input['subject'],
-      'notificationid' => $notification_id // This will enable tracking
+      'notificationid' => $notification_id, // This will enable tracking
+      // Transactional: still delivered to self-unsubscribers (scope=marketing_only)
+      'category' => $input['category'] ?? 'account'
     ];
     
     // Build tracking pixel

@@ -375,13 +375,53 @@ function setPrimaryLogo(logoId) {
             },
             success: function(response) {
                 if (response.success) {
-                    location.reload();
+                    // Remove primary styling from all cards
+                    $('.logo-card').removeClass('primary');
+                    $('.logo-card .primary-badge').remove();
+                    $('.logo-card .btn-success').each(function() {
+                        // Show "Set as Primary" button on all cards
+                        $(this).show();
+                    });
+
+                    // Add primary styling to selected card
+                    var selectedCard = $('[data-logo-id="' + logoId + '"]');
+                    selectedCard.addClass('primary');
+                    selectedCard.prepend('<span class="badge bg-success primary-badge">Primary</span>');
+
+                    // Hide "Set as Primary" button on selected card
+                    selectedCard.find('.btn-success').hide();
+
+                    // Update the "Current Primary Logo" section
+                    var logoImg = selectedCard.find('img').attr('data-src') || selectedCard.find('img').attr('src');
+                    var logoFilename = selectedCard.find('.logo-info .text-truncate').text();
+                    var today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                    var primaryHtml = '<div class="card mb-4">' +
+                        '<div class="card-header"><h5 class="mb-0">Current Primary Logo</h5></div>' +
+                        '<div class="card-body text-center">' +
+                        '<img src="' + logoImg + '" alt="Primary Logo" loading="lazy" style="max-height: 200px; max-width: 100%;">' +
+                        '<div class="mt-3">' +
+                        '<p class="text-muted mb-1">Filename: ' + logoFilename + '</p>' +
+                        '<p class="text-muted mb-0">Set on: ' + today + '</p>' +
+                        '</div></div></div>';
+
+                    // Replace or add primary logo section
+                    var existingPrimary = $('.logo-manager-section > .card.mb-4').first();
+                    if (existingPrimary.find('.card-header h5').text() === 'Current Primary Logo') {
+                        existingPrimary.replaceWith(primaryHtml);
+                    } else {
+                        // Remove warning if exists and add primary section
+                        $('.logo-manager-section > .alert-warning').remove();
+                        $('.logo-manager-section > .card').first().before(primaryHtml);
+                    }
+
+                    showLogoMessage('Primary logo updated successfully', 'success');
                 } else {
-                    alert('Error: ' + response.message);
+                    showLogoMessage('Error: ' + response.message, 'danger');
                 }
             },
             error: function() {
-                alert('Error setting primary logo. Please try again.');
+                showLogoMessage('Error setting primary logo. Please try again.', 'danger');
             }
         });
     }
@@ -420,7 +460,7 @@ $('#confirmDeleteLogo').on('click', function() {
     if (pendingDeleteLogoId) {
         // Show loading state
         $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Deleting...');
-        
+
         $.ajax({
             url: '/admin_actions/delete_logo.php',
             method: 'POST',
@@ -428,28 +468,57 @@ $('#confirmDeleteLogo').on('click', function() {
                 logo_id: pendingDeleteLogoId
             },
             success: function(response) {
+                // Hide modal
+                bootstrap.Modal.getInstance(document.getElementById('deleteLogoModal')).hide();
+
+                // Reset button
+                $('#confirmDeleteLogo').prop('disabled', false).html('<i class="bi bi-trash me-2"></i>Delete Logo');
+
                 if (response.success) {
-                    location.reload();
+                    // Remove the logo card from DOM with fade effect
+                    var logoCard = $('[data-logo-id="' + pendingDeleteLogoId + '"]');
+                    logoCard.closest('.col-md-4').fadeOut(300, function() {
+                        $(this).remove();
+
+                        // Check if no logos left
+                        if ($('.logo-card').length === 0) {
+                            $('.card-body .row').html('<p class="text-muted text-center mb-0">No logos found for this company.</p>');
+                        }
+                    });
+
+                    // Show success toast/message
+                    showLogoMessage('Logo deleted successfully', 'success');
                 } else {
-                    // Hide modal and show error
-                    bootstrap.Modal.getInstance(document.getElementById('deleteLogoModal')).hide();
-                    alert('Error: ' + response.message);
-                    
-                    // Reset button
-                    $('#confirmDeleteLogo').prop('disabled', false).html('<i class="bi bi-trash me-2"></i>Delete Logo');
+                    showLogoMessage('Error: ' + response.message, 'danger');
                 }
             },
             error: function() {
                 // Hide modal and show error
                 bootstrap.Modal.getInstance(document.getElementById('deleteLogoModal')).hide();
-                alert('Error deleting logo. Please try again.');
-                
+                showLogoMessage('Error deleting logo. Please try again.', 'danger');
+
                 // Reset button
                 $('#confirmDeleteLogo').prop('disabled', false).html('<i class="bi bi-trash me-2"></i>Delete Logo');
             }
         });
     }
 });
+
+// Helper function to show messages
+function showLogoMessage(message, type) {
+    var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+        message +
+        '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+        '</div>';
+
+    // Insert at top of logo manager section
+    $('.logo-manager-section').prepend(alertHtml);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(function() {
+        $('.logo-manager-section .alert').fadeOut(300, function() { $(this).remove(); });
+    }, 5000);
+}
 
 function uploadLogo() {
     alert('Upload functionality coming soon. For now, use the "Fetch New Logos" feature.');

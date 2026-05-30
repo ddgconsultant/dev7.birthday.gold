@@ -161,22 +161,25 @@ foreach ($notifications as $notification) {
             'subject' => $email_subject,
             'body' => $final_html,
             'from' => ['hello@birthday.gold', 'Birthday Gold'],
-            'notificationid' => $notification['notification_id']
+            'notificationid' => $notification['notification_id'],
+            // Newsletters are marketing — marketing_only suppressions (self-unsubscribers)
+            // will block them; transactional category would override this.
+            'category' => 'marketing'
         ];
-        
+
         // Send the email
         $result = $mail->sendmail($email_details);
-        
+
         if ($result['mail_sent'] === true) {
             // Update notification status to sent
-            $update_sql = "UPDATE bg_user_notifications 
-                          SET status = 'sent', 
-                              sent_dt = NOW(), 
-                              modify_dt = NOW() 
+            $update_sql = "UPDATE bg_user_notifications
+                          SET status = 'sent',
+                              sent_dt = NOW(),
+                              modify_dt = NOW()
                           WHERE notification_id = :notification_id";
-            
+
             $database->query($update_sql, ['notification_id' => $notification['notification_id']]);
-            
+
             $sent_count++;
             echo "Sent newsletter to " . $user_email . " (User: " . $notification['user_id'] . ")\n";
 
@@ -184,7 +187,7 @@ foreach ($notifications as $notification) {
             if ($sent_count % 10 == 0) {
                 flush();
             }
-            
+
             // Log activity
             try {
                 // Extract campaign_id from category field if present
@@ -192,7 +195,7 @@ foreach ($notifications as $notification) {
                 if (preg_match('/campaign_(\d+)/', $notification['category'], $matches)) {
                     $campaign_id = $matches[1];
                 }
-                
+
                 session_tracking('newsletter_sent', [
                     'campaign_id' => $campaign_id,
                     'user_id' => $notification['user_id']
@@ -200,20 +203,33 @@ foreach ($notifications as $notification) {
             } catch (Exception $e) {
                 // Logging error is not critical
             }
-            
+
+        } elseif (!empty($result['suppressed'])) {
+            // Address is on the suppression list — terminal state, no retry.
+            $update_sql = "UPDATE bg_user_notifications
+                          SET status = 'suppressed',
+                              modify_dt = NOW()
+                          WHERE notification_id = :notification_id";
+
+            $database->query($update_sql, ['notification_id' => $notification['notification_id']]);
+
+            if (!isset($suppressed_count)) $suppressed_count = 0;
+            $suppressed_count++;
+            echo "Suppressed (not sent) newsletter to " . $user_email . " (User: " . $notification['user_id'] . ", source: " . ($result['suppression']['source'] ?? 'unknown') . ")\n";
+
         } else {
             // Update notification status to failed
             $error_message = isset($result['error']) ? $result['error'] : 'Unknown error';
-            
-            $update_sql = "UPDATE bg_user_notifications 
-                          SET status = 'failed', 
-                              modify_dt = NOW() 
+
+            $update_sql = "UPDATE bg_user_notifications
+                          SET status = 'failed',
+                              modify_dt = NOW()
                           WHERE notification_id = :notification_id";
-            
+
             $database->query($update_sql, ['notification_id' => $notification['notification_id']]);
-            
+
             $error_count++;
-            echo "Failed to send to " . $user_data['email'] . ": " . $error_message . "\n";
+            echo "Failed to send to " . $user_email . ": " . $error_message . "\n";
         }
         
         // Rate limiting
@@ -234,25 +250,28 @@ foreach ($notifications as $notification) {
     }
 }
 
-echo "Newsletter sender completed: Sent = $sent_count, Errors = $error_count\n";
+$suppressed_count = $suppressed_count ?? 0;
+echo "Newsletter sender completed: Sent = $sent_count, Suppressed = $suppressed_count, Errors = $error_count\n";
 
-// Check if any campaigns are fully sent and update their status
-$check_sql = "SELECT DISTINCT 
+// Check if any campaigns are fully sent and update their status.
+// 'suppressed' counts as a terminal state alongside 'sent' — otherwise a
+// single suppressed recipient would keep a campaign stuck in 'sending'.
+$check_sql = "SELECT DISTINCT
                 SUBSTRING(n.category, 10) as campaign_id,
                 COUNT(*) as total,
-                SUM(CASE WHEN n.status = 'sent' THEN 1 ELSE 0 END) as sent
+                SUM(CASE WHEN n.status IN ('sent','suppressed') THEN 1 ELSE 0 END) as finished
               FROM bg_user_notifications n
               WHERE n.type = 'newsletter'
               AND n.category LIKE 'campaign_%'
               GROUP BY n.category
-              HAVING COUNT(*) = SUM(CASE WHEN n.status = 'sent' THEN 1 ELSE 0 END)";
+              HAVING COUNT(*) = SUM(CASE WHEN n.status IN ('sent','suppressed') THEN 1 ELSE 0 END)";
 
 $completed = $database->getrows($check_sql);
 
 foreach ($completed as $c) {
-    $update_sql = "UPDATE mk_campaigns 
+    $update_sql = "UPDATE mk_campaigns
                   SET newsletter_status = 'sent',
-                      status = 'sent' 
+                      status = 'sent'
                   WHERE campaign_id = :campaign_id";
     $database->query($update_sql, ['campaign_id' => $c['campaign_id']]);
     echo "Campaign " . $c['campaign_id'] . " marked as fully sent\n";
@@ -261,6 +280,7 @@ foreach ($completed as $c) {
 // Log summary
 session_tracking('newsletter_batch_complete', [
     'sent' => $sent_count,
+    'suppressed' => $suppressed_count,
     'errors' => $error_count,
     'timestamp' => date('Y-m-d H:i:s')
 ], 'mk-newsletter-sender');

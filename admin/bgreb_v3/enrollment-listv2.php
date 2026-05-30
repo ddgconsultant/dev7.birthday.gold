@@ -246,11 +246,15 @@ $buttonContainerClass = $scheduleresult['allow_enrollment'] ?
             $enrollingbutton='<div class="my-1"><a target="userregistration" href="' . $linkbase . $qik->encodeId($user['user_id']) . '" class="btn btn-sm ' . $buttonClass . '">Start Enrolling</a></div>';
             $impersonatebutton = '<div class="my-1"><a class="btn btn-sm ' . $buttonClass . '" href="/myaccount/myaccount_actions/switch2user?id=' . $qik->encodeId($user['user_id']) . '&aid=' . $qik->encodeId($current_user_data['user_id']) . '&_token=' . $display->inputcsrf_token('tokenonly') . '">Impersonate</a></div>';
             $userdetailbutton = '<div class="my-1"><button class="btn btn-sm ' . $buttonClass . '" onclick="loadProfileDetails(' . $user['user_id'] . ')" data-bs-toggle="modal" data-bs-target="#profileModal">Profile Details</button></div>';
+            $viewjsonbutton = '<div class="my-1"><a target="_blank" href="/admin/bgreb_v3/bgr_getprocessdetails.php?type=bgrab&aid=' . $current_user_data['user_id'] . '&uid=' . $user['user_id'] . '&pretty=1" class="btn btn-sm btn-outline-info">View JSON</a></div>';
+            $cometbutton = '<div class="my-1"><a target="_blank" href="/admin/bgreb_v3/comet-enroller.php?aid=' . $current_user_data['user_id'] . '&uid=' . $user['user_id'] . '" class="btn btn-sm btn-outline-warning"><i class="bi bi-rocket-takeoff"></i> Comet Enroll</a></div>';
             $buttons = '
             <div class="' . $buttonContainerClass . ' ">
                 ' . $enrollingbutton . '
                 ' . $impersonatebutton . '
                 ' . $userdetailbutton . '
+                ' . $viewjsonbutton . '
+                ' . $cometbutton . '
             </div>';
 
             $userlistoutput .= '<div class="col-md-3  text-center">';

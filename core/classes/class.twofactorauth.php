@@ -308,7 +308,10 @@ class TwoFactorAuth {
                     <hr>
                     <small>This is an automated message from Birthday.Gold</small>
                 ",
-                'donottrack' => true
+                'donottrack' => true,
+                // Transactional: still delivered to self-unsubscribers (scope=marketing_only).
+                // scope=all (abuse/bounce) will still block — intentional per policy.
+                'category' => '2fa'
             ];
             
             try {
@@ -353,7 +356,17 @@ class TwoFactorAuth {
                 }
             }
             
-            // Final fallback to basic mail function
+            // Final fallback to basic mail function. The Mail object isn't
+            // available, so do a direct suppression check here as defense in
+            // depth — we don't want 2FA codes going to abuse-complained
+            // addresses even via the raw-mail() path.
+            if (isset($mail) && is_object($mail) && method_exists($mail, 'isEmailSuppressed')) {
+                if ($mail->isEmailSuppressed($email, '2fa')) {
+                    error_log('2FA email suppressed for ' . $email);
+                    return false;
+                }
+            }
+
             $subject = "Your Security Code - Birthday.Gold";
             $message = "<h2>Your 6-Digit Security Code</h2>
                        <p>Your security code is: <strong style='font-size: 1.5em; color: #0d6efd;'>$code</strong></p>
@@ -362,7 +375,7 @@ class TwoFactorAuth {
             $headers = "From: Birthday.Gold <noreply@birthday.gold>\r\n";
             $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
             $headers .= "MIME-Version: 1.0\r\n";
-            
+
             return mail($email, $subject, $message, $headers);
         }
     }

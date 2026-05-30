@@ -48,53 +48,98 @@ foreach ($queue_items as $item) {
         'subject' => replacePlaceholders($item['subject'], $item),
         'body' => $personalized_body,
         'from' => ['hello@birthday.gold', 'Birthday Gold'],
-        'donottrack' => false
+        'donottrack' => false,
+        // Newsletters are marketing — marketing_only suppressions block them.
+        'category' => 'marketing'
     ];
-    
-    // Send email
+
+    // Send email. sendmail() returns an assoc array with mail_sent/suppressed;
+    // the previous version of this loop only caught exceptions and silently
+    // marked soft-failures as 'sent'. Inspect the return value now.
     try {
-        $mail->sendmail($email_details);
-        
-        // Mark as sent
-        $update_sql = "UPDATE bg_newsletter_queue 
-                      SET status = 'sent', processed_dt = NOW() 
-                      WHERE queue_id = :queue_id";
-        
-        $database->query($update_sql, ['queue_id' => $item['queue_id']]);
-        
-        // Log sent event
-        $log_sql = "INSERT INTO bg_newsletter_events 
-                   (campaign_id, user_id, event_type, event_dt) 
-                   VALUES 
-                   (:campaign_id, :user_id, 'sent', NOW())";
-        
-        $database->query($log_sql, [
-            'campaign_id' => $item['campaign_id'],
-            'user_id' => $item['user_id']
-        ]);
-        
-        echo "Sent to " . $item['email'] . "\n";
-        
+        $result = $mail->sendmail($email_details);
+
+        if (!empty($result['suppressed'])) {
+            // Address is on the suppression list — terminal state, no retry.
+            $update_sql = "UPDATE bg_newsletter_queue
+                          SET status = 'suppressed', processed_dt = NOW()
+                          WHERE queue_id = :queue_id";
+            $database->query($update_sql, ['queue_id' => $item['queue_id']]);
+
+            $log_sql = "INSERT INTO bg_newsletter_events
+                       (campaign_id, user_id, event_type, event_dt, extra)
+                       VALUES
+                       (:campaign_id, :user_id, 'suppressed', NOW(), :extra)";
+            $database->query($log_sql, [
+                'campaign_id' => $item['campaign_id'],
+                'user_id' => $item['user_id'],
+                'extra' => json_encode([
+                    'source' => $result['suppression']['source'] ?? 'unknown',
+                    'scope'  => $result['suppression']['scope']  ?? 'unknown',
+                ])
+            ]);
+
+            echo "Suppressed: " . $item['email'] . " (source: " . ($result['suppression']['source'] ?? 'unknown') . ")\n";
+
+        } elseif (!empty($result['mail_sent'])) {
+            // Mark as sent
+            $update_sql = "UPDATE bg_newsletter_queue
+                          SET status = 'sent', processed_dt = NOW()
+                          WHERE queue_id = :queue_id";
+            $database->query($update_sql, ['queue_id' => $item['queue_id']]);
+
+            // Log sent event
+            $log_sql = "INSERT INTO bg_newsletter_events
+                       (campaign_id, user_id, event_type, event_dt)
+                       VALUES
+                       (:campaign_id, :user_id, 'sent', NOW())";
+            $database->query($log_sql, [
+                'campaign_id' => $item['campaign_id'],
+                'user_id' => $item['user_id']
+            ]);
+
+            echo "Sent to " . $item['email'] . "\n";
+
+        } else {
+            // Soft failure — sendmail returned without throwing but mail_sent is false.
+            $update_sql = "UPDATE bg_newsletter_queue
+                          SET status = 'error', processed_dt = NOW()
+                          WHERE queue_id = :queue_id";
+            $database->query($update_sql, ['queue_id' => $item['queue_id']]);
+
+            $log_sql = "INSERT INTO bg_newsletter_events
+                       (campaign_id, user_id, event_type, event_dt, extra)
+                       VALUES
+                       (:campaign_id, :user_id, 'error', NOW(), :extra)";
+            $database->query($log_sql, [
+                'campaign_id' => $item['campaign_id'],
+                'user_id' => $item['user_id'],
+                'extra' => json_encode(['error' => $result['processingerror'] ?? 'sendmail returned mail_sent=false'])
+            ]);
+
+            echo "Soft-failed sending to " . $item['email'] . "\n";
+        }
+
     } catch (Exception $e) {
         // Mark as error
-        $update_sql = "UPDATE bg_newsletter_queue 
-                      SET status = 'error', processed_dt = NOW() 
+        $update_sql = "UPDATE bg_newsletter_queue
+                      SET status = 'error', processed_dt = NOW()
                       WHERE queue_id = :queue_id";
-        
+
         $database->query($update_sql, ['queue_id' => $item['queue_id']]);
-        
+
         // Log error
-        $log_sql = "INSERT INTO bg_newsletter_events 
-                   (campaign_id, user_id, event_type, event_dt, extra) 
-                   VALUES 
+        $log_sql = "INSERT INTO bg_newsletter_events
+                   (campaign_id, user_id, event_type, event_dt, extra)
+                   VALUES
                    (:campaign_id, :user_id, 'error', NOW(), :extra)";
-        
+
         $database->query($log_sql, [
             'campaign_id' => $item['campaign_id'],
             'user_id' => $item['user_id'],
             'extra' => json_encode(['error' => $e->getMessage()])
         ]);
-        
+
         echo "Error sending to " . $item['email'] . ": " . $e->getMessage() . "\n";
     }
     

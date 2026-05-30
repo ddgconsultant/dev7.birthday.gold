@@ -10,6 +10,9 @@ if (!empty( $userId)) {
     $userId = intval($_GET['userId']  );
     $local_profilemode='modal';
 }
+
+// Default layout if not set (1 = single column, 2 = two columns)
+$local_list_profiledetailslayout = $local_list_profiledetailslayout ?? '1';
 // Get user details
 $userDetails = $account->getuserdata($userId, 'user_id');
 

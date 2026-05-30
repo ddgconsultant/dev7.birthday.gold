@@ -2,7 +2,7 @@
 //company-editor-main.php
 include($_SERVER['DOCUMENT_ROOT'] . '/core/site-controller.php');
 
-$company_id = $cid = $_GET['cid'] ?? null;
+$company_id = $cid = $_REQUEST['cid'] ?? null;
 
 if (!$company_id) {
     header('Location: /admin/brands.php');

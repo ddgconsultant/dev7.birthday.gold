@@ -14,6 +14,7 @@ param(
     [string]$LogPath = "C:\ProgramData\ArGoSoft\MailServer.Net\_logs",
     [string]$LogFile,  # Specific log file to process (e.g., "ms251208.log")
     [string]$LogDirectory,  # Process all logs in a directory (e.g., "2025" or full path)
+    [switch]$ProcessNew,  # Process unprocessed logs in LogPath, excluding today's file
     [int]$FailureThreshold = 3,
     [int]$FailureWindowMinutes = 30,
     [int]$SubnetThreshold = 3,
@@ -159,14 +160,24 @@ function Add-FirewallBlock {
         $expiresAt = $null
         $isPermanent = 1
         $expiresText = "PERMANENT"
+        $ruleSuffix = "_PERM"
     } else {
         $expiresAt = (Get-Date).AddHours($blockHours).ToString("yyyy-MM-dd HH:mm:ss")
         $expiresText = "$blockHours hours"
+        # Build expiration suffix: _EXP-8h, _EXP-24h, _EXP-72h, _EXP-9d, _EXP-27d
+        $ruleSuffix = switch ($blockHours) {
+            8 { "_EXP-8h" }
+            24 { "_EXP-24h" }
+            72 { "_EXP-72h" }
+            216 { "_EXP-9d" }
+            648 { "_EXP-27d" }
+            default { "_EXP-${blockHours}h" }
+        }
     }
 
-    # Build rule name with PERM suffix for permanent blocks
+    # Build rule name with suffix
     $ruleBase = "MailFirewall_Block_$($IP -replace '[./]', '_')"
-    $ruleName = if ($isPermanent) { "${ruleBase}_PERM" } else { $ruleBase }
+    $ruleName = "${ruleBase}${ruleSuffix}"
 
     if ($DryRun) {
         Write-Log "DRY RUN: Would block $IP (Offense #$offenseCount - $expiresText)" -Level "BLOCK"
@@ -175,9 +186,8 @@ function Add-FirewallBlock {
 
     # Create Windows Firewall rule
     try {
-        # Remove existing rules (both permanent and non-permanent versions)
-        Remove-NetFirewallRule -DisplayName $ruleBase -ErrorAction SilentlyContinue
-        Remove-NetFirewallRule -DisplayName "${ruleBase}_PERM" -ErrorAction SilentlyContinue
+        # Remove any existing rules for this IP (all suffix variants)
+        Get-NetFirewallRule -DisplayName "${ruleBase}*" -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue
 
         # Create new blocking rule
         New-NetFirewallRule -DisplayName $ruleName `
@@ -392,7 +402,7 @@ function Process-LogLine {
 function Check-AndBlockIP {
     param([string]$IP)
 
-    # Skip if whitelisted
+    # Skip if whitelisted (includes auto_whitelist from successful logins)
     if (Test-IPInWhitelist -IP $IP) {
         return $false
     }
@@ -402,21 +412,28 @@ function Check-AndBlockIP {
         return $false
     }
 
-    # Check attempt count and recency
-    $windowStart = (Get-Date).AddMinutes(-$FailureWindowMinutes).ToString("yyyy-MM-dd HH:mm:ss")
-    $countQuery = @"
-SELECT attempt_count as cnt FROM failed_auth
-WHERE ip_address = @ip AND last_seen > @window
-"@
-    $result = Invoke-SqliteQuery -DataSource $DatabasePath -Query $countQuery -SqlParameters @{
+    # Get attempt count and last_seen
+    $query = "SELECT attempt_count as cnt, last_seen FROM failed_auth WHERE ip_address = @ip"
+    $result = Invoke-SqliteQuery -DataSource $DatabasePath -Query $query -SqlParameters @{
         ip = $IP
-        window = $windowStart
     }
 
-    if ($result -and $result.cnt -ge $FailureThreshold) {
-        Add-FirewallBlock -IP $IP -Reason "Failed auth $($result.cnt)x in $FailureWindowMinutes min" -FailureCount $result.cnt
+    if (-not $result) { return $false }
+
+    # Condition 1: 3+ failures in rolling 30-minute window = aggressive attack
+    $windowStart = (Get-Date).AddMinutes(-$FailureWindowMinutes).ToString("yyyy-MM-dd HH:mm:ss")
+    if ($result.last_seen -gt $windowStart -and $result.cnt -ge $FailureThreshold) {
+        Add-FirewallBlock -IP $IP -Reason "Aggressive: $($result.cnt) failures in $FailureWindowMinutes min" -FailureCount $result.cnt
         return $true
     }
+
+    # Condition 2: 5+ failures total (cumulative) = persistent attacker
+    $cumulativeThreshold = 5
+    if ($result.cnt -ge $cumulativeThreshold) {
+        Add-FirewallBlock -IP $IP -Reason "Persistent: $($result.cnt) failures total" -FailureCount $result.cnt
+        return $true
+    }
+
     return $false
 }
 
@@ -649,6 +666,13 @@ function Process-LogFile {
 
     $blockMsg = if ($newBlocks -gt 0) { ", $newBlocks IPs blocked" } else { "" }
     Write-Log "Completed: $linesProcessed lines, $newFailures failed auths, $newSuccesses successful logins$blockMsg" -Level "SUCCESS"
+
+    # Update run metrics
+    $script:runMetrics.FilesProcessed++
+    $script:runMetrics.LinesProcessed += $linesProcessed
+    $script:runMetrics.FailedAuthsFound += $newFailures
+    $script:runMetrics.SuccessfulAuthsFound += $newSuccesses
+    $script:runMetrics.NewBlocksCreated += $newBlocks
 }
 
 #endregion
@@ -658,6 +682,9 @@ function Process-LogFile {
 Write-Log "Mail Firewall Monitor starting..." -Level "INFO"
 Write-Log "Database: $DatabasePath" -Level "INFO"
 Write-Log "Log path: $LogPath" -Level "INFO"
+if ($ProcessNew) {
+    Write-Log "Processing new/unprocessed logs in: $LogPath (excluding today)" -Level "INFO"
+}
 if ($LogDirectory) {
     Write-Log "Processing all logs in directory: $LogDirectory" -Level "INFO"
 }
@@ -677,6 +704,108 @@ if ($ImportOnly) {
 if (-not (Test-Path $DatabasePath)) {
     Write-Log "Database not found. Run MailFirewall-Setup.ps1 first!" -Level "ERROR"
     exit 1
+}
+
+# Initialize run metrics
+$script:runMetrics = @{
+    RunStart = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    RunMode = if ($ProcessNew) { "ProcessNew" } elseif ($LogDirectory) { "BatchImport" } elseif ($LogFile) { "SingleFile" } elseif ($Continuous) { "Continuous" } else { "Default" }
+    FilesProcessed = 0
+    LinesProcessed = 0
+    FailedAuthsFound = 0
+    SuccessfulAuthsFound = 0
+    NewBlocksCreated = 0
+    ExpiredBlocksRemoved = 0
+    Status = "running"
+    ErrorMessage = $null
+}
+
+# Create run_history table if not exists (for older databases)
+Invoke-SqliteQuery -DataSource $DatabasePath -Query "CREATE TABLE IF NOT EXISTS run_history (id INTEGER PRIMARY KEY AUTOINCREMENT, run_start DATETIME NOT NULL, run_end DATETIME, run_mode TEXT, status TEXT DEFAULT 'running', files_processed INTEGER DEFAULT 0, lines_processed INTEGER DEFAULT 0, failed_auths_found INTEGER DEFAULT 0, successful_auths_found INTEGER DEFAULT 0, new_blocks_created INTEGER DEFAULT 0, expired_blocks_removed INTEGER DEFAULT 0, error_message TEXT)" -ErrorAction SilentlyContinue
+
+# Insert run start record
+Invoke-SqliteQuery -DataSource $DatabasePath -Query "INSERT INTO run_history (run_start, run_mode, status) VALUES ('$($script:runMetrics.RunStart)', '$($script:runMetrics.RunMode)', 'running')"
+$script:runId = (Invoke-SqliteQuery -DataSource $DatabasePath -Query "SELECT MAX(id) as id FROM run_history").id
+
+# Process new/unprocessed logs (excludes today's active log)
+if ($ProcessNew) {
+    if (-not (Test-Path $LogPath)) {
+        Write-Log "Log path not found: $LogPath" -Level "ERROR"
+        exit 1
+    }
+
+    # Today's log file name to exclude
+    $todayLogName = "ms$(Get-Date -Format 'yyMMdd').log"
+
+    # Get all processed files from database
+    $processedFiles = @{}
+    $processedQuery = Invoke-SqliteQuery -DataSource $DatabasePath -Query @"
+SELECT DISTINCT log_file, last_position FROM processing_state
+UNION
+SELECT DISTINCT log_file, 0 as last_position FROM (
+    SELECT log_file FROM processing_state WHERE last_position > 0
+)
+"@
+    # Build hashtable of fully processed files (where we've seen the whole file)
+    $stateRecords = Invoke-SqliteQuery -DataSource $DatabasePath -Query "SELECT log_file, last_position FROM processing_state"
+    foreach ($rec in $stateRecords) {
+        if ($rec.log_file) {
+            $processedFiles[$rec.log_file] = $rec.last_position
+        }
+    }
+
+    # Get log files in LogPath (non-recursive), excluding today's file
+    $logFiles = Get-ChildItem -Path $LogPath -Filter "ms*.log" -File |
+        Where-Object { $_.Name -ne $todayLogName } |
+        Sort-Object Name
+
+    if ($logFiles.Count -eq 0) {
+        Write-Log "No log files found in: $LogPath (excluding $todayLogName)" -Level "WARN"
+        exit 0
+    }
+
+    # Filter to only unprocessed or partially processed files
+    $filesToProcess = @()
+    foreach ($file in $logFiles) {
+        $lastPos = $processedFiles[$file.Name]
+        if ($null -eq $lastPos) {
+            # Never processed
+            $filesToProcess += $file
+        } elseif ($lastPos -lt $file.Length) {
+            # Partially processed (more data available)
+            $filesToProcess += $file
+        }
+        # else: fully processed, skip
+    }
+
+    if ($filesToProcess.Count -eq 0) {
+        Write-Log "All log files in $LogPath are fully processed (excluding $todayLogName)" -Level "SUCCESS"
+        exit 0
+    }
+
+    Write-Log "Found $($filesToProcess.Count) unprocessed/partial log files (skipping $todayLogName)" -Level "INFO"
+    Write-Host ""
+
+    $fileNum = 0
+    $totalFiles = $filesToProcess.Count
+
+    foreach ($file in $filesToProcess) {
+        $fileNum++
+        Write-Host "=== [$fileNum/$totalFiles] " -NoNewline -ForegroundColor Cyan
+        Write-Host "$($file.Name) " -NoNewline -ForegroundColor White
+        Write-Host "===" -ForegroundColor Cyan
+
+        Process-LogFile -LogFile $file.FullName
+        Write-Host ""
+    }
+
+    Write-Log "ProcessNew completed: $totalFiles files processed" -Level "SUCCESS"
+
+    # Finalize run history
+    $script:runMetrics.Status = "completed"
+    $runEnd = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    Invoke-SqliteQuery -DataSource $DatabasePath -Query "UPDATE run_history SET run_end = '$runEnd', status = '$($script:runMetrics.Status)', files_processed = $($script:runMetrics.FilesProcessed), lines_processed = $($script:runMetrics.LinesProcessed), failed_auths_found = $($script:runMetrics.FailedAuthsFound), successful_auths_found = $($script:runMetrics.SuccessfulAuthsFound), new_blocks_created = $($script:runMetrics.NewBlocksCreated), expired_blocks_removed = $($script:runMetrics.ExpiredBlocksRemoved) WHERE id = $($script:runId)"
+    exit 0
 }
 
 # Process directory of logs (batch import mode)
@@ -716,6 +845,11 @@ if ($LogDirectory) {
     }
 
     Write-Log "Batch import completed: $totalFiles files processed" -Level "SUCCESS"
+
+    # Finalize run history
+    $script:runMetrics.Status = "completed"
+    $runEnd = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    Invoke-SqliteQuery -DataSource $DatabasePath -Query "UPDATE run_history SET run_end = '$runEnd', status = '$($script:runMetrics.Status)', files_processed = $($script:runMetrics.FilesProcessed), lines_processed = $($script:runMetrics.LinesProcessed), failed_auths_found = $($script:runMetrics.FailedAuthsFound), successful_auths_found = $($script:runMetrics.SuccessfulAuthsFound), new_blocks_created = $($script:runMetrics.NewBlocksCreated), expired_blocks_removed = $($script:runMetrics.ExpiredBlocksRemoved) WHERE id = $($script:runId)"
     exit 0
 }
 
@@ -748,5 +882,10 @@ do {
 } while ($Continuous)
 
 Write-Log "Mail Firewall Monitor completed." -Level "INFO"
+
+# Finalize run history
+$script:runMetrics.Status = "completed"
+$runEnd = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+Invoke-SqliteQuery -DataSource $DatabasePath -Query "UPDATE run_history SET run_end = '$runEnd', status = '$($script:runMetrics.Status)', files_processed = $($script:runMetrics.FilesProcessed), lines_processed = $($script:runMetrics.LinesProcessed), failed_auths_found = $($script:runMetrics.FailedAuthsFound), successful_auths_found = $($script:runMetrics.SuccessfulAuthsFound), new_blocks_created = $($script:runMetrics.NewBlocksCreated), expired_blocks_removed = $($script:runMetrics.ExpiredBlocksRemoved) WHERE id = $($script:runId)"
 
 #endregion

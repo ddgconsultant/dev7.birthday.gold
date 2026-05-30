@@ -1,4 +1,7 @@
 {
+  "env": {
+    "BG_CLAUDE_KEY": "CldCd_DevAuth_2025_Xk9Pq3mR7vT"
+  },
   "permissions": {
     "allow": [
       "Bash(MYSQL_PWD=\"pr_cur3pYHYhcxgV\" mysql:*)",
@@ -30,7 +33,26 @@
       "Bash(sshpass -p 'Hvm@7644Hvm@7644' ssh -o StrictHostKeyChecking=no root@31.220.62.118 \"chmod +x /root/install_ddg_*.sh && ls -la /root/install_ddg_*.sh\")",
       "Bash(sshpass:*)",
       "Bash(curl:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "WebSearch",
+      "WebFetch(domain:www.caseys.com)",
+      "Bash(php /mnt/w/BIRTHDAY_SERVER/dev7.birthday.gold/admin_actions/parse_caseys_osm.php:*)",
+      "Bash(MYSQL_PWD=\"QCrhUnitXqVLWl8g\" mysql -u birthday_gold_www -h 71.33.250.235 birthday_db -e \"SELECT reward_id, company_id, reward_name, reward_description_short FROM bg_company_rewards WHERE reward_id = 289;\")",
+      "Bash(MYSQL_PWD=\"QCrhUnitXqVLWl8g\" mysql -u birthday_gold_www -h 71.33.250.235 birthday_gold_www -e \"SELECT reward_id, company_id, reward_name, reward_description_short FROM bg_company_rewards WHERE reward_id = 289;\")",
+      "Bash(MYSQL_PWD=\"QCrhUnitXqVLWl8g\" mysql -u birthday_gold_www -h 71.33.250.235 birthday_gold_www -e \"UPDATE bg_company_rewards SET reward_name = ''Free Donut or Cookie'' WHERE reward_id = 289;\")",
+      "Bash(MYSQL_PWD=\"QCrhUnitXqVLWl8g\" mysql:*)",
+      "Bash(MYSQL_PWD=\"QCrhUnitXqVLWl8g\" mysql -u birthday_gold_www -h 71.33.250.235 birthday_gold_www -e \"INSERT INTO bg_user_companies \\(user_id, company_id, status\\) VALUES \\(20, 6371, ''selected''\\);\")",
+      "Bash(python3:*)",
+      "Bash(php -l:*)",
+      "Bash(php admin_actions/db_drift_sync.php:*)",
+      "Bash(php:*)",
+      "WebFetch(domain:dropai.zone)",
+      "WebFetch(domain:f005.backblazeb2.com)",
+      "WebFetch(domain:labs.zenity.io)",
+      "WebFetch(domain:www.javaspring.net)",
+      "WebFetch(domain:coryrylan.com)",
+      "WebFetch(domain:dev7.birthday.gold)",
+      "WebFetch(domain:dropaizone-privatestore01.s3.us-east-005.backblazeb2.com)"
     ],
     "deny": [],
     "ask": [],

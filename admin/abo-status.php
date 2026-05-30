@@ -930,7 +930,7 @@ include($dir['core_components'] . '/bg_header.inc');
                             <div class="mobile-status-grid">
                                 <?php foreach ($processors as $processor): 
                                     $processor_status = $company['progress'][$processor['processor_key']] ?? 'not_started';
-                                    $scheduler_file = $processor['data']['scheduler_file'] ?? '';
+                                    $scheduler_file = $processor['data']['scheduler'] ?? $processor['data']['scheduler_file'] ?? '';
                                     
                                     // Check retrigger configuration
                                     $retrigger_config = $processor['data']['retrigger'] ?? null;
@@ -988,24 +988,24 @@ include($dir['core_components'] . '/bg_header.inc');
                                             <?php echo ucfirst(str_replace('_', ' ', $processor_status)); ?>
                                         </span>
                                         <?php if ($can_retrigger && $company_allows_actions): ?>
-                                            <?php 
+                                            <?php
                                             $encoded_id = $qik->encodeID($company['company_id']);
                                             $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}&retrigger=1";
                                             ?>
-                                            <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
-                                               class="trigger-icon" 
-                                               target="_blank"
+                                            <a href="javascript:void(0)"
+                                               onclick="triggerAbo('<?php echo htmlspecialchars($trigger_url); ?>', '<?php echo htmlspecialchars(addslashes($processor['processor_name'])); ?>', '<?php echo htmlspecialchars(addslashes($company['company_name'])); ?>')"
+                                               class="trigger-icon"
                                                title="Retrigger <?php echo htmlspecialchars($processor['processor_name']); ?>">
                                                 <i class="bi bi-arrow-clockwise text-warning"></i>
                                             </a>
                                         <?php elseif ($can_trigger): ?>
-                                            <?php 
+                                            <?php
                                             $encoded_id = $qik->encodeID($company['company_id']);
                                             $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}";
                                             ?>
-                                            <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
-                                               class="trigger-icon" 
-                                               target="_blank"
+                                            <a href="javascript:void(0)"
+                                               onclick="triggerAbo('<?php echo htmlspecialchars($trigger_url); ?>', '<?php echo htmlspecialchars(addslashes($processor['processor_name'])); ?>', '<?php echo htmlspecialchars(addslashes($company['company_name'])); ?>')"
+                                               class="trigger-icon"
                                                title="Trigger <?php echo htmlspecialchars($processor['processor_name']); ?>">
                                                 <i class="bi bi-play-circle-fill"></i>
                                             </a>
@@ -1037,7 +1037,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                     <?php 
                                     foreach ($processors as $processor): 
                                         $processor_status = $company['progress'][$processor['processor_key']] ?? 'not_started';
-                                        $scheduler_file = $processor['data']['scheduler_file'] ?? '';
+                                        $scheduler_file = $processor['data']['scheduler'] ?? $processor['data']['scheduler_file'] ?? '';
                                         $can_trigger = in_array($company['status'], ['pending_review', 'approved_pending_data', 'active']) && 
                                                       !in_array($processor_status, ['in_progress', 'completed']);
                                     ?>
@@ -1048,13 +1048,13 @@ include($dir['core_components'] . '/bg_header.inc');
                                                 <small class="text-muted"><?php echo htmlspecialchars($processor['data']['description']); ?></small>
                                             </div>
                                             <?php if ($can_trigger): ?>
-                                                <?php 
+                                                <?php
                                                 $encoded_id = $qik->encodeID($company['company_id']);
                                                 $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}";
                                                 ?>
-                                                <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
-                                                   class="btn btn-sm btn-outline-primary ms-2" 
-                                                   target="_blank">
+                                                <a href="javascript:void(0)"
+                                                   onclick="triggerAbo('<?php echo htmlspecialchars($trigger_url); ?>', '<?php echo htmlspecialchars(addslashes($processor['processor_name'])); ?>', '<?php echo htmlspecialchars(addslashes($company['company_name'])); ?>')"
+                                                   class="btn btn-sm btn-outline-primary ms-2">
                                                     <i class="bi bi-play-circle"></i>
                                                 </a>
                                             <?php endif; ?>
@@ -1067,7 +1067,7 @@ include($dir['core_components'] . '/bg_header.inc');
                     </div>
                     <?php endforeach; ?>
                 </div>
-                
+
                 <!-- Desktop Table View -->
                 <div class="desktop-table-view">
                 <!-- Summary View Table -->
@@ -1193,7 +1193,7 @@ include($dir['core_components'] . '/bg_header.inc');
                                                     $step_num = 1;
                                                     foreach ($processors as $processor): 
                                                         $processor_status = $company['progress'][$processor['processor_key']] ?? 'not_started';
-                                                        $scheduler_file = $processor['data']['scheduler_file'] ?? '';
+                                                        $scheduler_file = $processor['data']['scheduler'] ?? $processor['data']['scheduler_file'] ?? '';
                                                         
                                                         // Get last updated time if available
                                                         $last_updated = '';
@@ -1388,24 +1388,24 @@ include($dir['core_components'] . '/bg_header.inc');
                                                             // Determine what to show
                                                             if ($can_retrigger && $company_allows_actions): ?>
                                                                 <!-- Retrigger button based on config -->
-                                                                <?php 
+                                                                <?php
                                                                 $encoded_id = $qik->encodeID($company['company_id']);
                                                                 $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}&retrigger=1";
                                                                 ?>
-                                                                <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
-                                                                   class="btn btn-sm btn-outline-warning" 
-                                                                   target="_blank"
+                                                                <a href="javascript:void(0)"
+                                                                   onclick="triggerAbo('<?php echo htmlspecialchars($trigger_url); ?>', '<?php echo htmlspecialchars(addslashes($processor['processor_name'])); ?>', '<?php echo htmlspecialchars(addslashes($company['company_name'])); ?>')"
+                                                                   class="btn btn-sm btn-outline-warning"
                                                                    title="Retrigger this processor">
                                                                     <i class="bi bi-arrow-clockwise"></i> Retrigger
                                                                 </a>
                                                             <?php elseif ($company_allows_actions && !in_array($processor_status, ['in_progress', 'completed'])): ?>
-                                                                <?php 
+                                                                <?php
                                                                 $encoded_id = $qik->encodeID($company['company_id']);
                                                                 $trigger_url = "/admin_actions/abo/{$scheduler_file}?id={$encoded_id}&rawid={$company['company_id']}";
                                                                 ?>
-                                                                <a href="<?php echo htmlspecialchars($trigger_url); ?>" 
-                                                                   class="btn btn-sm btn-outline-primary" 
-                                                                   target="_blank"
+                                                                <a href="javascript:void(0)"
+                                                                   onclick="triggerAbo('<?php echo htmlspecialchars($trigger_url); ?>', '<?php echo htmlspecialchars(addslashes($processor['processor_name'])); ?>', '<?php echo htmlspecialchars(addslashes($company['company_name'])); ?>')"
+                                                                   class="btn btn-sm btn-outline-primary"
                                                                    title="Manually trigger this processor">
                                                                     <i class="bi bi-play-circle"></i> Trigger
                                                                 </a>
@@ -1443,6 +1443,226 @@ include($dir['core_components'] . '/bg_header.inc');
         </div>
     </div>
 </div>
+
+<!-- ABO Trigger Modal -->
+<div class="modal fade" id="aboTriggerModal" tabindex="-1" aria-labelledby="aboTriggerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aboTriggerModalLabel">
+                    <i class="bi bi-terminal me-2"></i>
+                    <span id="aboModalProcessorName">ABO Processor</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="aboOutputContainer" style="background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; min-height: 300px; max-height: 60vh; overflow-y: auto; padding: 1rem;">
+                    <div id="aboOutput"></div>
+                    <div id="aboSpinner" class="text-center py-4" style="display: none;">
+                        <div class="spinner-border text-light" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div class="text-light mt-2">Processing...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span id="aboStatusBadge" class="badge bg-secondary me-auto">Ready</span>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="aboRetriggerBtn" style="display: none;" onclick="retriggerLastAbo()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Run Again
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let aboModal = null;
+let lastAboUrl = '';
+let aboProcessed = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    aboModal = new bootstrap.Modal(document.getElementById('aboTriggerModal'));
+
+    // Refresh page when modal is closed if a process was run
+    document.getElementById('aboTriggerModal').addEventListener('hidden.bs.modal', function() {
+        if (aboProcessed) {
+            // Refresh the page to show updated statuses
+            window.location.reload();
+        }
+    });
+});
+
+function triggerAbo(url, processorName, companyName) {
+    lastAboUrl = url;
+    aboProcessed = false;
+
+    // Update modal title
+    document.getElementById('aboModalProcessorName').textContent = processorName + ' - ' + companyName;
+
+    // Reset output
+    document.getElementById('aboOutput').innerHTML = '';
+    document.getElementById('aboSpinner').style.display = 'block';
+    document.getElementById('aboStatusBadge').className = 'badge bg-info me-auto';
+    document.getElementById('aboStatusBadge').textContent = 'Running...';
+    document.getElementById('aboRetriggerBtn').style.display = 'none';
+
+    // Show modal
+    aboModal.show();
+
+    // Make AJAX request
+    fetch(url)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('aboSpinner').style.display = 'none';
+
+            // Try to parse as JSON for pretty display
+            try {
+                const jsonData = JSON.parse(data);
+                displayJsonOutput(jsonData);
+
+                // Update status badge based on result
+                if (jsonData.status === 'success') {
+                    document.getElementById('aboStatusBadge').className = 'badge bg-success me-auto';
+                    document.getElementById('aboStatusBadge').textContent = 'Success';
+                } else if (jsonData.status === 'error') {
+                    document.getElementById('aboStatusBadge').className = 'badge bg-danger me-auto';
+                    document.getElementById('aboStatusBadge').textContent = 'Error';
+                } else {
+                    document.getElementById('aboStatusBadge').className = 'badge bg-warning me-auto';
+                    document.getElementById('aboStatusBadge').textContent = jsonData.status || 'Complete';
+                }
+            } catch (e) {
+                // Not JSON, display as plain text
+                document.getElementById('aboOutput').innerHTML = '<pre style="color: #d4d4d4; margin: 0; white-space: pre-wrap;">' + escapeHtml(data) + '</pre>';
+                document.getElementById('aboStatusBadge').className = 'badge bg-secondary me-auto';
+                document.getElementById('aboStatusBadge').textContent = 'Complete';
+            }
+
+            document.getElementById('aboRetriggerBtn').style.display = 'inline-block';
+            aboProcessed = true;
+            scrollOutputToBottom();
+        })
+        .catch(error => {
+            document.getElementById('aboSpinner').style.display = 'none';
+            document.getElementById('aboOutput').innerHTML = '<div class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error: ' + escapeHtml(error.message) + '</div>';
+            document.getElementById('aboStatusBadge').className = 'badge bg-danger me-auto';
+            document.getElementById('aboStatusBadge').textContent = 'Error';
+            document.getElementById('aboRetriggerBtn').style.display = 'inline-block';
+            aboProcessed = true;
+        });
+}
+
+function retriggerLastAbo() {
+    if (lastAboUrl) {
+        // Add retrigger param if not already present
+        let url = lastAboUrl;
+        if (!url.includes('retrigger=')) {
+            url += (url.includes('?') ? '&' : '?') + 'retrigger=1';
+        }
+
+        // Reset and run
+        document.getElementById('aboOutput').innerHTML = '<div class="text-muted mb-2">--- Retriggering ---</div>';
+        document.getElementById('aboSpinner').style.display = 'block';
+        document.getElementById('aboStatusBadge').className = 'badge bg-info me-auto';
+        document.getElementById('aboStatusBadge').textContent = 'Running...';
+        document.getElementById('aboRetriggerBtn').style.display = 'none';
+
+        fetch(url)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('aboSpinner').style.display = 'none';
+                try {
+                    const jsonData = JSON.parse(data);
+                    displayJsonOutput(jsonData);
+                    document.getElementById('aboStatusBadge').className = jsonData.status === 'success' ? 'badge bg-success me-auto' : 'badge bg-warning me-auto';
+                    document.getElementById('aboStatusBadge').textContent = jsonData.status === 'success' ? 'Success' : (jsonData.status || 'Complete');
+                } catch (e) {
+                    document.getElementById('aboOutput').innerHTML += '<pre style="color: #d4d4d4; margin: 0; white-space: pre-wrap;">' + escapeHtml(data) + '</pre>';
+                    document.getElementById('aboStatusBadge').className = 'badge bg-secondary me-auto';
+                    document.getElementById('aboStatusBadge').textContent = 'Complete';
+                }
+                document.getElementById('aboRetriggerBtn').style.display = 'inline-block';
+                aboProcessed = true;
+                scrollOutputToBottom();
+            })
+            .catch(error => {
+                document.getElementById('aboSpinner').style.display = 'none';
+                document.getElementById('aboOutput').innerHTML += '<div class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error: ' + escapeHtml(error.message) + '</div>';
+                document.getElementById('aboStatusBadge').className = 'badge bg-danger me-auto';
+                document.getElementById('aboStatusBadge').textContent = 'Error';
+                document.getElementById('aboRetriggerBtn').style.display = 'inline-block';
+                aboProcessed = true;
+            });
+    }
+}
+
+function displayJsonOutput(json) {
+    let html = '';
+
+    // Status line - larger font
+    const statusColor = json.status === 'success' ? '#4ec9b0' : (json.status === 'error' ? '#f14c4c' : '#dcdcaa');
+    html += '<div style="color: ' + statusColor + '; font-weight: bold; font-size: 18px; margin-bottom: 8px;">';
+    html += '<i class="bi bi-' + (json.status === 'success' ? 'check-circle' : 'info-circle') + ' me-2"></i>';
+    html += 'Status: ' + (json.status || 'unknown').toUpperCase();
+    html += '</div>';
+
+    // Timestamp - medium font
+    if (json.timestamp) {
+        html += '<div style="color: #808080; font-size: 14px; margin-bottom: 12px;">' + json.timestamp + '</div>';
+    }
+
+    // Message - larger font
+    if (json.message) {
+        html += '<div style="color: #ce9178; font-size: 16px; margin-bottom: 12px;">' + escapeHtml(json.message) + '</div>';
+    }
+
+    // Data collected - larger font
+    if (json.data_collected) {
+        html += '<div style="color: #9cdcfe; font-size: 16px; margin-bottom: 12px;"><i class="bi bi-database me-2"></i>' + escapeHtml(json.data_collected) + '</div>';
+    }
+
+    // Show specific data if available
+    if (json.social_media_found) {
+        html += '<div style="margin-top: 12px; padding: 8px; background: #2d2d2d; border-radius: 4px;">';
+        html += '<div style="color: #569cd6; margin-bottom: 4px;">Social Media Found:</div>';
+        for (const [platform, url] of Object.entries(json.social_media_found)) {
+            html += '<div style="margin-left: 12px;"><span style="color: #dcdcaa;">' + platform + ':</span> <a href="' + escapeHtml(url) + '" target="_blank" style="color: #4fc1ff;">' + escapeHtml(url) + '</a></div>';
+        }
+        html += '</div>';
+    }
+
+    // Errors
+    if (json.errors && json.errors.length > 0) {
+        html += '<div style="margin-top: 12px; padding: 8px; background: #3d2020; border-radius: 4px;">';
+        html += '<div style="color: #f14c4c; margin-bottom: 4px;">Errors:</div>';
+        json.errors.forEach(err => {
+            html += '<div style="margin-left: 12px; color: #f14c4c;">' + escapeHtml(typeof err === 'string' ? err : JSON.stringify(err)) + '</div>';
+        });
+        html += '</div>';
+    }
+
+    // Full JSON (collapsed)
+    html += '<details style="margin-top: 16px;">';
+    html += '<summary style="color: #808080; cursor: pointer; user-select: none;">View Raw JSON</summary>';
+    html += '<pre style="color: #d4d4d4; margin: 8px 0 0 0; padding: 8px; background: #2d2d2d; border-radius: 4px; overflow-x: auto;">' + escapeHtml(JSON.stringify(json, null, 2)) + '</pre>';
+    html += '</details>';
+
+    document.getElementById('aboOutput').innerHTML = html;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function scrollOutputToBottom() {
+    const container = document.getElementById('aboOutputContainer');
+    container.scrollTop = container.scrollHeight;
+}
+</script>
 
 <?php
 $display_footertype = 'min';

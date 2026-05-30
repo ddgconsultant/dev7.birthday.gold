@@ -1,5 +1,21 @@
 #!/bin/bash
 
+# Source DB hostname - defaults to july03.bday.gold, can be overridden via command line
+# Usage: ./install_mysqldb.sh [source_db_hostname]
+# Example: ./install_mysqldb.sh july05.bday.gold
+SOURCE_DB_HOST="${1:-july03.bday.gold}"
+
+# Validate that SOURCE_DB_HOST is a fully qualified domain name
+if [[ ! "$SOURCE_DB_HOST" =~ \. ]]; then
+    echo ""
+    echo "ERROR: Source host '$SOURCE_DB_HOST' is not a fully qualified domain name."
+    echo ""
+    echo "Usage: ./install_mysqldb.sh [source_db_hostname]"
+    echo "Example: ./install_mysqldb.sh july04.bday.gold"
+    echo ""
+    exit 1
+fi
+
 # Use fixed log filename so we can always tail it after reboots
 LOG_FILE=~/installhistory_mysql_current.log
 # Also create a timestamped backup
@@ -42,21 +58,22 @@ load_state() {
 }
 
 log "Starting MySQL installation process on $(hostname)"
+log "Source database host: $SOURCE_DB_HOST"
 
 # ============================================================================
 # CHECK AND PROMPT FOR REQUIRED PASSWORDS
 # ============================================================================
 figlet "Password Check"
 
-# Check for LEGACY_ROOT_PASSWORD (SSH password for july02.bday.gold)
+# Check for LEGACY_ROOT_PASSWORD (SSH password for source DB host)
 if [ -z "$LEGACY_ROOT_PASSWORD" ]; then
     echo ""
     echo "=========================================================================="
     echo "LEGACY_ROOT_PASSWORD is NOT set!"
-    echo "This is the ROOT SSH password for july02.bday.gold"
-    echo "Used for: SSH to july02 to dump the database"
+    echo "This is the ROOT SSH password for $SOURCE_DB_HOST"
+    echo "Used for: SSH to $SOURCE_DB_HOST to dump the database"
     echo "=========================================================================="
-    read -s -p "Enter ROOT SSH password for july02.bday.gold: " LEGACY_ROOT_PASSWORD
+    read -s -p "Enter ROOT SSH password for $SOURCE_DB_HOST: " LEGACY_ROOT_PASSWORD
     echo ""
     export LEGACY_ROOT_PASSWORD
 else
@@ -84,7 +101,7 @@ if [ -z "$MYSQL_ADMIN_PASSWORD" ]; then
     echo "=========================================================================="
     echo "MYSQL_ADMIN_PASSWORD is NOT set!"
     echo "This is the MySQL password for user: birthday_gold_admin"
-    echo "Used for: Remote MySQL admin operations on july02.bday.gold"
+    echo "Used for: Remote MySQL admin operations on $SOURCE_DB_HOST"
     echo "=========================================================================="
     read -s -p "Enter MySQL password for 'birthday_gold_admin': " MYSQL_ADMIN_PASSWORD
     echo ""
@@ -239,7 +256,8 @@ EOF'
     validate "Creating 99-mysql_1-settings.cnf"
 
     # Create mysql_2-replication.cnf
-    hostname=$(hostname)
+    # Use short hostname (july06) not FQDN (july06.bday.gold) so regex parsing works
+    hostname=$(hostname -s)
     month=$(echo $hostname | grep -oP '^[a-zA-Z]+')
     day=$(echo $hostname | grep -oP '\d+$')
 
@@ -273,7 +291,7 @@ log_timestamps = SYSTEM
 
 log_replica_updates = 1
 binlog_expire_logs_seconds = 3888000
-max_binlog_size = 10737418240   #1G
+max_binlog_size = 1073741824    #1G
 
 sync_binlog = 0
 
@@ -295,6 +313,17 @@ enforce_gtid_consistency = ON
 EOF"
     validate "Creating 99-mysql_2-replication.cnf"
 
+    # Extend systemd timeout for MySQL — InnoDB warmup with large buffer pools
+    # can take 5+ minutes, causing systemd to report a false failure
+    mkdir -p /etc/systemd/system/mysql.service.d
+    cat > /etc/systemd/system/mysql.service.d/timeout.conf <<EOF
+[Service]
+TimeoutStartSec=600
+TimeoutStopSec=600
+EOF
+    systemctl daemon-reload
+    validate "Extending MySQL systemd timeout to 600s"
+
     save_state "restart_mysql"
     ;&
 ##########################################################
@@ -307,14 +336,14 @@ EOF"
 ##########################################################
 "dump_dbdump")
     figlet "Dump Data"
-    log "Performing MySQL dump from july02.bday.gold (this takes ~15 minutes)"
-    log "Using birthday_gold_admin user to connect to july02.bday.gold MySQL"
+    log "Performing MySQL dump from $SOURCE_DB_HOST (this takes ~15 minutes)"
+    log "Using birthday_gold_admin user to connect to $SOURCE_DB_HOST MySQL"
 
-    # Dump directly from july02's MySQL to local file (no SSH needed)
-    mysqldump -h july02.bday.gold -u birthday_gold_admin -p"$MYSQL_ADMIN_PASSWORD" \
+    # Dump directly from source DB's MySQL to local file (no SSH needed)
+    mysqldump -h $SOURCE_DB_HOST -u birthday_gold_admin -p"$MYSQL_ADMIN_PASSWORD" \
         --all-databases --single-transaction --flush-logs \
         --source-data=2 --set-gtid-purged=ON --force | gzip > /tmp/dump.sql.gz
-    validate "Dumping MySQL data from july02.bday.gold"
+    validate "Dumping MySQL data from $SOURCE_DB_HOST"
 
     # Check dump file size
     DUMP_SIZE=$(du -h /tmp/dump.sql.gz | cut -f1)
@@ -333,17 +362,33 @@ EOF"
     validate "Restoring MySQL dump"
 
     log "Database import completed successfully"
+
+    # After importing --all-databases dump, root's auth_socket plugin gets overwritten
+    # by the source server's auth config. Restore root to use auth_socket for local access.
+    log "Restoring root@localhost auth_socket access after dump import"
+    # Use mysqld --skip-grant-tables briefly to reset root access
+    systemctl stop mysql
+    mysqld --skip-grant-tables --skip-networking --user=mysql &
+    MYSQLD_PID=$!
+    sleep 3
+    mysql -u root -e "FLUSH PRIVILEGES; ALTER USER 'root'@'localhost' IDENTIFIED WITH auth_socket;" 2>&1 | tee -a $LOG_FILE
+    validate "Restoring root auth_socket access"
+    kill $MYSQLD_PID 2>/dev/null
+    wait $MYSQLD_PID 2>/dev/null
+    systemctl start mysql
+    validate "Restarting MySQL after root access restore"
+
     save_state "configure_replication"
     ;&
 ##########################################################
 "remove_replication_channel")
-    figlet "Removing Replication Channel"    
-    master_host='july02.bday.gold'
-    slave_host=$(hostname)        
+    figlet "Removing Replication Channel"
+    master_host="$SOURCE_DB_HOST"
+    slave_host=$(hostname -s)
     # Extract the numbers from the hostnames
     master_num=$(echo $master_host | grep -oP '\d+')
-    slave_num=$(echo $slave_host | grep -oP '\d+')    
-    master_channel="channelsource_prod${master_num}_to_prod${slave_num}"    
+    slave_num=$(echo $slave_host | grep -oP '\d+')
+    master_channel="channelsource_prod${master_num}_to_prod${slave_num}"
     # Check if the replication channel exists
     channel_exists=$(mysql -u root -e "SHOW SLAVE STATUS FOR CHANNEL '$master_channel'\G" | grep -c "Channel_Name: $master_channel")
         if [ $channel_exists -gt 0 ]; then
@@ -353,24 +398,24 @@ EOF"
         validate "Replication channel $master_channel removed on $slave_host"
     else
         log "Replication channel $master_channel does not exist on $slave_host - no remove action taken."
-    fi    
+    fi
     save_state "configure_replication"
 ;&
 ##########################################################
-"configure_replication")   
-    master_host='july02.bday.gold'
-    slave_host=$(hostname)    
+"configure_replication")
+    master_host="$SOURCE_DB_HOST"
+    slave_host=$(hostname -s)
     # Extract the numbers from the hostnames
     master_num=$(echo $master_host | grep -oP '\d+')
-    slave_num=$(echo $slave_host | grep -oP '\d+')    
+    slave_num=$(echo $slave_host | grep -oP '\d+')
     master_channel="channelsource_prod${master_num}_to_prod${slave_num}"
-    
-    figlet "Adding Replication Channel" 
+
+    figlet "Adding Replication Channel"
     log "creating $master_channel on: $slave_host"
     # Password should be pre-set via environment variable MYSQL_REPL_PASSWORD
 
     # Set up replication
-    mysql -u root -e "CHANGE MASTER TO 
+    mysql -u root -e "CHANGE MASTER TO
      MASTER_HOST='$master_host',
      MASTER_USER='bgdbreplicator1',
      MASTER_PASSWORD='$MYSQL_REPL_PASSWORD',
@@ -386,44 +431,44 @@ EOF"
     ;&
 ##########################################################
 "remove_reverse_replication_channel")
-    figlet "Removing Reverse Replication Channel"        
-    slave_host='july02.bday.gold'
-    master_host=$(hostname).bday.gold
+    figlet "Removing Reverse Replication Channel"
+    slave_host="$SOURCE_DB_HOST"
+    master_host=$(hostname -s).bday.gold
     # Extract the numbers from the hostnames
-   master_num=$(echo $master_host | grep -oP '\d+')
+    master_num=$(echo $master_host | grep -oP '\d+')
     slave_num=$(echo $slave_host | grep -oP '\d+')
     master_channel="channelsource_prod${slave_num}_to_prod${master_num}"
 
-    log "Checking reverse replication channel on july02 using MYSQL_ADMIN_PASSWORD"
+    log "Checking reverse replication channel on $SOURCE_DB_HOST using MYSQL_ADMIN_PASSWORD"
     # Check if the replication channel exists
-    channel_exists=$(mysql -u birthday_gold_admin -h${slave_host} -p${MYSQL_ADMIN_PASSWORD} -e "SHOW SLAVE STATUS FOR CHANNEL '$master_channel'\G" | grep -c "Channel_Name: $master_channel")
+    channel_exists=$(mysql -u birthday_gold_admin -h${slave_host} -p"${MYSQL_ADMIN_PASSWORD}" -e "SHOW SLAVE STATUS FOR CHANNEL '$master_channel'\G" | grep -c "Channel_Name: $master_channel")
     if [ $channel_exists -gt 0 ]; then
-        log "Removing reverse replication channel $master_channel on july02"
-        mysql -u birthday_gold_admin -h${slave_host} -p${MYSQL_ADMIN_PASSWORD} -e "STOP SLAVE FOR CHANNEL '$master_channel'; RESET SLAVE ALL FOR CHANNEL '$master_channel';"
+        log "Removing reverse replication channel $master_channel on $SOURCE_DB_HOST"
+        mysql -u birthday_gold_admin -h${slave_host} -p"${MYSQL_ADMIN_PASSWORD}" -e "STOP SLAVE FOR CHANNEL '$master_channel'; RESET SLAVE ALL FOR CHANNEL '$master_channel';"
         validate "Replication reverse channel $master_channel removed"
     else
         log "Reverse replication channel $master_channel does not exist - checking status"
-        mysql -u birthday_gold_admin -h${slave_host} -p${MYSQL_ADMIN_PASSWORD} -e "SHOW SLAVE STATUS FOR CHANNEL '$master_channel'\G"
+        mysql -u birthday_gold_admin -h${slave_host} -p"${MYSQL_ADMIN_PASSWORD}" -e "SHOW SLAVE STATUS FOR CHANNEL '$master_channel'\G"
         echo "Replication reverse channel $master_channel does not exist"
-    fi 
+    fi
     save_state "configure_reverse_replication"
     ;&
 ##########################################################
 "configure_reverse_replication")
     figlet "Reverse Replication"
 
-    slave_host='july02.bday.gold'
-    master_host=$(hostname).bday.gold
+    slave_host="$SOURCE_DB_HOST"
+    master_host=$(hostname -s).bday.gold
     # Extract the numbers from the hostnames
     master_num=$(echo $master_host | grep -oP '\d+')
     slave_num=$(echo $slave_host | grep -oP '\d+')
     master_channel="channelsource_prod${slave_num}_to_prod${master_num}"
 
-    log "Setting up reverse replication channel $master_channel on july02"
-    log "Using MYSQL_ADMIN_PASSWORD to connect to july02"
+    log "Setting up reverse replication channel $master_channel on $SOURCE_DB_HOST"
+    log "Using MYSQL_ADMIN_PASSWORD to connect to $SOURCE_DB_HOST"
     log "Using MYSQL_REPL_PASSWORD for bgdbreplicator1 user"
 
-    mysql -u birthday_gold_admin -h${slave_host} -p${MYSQL_ADMIN_PASSWORD} -e "CHANGE MASTER TO
+    mysql -u birthday_gold_admin -h${slave_host} -p"${MYSQL_ADMIN_PASSWORD}" -e "CHANGE MASTER TO
      MASTER_HOST='$master_host',
      MASTER_USER='bgdbreplicator1',
      MASTER_PASSWORD='$MYSQL_REPL_PASSWORD',
@@ -433,7 +478,7 @@ EOF"
     START SLAVE FOR CHANNEL '$master_channel';"
     validate "Setting up reverse replication"
 
-    # Check replication status
+    # Check replication status (use admin user since root may not have remote access)
     log "Checking reverse replication status"
     mysql -u root -e "SHOW SLAVE STATUS FOR CHANNEL '$master_channel'\G"
     validate "Checking replication status"

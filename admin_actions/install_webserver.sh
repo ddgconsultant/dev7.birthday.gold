@@ -795,38 +795,20 @@ EOF
 "deploy")
     ./deploy_www.sh
     validate "Running deploy_www.sh"
-    save_state "system_availability_mysqlrecord"
-    ;&
-"system_availability_mysqlrecord")
-        master_host='july02.bday.gold'
-        figlet "Input Required"        
-        # Prompt for the MySQL password
-        echo "Enter MySQL birthday_gold_admin password:"
-        # Get current hostname
-        current_hostname=$(hostname)        
-        # Get current OS version
-        os_version=$(lsb_release -d | awk -F'\t' '{print $2}')        
-        # Get current Apache version
-        apache_version=$(apache2 -v | grep "Server version" | awk '{print $3}')        
-        # Get current PHP version
-        php_version=$(php -v | head -n 1 | awk '{print $2}')        
-        # Get current host IP address
-        ip_address=$(hostname -I | awk '{print $1}')        
-        # Insert System Availability DB record
-        mysql -u birthday_gold_admin -h${master_host} -p -e "
-        INSERT INTO \`birthday_gold_www\`.\`bg_system_availability\` 
-        (\`system_id\`, \`name\`, \`description\`, \`url\`, \`port\`, \`system_status\`, \`status\`, \`last_success_dt\`, \`last_failure_dt\`, \`create_dt\`, \`modify_dt\`) 
-        VALUES 
-        (180, '${current_hostname} / Production LAMP Stack', '=== Production LAMP Stack\n\n${os_version}\n+ ${apache_version}\n+ PHP ${php_version}\n+ MySQL 8 (ID: ###)', '${ip_address}', 80, 'green', 'A', NOW(), NOW(), NOW(), NOW());" -p
-        validate "Insert System Availability DB record"
-        save_state "completed"
+    save_state "completed"
     ;&
 "completed")
     # Re-enable kernel warnings by disabling the motd-news service
     echo 'ENABLED=1' > /etc/default/motd-news
     figlet "Completed WEB"
     log "Installation process completed successfully on $(hostname)"
-    log "Perform Execute: install_mysqldb.sh"
+    log ""
+    log "NEXT STEPS:"
+    log "1. Run: ./install_mysqldb.sh [source_db_host]    # MySQL dump/restore/replication"
+    log "2. Run: ./deploy_www.sh                          # Deploy application code"
+    log "3. Run: ./install_haproxynode.sh [source_db_host] # Enable in HAProxy (GO LIVE)"
+    log "4. Run: ./install_addtometabase_web.sh           # Metabase monitoring"
+    log "5. Run: ./install_uptime_monitors_web.sh         # Uptime Kuma monitors"
     ;;
 *)
     log "Unknown state: $STATE"

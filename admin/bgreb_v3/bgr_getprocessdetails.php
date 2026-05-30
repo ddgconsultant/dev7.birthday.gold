@@ -208,8 +208,16 @@ $output=str_replace($search, $replace,$output);
 
  #session_tracking('bgr_getprocessdetails', $output);
 if (empty($noecho)) {
- if ($return=='js') echo $output;
- else $output= json_encode(json_decode($output), JSON_PRETTY_PRINT);
+    // Check if pretty print is requested (for browser viewing)
+    $pretty = isset($_REQUEST['pretty']) && $_REQUEST['pretty'] == '1';
+
+    if ($return=='js' && !$pretty) {
+        echo $output;
+    } else {
+        // Pretty print for browser viewing
+        header('Content-Type: application/json');
+        echo json_encode(json_decode($output), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    }
 }
 
 

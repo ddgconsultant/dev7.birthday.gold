@@ -533,21 +533,6 @@ if ($show_profile_completion && $replacements['profilestatus']!=='success') {
 
 
 // -------------------------------------------------------
-// obtained funfacts from user_getaccountdetails.inc
-echo '
-<!-- Fun Facts Block -->
-<div class="content-panel mb-4 pb-1">
-<h3 class="text-info fw-bold">Fun Facts</h3>
-<div class="row p-0 m-0">
-' . $funfact_content . '
-</div> 
-<div class="my-0 py-0 d-flex justify-content-end">
-<a href="/myaccount/fun-facts" class="fw-bold">Discover more fun facts ></a>
-</div>
-</div>
-';
-
-
 // Dashboard Panel with Enrollments and Allocations (Enrollments first for importance)
 echo '
 <!-- Dashboard Panel -->
@@ -724,6 +709,20 @@ echo '
             </div>
         </div>
     </div>
+</div>
+';
+
+// Fun Facts Block (moved below Dashboard)
+echo '
+<!-- Fun Facts Block -->
+<div class="content-panel mb-4 pb-1">
+<h3 class="text-info fw-bold">Fun Facts</h3>
+<div class="row p-0 m-0">
+' . $funfact_content . '
+</div>
+<div class="my-0 py-0 d-flex justify-content-end">
+<a href="/myaccount/fun-facts" class="fw-bold">Discover more fun facts ></a>
+</div>
 </div>
 ';
 

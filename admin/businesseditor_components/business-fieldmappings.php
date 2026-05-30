@@ -89,9 +89,21 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_REQUEST['newversion']) && iss
 ###==============================================================================================================
 ###==============================================================================================================
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_REQUEST['addtestcase']) && $_REQUEST['addtestcase'] == '0' && isset($_REQUEST['section']) && $_REQUEST['section'] == 'formfieldedit') {
+    // Handle deleted mappings first
+    if (!empty($_POST['deleted_mappings'])) {
+        $deletedIds = array_filter(explode(',', $_POST['deleted_mappings']), 'is_numeric');
+        if (!empty($deletedIds)) {
+            $placeholders = implode(',', array_fill(0, count($deletedIds), '?'));
+            $sql = "DELETE FROM bg_form_field_mappings WHERE mapping_id IN ($placeholders) AND company_id = ?";
+            $stmt = $database->prepare($sql);
+            $params = array_merge($deletedIds, [$company_id]);
+            $stmt->execute($params);
+        }
+    }
+
     // Fetch the post data
-    $mappings = $_POST['mappings'];
- 
+    $mappings = $_POST['mappings'] ?? [];
+
     // Loop over each mapping
     foreach ($mappings as $mappingID => $mappingData) {
         $userFieldName = trim($mappingData['userFieldName']);
@@ -345,9 +357,9 @@ if (!empty($version[0]['version'])) {
     $criteria = '';
 }
 
-$sql = "SELECT * FROM bg_form_field_mappings 
-        WHERE company_id = ? $criteria 
-        ORDER BY user_field_name";
+$sql = "SELECT * FROM bg_form_field_mappings
+        WHERE company_id = ? $criteria
+        ORDER BY `rank` ASC, user_field_name";
 $stmt = $database->prepare($sql);
 $stmt->execute([$company_id]);
 $mappings = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -447,6 +459,23 @@ $additionalstyles .= '
 .card-header[data-bs-toggle="collapse"] i {
     transition: transform 0.2s;
 }
+
+/* Marked for deletion styling */
+.marked-for-deletion {
+    background-color: #fee2e2 !important;
+    opacity: 0.7;
+}
+.marked-for-deletion td {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+.marked-for-deletion .undo-delete {
+    color: #2563eb;
+    text-decoration: none;
+}
+.marked-for-deletion .undo-delete:hover {
+    color: #1d4ed8;
+}
 </style >
 ';
 ?>
@@ -503,8 +532,23 @@ $additionalstyles .= '
             <i class="bi bi-grid-3x3-gap me-2"></i> BuildOut
         </button>
         <?php if (!empty($signup_url) && $signup_url !== $website['apponlytag']): ?>
-        <button type="button" class="btn btn-success" onclick="window.open('<?php echo htmlspecialchars($signup_url); ?>', '_blank')" title="Open the signup URL for this company">
-            <i class="bi bi-eye me-2"></i> Preview Signup
+        <?php
+        // Generate the member-enroller URL with proper encoded parameters for test user #20
+        $test_user_id = 20;
+        $admin_user_id = isset($session) ? $session->get('user_id', 0) : ($_SESSION['user_id'] ?? 0);
+        $member_enroller_url = '/admin/bgreb_v3/member-enroller?sid=' . session_id()
+            . '&aid=' . $qik->encodeId($admin_user_id)
+            . '&uid=' . $qik->encodeId($test_user_id)
+            . '&bid=' . $qik->encodeId($company_id);
+        ?>
+        <a href="<?php echo htmlspecialchars($member_enroller_url); ?>" target="enrollerwindow" class="btn btn-success" title="Open Member Enroller with Test User #20">
+            <i class="bi bi-robot me-2"></i> BGRAB Enroller
+        </a>
+        <button type="button" class="btn btn-outline-success" onclick="previewSignupWithBgrab()" title="Preview field mappings for this company">
+            <i class="bi bi-list-check me-2"></i> Preview Fields
+        </button>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.open('<?php echo htmlspecialchars($signup_url); ?>', '_blank')" title="Open the signup URL directly">
+            <i class="bi bi-eye me-2"></i> View Signup Page
         </button>
         <?php endif; ?>
         <button type="button" class="btn btn-primary" id="addFieldBtn" <?php echo $isAppOnly ? 'disabled' : ''; ?>>
@@ -573,6 +617,7 @@ $additionalstyles .= '
         <input type="hidden" name="version" value="<?php echo $versionnumber; ?>">
         <input type="hidden" name="cid" value="<?php echo $company_id; ?>">
         <input type="hidden" name="section" value="formfieldedit">
+        <input type="hidden" name="deleted_mappings" id="deleted_mappings" value="">
         
         <div class="card">
             <table class="form-table" id="mappingsTable">
@@ -688,6 +733,47 @@ document.addEventListener('DOMContentLoaded', function() {
             formatHelpChevron.classList.add('bi-chevron-down');
         });
     }
+
+    // Format type help definitions (must be defined before initialization code)
+    const formatHelp = {
+        'date': 'PHP Date: Y=2025, y=25, m=07, n=7, d=27, j=27, F=July, M=Jul, D=Mon, l=Monday',
+        'date-calculate': 'Example: {m}+81098',
+        'date-numberformat': 'Formats date as number',
+        'lowerdate': 'Lowercase date output',
+        'phone': 'Examples: (###) ###-####, ###-###-####, 012, 345, 6789',
+        'state': 'Use: code (for 2-letter abbreviation)',
+        'title': 'Use: noperiod (removes periods)',
+        'name': 'Use: {first_name} {middle_name} {last_name}',
+        'gender': 'Options: uppercode, lowercode, upper, ucwords, MF->12',
+        'tf->yn': 'Options: uinitial, ucwords, upper, lower, NNo',
+        'tf->10': 'Converts true/false to 1/0',
+        'tf->fixed': 'Format: truevalue/falsevalue',
+        'tf->fixedpipe': 'Format: truevalue|falsevalue',
+        'country': 'Options: code, codelong, fullname_lower'
+    };
+
+    // Extended PHP date format info for tooltip/popover
+    const phpDateFormats = `
+<strong>PHP Date Format Characters:</strong><br>
+<code>Y</code> = 4-digit year (2025)<br>
+<code>y</code> = 2-digit year (25)<br>
+<code>m</code> = Month 01-12<br>
+<code>n</code> = Month 1-12 (no zero)<br>
+<code>d</code> = Day 01-31<br>
+<code>j</code> = Day 1-31 (no zero)<br>
+<code>F</code> = Full month (January)<br>
+<code>M</code> = Short month (Jan)<br>
+<code>l</code> = Full day (Monday)<br>
+<code>D</code> = Short day (Mon)<br>
+<hr style="margin:4px 0">
+<strong>Examples:</strong><br>
+<code>Y-m-d</code> → 2025-07-27<br>
+<code>m/d/Y</code> → 07/27/2025<br>
+<code>n/j/Y</code> → 7/27/2025<br>
+<code>F j, Y</code> → July 27, 2025<br>
+<code>M j, Y</code> → Jul 27, 2025
+`;
+
     // Add field functionality
     document.getElementById('addFieldBtn').addEventListener('click', function() {
         const tableBody = document.querySelector('#mappingsTable tbody');
@@ -750,11 +836,63 @@ document.addEventListener('DOMContentLoaded', function() {
         initStatusToggle(newRow.querySelector('.status-toggle-btn'));
     });
     
-    // Remove row functionality
+    // Remove row functionality - mark for deletion with visual feedback
     document.addEventListener('click', function(e) {
         if (e.target.closest('.remove-row')) {
             const row = e.target.closest('tr');
-            row.remove();
+            const mappingId = row.dataset.mappingId;
+
+            // For new rows (not yet saved), just remove them
+            if (mappingId && mappingId.startsWith('new_')) {
+                row.remove();
+                return;
+            }
+
+            // Mark row as deleted visually
+            row.classList.add('marked-for-deletion');
+            row.querySelectorAll('input, select').forEach(el => el.disabled = true);
+
+            // Track deletion in hidden field
+            if (mappingId) {
+                const deletedField = document.getElementById('deleted_mappings');
+                const currentDeleted = deletedField.value ? deletedField.value.split(',') : [];
+                if (!currentDeleted.includes(mappingId)) {
+                    currentDeleted.push(mappingId);
+                    deletedField.value = currentDeleted.join(',');
+                }
+            }
+
+            // Change trash button to undo button
+            const removeBtn = row.querySelector('.remove-row');
+            removeBtn.classList.remove('remove-row');
+            removeBtn.classList.add('undo-delete');
+            removeBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+            removeBtn.title = 'Undo Delete';
+        }
+
+        // Undo delete functionality
+        if (e.target.closest('.undo-delete')) {
+            const row = e.target.closest('tr');
+            const mappingId = row.dataset.mappingId;
+
+            // Restore row visually
+            row.classList.remove('marked-for-deletion');
+            row.querySelectorAll('input, select').forEach(el => el.disabled = false);
+
+            // Remove from deleted tracking
+            if (mappingId) {
+                const deletedField = document.getElementById('deleted_mappings');
+                let currentDeleted = deletedField.value ? deletedField.value.split(',') : [];
+                currentDeleted = currentDeleted.filter(id => id !== mappingId);
+                deletedField.value = currentDeleted.join(',');
+            }
+
+            // Change undo button back to trash button
+            const undoBtn = row.querySelector('.undo-delete');
+            undoBtn.classList.remove('undo-delete');
+            undoBtn.classList.add('remove-row');
+            undoBtn.innerHTML = '<i class="bi bi-trash"></i>';
+            undoBtn.title = 'Remove';
         }
     });
     
@@ -788,6 +926,33 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.status-toggle-btn').forEach(button => {
         initStatusToggle(button);
     });
+
+    // Initialize info icons with popovers for existing date format rows
+    document.querySelectorAll('select[name*="[fieldFormatType]"]').forEach(select => {
+        const formatType = select.value;
+        if (formatType === 'date' || formatType === 'lowerdate') {
+            const controlGroup = select.closest('tr').querySelector('.field-control-group');
+            const infoIcon = controlGroup.querySelector('.info-icon');
+            if (infoIcon) {
+                new bootstrap.Popover(infoIcon, {
+                    html: true,
+                    trigger: 'click',
+                    placement: 'left',
+                    title: 'PHP Date Formats',
+                    content: phpDateFormats
+                });
+                infoIcon.style.cursor = 'help';
+                infoIcon.title = 'Click for PHP date format reference';
+            }
+        } else if (formatType && formatHelp[formatType]) {
+            const controlGroup = select.closest('tr').querySelector('.field-control-group');
+            const infoIcon = controlGroup.querySelector('.info-icon');
+            if (infoIcon) {
+                infoIcon.title = formatHelp[formatType];
+                infoIcon.style.cursor = 'help';
+            }
+        }
+    });
     
     // Make format code examples clickable to copy
     document.querySelectorAll('code').forEach(code => {
@@ -813,44 +978,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Format type change handler with dynamic help
-    const formatHelp = {
-        'date': 'Examples: Y-m-d, m/d/Y, F j Y, n/j/Y',
-        'date-calculate': 'Example: {m}+81098',
-        'date-numberformat': 'Formats date as number',
-        'lowerdate': 'Lowercase date output',
-        'phone': 'Examples: (###) ###-####, ###-###-####, 012, 345, 6789',
-        'state': 'Use: code (for 2-letter abbreviation)',
-        'title': 'Use: noperiod (removes periods)',
-        'name': 'Use: {first_name} {middle_name} {last_name}',
-        'gender': 'Options: uppercode, lowercode, upper, ucwords, MF->12',
-        'tf->yn': 'Options: uinitial, ucwords, upper, lower, NNo',
-        'tf->10': 'Converts true/false to 1/0',
-        'tf->fixed': 'Format: truevalue/falsevalue',
-        'tf->fixedpipe': 'Format: truevalue|falsevalue',
-        'country': 'Options: code, codelong, fullname_lower'
-    };
-    
+    // Format type change handler - uses formatHelp and phpDateFormats defined above
     document.addEventListener('change', function(e) {
         if (e.target.matches('select[name*="[fieldFormatType]"]')) {
             const formatType = e.target.value;
             const formatInput = e.target.closest('tr').querySelector('input[name$="[fieldFormat]"]');
             const controlGroup = e.target.closest('tr').querySelector('.field-control-group');
-            
+
             // Remove existing info icon if any
             const existingIcon = controlGroup.querySelector('.info-icon');
             if (existingIcon) {
+                // Dispose of any existing popover
+                const popover = bootstrap.Popover.getInstance(existingIcon);
+                if (popover) popover.dispose();
                 existingIcon.remove();
             }
-            
-            // Add info icon with tooltip for format types
+
+            // Add info icon with tooltip/popover for format types
             if (formatType && formatHelp[formatType]) {
                 const infoIcon = document.createElement('i');
                 infoIcon.className = 'bi bi-info-circle info-icon';
-                infoIcon.title = formatHelp[formatType];
                 infoIcon.style.cursor = 'help';
                 controlGroup.appendChild(infoIcon);
-                
+
+                // Use popover for date formats (more detailed), tooltip for others
+                if (formatType === 'date' || formatType === 'lowerdate') {
+                    new bootstrap.Popover(infoIcon, {
+                        html: true,
+                        trigger: 'click',
+                        placement: 'left',
+                        title: 'PHP Date Formats',
+                        content: phpDateFormats
+                    });
+                    infoIcon.title = 'Click for PHP date format reference';
+                } else {
+                    infoIcon.title = formatHelp[formatType];
+                }
+
                 // Set placeholder based on format type
                 formatInput.placeholder = formatHelp[formatType];
             } else {
@@ -858,5 +1022,150 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // BGRAB Preview Signup function - fetches enrollment data and shows it
+    window.previewSignupWithBgrab = function() {
+        const companyId = parseInt(<?php echo json_encode($company_id); ?>, 10);
+        const signupUrl = <?php echo json_encode($signup_url); ?>;
+        const testUserId = -1; // Test mode (-1) uses user 20's data but can access ANY company
+        const adminId = parseInt(<?php echo json_encode(isset($session) ? $session->get('user_id', 0) : ($_SESSION['user_id'] ?? 0)); ?>, 10);
+
+        console.log('BGRAB Preview: Fetching enrollment data for:', {
+            userId: testUserId,
+            aid: adminId,
+            bid: companyId
+        });
+
+        // Show loading state
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Loading...';
+        btn.disabled = true;
+
+        // Fetch the enrollment data from the BGRAB endpoint
+        const apiUrl = '/admin/bgreb_v3/bgr_getprocessdetails.php?aid=' + adminId + '&uid=' + testUserId + '&bid=' + companyId + '&type=bgrab';
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                console.log('BGRAB Preview: Data received:', data);
+
+                // Restore button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+
+                // Show the enrollment data modal
+                showBgrabPreviewModal(data, signupUrl, companyId, testUserId, adminId);
+            })
+            .catch(error => {
+                console.error('BGRAB Preview: Error fetching data:', error);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('Error fetching enrollment data: ' + error.message);
+            });
+    };
+
+    // Show BGRAB preview modal with enrollment data
+    function showBgrabPreviewModal(data, signupUrl, companyId, testUserId, adminId) {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('bgrabPreviewModal');
+        if (existingModal) existingModal.remove();
+
+        // Get user and field mapping data
+        const userDetails = data.USERDETAILS || {};
+        const registrationList = data.REGISTRATIONLIST || [];
+        const currentCompany = registrationList.find(c => c.company_id == companyId) || {};
+        const fieldMapping = currentCompany.FIELDMAPPING || {};
+
+        // Build field mapping table
+        let fieldMappingHtml = '';
+        if (Object.keys(fieldMapping).length > 0) {
+            fieldMappingHtml = '<table class="table table-sm table-striped"><thead><tr><th>Form Field</th><th>Value</th><th></th></tr></thead><tbody>';
+            Object.entries(fieldMapping).forEach(([key, value]) => {
+                const [order, actualKey] = key.split('||');
+                const displayValue = value || '<em class="text-muted">empty</em>';
+                fieldMappingHtml += '<tr><td><code>' + actualKey + '</code></td><td>' + displayValue + '</td><td><button class="btn btn-xs btn-outline-secondary" onclick="navigator.clipboard.writeText(\'' + (value || '').replace(/'/g, "\\'") + '\')"><i class="bi bi-clipboard"></i></button></td></tr>';
+            });
+            fieldMappingHtml += '</tbody></table>';
+        } else {
+            fieldMappingHtml = '<div class="alert alert-warning">No field mapping configured for this company.</div>';
+        }
+
+        // Build user details
+        let userHtml = '<div class="row">';
+        userHtml += '<div class="col-md-6"><strong>Name:</strong> ' + (userDetails.first_name || '') + ' ' + (userDetails.last_name || '') + '</div>';
+        userHtml += '<div class="col-md-6"><strong>Email:</strong> ' + (userDetails.email || '') + '</div>';
+        userHtml += '<div class="col-md-6"><strong>Birthday:</strong> ' + (userDetails.birthdate || '') + '</div>';
+        userHtml += '<div class="col-md-6"><strong>Phone:</strong> ' + (userDetails.phone || '') + '</div>';
+        userHtml += '</div>';
+
+        // Create modal HTML
+        const modalHtml = `
+        <div class="modal fade" id="bgrabPreviewModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="bi bi-robot me-2"></i> BGRAB Preview - Test Mode (User #20 data)</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Signup URL:</strong> <a href="${signupUrl}" target="_blank">${signupUrl}</a>
+                        </div>
+
+                        <h6 class="border-bottom pb-2 mb-3">Test User Details</h6>
+                        ${userHtml}
+
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">Field Mapping (${Object.keys(fieldMapping).length} fields)</h6>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            ${fieldMappingHtml}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="openWithBgrabEvent(-1, ${adminId}, ${companyId}, '${signupUrl}')">
+                            <i class="bi bi-box-arrow-up-right me-2"></i> Open Signup (with BGRAB event)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('bgrabPreviewModal'));
+        modal.show();
+    }
+
+    // Open signup with BGRAB event dispatch
+    window.openWithBgrabEvent = function(userId, aid, bid, signupUrl) {
+        console.log('BGRAB: Dispatching processUser event and opening URL');
+
+        // Dispatch the processUser event for Chrome extension users
+        const event = new CustomEvent('processUser', {
+            detail: {
+                userId: userId,
+                aid: aid,
+                bid: bid,
+                mode: 'desktop'
+            },
+            bubbles: true
+        });
+        document.dispatchEvent(event);
+
+        // Open the signup URL
+        setTimeout(function() {
+            const enrollWindow = window.open(signupUrl, 'enrollerwindow',
+                'width=1024,height=1200,toolbar=yes,scrollbars=yes,menubar=yes,resizable=yes,status=yes');
+            if (enrollWindow) {
+                enrollWindow.focus();
+            } else {
+                alert('Please allow popups for this site.');
+            }
+        }, 300);
+    };
 });
 </script>

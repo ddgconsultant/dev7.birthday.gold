@@ -39,6 +39,12 @@ $allowed_fields = [
     'parent_company'
 ];
 
+// Map field names to actual database column names (where they differ)
+$field_mapping = [
+    'minimum_age' => 'minage',
+    'maximum_age' => 'maxage'
+];
+
 // Check if field is allowed
 if (!in_array($field, $allowed_fields)) {
     header('Content-Type: application/json');

@@ -153,6 +153,8 @@ if ($app->formposted()) {
     
     // Define actions that don't require a business ID
     $email_actions = ['sendmessage_starting', 'sendmessage_queuing', 'sendmessage_completed'];
+    $text_actions = ['sendtext_starting', 'sendtext_queuing', 'sendtext_completed'];
+    $message_actions = array_merge($email_actions, $text_actions);
     
     // Process form actions only with valid parameters
     if (empty($action)) {
@@ -160,15 +162,110 @@ if ($app->formposted()) {
             <strong>Error:</strong> No action specified.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>';
-    } elseif (empty($post_bid) && !in_array($action, $email_actions)) {
+    } elseif (empty($post_bid) && !in_array($action, $message_actions)) {
         $errormessage = '<div class="alert alert-danger alert-dismissible fade show" id="autoCloseAlert" role="alert">
             <strong>Error:</strong> Missing business ID for the requested action.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>';
     } else {
-        // Handle email actions that don't require a business
-        if (in_array($action, $email_actions)) {
+        // Handle message actions that don't require a business (email and text)
+        if (in_array($action, $message_actions)) {
             switch ($action) {
+                // TEXT MESSAGE ACTIONS
+                case 'sendtext_starting':
+                    // Send starting enrollment text message
+                    require_once $dir['core'] . '/classes/class.sms.php';
+                    $sms = new sms();
+
+                    $phoneNumber = $working_user_data['profile_phone_number'] ?? '';
+                    if (empty($phoneNumber)) {
+                        $errormessage = '<div class="alert alert-danger alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Error:</strong> No phone number available for this user.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                        break;
+                    }
+
+                    $message = "Birthday Gold: We are ready to process your enrollments! Please add your email address to your profile so we successfully complete your picks. -- https://birthday.gold";
+
+                    try {
+                        $smsResult = $sms->sendSingleMessage($phoneNumber, $message);
+                        $errormessage = '<div class="alert alert-success alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Success:</strong> Starting enrollment text sent to ' . safe_echo($phoneNumber) . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                        session_tracking('text_sent', 'sendtext_starting to ' . $phoneNumber);
+                    } catch (Exception $e) {
+                        $errormessage = '<div class="alert alert-danger alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Error:</strong> Failed to send text. ' . $e->getMessage() . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                    }
+                    break;
+
+                case 'sendtext_queuing':
+                    // Send queuing enrollment text message
+                    require_once $dir['core'] . '/classes/class.sms.php';
+                    $sms = new sms();
+
+                    $phoneNumber = $working_user_data['profile_phone_number'] ?? '';
+                    if (empty($phoneNumber)) {
+                        $errormessage = '<div class="alert alert-danger alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Error:</strong> No phone number available for this user.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                        break;
+                    }
+
+                    $message = "Birthday Gold: Your enrollments are in queue. Please add your email to your profile so we can send you updates - https://birthday.gold";
+
+                    try {
+                        $smsResult = $sms->sendSingleMessage($phoneNumber, $message);
+                        $errormessage = '<div class="alert alert-success alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Success:</strong> Queuing enrollment text sent to ' . safe_echo($phoneNumber) . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                        session_tracking('text_sent', 'sendtext_queuing to ' . $phoneNumber);
+                    } catch (Exception $e) {
+                        $errormessage = '<div class="alert alert-danger alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Error:</strong> Failed to send text. ' . $e->getMessage() . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                    }
+                    break;
+
+                case 'sendtext_completed':
+                    // Send completed enrollment text message
+                    require_once $dir['core'] . '/classes/class.sms.php';
+                    $sms = new sms();
+
+                    $phoneNumber = $working_user_data['profile_phone_number'] ?? '';
+                    if (empty($phoneNumber)) {
+                        $errormessage = '<div class="alert alert-danger alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Error:</strong> No phone number available for this user.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                        break;
+                    }
+
+                    $message = "Birthday Gold: Your enrollments are complete! Please add your email to your profile to receive your birthday rewards - https://birthday.gold";
+
+                    try {
+                        $smsResult = $sms->sendSingleMessage($phoneNumber, $message);
+                        $errormessage = '<div class="alert alert-success alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Success:</strong> Completed enrollment text sent to ' . safe_echo($phoneNumber) . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                        session_tracking('text_sent', 'sendtext_completed to ' . $phoneNumber);
+                    } catch (Exception $e) {
+                        $errormessage = '<div class="alert alert-danger alert-dismissible fade show text-start" id="autoCloseAlert" role="alert">
+                            <strong>Error:</strong> Failed to send text. ' . $e->getMessage() . '
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>';
+                    }
+                    break;
+
+                // EMAIL ACTIONS
                 case 'sendmessage_starting':
                     // Send starting enrollment email
                     global $sitesettings;
@@ -732,29 +829,78 @@ echo '
 // CONTENT DISPLAY LOGIC - Either show business details or waiting state
 if (empty($bid)) {
     // No business selected - show waiting state
-    $emailTypes = [
-        'starting' => [
-            'id' => 'startingEnrollmentModal',
-            'buttonText' => 'Send Starting Enrollment Email',
-            'buttonClass' => 'btn-primary',
-            'action' => 'sendmessage_starting',
-            'description' => 'This email notifies the member that we are beginning to process their enrollment documents and will be in touch with updates.'
-        ],
-        'queuing' => [
-            'id' => 'queuingEnrollmentModal',
-            'buttonText' => 'Send Queuing Enrollment Email',
-            'buttonClass' => 'btn-info',
-            'action' => 'sendmessage_queuing',
-            'description' => 'This email informs the member that their enrollment is in our processing queue and provides an estimated timeline for completion.'
-        ],
-        'completed' => [
-            'id' => 'completedEnrollmentModal',
-            'buttonText' => 'Send Enrollments Completed',
-            'buttonClass' => 'btn-success',
-            'action' => 'sendmessage_completed',
-            'description' => 'This email confirms to the member that their enrollment has been successfully processed and provides next steps.'
-        ]
-    ];
+    // Determine if we should use email or text message based on user data
+    $userEmail = safe_array_get($working_user_data, 'profile_email', '');
+    $userPhone = safe_array_get($working_user_data, 'profile_phone_number', '');
+    $useTextMessages = empty($userEmail) && !empty($userPhone);
+
+    if ($useTextMessages) {
+        // Text message configuration (no email available)
+        $messageTypes = [
+            'starting' => [
+                'id' => 'startingEnrollmentModal',
+                'buttonText' => 'Send Starting Text Message',
+                'buttonClass' => 'btn-warning',
+                'action' => 'sendtext_starting',
+                'description' => 'This text notifies the member that we are beginning to process their enrollments and asks them to add their email.',
+                'shortMessage' => 'Birthday Gold: We are ready to process your enrollments! Please add your email address to your profile so we successfully complete your picks. -- https://birthday.gold'
+            ],
+            'queuing' => [
+                'id' => 'queuingEnrollmentModal',
+                'buttonText' => 'Send Queuing Text Message',
+                'buttonClass' => 'btn-warning',
+                'action' => 'sendtext_queuing',
+                'description' => 'This text informs the member that their enrollment is in queue and asks them to add their email.',
+                'shortMessage' => 'Birthday Gold: Your enrollments are in queue. Please add your email to your profile so we can send you updates - https://birthday.gold'
+            ],
+            'completed' => [
+                'id' => 'completedEnrollmentModal',
+                'buttonText' => 'Send Completed Text Message',
+                'buttonClass' => 'btn-warning',
+                'action' => 'sendtext_completed',
+                'description' => 'This text confirms enrollments are complete and asks them to add their email.',
+                'shortMessage' => 'Birthday Gold: Your enrollments are complete! Please add your email to your profile to receive your birthday rewards - https://birthday.gold'
+            ]
+        ];
+        $modalTitle = 'Confirm Text Message';
+        $sendToLabel = 'Send text to';
+        $sendToValue = $userPhone;
+        $sendButtonColor = 'btn-warning';
+        $alertMessage = '<div class="alert alert-warning mt-3"><i class="bi bi-exclamation-triangle"></i> <strong>No Email Available</strong> - This member has no email address. Text messages will be sent instead, asking them to add their email.</div>';
+    } else {
+        // Email configuration (default)
+        $messageTypes = [
+            'starting' => [
+                'id' => 'startingEnrollmentModal',
+                'buttonText' => 'Send Starting Enrollment Email',
+                'buttonClass' => 'btn-primary',
+                'action' => 'sendmessage_starting',
+                'description' => 'This email notifies the member that we are beginning to process their enrollment documents and will be in touch with updates.',
+                'shortMessage' => ''
+            ],
+            'queuing' => [
+                'id' => 'queuingEnrollmentModal',
+                'buttonText' => 'Send Queuing Enrollment Email',
+                'buttonClass' => 'btn-info',
+                'action' => 'sendmessage_queuing',
+                'description' => 'This email informs the member that their enrollment is in our processing queue and provides an estimated timeline for completion.',
+                'shortMessage' => ''
+            ],
+            'completed' => [
+                'id' => 'completedEnrollmentModal',
+                'buttonText' => 'Send Enrollments Completed',
+                'buttonClass' => 'btn-success',
+                'action' => 'sendmessage_completed',
+                'description' => 'This email confirms to the member that their enrollment has been successfully processed and provides next steps.',
+                'shortMessage' => ''
+            ]
+        ];
+        $modalTitle = 'Confirm Email Send';
+        $sendToLabel = 'Send email to';
+        $sendToValue = $userEmail;
+        $sendButtonColor = 'btn-primary';
+        $alertMessage = '';
+    }
 
     echo '
     <div class="card mb-4">
@@ -765,14 +911,14 @@ if (empty($bid)) {
             <i class="bi bi-arrow-left-circle mb-3" style="font-size: 2rem;"></i>
             <h3 class="mb-3">Select a Business</h3>
             <p class="text-muted mb-0">Please select a business from the left panel to begin processing enrollments</p>
-            
+            ' . $alertMessage . '
             <div class="mt-5">';
 
     // Generate buttons
-    foreach ($emailTypes as $type => $config) {
+    foreach ($messageTypes as $type => $config) {
         echo '
                 <button type="button" class="btn ' . $config['buttonClass'] . ' mx-2" data-bs-toggle="modal" data-bs-target="#' . $config['id'] . '">
-                    ' . $config['buttonText'] . '
+                    ' . ($useTextMessages ? '<i class="bi bi-phone"></i> ' : '<i class="bi bi-envelope"></i> ') . $config['buttonText'] . '
                 </button>';
     }
 
@@ -782,7 +928,7 @@ if (empty($bid)) {
     </div>';
 
     // Generate modals
-    foreach ($emailTypes as $type => $config) {
+    foreach ($messageTypes as $type => $config) {
         echo '
     <!-- ' . ucfirst($type) . ' Enrollment Modal -->
     <div class="modal fade mt-5" id="' . $config['id'] . '" tabindex="-1">
@@ -794,19 +940,30 @@ if (empty($bid)) {
                     <input type="hidden" name="bid" value="' . (!empty($bid) ? $qik->encodeId($bid) : '') . '">
                     <input type="hidden" name="uid" value="' . $qik->encodeId($userId) . '">
                     <input type="hidden" name="aid" value="' . $qik->encodeId($aid) . '">
-                    
-                    <div class="modal-header">
-                        <h5 class="modal-title">Confirm Email Send</h5>
+
+                    <div class="modal-header ' . ($useTextMessages ? 'bg-warning' : '') . '">
+                        <h5 class="modal-title">' . ($useTextMessages ? '<i class="bi bi-phone"></i> ' : '') . $modalTitle . '</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p>Send email to <span id="memberName">' . safe_echo($first_name . ' ' . $last_name) . '</span> at: <span id="memberEmail">'. safe_echo(safe_array_get($working_user_data, 'email', '')) .'</span></p>
+                        <p>' . $sendToLabel . ' <strong>' . safe_echo($first_name . ' ' . $last_name) . '</strong> at: <strong>' . safe_echo($sendToValue) . '</strong></p>';
+
+        // Show the actual message for text messages
+        if ($useTextMessages && !empty($config['shortMessage'])) {
+            echo '
+                        <div class="alert alert-secondary">
+                            <strong>Message Preview:</strong><br>
+                            <small>' . safe_echo($config['shortMessage']) . '</small>
+                        </div>';
+        }
+
+        echo '
                         <hr>
                         <p class="text-muted small">' . $config['description'] . '</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">SEND</button>
+                        <button type="submit" class="btn ' . $sendButtonColor . '">' . ($useTextMessages ? '<i class="bi bi-phone"></i> SEND TEXT' : 'SEND') . '</button>
                     </div>
                 </form>
             </div>

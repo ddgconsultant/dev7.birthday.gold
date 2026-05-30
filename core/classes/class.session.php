@@ -24,9 +24,17 @@ class Session
 {
   public function __construct($local_config)
   {
-    // Start session if it has not already started
+    // Start session if it has not already started, with retry for Windows file locking issues
     if (session_status() == PHP_SESSION_NONE && !headers_sent()) {
-      session_start();
+      $retries = 3;
+      $started = false;
+      while ($retries > 0 && !$started) {
+        $started = @session_start();
+        if (!$started) {
+          $retries--;
+          if ($retries > 0) usleep(50000); // 50ms delay between retries
+        }
+      }
     }
   }
 
@@ -93,9 +101,39 @@ class Session
   # ##--------------------------------------------------------------------------------------------------------------------------------------------------
   public function destroy()
   {
+    // Clear all session variables first
+    $_SESSION = array();
+
+    // Delete the session cookie if it exists
+    if (ini_get("session.use_cookies")) {
+      $params = session_get_cookie_params();
+      setcookie(session_name(), '', time() - 42000,
+        $params["path"], $params["domain"],
+        $params["secure"], $params["httponly"]
+      );
+    }
+
     // Destroy the session
     session_destroy();
-    // Start a new session immediately after destroying the old one
-    session_start();
+
+    // Ensure session save path is set before starting new session
+    global $dir;
+    $session_path = realpath($dir['base'] . '/../_SESSIONS_');
+    if ($session_path && !headers_sent()) {
+      ini_set('session.save_path', $session_path);
+    }
+
+    // Start a new session with retry for Windows file locking issues
+    if (!headers_sent()) {
+      $retries = 3;
+      $started = false;
+      while ($retries > 0 && !$started) {
+        $started = @session_start();
+        if (!$started) {
+          $retries--;
+          if ($retries > 0) usleep(50000); // 50ms delay between retries
+        }
+      }
+    }
   }
 }

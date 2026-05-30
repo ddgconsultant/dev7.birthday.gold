@@ -110,6 +110,22 @@ CREATE TABLE IF NOT EXISTS processing_state (
     last_processed DATETIME
 );
 
+-- Run history (track each execution for monitoring)
+CREATE TABLE IF NOT EXISTS run_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_start DATETIME NOT NULL,
+    run_end DATETIME,
+    run_mode TEXT,
+    status TEXT DEFAULT 'running',
+    files_processed INTEGER DEFAULT 0,
+    lines_processed INTEGER DEFAULT 0,
+    failed_auths_found INTEGER DEFAULT 0,
+    successful_auths_found INTEGER DEFAULT 0,
+    new_blocks_created INTEGER DEFAULT 0,
+    expired_blocks_removed INTEGER DEFAULT 0,
+    error_message TEXT
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_failed_auth_ip ON failed_auth(ip_address);
 CREATE INDEX IF NOT EXISTS idx_failed_auth_last_seen ON failed_auth(last_seen);

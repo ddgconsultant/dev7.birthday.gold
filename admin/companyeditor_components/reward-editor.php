@@ -438,7 +438,7 @@ echo $additionalstyles;
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Max Age</label>
-                            <input type="number" class="form-control" name="maxage" id="maxage" min="0" max="120">
+                            <input type="number" class="form-control" name="maxage" id="maxage" min="0" max="150">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Days Before Birthday</label>
@@ -457,7 +457,8 @@ echo $additionalstyles;
 
 <script>
 // Store rewards data for easy access
-const rewardsData = <?php echo json_encode(array_merge($companyRewards, $locationRewards)); ?>;
+const rewardsData = <?php echo json_encode(array_values($rewards), JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+console.log('rewardsData loaded:', rewardsData.length, 'rewards');
 
 function createReward(locationId = null) {
     // Clear the form
@@ -476,35 +477,63 @@ function createReward(locationId = null) {
 }
 
 function editReward(rewardId) {
-    // Find the reward data
-    const reward = rewardsData.find(r => r.reward_id == rewardId);
-    
+    console.log('editReward called with ID:', rewardId, 'type:', typeof rewardId);
+    console.log('Searching in', rewardsData.length, 'rewards');
+
+    // Find the reward data - convert both to string for comparison
+    const reward = rewardsData.find(r => String(r.reward_id) === String(rewardId));
+
     if (!reward) {
         console.error('Reward not found:', rewardId);
+        console.log('Available reward IDs:', rewardsData.map(r => r.reward_id));
+        alert('Reward data not found. Please refresh the page and try again.');
         return;
     }
-    
-    // Clear the form first
-    document.getElementById('rewardForm').reset();
-    
-    // Populate the form fields
-    document.getElementById('reward_id').value = reward.reward_id || '';
-    document.getElementById('reward_name').value = reward.reward_name || '';
-    document.getElementById('reward_type').value = reward.reward_type || '';
-    document.getElementById('reward_description_short').value = reward.reward_description_short || '';
-    document.getElementById('reward_description_long').value = reward.reward_description_long || '';
-    document.getElementById('reward_value').value = reward.reward_value || '';
-    document.getElementById('cash_value').value = reward.cash_value || '';
-    document.getElementById('location_id').value = reward.location_id || '';
-    document.getElementById('minage').value = reward.minage || '';
-    document.getElementById('maxage').value = reward.maxage || '';
-    document.getElementById('mindaysstart').value = reward.mindaysstart || '';
-    
+
+    console.log('Found reward - FULL OBJECT:', JSON.stringify(reward, null, 2));
+
+    const modalEl = document.getElementById('rewardEditorModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
     // Update modal title
     document.getElementById('rewardModalTitle').textContent = 'Edit Reward';
-    
-    // Show the modal
-    const modal = new bootstrap.Modal(document.getElementById('rewardEditorModal'));
+
+    // Remove any existing event listener to prevent duplicates
+    modalEl.removeEventListener('shown.bs.modal', modalEl._populateHandler);
+
+    // Create handler function to populate form AFTER modal is fully shown
+    modalEl._populateHandler = function() {
+        console.log('Modal shown - now populating form fields');
+
+        // Use ?? (nullish coalescing) instead of || to preserve 0 values
+        document.getElementById('reward_id').value = reward.reward_id ?? '';
+        document.getElementById('reward_name').value = reward.reward_name ?? '';
+        document.getElementById('reward_type').value = reward.reward_type ?? 'physical';
+        document.getElementById('reward_description_short').value = reward.reward_description_short ?? '';
+        document.getElementById('reward_description_long').value = reward.reward_description_long ?? '';
+        document.getElementById('reward_value').value = reward.reward_value ?? '';
+        document.getElementById('cash_value').value = reward.cash_value ?? '';
+        document.getElementById('location_id').value = reward.location_id ?? '';
+        document.getElementById('minage').value = reward.minage ?? '';
+        document.getElementById('maxage').value = reward.maxage ?? '';
+        document.getElementById('mindaysstart').value = reward.mindaysstart ?? '';
+
+        console.log('Form populated with values:', {
+            reward_id: document.getElementById('reward_id').value,
+            reward_name: document.getElementById('reward_name').value,
+            reward_type: document.getElementById('reward_type').value,
+            reward_description_short: document.getElementById('reward_description_short').value,
+            reward_description_long: document.getElementById('reward_description_long').value
+        });
+
+        // Remove listener after populating (one-time use)
+        modalEl.removeEventListener('shown.bs.modal', modalEl._populateHandler);
+    };
+
+    // Add listener for when modal is fully shown
+    modalEl.addEventListener('shown.bs.modal', modalEl._populateHandler);
+
+    // Show the modal - form will be populated after it's visible
     modal.show();
 }
 

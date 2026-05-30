@@ -637,14 +637,12 @@ $status_color = $status_colors[$company_status] ?? 'secondary';
         </div>
         <div class="card-body">
             <div class="row g-3">
-                <?php 
+                <?php
                 $social_platforms = [
                     'facebook' => ['icon' => 'facebook', 'label' => 'Facebook'],
                     'twitter' => ['icon' => 'twitter', 'label' => 'Twitter'],
                     'instagram' => ['icon' => 'instagram', 'label' => 'Instagram'],
-                    'tiktok' => ['icon' => 'tiktok', 'label' => 'TikTok'],
-                    'youtube' => ['icon' => 'youtube', 'label' => 'YouTube'],
-                    'linkedin' => ['icon' => 'linkedin', 'label' => 'LinkedIn']
+                    'tiktok' => ['icon' => 'tiktok', 'label' => 'TikTok']
                 ];
                 
                 foreach ($social_platforms as $key => $platform): 
@@ -972,7 +970,7 @@ $(document).ready(function() {
                 field.find('.view-mode input').removeClass('border-success').addClass('border-danger');
                 field.find('.view-mode a.btn-outline-success').remove();
             }
-        } else if (['facebook', 'twitter', 'instagram', 'tiktok', 'youtube', 'linkedin'].includes(fieldName)) {
+        } else if (['facebook', 'twitter', 'instagram', 'tiktok'].includes(fieldName)) {
             // For social media fields, update the display
             var socialContainer = field.find('.view-mode > div');
             if (value) {

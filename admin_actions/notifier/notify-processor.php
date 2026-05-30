@@ -125,6 +125,11 @@ if ($config['actualsend']) {
     $details['to'] = [$notification_data['sent_to'], $notify_user_data['first_name'] . ' ' . $notify_user_data['last_name']];
     $details['subject'] = $notification_data['title'];
     $details['body'] = $notification_data['message'];
+    // Pass the notification category through so Mail::isEmailSuppressed() can
+    // apply the marketing-only carve-out correctly.
+    if (!empty($notification_data['category'])) {
+        $details['category'] = $notification_data['category'];
+    }
 $details['notificationid'] = $insertednotificationId;
 
     $result = $mail->sendmail($details);
@@ -137,6 +142,15 @@ $details['notificationid'] = $insertednotificationId;
         $stmt = $database->prepare($query);
         $stmt->execute(['notification_id' => $insertednotificationId]);
         $counters['emails_sent']++;
+    } elseif (!empty($result['suppressed'])) {
+        // Address is on the suppression list — mark as 'suppressed' so the
+        // retry loop skips it and reporting can distinguish from a real failure.
+        $qik->logmessage("<p style='color: #8a6d3b;'>🚫 Email suppressed: " . htmlspecialchars($notification_data['title']) . " to " . htmlspecialchars($details['to'][0]) . " (User: " . $notification_data['user_id'] . ", source: " . htmlspecialchars($result['suppression']['source'] ?? 'unknown') . ")</p>\n");
+        $query = "UPDATE bg_user_notifications SET `status` = 'suppressed', modify_dt=now() WHERE notification_id = :notification_id";
+        $stmt = $database->prepare($query);
+        $stmt->execute(['notification_id' => $insertednotificationId]);
+        if (!isset($counters['emails_suppressed'])) $counters['emails_suppressed'] = 0;
+        $counters['emails_suppressed']++;
     } else {
         $qik->logmessage("<p style='color: red;'>❌ Email failed: " . htmlspecialchars($notification_data['title']) . " (User: " . $notification_data['user_id'] . ")</p>\n");
     }
@@ -231,14 +245,20 @@ function retry_unsent_notifications() {
                 'notificationid' => $notification['notification_id']
             ];
 
+            // Pass the notification category through so Mail::isEmailSuppressed()
+            // can apply the marketing-only carve-out correctly.
+            if (!empty($notification['category'])) {
+                $details['category'] = $notification['category'];
+            }
+
             // Add from if specified
             if (!empty($from_details)) {
                 $details['from'] = $from_details;
             }
-            
+
             // Log detailed info about what we're trying to send
             $qik->logmessage("<p style='color: #0066cc;'>🔄 Retry attempt: " . htmlspecialchars($notification['title']) . " to " . htmlspecialchars($recipient_email) . " (ID: " . $notification['notification_id'] . ")</p>\n", 1);
-            
+
             // Check if recipient email is valid
             if (!filter_var($recipient_email, FILTER_VALIDATE_EMAIL)) {
                 $error_detail = empty($recipient_email) ? "Email is empty/missing" : "Invalid email format";
@@ -246,8 +266,25 @@ function retry_unsent_notifications() {
                 $retry_failure++;
                 continue;
             }
-            
+
             $result = $mail->sendmail($details);
+
+            // Suppressed addresses get a terminal 'suppressed' status so the
+            // exponential-backoff retry loop never picks them up again.
+            if (!empty($result['suppressed'])) {
+                $qik->logmessage("<p style='color: #8a6d3b;'>🚫 Retry skipped (suppressed): " . htmlspecialchars($notification['title']) . " to " . htmlspecialchars($recipient_email) . " (User: " . $notification['user_id'] . ", source: " . htmlspecialchars($result['suppression']['source'] ?? 'unknown') . ")</p>\n", 1);
+
+                $update_query = "UPDATE bg_user_notifications SET
+                                 `status`  = 'suppressed',
+                                 modify_dt = NOW()
+                                 WHERE notification_id = :notification_id";
+                $update_stmt = $database->prepare($update_query);
+                $update_stmt->execute(['notification_id' => $notification['notification_id']]);
+
+                if (!isset($counters['retry_suppressed'])) $counters['retry_suppressed'] = 0;
+                $counters['retry_suppressed']++;
+                continue;
+            }
 
             // Check if the email was sent successfully
             if ($result['mail_sent'] === true) {
