@@ -54,3 +54,7 @@ admin_actions/sync_logs/
 temp_*.sql
 enrollmentlimit_fix.txt
 cleanup_bad_database_backups.txt
+!.env.example
+logs/
+sessions/
+tmp/
